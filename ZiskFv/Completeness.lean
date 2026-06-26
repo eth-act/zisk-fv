@@ -6,15 +6,15 @@ import ZiskFv.Completeness.Rv64im.SailDecode
 Read top to bottom; the whole point is to make "the eventual theorem" and "what
 we currently assume" each a single named object.
 
-* `ZiskSurface` — ZisK's production decode/lower/circuit surface as abstract
+* `OutstandingZiskPredicates` — ZisK's production decode/lower/circuit surface as abstract
   predicates on a raw word. Placeholders for the *real* ZisK predicates, which
   live in the Aeneas-extracted world this build cannot import.
-* `ZiskSurface.Covers raw` — what "ZisK fully handles `raw`" means: the whole
+* `OutstandingZiskPredicates.Covers raw` — what "ZisK fully handles `raw`" means: the whole
   pipeline succeeds and the soundness-row contract holds.
 * `EventualCompleteness state z` — **THE GOAL.** Every Sail-executable RV64IM word
   outside the known decode gaps is covered by ZisK. This is what we want
   *unconditionally*.
-* `ZiskSurface.CoverageAssumptions z` — **WHAT WE CURRENTLY ASSUME.** One field per
+* `OutstandingZiskPredicates.CoverageAssumptions z` — **WHAT WE CURRENTLY ASSUME.** One field per
   pipeline stage; each field is a plan item the Aeneas harness must discharge.
 * `sail_executable_within_supported_decode_shape` — PROVEN, and the *only* piece
   actually established in this build: Sail-executable words land in
@@ -36,7 +36,7 @@ bridge) and `skeletal_root_completeness` yields `EventualCompleteness` outright.
 * eth-act/zisk-fv#108 — extend the Aeneas extraction to ZisK table data + witness
   builders. Backs the `rowTotal` / `opcodeTotal` / `soundnessContract` fields.
 * eth-act/zisk-fv#74 — instantiate the theorem on a real ZisK execution trace
-  (end-to-end integration witness): produces a concrete `ZiskSurface` to feed here.
+  (end-to-end integration witness): produces a concrete `OutstandingZiskPredicates` to feed here.
 * eth-act/zisk-fv#77 — differentially test the Sail-Lean spec against the
   reference emulator; trust in the Sail side the proven bridge rests on.
 * eth-act/zisk-fv#75 — eliminate `native_decide` / kernel-only axiom closure; the
@@ -86,7 +86,7 @@ raw 32-bit word. Each field is a placeholder for the corresponding *real* ZisK
 predicate that the Aeneas extraction would instantiate it with
 (eth-act/zisk-fv#111 for decode/lowering, eth-act/zisk-fv#108 for table/witness
 data; eth-act/zisk-fv#74 produces a concrete instance from a real trace). -/
-structure ZiskSurface where
+structure OutstandingZiskPredicates where
   /-- ZisK's production decoder accepts (supports) the word. -/
   decoderAccepts : BitVec 32 → Prop
   /-- Lowering assigns the word an internal ZisK opcode. -/
@@ -103,7 +103,7 @@ structure ZiskSurface where
 
 /-- "ZisK fully covers `raw`": the whole pipeline succeeds (decoder accepts →
 lowering → row → opcode) and the soundness-row contract holds. -/
-def ZiskSurface.Covers (z : ZiskSurface) (raw : BitVec 32) : Prop :=
+def OutstandingZiskPredicates.Covers (z : OutstandingZiskPredicates) (raw : BitVec 32) : Prop :=
   (z.decoderAccepts raw ∧ z.loweringSucceeds raw ∧
     z.rowMaterializes raw ∧ z.opcodeProven raw) ∧ z.rowSoundnessContract raw
 
@@ -113,7 +113,7 @@ outside ZisK's known decode gaps, is fully covered by ZisK. This is the eventual
 the `CoverageAssumptions` are discharged. A concrete `z` plus discharged
 assumptions — the end-to-end instantiation tracked in eth-act/zisk-fv#74 — makes
 this hold outright. -/
-def EventualCompleteness (state : SailState) (z : ZiskSurface) : Prop :=
+def EventualCompleteness (state : SailState) (z : OutstandingZiskPredicates) : Prop :=
   ∀ raw, SailRv64imExecutableRawIn state raw → ¬ z.knownDecodeGap raw → z.Covers raw
 
 /-- **WHAT WE CURRENTLY ASSUME.** The per-stage coverage facts about ZisK's real
@@ -122,7 +122,7 @@ item on the plan; discharging all of them closes the gap to
 `EventualCompleteness`. Discharge is tracked by eth-act/zisk-fv#111 (decode side:
 `decoderAcceptsInShape`, `loweringTotal`) and eth-act/zisk-fv#108 (table/witness
 data: `rowTotal`, `opcodeTotal`, `soundnessContract`). -/
-structure ZiskSurface.CoverageAssumptions (z : ZiskSurface) : Prop where
+structure OutstandingZiskPredicates.CoverageAssumptions (z : OutstandingZiskPredicates) : Prop where
   /-- PLAN ITEM (the only one touching the Sail-derived shape domain): every
   in-shape word that is not a known gap is accepted by ZisK's decoder.
   Discharge: eth-act/zisk-fv#111. -/
@@ -160,7 +160,7 @@ state z` unconditionally.
 * `assumptions` — the per-stage coverage facts about `z` (the plan items). -/
 theorem skeletal_root_completeness
     (state : SailState) (sailIsa : IsaExtensionsEnabled state)
-    (z : ZiskSurface) (assumptions : z.CoverageAssumptions) :
+    (z : OutstandingZiskPredicates) (assumptions : z.CoverageAssumptions) :
     EventualCompleteness state z := by
   intro raw h_sail h_not_gap
   have h_shape :=
