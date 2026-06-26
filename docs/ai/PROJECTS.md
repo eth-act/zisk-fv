@@ -1,5 +1,16 @@
 # Projects
 
+## Aeneas Bridge 111
+
+Plan: `docs/ai/plan/PLAN_AENEAS_BRIDGE_111.md` (issue #111). Discharge
+`OpEnvelope.aeneasBridgeTrust` by proving the per-opcode Main-row decode pins from the real
+Aeneas-extracted lowerer (`trust/aeneas/ProductionM2.lean`) in the main `lake build`, replacing
+the `mainRowProvenance_of_pins` literal fabrication. Keep Lean 4.28.0 by pinning aeneas back to
+`a2fcf1923d` (last v4.28.0-rc1 commit); import is GO per the 2026-06-19 spike. Trust route R1
+(sound, no `native_decide`); the spike warns the sound static-pin discharge via cheap tactics is a
+NO-GO, so Phase 1 leads with an empirical `progress`/`scalar_tac` tractability test as the real
+make-or-break. Worktree `.worktrees/aeneas-bridge-111`, branch `aeneas-bridge-111`.
+
 ## Endgame
 
 Metaplan: `docs/ai/plan/ENDGAME_ROADMAP.md` — campaign from the current envelope-conditional global theorem to a trace-level public statement, with P1 complete on main via #89 and P3 complete on main via #90/#91. Active stream: `docs/ai/plan/PLAN_ENDGAME_P4.md`, the first trust-reducing phase: build `AcceptedTrace -> OpEnvelope`, discharge bucket-(a) evidence, and leave only `aeneasBridgeTrust`, `ProgramBinding`/boot, and `NoKnownDefect`. Current focus is stacked P4 PR2/PR2a work in `.worktrees/endgame-p4-pr2` on rebased PR1 `da0dfc2c`; extractor, provider-free breadth, lookup-aware ArithMul wrapper, full-ensemble ArithMul provider swap, ArithMul opcode-exclusion, full-ensemble XOR provider selector, XOR bus/promise construction, XOR Binary provider input-row derivation, balance-fed XOR construction, and balance-fed AND construction are pushed through `5c261c7`. Cody's latest 2026-06-14 pull/rebase request was a no-op: `main` stayed `236449c9`, PR1 stayed `da0dfc2c`, and PR2 stayed `f31bbc6`; local AND/logical-Binary edits were preserved by autostash. The current changeset adds verified balance-fed OR construction; next is continuing Binary-family breadth beyond AND/OR/XOR.
