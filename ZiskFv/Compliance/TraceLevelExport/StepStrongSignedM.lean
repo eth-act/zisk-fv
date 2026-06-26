@@ -56,7 +56,7 @@ set_option maxHeartbeats 8000000
     witnessed by `arith_mem`).
 
     The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
-    `h_known : Defects.NoKnownDefect (mulEnvOf …)` (= `StepNoKnownDefect`'s mul
+    `h_known : Defects.NoKnownDefect (mulEnvOf …)` (= `RowOutsideDefectRegion`'s mul
     arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
     global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
     SATISFIABLE: for an honest MUL row (`RowData_mul.h_not_forge`, i.e.
@@ -166,7 +166,7 @@ theorem stepStrong_mulhsu
     witnessed by `arith_mem`).
 
     The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
-    `h_known : Defects.NoKnownDefect (divEnvOf …)` (= `StepNoKnownDefect`'s div
+    `h_known : Defects.NoKnownDefect (divEnvOf …)` (= `RowOutsideDefectRegion`'s div
     arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
     global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
     SATISFIABLE: for an honest signed DIV row (`RowData_div.h_not_forge`, i.e.
@@ -281,7 +281,7 @@ theorem stepStrong_remw
     memory-timeline obligation is trivial (FENCE has no memory entry).
 
     The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
-    `h_known : Defects.NoKnownDefect (fenceEnvOf …)` (= `StepNoKnownDefect`'s fence
+    `h_known : Defects.NoKnownDefect (fenceEnvOf …)` (= `RowOutsideDefectRegion`'s fence
     arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
     old theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
     SATISFIABLE: for an honest FENCE row (`RowData_fence.h_fm_zero` / `h_rs_x0` /

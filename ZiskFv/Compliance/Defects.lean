@@ -152,7 +152,7 @@ The four predicates below state the SAME conditions as the `OpEnvelope`-based
 shapes above (`MaliciousSignedMulWitnessShape`, `ArithDivDynamicWitnessShape`,
 `FenceKnownGoodShape`), re-expressed directly over the arith witness / claim
 fields that live in the `Inputs_<op>` / `Claim_<op>` row data.  This lets the
-threaded `StepNoKnownDefect` obligation read the defect condition off the row
+threaded `RowOutsideDefectRegion` obligation read the defect condition off the row
 data without the `OpEnvelope` detour.  The faithfulness of the re-expression is
 the content of the bridge lemmas `signedMulForge_iff_shape` /
 `divRemForge_iff_shape` / `divRemForgeW_iff_shape` / `fenceKnownGood_iff_shape`

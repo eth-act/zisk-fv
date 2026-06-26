@@ -23,7 +23,7 @@ defect-exclusion obligation `h_known_bugs`, EVERY row of the trace satisfies the
 canonical per-step channel-balance conclusion (`= state_effect_via_channels …`)
 — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
 produces — with NO caller-supplied `OpEnvelope`.  The envelope for each row is
-constructed/lifted INSIDE, per row, by `stepFaithful_of_evidence` dispatching the
+constructed/lifted INSIDE, per row, by `stepSound_of_evidence` dispatching the
 reassembled `RowData_<op>` to the matching `stepStrong_<op>`.
 
 > The earlier, weaker `bus_effect`-form export (`RowConstructionData` /
@@ -97,8 +97,8 @@ global theorem produces:
 ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
 
 The `h_known_bugs` premise is the per-row defect-exclusion obligation
-(`StepNoKnownDefect`), stated DIRECTLY over the row data (no `OpEnvelope`
-detour).  It is threaded — via `stepFaithful_of_evidence` — to each
+(`RowOutsideDefectRegion`), stated DIRECTLY over the row data (no `OpEnvelope`
+detour).  It is threaded — via `stepSound_of_evidence` — to each
 `stepStrong_<op>`.  It takes two shapes across the 63 arms, all SATISFIABLE for
 an honest row (so this export is NOT vacuous):
   * **Non-defect arms** (op-bus ALU + M-ext-unsigned + control-flow / U-type /
