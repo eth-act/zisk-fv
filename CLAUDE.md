@@ -31,10 +31,16 @@ per-class in `trust/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv.Compliance.equiv_<OP>` wrappers under
 `ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
 `OpEnvelope` sum type.
-`ZiskFv.Completeness.root_completeness` is also checked in as an
-acceptance/coverage theorem for Sail-executable RV64IM raw words outside the
-recorded FENCE decode gap. It is interface-mediated through the Aeneas
-extraction gate and does not revive Clean prover completeness non-claims.
+The RV64IM acceptance/coverage completeness surface is checked in as two
+honest endpoints in `ZiskFv/Completeness.lean`: `sail_executable_within_supported_decode_shape`
+(PROVEN — Sail-executable raw words land in `SupportedDecodeShape`) and
+`skeletal_root_completeness` (the end-to-end coverage statement, CONDITIONAL on the ZisK
+coverage obligations only; the recorded FENCE decode gap is its `knownDecodeGap`
+premise).
+The ZisK obligations are interface-mediated through the Aeneas extraction gate
+(documentary link only — this build cannot import that workspace). The abstract
+`Rv.Interface` route under `ZiskFv/Completeness/Aspirational/` is quarantined
+(see its `README.md`). This does not revive Clean prover completeness non-claims.
 The Clean completeness side is no longer a set of vacuous non-claims: all
 17 fields now have honest-row constructibility proofs with gate-checked
 witnesses. The documented scope is row-local constructibility only, with

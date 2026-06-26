@@ -20,7 +20,22 @@ abbrev SailState := PreSail.SequentialState RegisterType Sail.trivialChoiceSourc
 def SailReturns {α : Type} (action : SailM α) (state : SailState) (value : α) : Prop :=
   action state = EStateM.Result.ok value state
 
-def Rv64imEnabledSailState (state : SailState) : Prop :=
+/-- The targeted ISA-extension configuration of a Sail state: `M` enabled and
+`Zmmul` disabled.
+
+`Zmmul` is RISC-V's *multiply-only* subset of `M` (MUL/MULH* but no DIV/REM); we
+want full RV64IM, so we enable `M`. We additionally pin `Zmmul = false` to keep
+the Sail decode of the multiply opcodes on the `M` path rather than the mul-only
+subset.
+
+NOTE: it is not yet verified whether the `Zmmul = false` conjunct is strictly
+load-bearing for the containment proofs, or whether `M` enabled alone already
+pins those decodes — Sail's `encdec`/`currentlyEnabled` guards for the M opcodes
+would need to be checked; the conjunct is kept conservatively for now.
+
+Named generically (`IsaExtensionsEnabled`, not `Rv64imEnabled…`) to future-proof
+for enabling further extensions (e.g. Zicclsm) without renaming. -/
+def IsaExtensionsEnabled (state : SailState) : Prop :=
   LeanRV64D.Functions.currentlyEnabled extension.Ext_M state =
     EStateM.Result.ok true state ∧
   LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul state =

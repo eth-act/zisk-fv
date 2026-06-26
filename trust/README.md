@@ -68,28 +68,33 @@ EquivCore routes are implementation details.
 
 ## RV64IM Acceptance Completeness
 
-The checked-in endpoint
-`ZiskFv.Completeness.root_completeness` states acceptance/coverage
-completeness for the RV64IM decoder layer: every Sail-executable RV64IM raw
-word, except the recorded `ZISK-DEFECT-FENCE-INCOMPLETE` decode gap, is covered
-by the pinned production ZisK decode/lower/materialize path and yields the
-row-local soundness input expected by the canonical opcode theorems.
+The checked-in endpoints (`ZiskFv/Completeness.lean`) state acceptance/coverage
+completeness for the RV64IM decoder layer as two honest theorems:
+`sail_executable_within_supported_decode_shape` (PROVEN — Sail-executable raw words land in
+`SupportedDecodeShape`) and `skeletal_root_completeness` (the end-to-end coverage
+statement, CONDITIONAL on the ZisK coverage obligations only). The recorded
+`ZISK-DEFECT-FENCE-INCOMPLETE` decode gap enters as the `knownDecodeGap` premise.
 
-This theorem is interface-mediated. Its five ZisK-side premises
-(`SupportedDecodeAvoidKnownDecodeBugs`, `LoweringComplete`,
-`RowMaterializationComplete`, `OpcodeCoverageComplete`, and
-`SupportedDecodeSoundnessInputComplete`) are checked in the regenerated Aeneas
-extraction workspace, not by importing generated Aeneas Lean into the main Lake
-tree. The standing `nix run .#test` gate runs
+The ZisK half is interface-mediated. The coverage obligations
+`skeletal_root_completeness` takes as hypotheses (decoder-accepts, lowering, row
+materialization, opcode coverage, soundness contract) are checked in the
+regenerated Aeneas extraction workspace, not by importing generated Aeneas Lean
+into the main Lake tree. The standing `nix run .#test` gate runs
 `scripts/aeneas-production-extract.sh` with `AENEAS_CHECK_RV_COMPLETENESS=1` so
-those premises are rechecked. The direct Aeneas extraction artifact is tracked
-at [`aeneas/ProductionM2.lean`](aeneas/ProductionM2.lean), and CI separately
+those obligations are rechecked there. The link is documentary: this build cannot
+import the Aeneas workspace, so the obligations are not substituted into the Lean
+endpoint — `skeletal_root_completeness` stays conditional on them. The direct Aeneas extraction artifact is tracked at
+[`aeneas/ProductionM2.lean`](aeneas/ProductionM2.lean), and CI separately
 regenerates it from the pinned inputs and fails on any non-zero diff.
+
+The abstract `Rv.Interface`-parametrized completeness route under
+`ZiskFv/Completeness/Aspirational/` is quarantined (see that dir's `README.md`):
+it is not consumed by these endpoints.
 
 This does not revive Clean prover completeness. The Clean
 `GeneralFormalCircuit.Completeness` fields demoted after the false/circular
 axiom audit remain explicit non-claims with `ProverAssumptions := False`; the
-global soundness theorem and the `root_completeness` acceptance theorem do
+global soundness theorem and the completeness acceptance theorems do
 not consume those non-claims.
 
 ## PR Policy

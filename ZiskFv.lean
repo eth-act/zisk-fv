@@ -160,6 +160,9 @@ import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance
 import ZiskFv.Soundness
 import ZiskFv.Completeness.Rv
-import ZiskFv.Completeness.Rv64im
+-- Quarantined aspirational route; kept here so it stays built/verified, but the
+-- live endpoints in `ZiskFv.Completeness` do not depend on it.
+-- See `ZiskFv/Completeness/Aspirational/README.md`.
+import ZiskFv.Completeness.Aspirational
 import ZiskFv.Completeness.Rv64im.SailDecode
 import ZiskFv.Completeness

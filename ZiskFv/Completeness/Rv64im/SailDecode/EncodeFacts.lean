@@ -436,7 +436,7 @@ theorem sail_encode_sraw_eq_rawRType (rs2 rs1 rd : regidx) :
   rw [sail_sraw_concat_eq_rawRType rs2 rs1 rd]
 
 theorem sail_encode_mul_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.MUL (rs2, rs1, rd,
@@ -449,7 +449,7 @@ theorem sail_encode_mul_eq_rawRType_in
           0
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -483,7 +483,7 @@ theorem sail_encode_mul_eq_rawRType_in
   simpa using sail_mul_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_mulh_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.MUL (rs2, rs1, rd,
@@ -496,7 +496,7 @@ theorem sail_encode_mulh_eq_rawRType_in
           1
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -530,7 +530,7 @@ theorem sail_encode_mulh_eq_rawRType_in
   simpa using sail_mulh_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_mulhsu_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.MUL (rs2, rs1, rd,
@@ -543,7 +543,7 @@ theorem sail_encode_mulhsu_eq_rawRType_in
           2
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -577,7 +577,7 @@ theorem sail_encode_mulhsu_eq_rawRType_in
   simpa using sail_mulhsu_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_mulhu_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.MUL (rs2, rs1, rd,
@@ -590,7 +590,7 @@ theorem sail_encode_mulhu_eq_rawRType_in
           3
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -624,7 +624,7 @@ theorem sail_encode_mulhu_eq_rawRType_in
   simpa using sail_mulhu_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_mulw_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.MULW (rs2, rs1, rd))
@@ -634,7 +634,7 @@ theorem sail_encode_mulw_eq_rawRType_in
           0
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -664,7 +664,7 @@ theorem sail_encode_mulw_eq_rawRType_in
   simpa using sail_mulw_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_div_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.DIV (rs2, rs1, rd, false))
@@ -674,7 +674,7 @@ theorem sail_encode_div_eq_rawRType_in
           4
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -703,7 +703,7 @@ theorem sail_encode_div_eq_rawRType_in
   simpa using sail_div_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_divu_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.DIV (rs2, rs1, rd, true))
@@ -713,7 +713,7 @@ theorem sail_encode_divu_eq_rawRType_in
           5
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -742,7 +742,7 @@ theorem sail_encode_divu_eq_rawRType_in
   simpa using sail_divu_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_divw_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.DIVW (rs2, rs1, rd, false))
@@ -752,7 +752,7 @@ theorem sail_encode_divw_eq_rawRType_in
           4
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -781,7 +781,7 @@ theorem sail_encode_divw_eq_rawRType_in
   simpa using sail_divw_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_divuw_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.DIVW (rs2, rs1, rd, true))
@@ -791,7 +791,7 @@ theorem sail_encode_divuw_eq_rawRType_in
           5
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -820,7 +820,7 @@ theorem sail_encode_divuw_eq_rawRType_in
   simpa using sail_divuw_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_rem_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.REM (rs2, rs1, rd, false))
@@ -830,7 +830,7 @@ theorem sail_encode_rem_eq_rawRType_in
           6
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -859,7 +859,7 @@ theorem sail_encode_rem_eq_rawRType_in
   simpa using sail_rem_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_remu_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.REM (rs2, rs1, rd, true))
@@ -869,7 +869,7 @@ theorem sail_encode_remu_eq_rawRType_in
           7
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -898,7 +898,7 @@ theorem sail_encode_remu_eq_rawRType_in
   simpa using sail_remu_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_remw_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.REMW (rs2, rs1, rd, false))
@@ -908,7 +908,7 @@ theorem sail_encode_remw_eq_rawRType_in
           6
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change
@@ -937,7 +937,7 @@ theorem sail_encode_remw_eq_rawRType_in
   simpa using sail_remw_concat_eq_rawRType rs2 rs1 rd
 
 theorem sail_encode_remuw_eq_rawRType_in
-    (state : SailState) (h_state : Rv64imEnabledSailState state)
+    (state : SailState) (h_state : IsaExtensionsEnabled state)
     (rs2 rs1 rd : regidx) :
     SailEncodesToIn state
         (instruction.REMW (rs2, rs1, rd, true))
@@ -947,7 +947,7 @@ theorem sail_encode_remuw_eq_rawRType_in
           7
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, Rv64imEnabledSailState] at *
+  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
   rcases h_state with ⟨h_m, _h_zmmul⟩
   unfold LeanRV64D.Functions.encdec_forwards
   change

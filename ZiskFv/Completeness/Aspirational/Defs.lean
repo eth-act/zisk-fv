@@ -1,4 +1,14 @@
 import ZiskFv.Completeness.Rv64im.Shapes
+import ZiskFv.Completeness.Aspirational.Interface
+
+/- ⚠ ASPIRATIONAL / QUARANTINED — not wired to any live completeness endpoint.
+   Abstract `Rv.Interface`-parametrized route; no concrete `Interface` is ever
+   built, and the live endpoints in `ZiskFv.Completeness`
+   (`sail_executable_within_supported_decode_shape`, `skeletal_root_completeness`)
+   do not depend on it. Intended *eventual* composition machinery for when the
+   Aeneas-extracted ZisK coverage proofs can be imported into this build. Kept
+   compiling via `ZiskFv.lean` for preservation only.
+   See `ZiskFv/Completeness/Aspirational/README.md`. -/
 
 /-!
 # RV64IM completeness — predicate definitions
