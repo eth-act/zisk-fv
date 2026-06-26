@@ -759,7 +759,7 @@ def StepSound
 
 /-- Per-row dispatch to the matching strengthened step theorem.
 
-    The `h_known` parameter carries the per-row defect-exclusion obligation
+    The `hAvoidKnownBugs` parameter carries the per-row defect-exclusion obligation
     (`RowOutsideDefectRegion`), stated directly over the row data.  For the 8
     defect-capable arms it is the row-data forge-negation / FENCE-known-good
     fact; the dispatcher hands it straight to the corresponding `stepStrong_<op>`,
@@ -771,71 +771,71 @@ def StepSound
 theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
-    (h_known : RowOutsideDefectRegion ziskTrace sailTrace i zs ia) :
+    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace sailTrace i zs ia) :
     StepSound ziskTrace sailTrace i zs := by
   cases zs with
-  | sub c => exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia) h_known
-  | and c => exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia) h_known
-  | or c => exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia) h_known
-  | xor c => exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia) h_known
-  | slt c => exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia) h_known
-  | sltu c => exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia) h_known
-  | andi c => exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia) h_known
-  | ori c => exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia) h_known
-  | xori c => exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia) h_known
-  | slti c => exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia) h_known
-  | sltiu c => exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia) h_known
-  | sll c => exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia) h_known
-  | srl c => exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia) h_known
-  | sra c => exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia) h_known
-  | slli c => exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia) h_known
-  | srli c => exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia) h_known
-  | srai c => exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia) h_known
-  | add c => exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia) h_known
-  | addi c => exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia) h_known
-  | subw c => exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia) h_known
-  | addw c => exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia) h_known
-  | addiw c => exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia) h_known
-  | sllw c => exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia) h_known
-  | srlw c => exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia) h_known
-  | sraw c => exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia) h_known
-  | slliw c => exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia) h_known
-  | srliw c => exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia) h_known
-  | sraiw c => exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia) h_known
-  | mul c => exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia) h_known
-  | mulh c => exact stepStrong_mulh ziskTrace sailTrace i (toRowData_mulh c rd ia) h_known
-  | mulhsu c => exact stepStrong_mulhsu ziskTrace sailTrace i (toRowData_mulhsu c rd ia) h_known
-  | mulw c => exact stepStrong_mulw ziskTrace sailTrace i (toRowData_mulw c rd ia) h_known
-  | mulhu c => exact stepStrong_mulhu ziskTrace sailTrace i (toRowData_mulhu c rd ia) h_known
-  | div c => exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia) h_known
-  | rem c => exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia) h_known
-  | divw c => exact stepStrong_divw ziskTrace sailTrace i (toRowData_divw c rd ia) h_known
-  | remw c => exact stepStrong_remw ziskTrace sailTrace i (toRowData_remw c rd ia) h_known
-  | divu c => exact stepStrong_divu ziskTrace sailTrace i (toRowData_divu c rd ia) h_known
-  | divuw c => exact stepStrong_divuw ziskTrace sailTrace i (toRowData_divuw c rd ia) h_known
-  | remu c => exact stepStrong_remu ziskTrace sailTrace i (toRowData_remu c rd ia) h_known
-  | remuw c => exact stepStrong_remuw ziskTrace sailTrace i (toRowData_remuw c rd ia) h_known
-  | beq c => exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia) h_known
-  | bne c => exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia) h_known
-  | blt c => exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia) h_known
-  | bge c => exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia) h_known
-  | bltu c => exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia) h_known
-  | bgeu c => exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia) h_known
-  | lui c => exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia) h_known
-  | auipc c => exact stepStrong_auipc ziskTrace sailTrace i (toRowData_auipc c rd ia) h_known
-  | jal c => exact stepStrong_jal ziskTrace sailTrace i (toRowData_jal c rd ia) h_known
-  | jalr c => exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia) h_known
-  | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) h_known
-  | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) h_known
-  | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) h_known
-  | sd c => exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia) h_known
-  | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) h_known
-  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) h_known
-  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) h_known
-  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) h_known
-  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) h_known
-  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) h_known
-  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) h_known
-  | fence c => exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia) h_known
+  | sub c => exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia) hAvoidKnownBugs
+  | and c => exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia) hAvoidKnownBugs
+  | or c => exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia) hAvoidKnownBugs
+  | xor c => exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia) hAvoidKnownBugs
+  | slt c => exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia) hAvoidKnownBugs
+  | sltu c => exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia) hAvoidKnownBugs
+  | andi c => exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia) hAvoidKnownBugs
+  | ori c => exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia) hAvoidKnownBugs
+  | xori c => exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia) hAvoidKnownBugs
+  | slti c => exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia) hAvoidKnownBugs
+  | sltiu c => exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia) hAvoidKnownBugs
+  | sll c => exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia) hAvoidKnownBugs
+  | srl c => exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia) hAvoidKnownBugs
+  | sra c => exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia) hAvoidKnownBugs
+  | slli c => exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia) hAvoidKnownBugs
+  | srli c => exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia) hAvoidKnownBugs
+  | srai c => exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia) hAvoidKnownBugs
+  | add c => exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia) hAvoidKnownBugs
+  | addi c => exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia) hAvoidKnownBugs
+  | subw c => exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia) hAvoidKnownBugs
+  | addw c => exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia) hAvoidKnownBugs
+  | addiw c => exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia) hAvoidKnownBugs
+  | sllw c => exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia) hAvoidKnownBugs
+  | srlw c => exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia) hAvoidKnownBugs
+  | sraw c => exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia) hAvoidKnownBugs
+  | slliw c => exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia) hAvoidKnownBugs
+  | srliw c => exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia) hAvoidKnownBugs
+  | sraiw c => exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia) hAvoidKnownBugs
+  | mul c => exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia) hAvoidKnownBugs
+  | mulh c => exact stepStrong_mulh ziskTrace sailTrace i (toRowData_mulh c rd ia) hAvoidKnownBugs
+  | mulhsu c => exact stepStrong_mulhsu ziskTrace sailTrace i (toRowData_mulhsu c rd ia) hAvoidKnownBugs
+  | mulw c => exact stepStrong_mulw ziskTrace sailTrace i (toRowData_mulw c rd ia) hAvoidKnownBugs
+  | mulhu c => exact stepStrong_mulhu ziskTrace sailTrace i (toRowData_mulhu c rd ia) hAvoidKnownBugs
+  | div c => exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia) hAvoidKnownBugs
+  | rem c => exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia) hAvoidKnownBugs
+  | divw c => exact stepStrong_divw ziskTrace sailTrace i (toRowData_divw c rd ia) hAvoidKnownBugs
+  | remw c => exact stepStrong_remw ziskTrace sailTrace i (toRowData_remw c rd ia) hAvoidKnownBugs
+  | divu c => exact stepStrong_divu ziskTrace sailTrace i (toRowData_divu c rd ia) hAvoidKnownBugs
+  | divuw c => exact stepStrong_divuw ziskTrace sailTrace i (toRowData_divuw c rd ia) hAvoidKnownBugs
+  | remu c => exact stepStrong_remu ziskTrace sailTrace i (toRowData_remu c rd ia) hAvoidKnownBugs
+  | remuw c => exact stepStrong_remuw ziskTrace sailTrace i (toRowData_remuw c rd ia) hAvoidKnownBugs
+  | beq c => exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia) hAvoidKnownBugs
+  | bne c => exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia) hAvoidKnownBugs
+  | blt c => exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia) hAvoidKnownBugs
+  | bge c => exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia) hAvoidKnownBugs
+  | bltu c => exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia) hAvoidKnownBugs
+  | bgeu c => exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia) hAvoidKnownBugs
+  | lui c => exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia) hAvoidKnownBugs
+  | auipc c => exact stepStrong_auipc ziskTrace sailTrace i (toRowData_auipc c rd ia) hAvoidKnownBugs
+  | jal c => exact stepStrong_jal ziskTrace sailTrace i (toRowData_jal c rd ia) hAvoidKnownBugs
+  | jalr c => exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia) hAvoidKnownBugs
+  | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) hAvoidKnownBugs
+  | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) hAvoidKnownBugs
+  | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) hAvoidKnownBugs
+  | sd c => exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia) hAvoidKnownBugs
+  | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) hAvoidKnownBugs
+  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) hAvoidKnownBugs
+  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) hAvoidKnownBugs
+  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) hAvoidKnownBugs
+  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) hAvoidKnownBugs
+  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) hAvoidKnownBugs
+  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) hAvoidKnownBugs
+  | fence c => exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia) hAvoidKnownBugs
 
 end ZiskFv.Compliance
