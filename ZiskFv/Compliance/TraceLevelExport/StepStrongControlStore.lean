@@ -502,7 +502,7 @@ theorem stepStrong_jal
     (_h_known : True) :
     execute_instruction (instruction.JAL (d.toClaim.imm, d.toClaim.rd)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
+          ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let e_rd := eRdLui trace i
@@ -512,6 +512,46 @@ theorem stepStrong_jal
     ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m i.val h_spec
   obtain ⟨h_c0, _h_b0, h_c1, _h_b1, h_set_flag, _h_clear_flag, h_disjoint,
       h_flag_bool, h_ext_bool⟩ := h_add_subset
+  -- #100: `flag = 1` is DERIVED (not pinned) from the OP_FLAG decode pins
+  -- and the Main `internal_op0_sets_flag` constraint (`h_set_flag`).
+  have h_flag : m.flag i.val = 1 :=
+    ZiskFv.Airs.Main.flag_eq_one_of_internal_op_zero m i.val d.toDecode.h_main_active
+      (by simpa [ZiskFv.Trusted.OP_FLAG] using d.toDecode.h_main_op) h_set_flag
+  -- #100: the JAL jump target `nextPC_val = PC + signExtend 64 imm`, derived
+  -- from `success = true` (both alignment bits valid ⇒ the taken branch).
+  have h_target :
+      d.toInputs.jal_input.PC + BitVec.signExtend 64 d.toInputs.jal_input.imm
+        = d.toInputs.nextPC_val := by
+    have h_bit0_neg :
+        (!BitVec.ofBool
+            (d.toInputs.jal_input.PC + BitVec.signExtend 64 d.toInputs.jal_input.imm)[0]! == 0#1)
+          = false := by
+      have h_t : (PureSpec.execute_JAL_pure d.toInputs.jal_input).throws = false :=
+        d.toInputs.h_not_throws
+      simp only [PureSpec.execute_JAL_pure] at h_t
+      exact h_t
+    have h_bit1_neg :
+        (!BitVec.ofBool
+            (d.toInputs.jal_input.PC + BitVec.signExtend 64 d.toInputs.jal_input.imm)[1]! == 0#1)
+          = false := by
+      have h_s : (PureSpec.execute_JAL_pure d.toInputs.jal_input).success = true :=
+        d.toInputs.h_success
+      simp only [PureSpec.execute_JAL_pure] at h_s
+      simp_all
+    have ho := d.toInputs.h_nextPC_option
+    simp only [PureSpec.execute_JAL_pure, h_bit0_neg, h_bit1_neg, Bool.false_or] at ho
+    rw [if_neg (by decide)] at ho
+    exact Option.some.inj ho
+  -- #100: the field-level no-wrap bound (`pc.val + jmp_offset1.val < GL_prime`),
+  -- in column form for `ofNat_fgl_pc_plus_offset_eq`, from the input-facing
+  -- target bound via the PC / offset row-shape bridges.
+  have h_no_wrap_fgl :
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+        + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+            i.val).val
+        < GL_prime := by
+    rw [d.toInputs.h_pc_bridge, d.toInputs.h_offset_bridge]
+    exact d.toInputs.h_no_fgl_wrap
   let next_pc : FGL :=
     m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
       + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
@@ -548,22 +588,33 @@ theorem stepStrong_jal
       state d.toInputs.jal_input.PC d.toInputs.jal_input.rd d.toInputs.misa_val
       (PureSpec.execute_JAL_pure d.toInputs.jal_input).success
       (PureSpec.execute_JAL_pure d.toInputs.jal_input).nextPC
-      d.toClaim.rd d.toClaim.execRow e_rd d.toInputs.nextPC_val :=
+      d.toClaim.rd (Pilot.execRowOf trace i) e_rd d.toInputs.nextPC_val :=
     { input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
       input_misa_eq := d.toInputs.h_input_misa
       misa_c_zero := d.toInputs.h_misa_c
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      -- #100: next-PC residual DISCHARGED from the in-circuit transition
+      -- certificate via the FLAG-PATH lemma (set_pc=0, flag=1 ⇒ pc + jmp_offset1),
+      -- then the signed-offset wide-PC cast (`jmp_offset1 = signExtend imm` +
+      -- target no-wrap) gives JAL's taken target `PC + signExtend 64 imm`,
+      -- which `h_target` identifies with `nextPC_val`.
+      nextPC_matches := by
+        have hstep := Pilot.flag_path_nextPC_discharged trace i
+          d.toDecode.h_idx d.toDecode.h_set_pc h_flag
+        rw [hstep]
+        exact (Pilot.ofNat_fgl_pc_plus_offset_eq _ _
+          d.toInputs.jal_input.PC (BitVec.signExtend 64 d.toInputs.jal_input.imm)
+          d.toInputs.h_pc_bridge d.toInputs.h_offset_bridge h_no_wrap_fgl).trans h_target
       rd_mult := by rfl
       rd_as := by rfl
       success := d.toInputs.h_success
       nextPC_option := d.toInputs.h_nextPC_option
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.jal d.toInputs.jal_input d.toClaim.imm d.toClaim.rd d.toInputs.misa_val next_pc d.toClaim.execRow e_rd
+    OpEnvelope.jal d.toInputs.jal_input d.toClaim.imm d.toClaim.rd d.toInputs.misa_val next_pc (Pilot.execRowOf trace i) e_rd
       d.toInputs.nextPC_val store_pc_mem provenance row_mode h_jal_subset d.toDecode.h_jmp2 d.toInputs.h_pc_bridge
       promises d.toInputs.h_input_imm d.toInputs.h_not_throws d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=

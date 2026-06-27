@@ -96,6 +96,27 @@ lemma ofNat_fgl_pc_plus_4_eq
   rw [BitVec.toNat_ofNat, BitVec.toNat_add]
   norm_num
 
+/-- **Wide-PC general-offset cast (full BitVec form).** Generalizes
+    `ofNat_fgl_pc_plus_4_eq` from the constant `+4` to an arbitrary `BitVec 64`
+    offset `offset_bv` bound to the field column `offset_fgl` by the row-shape
+    bridge `offset_fgl.val = offset_bv.toNat` (the same unsigned-equal offset
+    contract `WidePCNoWrap.fgl_pc_plus_offset_*` and AUIPC's `h_offset_bridge`
+    already use). Under the `< GL_prime` no-wrap pin the field sum's
+    `BitVec.ofNat 64`-image is exactly `PC + offset_bv`. JAL consumes this with
+    `offset_bv := signExtend 64 imm` (the taken jump offset). -/
+lemma ofNat_fgl_pc_plus_offset_eq
+    (pc_fgl offset_fgl : FGL) (PC offset_bv : BitVec 64)
+    (h_pc_bridge : pc_fgl.val = PC.toNat)
+    (h_offset_bridge : offset_fgl.val = offset_bv.toNat)
+    (h_no_fgl_wrap : pc_fgl.val + offset_fgl.val < GL_prime) :
+    BitVec.ofNat 64 ((pc_fgl + offset_fgl).val) = PC + offset_bv := by
+  have h_fgl_val : (pc_fgl + offset_fgl : FGL).val = pc_fgl.val + offset_fgl.val := by
+    rw [show (pc_fgl + offset_fgl : FGL) = pc_fgl + offset_fgl from rfl, Fin.val_add]
+    exact Nat.mod_eq_of_lt h_no_fgl_wrap
+  rw [h_fgl_val, h_pc_bridge, h_offset_bridge]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat, BitVec.toNat_add]
+
 /-- **General sequential next-PC discharge (#100).** Op-agnostic core: for ANY
     sequential (non-jump) opcode — whose Sail `nextPC = PC + 4#64` — the
     `busSub`-family producer entry's wide-PC cast equals `PC + 4#64`, derived from

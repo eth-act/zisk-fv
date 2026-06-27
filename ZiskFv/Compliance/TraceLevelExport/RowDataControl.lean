@@ -428,7 +428,6 @@ def toRowData_bgeu {trace : AcceptedZiskTrace numInstructions} {binding : SailTr
 structure Claim_jal (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 21
   rd : regidx
-  execRow : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
@@ -450,9 +449,12 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
-  h_exec_len : c.execRow.length = 2
-  h_e0_mult : c.execRow[0]!.multiplicity = -1
-  h_e1_mult : c.execRow[1]!.multiplicity = 1
+  -- #100 next-PC transition input (replaces the exec artifacts; JAL already
+  -- carries h_set_pc above): the next row exists. The taken-offset pin
+  -- (`jmp_offset1 = signExtend imm`) and the target no-wrap bound live in
+  -- Inputs (they reference `jal_input.imm`). `flag = 1` is DERIVED in
+  -- `stepStrong_jal` from the OP_FLAG decode pins + `internal_op0_sets_flag`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
@@ -462,9 +464,18 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = jal_input.PC.toNat
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.execRow[1]!.pc).val))
-      = nextPC_val
+  -- #100: the taken-offset decode/ROM bridge (`jmp_offset1 = signExtend imm`,
+  -- Rust lowerer `zib.j(imm, 4)`; cf. `RowShape/Contract.lean` JAL arm, line 246)
+  -- — the same unsigned-equal offset contract AUIPC's `h_offset_bridge` uses —
+  -- plus the JAL-target no-wrap bound (target stays below the GL bound). These
+  -- replace the cross-world `h_nextPC_matches`, now DERIVED via
+  -- `Pilot.flag_path_nextPC_discharged` + `Pilot.ofNat_fgl_pc_plus_offset_eq`.
+  h_offset_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+        i.val).val
+      = (BitVec.signExtend 64 jal_input.imm).toNat
+  h_no_fgl_wrap :
+    jal_input.PC.toNat + (BitVec.signExtend 64 jal_input.imm).toNat < GL_prime
   h_input_rd : jal_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jal_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
