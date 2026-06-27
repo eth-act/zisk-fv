@@ -37,6 +37,11 @@ whether they re-prove SOUNDLY via `rcases System.Platform.numBits_eq with h|h <;
 (numBits 32/64 split). If yes → R1 GO with bounded effort (re-prove ~16 helpers; reuse the simp
 structure). Probe agent directed to test this.
 
+CONFIRMED independently: System.Platform.numBits_eq : numBits=32 ∨ numBits=64 EXISTS in Lean core
+(Init/Prelude.lean:2266, present in 4.28-rc1); core uses `cases System.Platform.numBits_eq <;>
+simp_all` to resolve USize facts, and the rc1 bv_decide frontend explicitly HINTS this split for
+USize goals. So the sound handle is real + idiomatic → R1 helpers very likely re-prove soundly.
+
 In-build gap (precise): mainRowProvenance_of_pins (TraceLevelExport/Base.lean:99) builds
 `extractedRow` as a LITERAL from the caller's `opc` (the circuit decode residual), so LuiRowMode's
 `extractedRow.op = opCopyB` is rfl-true against a NAMED CONSTANT — never tied to the real Rust
