@@ -4,7 +4,7 @@ ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean  (eth-act/zisk-fv#111)
 Discharges the per-opcode STATIC decode/row-mode pins of #111 from the REAL
 Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`, the `ProductionM2`
 lean_lib), kernel-soundly (NO native_decide / bv_decide / ofReduceBool /
-trustCompiler / sorry). LUI pilot here; Phase 2 generalizes per-op.
+trustCompiler / `sorry`). LUI pilot here; Phase 2 generalizes per-op.
 
 Proof bodies ported from the rc2-typechecked reference
 (docs/ai/aeneas-proof-reference/LuiPins.lean) and the v4.28.0 probe
