@@ -1563,13 +1563,13 @@ theorem stepStrong_sll
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SLL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1610,10 +1610,13 @@ theorem stepStrong_sll
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.sll_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -1659,13 +1662,13 @@ theorem stepStrong_srl
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SRL))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1706,10 +1709,13 @@ theorem stepStrong_srl
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.srl_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -1755,13 +1761,13 @@ theorem stepStrong_sra
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SRA))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1802,10 +1808,13 @@ theorem stepStrong_sra
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.sra_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -1847,13 +1856,13 @@ theorem stepStrong_slli
     (_h_known : True) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SLLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1894,10 +1903,13 @@ theorem stepStrong_slli
       input_shamt_eq := d.toInputs.h_input_shamt,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.slli_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -1943,13 +1955,13 @@ theorem stepStrong_srli
     (_h_known : True) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -1990,10 +2002,13 @@ theorem stepStrong_srli
       input_shamt_eq := d.toInputs.h_input_shamt,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.srli_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2039,13 +2054,13 @@ theorem stepStrong_srai
     (_h_known : True) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRAI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2086,10 +2101,13 @@ theorem stepStrong_srai
       input_shamt_eq := d.toInputs.h_input_shamt,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.srai_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2508,13 +2526,13 @@ theorem stepStrong_sllw
     (_h_known : True) :
     execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SLLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2555,10 +2573,13 @@ theorem stepStrong_sllw
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.sllw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2583,8 +2604,10 @@ theorem stepStrong_sllw
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sllw d.toInputs.sllw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
-      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc d.toDecode.h_exec_len d.toDecode.h_e0_mult
-      d.toDecode.h_e1_mult d.toInputs.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc (by rfl) (by rfl)
+      (by rfl) (Pilot.sequential_nextPC_discharged trace i d.toInputs.sllw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
       (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2603,13 +2626,13 @@ theorem stepStrong_srlw
     (_h_known : True) :
     execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SRLW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2650,10 +2673,13 @@ theorem stepStrong_srlw
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.srlw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2678,8 +2704,10 @@ theorem stepStrong_srlw
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srlw d.toInputs.srlw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
-      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc d.toDecode.h_exec_len d.toDecode.h_e0_mult
-      d.toDecode.h_e1_mult d.toInputs.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc (by rfl) (by rfl)
+      (by rfl) (Pilot.sequential_nextPC_discharged trace i d.toInputs.srlw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
       (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2698,13 +2726,13 @@ theorem stepStrong_sraw
     (_h_known : True) :
     execute_instruction (instruction.RTYPEW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, ropw.SRAW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2746,10 +2774,13 @@ theorem stepStrong_sraw
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.sraw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2774,8 +2805,10 @@ theorem stepStrong_sraw
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sraw d.toInputs.sraw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
-      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc d.toDecode.h_exec_len d.toDecode.h_e0_mult
-      d.toDecode.h_e1_mult d.toInputs.h_nextPC_matches (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
+      d.toInputs.h_input_r1 d.toInputs.h_input_r2 d.toInputs.h_input_rd d.toInputs.h_input_pc (by rfl) (by rfl)
+      (by rfl) (Pilot.sequential_nextPC_discharged trace i d.toInputs.sraw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
       (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -2795,13 +2828,13 @@ theorem stepStrong_slliw
     execute_instruction
       (instruction.SHIFTIWOP (d.toClaim.slliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SLLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2841,10 +2874,13 @@ theorem stepStrong_slliw
     { input_r1_eq := d.toInputs.h_input_r1,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toClaim.slliw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2886,13 +2922,13 @@ theorem stepStrong_srliw
     execute_instruction
       (instruction.SHIFTIWOP (d.toClaim.srliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -2932,10 +2968,13 @@ theorem stepStrong_srliw
     { input_r1_eq := d.toInputs.h_input_r1,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toClaim.srliw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
@@ -2977,13 +3016,13 @@ theorem stepStrong_sraiw
     execute_instruction
       (instruction.SHIFTIWOP (d.toClaim.sraiw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRAIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_shift_provided
@@ -3024,10 +3063,13 @@ theorem stepStrong_sraiw
     { input_r1_eq := d.toInputs.h_input_r1,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toClaim.sraiw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,
