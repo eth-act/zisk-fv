@@ -93,6 +93,23 @@ theorem branch_static_pins_of
   · rw [htypeop] at hot; injection hot with e; subst e; exact hext'
   · rw [hm32op] at hm32; injection hm32 with e; exact e.symm
 
+/-- macro: emit `<nm>_static_pins` for a concrete branch op (op_type Binary). -/
+local macro "branch_static" nm:ident "," ropx:term "," negx:term "," opcx:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_static_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed self i $ropx $negx inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.op = $opcx ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
+        zib.i.set_pc = false ∧ zib.i.store_pc = false :=
+    branch_static_pins_of self i $ropx $negx inst_size ctx $opcx rfl rfl rfl h)
+
+branch_static beq,  zisk_ops.ZiskOp.Eq,  false, 9#u8
+branch_static bne,  zisk_ops.ZiskOp.Eq,  true,  9#u8
+branch_static blt,  zisk_ops.ZiskOp.Lt,  false, 7#u8
+branch_static bge,  zisk_ops.ZiskOp.Lt,  true,  7#u8
+branch_static bltu, zisk_ops.ZiskOp.Ltu, false, 6#u8
+branch_static bgeu, zisk_ops.ZiskOp.Ltu, true,  6#u8
+
 theorem beq_extracted_rowMode_pins
     (self) (i) (inst_size) (ctx)
     (h : riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
