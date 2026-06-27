@@ -314,7 +314,7 @@ theorem stepStrong_lui
     (_h_known : True) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.LUI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
+          ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let e_rd := eRdLui trace i
@@ -361,20 +361,23 @@ theorem stepStrong_lui
   let promises : ZiskFv.EquivCore.Promises.UTypePromises
       state d.toInputs.lui_input.imm d.toInputs.lui_input.rd d.toInputs.lui_input.PC
       (PureSpec.execute_LUI_pure d.toInputs.lui_input).nextPC
-      d.toClaim.imm d.toClaim.rd d.toClaim.execRow e_rd (d.toInputs.lui_input.PC + 4#64) :=
+      d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd (d.toInputs.lui_input.PC + 4#64) :=
     { input_imm_eq := d.toInputs.h_input_imm
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lui d.toInputs.lui_input d.toClaim.imm d.toClaim.rd next_pc d.toClaim.execRow e_rd store_pc_mem
+    OpEnvelope.lui d.toInputs.lui_input d.toClaim.imm d.toClaim.rd next_pc (Pilot.execRowOf trace i) e_rd store_pc_mem
       provenance row_mode h_lui_subset d.toDecode.h_imm_lo_nat d.toDecode.h_imm_hi_nat promises
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨⟨provenance⟩, row_mode, d.toDecode.h_imm_lo_nat, d.toDecode.h_imm_hi_nat⟩

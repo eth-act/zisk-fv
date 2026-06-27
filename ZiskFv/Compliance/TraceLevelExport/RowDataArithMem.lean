@@ -452,7 +452,6 @@ def toRowData_addiw {trace : AcceptedZiskTrace numInstructions} {binding : SailT
 structure Claim_lui (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 20
   rd : regidx
-  execRow : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_lui (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lui trace i) : Type where
@@ -477,9 +476,18 @@ structure Decode_lui (trace : AcceptedZiskTrace numInstructions)
   h_imm_hi_nat :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val).val
       = (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat / 4294967296
-  h_exec_len : c.execRow.length = 2
-  h_e0_mult : c.execRow[0]!.multiplicity = -1
-  h_e1_mult : c.execRow[1]!.multiplicity = 1
+  -- #100 next-PC transition inputs (replace the exec artifacts; LUI already
+  -- carries h_set_pc above): the next row exists, plus the COPYB LUI-row
+  -- jmp pins `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`;
+  -- cf. `RowShape/Contract.lean` LUI arm, line 710). With set_pc=0 and
+  -- jmp1=jmp2=4 the handshake mux collapses to pc+4 regardless of `flag`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_jmp1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = 4
+  h_jmp2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = 4
 
 structure Inputs_lui (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lui trace i) : Type where
@@ -487,9 +495,10 @@ structure Inputs_lui (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_input_imm : lui_input.imm = c.imm
   h_input_rd : lui_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some lui_input.PC
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.execRow[1]!.pc).val))
-      = (PureSpec.execute_LUI_pure lui_input).nextPC
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = lui_input.PC.toNat
+  h_pc_bound : lui_input.PC.toNat < GL_prime - 4
   h_rd_idx :
     lui_input.rd =
       Transpiler.wrap_to_regidx (eRdLui trace i).ptr
