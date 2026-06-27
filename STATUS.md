@@ -11,8 +11,13 @@ Route: keep Lean 4.28.0; pin aeneas back to a2fcf1923d (last v4.28.0-rc1 commit)
 is GO per spike. Trust R1 (sound, no native_decide); R2 only as CODEOWNER fallback. Scope:
 static row-mode pins first; value pins (Phase 3) deferrable; dynamic conjuncts out of scope.
 
-Status: SETUP done + Phase 0a done + key make-or-break evidence gathered (cheaply, no rebuild).
-DECISION PENDING (asked user): R1 vs R2 vs out-of-band — see "Make-or-break finding" below.
+Status: MAKE-OR-BREAK PASSED — R1 is GO. Probe agent secured a SOUND concrete LUI static-pin proof
+off the real Riscv2ZiskContext lowerer with axioms = {propext, Classical.choice, Quot.sound} ONLY
+(no native_decide/ofReduceBool/trustCompiler/sorryAx). The ~16 numBits/Usize helpers re-prove
+soundly via the System.Platform.numBits_eq 32/64 split. A symbolic (arbitrary-input) version is
+compiling. NEXT: assemble ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean from the agent's
+verbatim deliverable (build recipe + sound helpers + LUI theorem), then wire the main lakefile
+`require aeneas` import. No R2/out-of-band fallback needed.
 
 Make-or-break finding (2026-06-26, no rebuild needed):
 - Import is GO and CHEAP: committed trust/aeneas/ProductionM2.lean is byte-identical to the
