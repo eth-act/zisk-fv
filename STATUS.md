@@ -25,8 +25,17 @@ Make-or-break finding (2026-06-26, no rebuild needed):
   regs_to_set_width_val_not_lt_one_u64, uscalar64_shift_right_i32_32_ok_true, one_u64_scalar_ne_zero
   (+ i64 variants) — these soundly resolve store_reg's numBits/Usize comparisons + unfold the
   @[irreducible] consts. Helpers are theorems (not axioms). So the sound static-pin discharge EXISTS.
-  Background agent a76bcfc817f42e0f0 is RUNNING the proof + #print axioms to confirm clean closure
-  (propext/Classical.choice/Quot.sound only) and that a2fcf aeneas-lean builds vs release mathlib.
+  Background agent a76bcfc817f42e0f0 is RUNNING the proof + #print axioms to confirm closure
+  and that a2fcf aeneas-lean builds vs release mathlib.
+
+REFINED VERDICT (2026-06-26): the CopybScratch `simp` proof is NOT actually sound as-is — its helper
+lemmas (one_u64_val_not_lt_regs_from_set_width, regs_to_set_width_val_not_lt_one_u64, i32_32_*, …,
+~16 of them in ScalarScratch.lean) are each proved BY native_decide, so the closure transitively pulls
+ofReduceBool/trustCompiler. The factoring just HID the native trust. BUT these helpers are tiny
+concrete finite inequalities (e.g. ¬(1 < setWidth 64 1#numBits)); the real bounded R1 question is
+whether they re-prove SOUNDLY via `rcases System.Platform.numBits_eq with h|h <;> simp[h] <;> decide`
+(numBits 32/64 split). If yes → R1 GO with bounded effort (re-prove ~16 helpers; reuse the simp
+structure). Probe agent directed to test this.
 
 In-build gap (precise): mainRowProvenance_of_pins (TraceLevelExport/Base.lean:99) builds
 `extractedRow` as a LITERAL from the caller's `opc` (the circuit decode residual), so LuiRowMode's
