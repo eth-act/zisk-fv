@@ -300,6 +300,13 @@ if [[ "$AENEAS_CHECK_LEAN" != 0 ]]; then
       "$lean_check/aeneas-lean/lakefile.lean"
   fi
   printf 'leanprover/lean4:v4.28.0\n' > "$lean_check/aeneas-lean/lean-toolchain"
+  # Drop the pristine rc1 lake-manifest.json (Mathlib 5352afcc) shipped with the
+  # aeneas runtime. The lean-check has NO root manifest, so this path-dep manifest
+  # would otherwise govern and pull rc1 Mathlib (toolchain v4.28.0-rc1) — which
+  # mismatches the lean-check toolchain (v4.28.0) and makes `lake exe cache get`
+  # refuse ("Mathlib uses a different lean-toolchain"). Removing it forces Lake to
+  # re-resolve Mathlib from the patched `require` (8f9d9cff, toolchain v4.28.0).
+  rm -f "$lean_check/aeneas-lean/lake-manifest.json" "$lean_check/lake-manifest.json"
 
   cat > "$lean_check/lakefile.lean" <<'EOF'
 import Lake
