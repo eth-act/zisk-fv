@@ -266,6 +266,104 @@ theorem branch_flag_lt_provided
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row
 
+/-- **BEQ/BNE branch FLAG provided.** Equality sibling of `branch_flag_ltu_provided`:
+    sources the static-table OP_EQ Binary provider row (via
+    `main_request_compare_provided`, the SAME provider BEQ/BNE use), unpacks its
+    facts and operand packings, and concludes the Main `flag` column equals the
+    signed-LT comparison of the two register operands. No new trust over SLT. -/
+theorem branch_flag_eq_provided
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (r1 r2 : regidx) (r1_val r2_val : BitVec 64)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = OP_EQ)
+    (h_m32 :
+      (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
+    (h_a_lo_t :
+      (mainOfTable trace.program trace.mainTable).a_0 i.val =
+        ZiskFv.Trusted.lane_lo
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+            (regidx_to_fin r1)))
+    (h_a_hi_t :
+      (mainOfTable trace.program trace.mainTable).a_1 i.val =
+        ZiskFv.Trusted.lane_hi
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+            (regidx_to_fin r1)))
+    (h_b_lo_t :
+      (mainOfTable trace.program trace.mainTable).b_0 i.val =
+        ZiskFv.Trusted.lane_lo
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+            (regidx_to_fin r2)))
+    (h_b_hi_t :
+      (mainOfTable trace.program trace.mainTable).b_1 i.val =
+        ZiskFv.Trusted.lane_hi
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+            (regidx_to_fin r2)))
+    (h_input_r1 :
+      read_xreg (regidx_to_fin r1) (binding i)
+        = EStateM.Result.ok r1_val (binding i))
+    (h_input_r2 :
+      read_xreg (regidx_to_fin r2) (binding i)
+        = EStateM.Result.ok r2_val (binding i)) :
+    (mainOfTable trace.program trace.mainTable).flag i.val
+      = if r1_val == r2_val then 1 else 0 := by
+  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    main_request_eq_provided trace i h_main_active h_main_op
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_m32_zero : m.m32 i.val = 0 := h_m32
+  have h_emit :
+      providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_EQ : FGL) := by
+    have h_match_op := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_op
+    have h_op_match :
+        m.op i.val = providerInput.chain.b_op + 16 * providerInput.mode.mode32 :=
+      h_match_op.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_EQ, ZiskFv.Trusted.OP_EQ] using h_main_op
+  obtain ⟨h_row_m32, h_bop, _⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_EQ (by
+        simp [ZiskFv.Airs.Tables.BinaryTable.OP_EQ])
+      h_core h_emit
+  have h_out :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+      providerInput h_facts
+      ZiskFv.Airs.Tables.BinaryTable.OP_EQ h_core h_row_m32 h_bop
+  have h_matches :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+        providerInput ZiskFv.Airs.Tables.BinaryTable.OP_EQ :=
+    allByteMatchesOfStaticOut64_local h_out
+  have h_input_r1_row :
+      r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
+    simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+        m providerInput i.val (regidx_to_fin r1) r1_val
+        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+  have h_input_r2_row :
+      r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+    simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+      ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
+        m providerInput i.val (regidx_to_fin r2) r2_val
+        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+  exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_eq_of_static_row
+    m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
+    h_input_r1_row h_input_r2_row
+
 /-- Strengthened `beq` step (channel-balance form), via the OpEnvelope route:
     CONSTRUCT `OpEnvelope.beq` from the trace's `RowData_beq` (the same
     `BranchInstrOperands` + `BranchPromises` `construction_beq_sound` builds) and
@@ -277,11 +375,11 @@ theorem stepStrong_beq
     (d : RowData_beq trace binding i)
     (_h_known : True) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BEQ)) (binding i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.toClaim.exec_row, []⟩ (binding i) := by
+      = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
-    ⟨d.toClaim.imm, d.toClaim.r1, d.toClaim.r2, d.toInputs.misa_val, d.toClaim.exec_row⟩
+    ⟨d.toClaim.imm, d.toClaim.r1, d.toClaim.r2, d.toInputs.misa_val, Pilot.execRowOf trace i⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
       state d.toInputs.beq_input.imm d.toInputs.beq_input.r1_val d.toInputs.beq_input.r2_val d.toInputs.beq_input.PC
       ops.misa_val
@@ -295,10 +393,32 @@ theorem stepStrong_beq
       input_pc_eq := d.toInputs.h_input_pc
       input_misa_eq := d.toInputs.h_input_misa
       misa_c_zero := d.toInputs.h_misa_c
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      -- #100: next-PC residual DISCHARGED. `flag = (r1 == r2 ? 1 : 0)` from the
+      -- OP_EQ Binary provider (`branch_flag_eq_provided`); flag1-taken cast.
+      nextPC_matches := by
+        have h_flag : m.flag i.val
+            = if d.toInputs.beq_input.r1_val == d.toInputs.beq_input.r2_val
+              then 1 else 0 :=
+          branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
+            d.toInputs.beq_input.r1_val d.toInputs.beq_input.r2_val
+            d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_cast := Pilot.branch_nextPC_flag1_taken trace i
+          (d.toInputs.beq_input.r1_val == d.toInputs.beq_input.r2_val)
+          d.toInputs.beq_input.PC (BitVec.signExtend 64 d.toInputs.beq_input.imm)
+          d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
+          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          d.toInputs.h_pc_bound
+        show (register_type_pc_equiv ▸
+            (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
+          = (PureSpec.execute_BEQ_pure d.toInputs.beq_input).nextPC
+        rw [h_cast]
+        exact (PureSpec.execute_BEQ_pure_nextPC_of_success
+          d.toInputs.beq_input d.toInputs.h_success).symm
       not_throws := d.toInputs.h_not_throws
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.beq d.toInputs.beq_input ops promises
@@ -315,11 +435,11 @@ theorem stepStrong_bne
     (d : RowData_bne trace binding i)
     (_h_known : True) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BNE)) (binding i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.toClaim.exec_row, []⟩ (binding i) := by
+      = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let ops : ZiskFv.Compliance.BranchInstrOperands :=
-    ⟨d.toClaim.imm, d.toClaim.r1, d.toClaim.r2, d.toInputs.misa_val, d.toClaim.exec_row⟩
+    ⟨d.toClaim.imm, d.toClaim.r1, d.toClaim.r2, d.toInputs.misa_val, Pilot.execRowOf trace i⟩
   let promises : ZiskFv.EquivCore.Promises.BranchPromises
       state d.toInputs.bne_input.imm d.toInputs.bne_input.r1_val d.toInputs.bne_input.r2_val d.toInputs.bne_input.PC
       ops.misa_val
@@ -333,10 +453,32 @@ theorem stepStrong_bne
       input_pc_eq := d.toInputs.h_input_pc
       input_misa_eq := d.toInputs.h_input_misa
       misa_c_zero := d.toInputs.h_misa_c
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      -- #100: next-PC residual DISCHARGED. `flag = (r1 == r2 ? 1 : 0)` from the
+      -- OP_EQ Binary provider; `neg` polarity (taken on flag=0), flag0-taken cast.
+      nextPC_matches := by
+        have h_flag : m.flag i.val
+            = if d.toInputs.bne_input.r1_val == d.toInputs.bne_input.r2_val
+              then 1 else 0 :=
+          branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
+            d.toInputs.bne_input.r1_val d.toInputs.bne_input.r2_val
+            d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_cast := Pilot.branch_nextPC_flag0_taken trace i
+          (d.toInputs.bne_input.r1_val == d.toInputs.bne_input.r2_val)
+          d.toInputs.bne_input.PC (BitVec.signExtend 64 d.toInputs.bne_input.imm)
+          d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
+          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          d.toInputs.h_pc_bound
+        show (register_type_pc_equiv ▸
+            (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
+          = (PureSpec.execute_BNE_pure d.toInputs.bne_input).nextPC
+        rw [h_cast]
+        exact (PureSpec.execute_BNE_pure_nextPC_of_success
+          d.toInputs.bne_input d.toInputs.h_success).symm
       not_throws := d.toInputs.h_not_throws
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.bne d.toInputs.bne_input ops promises

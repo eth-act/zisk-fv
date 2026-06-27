@@ -965,6 +965,86 @@ lemma static_lt_chain_flags7_iff_slt
     (by norm_num) (by norm_num) (by norm_num)
     (by rw [h_mode32_zero]; norm_num)
 
+/-- **Equality sibling of `static_ltu_chain_flags7_iff_lt` (#100 BEQ/BNE).** For a
+    static-table OP_EQ provider row in RV64 mode (`mode32 = 0`), the last byte's
+    flag parity equals packed-operand EQUALITY. Same `out` plumbing + `pi` pins as
+    the signed wrapper, with `binary_eq_chunks_eq_bv_eq_of_wf` in place of the LT
+    lift. -/
+lemma static_eq_chain_flags7_iff_eq
+    (v : Valid_Binary FGL FGL) (r : ℕ)
+    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_EQ)
+    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_mode32_zero : v.mode32 r = 0) :
+    ((ZiskFv.AirsClean.Binary.lookupFlags7Row
+        (ZiskFv.AirsClean.Binary.rowAt v r)).val % 2 = 1 ↔
+      ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
+          + (v.free_in_a_2 r).val * 65536
+          + (v.free_in_a_3 r).val * 16777216
+          + (v.free_in_a_4 r).val * 4294967296
+          + (v.free_in_a_5 r).val * 1099511627776
+          + (v.free_in_a_6 r).val * 281474976710656
+          + (v.free_in_a_7 r).val * 72057594037927936)
+      =
+        ((v.free_in_b_0 r).val + (v.free_in_b_1 r).val * 256
+          + (v.free_in_b_2 r).val * 65536
+          + (v.free_in_b_3 r).val * 16777216
+          + (v.free_in_b_4 r).val * 4294967296
+          + (v.free_in_b_5 r).val * 1099511627776
+          + (v.free_in_b_6 r).val * 281474976710656
+          + (v.free_in_b_7 r).val * 72057594037927936)) := by
+  rcases h_core with ⟨_, _, _, h_ufb_bool, _, _, _⟩
+  exact ZiskFv.Airs.Binary.binary_eq_chunks_eq_bv_eq_of_wf
+    (v.free_in_a_0 r) (v.free_in_a_1 r) (v.free_in_a_2 r) (v.free_in_a_3 r)
+    (v.free_in_a_4 r) (v.free_in_a_5 r) (v.free_in_a_6 r) (v.free_in_a_7 r)
+    (v.free_in_b_0 r) (v.free_in_b_1 r) (v.free_in_b_2 r) (v.free_in_b_3 r)
+    (v.free_in_b_4 r) (v.free_in_b_5 r) (v.free_in_b_6 r) (v.free_in_b_7 r)
+    (v.free_in_c_0 r) (v.free_in_c_1 r) (v.free_in_c_2 r) (v.free_in_c_3 r)
+    (v.free_in_c_4 r) (v.free_in_c_5 r) (v.free_in_c_6 r) (v.free_in_c_7 r)
+    0 (v.carry_0 r) (v.carry_1 r) (v.carry_2 r)
+    (v.carry_3 r) (v.carry_4 r) (v.carry_5 r) (v.carry_6 r)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_0 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_1 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_2 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_3 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_4 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_5 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row
+      (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_6 r))
+    (ZiskFv.AirsClean.Binary.lookupFlags7Row
+      (ZiskFv.AirsClean.Binary.rowAt v r))
+    (2 * v.use_first_byte r) 0 0 (v.mode32 r) 0 0 0 (1 - v.mode32 r)
+    out.chain_0 out.chain_1 out.chain_2 out.chain_3
+    out.chain_4 out.chain_5 out.chain_6 out.chain_7
+    (chain_a_byte_lt_256 out.chain_0)
+    (chain_a_byte_lt_256 out.chain_1)
+    (chain_a_byte_lt_256 out.chain_2)
+    (chain_a_byte_lt_256 out.chain_3)
+    (chain_a_byte_lt_256 out.chain_4)
+    (chain_a_byte_lt_256 out.chain_5)
+    (chain_a_byte_lt_256 out.chain_6)
+    (chain_a_byte_lt_256 out.chain_7)
+    (chain_b_byte_lt_256 out.chain_0)
+    (chain_b_byte_lt_256 out.chain_1)
+    (chain_b_byte_lt_256 out.chain_2)
+    (chain_b_byte_lt_256 out.chain_3)
+    (chain_b_byte_lt_256 out.chain_4)
+    (chain_b_byte_lt_256 out.chain_5)
+    (chain_b_byte_lt_256 out.chain_6)
+    (chain_b_byte_lt_256 out.chain_7)
+    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
+    out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
+    (two_mul_boolean_ne_one h_ufb_bool)
+    (by norm_num) (by norm_num)
+    (by rw [h_mode32_zero]; norm_num)
+    (by norm_num) (by norm_num) (by norm_num)
+    (by rw [h_mode32_zero]; norm_num)
+
 /-- If the Binary provider row matched an LTU consumer requiring
     `flag = 1`, then the static LTU chain proves the packed unsigned
     byte comparison. -/
