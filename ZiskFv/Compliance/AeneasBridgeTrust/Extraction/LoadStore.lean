@@ -11,8 +11,9 @@ REAL Aeneas-extracted ZisK lowerer (`ProductionM2`):
   * `…store_op_typed` (via `…store_op_with_reg_offset`) — SB/SH/SW/SD (all CopyB,
        op 1, Internal; `store_ind` forces store_pc = false)
 
-Plus `copyb_static_pins` (audit; the `copyb` entry behind the degenerate
-ADD/OR/ADDI(imm=0) paths).
+Plus `copyb_static_pins` / `copyb_extracted_rowMode_pins` (the `copyb` entry
+behind the degenerate ADD/OR/ADDI(imm=0) dispatcher paths).  These now carry
+all FIVE static pins, including `m32 = false` (exposed via `op_zisk_copyb`).
 
 Sound: NO native_decide / bv_decide / ofReduceBool / trustCompiler / `sorry`.
 Shared helpers live in `Extraction/Helpers.lean`.
@@ -273,7 +274,7 @@ theorem copyb_static_pins
     (ctx : riscv2zisk_context.Riscv2ZiskContext)
     (h : riscv2zisk_context.Riscv2ZiskContext.copyb self i inst_size rs = ok ctx) :
     ∃ zib, ctx.extract_inst = some zib ∧
-      zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧
+      zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
       zib.i.set_pc = false ∧ zib.i.store_pc = false := by
   simp only [riscv2zisk_context.Riscv2ZiskContext.copyb,
     bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
@@ -293,15 +294,34 @@ theorem copyb_static_pins
   obtain ⟨_, _, _, hsp0, hspc0⟩ := new_pins _ _ h0
   obtain ⟨_, _, _, hsp1, hspc1⟩ := src_a_imm_pres _ _ _ h1
   obtain ⟨_, _, _, hsp2, hspc2⟩ := src_b_reg_pres _ _ _ _ h2
-  obtain ⟨hop3, hext3, _hm3, hsp3, hspc3⟩ := op_zisk_copyb _ _ h3
+  obtain ⟨hop3, hext3, hm3, hsp3, hspc3⟩ := op_zisk_copyb _ _ h3
   have hz3spc : z3.i.store_pc = false := by rw [hspc3, hspc2, hspc1]; exact hspc0
-  obtain ⟨hop4, hext4, _hm4, hsp4, hspc4⟩ := store_reg_pins _ _ _ _ hz3spc h4
-  obtain ⟨hop5, hext5, _hm5, hsp5, hspc5⟩ := j_pres _ _ _ _ h5
-  obtain ⟨hop6, hext6, _hm6, hsp6, hspc6⟩ := build_pres _ _ h6
-  refine ⟨z6, insert_inst_extract _ _ _ _ h7, ?_, ?_, ?_, ?_⟩
+  obtain ⟨hop4, hext4, hm4, hsp4, hspc4⟩ := store_reg_pins _ _ _ _ hz3spc h4
+  obtain ⟨hop5, hext5, hm5, hsp5, hspc5⟩ := j_pres _ _ _ _ h5
+  obtain ⟨hop6, hext6, hm6, hsp6, hspc6⟩ := build_pres _ _ h6
+  refine ⟨z6, insert_inst_extract _ _ _ _ h7, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hop6, hop5, hop4, hop3]
   · rw [hext6, hext5, hext4, hext3]
+  · rw [hm6, hm5, hm4, hm3]
   · rw [hsp6, hsp5, hsp4, hsp3, hsp2, hsp1]; exact hsp0
   · rw [hspc6, hspc5]; exact hspc4
+
+/-- Row-mode bridge for the `copyb` entry: all five static pins onto
+`mainExtractedRowOfZiskInst` (op = CopyB, internal, not m32, no pc writes). -/
+theorem copyb_extracted_rowMode_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput)
+    (inst_size rs : Std.U64)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.copyb self i inst_size rs = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      (mainExtractedRowOfZiskInst zib.i).op = ExtractedConst.opCopyB ∧
+      (mainExtractedRowOfZiskInst zib.i).isExternalOp = false ∧
+      (mainExtractedRowOfZiskInst zib.i).m32 = false ∧
+      (mainExtractedRowOfZiskInst zib.i).setPc = false ∧
+      (mainExtractedRowOfZiskInst zib.i).storePc = false := by
+  obtain ⟨zib, hext, ho, he, hm, hs, hpc⟩ := copyb_static_pins self i inst_size rs ctx h
+  exact ⟨zib, hext, by simp only [mainExtractedRowOfZiskInst, ho, ExtractedConst.opCopyB]; decide,
+    he, hm, hs, hpc⟩
 
 end ZiskFv.Compliance.Extraction
