@@ -2516,7 +2516,7 @@ theorem extracted_raw_fence_decode_completeness :
 
 end zisk_core_generated_fence_completeness
 EOF
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/RvDecodeCommon.lean" <<'EOF'
 import ProductionM2
@@ -8993,7 +8993,7 @@ EOF
       echo "  · exact lower_jal_reg${rd}_route_ok imm" >> "$lean_check/RvUpperJumpCompleteness.lean"
     done
     printf '\n\nend zisk_core_generated_rv_upper_jump_completeness\n' >> "$lean_check/RvUpperJumpCompleteness.lean"
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvRouteSoundness RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks RvRouteSoundness RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
 import ProductionM2
@@ -9101,9 +9101,9 @@ example :
 
 end zisk_core_generated_rv64im_completeness
 EOF
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks Rv64imCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks Rv64imCompleteness' bash "$lean_check"
   else
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
   fi
 fi
 
