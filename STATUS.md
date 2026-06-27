@@ -11,8 +11,37 @@ Route: keep Lean 4.28.0; pin aeneas back to a2fcf1923d (last v4.28.0-rc1 commit)
 is GO per spike. Trust R1 (sound, no native_decide); R2 only as CODEOWNER fallback. Scope:
 static row-mode pins first; value pins (Phase 3) deferrable; dynamic conjuncts out of scope.
 
-Status: SETUP done. Worktree + build/ symlinks + cache get done; tracking files written.
-Next: Phase 0a (verify flake aeneas/charon structure), then Phase 0b (bump pin + regen).
+Status: SETUP done + Phase 0a done + key make-or-break evidence gathered (cheaply, no rebuild).
+DECISION PENDING (asked user): R1 vs R2 vs out-of-band — see "Make-or-break finding" below.
+
+Make-or-break finding (2026-06-26, no rebuild needed):
+- Import is GO and CHEAP: committed trust/aeneas/ProductionM2.lean is byte-identical to the
+  on-disk extraction; a2fcf1923d validates (transitive charon ed22146b). No charon re-extraction
+  needed — only the a2fcf (rc1, 4.28-compat) aeneas-lean runtime to import against
+  (/nix/store/hpw9...source/backends/lean).
+- R1 is GO (CORRECTED — my earlier "native_decide only" was a grep miss of multi-line `by\n simp`).
+  CopybScratch.lean (CopyB == LUI's opcode) proves materialization with SOUND `simp` (no
+  native_decide) using THEOREM helpers: one_u64_val_not_lt_regs_from_set_width,
+  regs_to_set_width_val_not_lt_one_u64, uscalar64_shift_right_i32_32_ok_true, one_u64_scalar_ne_zero
+  (+ i64 variants) — these soundly resolve store_reg's numBits/Usize comparisons + unfold the
+  @[irreducible] consts. Helpers are theorems (not axioms). So the sound static-pin discharge EXISTS.
+  Background agent a76bcfc817f42e0f0 is RUNNING the proof + #print axioms to confirm clean closure
+  (propext/Classical.choice/Quot.sound only) and that a2fcf aeneas-lean builds vs release mathlib.
+
+In-build gap (precise): mainRowProvenance_of_pins (TraceLevelExport/Base.lean:99) builds
+`extractedRow` as a LITERAL from the caller's `opc` (the circuit decode residual), so LuiRowMode's
+`extractedRow.op = opCopyB` is rfl-true against a NAMED CONSTANT — never tied to the real Rust
+lowerer. #111 = make `extractedRow := mainExtractedRowOfZiskInst (productionLower raw)` and prove the
+static pins (op/isExt/m32/setPc/storePc) from ProductionM2. Per-op RowMode structs live in
+RowProvenance.lean (LuiRowMode:165, AuipcRowMode, JalRowMode, jalrPins, fencePins) + AeneasBridgeTrust/
+family arms. Full load-bearingness also needs RomImageBinding (committed ROM word == raw) — a named
+residual, out of scope, must NOT be silently claimed.
+
+Integration surface: main lakefile.toml requires mathlib(v4.28.0)/LeanRV/Clean/repl. #111 adds
+`require aeneas` (vendored a2fcf backends/lean, patched to release mathlib) + new
+ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean importing ProductionM2. RISK: aeneas runtime
+sorries (Slice/String) must NOT enter root_soundness closure (spike: LUI path is clean) — V2
+axiom-closure baseline will catch any sorryAx. The probe (Route B) tests exactly this feasibility.
 
 Checklist:
 - [x] Setup: worktree, build/ symlinks, lake exe cache get, tracking files.
