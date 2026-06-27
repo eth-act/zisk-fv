@@ -2,6 +2,18 @@ Stream: #111 — discharge `aeneasBridgeTrust` from the real Aeneas extraction.
 Branch: aeneas-bridge-111 (off origin/main @ 6ffb31e5).
 Plan: docs/ai/plan/PLAN_AENEAS_BRIDGE_111.md   Issue: eth-act/zisk-fv#111
 
+=== FINAL STATE (plan complete, in-scope) ===
+DRAFT PR: eth-act/zisk-fv#160 (open, draft — CI validates the populate path).
+DONE: all 63 RV64IM static decode pins proven IN-BUILD from the real Aeneas lowering, kernel-sound
+(axioms {propext,Classical.choice,Quot.sound}, 0 native_decide, 0 new project axioms). Full build
+green (9012 jobs incl ZiskFv.Soundness); V1+V2 trust gates pass; extraction-diff gate passes.
+Toolchain synced (#158): flake aeneas → a2fcf rc1, ProductionM2 re-extracted (cosmetic diff),
+nix/aeneas-lean.nix populate step added. Module: ZiskFv/Compliance/AeneasBridgeTrust/Extraction/.
+DEFERRED (out of scope, tracked): load-bearing wiring into root_soundness = RomImageBinding = #159
+(child of #61); dynamic per-arm conjuncts; Phase-3 value pins. These need the raw program in the
+soundness statement + positional ROM binding (#61) + full MirrorFidelity — a foundational pillar,
+NOT a small residual. #111's pins are standalone (root_soundness/equiv closures unchanged).
+
 Goal: replace the *asserted* Main-row decode pins (the `mainRowProvenance_of_pins`
 fabrication in the live root_soundness → stepStrong_* path) with proof terms about the
 real extracted lowerer in trust/aeneas/ProductionM2.lean, IN the main lake build, without
