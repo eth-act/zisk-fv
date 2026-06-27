@@ -138,7 +138,7 @@ theorem stepStrong_sub
       -- carried as a caller-supplied promise.
       nextPC_matches :=
         Pilot.sub_nextPC_discharged trace binding i d.toInputs.sub_input
-          d.toDecode.h_idx d.toDecode.h_fixed
+          d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,

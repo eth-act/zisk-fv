@@ -47,9 +47,12 @@ set_option maxHeartbeats 8000000
 -- entry's `pc` reads the next-row Main `pc` column).  The three exec artifacts
 -- (`h_exec_len`/`h_e0_mult`/`h_e1_mult`) thereby become `rfl` and are dropped;
 -- in their place `Decode_sub` carries the in-circuit transition inputs
--- (`h_idx`/`h_fixed` + the R-type/SUB decode pins `h_set_pc`/`h_jmp1`/`h_jmp2`)
--- that `Pilot.sub_nextPC_discharged` consumes to DERIVE the (removed) cross-world
--- `h_nextPC_matches` from the accepted trace's `transitions_hold` certificate.
+-- (the next-row-exists side condition `h_idx` + the R-type/SUB decode pins
+-- `h_set_pc`/`h_jmp1`/`h_jmp2`) that `Pilot.sub_nextPC_discharged` consumes to
+-- DERIVE the (removed) cross-world `h_nextPC_matches` from the accepted trace's
+-- `transitions_hold` certificate.  The `SEGMENT_L1` fixed-column fact is no
+-- longer a per-arm binder: it lives once on the trace as `segment_l1_fixed`
+-- (read via `trace.mainTable_fixed`), the `main_height`-class shared home.
 structure Claim_sub (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   r1 : regidx
   r2 : regidx
@@ -70,12 +73,14 @@ structure Decode_sub (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
   -- transition inputs (replace the removed exec artifacts; all sailTrace-free
-  -- rowDecode-class facts): the next row exists, the `SEGMENT_L1` fixed column,
-  -- and the SUB/R-type decode pins `set_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`
-  -- (Rust lowerer `create_register_op(…, "sub", 4)` → `zib.j(4,4)`, no `set_pc()`;
-  -- cf. `RowShape/Contract.lean` SUB arm, `main.pil:150-152`).
+  -- rowDecode-class facts): the next row exists, and the SUB/R-type decode pins
+  -- `set_pc = 0`, `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer
+  -- `create_register_op(…, "sub", 4)` → `zib.j(4,4)`, no `set_pc()`; cf.
+  -- `RowShape/Contract.lean` SUB arm, `main.pil:150-152`).  The `SEGMENT_L1`
+  -- fixed-column fact is NOT carried per-arm: `Pilot.sub_nextPC_discharged`
+  -- reads it off the accepted trace's shared `segment_l1_fixed` certificate
+  -- (`trace.mainTable_fixed`), the once-for-all `main_height`-class home.
   h_idx : i.val + 1 < trace.mainTable.table.length
-  h_fixed : MainTableGeneratedFixedColumnFacts trace.program trace.mainTable
   h_set_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0

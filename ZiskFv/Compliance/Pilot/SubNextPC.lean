@@ -22,10 +22,16 @@ and the wide-PC no-wrap cast (mirroring `WidePCNoWrap`) lifts the field-level
 
 ## Justification of the residual hypotheses (none is a smuggled discharge)
 
-* `h_idx`, `h_fixed` — `h_fixed : MainTableGeneratedFixedColumnFacts …` is the
-  Mem-style fixed-column obligation for `SEGMENT_L1 = [1,0,…]` (`main.pil:19`),
-  threaded exactly as the Mem precedent. It supplies `segment_l1 (i+1) = 0`
-  (within-segment), the non-boundary side condition of the transition.
+* `h_idx : i + 1 < mainTable.length` — the one honest structural side condition
+  ("the next Main row exists"); needed for the cross-row transition to apply at
+  the pair `(i, i+1)`. The caller derives it from `mainTable_index` for any
+  non-terminal row (`i + 1 < numInstructions`); the terminal row is the
+  cross-segment boundary (#103, out of scope).
+  The `SEGMENT_L1 = [1,0,…]` fixed-column fact (`main.pil:19`) is **no longer a
+  binder** — it is read off the accepted trace's shared `segment_l1_fixed`
+  certificate via `trace.mainTable_fixed` (a `main_height`-class once-for-all
+  obligation), supplying `segment_l1 (i+1) = 0` (within-segment), the
+  non-boundary side condition of the transition.
 * `h_set_pc`, `h_jmp1`, `h_jmp2` — Main decode pins for a register-type SUB row:
   the Rust lowerer's R-type arm `create_register_op(…, "sub", 4)` calls
   `zib.j(4, 4)` (⇒ `jmp_offset1 = jmp_offset2 = 4`) and never `set_pc()`
@@ -102,7 +108,6 @@ theorem sub_nextPC_discharged
     (i : Fin trace.numInstructions)
     (sub_input : PureSpec.SubInput)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_fixed : MainTableGeneratedFixedColumnFacts trace.program trace.mainTable)
     (h_set_pc :
       (mainOfTable trace.program trace.mainTable).set_pc i.val = 0)
     (h_jmp1 :
@@ -121,8 +126,10 @@ theorem sub_nextPC_discharged
   have h_pc1 :
       (busSub trace i (execRowOf trace i)).exec_row[1]!.pc
         = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
-  -- (2) Transition certificate + within-segment fixed-column fact.
-  have h_seg := h_fixed.segment_l1_succ i.val h_idx
+  -- (2) Transition certificate + within-segment fixed-column fact.  The
+  -- `SEGMENT_L1 = [1,0,…]` shape is now read off the accepted trace's shared
+  -- `segment_l1_fixed` certificate (`trace.mainTable_fixed`), not a per-arm binder.
+  have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx
   have h_hand :=
     ZiskFv.Compliance.AcceptedZiskTrace.mainTransition_to_next_pc trace i.val h_idx h_seg
   -- (3) Decode pins collapse the mux to `pc i + 4`.
@@ -153,11 +160,13 @@ theorem sub_nextPC_discharged
     `execRow` ∀-binder is likewise gone (pinned to the committed columns).
 
     In exchange the statement takes the genuinely-lighter, independently-justified
-    transition inputs (`h_idx`, `h_fixed`, the SUB decode pins `h_set_pc`/`h_jmp1`/
-    `h_jmp2`, and the Jal/Auipc-style `h_pc_bridge`/`h_pc_bound`). The opaque
-    cross-row next-PC *promise* is thereby replaced by a derivation from the
-    in-circuit `pcHandshakeBetween` transition — a real reduction of the
-    next-PC trust surface, not a relabel. -/
+    transition inputs: the structural next-row-exists side condition `h_idx`, the
+    SUB decode pins `h_set_pc`/`h_jmp1`/`h_jmp2`, and the Jal/Auipc-style
+    `h_pc_bridge`/`h_pc_bound`. The `SEGMENT_L1` fixed-column fact is no longer a
+    binder here — it is read off the accepted trace's shared `segment_l1_fixed`
+    certificate (`trace.mainTable_fixed`). The opaque cross-row next-PC *promise*
+    is thereby replaced by a derivation from the in-circuit `pcHandshakeBetween`
+    transition — a real reduction of the next-PC trust surface, not a relabel. -/
 theorem construction_sub_sound'
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -208,7 +217,6 @@ theorem construction_sub_sound'
         Transpiler.wrap_to_regidx (busSub trace i (execRowOf trace i)).e2.ptr)
     -- NEW transition inputs (replace the removed next-PC promise + exec artifacts)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_fixed : MainTableGeneratedFixedColumnFacts trace.program trace.mainTable)
     (h_set_pc :
       (mainOfTable trace.program trace.mainTable).set_pc i.val = 0)
     (h_jmp1 :
@@ -237,7 +245,7 @@ theorem construction_sub_sound'
     -- exec artifacts: now `rfl` (execRowOf is a concrete two-entry list)
     rfl rfl rfl
     -- next-PC promise: discharged from the transition certificate
-    (sub_nextPC_discharged trace binding i sub_input h_idx h_fixed
+    (sub_nextPC_discharged trace binding i sub_input h_idx
       h_set_pc h_jmp1 h_jmp2 h_pc_bridge h_pc_bound)
     h_rd_idx
 

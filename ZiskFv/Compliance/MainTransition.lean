@@ -115,4 +115,20 @@ theorem MainTableGeneratedFixedColumnFacts.segment_l1_succ
     (mainOfTable program table).segment_l1 (i + 1) = 0 :=
   h_fixed.segmentL1_nonfirst ⟨i + 1, h_idx⟩ (Nat.succ_pos i)
 
+/-- `MainTableGeneratedFixedColumnFacts` for the **derived** Main table, read off
+    the accepted trace's `segment_l1_fixed` certificate and specialized to
+    `mainTable` via its membership and component facts — the exact `main_height`
+    → `mainTable_index` pattern. This is the single, shared home for the
+    SEGMENT_L1 fixed-column obligation: the per-opcode next-PC discharges now read
+    it off the trace (`trace.mainTable_fixed`) instead of carrying a per-arm
+    `h_fixed` binder. -/
+theorem AcceptedZiskTrace.mainTable_fixed (trace : AcceptedZiskTrace n) :
+    MainTableGeneratedFixedColumnFacts trace.program trace.mainTable where
+  segmentL1_first :=
+    (trace.segment_l1_fixed trace.mainTable trace.mainTable_mem
+      trace.mainTable_component).1
+  segmentL1_nonfirst :=
+    (trace.segment_l1_fixed trace.mainTable trace.mainTable_mem
+      trace.mainTable_component).2
+
 end ZiskFv.Compliance
