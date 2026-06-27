@@ -126,11 +126,17 @@ theorem sequential_nextPC_discharged
     (h_pc_bound : PC.toNat < 18446744069414584321 - 4) :
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64
-          ((busSub trace i (execRowOf trace i)).exec_row[1]!.pc).val))
+          ((execRowOf trace i)[1]!.pc).val))
       = PC + 4#64 := by
   -- (1) The producer entry's pc is the committed next-row pc column (structural).
+  -- Stated directly over `execRowOf` (the bus constructor factored out): every
+  -- exec-row bus constructor (`busSub`/`busLd`/`busSt`) sets `exec_row := execRow`
+  -- as a verbatim passthrough, so `(bus … (execRowOf trace i)).exec_row[1]!.pc`
+  -- is defeq to `(execRowOf trace i)[1]!.pc`. Working over the latter makes this
+  -- lemma bus-CONSTRUCTOR-agnostic, reusable by loads (`busLd`) and stores
+  -- (`busSt`) as well as the `busSub` family.
   have h_pc1 :
-      (busSub trace i (execRowOf trace i)).exec_row[1]!.pc
+      (execRowOf trace i)[1]!.pc
         = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
   -- (2) Transition certificate + within-segment fixed-column fact.  The
   -- `SEGMENT_L1 = [1,0,…]` shape is now read off the accepted trace's shared
