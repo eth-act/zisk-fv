@@ -38,4 +38,17 @@ def axiomDepsForTheorem (env : Environment) (name : Name) : Array Name :=
   let filtered := st.axioms.filter isProjectAxiom
   filtered.qsort (fun a b => a.toString < b.toString)
 
+/-- Compute the FULL, UNFILTERED transitive axiom closure of `name`, sorted —
+every axiom `Lean.collectAxioms` reaches, including external ones (`sorryAx`,
+`Lean.ofReduceBool`, `Lean.trustCompiler`, the LeanRV64D Sail-translation
+axioms) AND the `ZiskFv.*` project axioms.
+
+Unlike `axiomDepsForTheorem`, this applies NO filter. It backs the
+extraction-pin closure gate (`check-extraction-closure`), whose whole point is
+to catch a leaked external `sorryAx` / `ofReduceBool` from the imported Aeneas
+runtime — exactly the axioms `axiomDepsForTheorem` deliberately drops. -/
+def rawAxiomDepsForTheorem (env : Environment) (name : Name) : Array Name :=
+  let st := ((Lean.CollectAxioms.collect name).run env).run {} |>.snd
+  st.axioms.qsort (fun a b => a.toString < b.toString)
+
 end TrustGate.AxiomClosure
