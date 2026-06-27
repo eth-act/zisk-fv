@@ -671,33 +671,33 @@ def StepSound
           (c.sb_input.imm, regidx.Regidx c.sb_input.r2, regidx.Regidx c.sb_input.r1, 1))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace i c.execRow).exec_row,
-           [(busSt ziskTrace i c.execRow).e0, (busSt ziskTrace i c.execRow).e1,
-            (busSt ziskTrace i c.execRow).e2]⟩ (sailTrace i)
+          ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
+           [(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e0, (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e1,
+            (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .sh c =>
       execute_instruction (instruction.STORE
           (c.sh_input.imm, regidx.Regidx c.sh_input.r2, regidx.Regidx c.sh_input.r1, 2))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace i c.execRow).exec_row,
-           [(busSt ziskTrace i c.execRow).e0, (busSt ziskTrace i c.execRow).e1,
-            (busSt ziskTrace i c.execRow).e2]⟩ (sailTrace i)
+          ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
+           [(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e0, (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e1,
+            (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .sw c =>
       execute_instruction (instruction.STORE
           (c.sw_input.imm, regidx.Regidx c.sw_input.r2, regidx.Regidx c.sw_input.r1, 4))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace i c.execRow).exec_row,
-           [(busSt ziskTrace i c.execRow).e0, (busSt ziskTrace i c.execRow).e1,
-            (busSt ziskTrace i c.execRow).e2]⟩ (sailTrace i)
+          ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
+           [(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e0, (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e1,
+            (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .sd c =>
       execute_instruction (instruction.STORE
           (c.sd_input.imm, regidx.Regidx c.sd_input.r2, regidx.Regidx c.sd_input.r1, 8))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSt ziskTrace i c.execRow).exec_row,
-           [(busSt ziskTrace i c.execRow).e0, (busSt ziskTrace i c.execRow).e1,
-            (busSt ziskTrace i c.execRow).e2]⟩ (sailTrace i)
+          ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
+           [(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e0, (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e1,
+            (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .ld c =>
       execute_instruction (instruction.LOAD
           (c.ld_input.imm, regidx.Regidx c.ld_input.r1, regidx.Regidx c.ld_input.rd, false, 8))
