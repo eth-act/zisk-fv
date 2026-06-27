@@ -289,6 +289,18 @@ if [[ "$AENEAS_CHECK_LEAN" != 0 ]]; then
     chmod -R u+w "$lean_check/aeneas-lean"
   fi
 
+  # Patch the vendored Aeneas runtime to the RELEASE Mathlib rev + toolchain the
+  # main build uses (mirrors nix/aeneas-lean.nix). The pinned aeneas commit
+  # (a2fcf1923d) ships an rc1 Mathlib require + rc1 toolchain, whose ProofWidgets
+  # (6d65c6e0) cloud release does not satisfy `widgetJsAll` (build fails even after
+  # `lake exe cache get`). The release Mathlib (8f9d9cff -> ProofWidgets be3b2e63)
+  # has a working cloud release, as the main FV build demonstrates. Idempotent.
+  if grep -q '@ "v4.28.0-rc1"' "$lean_check/aeneas-lean/lakefile.lean"; then
+    sed -i 's#@ "v4.28.0-rc1"#@ "8f9d9cff6bd728b17a24e163c9402775d9e6a365"#' \
+      "$lean_check/aeneas-lean/lakefile.lean"
+  fi
+  printf 'leanprover/lean4:v4.28.0\n' > "$lean_check/aeneas-lean/lean-toolchain"
+
   cat > "$lean_check/lakefile.lean" <<'EOF'
 import Lake
 open Lake DSL
@@ -376,7 +388,7 @@ lean_lib RvCompleteness
 lean_lib RvUpperJumpCompleteness
 EOF
   rm -f "$lean_check/lean-toolchain"
-  cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
+  printf 'leanprover/lean4:v4.28.0\n' > "$lean_check/lean-toolchain"
 
   cat > "$lean_check/GeneratedChecks.lean" <<'EOF'
 import ProductionM2
