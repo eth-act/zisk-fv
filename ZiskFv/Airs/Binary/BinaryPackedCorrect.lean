@@ -1777,6 +1777,59 @@ def signed_lt_64' (a b : ℕ) : Prop :=
   let sb : Bool := decide (b ≥ 9223372036854775808)
   if sa = sb then a < b else sa = true
 
+/-- Bridge from `signed_lt_64'` (the Nat-level signed-LT predicate the K1-B LT
+    lift produces) to `BitVec.slt` on 64-bit values. Public sibling of the
+    `private` copy in `EquivCore/WriteValueProofs/BinaryCompare.lean`, exposed
+    for the #100 branch-flag discharge (`branch_flag_lt_of_static_row`). -/
+lemma signed_lt_64'_iff_bv_slt (a b : BitVec 64) :
+    signed_lt_64' a.toNat b.toNat ↔ BitVec.slt a b = true := by
+  rw [BitVec.slt_iff_toInt_lt]
+  unfold signed_lt_64' BitVec.toInt
+  have h2_64 : (2^64 : ℕ) = 18446744073709551616 := by norm_num
+  have hA_lt : a.toNat < 2^64 := a.isLt
+  have hB_lt : b.toNat < 2^64 := b.isLt
+  by_cases hA : a.toNat ≥ 9223372036854775808
+  · by_cases hB : b.toNat ≥ 9223372036854775808
+    · have hA' : ¬ (2 * a.toNat < 2^64) := by rw [h2_64]; omega
+      have hB' : ¬ (2 * b.toNat < 2^64) := by rw [h2_64]; omega
+      rw [if_neg hA', if_neg hB']
+      have hAd : decide (a.toNat ≥ 9223372036854775808) = true := decide_eq_true hA
+      have hBd : decide (b.toNat ≥ 9223372036854775808) = true := decide_eq_true hB
+      simp only [hAd, hBd, if_true]
+      omega
+    · have hA' : ¬ (2 * a.toNat < 2^64) := by rw [h2_64]; omega
+      have hB' : 2 * b.toNat < 2^64 := by rw [h2_64]; omega
+      rw [if_neg hA', if_pos hB']
+      have hAd : decide (a.toNat ≥ 9223372036854775808) = true := decide_eq_true hA
+      have hBd : decide (b.toNat ≥ 9223372036854775808) = false := decide_eq_false hB
+      simp only [hAd, hBd]
+      have h_lt : (a.toNat : Int) - 18446744073709551616 < (b.toNat : Int) := by
+        have h_a_int : (a.toNat : Int) < 18446744073709551616 := by exact_mod_cast hA_lt
+        have h_b_int : (b.toNat : Int) ≥ 0 := by positivity
+        omega
+      simp [h_lt]
+  · push_neg at hA
+    by_cases hB : b.toNat ≥ 9223372036854775808
+    · have hA' : 2 * a.toNat < 2^64 := by rw [h2_64]; omega
+      have hB' : ¬ (2 * b.toNat < 2^64) := by rw [h2_64]; omega
+      rw [if_pos hA', if_neg hB']
+      have hAd : decide (a.toNat ≥ 9223372036854775808) = false := decide_eq_false hA.not_ge
+      have hBd : decide (b.toNat ≥ 9223372036854775808) = true := decide_eq_true hB
+      simp only [hAd, hBd]
+      have h_lt_false : ¬ ((a.toNat : Int) < (b.toNat : Int) - 18446744073709551616) := by
+        have h_b_int : (b.toNat : Int) < 18446744073709551616 := by exact_mod_cast hB_lt
+        have h_a_int : (a.toNat : Int) ≥ 0 := by positivity
+        omega
+      simp [h_lt_false]
+    · push_neg at hB
+      have hA' : 2 * a.toNat < 2^64 := by rw [h2_64]; omega
+      have hB' : 2 * b.toNat < 2^64 := by rw [h2_64]; omega
+      rw [if_pos hA', if_pos hB']
+      have hAd : decide (a.toNat ≥ 9223372036854775808) = false := decide_eq_false hA.not_ge
+      have hBd : decide (b.toNat ≥ 9223372036854775808) = false := decide_eq_false hB.not_ge
+      simp only [hAd, hBd, if_true]
+      omega
+
 /-- LT byte-7 closer. Takes the bytes-0..6 LTU answer (`step6_iff`),
     range bounds, byte-7 a, b values, the LT chain rule clauses, and
     the LT byte-7 override clause; produces the signed-LT conclusion. -/

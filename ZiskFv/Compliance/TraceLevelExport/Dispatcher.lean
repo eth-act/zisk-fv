@@ -638,10 +638,10 @@ def StepSound
       = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
   | .blt c =>
       execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BLT)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf ziskTrace i, []⟩ (sailTrace i)
   | .bge c =>
       execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BGE)) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨c.exec_row, []⟩ (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf ziskTrace i, []⟩ (sailTrace i)
   | .bltu c =>
       execute_instruction (instruction.BTYPE (c.imm, c.r2, c.r1, bop.BLTU)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf ziskTrace i, []⟩ (sailTrace i)
