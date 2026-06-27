@@ -402,7 +402,7 @@ theorem stepStrong_auipc
     (_h_known : True) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.AUIPC)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
+          ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let e_rd := eRdLui trace i
@@ -412,6 +412,12 @@ theorem stepStrong_auipc
     ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m i.val h_spec
   obtain ⟨h_c0, _h_b0, h_c1, _h_b1, h_set_flag, _h_clear_flag, h_disjoint,
       h_flag_bool, h_ext_bool⟩ := h_add_subset
+  -- #100: `flag = 1` is DERIVED (not pinned) from the OP_FLAG decode pins
+  -- (`is_external_op = 0`, `op = OP_FLAG = 0`) and the Main `internal_op0_sets_flag`
+  -- constraint (`h_set_flag`), exactly as `auipc_archetype_pc_advance` does.
+  have h_flag : m.flag i.val = 1 :=
+    ZiskFv.Airs.Main.flag_eq_one_of_internal_op_zero m i.val d.toDecode.h_main_active
+      (by simpa [ZiskFv.Trusted.OP_FLAG] using d.toDecode.h_main_op) h_set_flag
   let next_pc : FGL :=
     m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
       + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
@@ -447,20 +453,29 @@ theorem stepStrong_auipc
   let promises : ZiskFv.EquivCore.Promises.UTypePromises
       state d.toInputs.auipc_input.imm d.toInputs.auipc_input.rd d.toInputs.auipc_input.PC
       (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC
-      d.toClaim.imm d.toClaim.rd d.toClaim.execRow e_rd (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC :=
+      d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC :=
     { input_imm_eq := d.toInputs.h_input_imm
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      -- #100: next-PC residual DISCHARGED from the in-circuit transition
+      -- certificate via the FLAG-PATH lemma (set_pc=0, flag=1 ⇒ pc + jmp_offset1),
+      -- then `jmp_offset1 = 4` and the `pc + 4` wide-PC cast give AUIPC's
+      -- Sail `nextPC = PC + 4#64`.
+      nextPC_matches := by
+        have hstep := Pilot.flag_path_nextPC_discharged trace i
+          d.toDecode.h_idx d.toDecode.h_set_pc h_flag
+        rw [hstep, d.toDecode.h_jmp1]
+        exact Pilot.ofNat_fgl_pc_plus_4_eq _ d.toInputs.auipc_input.PC
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.auipc d.toInputs.auipc_input d.toClaim.imm d.toClaim.rd d.toClaim.execRow e_rd
+    OpEnvelope.auipc d.toInputs.auipc_input d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd
       (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC next_pc store_pc_mem
       provenance row_mode h_auipc_subset d.toInputs.h_offset_bridge d.toInputs.h_pc_bridge promises
       d.toInputs.h_no_wrap d.toInputs.h_pc_offset_lt_2_32

@@ -522,7 +522,6 @@ def toRowData_lui {trace : AcceptedZiskTrace numInstructions} {binding : SailTra
 structure Claim_auipc (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 20
   rd : regidx
-  execRow : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_auipc trace i) : Type where
@@ -541,9 +540,17 @@ structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
-  h_exec_len : c.execRow.length = 2
-  h_e0_mult : c.execRow[0]!.multiplicity = -1
-  h_e1_mult : c.execRow[1]!.multiplicity = 1
+  -- #100 next-PC transition inputs (replace the exec artifacts; AUIPC already
+  -- carries h_set_pc above): the next row exists, plus the AUIPC FLAG-row jmp
+  -- pin `jmp_offset1 = 4` (Rust lowerer `zib.j(4, imm)`; cf.
+  -- `RowShape/Contract.lean` AUIPC arm, line 246). With set_pc=0 and flag=1
+  -- the handshake mux selects the taken offset `jmp_offset1 = 4`, so
+  -- next_pc = pc + 4. `flag = 1` is NOT pinned here: it is derived in
+  -- `stepStrong_auipc` from the OP_FLAG decode pins + `internal_op0_sets_flag`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_jmp1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = 4
 
 structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_auipc trace i) : Type where
@@ -558,9 +565,11 @@ structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = auipc_input.PC.toNat
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.execRow[1]!.pc).val))
-      = (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+  -- #100: the JAL/AUIPC-style PC-trajectory no-wrap bound on the `pc + 4`
+  -- sequential successor (mirrors `Pilot.ofNat_fgl_pc_plus_4_eq`'s precondition),
+  -- ruling out FGL wrap on the next PC. Replaces the cross-world `h_nextPC_matches`,
+  -- which is now derived via `Pilot.flag_path_nextPC_discharged`.
+  h_pc_bound : auipc_input.PC.toNat < GL_prime - 4
   h_rd_idx :
     auipc_input.rd =
       Transpiler.wrap_to_regidx (eRdLui trace i).ptr

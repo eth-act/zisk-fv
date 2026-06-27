@@ -655,7 +655,7 @@ def StepSound
   | .auipc c =>
       execute_instruction (instruction.UTYPE (c.imm, c.rd, uop.AUIPC)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨c.execRow, [eRdLui ziskTrace i]⟩ (sailTrace i)
+          ⟨Pilot.execRowOf ziskTrace i, [eRdLui ziskTrace i]⟩ (sailTrace i)
   | .jal c =>
       execute_instruction (instruction.JAL (c.imm, c.rd)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
