@@ -120,8 +120,20 @@ Fresh probe at /home/cody/zisk-fv/build/aeneas-428-probe (gitignored shared buil
 
 Checklist:
 - [x] Setup: worktree, build/ symlinks, lake exe cache get, tracking files.
-- [ ] Phase 0a: verify flake aeneas/charon structure (transitive charon? current/target pin).
-- [ ] Phase 0b: bump flake.lock aeneas ac9f1bc5 → a2fcf1923d; regenerate ProductionM2.
+- [x] Phase 0a: verify flake aeneas/charon structure (transitive charon? current/target pin).
+      DONE 2026-06-26 (#158): aeneas was ac9f1bc5 (rc2) + transitive charon a535e914; override to
+      a2fcf1923d moves charon → ed22146b (+ charon/rust-overlay 51390d0b → 5177426d).
+- [x] Phase 0b: bump flake.lock aeneas ac9f1bc5 → a2fcf1923d; regenerate ProductionM2.
+      DONE 2026-06-26 (#158, commit ba7f8647). `nix flake lock --override-input aeneas …a2fcf…`;
+      `AENEAS_UPDATE_TRACKED=1 nix run .#aeneas-production-extract` regenerated ProductionM2
+      (rc1↔rc2 drift = COSMETIC ONLY: dropped `set_option maxRecDepth 2048` + doc-comment text;
+      no def/sig/term changed). VERIFIED: lake build ProductionM2 + Extraction + full lake build
+      green; #print axioms lui_static_pins & lui_extracted_rowMode_pins = [propext, Classical.choice,
+      Quot.sound]; `nix run .#aeneas-production-extract-check-tracked` PASS (deterministic);
+      V1 + V2 trust gates ALL CHECKS PASSED. Plus commit fb2476c0: nix/aeneas-lean.nix +
+      populate wiring (build/aeneas-lean from pinned a2fcf, toolchain/mathlib-patched; output
+      byte-identical to the working runtime) — CI populate for #158. Commit 54ac429f: cleared a
+      pre-existing zero-sorry-gate false positive (bare `sorry` in Extraction.lean comment).
 - [x] 4.28 aeneas-world rebuild (labor #1): rc1 aeneas-lean vendored+patched; hand-edit manifest
       (NO lake update); ProductionM2 cross-compat confirmed (no re-extraction); LuiPins green +
       axioms clean on v4.28.0. Persisted in build/aeneas-428-probe.
