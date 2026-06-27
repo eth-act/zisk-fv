@@ -137,7 +137,7 @@ private lemma boolean_carry_implies_eq_zero {x : FGL}
     have hval : x.val = 1 := by rw [h]; rfl
     omega
 
-private lemma lookup_flags7_mod_two_eq_carry
+lemma lookup_flags7_mod_two_eq_carry
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_core : ZiskFv.Airs.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0) :
@@ -2265,6 +2265,27 @@ lemma compare_c_lanes_LT_of_static_chain
     ring
   · rw [h_c_hi_m, hc4, hc5, hc6, hc7]
     ring
+
+/-- **Flag-lane sibling of `compare_c_lanes_*_of_static_chain` (#100/#101
+    branch-flag discharge).** The operation-bus `matches_entry` flag
+    equality identifies Main's `flag` column with the Binary provider's
+    `carry_7` (the final comparison cout). PIL-faithful: Main emits
+    `assumes_operation(... flag:)` (`opBus_row_Main.flag = m.flag`) and the
+    Binary SM proves `proves_operation(... flag: cout)`
+    (`opBus_row_Binary.flag = carry_7`); the bus permutation equates them.
+    This is the BRANCH analogue of how SLT/SLTU read the comparison off the
+    `c` lane — branches read the SAME comparison cout off the `flag` lane.
+    No byte-chain work is needed: it is a direct projection of the matched
+    flag field. -/
+lemma compare_flag_lane_of_match
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
+    {r_main r_binary : ℕ}
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)) :
+    m.flag r_main = v.carry_7 r_binary := by
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, _, _, _, _, _, _, h_flag_m, _, _, _⟩ := h_lane_eqs
+  exact h_flag_m
 
 /-- **Static byte-chain discharge for the 3-field family.** The Clean static
     BinaryTable route is faithful to the PIL: bytes 0-3 lookup `b_op`, while
