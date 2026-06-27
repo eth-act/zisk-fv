@@ -53,7 +53,8 @@ from `mainTransition_to_next_pc` + the decode pins.
 namespace ZiskFv.Compliance.Pilot
 
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable)
-open ZiskFv.Airs.Main (pc_handshake_with_next_pc pc_handshake_branch pc_handshake_jump)
+open ZiskFv.Airs.Main (pc_handshake_with_next_pc pc_handshake_branch pc_handshake_jump
+  pc_handshake_setpc)
 open Interaction
 
 /-- **Trace-derived execution-bus row.** The two committed execution-bus entries
@@ -227,6 +228,59 @@ theorem flag_path_nextPC_discharged
         = (mainOfTable trace.program trace.mainTable).pc i.val
           + (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val :=
     pc_handshake_jump (mainOfTable trace.program trace.mainTable) i.val
+      ((mainOfTable trace.program trace.mainTable).pc (i.val + 1)) h_set_pc h_flag h_hand
+  -- (4) Substitute; the `register_type_pc_equiv ▸ …` cast is defeq-identity.
+  rw [h_pc1, h_step]
+
+/-- **General SET-PC-PATH next-PC discharge (#100).** Sibling of
+    `flag_path_nextPC_discharged` for the set-PC jump family (JALR): the
+    `execRowOf`-family producer entry's `pc` is the committed next-row column,
+    which the accepted trace's in-circuit `pcHandshakeBetween` transition
+    certificate (`mainTransition_to_next_pc`) composed with the within-segment
+    fixed-column fact (`trace.mainTable_fixed.segment_l1_succ`) and the set-PC
+    decode pins (`set_pc = 1`, `flag = 0`) equates to the *in-row target* mux
+    value `c_0 i + jmp_offset1 i` (via `pc_handshake_setpc`).
+
+    Like its flag-path sibling, the conclusion is left at the field-level
+    `c_0 + jmp_offset1` (cast through `register_type_pc_equiv`). Unlike the
+    sequential / flag-path families, the per-op caller can **not** finish from
+    a decode pin alone: JALR's `c_0` is the Binary-SM `OP_AND` output
+    `mask &&& (rs1 + signExtend imm)`, whose value derivation (operand bridge
+    `b = rs1 + imm` via the `lastc`/previous-`OP_ADD` row, `a = mask` row-shape
+    pins, the AND value-correctness, and the masked field↔BitVec cast) is the
+    remaining #100 obligation — see the file-level note. This lemma supplies
+    the *mechanism* half (transition certificate → `c_0 + jmp_offset1`);
+    sourcing `c_0`'s value is the substantive piece still owed. Kernel-only,
+    like its siblings. -/
+theorem setpc_path_nextPC_discharged
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_idx : i.val + 1 < trace.mainTable.table.length)
+    (h_set_pc :
+      (mainOfTable trace.program trace.mainTable).set_pc i.val = 1)
+    (h_flag :
+      (mainOfTable trace.program trace.mainTable).flag i.val = 0) :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64
+          ((execRowOf trace i)[1]!.pc).val))
+      = BitVec.ofNat 64
+          (((mainOfTable trace.program trace.mainTable).c_0 i.val
+            + (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val) := by
+  -- (1) The producer entry's pc is the committed next-row pc column (structural).
+  have h_pc1 :
+      (execRowOf trace i)[1]!.pc
+        = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
+  -- (2) Transition certificate + within-segment fixed-column fact.
+  have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx
+  have h_hand :=
+    ZiskFv.Compliance.AcceptedZiskTrace.mainTransition_to_next_pc trace i.val h_idx h_seg
+  -- (3) The set-PC decode pins collapse the mux to the in-row target
+  --     `c_0 i + jmp_offset1 i` (via `pc_handshake_setpc`, set_pc = 1, flag = 0).
+  have h_step :
+      (mainOfTable trace.program trace.mainTable).pc (i.val + 1)
+        = (mainOfTable trace.program trace.mainTable).c_0 i.val
+          + (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val :=
+    pc_handshake_setpc (mainOfTable trace.program trace.mainTable) i.val
       ((mainOfTable trace.program trace.mainTable).pc (i.val + 1)) h_set_pc h_flag h_hand
   -- (4) Substitute; the `register_type_pc_equiv ▸ …` cast is defeq-identity.
   rw [h_pc1, h_step]

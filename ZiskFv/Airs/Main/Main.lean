@@ -297,6 +297,27 @@ lemma pc_handshake_jump
   rw [h_set_pc, h_flag] at h
   linear_combination h
 
+/-- Specialized PC handshake for the **set-PC jump** family (JALR):
+    `set_pc = 1` and `flag = 0`. The handshake collapses to
+    `next_pc = c_0 + jmp_offset1` (the in-row target path: the next-row pc is
+    the row's own `c_0` output offset by `jmp_offset1`). Sibling of
+    `pc_handshake_jump`; with `set_pc = 1` the `(1 - set_pc)` sequential term
+    vanishes, and with `flag = 0` the `flag * (jmp_offset1 - jmp_offset2)`
+    term vanishes. Used by the #100 set-PC next-PC discharge
+    (`Pilot.setpc_path_nextPC_discharged`); mirrors the abstract
+    `ZiskCircuit.Jalr.jalr_pc_advance` but consumes only the bare
+    `pc_handshake_with_next_pc` + the two decode pins (no bundled mode
+    witnesses), so it composes directly with the transition certificate. -/
+lemma pc_handshake_setpc
+    (v : Valid_Main F ExtF) (row : ℕ) (next_pc : F)
+    (h_set_pc : v.set_pc row = 1)
+    (h_flag : v.flag row = 0)
+    (h : pc_handshake_with_next_pc v row next_pc) :
+    next_pc = v.c_0 row + v.jmp_offset1 row := by
+  simp only [pc_handshake_with_next_pc] at h
+  rw [h_set_pc, h_flag] at h
+  linear_combination h
+
 /-- If the final row routes `b` from source-C and the non-segment lane-0
     source-C constraint holds, then `b[0]` is the previous row's `c[0]`.
     This is the Lean-side `lastc` bridge used by production unaligned
