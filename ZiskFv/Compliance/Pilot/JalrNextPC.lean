@@ -42,6 +42,46 @@ open ZiskFv.AirsClean.FullEnsemble (mainOfTable)
 open Interaction
 open ZiskFv.Trusted
 
+/-- **Bit-0 commutation (aligned JALR).**  Clearing bit 0 commutes with adding an
+    even offset: `(mask &&& x) + off = mask &&& (x + off)` for `mask = 0xFF…FE`
+    whenever `off`'s bit 0 is zero.  This is the BitVec identity underlying the
+    aligned JALR lowering, where the circuit commits `(mask &&& rs1) + imm`
+    (`imm` even, `imm % 4 == 0`) and Sail commits `mask &&& (rs1 + imm)`.  The
+    evenness is load-bearing — the identity is false for odd `off` — and is
+    exactly the `imm % 4 == 0` guard the Rust lowerer (`riscv2zisk_context.rs::jalr`)
+    uses to select the aligned one-row form.
+
+    Proven from the bit-0 partition `z = (mask &&& z) + (1 &&& z)` (disjoint OR is
+    BitVec addition) plus `1 &&& (x + off) = 1 &&& x` under `off`-even — no
+    `bv_decide` / `native_decide`, so no `trustCompiler` axiom. -/
+theorem masked_add_offset_even (x off : BitVec 64) (h_even : off &&& 1#64 = 0#64) :
+    (0xFFFFFFFFFFFFFFFE#64 &&& x) + off = 0xFFFFFFFFFFFFFFFE#64 &&& (x + off) := by
+  have partition : ∀ z : BitVec 64,
+      (0xFFFFFFFFFFFFFFFE#64 &&& z) + (1#64 &&& z) = z := by
+    intro z
+    have hdisj : (0xFFFFFFFFFFFFFFFE#64 &&& z) &&& (1#64 &&& z) = 0#64 := by
+      rw [show (0xFFFFFFFFFFFFFFFE#64 &&& z) &&& (1#64 &&& z)
+            = (0xFFFFFFFFFFFFFFFE#64 &&& 1#64) &&& z from by ac_rfl,
+          show (0xFFFFFFFFFFFFFFFE#64 &&& 1#64) = 0#64 from by decide]
+      simp
+    rw [BitVec.add_eq_or_of_and_eq_zero _ _ hdisj, ← BitVec.and_or_distrib_right,
+        show (0xFFFFFFFFFFFFFFFE#64 ||| 1#64) = BitVec.allOnes 64 from by decide,
+        BitVec.allOnes_and]
+  have hmask : ∀ z : BitVec 64, 0xFFFFFFFFFFFFFFFE#64 &&& z = z - (1#64 &&& z) :=
+    fun z => eq_sub_of_add_eq (partition z)
+  have hbit : 1#64 &&& (x + off) = 1#64 &&& x := by
+    have hoff2 : off.toNat % 2 = 0 := by
+      have h := congrArg BitVec.toNat h_even
+      rw [BitVec.toNat_and, show (1#64).toNat = 1 from rfl, Nat.land_comm,
+          Nat.one_and_eq_mod_two, BitVec.toNat_zero] at h
+      exact h
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, BitVec.toNat_and, BitVec.toNat_add,
+        show (1#64).toNat = 1 from rfl, Nat.one_and_eq_mod_two, Nat.one_and_eq_mod_two]
+    omega
+  rw [hmask x, hmask (x + off), hbit]
+  ring
+
 /-- **JALR lo-lane AND value (`c_1 = 0`).**  On the final `OP_AND` row, with the
     Binary-SM byte witnesses (`h_matches`), the Main/Binary `c`-lane match
     (`h_match_clo`/`h_match_chi`), and the operand bridges
@@ -120,22 +160,21 @@ theorem jalr_c0_val_eq_masked_operand
 /-- **JALR set-PC next-PC discharge (#100), unified over both lowerings.**
     Composes the set-PC handshake mechanism (`setpc_path_nextPC_discharged`,
     `next_pc = c_0 + jmp_offset1`) with the lo-lane AND value
-    (`jalr_c0_val_eq_masked_operand`) and the wide-PC offset cast
-    (`ofNat_fgl_pc_plus_offset_eq`) to derive the committed next-row PC's BitVec
-    image as `(mask &&& operand) + offset_bv` — the set-PC handshake's
-    `c_0 + jmp_offset1` in BitVec form.
+    (`jalr_c0_val_eq_masked_operand`), the wide-PC offset cast
+    (`ofNat_fgl_pc_plus_offset_eq`), and the bit-0 commutation
+    (`masked_add_offset_even`) to derive the committed next-row PC's BitVec image
+    as the masked AND jump target `mask &&& (operand + offset_bv)`.
 
     Both ZisK JALR lowerings instantiate this with `operand := binaryRowB64 row`
     (the final `OP_AND` `b` operand) and `offset_bv := jmp_offset1`'s BitVec:
     aligned `(operand = rs1, offset_bv = signExtend imm)` and unaligned
-    `(operand = rs1 + signExtend imm, offset_bv = 0)`.  The caller closes the
-    discharge by identifying `(mask &&& operand) + offset_bv` with Sail's
-    `nextPC = mask &&& (rs1_val + signExtend 64 imm)`:
-    * unaligned (`offset_bv = 0`): `(mask &&& operand) + 0 = mask &&& operand` with
-      `operand = rs1 + signExtend imm` — definitional;
-    * aligned (`operand = rs1`, `offset_bv = signExtend imm`, `imm % 4 = 0` so
-      `offset_bv` even): the bit-0 commutation
-      `(mask &&& rs1) + off = mask &&& (rs1 + off)` for even `off`.
+    `(operand = rs1 + signExtend imm, offset_bv = 0)`.  In both,
+    `operand + offset_bv = rs1_val + signExtend 64 imm`, so the conclusion
+    `mask &&& (operand + offset_bv)` is exactly Sail's
+    `nextPC = mask &&& (rs1_val + signExtend 64 imm)` — the caller closes the
+    discharge with that single per-lowering BitVec identity.  `h_offset_even`
+    (`jmp_offset1` even) is the aligned `imm % 4 == 0` ROM guard; it holds
+    trivially in the unaligned case (`offset_bv = 0`).
 
     No cross-world next-PC promise; every input is a same-world circuit witness,
     scope pin (`h_c1_zero`, `h_no_fgl_wrap`), or decode/ROM pin. -/
@@ -168,12 +207,13 @@ theorem jalr_setpc_nextPC_discharged
     (h_offset_bridge :
       ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val
         = offset_bv.toNat)
+    (h_offset_even : offset_bv &&& 1#64 = 0#64)
     (h_no_fgl_wrap :
       ((mainOfTable trace.program trace.mainTable).c_0 i.val).val
         + ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val < GL_prime) :
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64 ((execRowOf trace i)[1]!.pc).val))
-      = (0xFFFFFFFFFFFFFFFE#64 &&& operand) + offset_bv := by
+      = 0xFFFFFFFFFFFFFFFE#64 &&& (operand + offset_bv) := by
   have h_c0 :
       ((mainOfTable trace.program trace.mainTable).c_0 i.val).val
         = (0xFFFFFFFFFFFFFFFE#64 &&& operand).toNat :=
@@ -181,6 +221,7 @@ theorem jalr_setpc_nextPC_discharged
       h_a_mask h_b_operand hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7 h_c1_zero
   rw [setpc_path_nextPC_discharged trace i h_idx h_set_pc h_flag,
       ofNat_fgl_pc_plus_offset_eq _ _ (0xFFFFFFFFFFFFFFFE#64 &&& operand) offset_bv
-        h_c0 h_offset_bridge h_no_fgl_wrap]
+        h_c0 h_offset_bridge h_no_fgl_wrap,
+      masked_add_offset_even operand offset_bv h_offset_even]
 
 end ZiskFv.Compliance.Pilot
