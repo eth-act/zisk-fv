@@ -2,6 +2,19 @@ Stream: #111 — discharge `aeneasBridgeTrust` from the real Aeneas extraction.
 Branch: aeneas-bridge-111 (off origin/main @ 6ffb31e5).
 Plan: docs/ai/plan/PLAN_AENEAS_BRIDGE_111.md   Issue: eth-act/zisk-fv#111
 
+=== REVIEW FIX (2026-06-27, commit 7d70c908) — dispatcher-level pins ===
+External review of PR #160 flagged that the per-opcode static pins were proven about the BUILDER
+ENTRY POINTS, not the top-level DISPATCHER. FIXED: new Extraction/Dispatch.lean adds
+<op>_dispatch_static_pins + <op>_dispatch_extracted_rowMode_pins for ALL 63 opcodes (126 thms)
+through riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input, each stating the
+exact routing side-condition and reducing to the kept entry-point lemma. Side-conds: ADD needs
+input_precompile=none & rd/rs1/rs2≠0; OR needs rs1/rs2≠0; ADDI needs rd≠0&imm≠0&rs1≠0; ADDIW rd≠0;
+XORI/ORI rs1≠0; AUIPC/JAL/JALR row store_pc=true needs nonzero-rd; rest unconditional. Also P2a:
+copyb_static_pins now exposes m32=false (all 5 pins) + copyb_extracted_rowMode_pins. Docstrings
+(aggregator + LoadStore) updated. Axioms clean ({propext,Classical.choice,Quot.sound}); full build
+green (9013 jobs); V1+V2 gates pass. NOTE: trust/trusted-base.md + zisk submodule were already
+dirty (prior #111 work) — NOT included in this commit.
+
 === FINAL STATE (plan complete, in-scope) ===
 DRAFT PR: eth-act/zisk-fv#160 (open, draft — CI validates the populate path).
 DONE: all 63 RV64IM static decode pins proven IN-BUILD from the real Aeneas lowering, kernel-sound
