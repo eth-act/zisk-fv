@@ -81,13 +81,13 @@ theorem stepStrong_sub
       LeanRV64D.Functions.execute
         (instruction.RTYPE (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, rop.SUB))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busSub trace i d.toClaim.execRow
+  let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
     main_request_sub_provided
@@ -128,10 +128,19 @@ theorem stepStrong_sub
       input_r2_eq := d.toInputs.h_input_r2,
       input_rd_eq := d.toInputs.h_input_rd,
       input_pc_eq := d.toInputs.h_input_pc,
-      exec_len := d.toDecode.h_exec_len,
-      e0_mult := d.toDecode.h_e0_mult,
-      e1_mult := d.toDecode.h_e1_mult,
-      nextPC_matches := d.toInputs.h_nextPC_matches,
+      -- exec artifacts: now `rfl` (`Pilot.execRowOf` is a concrete two-entry list
+      -- with the expected length / multiplicities).
+      exec_len := by rfl,
+      e0_mult := by rfl,
+      e1_mult := by rfl,
+      -- #100: the cross-world next-PC residual is DERIVED here from the accepted
+      -- trace's in-circuit `pcHandshakeBetween` transition certificate, not
+      -- carried as a caller-supplied promise.
+      nextPC_matches :=
+        Pilot.sub_nextPC_discharged trace binding i d.toInputs.sub_input
+          d.toDecode.h_idx d.toDecode.h_fixed
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound,
       m0_mult := by rfl,
       m0_as := by rfl,
       m1_mult := by rfl,

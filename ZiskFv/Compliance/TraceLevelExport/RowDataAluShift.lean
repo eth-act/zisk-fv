@@ -21,6 +21,7 @@ import ZiskFv.Compliance.ConstructionJump
 import ZiskFv.Compliance
 import ZiskFv.Compliance.Defects
 import ZiskFv.Compliance.TraceLevelExport.Base
+import ZiskFv.Compliance.Pilot.SubNextPC
 
 namespace ZiskFv.Compliance
 
@@ -41,11 +42,18 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
+-- #100 trace-derived SUB: `execRow` is no longer a free `Claim` binder; the SUB
+-- arm pins it to the committed-trace `Pilot.execRowOf trace i` (whose producer
+-- entry's `pc` reads the next-row Main `pc` column).  The three exec artifacts
+-- (`h_exec_len`/`h_e0_mult`/`h_e1_mult`) thereby become `rfl` and are dropped;
+-- in their place `Decode_sub` carries the in-circuit transition inputs
+-- (`h_idx`/`h_fixed` + the R-type/SUB decode pins `h_set_pc`/`h_jmp1`/`h_jmp2`)
+-- that `Pilot.sub_nextPC_discharged` consumes to DERIVE the (removed) cross-world
+-- `h_nextPC_matches` from the accepted trace's `transitions_hold` certificate.
 structure Claim_sub (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   r1 : regidx
   r2 : regidx
   rd : regidx
-  execRow : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_sub (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sub trace i) : Type where
@@ -61,9 +69,22 @@ structure Decode_sub (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  -- transition inputs (replace the removed exec artifacts; all sailTrace-free
+  -- rowDecode-class facts): the next row exists, the `SEGMENT_L1` fixed column,
+  -- and the SUB/R-type decode pins `set_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`
+  -- (Rust lowerer `create_register_op(…, "sub", 4)` → `zib.j(4,4)`, no `set_pc()`;
+  -- cf. `RowShape/Contract.lean` SUB arm, `main.pil:150-152`).
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_fixed : MainTableGeneratedFixedColumnFacts trace.program trace.mainTable
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
+      i.val = 0
+  h_jmp1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = 4
+  h_jmp2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = 4
 
 structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sub trace i) : Type where
@@ -96,13 +117,18 @@ structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
-      = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+  -- #100: the JAL/AUIPC-style PC provenance bridge + no-wrap bound (the same
+  -- shapes `Inputs_jal`/`Inputs_jalr` already carry).  `Pilot.sub_nextPC_discharged`
+  -- consumes these — together with the `Decode_sub` transition inputs — to DERIVE
+  -- the (now-removed) cross-world `h_nextPC_matches` from the in-circuit
+  -- `pcHandshakeBetween` transition certificate, rather than asserting it.
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = sub_input.PC.toNat
+  h_pc_bound : sub_input.PC.toNat < GL_prime - 4
   h_rd_idx :
     sub_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `sub` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sub` bundles them. -/
