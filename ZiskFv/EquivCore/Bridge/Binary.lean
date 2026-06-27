@@ -2970,6 +2970,193 @@ lemma input_r2_packed_b_row
   rw [h_b0_val, h_b1_val]
   ring
 
+/-- **Main `a`-lane packing from the op-bus match (m32 = 0), register-read-free.**
+    Companion of `input_r1_packed_a_row`, but the operand is sourced directly from
+    the committed Main `a_0`/`a_1` columns (NOT a register read): the Main `a`-lane
+    value `a_0 + a_1 · 2^32` agrees with the Binary provider row's packed 8-byte
+    `a` value (the body of `binaryRowA64`).  JALR's constant-mask `a`-lane needs
+    exactly this register-free projection.  Pure lane projection: no operation
+    semantics, so `op_val` stays generic. -/
+lemma main_a_packing_of_match
+    {op_val : ℕ}
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ)
+    (h_matches : all_byte_matches_wf_at_row row op_val)
+    (h_m32 : m.m32 r_main = 0)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296)
+      = BitVec.ofNat 64
+          (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+            + row.aBytes.free_in_a_2.val * 65536 + row.aBytes.free_in_a_3.val * 16777216
+            + row.aBytes.free_in_a_4.val * 4294967296
+            + row.aBytes.free_in_a_5.val * 1099511627776
+            + row.aBytes.free_in_a_6.val * 281474976710656
+            + row.aBytes.free_in_a_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨ha0, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨ha1, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨ha2, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨ha3, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨ha4, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨ha5, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨ha6, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨ha7, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  have h_match' : matches_entry (opBus_row_Main m r_main)
+      (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_match'
+  rw [h_m32] at h_a_hi_m
+  simp only [one_sub_zero_mul] at h_a_hi_m
+  have h_a0_val : (m.a_0 r_main).val =
+      row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+      + row.aBytes.free_in_a_2.val * 65536 + row.aBytes.free_in_a_3.val * 16777216 := by
+    rw [h_a_lo_m]
+    have h_cast :
+        row.aBytes.free_in_a_0 + 256 * row.aBytes.free_in_a_1
+          + 65536 * row.aBytes.free_in_a_2 + 16777216 * row.aBytes.free_in_a_3
+        = (((row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+              + row.aBytes.free_in_a_2.val * 65536
+              + row.aBytes.free_in_a_3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]; apply Nat.mod_eq_of_lt; omega
+  have h_a1_val : (m.a_1 r_main).val =
+      row.aBytes.free_in_a_4.val + row.aBytes.free_in_a_5.val * 256
+      + row.aBytes.free_in_a_6.val * 65536 + row.aBytes.free_in_a_7.val * 16777216 := by
+    rw [h_a_hi_m]
+    have h_cast :
+        row.aBytes.free_in_a_4 + 256 * row.aBytes.free_in_a_5
+          + 65536 * row.aBytes.free_in_a_6 + 16777216 * row.aBytes.free_in_a_7
+        = (((row.aBytes.free_in_a_4.val + row.aBytes.free_in_a_5.val * 256
+              + row.aBytes.free_in_a_6.val * 65536
+              + row.aBytes.free_in_a_7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]; apply Nat.mod_eq_of_lt; omega
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_a0_val, h_a1_val]; ring
+
+/-- **Main `b`-lane packing from the op-bus match (m32 = 0), register-read-free.**
+    `b`-lane sibling of `main_a_packing_of_match`: the Main `b_0`/`b_1` columns
+    pack to the Binary provider row's packed 8-byte `b` value (`binaryRowB64`).
+    JALR's `b`-lane is `rs1` (aligned) or `rs1 + sext imm` via `lastc`
+    (unaligned); in both, this projection identifies the committed `b` columns
+    with the row's `b` operand without a register read. -/
+lemma main_b_packing_of_match
+    {op_val : ℕ}
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ)
+    (h_matches : all_byte_matches_wf_at_row row op_val)
+    (h_m32 : m.m32 r_main = 0)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)
+      = BitVec.ofNat 64
+          (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+            + row.bBytes.free_in_b_2.val * 65536 + row.bBytes.free_in_b_3.val * 16777216
+            + row.bBytes.free_in_b_4.val * 4294967296
+            + row.bBytes.free_in_b_5.val * 1099511627776
+            + row.bBytes.free_in_b_6.val * 281474976710656
+            + row.bBytes.free_in_b_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, hb0, _⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, hb1, _⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, hb2, _⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, hb3, _⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, hb4, _⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, hb5, _⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, hb6, _⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, hb7, _⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  have h_match' : matches_entry (opBus_row_Main m r_main)
+      (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match'
+  rw [h_m32] at h_b_hi_m
+  simp only [one_sub_zero_mul] at h_b_hi_m
+  have h_b0_val : (m.b_0 r_main).val =
+      row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+      + row.bBytes.free_in_b_2.val * 65536 + row.bBytes.free_in_b_3.val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+          + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+        = (((row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+              + row.bBytes.free_in_b_2.val * 65536
+              + row.bBytes.free_in_b_3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]; apply Nat.mod_eq_of_lt; omega
+  have h_b1_val : (m.b_1 r_main).val =
+      row.bBytes.free_in_b_4.val + row.bBytes.free_in_b_5.val * 256
+      + row.bBytes.free_in_b_6.val * 65536 + row.bBytes.free_in_b_7.val * 16777216 := by
+    rw [h_b_hi_m]
+    have h_cast :
+        row.bBytes.free_in_b_4 + 256 * row.bBytes.free_in_b_5
+          + 65536 * row.bBytes.free_in_b_6 + 16777216 * row.bBytes.free_in_b_7
+        = (((row.bBytes.free_in_b_4.val + row.bBytes.free_in_b_5.val * 256
+              + row.bBytes.free_in_b_6.val * 65536
+              + row.bBytes.free_in_b_7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]; apply Nat.mod_eq_of_lt; omega
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_b0_val, h_b1_val]; ring
+
+/-- **Main `c`-lane carry-free projection from the op-bus match (flag = 0).**
+    The Binary op-bus `c_lo` lane carries a `+ carry_7` rebase summand
+    (`binary.pil:154`) and the bus `flag` lane *is* `carry_7`.  For JALR's
+    `OP_AND` row the Main `flag` column is `0` (a genuine decode pin), so the
+    matched `flag` lane pins `carry_7 = 0`, and both `c` lanes reduce to the
+    plain packed-byte form (no carry) that `jalr_c0_val_eq_masked_operand`
+    consumes. -/
+lemma main_c_lanes_carryfree_of_match
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
+    (h_flag : m.flag r_main = 0) :
+    (m.c_0 r_main = row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+        + row.cBytes.free_in_c_2 * 65536 + row.cBytes.free_in_c_3 * 16777216)
+    ∧ (m.c_1 r_main = row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+        + row.cBytes.free_in_c_6 * 65536 + row.cBytes.free_in_c_7 * 16777216) := by
+  have h_match' : matches_entry (opBus_row_Main m r_main)
+      (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, h_flag_m, _, _, _⟩ := h_match'
+  have h_carry7 : row.chain.carry_7 = 0 := h_flag_m.symm.trans h_flag
+  refine ⟨?_, ?_⟩
+  · rw [h_c_lo_m, h_carry7]; ring
+  · rw [h_c_hi_m]; ring
+
+/-- **Row `c`-byte ranges from the op-bus byte matches.**  Each of the 8 `c`-bytes
+    of a matched Binary row is `< 256` (the table `range_conditions`).  Extracted
+    directly from `all_byte_matches_wf_at_row` as a plain (non-dependent) tuple,
+    so callers avoid projecting the `validOfRow`-typed `BinaryChainStaticOut64`
+    fields (which force a costly `whnf` of the provider row). -/
+lemma cByte_ranges_of_all_byte_matches_row
+    {op_val : ℕ}
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches : all_byte_matches_wf_at_row row op_val) :
+    row.cBytes.free_in_c_0.val < 256 ∧ row.cBytes.free_in_c_1.val < 256
+    ∧ row.cBytes.free_in_c_2.val < 256 ∧ row.cBytes.free_in_c_3.val < 256
+    ∧ row.cBytes.free_in_c_4.val < 256 ∧ row.cBytes.free_in_c_5.val < 256
+    ∧ row.cBytes.free_in_c_6.val < 256 ∧ row.cBytes.free_in_c_7.val < 256 := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, _, hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, _, hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, _, hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, _, hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, _, hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, _, hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  exact ⟨hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩
+
 open ZiskFv.EquivCore.Bridge.SailStateBridge in
 /-- Row-native 32-bit (W-mode) `input_r1` binding for the **m32 = 1** case.
 

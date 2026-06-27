@@ -665,7 +665,7 @@ def StepSound
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (c.imm, c.rs1, c.rd))) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨c.execRow, [eRdLui ziskTrace i]⟩ (sailTrace i)
+          ⟨Pilot.execRowOf ziskTrace i, [eRdLui ziskTrace i]⟩ (sailTrace i)
   | .sb c =>
       execute_instruction (instruction.STORE
           (c.sb_input.imm, regidx.Regidx c.sb_input.r2, regidx.Regidx c.sb_input.r1, 1))

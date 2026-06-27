@@ -25,6 +25,7 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 import ZiskFv.Compliance.TraceLevelExport.EnvOf
+import ZiskFv.Compliance.Pilot.JalrNextPC
 
 namespace ZiskFv.Compliance
 
@@ -641,7 +642,7 @@ theorem stepStrong_jalr
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.JALR (d.toClaim.imm, d.toClaim.rs1, d.toClaim.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.execRow, [eRdLui trace i]⟩ (binding i) := by
+          ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let e_rd := eRdLui trace i
@@ -678,26 +679,127 @@ theorem stepStrong_jalr
       rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
+  -- (b) Binary `OP_AND` provider witnesses for the JALR row (mirrors
+  --     `stepStrong_and`): the static Binary table row backing the masked-AND.
+  obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+      h_component, h_table_spec, h_match⟩ :=
+    main_request_logic_provided
+      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
+  let providerInput :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_static :
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
+  have h_emit :
+      providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_AND : FGL) := by
+    have h_match_op := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_op
+    have h_op_match :
+        m.op i.val = providerInput.chain.b_op + 16 * providerInput.mode.mode32 :=
+      h_match_op.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_AND, ZiskFv.Trusted.OP_AND] using
+      d.toDecode.h_main_op
+  obtain ⟨h_row_m32, h_bop, _⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_AND (by
+        simp [ZiskFv.Airs.Tables.BinaryTable.OP_AND])
+      h_core h_emit
+  have h_out :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+      providerInput h_facts
+      ZiskFv.Airs.Tables.BinaryTable.OP_AND h_core h_row_m32 h_bop
+  have h_matches :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+        providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
+    allByteMatchesOfStaticOut64_local h_out
+  -- (c) lane projections: `a = mask`, `b = operand` (committed `b`-lane packing),
+  --     and the carry-free `c` lanes (from `flag = 0`).
+  have h_a_mask :
+      ZiskFv.EquivCore.Add.binaryRowA64 providerInput = 0xFFFFFFFFFFFFFFFE#64 := by
+    have h_a_pack : ZiskFv.EquivCore.Add.binaryRowA64 providerInput
+        = BitVec.ofNat 64 ((m.a_0 i.val).val + (m.a_1 i.val).val * 4294967296) := by
+      simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+        (ZiskFv.EquivCore.Bridge.Binary.main_a_packing_of_match
+          m providerInput i.val h_matches h_m32_zero h_match).symm
+    rw [h_a_pack, d.toDecode.h_a_mask_lo, d.toDecode.h_a_mask_hi]
+    decide
+  have h_b_operand :
+      ZiskFv.EquivCore.Add.binaryRowB64 providerInput
+        = BitVec.ofNat 64 ((m.b_0 i.val).val + (m.b_1 i.val).val * 4294967296) := by
+    simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+      (ZiskFv.EquivCore.Bridge.Binary.main_b_packing_of_match
+        m providerInput i.val h_matches h_m32_zero h_match).symm
+  obtain ⟨h_match_clo, h_match_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.main_c_lanes_carryfree_of_match
+      m providerInput i.val h_match d.toDecode.h_flag
+  obtain ⟨hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.cByte_ranges_of_all_byte_matches_row
+      providerInput h_matches
+  -- (d) JALR's pre-mask target value `nextPC_val = mask &&& (rs1 + signExtend imm)`,
+  --     identified from `success = true` (the aligned/taken branch), as JAL does.
+  have h_target : d.toInputs.nextPC_val
+      = 0xFFFFFFFFFFFFFFFE#64 &&&
+          (d.toInputs.jalr_input.rs1_val + BitVec.signExtend 64 d.toInputs.jalr_input.imm) := by
+    have h_s : (BitVec.ofBool
+          (d.toInputs.jalr_input.rs1_val
+            + BitVec.signExtend 64 d.toInputs.jalr_input.imm)[1]! == 0#1) = true := by
+      have := d.toInputs.h_success
+      simpa [PureSpec.execute_JALR_pure] using this
+    have ho := d.toInputs.h_nextPC_option
+    simp only [PureSpec.execute_JALR_pure, h_s, Bool.not_true, Bool.false_eq_true,
+      if_false] at ho
+    exact (Option.some.inj ho).symm
+  -- (e) #100: the cross-world next-PC residual is DISCHARGED from the accepted
+  --     trace's in-circuit set-PC handshake composed with the masked-AND
+  --     target-value derivation (`jalr_setpc_nextPC_discharged`), then bridged to
+  --     Sail's `mask &&& (rs1 + signExtend imm)` via the per-lowering operand
+  --     identity (`h_operand_offset`) and the success-branch target (`h_target`).
+  have h_nextPC_disch :
+      (register_type_pc_equiv ▸
+          (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
+        = d.toInputs.nextPC_val := by
+    have hoo := d.toInputs.h_operand_offset
+    rw [← hm] at hoo
+    rw [ZiskFv.Compliance.Pilot.jalr_setpc_nextPC_discharged
+          trace i providerInput
+          (BitVec.ofNat 64 ((m.b_0 i.val).val + (m.b_1 i.val).val * 4294967296))
+          d.toClaim.offset_bv
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_flag
+          h_matches h_match_clo h_match_chi h_a_mask h_b_operand
+          hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+          d.toDecode.h_c1_zero d.toDecode.h_offset_bridge
+          d.toDecode.h_offset_even d.toDecode.h_no_fgl_wrap,
+        hoo, h_target]
   let promises : ZiskFv.EquivCore.Promises.JumpPromises
       state d.toInputs.jalr_input.PC d.toInputs.jalr_input.rd d.toInputs.misa_val
       (PureSpec.execute_JALR_pure d.toInputs.jalr_input).success
       (PureSpec.execute_JALR_pure d.toInputs.jalr_input).nextPC
-      d.toClaim.rd d.toClaim.execRow e_rd d.toInputs.nextPC_val :=
+      d.toClaim.rd (Pilot.execRowOf trace i) e_rd d.toInputs.nextPC_val :=
     { input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
       input_misa_eq := d.toInputs.h_input_misa
       misa_c_zero := d.toInputs.h_misa_c
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      -- exec artifacts: now `rfl` (`Pilot.execRowOf` is a concrete two-entry list).
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches := h_nextPC_disch
       rd_mult := by rfl
       rd_as := by rfl
       success := d.toInputs.h_success
       nextPC_option := d.toInputs.h_nextPC_option
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.jalr d.toInputs.jalr_input d.toClaim.imm d.toClaim.rs1 d.toClaim.rd d.toInputs.misa_val d.toInputs.mseccfg d.toClaim.execRow e_rd
+    OpEnvelope.jalr d.toInputs.jalr_input d.toClaim.imm d.toClaim.rs1 d.toClaim.rd d.toInputs.misa_val d.toInputs.mseccfg (Pilot.execRowOf trace i) e_rd
       d.toInputs.nextPC_val next_pc store_pc_mem pins d.toDecode.h_flag d.toDecode.h_m32 d.toDecode.h_set_pc d.toDecode.h_store_pc
       h_jalr_subset promises d.toInputs.h_input_imm d.toInputs.h_input_rs1 d.toInputs.h_cur_privilege d.toInputs.h_mseccfg
       d.toInputs.h_link_bridge d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32

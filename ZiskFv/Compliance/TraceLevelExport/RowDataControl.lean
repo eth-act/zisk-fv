@@ -508,7 +508,9 @@ structure Claim_jalr (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   imm : BitVec 12
   rs1 : regidx
   rd : regidx
-  execRow : List (Interaction.ExecutionBusEntry FGL)
+  -- #100: the `jmp_offset1` offset as a `BitVec 64` (aligned: `signExtend imm`;
+  -- unaligned: `0`). Bridged to the committed `jmp_offset1` column in `Decode`.
+  offset_bv : BitVec 64
 
 structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
@@ -530,9 +532,38 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
-  h_exec_len : c.execRow.length = 2
-  h_e0_mult : c.execRow[0]!.multiplicity = -1
-  h_e1_mult : c.execRow[1]!.multiplicity = 1
+  -- #100 next-PC transition inputs (replace the exec artifacts; the next-PC
+  -- residual is now DERIVED via `jalr_setpc_nextPC_discharged`). All are
+  -- same-world circuit / decode / ROM pins (no Sail-binding dependency).
+  --   * `h_idx`: the next Main row exists (cross-row boundary marker).
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  --   * mask `a`-lane pins (`JALR_MASK = 0xFFFFFFFFFFFFFFFE` loaded into `a`,
+  --     `riscv2zisk_context.rs::jalr` `src_a("imm", JALR_MASK)`):
+  --     `a_0 = 0xFFFFFFFE`, `a_1 = 0xFFFFFFFF`.
+  h_a_mask_lo :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0
+      i.val = 4294967294
+  h_a_mask_hi :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1
+      i.val = 4294967295
+  --   * the 32-bit-PC scope pin `c_1 = 0` (JALR analogue of JAL/AUIPC's
+  --     `h_pc_offset_lt_2_32`: the AND result's hi lane is dropped by the
+  --     set-PC handshake, so the jump must stay inside ZisK's 32-bit PC space).
+  h_c1_zero :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_1
+      i.val = 0
+  --   * the `jmp_offset1` field ↔ `offset_bv` bridge (unsigned-equal offset
+  --     contract, same shape AUIPC/JAL use) + the evenness ROM guard
+  --     (aligned `imm % 4 == 0` ⇒ `offset_bv` even; trivial for unaligned
+  --     `offset_bv = 0`) + the field-level no-FGL-wrap bound.
+  h_offset_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+        i.val).val = c.offset_bv.toNat
+  h_offset_even : c.offset_bv &&& 1#64 = 0#64
+  h_no_fgl_wrap :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0 i.val).val
+      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+          i.val).val < GL_prime
 
 structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
@@ -540,9 +571,20 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   misa_val : RegisterType Register.misa
   mseccfg : RegisterType Register.mseccfg
   nextPC_val : BitVec 64
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.execRow[1]!.pc).val))
-      = nextPC_val
+  -- #100: the per-lowering operand identity replacing the cross-world
+  -- `h_nextPC_matches`. The committed Main `b`-lane (`b_0 + b_1 · 2^32`) plus
+  -- `offset_bv` equals Sail's pre-mask target `rs1_val + signExtend 64 imm`:
+  --   * aligned   (`b = rs1`,        `offset_bv = signExtend imm`);
+  --   * unaligned (`b = rs1 + imm`,  `offset_bv = 0`).
+  -- A TRUE, satisfiable fact for a real JALR row in BOTH lowerings (the masking
+  -- itself is handled downstream by `jalr_setpc_nextPC_discharged`).
+  h_operand_offset :
+    BitVec.ofNat 64
+        (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
+          + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1
+              i.val).val * 4294967296)
+      + c.offset_bv
+      = jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm
   h_input_rd : jalr_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
