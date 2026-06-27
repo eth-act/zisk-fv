@@ -15,9 +15,32 @@ Status: MAKE-OR-BREAK PASSED — R1 is GO. Probe agent secured a SOUND concrete 
 off the real Riscv2ZiskContext lowerer with axioms = {propext, Classical.choice, Quot.sound} ONLY
 (no native_decide/ofReduceBool/trustCompiler/sorryAx). The ~16 numBits/Usize helpers re-prove
 soundly via the System.Platform.numBits_eq 32/64 split. A symbolic (arbitrary-input) version is
-compiling. NEXT: assemble ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean from the agent's
-verbatim deliverable (build recipe + sound helpers + LUI theorem), then wire the main lakefile
-`require aeneas` import. No R2/out-of-band fallback needed.
+compiling. No R2/out-of-band fallback needed.
+
+DELIVERED by probe (persisted in docs/ai/aeneas-proof-reference/{LuiPins,WorkingHelpers,AllHelpers}.lean):
+- SYMBOLIC `lui_static_pins` (arbitrary input): lui succeeds ⇒ inst has op=1(CopyB)/isExt=false/
+  m32=false/setPc=false/storePc=false. Axioms clean. Uses store_reg_pins + bind_eq_ok_imp helpers.
+- CONCRETE `lui_pins_concrete`. Axioms clean.
+- Sound helpers: setWidth-family via `rcases System.Platform.numBits_eq with h|h <;> rw [h] <;> decide`
+  (rw not subst — numBits is a constant); fixed-width facts via `decide`; shift via simp only. VERBATIM
+  in the reference files.
+- Per-theorem closure isolation CONFIRMED: importing RvCompleteness (full of native_decide lemmas)
+  does NOT taint a theorem whose own proof avoids them (collectAxioms is per-theorem).
+
+KNOWN HELPER GAP (Phase 2, register-source/store ops only): the cast/hcast-of-REGS_IN_MAIN_* variants
+(one_u64_not_lt_regs_from etc.) do NOT close via numBits_eq because numBits is hidden inside the
+`1#usize.bv` OfNat; need a value-level lemma `(1#usize).val = 1`. NOT needed for LUI/immediate ops.
+
+REMAINING WORK (labor, not risk — the hard proof is done + portable):
+1. 4.28 aeneas-world rebuild: vendor rc1 aeneas-lean (store 6yfihaq6.../hpw9azi...), patch require
+   mathlib → 8f9d9cff + toolchain → v4.28.0; get ProductionM2 to compile on 4.28 (may need
+   re-extraction under a2fcf/rc1 if the committed rc2 source is API-incompatible with rc1 aeneas).
+   TOOLCHAIN NOTE: the probe's proofs typecheck under v4.30.0-rc2 (the on-disk oleans are rc2); the
+   MAIN build is v4.28.0 — rc2 oleans can't be imported, hence the 4.28 rebuild.
+2. Extraction.lean (port LuiPins + mainExtractedRowOfZiskInst projection + 33 op-code lemmas).
+3. Phase 2 (63 ops per PHASE2_PER_OP_SPEC.md).
+4. Wiring swap (extractedRow := production output); RomImageBinding named residual.
+5. Boundary gates + verification + PR.
 
 Make-or-break finding (2026-06-26, no rebuild needed):
 - Import is GO and CHEAP: committed trust/aeneas/ProductionM2.lean is byte-identical to the
