@@ -1,4 +1,4 @@
-{ writeShellApplication, sail-lean-tree, zisk-pilout, extracted-lean, clean-source }:
+{ writeShellApplication, sail-lean-tree, zisk-pilout, extracted-lean, clean-source, aeneas-lean-source }:
 
 # Replaces docker/build-{sail-lean,zisk-lean}.sh. Copies the
 # Nix-built derivation outputs into the repo paths `lake build`
@@ -11,6 +11,9 @@
 #                                             MemGeneratedArtifact/bridge files
 #   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
+#   build/aeneas-lean/                      ← aeneas-lean-source (the
+#                                             patched Aeneas Lean runtime;
+#                                             eth-act/zisk-fv#158).
 #
 # After this, `lake build` and `nix run .#test` work the same as they
 # did under the old Docker pipeline.
@@ -74,6 +77,11 @@ EOF
     rm -rf build/clean-lean
     cp -rL --no-preserve=mode "${clean-source}" build/clean-lean
     chmod -R u+w build/clean-lean
+
+    echo "▶ build/aeneas-lean/ ← ${aeneas-lean-source}"
+    rm -rf build/aeneas-lean
+    cp -rL --no-preserve=mode "${aeneas-lean-source}" build/aeneas-lean
+    chmod -R u+w build/aeneas-lean
 
     echo "✅ build/ populated"
   '';

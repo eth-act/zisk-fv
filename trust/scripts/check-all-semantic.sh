@@ -54,24 +54,26 @@ run_witnesses() {
   return $ok
 }
 
-run "1/13 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
-run "2/13 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
-run "3/13 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
-run "4/13 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
-run "5/13 strong-export axiom closure (V2)" "$dir/check-strong-export-closure.sh"
-run "6/13 strong-export binders + forbidden types (V2)" "$dir/check-strong-export-binders.sh"
-run "7/13 consistency false probe rejected" reject_false_probe
-run "8/13 Sail memory timeline witness" \
+run "1/14 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
+run "2/14 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
+run "3/14 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
+run "4/14 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
+run "5/14 strong-export axiom closure (V2)" "$dir/check-strong-export-closure.sh"
+run "6/14 strong-export binders + forbidden types (V2)" "$dir/check-strong-export-binders.sh"
+run "7/14 consistency false probe rejected" reject_false_probe
+run "8/14 Sail memory timeline witness" \
   run_lean_no_sorry trust/consistency/load_byte_agreement_witness.lean
-run "9/13 memory timeline construction witness" \
+run "9/14 memory timeline construction witness" \
   run_lean_no_sorry trust/consistency/memory_timeline_construction_witness.lean
-run "10/13 memory prefix alignment witness" \
+run "10/14 memory prefix alignment witness" \
   run_lean_no_sorry trust/consistency/memory_prefix_alignment_witness.lean
-run "11/13 global ADD theorem instantiation" \
+run "11/14 global ADD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_add.lean
-run "12/13 global LD theorem instantiation" \
+run "12/14 global LD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_ld.lean
-run "13/13 Clean completeness witnesses" run_witnesses
+run "13/14 Clean completeness witnesses" run_witnesses
+run "14/14 Aeneas extraction-pin raw axiom closure (V2)" \
+  "$dir/check-extraction-closure.sh"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate (V2 semantic): ALL CHECKS PASSED."
