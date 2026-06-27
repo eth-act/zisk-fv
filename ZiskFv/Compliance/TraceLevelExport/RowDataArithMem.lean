@@ -131,7 +131,6 @@ structure Claim_addi (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   r1 : regidx
   rd : regidx
   imm : BitVec 12
-  execRow : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_addi (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type where
@@ -150,9 +149,13 @@ structure Decode_addi (trace : AcceptedZiskTrace numInstructions)
   h_set_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
-  h_exec_len : (busSub trace i c.execRow).exec_row.length = 2
-  h_e0_mult : (busSub trace i c.execRow).exec_row[0]!.multiplicity = -1
-  h_e1_mult : (busSub trace i c.execRow).exec_row[1]!.multiplicity = 1
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_jmp1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = 4
+  h_jmp2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = 4
 
 structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type where
@@ -176,13 +179,13 @@ structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_addi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val addi_input.imm
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((busSub trace i c.execRow).exec_row[1]!.pc).val))
-      = (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = addi_input.PC.toNat
+  h_pc_bound : addi_input.PC.toNat < GL_prime - 4
   h_rd_idx :
     addi_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i c.execRow).e2.ptr
+      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `addi` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addi` bundles them. -/
