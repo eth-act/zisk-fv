@@ -301,7 +301,6 @@ structure Claim_bltu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  exec_row : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
@@ -323,9 +322,11 @@ structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
-  h_exec_len : c.exec_row.length = 2
-  h_e0_mult : c.exec_row[0]!.multiplicity = -1
-  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+  -- #100 next-PC transition input (replaces the exec artifacts): the next row
+  -- exists. The taken-offset pin (`jmp_offset1 = signExtend imm`) and the no-wrap
+  -- bound live in `Inputs` (they reference `bltu_input`). `flag = comparison` is
+  -- DERIVED in `stepStrong_bltu` from the LTU Binary provider.
+  h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
@@ -339,9 +340,45 @@ structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_input_pc : (binding i).regs.get? Register.PC = .some bltu_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
-      = (PureSpec.execute_BLTU_pure bltu_input).nextPC
+  -- #100: operand-provenance lane bridges (the `a_0/a_1/b_0/b_1` Main columns
+  -- carry r1/r2 — same as SLT/SLTU), feeding the LTU flag derivation.
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r2))
+  -- #100: the taken-offset decode/ROM bridge (`jmp_offset1 = signExtend imm`),
+  -- the PC provenance bridge, the taken-target no-wrap bound, and the PC
+  -- trajectory bound. These replace the cross-world `h_nextPC_matches`, now
+  -- DERIVED via `Pilot.branch_nextPC_flag1_taken` + `branch_flag_ltu_provided`.
+  h_off_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+        i.val).val
+      = (BitVec.signExtend 64 bltu_input.imm).toNat
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = bltu_input.PC.toNat
+  h_no_wrap :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+          i.val).val
+      < GL_prime
+  h_pc_bound : bltu_input.PC.toNat < 18446744069414584321 - 4
   h_not_throws : (PureSpec.execute_BLTU_pure bltu_input).throws = false
   h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
 
@@ -365,7 +402,6 @@ structure Claim_bgeu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   imm : BitVec 13
   r1 : regidx
   r2 : regidx
-  exec_row : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where
@@ -387,9 +423,11 @@ structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
-  h_exec_len : c.exec_row.length = 2
-  h_e0_mult : c.exec_row[0]!.multiplicity = -1
-  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+  -- #100 next-PC transition input (replaces the exec artifacts): the next row
+  -- exists. BGEU is the `create_branch_op`-`neg` polarity (taken on `flag = 0`):
+  -- the taken offset rides on `jmp_offset2` (`Inputs`); `jmp_offset1 = 4` is the
+  -- fall-through side. `flag = comparison` is DERIVED in `stepStrong_bgeu`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where
@@ -403,9 +441,44 @@ structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_input_pc : (binding i).regs.get? Register.PC = .some bgeu_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
-      = (PureSpec.execute_BGEU_pure bgeu_input).nextPC
+  -- #100: operand-provenance lane bridges (feeding the LTU flag derivation).
+  h_a_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r1))
+  h_a_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r1))
+  h_b_lo_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r2))
+  h_b_hi_t :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin c.r2))
+  -- #100: the taken-offset decode/ROM bridge — for BGEU the taken offset rides
+  -- on `jmp_offset2` (the `flag = 0` side) — plus PC bridge / no-wrap / bound.
+  -- These replace `h_nextPC_matches`, now DERIVED via
+  -- `Pilot.branch_nextPC_flag0_taken` + `branch_flag_ltu_provided`.
+  h_off_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+        i.val).val
+      = (BitVec.signExtend 64 bgeu_input.imm).toNat
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = bgeu_input.PC.toNat
+  h_no_wrap :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+          i.val).val
+      < GL_prime
+  h_pc_bound : bgeu_input.PC.toNat < 18446744069414584321 - 4
   h_not_throws : (PureSpec.execute_BGEU_pure bgeu_input).throws = false
   h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
 

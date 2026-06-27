@@ -104,4 +104,22 @@ namespace PureSpec
         repeat rw [if_pos (by omega)]
         simp
 
+  /-- **BGEU next-PC under success.** Projects the pure-spec `nextPC` to the
+      clean Sail conditional `if (r1 <u r2) then PC + 4 else PC + signExtend imm`
+      (taken on `r1 ≥u r2`, i.e. `flag = 0`), valid once the taken branch did not
+      fault. Consumed by the #100 branch next-PC discharge (`stepStrong_bgeu`). -/
+  lemma execute_BGEU_pure_nextPC_of_success (bi : BgeuInput)
+      (h_success : (execute_BGEU_pure bi).success = true) :
+      (execute_BGEU_pure bi).nextPC
+        = if BitVec.ult bi.r1_val bi.r2_val
+          then bi.PC + 4#64
+          else bi.PC + BitVec.signExtend 64 bi.imm := by
+    have hult : BitVec.ult bi.r1_val bi.r2_val
+        = !(bi.r1_val.toNat ≥b bi.r2_val.toNat) := by
+      simp [BitVec.ult, ge_iff_le, ← decide_not, Nat.not_le]
+    rw [hult]
+    cases h : bi.r1_val.toNat ≥b bi.r2_val.toNat with
+    | false => simp [execute_BGEU_pure, h]
+    | true => simp_all [execute_BGEU_pure]
+
 end PureSpec

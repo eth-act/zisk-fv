@@ -107,4 +107,21 @@ namespace PureSpec
         repeat rw [if_pos (by omega)]
         simp
 
+  /-- **BLTU next-PC under success.** Projects the pure-spec `nextPC` to the
+      clean Sail conditional `if (r1 <u r2) then PC + signExtend imm else PC + 4`,
+      valid once the taken branch did not fault (`success = true` ⇒ `fails =
+      false`, so the `skip || fails` guard collapses to `skip`). Consumed by the
+      #100 branch next-PC discharge (`stepStrong_bltu`). -/
+  lemma execute_BLTU_pure_nextPC_of_success (bi : BltuInput)
+      (h_success : (execute_BLTU_pure bi).success = true) :
+      (execute_BLTU_pure bi).nextPC
+        = if BitVec.ult bi.r1_val bi.r2_val
+          then bi.PC + BitVec.signExtend 64 bi.imm
+          else bi.PC + 4#64 := by
+    simp only [show BitVec.ult bi.r1_val bi.r2_val
+        = (bi.r1_val.toNat <b bi.r2_val.toNat) from rfl]
+    cases h : bi.r1_val.toNat <b bi.r2_val.toNat with
+    | false => simp [execute_BLTU_pure, h]
+    | true => simp_all [execute_BLTU_pure]
+
 end PureSpec
