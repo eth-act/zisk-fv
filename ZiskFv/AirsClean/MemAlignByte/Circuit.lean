@@ -173,7 +173,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit :=
         ring }
 
 /-- MemAlignByte as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-- Project the generic Clean component `Spec` to the concrete
     MemAlignByte row `Spec`. -/

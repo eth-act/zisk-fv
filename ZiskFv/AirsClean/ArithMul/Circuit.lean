@@ -366,10 +366,10 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
       exact False.elim h_assumptions }
 
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-- Lookup-aware ArithMul component exposing `FullSpec`. -/
-def componentWithArithTable : Air.Flat.Component FGL := ⟨ circuitWithArithTable ⟩
+def componentWithArithTable : Air.Flat.Component FGL := { circuit := circuitWithArithTable }
 
 /-- The lookup-aware ArithMul circuit participates only in the operation bus. -/
 theorem circuitWithArithTable_channels :

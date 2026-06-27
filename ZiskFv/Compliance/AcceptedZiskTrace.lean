@@ -48,6 +48,14 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
+  /-- The Main AIR's cross-row PC-handshake transition constraint (`main.pil:409-410`) holds on every
+      consecutive Main-table row pair. This polynomial transition CANNOT be expressed by the single-row
+      Clean `Air.Flat` per-row `Constraints` (which is exactly why it was dropped from the per-row Spec);
+      it is declared on the Main component via `Air.Flat.Component.transition` and carried here as a
+      verifier-checked certificate, in the same epistemic class as `main_height` — a PIL-faithful,
+      constructible accepted-trace obligation. It consolidates the per-opcode cross-world
+      `h_nextPC_matches` promises into one in-circuit constraint. See `trust/trusted-base.md`. -/
+  transitions_hold : witness.TransitionConstraints
   /-- The Main execution table covers every instruction: any witness table with
       the Main component has a row for each instruction. This is the one genuine
       row-count assumption — the witness pins table count and component, but never

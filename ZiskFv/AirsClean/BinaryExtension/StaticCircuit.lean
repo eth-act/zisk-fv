@@ -570,9 +570,9 @@ def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit 
             (binaryExtensionTableRow i0).op_is_shift h7_op h7_byte h7_shift h7_opShift⟩
       · exact h_b0Range }
 
-def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
+def staticLookupComponent : Air.Flat.Component FGL := { circuit := staticLookupCircuit }
 
-def shiftStaticLookupComponent : Air.Flat.Component FGL := ⟨ shiftStaticLookupCircuit ⟩
+def shiftStaticLookupComponent : Air.Flat.Component FGL := { circuit := shiftStaticLookupCircuit }
 
 theorem staticLookupComponent_interactionsWith_opBus :
     staticLookupComponent.operations.interactionsWith OpBusChannel.toRaw =

@@ -292,7 +292,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
             (arithDivChainSum_zero c b hc hb hb_ne)) }
 
 /-- ArithDiv as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 set_option maxHeartbeats 1000000 in
 /-- The ArithDiv DIV carry-chain `Spec` for a row, derived **through the

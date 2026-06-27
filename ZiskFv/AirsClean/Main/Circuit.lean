@@ -172,7 +172,7 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
           h_jmp_offset2, h_store_pc, h_im_high_degree_2, h_segment_l1⟩ := h_input
         simp [h_b_0, h_b_1, h_c_0, h_c_1, h_flag, h_is_external_op, h_op] }
 
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-! ## Main with ROM + memory-bus consumer emissions -/
 
@@ -496,7 +496,7 @@ def circuitWithRomAndMemBus
 def componentWithRomAndMemBus
     (length : ℕ) (program : Program length) :
     Air.Flat.Component FGL :=
-  ⟨ circuitWithRomAndMemBus length program ⟩
+  { circuit := circuitWithRomAndMemBus length program }
 
 /-! ### Unified Main component for the full T7 ensemble -/
 
@@ -560,11 +560,23 @@ def circuitWithRomMemAndOpBus
     soundness := mainWithRomMemAndOpBus_soundness length program
     completeness := mainWithRomMemAndOpBus_completeness length program }
 
+/-- Two-row form of the Main PC-handshake (`main.pil:409-410`): `curr.pc` equals the previous row's
+    next-PC mux (gated by `curr.segment_l1`). This is the `Air.Flat.Component.transition` ZisK's Main
+    AIR enforces but the single-row per-row `Spec` drops. Definitionally the 2-row form of
+    `ZiskFv.AirsClean.Main.pc_handshake_at`. -/
+def pcHandshakeBetween (prev curr : MainRowWithRom FGL) : Prop :=
+  (1 - curr.core.segment_l1) *
+    (curr.core.pc -
+      (prev.core.set_pc * (prev.core.c_0 + prev.core.jmp_offset1)
+        + (1 - prev.core.set_pc) * (prev.core.pc + prev.core.jmp_offset2)
+        + prev.core.flag * (prev.core.jmp_offset1 - prev.core.jmp_offset2))) = 0
+
 /-- Unified Main component used by the T7 full ensemble. -/
 def componentWithRomMemAndOpBus
     (length : ℕ) (program : Program length) :
     Air.Flat.Component FGL :=
-  ⟨ circuitWithRomMemAndOpBus length program ⟩
+  { circuit := circuitWithRomMemAndOpBus length program
+    transition := pcHandshakeBetween }
 
 /-- Project the generic Clean component `Spec` for the unified
     ROM/memory/op-bus Main component to the concrete Main-row `Spec`. -/

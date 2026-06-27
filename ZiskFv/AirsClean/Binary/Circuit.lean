@@ -109,7 +109,7 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
       simp [binaryBOpOrSextOf, binaryMode32AndCIsSignedOf]
       ring_nf }
 
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 @[reducible]
 def lookupFlags012Row (row : BinaryRow FGL) (carry : FGL) : FGL :=
@@ -518,7 +518,7 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
               + 8 * boolF cIsSigned)
             (by simpa [sub_eq_add_neg] using h7_pos) h7_op rfl h7_flags⟩ }
 
-def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
+def staticLookupComponent : Air.Flat.Component FGL := { circuit := staticLookupCircuit }
 
 theorem staticLookupComponent_interactionsWith_opBus :
     staticLookupComponent.operations.interactionsWith OpBusChannel.toRaw =
