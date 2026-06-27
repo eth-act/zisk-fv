@@ -71,6 +71,10 @@
           inherit clean-src;
         };
 
+        packages.aeneas-lean-source = pkgs.callPackage ./nix/aeneas-lean.nix {
+          inherit aeneas;
+        };
+
         packages.pil2-compiler = pkgs.callPackage ./nix/pil2-compiler.nix {
           inherit pil2-compiler-src;
         };
@@ -93,9 +97,10 @@
             zisk-pilout = self.packages.${system}.zisk-pilout;
             extracted-lean = self.packages.${system}.extracted-lean;
             clean-source = self.packages.${system}.clean-source;
+            aeneas-lean-source = self.packages.${system}.aeneas-lean-source;
           }}/bin/populate";
           meta = {
-            description = "Build and copy the Sail-Lean spec, ZisK pilout, extracted Lean, and Clean source into build/.";
+            description = "Build and copy the Sail-Lean spec, ZisK pilout, extracted Lean, Clean source, and Aeneas runtime into build/.";
           };
         };
 
