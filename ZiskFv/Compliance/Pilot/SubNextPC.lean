@@ -96,12 +96,73 @@ lemma ofNat_fgl_pc_plus_4_eq
   rw [BitVec.toNat_ofNat, BitVec.toNat_add]
   norm_num
 
+/-- **General sequential next-PC discharge (#100).** Op-agnostic core: for ANY
+    sequential (non-jump) opcode — whose Sail `nextPC = PC + 4#64` — the
+    `busSub`-family producer entry's wide-PC cast equals `PC + 4#64`, derived from
+    the accepted trace's in-circuit `pcHandshakeBetween` transition certificate
+    (`mainTransition_to_next_pc`) composed with the within-segment fixed-column
+    fact (`trace.mainTable_fixed.segment_l1_succ`) and the register-type decode
+    pins (`set_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`).
+
+    This is the SUB pilot (`sub_nextPC_discharged`) lifted to a `PC : BitVec 64`
+    parameter and a bus-agnostic `PC + 4#64` conclusion.  Every busSub-family
+    sequential op discharges its `h_nextPC_matches` residual by applying this
+    lemma with `PC := <op>_input.PC` (the per-op Sail `nextPC = PC + 4#64` holds
+    by `rfl` from the pure-spec definition, so no extra input is needed).  Inputs
+    are exactly the SUB pilot's set minus the op-specific `sub_input`/`binding`. -/
+theorem sequential_nextPC_discharged
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (PC : BitVec 64)
+    (h_idx : i.val + 1 < trace.mainTable.table.length)
+    (h_set_pc :
+      (mainOfTable trace.program trace.mainTable).set_pc i.val = 0)
+    (h_jmp1 :
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4)
+    (h_jmp2 :
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4)
+    (h_pc_bridge :
+      ((mainOfTable trace.program trace.mainTable).pc i.val).val = PC.toNat)
+    (h_pc_bound : PC.toNat < 18446744069414584321 - 4) :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64
+          ((busSub trace i (execRowOf trace i)).exec_row[1]!.pc).val))
+      = PC + 4#64 := by
+  -- (1) The producer entry's pc is the committed next-row pc column (structural).
+  have h_pc1 :
+      (busSub trace i (execRowOf trace i)).exec_row[1]!.pc
+        = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
+  -- (2) Transition certificate + within-segment fixed-column fact.  The
+  -- `SEGMENT_L1 = [1,0,…]` shape is now read off the accepted trace's shared
+  -- `segment_l1_fixed` certificate (`trace.mainTable_fixed`), not a per-arm binder.
+  have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx
+  have h_hand :=
+    ZiskFv.Compliance.AcceptedZiskTrace.mainTransition_to_next_pc trace i.val h_idx h_seg
+  -- (3) Decode pins collapse the mux to `pc i + 4`.
+  have h_step :
+      (mainOfTable trace.program trace.mainTable).pc (i.val + 1)
+        = (mainOfTable trace.program trace.mainTable).pc i.val + 4 := by
+    have hb := pc_handshake_branch (mainOfTable trace.program trace.mainTable) i.val
+      ((mainOfTable trace.program trace.mainTable).pc (i.val + 1)) h_set_pc h_hand
+    rw [h_jmp1, h_jmp2] at hb
+    linear_combination hb
+  -- (4) Substitute and discharge the wide-PC cast.  The residual
+  -- `register_type_pc_equiv ▸ (PC + 4#64) = PC + 4#64` closes by `rfl` because the
+  -- cast (`RegisterType Register.PC = BitVec 64`) is defeq-identity.
+  rw [h_pc1, h_step,
+      ofNat_fgl_pc_plus_4_eq ((mainOfTable trace.program trace.mainTable).pc i.val)
+        PC h_pc_bridge h_pc_bound]
+
 /-- **Pilot SUB next-PC discharge.** From the accepted trace's transition
     certificate (`mainTransition_to_next_pc`), the within-segment fixed-column
     fact, the SUB/R-type decode pins, and the PC provenance bridge/bound, prove
     SUB's `h_nextPC_matches` residual *for the trace-derived exec row*
     `execRowOf trace i`. No `h_nextPC_matches` (or `pc (i+1) = …`, or
-    `exec_row[1].pc = …`) binder appears: the next-row PC is derived. -/
+    `exec_row[1].pc = …`) binder appears: the next-row PC is derived.
+
+    Now a thin wrapper of the general `sequential_nextPC_discharged`: SUB's Sail
+    `nextPC` unfolds to `sub_input.PC + 4#64` (defeq), so the general lemma's
+    `PC + 4#64` conclusion *is* `(execute_RTYPE_sub_pure sub_input).nextPC`. -/
 theorem sub_nextPC_discharged
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -121,32 +182,9 @@ theorem sub_nextPC_discharged
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64
           ((busSub trace i (execRowOf trace i)).exec_row[1]!.pc).val))
-      = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC := by
-  -- (1) The producer entry's pc is the committed next-row pc column (structural).
-  have h_pc1 :
-      (busSub trace i (execRowOf trace i)).exec_row[1]!.pc
-        = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
-  -- (2) Transition certificate + within-segment fixed-column fact.  The
-  -- `SEGMENT_L1 = [1,0,…]` shape is now read off the accepted trace's shared
-  -- `segment_l1_fixed` certificate (`trace.mainTable_fixed`), not a per-arm binder.
-  have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx
-  have h_hand :=
-    ZiskFv.Compliance.AcceptedZiskTrace.mainTransition_to_next_pc trace i.val h_idx h_seg
-  -- (3) Decode pins collapse the mux to `pc i + 4`.
-  have h_step :
-      (mainOfTable trace.program trace.mainTable).pc (i.val + 1)
-        = (mainOfTable trace.program trace.mainTable).pc i.val + 4 := by
-    have hb := pc_handshake_branch (mainOfTable trace.program trace.mainTable) i.val
-      ((mainOfTable trace.program trace.mainTable).pc (i.val + 1)) h_set_pc h_hand
-    rw [h_jmp1, h_jmp2] at hb
-    linear_combination hb
-  -- (4) Substitute and discharge the wide-PC cast.
-  rw [h_pc1, h_step,
-      ofNat_fgl_pc_plus_4_eq ((mainOfTable trace.program trace.mainTable).pc i.val)
-        sub_input.PC h_pc_bridge h_pc_bound]
-  -- `register_type_pc_equiv ▸ (PC + 4) = (execute_RTYPE_sub_pure sub_input).nextPC`:
-  -- the cast is defeq-identity and `nextPC` unfolds to `PC + 4#64`.
-  rfl
+      = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC :=
+  sequential_nextPC_discharged trace i sub_input.PC h_idx
+    h_set_pc h_jmp1 h_jmp2 h_pc_bridge h_pc_bound
 
 /-- **Bonus: SUB construction with the next-PC promise removed.** Restates the
     canonical SUB construction (`construction_sub_sound_claimed_dead`) at the
