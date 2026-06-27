@@ -42,6 +42,21 @@ REMAINING WORK (labor, not risk — the hard proof is done + portable):
 4. Wiring swap (extractedRow := production output); RomImageBinding named residual.
 5. Boundary gates + verification + PR.
 
+PHASE 0d / integration design (confirmed by reading the gates — LIGHTER than feared):
+- MIRROR THE CLEAN PATTERN: populate the 4.28-patched aeneas-lean runtime into gitignored
+  build/aeneas-lean (new nix step like clean.nix: cp -rL source + patch mathlib require → our rev +
+  lean-toolchain → v4.28.0), then `require aeneas from build/aeneas-lean` in lakefile.toml. Do NOT
+  commit the runtime.
+- ProductionM2 stays canonical at trust/aeneas/ProductionM2.lean (committed, as now); a lean_lib
+  points there OR Extraction.lean imports it.
+- check-locality.sh scans ZiskFv/ ONLY → the runtime's native_decide/sorry lemmas don't trip it.
+- check-no-checked-in-aeneas-artifacts.sh: build/ is gitignored + runtime has no .llbc/ProductionM* → OK.
+- check-aeneas-production-boundary.py is Rust-side (anti-parallel-lowerer) → unaffected by the import.
+- check-aeneas-generated-bridge-manifest.py: MAY need updating (the documentary cross-workspace link
+  becomes a real in-build import). Review when wiring.
+- LUI pilot Extraction.lean fully drafted at docs/ai/aeneas-proof-reference/Extraction.lean.draft.
+- Agent ad08fc2c (background) rebuilding aeneas+ProductionM2 on 4.28 = the current gate.
+
 Make-or-break finding (2026-06-26, no rebuild needed):
 - Import is GO and CHEAP: committed trust/aeneas/ProductionM2.lean is byte-identical to the
   on-disk extraction; a2fcf1923d validates (transitive charon ed22146b). No charon re-extraction
