@@ -148,11 +148,23 @@ Checklist:
       #print axioms for lui_static_pins AND lui_extracted_rowMode_pins = [propext, Classical.choice,
       Quot.sound]. CI repro depends on eth-act/zisk-fv#158 (populate provides build/aeneas-lean).
 - [ ] Phase 0d: update boundary gates; verify #eval LUI pins + no sorryAx on probe.
-- [ ] Phase 1 (MAKE-OR-BREAK): LUI sound-discharge tractability (progress/scalar_tac, no native_decide).
-      Spike 2026-06-19 found plain decide/rfl/simp = NO-GO. DECISION POINT here.
-- [ ] Phase 1: AeneasBridgeTrust/Extraction.lean + LUI pilot.
-- [ ] Phase 2: uniform static pins across 63 ops.
-- [ ] Wiring swap + verification + residual docs.
+- [x] Phase 1: AeneasBridgeTrust/Extraction.lean + LUI pilot (done in Phase 0c).
+- [x] Phase 2: uniform static pins across all 63 ops — DONE 2026-06-26 (commit 8433fe47).
+      Split Extraction.lean into Extraction/{Helpers,ControlUType,Branch,RegisterOp,Immediate,
+      LoadStore,Precompiled}.lean (all namespace ZiskFv.Compliance.Extraction; shared helpers in
+      Helpers ONCE: projection + frame/store/op_zisk/bind/i32/numBits). Each of the 63 RV64IM
+      opcodes gets <op>_static_pins (facts on zib.i) + <op>_extracted_rowMode_pins (lift onto
+      mainExtractedRowOfZiskInst). Opcode->entry mapping follows the REAL dispatcher
+      lower_rv64im_single_row_input (NOT the reference files' assumptions): register shifts via
+      create_register_op_typed; loads via load_op_typed; stores via store_op_typed; ADDI/XORI/ORI
+      via immediate_op_or_x0_copyb_typed; FENCE via nop. Proved 4 NEW entry points the references
+      lacked (nop, immediate_op_or_x0_copyb_typed, load_op_typed/store_op_typed +reg_offset). All
+      sound: #print axioms = [propext, Classical.choice, Quot.sound] (spot-checked auipc/add/mul/
+      div/beq/addi/slli/lb/sb/copyb/sll). Full `lake build` green (9012 jobs); V1 gate ALL PASS.
+      Honest side-conditions kept: AUIPC/JAL/JALR store_pc=true needs rd-cast≠0; ADDI/XORI/ORI
+      op/ext/m32 need i.rs1≠0. ZiskFv.lean imports the aggregator → in main build. NOT yet wired
+      into stepStrong_*/root_soundness.
+- [ ] Wiring swap (root_soundness consumes these pins) + verification + residual docs.
 
 Key reference: spike memory
 ~/.claude/projects/-home-cody-zisk-fv/memory/project_aeneas_discharge_blocked.md
