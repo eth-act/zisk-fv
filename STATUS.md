@@ -100,11 +100,41 @@ ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean importing ProductionM2. RISK
 sorries (Slice/String) must NOT enter root_soundness closure (spike: LUI path is clean) — V2
 axiom-closure baseline will catch any sorryAx. The probe (Route B) tests exactly this feasibility.
 
+4.28 REBUILD DONE (2026-06-26) — make-or-break "labor" item #1 COMPLETE.
+Fresh probe at /home/cody/zisk-fv/build/aeneas-428-probe (gitignored shared build area):
+- Vendored rc1 aeneas-lean (store hpw9azi.../backends/lean), patched its mathlib require
+  → 8f9d9cff and lean-toolchain → v4.28.0. Symlinked probe .lake/packages → THIS worktree's
+  built v4.28.0 packages (mathlib 8f9d9cff REUSED, not rebuilt). Hand-wrote
+  lake-manifest.json (v1.1.0: aeneas path dep + mathlib + 8 transitive deps at the worktree's
+  pinned revs). NO `lake update`. `lake build Aeneas` green (rc1 aeneas builds vs release mathlib).
+- DECISIVE TEST PASSED: the COMMITTED rc2-extracted trust/aeneas/ProductionM2.lean compiles
+  UNCHANGED against the rc1 aeneas runtime under v4.28.0. NO re-extraction needed — rc1↔rc2
+  generated-API drift is a non-issue for this surface. ProductionM2.olean (5.7M) built.
+- LuiPins ported (import ProductionM2 not the RvCompleteness harness; emptyExtractContext
+  vendored locally) typechecks on v4.28.0 with
+  #print axioms = [propext, Classical.choice, Quot.sound] for BOTH lui_static_pins (symbolic)
+  and lui_pins_concrete. NO sorryAx / ofReduceBool / trustCompiler — the aeneas-runtime
+  Slice/String sorries do NOT leak into the LUI closure (per-theorem isolation holds at 4.28).
+  Reproducible recipe = the probe dir itself (lakefile.lean + lake-manifest.json + patched
+  aeneas-lean/ + LuiPins.lean).
+
 Checklist:
 - [x] Setup: worktree, build/ symlinks, lake exe cache get, tracking files.
 - [ ] Phase 0a: verify flake aeneas/charon structure (transitive charon? current/target pin).
 - [ ] Phase 0b: bump flake.lock aeneas ac9f1bc5 → a2fcf1923d; regenerate ProductionM2.
-- [ ] Phase 0c: vendor aeneas-lean; hand-edit manifest (NEVER lake update); require aeneas + probe; lake build green.
+- [x] 4.28 aeneas-world rebuild (labor #1): rc1 aeneas-lean vendored+patched; hand-edit manifest
+      (NO lake update); ProductionM2 cross-compat confirmed (no re-extraction); LuiPins green +
+      axioms clean on v4.28.0. Persisted in build/aeneas-428-probe.
+- [x] Phase 0c (MAIN wiring) DONE (2026-06-26): main lakefile.toml gains `require aeneas`
+      (path build/aeneas-lean, gitignored symlink → shared /home/cody/zisk-fv/build/aeneas-lean)
+      + `lean_lib ProductionM2` (srcDir trust/aeneas); lake-manifest.json gains the aeneas path
+      pkg entry (NO lake update). `lake build ProductionM2` green. New
+      ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean (namespace ZiskFv.Compliance.Extraction)
+      ports the sound LUI helpers/store_reg_pins/lui_static_pins verbatim, adds the @[reducible]
+      mainExtractedRowOfZiskInst projection (uses Aeneas `.val`, NOT `.toNat`/`.toInt`) + the
+      MainExtractedRow bridge lui_extracted_rowMode_pins. `lake build` of the module green;
+      #print axioms for lui_static_pins AND lui_extracted_rowMode_pins = [propext, Classical.choice,
+      Quot.sound]. CI repro depends on eth-act/zisk-fv#158 (populate provides build/aeneas-lean).
 - [ ] Phase 0d: update boundary gates; verify #eval LUI pins + no sorryAx on probe.
 - [ ] Phase 1 (MAKE-OR-BREAK): LUI sound-discharge tractability (progress/scalar_tac, no native_decide).
       Spike 2026-06-19 found plain decide/rfl/simp = NO-GO. DECISION POINT here.
