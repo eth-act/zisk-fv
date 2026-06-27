@@ -576,7 +576,6 @@ structure Claim_fence (trace : AcceptedZiskTrace numInstructions) (i : Fin trace
   fenceS : BitVec 4
   rs : regidx
   rd : regidx
-  exec_row : List (Interaction.ExecutionBusEntry FGL)
 
 structure Decode_fence (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_fence trace i) : Type where
@@ -586,9 +585,22 @@ structure Decode_fence (trace : AcceptedZiskTrace numInstructions)
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       i.val = ZiskFv.Trusted.OP_FLAG
-  h_exec_len : c.exec_row.length = 2
-  h_e0_mult : c.exec_row[0]!.multiplicity = -1
-  h_e1_mult : c.exec_row[1]!.multiplicity = 1
+  -- #100 next-PC transition inputs (replace the exec artifacts): the next row
+  -- exists, plus the FENCE-row decode pins `set_pc = 0`,
+  -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `self.nop()` →
+  -- `riscv2zisk_context.rs:772`, `j(4, 4)`; cf. `ZiskFv/SailSpec/fence.lean:13`).
+  -- FENCE is op = OP_FLAG (flag = 1), but with jmp1 = jmp2 = 4 the handshake's
+  -- `flag * (jmp1 - jmp2)` term vanishes, so the mux still collapses to pc + 4.
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_set_pc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
+      i.val = 0
+  h_jmp1 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = 4
+  h_jmp2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = 4
   h_fm_zero : c.fm = 0#4
   h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rs
   h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rd
@@ -599,9 +611,10 @@ structure Inputs_fence (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_input_pc : (binding i).regs.get? Register.PC = .some fence_input.PC
   h_input_priv :
     (binding i).regs.get? Register.cur_privilege = .some Privilege.Machine
-  h_nextPC_matches :
-    (register_type_pc_equiv ▸ (BitVec.ofNat 64 (c.exec_row[1]!.pc).val))
-      = (PureSpec.execute_FENCE_pure fence_input).nextPC
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = fence_input.PC.toNat
+  h_pc_bound : fence_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `fence` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_fence` bundles them. -/

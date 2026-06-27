@@ -53,14 +53,17 @@ noncomputable def fenceEnvOf
     (d : RowData_fence trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.fence d.toInputs.fence_input d.toClaim.fm d.toClaim.fenceP d.toClaim.fenceS d.toClaim.rs d.toClaim.rd d.toClaim.exec_row
+  OpEnvelope.fence d.toInputs.fence_input d.toClaim.fm d.toClaim.fenceP d.toClaim.fenceS d.toClaim.rs d.toClaim.rd (Pilot.execRowOf trace i)
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     { input_pc_eq := d.toInputs.h_input_pc
       input_priv_eq := d.toInputs.h_input_priv
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches }
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound }
 
 /-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
     `RowOutsideDefectRegion` mul obligation AND `stepStrong_mul` reference THIS env, so
