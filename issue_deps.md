@@ -5,10 +5,9 @@ that are explicit predecessors or already-done nodes in the dependency map. Node
 colors come from GitHub labels: `soundness`, `completeness`, both labels, no
 relevant label, and closed/done.
 
-Arrows preserve the issue-map convention from the seed diagram: `A --> B` means
-that `A` is downstream of, decomposed into, or intentionally tracked through `B`.
-This is not GitHub's formal blocker metadata, and the graph is not intended to
-be a strict DAG.
+Arrows preserve the dependency convention from the seed diagram: `A --> B` means
+that issue `A` depends on issue `B`. Merged PRs or closed issues mentioned only
+as historical context are not included as dependency nodes.
 
 ```mermaid
 %%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
@@ -33,7 +32,6 @@ flowchart TD
         I119["#119<br/>store RMW byte residual"]:::soundness
         I76["#76<br/>load memory premise reduced"]:::done
         I103["#103<br/>Mem seam capability banked"]:::done
-        I114["#114<br/>Arith boundary gap closed"]:::done
         I144["#144<br/>AcceptedZiskTrace numInstructions"]:::soundness
     end
 
@@ -42,7 +40,6 @@ flowchart TD
         I162["#162<br/>prove raw decoder"]:::both
         I158["#158<br/>sync Aeneas toolchain"]:::both
         I108["#108<br/>extract table/witness data"]:::completeness
-        I109["#109<br/>extraction uniformity subsumed"]:::done
         I75["#75<br/>eliminate native_decide"]:::both
         I77["#77<br/>Sail-Lean differential tests"]:::both
         I78["#78<br/>external kernel re-check"]:::both
@@ -67,16 +64,11 @@ flowchart TD
     I115 --> I119
     I115 --> I76 & I103
     I119 --> I76 & I103
-    I151 --> I114
 
     I159 --> I111 & I108
     I154 --> I111 & I108 & I74 & I77 & I75 & I78 & I162
-    I162 --> I158 & I75 & I159
-    I111 --> I158
+    I162 --> I158
     I108 --> I158
-    I109 --> I114 & I108
-    I78 --> I75
 
     I118 --> I117
-    I116 --> I117
 ```
