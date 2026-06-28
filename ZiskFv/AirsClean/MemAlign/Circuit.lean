@@ -203,7 +203,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
         ring_nf <;>
         simp }
 
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-- Project the generic Clean component `Spec` to the concrete MemAlign row
     `Spec`. -/

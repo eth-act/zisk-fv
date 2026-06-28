@@ -71,13 +71,13 @@ theorem stepStrong_ld
         (d.toClaim.ld_input.imm, regidx.Regidx d.toClaim.ld_input.r1, regidx.Regidx d.toClaim.ld_input.rd, false, 8))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -104,10 +104,13 @@ theorem stepStrong_ld
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -146,13 +149,13 @@ theorem stepStrong_lbu
         (d.toClaim.lbu_input.imm, regidx.Regidx d.toClaim.lbu_input.r1, regidx.Regidx d.toClaim.lbu_input.rd, true, 1))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -179,10 +182,13 @@ theorem stepStrong_lbu
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -221,13 +227,13 @@ theorem stepStrong_lhu
         (d.toClaim.lhu_input.imm, regidx.Regidx d.toClaim.lhu_input.r1, regidx.Regidx d.toClaim.lhu_input.rd, true, 2))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -254,10 +260,13 @@ theorem stepStrong_lhu
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -296,13 +305,13 @@ theorem stepStrong_lwu
         (d.toClaim.lwu_input.imm, regidx.Regidx d.toClaim.lwu_input.r1, regidx.Regidx d.toClaim.lwu_input.rd, true, 4))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -329,10 +338,13 @@ theorem stepStrong_lwu
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -371,13 +383,13 @@ theorem stepStrong_lb
         (d.toClaim.lb_input.imm, regidx.Regidx d.toClaim.lb_input.r1, regidx.Regidx d.toClaim.lb_input.rd, false, 1))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -404,10 +416,13 @@ theorem stepStrong_lb
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -447,13 +462,13 @@ theorem stepStrong_lh
         (d.toClaim.lh_input.imm, regidx.Regidx d.toClaim.lh_input.r1, regidx.Regidx d.toClaim.lh_input.rd, false, 2))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -480,10 +495,13 @@ theorem stepStrong_lh
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -523,13 +541,13 @@ theorem stepStrong_lw
         (d.toClaim.lw_input.imm, regidx.Regidx d.toClaim.lw_input.r1, regidx.Regidx d.toClaim.lw_input.rd, false, 4))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busLd trace i d.toClaim.execRow).exec_row,
-           [ (busLd trace i d.toClaim.execRow).e0
-           , (busLd trace i d.toClaim.execRow).e1
-           , (busLd trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busLd trace i (Pilot.execRowOf trace i)).e0
+           , (busLd trace i (Pilot.execRowOf trace i)).e1
+           , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let bus := busLd trace i d.toClaim.execRow
+  let bus := busLd trace i (Pilot.execRowOf trace i)
   have h_core : (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt m i.val := mainRowWithRomLd_core trace binding i
   have h_main_spec :
@@ -556,10 +574,13 @@ theorem stepStrong_lw
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -626,10 +647,10 @@ theorem stepStrong_mulw
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.MULW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   set v := vOfMulwRow (mulwArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op) with hv
@@ -664,7 +685,7 @@ theorem stepStrong_mulw
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
-        (busSub trace i d.toClaim.execRow).e2 :=
+        (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
@@ -676,17 +697,20 @@ theorem stepStrong_mulw
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.mulw_input.r1_val d.toInputs.mulw_input.r2_val d.toInputs.mulw_input.rd d.toInputs.mulw_input.PC
       (PureSpec.execute_MULW_pure d.toInputs.mulw_input).nextPC
-      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow).exec_row
-      (busSub trace i d.toClaim.execRow).e0
-      (busSub trace i d.toClaim.execRow).e1 (busSub trace i d.toClaim.execRow).e2 :=
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1 (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { input_r1_eq := d.toInputs.h_input_r1
       input_r2_eq := d.toInputs.h_input_r2
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.mulw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -695,7 +719,7 @@ theorem stepStrong_mulw
       m2_as := by rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.mulw d.toInputs.mulw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
+    OpEnvelope.mulw d.toInputs.mulw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges
       (d.toInputs.h_a23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_b23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_sext_choice d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
@@ -734,10 +758,10 @@ theorem stepStrong_mulhu
              signed_rs1 := .Unsigned
              signed_rs2 := .Unsigned }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   -- Balance-selected SHARED-ArithMul provider row + its FullSpec (ArithMul view).
@@ -776,7 +800,7 @@ theorem stepStrong_mulhu
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
-        (busSub trace i d.toClaim.execRow).e2 :=
+        (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
@@ -789,17 +813,20 @@ theorem stepStrong_mulhu
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.mulhu_input.r1_val d.toInputs.mulhu_input.r2_val d.toInputs.mulhu_input.rd d.toInputs.mulhu_input.PC
       (PureSpec.execute_MULH_mulhu_pure d.toInputs.mulhu_input).nextPC
-      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow).exec_row
-      (busSub trace i d.toClaim.execRow).e0
-      (busSub trace i d.toClaim.execRow).e1 (busSub trace i d.toClaim.execRow).e2 :=
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1 (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { input_r1_eq := d.toInputs.h_input_r1
       input_r2_eq := d.toInputs.h_input_r2
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.mulhu_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -808,7 +835,7 @@ theorem stepStrong_mulhu
       m2_as := by rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.mulhu d.toInputs.mulhu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
+    OpEnvelope.mulhu d.toInputs.mulhu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
   have h_bridge : env.aeneasBridgeTrust := by
@@ -838,10 +865,10 @@ theorem stepStrong_divu
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   set arow := divuArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
@@ -886,7 +913,7 @@ theorem stepStrong_divu
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
-        (busSub trace i d.toClaim.execRow).e2 :=
+        (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
@@ -898,17 +925,20 @@ theorem stepStrong_divu
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.divu_input.r1_val d.toInputs.divu_input.r2_val d.toInputs.divu_input.rd d.toInputs.divu_input.PC
       (PureSpec.execute_DIVREM_divu_pure d.toInputs.divu_input).nextPC
-      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow).exec_row
-      (busSub trace i d.toClaim.execRow).e0
-      (busSub trace i d.toClaim.execRow).e1 (busSub trace i d.toClaim.execRow).e2 :=
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1 (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { input_r1_eq := d.toInputs.h_input_r1
       input_r2_eq := d.toInputs.h_input_r2
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.divu_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -917,7 +947,7 @@ theorem stepStrong_divu
       m2_as := by rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.divu d.toInputs.divu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
+    OpEnvelope.divu d.toInputs.divu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
       (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
@@ -943,10 +973,10 @@ theorem stepStrong_divuw
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   set arow := divuwArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
@@ -987,7 +1017,7 @@ theorem stepStrong_divuw
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
-        (busSub trace i d.toClaim.execRow).e2 :=
+        (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
@@ -999,17 +1029,20 @@ theorem stepStrong_divuw
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.divuw_input.r1_val d.toInputs.divuw_input.r2_val d.toInputs.divuw_input.rd d.toInputs.divuw_input.PC
       (PureSpec.execute_DIVREM_divuw_pure d.toInputs.divuw_input).nextPC
-      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow).exec_row
-      (busSub trace i d.toClaim.execRow).e0
-      (busSub trace i d.toClaim.execRow).e1 (busSub trace i d.toClaim.execRow).e2 :=
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1 (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { input_r1_eq := d.toInputs.h_input_r1
       input_r2_eq := d.toInputs.h_input_r2
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.divuw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1018,7 +1051,7 @@ theorem stepStrong_divuw
       m2_as := by rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.divuw d.toInputs.divuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
+    OpEnvelope.divuw d.toInputs.divuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
       (d.toInputs.h_b23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_c23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_sext_choice d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
@@ -1043,10 +1076,10 @@ theorem stepStrong_remu
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   set arow := remuArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
@@ -1087,7 +1120,7 @@ theorem stepStrong_remu
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
-        (busSub trace i d.toClaim.execRow).e2 :=
+        (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
@@ -1099,17 +1132,20 @@ theorem stepStrong_remu
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.remu_input.r1_val d.toInputs.remu_input.r2_val d.toInputs.remu_input.rd d.toInputs.remu_input.PC
       (PureSpec.execute_DIVREM_remu_pure d.toInputs.remu_input).nextPC
-      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow).exec_row
-      (busSub trace i d.toClaim.execRow).e0
-      (busSub trace i d.toClaim.execRow).e1 (busSub trace i d.toClaim.execRow).e2 :=
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1 (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { input_r1_eq := d.toInputs.h_input_r1
       input_r2_eq := d.toInputs.h_input_r2
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.remu_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1118,7 +1154,7 @@ theorem stepStrong_remu
       m2_as := by rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.remu d.toInputs.remu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
+    OpEnvelope.remu d.toInputs.remu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
       (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)
@@ -1142,10 +1178,10 @@ theorem stepStrong_remuw
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨(busSub trace i d.toClaim.execRow).exec_row,
-           [ (busSub trace i d.toClaim.execRow).e0
-           , (busSub trace i d.toClaim.execRow).e1
-           , (busSub trace i d.toClaim.execRow).e2 ]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   set arow := remuwArow trace binding i d.toDecode.h_main_active d.toDecode.h_main_op with harow
@@ -1186,7 +1222,7 @@ theorem stepStrong_remuw
     simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   let arith_mem :
       ZiskFv.Compliance.ExternalArithMemoryWitness m i.val
-        (busSub trace i d.toClaim.execRow).e2 :=
+        (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { row := mainRowWithRomSub trace i
       row_eq := by
         have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
@@ -1198,17 +1234,20 @@ theorem stepStrong_remuw
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.remuw_input.r1_val d.toInputs.remuw_input.r2_val d.toInputs.remuw_input.rd d.toInputs.remuw_input.PC
       (PureSpec.execute_DIVREM_remuw_pure d.toInputs.remuw_input).nextPC
-      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow).exec_row
-      (busSub trace i d.toClaim.execRow).e0
-      (busSub trace i d.toClaim.execRow).e1 (busSub trace i d.toClaim.execRow).e2 :=
+      d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1 (busSub trace i (Pilot.execRowOf trace i)).e2 :=
     { input_r1_eq := d.toInputs.h_input_r1
       input_r2_eq := d.toInputs.h_input_r2
       input_rd_eq := d.toInputs.h_input_rd
       input_pc_eq := d.toInputs.h_input_pc
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.remuw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1217,7 +1256,7 @@ theorem stepStrong_remuw
       m2_as := by rfl
       rd_idx := d.toInputs.h_rd_idx }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.remuw d.toInputs.remuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i d.toClaim.execRow) v 0
+    OpEnvelope.remuw d.toInputs.remuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
       arith_table arith_chunk_ranges arith_carry_ranges (d.toInputs.remainder_bound d.toDecode.h_main_active d.toDecode.h_main_op)
       (d.toInputs.h_b23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_c23 d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_sext_choice d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs1_value d.toDecode.h_main_active d.toDecode.h_main_op) (d.toInputs.h_rs2_value d.toDecode.h_main_active d.toDecode.h_main_op)

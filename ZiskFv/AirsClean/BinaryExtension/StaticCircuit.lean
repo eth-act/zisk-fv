@@ -570,9 +570,9 @@ def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit 
             (binaryExtensionTableRow i0).op_is_shift h7_op h7_byte h7_shift h7_opShift⟩
       · exact h_b0Range }
 
-def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
+def staticLookupComponent : Air.Flat.Component FGL := { circuit := staticLookupCircuit }
 
-def shiftStaticLookupComponent : Air.Flat.Component FGL := ⟨ shiftStaticLookupCircuit ⟩
+def shiftStaticLookupComponent : Air.Flat.Component FGL := { circuit := shiftStaticLookupCircuit }
 
 theorem staticLookupComponent_interactionsWith_opBus :
     staticLookupComponent.operations.interactionsWith OpBusChannel.toRaw =
@@ -641,6 +641,12 @@ theorem static_table_op_val_ne_compare_of_spec_facts
     (h_specs : StaticBinaryExtensionTableSpecFacts row) :
     row.flags.op.val ≠ 6 ∧ row.flags.op.val ≠ 7 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_compare h_specs.1
+
+theorem static_table_op_val_ne_eq_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 9 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_eq h_specs.1
 
 theorem static_table_op_val_ne_add_sub_of_spec_facts
     (row : BinaryExtensionRow FGL)
@@ -756,6 +762,16 @@ theorem shiftStaticLookupComponent_op_val_ne_compare_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 7 := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_compare_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Binary-table equality opcode (`EQ`, value 9). -/
+theorem shiftStaticLookupComponent_op_val_ne_eq_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 9 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_eq_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 /-- A row accepted by the shift-aware lookup BinaryExtension component cannot

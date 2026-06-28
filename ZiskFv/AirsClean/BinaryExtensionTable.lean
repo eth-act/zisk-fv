@@ -316,6 +316,26 @@ theorem spec_op_val_ne_add_sub {t : BinaryExtensionTableMessage FGL}
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- BinaryExtensionTable rows cover shift and sign-extension opcodes only;
+    they cannot be the Binary-table equality opcode `9` (OP_EQ). -/
+theorem spec_op_val_ne_eq {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 9 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 9
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    unfold opOfBlock
+    norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+      OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- BinaryExtensionTable rows cover shift and sign-extension opcodes only;
     they cannot be the Main W-mode ADD/SUB opcodes `0x1A` or `0x1B`. -/
 theorem spec_op_val_ne_W_add_sub {t : BinaryExtensionTableMessage FGL}
     (h : binaryExtensionTable.Spec t) :

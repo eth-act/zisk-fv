@@ -293,7 +293,7 @@ theorem stepStrong_fence
     (d : RowData_fence trace binding i)
     (h_known : Defects.FenceKnownGood d.toClaim.fm d.toClaim.rs d.toClaim.rd) :
     execute_instruction (instruction.FENCE (d.toClaim.fm, d.toClaim.fenceP, d.toClaim.fenceS, d.toClaim.rs, d.toClaim.rd)) (binding i)
-      = ZiskFv.Channels.state_effect_via_channels ⟨d.toClaim.exec_row, []⟩ (binding i) := by
+      = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d

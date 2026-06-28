@@ -35,7 +35,7 @@ def circuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
     completeness := by circuit_proof_start [OpBusChannel] }
 
 /-- BinaryExtension as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 theorem component_interactionsWith_opBus :
     component.operations.interactionsWith OpBusChannel.toRaw =

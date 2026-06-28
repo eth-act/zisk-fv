@@ -292,7 +292,7 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
         linear_combination hcast }
 
 /-- BinaryAdd as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 theorem component_spec (env : Environment FGL) :
     component.Spec env = ComponentSpecFacts (component.rowInput env) := by

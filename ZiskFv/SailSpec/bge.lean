@@ -107,4 +107,22 @@ namespace PureSpec
         repeat rw [if_pos (by omega)]
         simp
 
+  /-- **BGE next-PC under success.** Projects the pure-spec `nextPC` to the clean
+      Sail conditional `if (r1 <s r2) then PC + 4 else PC + signExtend imm`
+      (taken on `r1 ≥s r2`, i.e. `flag = 0`). Signed sibling of
+      `execute_BGEU_pure_nextPC_of_success`; consumed by `stepStrong_bge`. -/
+  lemma execute_BGE_pure_nextPC_of_success (bi : BgeInput)
+      (h_success : (execute_BGE_pure bi).success = true) :
+      (execute_BGE_pure bi).nextPC
+        = if BitVec.slt bi.r1_val bi.r2_val
+          then bi.PC + 4#64
+          else bi.PC + BitVec.signExtend 64 bi.imm := by
+    have hslt : BitVec.slt bi.r1_val bi.r2_val
+        = !(bi.r1_val.toInt ≥b bi.r2_val.toInt) := by
+      simp [BitVec.slt, ge_iff_le, ← decide_not, Int.not_le]
+    rw [hslt]
+    cases h : bi.r1_val.toInt ≥b bi.r2_val.toInt with
+    | false => simp [execute_BGE_pure, h]
+    | true => simp_all [execute_BGE_pure]
+
 end PureSpec

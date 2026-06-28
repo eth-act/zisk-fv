@@ -53,14 +53,17 @@ noncomputable def fenceEnvOf
     (d : RowData_fence trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.fence d.toInputs.fence_input d.toClaim.fm d.toClaim.fenceP d.toClaim.fenceS d.toClaim.rs d.toClaim.rd d.toClaim.exec_row
+  OpEnvelope.fence d.toInputs.fence_input d.toClaim.fm d.toClaim.fenceP d.toClaim.fenceS d.toClaim.rs d.toClaim.rd (Pilot.execRowOf trace i)
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     { input_pc_eq := d.toInputs.h_input_pc
       input_priv_eq := d.toInputs.h_input_priv
-      exec_len := d.toDecode.h_exec_len
-      e0_mult := d.toDecode.h_e0_mult
-      e1_mult := d.toDecode.h_e1_mult
-      nextPC_matches := d.toInputs.h_nextPC_matches }
+      exec_len := by rfl
+      e0_mult := by rfl
+      e1_mult := by rfl
+      nextPC_matches :=
+        Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
+          d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound }
 
 /-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
     `RowOutsideDefectRegion` mul obligation AND `stepStrong_mul` reference THIS env, so
@@ -74,7 +77,17 @@ noncomputable def mulEnvOf
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.mul d.toInputs.mul_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.srs1 d.toClaim.srs2 d.toClaim.bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.h_match_primary
+    -- #100: DERIVE the bundled `nextPC_matches` from the in-circuit transition
+    -- certificate (kernel-only `sequential_nextPC_discharged`) and re-attach it to
+    -- the 14 caller-supplied value/data promises. MUL's Sail nextPC = PC + 4#64.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mul_pure d.toInputs.mul_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mul_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
 /-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
@@ -112,7 +125,15 @@ noncomputable def mulhEnvOf
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.mulh d.toInputs.mulh_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.h_match_secondary
+    -- #100: DERIVE the bundled `nextPC_matches` (MULH Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mulh_pure d.toInputs.mulh_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulh_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
     d.toInputs.h_sign_a d.toInputs.h_sign_b
 
@@ -125,7 +146,15 @@ noncomputable def mulhsuEnvOf
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.mulhsu d.toInputs.mulhsu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.h_match_secondary
+    -- #100: DERIVE the bundled `nextPC_matches` (MULHSU Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mulhsu_pure d.toInputs.mulhsu_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulhsu_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
     d.toInputs.h_sign_a
 
@@ -175,7 +204,16 @@ noncomputable def divEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.div d.toInputs.div_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
+    d.toInputs.h_match_primary
+    -- #100: DERIVE the bundled `nextPC_matches` (DIV Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    -- The DivRemForge value-defect gate is untouched.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_div_pure d.toInputs.div_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.div_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
     d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
@@ -187,7 +225,15 @@ noncomputable def remEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.rem d.toInputs.rem_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.h_match_secondary
+    -- #100: DERIVE the bundled `nextPC_matches` (REM Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_rem_pure d.toInputs.rem_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.rem_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
     d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
@@ -199,7 +245,15 @@ noncomputable def divwEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.divw d.toInputs.divw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds
+    d.toInputs.h_match_primary
+    -- #100: DERIVE the bundled `nextPC_matches` (DIVW Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_divw_pure d.toInputs.divw_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.divw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds
     d.toInputs.h_row_constraints d.toInputs.h_boundary d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
     d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
@@ -212,7 +266,15 @@ noncomputable def remwEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.remw d.toInputs.remw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds
+    d.toInputs.h_match_secondary
+    -- #100: DERIVE the bundled `nextPC_matches` (REMW Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_remw_pure d.toInputs.remw_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.remw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds
     d.toInputs.h_row_constraints d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
     d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice

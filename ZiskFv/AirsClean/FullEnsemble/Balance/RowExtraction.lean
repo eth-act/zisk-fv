@@ -628,6 +628,91 @@ theorem binaryAdd_provider_branch_ne_staticBinaryCompare
     norm_num [ZiskFv.Trusted.OP_LTU] at h_provider_op
 
 /-- The lookup-aware ArithMul branch cannot be the provider for a Main Binary
+    equality operation (`EQ`, value 9 < 176). -/
+theorem arithMul_provider_branch_ne_staticBinaryEq
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+              arithMulProviderComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_EQ) :
+    False := by
+  have h_ge :=
+    arithMul_provider_branch_main_op_val_ge_176 h_component h_providerSpec h_match
+  rw [h_main_op] at h_ge
+  norm_num [ZiskFv.Trusted.OP_EQ] at h_ge
+
+/-- A lookup-aware BinaryExtension provider branch cannot be the provider for a
+    Main Binary equality operation (`EQ`). -/
+theorem staticBinaryExtension_provider_branch_ne_staticBinaryEq
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_EQ) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec :
+      shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_eq_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  exact h_ne (by
+    rw [← h_provider_op, h_main_op]
+    norm_num [ZiskFv.Trusted.OP_EQ])
+
+/-- The BinaryAdd provider branch cannot be the provider for a Main Binary
+    equality operation (`EQ`, value 9 ≠ 10). -/
+theorem binaryAdd_provider_branch_ne_staticBinaryEq
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_EQ) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op := h_match.2.1
+    have h_op_val := congrArg Fin.val h_op
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+      using h_op_val
+  rw [h_main_op] at h_provider_op
+  norm_num [ZiskFv.Trusted.OP_EQ] at h_provider_op
+
+/-- The lookup-aware ArithMul branch cannot be the provider for a Main Binary
     `SUB` operation. -/
 theorem arithMul_provider_branch_ne_staticBinarySub
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}

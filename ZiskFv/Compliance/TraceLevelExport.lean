@@ -40,9 +40,9 @@ reassembled `RowData_<op>` to the matching `stepStrong_<op>`.
 `RowDecode`/`InputsAgree` then compute the matching `Decode_<op>` / `Inputs_<op>`
 residual.  Together (`RowData_<op>`, reassembled by `toRowData_<op>`) they package
 EXACTLY each construction's genuinely-irreducible residual binders (decode pins,
-Sail reads, operand/lane bridges, the `execRow` ∀-binder + exec facts,
-`h_nextPC_matches`; for loads also `MemoryTimelineEvidence` + the Mem-AIR
-provider linkage).  They do NOT package the bucket-(a) op-bus provider-match
+Sail reads, operand/lane bridges, PC-provenance/next-row pins; for loads also
+`MemoryTimelineEvidence` + the Mem-AIR provider linkage).  They do NOT package
+the bucket-(a) op-bus provider-match
 evidence: that is derived INSIDE each construction from `trace.channels_balanced`
 (via the `exists_*_provider_row_matches_*` Layer-A lemmas).
 
@@ -129,8 +129,11 @@ The irreducible residuals carried per arm bottom out in the existing project
 residuals — none introduces a new `ZiskFv.*` axiom:
 * loads/stores `h_memory_timeline` / RMW-preservation reads → **#76** (memory
   timeline), plus the Mem-AIR `h_mem_*` provider linkage;
-* branches + JAL/JALR `h_nextPC_matches` (conditional next-PC) → **#100**
-  (cross-row control flow);
+* `h_nextPC_matches` (conditional next-PC) → **#100 — now DISCHARGED** for ALL 63
+  opcodes: derived from the `AcceptedZiskTrace.transitions_hold` PC-handshake
+  certificate (`Compliance/MainTransition.lean`, `Compliance/Pilot/*NextPC.lean`),
+  no longer a residual. See `trust/trusted-base.md` ("Accepted-Trace Certificates")
+  for the trust-surface accounting + the within-segment (`i+1 < length`) boundary;
 * the signed loads (`lb`/`lh`/`lw`) carry `h_static` + `h_match` — the
   sign-extension `BinaryExtension` op-bus lookup linkage that
   `construction_{lb,lh,lw}_sound` themselves take as residual binders.

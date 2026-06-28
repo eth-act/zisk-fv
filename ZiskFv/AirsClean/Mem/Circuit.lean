@@ -109,7 +109,7 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
           h_selDual h_wr }
 
 /-- Mem as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-! ## Mem-with-MemBus Component
 
@@ -163,7 +163,7 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
 
 /-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
     provider emission. Used by Clean memory-bus component assembly. -/
-def componentWithMemBus : Air.Flat.Component FGL := ⟨ circuitWithMemBus ⟩
+def componentWithMemBus : Air.Flat.Component FGL := { circuit := circuitWithMemBus }
 
 /-- Dual-aware Mem wrapper. This models both `mem.pil` provider emissions:
     the primary row gated by `sel` and the dual read row gated by `sel_dual`.
@@ -212,7 +212,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
 
 /-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
     memory-bus provider emissions. -/
-def componentWithDualMemBus : Air.Flat.Component FGL := ⟨ circuitWithDualMemBus ⟩
+def componentWithDualMemBus : Air.Flat.Component FGL := { circuit := circuitWithDualMemBus }
 
 theorem componentWithMemBus_interactionsWith_memBus :
     componentWithMemBus.operations.interactionsWith MemBusChannel.toRaw =

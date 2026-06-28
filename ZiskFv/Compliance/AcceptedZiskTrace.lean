@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
 
 /-!
 # Accepted trace
@@ -48,6 +49,14 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
+  /-- The Main AIR's cross-row PC-handshake transition constraint (`main.pil:409-410`) holds on every
+      consecutive Main-table row pair. This polynomial transition CANNOT be expressed by the single-row
+      Clean `Air.Flat` per-row `Constraints` (which is exactly why it was dropped from the per-row Spec);
+      it is declared on the Main component via `Air.Flat.Component.transition` and carried here as a
+      verifier-checked certificate, in the same epistemic class as `main_height` — a PIL-faithful,
+      constructible accepted-trace obligation. It consolidates the per-opcode cross-world
+      `h_nextPC_matches` promises into one in-circuit constraint. See `trust/trusted-base.md`. -/
+  transitions_hold : witness.TransitionConstraints
   /-- The Main execution table covers every instruction: any witness table with
       the Main component has a row for each instruction. This is the one genuine
       row-count assumption — the witness pins table count and component, but never
@@ -56,6 +65,25 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       table.component =
           ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
         ∀ i : Fin numInstructions, i.val < table.table.length
+  /-- The Main execution table's `SEGMENT_L1` fixed column is `[1,0,0,...]`
+      (`main.pil:19`): the first row is a segment boundary, every later row is
+      within-segment. Carried here as a fixed-column constructibility certificate
+      in the same `main_height` epistemic class — PIL-faithful and constructible
+      (a real ZisK Main witness genuinely carries this deterministic column). Its
+      within-segment fact `segment_l1 (i + 1) = 0` is exactly what the Main
+      cross-row PC-handshake transition (`mainTransition_to_next_pc`) consumes to
+      derive the per-opcode next-PC relation, so it lives ONCE here (uniform with
+      `main_height` / `transitions_hold`) rather than as a per-arm `h_fixed`
+      binder. Formulated over `witness.allTables` — like `main_height` — because
+      the derived `mainTable` is defined after this struct;
+      `AcceptedZiskTrace.mainTable_fixed` specializes it to that table. -/
+  segment_l1_fixed : ∀ table ∈ witness.allTables,
+      table.component =
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
+        (0 < table.table.length →
+            (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 0 = 1) ∧
+        (∀ idx : Fin table.table.length, 0 < idx.val →
+            (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 idx.val = 0)
 
 /-- Recover the instruction count from a parameterized `AcceptedZiskTrace`.
     `numInstructions` is now a structure parameter rather than a field; this

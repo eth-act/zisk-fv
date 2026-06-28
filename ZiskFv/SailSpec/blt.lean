@@ -119,4 +119,20 @@ namespace PureSpec
         repeat rw [if_pos (by omega)]
         simp
 
+  /-- **BLT next-PC under success.** Projects the pure-spec `nextPC` to the clean
+      Sail conditional `if (r1 <s r2) then PC + signExtend imm else PC + 4`, valid
+      once the taken branch did not fault. Signed sibling of
+      `execute_BLTU_pure_nextPC_of_success`; consumed by `stepStrong_blt`. -/
+  lemma execute_BLT_pure_nextPC_of_success (bi : BltInput)
+      (h_success : (execute_BLT_pure bi).success = true) :
+      (execute_BLT_pure bi).nextPC
+        = if BitVec.slt bi.r1_val bi.r2_val
+          then bi.PC + BitVec.signExtend 64 bi.imm
+          else bi.PC + 4#64 := by
+    simp only [show BitVec.slt bi.r1_val bi.r2_val
+        = (bi.r1_val.toInt <b bi.r2_val.toInt) from rfl]
+    cases h : bi.r1_val.toInt <b bi.r2_val.toInt with
+    | false => simp [execute_BLT_pure, h]
+    | true => simp_all [execute_BLT_pure]
+
 end PureSpec
