@@ -2657,5 +2657,107 @@ def Decode_sd_of_program
       h_idx := h_idx }
 
 
+/-! ## Family: LUI/AUIPC -/
+
+/-- `Decode_lui` rebuilt from the committed program via the ROM lookup
+    (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
+    from `trace.program`; non-ROM pins (if any) are passthrough. -/
+def Decode_lui_of_program
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (c : Claim_lui trace i)
+    (h_idx : i.val + 1 < trace.mainTable.table.length)
+    (h_imm_lo_nat :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
+      = (c.imm ++ (0 : BitVec 12)).toNat)
+    (h_imm_hi_nat :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val).val
+      = (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat / 4294967296)
+    (bits : RomFlagBits)
+    (h_bits_ieo : bits.is_external_op = false)
+    (h_bits_m32 : bits.m32 = false)
+    (h_bits_set_pc : bits.set_pc = false)
+    (h_bits_store_pc : bits.store_pc = false)
+    (h_prog : ∀ j : Fin numInstructions,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc i.val →
+          (trace.program j).op = ZiskFv.Trusted.OP_COPYB
+        ∧ (trace.program j).jmp_offset1 = 4
+        ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).flags = packFlags bits) :
+    Decode_lui trace i c := by
+  have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have key :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_COPYB ∧
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).m32 i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).set_pc i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).store_pc i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4 ∧
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
+    obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
+      mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
+      mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+    exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
+  exact
+    { h_main_op := key.1
+      h_main_active := key.2.1
+      h_m32 := key.2.2.1
+      h_set_pc := key.2.2.2.1
+      h_store_pc := key.2.2.2.2.1
+      h_jmp1 := key.2.2.2.2.2.1
+      h_jmp2 := key.2.2.2.2.2.2
+      h_idx := h_idx
+      h_imm_lo_nat := h_imm_lo_nat
+      h_imm_hi_nat := h_imm_hi_nat }
+
+/-- `Decode_auipc` rebuilt from the committed program via the ROM lookup
+    (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
+    from `trace.program`; non-ROM pins (if any) are passthrough. -/
+def Decode_auipc_of_program
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (c : Claim_auipc trace i)
+    (h_idx : i.val + 1 < trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h_bits_ieo : bits.is_external_op = false)
+    (h_bits_m32 : bits.m32 = false)
+    (h_bits_set_pc : bits.set_pc = false)
+    (h_bits_store_pc : bits.store_pc = true)
+    (h_prog : ∀ j : Fin numInstructions,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc i.val →
+          (trace.program j).op = ZiskFv.Trusted.OP_FLAG
+        ∧ (trace.program j).jmp_offset1 = 4
+        ∧ (trace.program j).flags = packFlags bits) :
+    Decode_auipc trace i c := by
+  have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have key :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_FLAG ∧
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).m32 i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).set_pc i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).store_pc i.val = 1 ∧
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4 := by
+    obtain ⟨j, hline, hop, _, hj1, _, hflags⟩ :=
+      mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+    obtain ⟨hpo, hpj0, hpf⟩ := h_prog j hline
+    obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
+      mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+    exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hj1.symm.trans hpj0⟩
+  exact
+    { h_main_op := key.1
+      h_main_active := key.2.1
+      h_m32 := key.2.2.1
+      h_set_pc := key.2.2.2.1
+      h_store_pc := key.2.2.2.2.1
+      h_jmp1 := key.2.2.2.2.2
+      h_idx := h_idx }
+
+
 end ZiskFv.Compliance.RomDecodeBinding
 
