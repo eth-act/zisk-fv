@@ -6,8 +6,8 @@ on:
     types: [opened, edited, closed, reopened, labeled, unlabeled, transferred]
   schedule:
     # Dependency-sidebar edits do not always produce a useful workflow event.
-    # This cheap, no-commit refresh catches drift without triggering proof CI.
-    - cron: '17 9 * * *'
+    # This cheap, hourly no-commit refresh catches drift without triggering proof CI.
+    - cron: '17 * * * *'
 
 permissions:
   contents: read
