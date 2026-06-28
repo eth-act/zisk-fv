@@ -165,6 +165,7 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingImmediate
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingLoadStore
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingControl
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingCopyb
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingMext
 import ZiskFv.Compliance
 -- In-build per-opcode static decode/row-mode pin discharge from the real
 -- Aeneas-extracted ZisK lowerer (eth-act/zisk-fv#111). Standalone; not yet
