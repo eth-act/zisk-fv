@@ -36,14 +36,17 @@
     clean-src = {
       # Public fork codygunton/clean: a squashed snapshot of upstream
       # Verified-zkEVM/clean @ 95c8cc2e (= upstream main HEAD; Lean/Mathlib
-      # v4.28.0, matches zisk-fv) plus two zisk-fv integration patches:
+      # v4.28.0, matches zisk-fv) plus three zisk-fv integration patches:
       # namespace hygiene (Fin.foldl_eq_foldl_finRange →
       # Clean.Fin.foldl_eq_foldl_finRange, so Clean.Air.* can be imported
-      # alongside Mathlib/Batteries) and the C7
-      # `exists_nonzero_push_of_pull` balance strengthening. To be upstreamed;
-      # re-point at Verified-zkEVM/clean once both merge. Pinned by rev so
-      # the lock is immutable; fetched over HTTPS so CI needs no SSH key.
-      url = "github:codygunton/clean/ef6dfbcd353b4f6b15897c8113cf691d15b98b4c";
+      # alongside Mathlib/Batteries), the C7
+      # `exists_nonzero_push_of_pull` balance strengthening, and (zisk-fv #100)
+      # the additive `Air.Flat.Component.transition` adjacent-row constraint
+      # facility (branch air-flat-transition-constraints; see
+      # docs/clean-fork-divergences.md D1 — strong upstream-PR candidate). To be
+      # upstreamed; re-point at Verified-zkEVM/clean once all merge. Pinned by
+      # rev so the lock is immutable; fetched over HTTPS so CI needs no SSH key.
+      url = "github:codygunton/clean/497e4a4192ae90485647778542636539ef03316d";
       flake = false;
     };
 
