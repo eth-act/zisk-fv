@@ -46,4 +46,16 @@ theorem add_accepts (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 :
     rawRType_funct7 0 rs2 rs1 0 rd 0x33 (by norm_num) hrs2 hrs1 (by norm_num) hrd (by norm_num)]
   rfl
 
+set_option maxHeartbeats 1000000 in
+theorem rtype_family_accepts (funct7 funct3 opcode rd rs1 rs2 : Nat)
+    (hmem : (funct7, funct3, opcode) ∈ Rv64imShapes.allRTypeOpcodeShapes)
+    (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 : rs2 < 32) :
+    aeneas_extract.extract_rv64im_opcode_supported
+      (toU32 (Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode)) = ok true := by
+  fin_cases hmem <;>
+    (simp (disch := omega) only [aeneas_extract.extract_rv64im_opcode_supported,
+      aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
+      toU32_and127, toU32_and7, toU32_shr12, toU32_shr25,
+      rawRType_opcode, rawRType_funct3, rawRType_funct7] <;> rfl)
+
 end ZiskFv.Compliance.Decode
