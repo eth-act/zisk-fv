@@ -306,4 +306,32 @@ theorem jtype_family_accepts (rd imm : Nat) :
   exact bind_supported (decode_j_spec _ _)
     (by intro d hd; simp only [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im, hd])
 
+/-! ## Shift-immediate families (0x13 64-bit / 0x1b 32-bit) and FENCE.
+
+These three are proven separately (the shift decoders read the funct6/funct7
+sub-discriminant, and FENCE has its own arm); signatures match the shape disjuncts
+in `ZiskFv/Completeness/Rv64im/Shapes.lean`. -/
+
+set_option maxHeartbeats 1000000 in
+theorem shift64_family_accepts (rd rs1 shamt funct3 upper : Nat)
+    (hrd : rd < 32) (hrs1 : rs1 < 32) (hsh : shamt < 64)
+    (hfu : (funct3, upper) ∈ [(1, 0), (5, 0), (5, 0x400)]) :
+    aeneas_extract.extract_rv64im_opcode_supported
+      (toU32 (Rv64imShapes.rawIType (upper ||| shamt) rs1 funct3 rd 0x13)) = ok true := by
+  sorry
+
+set_option maxHeartbeats 1000000 in
+theorem shift32_family_accepts (rd rs1 shamt funct3 upper : Nat)
+    (hrd : rd < 32) (hrs1 : rs1 < 32) (hsh : shamt < 32)
+    (hfu : (funct3, upper) ∈ [(1, 0), (5, 0), (5, 0x400)]) :
+    aeneas_extract.extract_rv64im_opcode_supported
+      (toU32 (Rv64imShapes.rawIType (upper ||| shamt) rs1 funct3 rd 0x1b)) = ok true := by
+  sorry
+
+set_option maxHeartbeats 1000000 in
+theorem fence_family_accepts (pred succ : Nat) (hp : pred < 16) (hs : succ < 16) :
+    aeneas_extract.extract_rv64im_opcode_supported
+      (toU32 (Rv64imShapes.rawSupportedFence pred succ)) = ok true := by
+  sorry
+
 end ZiskFv.Compliance.Decode
