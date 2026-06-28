@@ -69,12 +69,34 @@ theorem signext_ok (v sz : Std.U32) (h1 : 1 ≤ sz.val) (h2 : sz.val ≤ 30)
 
 attribute [local step] signext_spec
 
+/-- `↑((inst &&& m) >>> k) < 2^31` — a masked, right-shifted field is small. -/
+theorem shr_field_lt (inst : Std.U32) (m : Std.U32) (k : Nat) (hk : 7 ≤ k) :
+    (↑(inst &&& m) >>> k : Nat) < 2 ^ 31 := by
+  rw [Nat.shiftRight_eq_div_pow]
+  have h : (inst &&& m).val < 2 ^ 32 := (inst &&& m).bv.isLt
+  simp only [UScalar.val] at h ⊢
+  calc (inst &&& m).bv.toNat / 2 ^ k ≤ (inst &&& m).bv.toNat / 2 ^ 7 :=
+        Nat.div_le_div_left (Nat.pow_le_pow_right (by norm_num) hk) (by norm_num)
+    _ < 2 ^ 31 := by omega
+
 theorem decode_s_spec (inst : Std.U32) (op : RiscvOpcode) :
     decode_s inst op ⦃ d => d.opcode = op ⦄ := by
   rw [decode_s]
   simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok]
   step*
-  sorry
+  -- ⊢ ↑(i8 ||| imm4_0) ≤ 2147483647,  i8 = imm11_5 <<< 5,  imm11_5 = (inst &&& _) >>> 25
+  have hi8 : (i8 : Std.U32).val < 2 ^ 31 := by
+    have h11 : imm11_5.val < 2 ^ 7 := by
+      rw [imm11_5_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 4261412864#u32).val < 2 ^ 32 := (inst &&& 4261412864#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i8_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm11_5 * 2 ^ 5) U32.size
+    simp only [UScalar.val] at h11 hle ⊢; omega
+  have hi40 : (imm4_0 : Std.U32).val < 2 ^ 31 := by rw [imm4_0_post1]; exact shr_field_lt inst _ 7 (by norm_num)
+  have : (i8 ||| imm4_0).val < 2 ^ 31 := by
+    simp only [UScalar.val, BitVec.toNat_or] at hi8 hi40 ⊢; exact Nat.or_lt_two_pow hi8 hi40
+  simp only [UScalar.val] at this ⊢; omega
 
 /-- Bridge from a leaf-decoder spec (which pins the opcode) to acceptance: if the
 leaf decodes (to a record carrying `op`) and `op` is is-supported, then the full
