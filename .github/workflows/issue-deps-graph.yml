@@ -1,0 +1,43 @@
+name: issue dependency graph
+
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled, transferred]
+  schedule:
+    # Dependency-sidebar edits do not always produce a useful workflow event.
+    # This cheap, no-commit refresh catches drift without triggering proof CI.
+    - cron: '17 9 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-deps-graph
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: update canonical graph issue
+    runs-on: ubuntu-latest
+    # The updater edits the graph issue body. Skip the resulting self-edit event
+    # to avoid a pointless second run.
+    if: ${{ github.event_name != 'issues' || github.event.issue.title != 'Issue dependency graph' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Update issue dependency graph
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/update_issue_deps_graph.py \
+            --owner "${{ github.repository_owner }}" \
+            --repo "${{ github.event.repository.name }}" \
+            --issue-title "Issue dependency graph" \
+            --update

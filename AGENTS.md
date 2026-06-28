@@ -1,12 +1,13 @@
 # Issue Dependency Graph Maintenance
 
-Use these rules when maintaining `issue_deps.md` or GitHub issue dependencies.
-GitHub's structured issue relationships are the source of truth; issue prose is
-only evidence to audit, not a graph input by itself.
+Use these rules when maintaining GitHub issue dependencies and the canonical
+`Issue dependency graph` issue. GitHub's structured issue relationships are the
+source of truth; issue prose is only evidence to audit, not a graph input by
+itself.
 
 When creating an issue, decide whether it has a strict prerequisite before
 leaving the task. If it does, set the GitHub `blockedBy` relationship immediately
-after creation and regenerate `issue_deps.md` in the same change.
+after creation and refresh the canonical graph issue.
 
 ## GitHub Issue Structure
 
@@ -58,10 +59,14 @@ mutation($blocked:ID!, $blocker:ID!) {
 }'
 ```
 
-## Mermaid / Markdown Graph
+## Canonical Mermaid Graph
 
-- Regenerate `issue_deps.md` from GitHub structured `blockedBy`, `blocking`,
-  parent, and `subIssues` data. Do not hand-invent dependency edges in Markdown.
+- The only visual dependency graph should be the generated body of the GitHub
+  issue titled `Issue dependency graph`. Do not add a second checked-in Mermaid
+  graph to the repository.
+- Regenerate the graph from GitHub structured `blockedBy`, `blocking`, parent,
+  `subIssues`, label, and state data. Do not hand-invent dependency edges in
+  Markdown.
 - Preserve the edge meaning: `A --> B` means issue `A` is blocked by issue `B`.
 - Include every open issue, plus closed issues that are real prerequisite nodes
   for included issues. Omit unrelated closed issues.
@@ -70,9 +75,15 @@ mutation($blocked:ID!, $blocker:ID!) {
   closed prerequisite nodes should use the closed/done class.
 - List parent/sub-issue relationships separately from the Mermaid dependency
   graph unless they also have structured blocker edges.
-- After editing, verify both Markdown hygiene and Mermaid rendering:
+- Refresh the graph issue with:
 
 ```bash
-git diff --check
-mmdc -i issue_deps.md -o /tmp/issue_deps.svg
+python3 scripts/update_issue_deps_graph.py \
+  --owner eth-act \
+  --repo zisk-fv \
+  --issue-title "Issue dependency graph" \
+  --update
 ```
+
+- The workflow `.github/workflows/issue-deps-graph.yml` runs the same updater
+  without committing generated Markdown, so it does not trigger push/PR proof CI.
