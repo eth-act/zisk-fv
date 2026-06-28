@@ -296,8 +296,11 @@ jobs:
         with:
           path: build/aeneas-production-extraction/lean-check/.lake
           key: aeneas-lean-check-${{ runner.os }}-${{ hashFiles('flake.lock', 'lean-toolchain', 'scripts/aeneas-production-extract.sh', 'zisk/core/src/aeneas_extract.rs', 'ZiskFv/Compliance/RowProvenance.lean', 'trust/aeneas/ProductionM2.lean') }}
-          restore-keys: |
-            aeneas-lean-check-${{ runner.os }}-
+          # Use only exact cache hits. The temporary Lake workspace stores
+          # package build products such as ProofWidgets' widgetJsAll target;
+          # prefix restores can mix those artifacts across harness/toolchain
+          # changes and make `lake exe cache get` appear successful while the
+          # following build still fails as stale.
 
       - name: Run full Aeneas production extraction completeness check
         env:
