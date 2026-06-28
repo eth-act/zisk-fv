@@ -75,7 +75,7 @@ note below.
 
 | Premise class | Current surface | Final trace-level role |
 |---------------|-----------------|------------------------|
-| Program binding and decode | Pure input records, `r1`/`r2`/`rd`/`imm`/`shamt`/`fm`/`pred`/`succ`, opcode pins | Named `ProgramBinding`/decode premise; constructor projections should be generated |
+| Program binding and decode | Pure input records, `r1`/`r2`/`rd`/`imm`/`shamt`/`fm`/`pred`/`succ`, opcode pins | Named `ProgramBinding`/decode premise; the ROM-backed decode columns are now **derived** from the committed raw program via the additive `root_soundness_rawProgram` endpoint (**#159**: `rawProgram` + op-agnostic `ProgramBinding` → real Aeneas decode/lower/serialize pipeline → the decode columns; see `trust/trusted-base.md` "Raw-Program Binding"). The operand-side witnesses (signed-load/shift/M-ext/JALR/LUI/FENCE) remain caller premises |
 | Boot/profile state | `misa` C-bit facts, `cur_privilege = Machine`, `RISC_V_assumptions`, `ModeRegsFull`, PMA/mstatus/mseccfg values | Named initial-state/profile invariant; not 63 separate assumptions |
 | Aeneas lowering bridge | `env.aeneasBridgeTrust` in `Compliance.lean` | Named bridge premise until generated Aeneas Lean is imported by the main proof |
 | Load memory timeline | `env.memoryTimelineEvidence` for LD/LBU/LHU/LWU/LB/LH/LW routes | Named memory premise until #76 derives it from Mem AIR/replay |

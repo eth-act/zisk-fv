@@ -513,6 +513,57 @@ its next-PC is the cross-segment continuation (`main.pil:501-529`), which is
 unsoundness: where `h_idx` holds the discharge is exact; where it does not, the
 final-row next-PC is a named #103 residual.
 
+## Raw-Program Binding (#159 — decode derived from the committed RISC-V program)
+
+#159 makes the per-opcode **decode** load-bearing on the committed raw RISC-V
+program, via the **additive** endpoint `root_soundness_rawProgram`
+(`ZiskFv/Soundness.lean`). It does **not** change `root_soundness`,
+`AcceptedZiskTrace`, or any `equiv_<op>` (all byte-for-byte unchanged; the
+endpoint's axiom closure is **identical** to `root_soundness`'s — 0 new
+`ZiskFv.*` axioms, verified by `#print axioms`). It is a separate, stronger
+statement a caller may use in place of `root_soundness`.
+
+**What it derives.** Where `root_soundness` takes `rowDecodes` (per row, the
+caller asserts the committed ROM's decode COLUMNS — op/flags/jmp_offset/ind_width),
+`root_soundness_rawProgram` takes a **thinner** `RawRowDecode` bundle and
+*computes* those columns through the **real Aeneas transpile pipeline**
+`extract_transpile_rv64im_raw` (`trust/aeneas/ProductionM2.lean`):
+`rawProgram(pc) → decode (#164) → lower (#111 + #159 block-2) → serialize → committed
+ROM message`. So the decode columns move from **assumed** to **derived** (kernel-only:
+the 63 `Decode_<op>_from_rawProgram` are `{propext, Classical.choice, Quot.sound}`).
+
+**The two new caller premises (non-axiom, additive):**
+
+| Premise (`Compliance/TraceLevelExport/RawProgramBinding.lean`) | What it is | Class |
+|---|---|---|
+| `rawProgram : Fin n → BitVec 32` | the committed raw RISC-V program (32-bit words) | a verifier-attached image, same epistemic class as `transitions_hold` — a real ZisK proof commits to a concrete program |
+| `ProgramBinding trace rawProgram` | `∀ k, trace.program k = romMessageOfRaw (trace.program k).line (rawProgram k)` — the committed ROM holds exactly the serialized real-lowering of the raw program. **Op-agnostic** (one pipeline per word; per-op decode is derived through it, not baked in) | a property of any honestly-generated witness (the prover builds `trace.program` by running exactly this pipeline); not an axiom, not a `constraints_hold` consequence |
+
+**The boot premise (irreducible, document-only).** "`rawProgram` *is* the intended
+RISC-V binary" is the spec↔binary correspondence every verified-binary claim
+carries. It is **not** a Lean hypothesis — it is the meaning attached to
+`rawProgram`, not Lean-provable (the compile/commitment boundary). Documented here
+so it is not silently assumed away.
+
+**Honest reduction.** Per row, `RawDecode_<op>` carries the structural `h_idx`, the
+**same** non-ROM operand witnesses block-1's `Decode_<op>` already carried
+(signed-load `BinaryExtension`, shift `h_b_lo_t`, M-ext arith, JALR/LUI/FENCE), and
+**one** op-shaped raw-word fact (`rawProgram(pc) = rawShape …`) — replacing the
+several ROM-column-correctness facts (now computed). None of the operand witnesses
+is new, split, or multiplied. Non-vacuous: a real trace inhabits each bundle
+(`rawProgram` the actual binary; `ProgramBinding` holds because the ROM is its
+serialized lowering; the raw-word fact holds because the binary at that pc is that
+instruction). The lowering-totality obligation #111 / block-2 *assumed* (the lowerer
+succeeds) is **proven** here (`Extraction/Totality.lean`: register overflow branches
+unreachable via the 5-bit decode bound).
+
+**Scope (honest).** The decode columns are derived — this is the #159 decode goal.
+NOT yet via this endpoint: tying the Sail-side instruction to `rawProgram` (the
+`W → Sail decode` bridge, a further grounding) and the full operand-field
+MirrorFidelity (only the decode-relevant ROM fields are pinned). Those are
+follow-ups; the operand witnesses remain caller premises exactly as before. Depends
+on #164 (the in-build `W → fields` decoder).
+
 ## Not In This Ledger
 
 The trust ledger does not enumerate the Lean kernel, mathlib,
