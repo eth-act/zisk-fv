@@ -209,6 +209,9 @@ reg_op subw, 32, 0, 0x3b, RiscvOpcode.Subw, riscv2zisk_single_row.Rv64imSingleRo
 reg_op sllw, 0, 1, 0x3b, RiscvOpcode.Sllw, riscv2zisk_single_row.Rv64imSingleRowOpcode.Sllw, zisk_ops.ZiskOp.SllW, 36#u8, true, zisk_ops.OpType.BinaryE, OP_SLL_W
 reg_op srlw, 0, 5, 0x3b, RiscvOpcode.Srlw, riscv2zisk_single_row.Rv64imSingleRowOpcode.Srlw, zisk_ops.ZiskOp.SrlW, 37#u8, true, zisk_ops.OpType.BinaryE, OP_SRL_W
 reg_op sraw, 32, 5, 0x3b, RiscvOpcode.Sraw, riscv2zisk_single_row.Rv64imSingleRowOpcode.Sraw, zisk_ops.ZiskOp.SraW, 38#u8, true, zisk_ops.OpType.BinaryE, OP_SRA_W
+-- MULW is the one M-ext op whose `Decode_<op>_of_program` takes `bits` directly
+-- (no extra arith/bound/pin witness), so it fits the register template.
+reg_op mulw, 1, 0, 0x3b, RiscvOpcode.Mulw, riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulw, zisk_ops.ZiskOp.MulW, 182#u8, true, zisk_ops.OpType.ArithAm32, OP_MUL_W
 
 section AxiomAudit
 #print axioms transpile_sub
