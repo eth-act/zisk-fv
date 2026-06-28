@@ -82,6 +82,33 @@ theorem ind_width_set4 (self z : zisk_inst_builder.ZiskInstBuilder)
   rw [he, Result.ok.injEq] at h
   subst h; rfl
 
+/-- `ind_width self 1#u64` writes `ind_width := 1#u64` (LB/LBU/SB width). -/
+theorem ind_width_set1 (self z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.ind_width self 1#u64 = ok z) :
+    z.i.ind_width = 1#u64 := by
+  have he : zisk_inst_builder.ZiskInstBuilder.ind_width self 1#u64
+          = ok { i := { self.i with ind_width := 1#u64 } } := rfl
+  rw [he, Result.ok.injEq] at h
+  subst h; rfl
+
+/-- `ind_width self 2#u64` writes `ind_width := 2#u64` (LH/LHU/SH width). -/
+theorem ind_width_set2 (self z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.ind_width self 2#u64 = ok z) :
+    z.i.ind_width = 2#u64 := by
+  have he : zisk_inst_builder.ZiskInstBuilder.ind_width self 2#u64
+          = ok { i := { self.i with ind_width := 2#u64 } } := rfl
+  rw [he, Result.ok.injEq] at h
+  subst h; rfl
+
+/-- `ind_width self 8#u64` writes `ind_width := 8#u64` (LD/SD width). -/
+theorem ind_width_set8 (self z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.ind_width self 8#u64 = ok z) :
+    z.i.ind_width = 8#u64 := by
+  have he : zisk_inst_builder.ZiskInstBuilder.ind_width self 8#u64
+          = ok { i := { self.i with ind_width := 8#u64 } } := rfl
+  rw [he, Result.ok.injEq] at h
+  subst h; rfl
+
 /-- `src_b_ind self off usp` writes `b_offset_imm0 := off` (both use_sp branches)
 and preserves `ind_width`. -/
 theorem src_b_ind_set (self : zisk_inst_builder.ZiskInstBuilder) (off : Std.U64) (usp : Bool)
@@ -174,7 +201,9 @@ theorem load_op_with_reg_offset_dynamic
     (h : riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset self i op 4#u64 inst_size reg_offset = ok ctx) :
     ∃ zib, ctx.extract_inst = some zib ∧
       zib.i.ind_width = 4#u64 ∧
-      zib.i.b_offset_imm0 = IScalar.hcast UScalarTy.U64 i.imm := by
+      zib.i.b_offset_imm0 = IScalar.hcast UScalarTy.U64 i.imm ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
   simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
     lift, Bind.bind, bind_ok] at h
   obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
@@ -193,10 +222,13 @@ theorem load_op_with_reg_offset_dynamic
   obtain ⟨hiw4, hbo4⟩ := op_zisk_pres_data _ _ _ h4
   obtain ⟨hiw5, hbo5⟩ := store_reg_pres_data _ _ _ _ _ h5
   obtain ⟨hiw6, hbo6⟩ := j_pres_data _ _ _ _ h6
+  obtain ⟨hjj1, hjj2⟩ := j_jmp _ _ _ _ h6
   have hz76 := build_eq _ _ h7
-  refine ⟨z7, insert_inst_extract _ _ _ _ h8, ?_, ?_⟩
+  refine ⟨z7, insert_inst_extract _ _ _ _ h8, ?_, ?_, ?_, ?_⟩
   · rw [hz76, hiw6, hiw5, hiw4, hiw3, hiw2]
   · rw [hz76, hbo6, hbo5, hbo4, hbo3]
+  · rw [hz76, hjj1]
+  · rw [hz76, hjj2]
 
 set_option maxHeartbeats 2000000 in
 theorem lw_dynamic_pins
@@ -207,12 +239,92 @@ theorem lw_dynamic_pins
           zisk_ops.ZiskOp.SignExtendW 4#u64 inst_size = ok ctx) :
     ∃ zib, ctx.extract_inst = some zib ∧
       zib.i.ind_width = 4#u64 ∧
-      zib.i.b_offset_imm0 = IScalar.hcast UScalarTy.U64 i.imm := by
+      zib.i.b_offset_imm0 = IScalar.hcast UScalarTy.U64 i.imm ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
   simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
     Bind.bind, bind_ok] at h
   obtain ⟨s1, hs1, h⟩ := bind_eq_ok_imp h
   rw [Result.ok.injEq] at h; subst h
   exact load_op_with_reg_offset_dynamic _ _ _ _ _ _ hs1
+
+/-! ## 3b. Load family, general width : `ind_width = wval` (from a per-width
+witness) plus both jump offsets = the (lifted) cast of `inst_size`.  Covers the
+six loads not handled by the b_offset-carrying `lw_dynamic_pins` pilot. -/
+
+set_option maxHeartbeats 2000000 in
+theorem load_op_with_reg_offset_jmp_width
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (w inst_size : Std.U64) (reg_offset : Std.I64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (wval : Std.U64)
+    (hiw : ∀ (s z : zisk_inst_builder.ZiskInstBuilder),
+            zisk_inst_builder.ZiskInstBuilder.ind_width s w = ok z → z.i.ind_width = wval)
+    (h : riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset self i op w inst_size reg_offset = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.ind_width = wval ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_reg
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- ind_width w
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- src_b_ind
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- op_zisk
+  obtain ⟨iadd, hadd, h⟩ := bind_eq_ok_imp h -- i4 ← i3 + reg_offset
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- store_reg
+  obtain ⟨z6, h6, h⟩ := bind_eq_ok_imp h    -- j
+  obtain ⟨z7, h7, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h8, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  have hiw2 : z2.i.ind_width = wval := hiw _ _ h2
+  obtain ⟨hbo3, hiw3⟩ := src_b_ind_set _ _ _ _ h3
+  obtain ⟨hiw4, hbo4⟩ := op_zisk_pres_data _ _ _ h4
+  obtain ⟨hiw5, hbo5⟩ := store_reg_pres_data _ _ _ _ _ h5
+  obtain ⟨hiw6, hbo6⟩ := j_pres_data _ _ _ _ h6
+  obtain ⟨hjj1, hjj2⟩ := j_jmp _ _ _ _ h6
+  have hz76 := build_eq _ _ h7
+  refine ⟨z7, insert_inst_extract _ _ _ _ h8, ?_, ?_, ?_⟩
+  · rw [hz76, hiw6, hiw5, hiw4, hiw3, hiw2]
+  · rw [hz76, hjj1]
+  · rw [hz76, hjj2]
+
+theorem load_op_typed_jmp_width
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (w inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (wval : Std.U64)
+    (hiw : ∀ (s z : zisk_inst_builder.ZiskInstBuilder),
+            zisk_inst_builder.ZiskInstBuilder.ind_width s w = ok z → z.i.ind_width = wval)
+    (h : riscv2zisk_context.Riscv2ZiskContext.load_op_typed self i op w inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.ind_width = wval ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    Bind.bind, bind_ok] at h
+  obtain ⟨s1, hs1, h⟩ := bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h
+  exact load_op_with_reg_offset_jmp_width _ _ _ _ _ _ _ wval hiw hs1
+
+/-- macro: emit `<nm>_dynamic_pins` for a load (concrete width + ind_width witness). -/
+local macro "load_dyn" nm:ident "," ropx:term "," wx:term "," wvalx:term "," iwlem:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_dynamic_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.load_op_typed self i $ropx $wx inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.ind_width = $wvalx ∧
+        zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+        zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size :=
+    load_op_typed_jmp_width self i $ropx $wx inst_size ctx $wvalx $iwlem h)
+
+load_dyn lb,  zisk_ops.ZiskOp.SignExtendB, 1#u64, 1#u64, ind_width_set1
+load_dyn lh,  zisk_ops.ZiskOp.SignExtendH, 2#u64, 2#u64, ind_width_set2
+load_dyn lbu, zisk_ops.ZiskOp.CopyB,       1#u64, 1#u64, ind_width_set1
+load_dyn lhu, zisk_ops.ZiskOp.CopyB,       2#u64, 2#u64, ind_width_set2
+load_dyn lwu, zisk_ops.ZiskOp.CopyB,       4#u64, 4#u64, ind_width_set4
+load_dyn ld,  zisk_ops.ZiskOp.CopyB,       8#u64, 8#u64, ind_width_set8
 
 /-! ## 4. Register-register ALU / M-ext : both jump offsets are the (lifted) cast
 of `inst_size`.  The `j` builder writes `jmp_offset1 = jmp_offset2 =
