@@ -463,6 +463,56 @@ rows and the wrapper ledger 1135, with `bridge` (122) and `row_shape`
 (18 canonical / 22 wrapper) the dominant remaining categories — documented as
 generated or full-ensemble integration boundaries, not hidden global axioms.
 
+## Accepted-Trace Certificates (non-axiom obligations on `AcceptedZiskTrace`)
+
+These are **not** Lean axioms (none appears in `generated/baseline-axioms.txt`;
+the per-theorem axiom closures are unchanged) and **not** derived from
+`constraints_hold` + `channels_balanced` (so they are not folded into
+`AcceptedZiskTrace.spec_holds`). They are explicit **structure fields** on
+`AcceptedZiskTrace` — verifier-checked facts a real ZisK proof certifies about
+the committed trace, but which the single-row Clean `Air.Flat` model cannot
+itself express. Each is PIL-faithful and constructible (real ZisK traces satisfy
+it). They are documented here precisely because they add to the accepted-trace
+trust surface even though they add no axiom.
+
+| Field (`Compliance/AcceptedZiskTrace.lean`) | PIL source | What it certifies |
+|---|---|---|
+| `main_height` (pre-existing) | — | the Main table has a row for every instruction (`i < length`) |
+| `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
+| `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
+
+**#100 trust-surface change (honest accounting — a SHIFT, documented as such).**
+The next-PC discharge does **not** derive `h_nextPC_matches` from the existing
+`constraints_hold`. It **removes** the 63 per-opcode cross-world
+`h_nextPC_matches` promises (each asserting *circuit next-PC = Sail next-PC*, the
+worst, conclusion-adjacent class) and in their place adds:
+- the **two accepted-trace certificates above** (`transitions_hold`,
+  `segment_l1_fixed`) — `main_height`-class, declared on the Main component via
+  `Air.Flat.Component.transition`, carried once for the whole trace; and
+- per-opcode **decode pins** (`set_pc`/`jmp_offset…`, the sailTrace-free
+  `rowDecode` bucket, dischargeable via #74) and the **PC-provenance bridge**
+  (`h_pc_bridge`/`h_pc_bound`, the same class JAL/AUIPC already carried).
+
+So a cross-world output promise is replaced by an in-circuit polynomial
+certificate plus dischargeable decode + the existing provenance class, with the
+per-op flag/target/cast content **proven** (0 new `ZiskFv.*` axioms). The Clean
+`Air.Flat.Component.transition` field is *inert* (no Clean soundness theorem
+consumes it — see `docs/clean-fork-divergences.md` D1); the obligation lives
+entirely at the `AcceptedZiskTrace` layer, which is why it is in `main_height`'s
+class rather than `constraints_hold`'s.
+
+**Within-segment boundary (explicit).** `mainTransition_to_next_pc`
+(`Compliance/MainTransition.lean`) requires `i + 1 < mainTable.table.length` — a
+*successor* Main row must exist — surfaced as the per-opcode `h_idx`. `main_height`
+only gives `i < length`, so for the final instruction this needs
+`numInstructions < length` (a real ZisK segment is padded to its fixed power-of-two
+row count, so a successor row exists). When the segment is exactly full
+(`numInstructions = length`) the final instruction has no within-segment successor;
+its next-PC is the cross-segment continuation (`main.pil:501-529`), which is
+**out of #100 scope = #103**. This is an applicability boundary, not an
+unsoundness: where `h_idx` holds the discharge is exact; where it does not, the
+final-row next-PC is a named #103 residual.
+
 ## Not In This Ledger
 
 The trust ledger does not enumerate the Lean kernel, mathlib,

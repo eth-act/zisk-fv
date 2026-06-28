@@ -191,13 +191,25 @@ real-premise) when the canonical conclusion is restated off the foreign openvm
 then they remain explicit named residuals, honestly classified as bucket-(c)
 artifacts rather than bucket-(a) derivations.
 
-## Cross-row note: PC / next-PC is bucket-(b)-pending-infrastructure
+## Cross-row note: PC / next-PC — DISCHARGED (#100, 2026-06-27)
+
+> **UPDATE (#100 landed):** `h_nextPC_matches` is now **DISCHARGED for all 63
+> opcodes** and is no longer a residual. It is derived from a new accepted-trace
+> certificate `AcceptedZiskTrace.transitions_hold` (the `main.pil:409-410`
+> cross-row PC-handshake polynomial constraint, brought into the model via an
+> additive `Air.Flat.Component.transition` field) plus per-op decode pins + the
+> existing PC-provenance bridge — NOT from `constraints_hold`. This is an honest
+> **trust-surface SHIFT** (cross-world promise → in-circuit certificate +
+> dischargeable decode), documented in `trust/trusted-base.md` →
+> "Accepted-Trace Certificates", including the within-segment `i+1 < length`
+> boundary (final-row next-PC = cross-segment #103). The historical analysis
+> below records the pre-#100 state.
 
 `h_nextPC_matches` (branch / FENCE / jump next-PC) is the **one semantically
 real** fact in the exec-bus cluster: `bus_effect` writes `Register.nextPC` and
 this equates it to the Sail next-PC. Unlike the exec-row artifacts, it is not an
-artifact to be eliminated — it is a real effect. But it is **not derivable from
-the live ensemble today**, so it is reclassified from bucket-(a) to
+artifact to be eliminated — it is a real effect. ~~But it is **not derivable from
+the live ensemble today**~~ (pre-#100), so it *was* reclassified from bucket-(a) to
 **bucket-(b)-pending-infrastructure** for **every** opcode (not just branches):
 sequential next-PC = `pc + 4` is *also* a cross-row property.
 
