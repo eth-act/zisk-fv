@@ -22,7 +22,7 @@ Op-AGNOSTIC: `serializeExtract` / `romMessageOfRaw` / `ProgramBinding` run ONE
 pipeline for every word; ADD-ness enters only via the `rawRType … 0x33` raw-word
 hypothesis (the ADD case of an exhaustive split), never as a trust premise.
 
-Sound: NO native_decide / bv_decide / new axiom / sorry; kernel-only closure
+Sound: NO native_decide / bv_decide / new axiom / `sorry`; kernel-only closure
 (`propext` / `Classical.choice` / `Quot.sound`).  The lowering totality is proven
 with the kernel-sound `System.Platform.numBits` casing (the same register-bound
 lemmas as `…/Extraction/Helpers.lean`), NOT `native_decide` (the production

@@ -1,0 +1,174 @@
+/-
+ZiskFv/Compliance/AeneasBridgeTrust/Extraction/Totality.lean  (eth-act/zisk-fv#159 BLOCK 3)
+
+Symbolic-register LOWERING-TOTALITY for the in-build transpile bridge (block 3).
+Where #111's `<op>_static_pins` / block-2's `<op>_dynamic_pins` prove field
+*preservation GIVEN the lowerer succeeds*, this module proves the lowerer
+SUCCEEDS (`= ok …`) for SYMBOLIC in-range registers — the one piece block 3's
+`transpile_<op>` reduction needs that the pins assume.
+
+Key facts (kernel-sound, NO native_decide / bv_decide / `sorry`):
+  * The decoder's register fields are 5-bit masks, hence `< 32`
+    (`decode_r_bounds`), so the lowerer's `reg * 8` overflow branches are
+    UNREACHABLE (contradictory, discharged by `scalar_tac` against the
+    numBits-split `REGS_IN_MAIN_{FROM,TO}` cast values) and every taken branch
+    returns `ok` — so `create_register_op_typed` is TOTAL with NO `≠ 0`
+    side-condition (those are dispatcher-routing conditions for ADD/OR only).
+  * `decode_extract_from_decoded` and `ZiskInstExtract.from_inst` are total
+    (every opcode/format arm returns `ok`; `from_inst` copies the row fields).
+-/
+import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.Helpers
+import ZiskFv.Compliance.AeneasBridgeTrust.Decode.Leaves
+
+open Aeneas Aeneas.Std Result zisk_core
+open aeneas_extract.rv64im_decode
+open ZiskFv.Compliance.Decode (toU32)
+
+namespace ZiskFv.Compliance.Extraction
+
+set_option maxHeartbeats 4000000
+
+/-! ## 1. Decoder register-field bounds (the 5-bit masks land `< 32`). -/
+
+/-- A masked, right-shifted 32-bit field is bounded by `mask >>> k`. -/
+theorem and_ushr_toNat_lt (x : Std.U32) (mbv : BitVec 32) (k : Nat) (bnd : Nat)
+    (h : mbv.toNat >>> k < bnd) :
+    ((x &&& ⟨mbv⟩ : Std.U32).bv.ushiftRight k).toNat < bnd := by
+  rw [show ((x &&& (⟨mbv⟩ : Std.U32)).bv.ushiftRight k) = (x.bv &&& mbv) >>> k from rfl,
+     BitVec.toNat_ushiftRight, BitVec.toNat_and]
+  have hle : (x.bv.toNat &&& mbv.toNat) ≤ mbv.toNat := Nat.and_le_right
+  rw [Nat.shiftRight_eq_div_pow] at h ⊢
+  exact lt_of_le_of_lt (Nat.div_le_div_right hle) h
+
+/-- `decode_r` is total and its `rd`/`rs1`/`rs2` fields are `< 32`. -/
+theorem decode_r_bounds (raw : Std.U32) (op : RiscvOpcode) :
+    ∃ d, decode_r raw op = ok d ∧ d.opcode = op
+      ∧ d.rd.val < 32 ∧ d.rs1.val < 32 ∧ d.rs2.val < 32 := by
+  refine ⟨_, rfl, rfl, ?_, ?_, ?_⟩ <;> simp only [UScalar.val]
+  · exact and_ushr_toNat_lt raw 3968#32 (7#i32).toNat 32 (by decide)
+  · exact and_ushr_toNat_lt raw 1015808#32 (15#i32).toNat 32 (by decide)
+  · exact and_ushr_toNat_lt raw 32505856#32 (20#i32).toNat 32 (by decide)
+
+/-! ## 2. numBits-split cast values for the register-bound comparisons. -/
+
+theorem cast_one_u64 : (UScalar.cast UScalarTy.U64 1#usize).val = 1 := by
+  simp only [Aeneas.Std.UScalar.cast]
+  rcases System.Platform.numBits_eq with h | h <;> simp_all <;> decide
+theorem cast_31_u64 : (UScalar.cast UScalarTy.U64 31#usize).val = 31 := by
+  simp only [Aeneas.Std.UScalar.cast]
+  rcases System.Platform.numBits_eq with h | h <;> simp_all <;> decide
+theorem cast_one_i64 : (UScalar.hcast IScalarTy.I64 1#usize).val = 1 := by
+  simp only [Aeneas.Std.UScalar.hcast]
+  rcases System.Platform.numBits_eq with h | h <;> simp_all <;> decide
+theorem cast_31_i64 : (UScalar.hcast IScalarTy.I64 31#usize).val = 31 := by
+  simp only [Aeneas.Std.UScalar.hcast]
+  rcases System.Platform.numBits_eq with h | h <;> simp_all <;> decide
+
+theorem cast_u32_u64_val (x : Std.U32) : (UScalar.cast UScalarTy.U64 x).val = x.val := by
+  simp only [Aeneas.Std.UScalar.cast, UScalar.val, BitVec.toNat_setWidth]
+  rw [show UScalarTy.U64.numBits = 64 from rfl,
+     Nat.mod_eq_of_lt (lt_of_lt_of_le x.bv.isLt (by norm_num))]
+
+theorem hcast_u32_i64_val (x : Std.U32) : (UScalar.hcast IScalarTy.I64 x : Std.I64).val = x.val := by
+  have hlt : x.bv.toNat < 2 ^ 64 := lt_of_lt_of_le x.bv.isLt (by norm_num)
+  simp only [Aeneas.Std.UScalar.hcast, IScalar.val, UScalar.val]
+  rw [BitVec.toInt_eq_toNat_of_lt (by
+        rw [BitVec.toNat_setWidth, show IScalarTy.I64.numBits = 64 from rfl, Nat.mod_eq_of_lt hlt]
+        have := x.bv.isLt; omega),
+     BitVec.toNat_setWidth, show IScalarTy.I64.numBits = 64 from rfl, Nat.mod_eq_of_lt hlt]
+
+/-! ## 3. Builder totality (every register-class branch returns `ok`). -/
+
+theorem src_a_reg_ok (self : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64) (usp : Bool)
+    (hb : reg.val < 32) : ∃ z, zisk_inst_builder.ZiskInstBuilder.src_a_reg self reg usp = ok z := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_a_reg, zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO, zisk_registers.REG_FIRST,
+    mem.SYS_ADDR, mem.RAM_ADDR, lift, Bind.bind, bind_ok]
+  have e1 := cast_one_u64; have e31 := cast_31_u64
+  split_ifs <;> first | exact ⟨_, rfl⟩ | (exfalso; scalar_tac)
+
+theorem src_b_reg_ok (self : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64) (usp : Bool)
+    (hb : reg.val < 32) : ∃ z, zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_reg, zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO, zisk_registers.REG_FIRST,
+    mem.SYS_ADDR, mem.RAM_ADDR, lift, Bind.bind, bind_ok]
+  have e1 := cast_one_u64; have e31 := cast_31_u64
+  split_ifs <;> first | exact ⟨_, rfl⟩ | (exfalso; scalar_tac)
+
+theorem store_reg_ok (self : zisk_inst_builder.ZiskInstBuilder) (off : Std.I64) (usp spc : Bool)
+    (hlo : 0 ≤ off.val) (hhi : off.val < 32) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.store_reg self off usp spc = ok z := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO, zisk_registers.REG_FIRST,
+    mem.SYS_ADDR, mem.RAM_ADDR, lift, Bind.bind, bind_ok]
+  have e1 := cast_one_i64; have e31 := cast_31_i64
+  split_ifs <;> first | exact ⟨_, rfl⟩ | (exfalso; scalar_tac)
+
+theorem src_b_imm_ok (self : zisk_inst_builder.ZiskInstBuilder) (v : Std.U64) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.src_b_imm self v = ok z := ⟨_, rfl⟩
+
+theorem op_zisk_ok (self : zisk_inst_builder.ZiskInstBuilder) (op : zisk_ops.ZiskOp) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.op_zisk self op = ok z := by
+  cases op <;> exact ⟨_, rfl⟩
+
+theorem new_ok (i : riscv2zisk_single_row.Rv64imLoweringInput) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering i = ok z := ⟨_, rfl⟩
+
+theorem j_ok (self : zisk_inst_builder.ZiskInstBuilder) (j1 j2 : Std.I64) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.j self j1 j2 = ok z := ⟨_, rfl⟩
+
+theorem build_ok (self : zisk_inst_builder.ZiskInstBuilder) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.build self = ok z := ⟨_, rfl⟩
+
+theorem insert_inst_ok (self : riscv2zisk_context.Riscv2ZiskContext) (rom : Std.U64)
+    (zib : zisk_inst_builder.ZiskInstBuilder) :
+    ∃ z, riscv2zisk_context.Riscv2ZiskContext.insert_inst self rom zib = ok z := ⟨_, rfl⟩
+
+/-! ## 4. Entry-point + helper totality used by the transpile bridge. -/
+
+/-- `create_register_op_typed` is total for in-range register fields (no `≠ 0`). -/
+theorem create_register_op_typed_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp) (inst_size : Std.U64)
+    (h1 : i.rs1.val < 32) (h2 : i.rs2.val < 32) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed self i op inst_size = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_reg_ok z0 (UScalar.cast UScalarTy.U64 i.rs1) false (by rw [cast_u32_u64_val]; exact h1)
+  obtain ⟨z2, hz2⟩ := src_b_reg_ok z1 (UScalar.cast UScalarTy.U64 i.rs2) false (by rw [cast_u32_u64_val]; exact h2)
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 op
+  obtain ⟨z4, hz4⟩ := store_reg_ok z3 (UScalar.hcast IScalarTy.I64 i.rd) false false
+    (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+    (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+  obtain ⟨z5, hz5⟩ := j_ok z4 (UScalar.hcast IScalarTy.I64 inst_size) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z6, hz6⟩ := build_ok z5
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z6
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
+
+/-- `from_inst` is total and copies the row's decode/row-mode fields. -/
+theorem from_inst_ok (zi : zisk_inst.ZiskInst) :
+    ∃ e, aeneas_extract.ZiskInstExtract.from_inst zi = ok e
+      ∧ e.op = zi.op ∧ e.is_external_op = zi.is_external_op ∧ e.m32 = zi.m32
+      ∧ e.set_pc = zi.set_pc ∧ e.store_pc = zi.store_pc
+      ∧ e.jmp_offset1 = zi.jmp_offset1 ∧ e.jmp_offset2 = zi.jmp_offset2 := by
+  refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rfl
+
+/-- `decode_extract_from_decoded` is total (every opcode/format arm returns `ok`). -/
+theorem decode_extract_ok (d : aeneas_extract.rv64im_decode.DecodedRv64im) :
+    ∃ e, aeneas_extract.decode_extract_from_decoded d = ok e := by
+  obtain ⟨b, hb⟩ : ∃ b, aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im d = ok b := by
+    rw [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im]; cases d.opcode <;> exact ⟨_, rfl⟩
+  obtain ⟨i, hi⟩ : ∃ i, aeneas_extract.opcode_id d.opcode = ok i := by
+    rw [aeneas_extract.opcode_id.eq_def]; cases d.opcode <;> exact ⟨_, rfl⟩
+  obtain ⟨i1, hi1⟩ : ∃ i, aeneas_extract.format_id d.format = ok i := by
+    rw [aeneas_extract.format_id.eq_def]; cases d.format <;> exact ⟨_, rfl⟩
+  simp only [aeneas_extract.decode_extract_from_decoded, Bind.bind, bind_ok, hb, hi, hi1]
+  exact ⟨_, rfl⟩
+
+/-- The default lowering context the transpile pipeline threads into the dispatcher. -/
+def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
+  { extract_inst := none, extract_marker := (), input_precompile := none,
+    output_precompile := none, input_precompile_reg := none, output_precompile_reg := none }
+
+end ZiskFv.Compliance.Extraction
