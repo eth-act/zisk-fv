@@ -174,4 +174,5 @@ import ZiskFv.Completeness.Rv
 -- See `ZiskFv/Completeness/Aspirational/README.md`.
 import ZiskFv.Completeness.Aspirational
 import ZiskFv.Completeness.Rv64im.SailDecode
+import ZiskFv.Completeness.Rv64im.SailDecode.ZiskClassifyMatch
 import ZiskFv.Completeness
