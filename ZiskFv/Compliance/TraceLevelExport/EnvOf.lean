@@ -204,7 +204,16 @@ noncomputable def divEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.div d.toInputs.div_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
+    d.toInputs.h_match_primary
+    -- #100: DERIVE the bundled `nextPC_matches` (DIV Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    -- The DivRemForge value-defect gate is untouched.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_div_pure d.toInputs.div_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.div_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
     d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
@@ -216,7 +225,15 @@ noncomputable def remEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.rem d.toInputs.rem_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
+    d.toInputs.h_match_secondary
+    -- #100: DERIVE the bundled `nextPC_matches` (REM Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_rem_pure d.toInputs.rem_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.rem_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
     d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
