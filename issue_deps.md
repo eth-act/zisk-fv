@@ -1,13 +1,14 @@
 # Issue Dependency Graph
 
 This graph includes all GitHub issues open as of 2026-06-28, plus closed issues
-that are explicit predecessors or already-done nodes in the dependency map. Node
-colors come from GitHub labels: `soundness`, `completeness`, both labels, no
-relevant label, and closed/done.
+that appear in GitHub's structured issue-dependency data. Node colors come from
+GitHub labels: `soundness`, `completeness`, both labels, no relevant label, and
+closed/done.
 
-Arrows preserve the dependency convention from the seed diagram: `A --> B` means
-that issue `A` depends on issue `B`. Merged PRs or closed issues mentioned only
-as historical context are not included as dependency nodes.
+Solid arrows are built from GitHub's structured `blockedBy` / `blocking`
+relationships only: `A --> B` means issue `A` is blocked by issue `B`.
+Sub-issues are listed separately below because GitHub tracks them as hierarchy,
+not dependency edges.
 
 ```mermaid
 %%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
@@ -30,8 +31,6 @@ flowchart TD
         I101["#101<br/>Binary-EQ aggregation"]:::soundness
         I115["#115<br/>remove RowTraceCoherence floor"]:::soundness
         I119["#119<br/>store RMW byte residual"]:::soundness
-        I76["#76<br/>load memory premise reduced"]:::done
-        I103["#103<br/>Mem seam capability banked"]:::done
         I144["#144<br/>AcceptedZiskTrace numInstructions"]:::soundness
     end
 
@@ -40,6 +39,7 @@ flowchart TD
         I162["#162<br/>prove raw decoder"]:::both
         I158["#158<br/>sync Aeneas toolchain"]:::both
         I108["#108<br/>extract table/witness data"]:::completeness
+        I114["#114<br/>Arith boundary gap closed"]:::done
         I75["#75<br/>eliminate native_decide"]:::both
         I77["#77<br/>Sail-Lean differential tests"]:::both
         I78["#78<br/>external kernel re-check"]:::both
@@ -54,21 +54,35 @@ flowchart TD
         I165["#165<br/>CI Aeneas cache optimization"]:::neither
     end
 
-    I61 --> I74
-    I61 --> I141 & I159 & I115 & I119 & I100 & I101 & I151 & I111
-
-    I74 --> I151 & I115 & I111 & I141
-    I141 --> I100 & I101
-    I101 --> I100
-
-    I115 --> I119
-    I115 --> I76 & I103
-    I119 --> I76 & I103
-
-    I159 --> I111 & I108
-    I154 --> I111 & I108 & I74 & I77 & I75 & I78 & I162
-    I162 --> I158
-    I108 --> I158
-
+    I74 --> I115 & I114 & I101 & I100 & I111
+    I115 --> I100
     I118 --> I117
 ```
+
+## GitHub Sub-Issues
+
+These structured GitHub relationships are hierarchy/progress tracking, not
+`blockedBy` dependencies, so they are not drawn as solid dependency arrows above.
+
+- #61 has sub-issues #74, #100, #101, #111, #115, #141, and #151.
+- #115 has sub-issue #119.
+- #114 has sub-issue #108. This looks stale as a dependency relation because #114
+  is closed while #108 remains open.
+
+No current issue in the queried set has structured `trackedIssues` /
+`trackedInIssues` relationships.
+
+## Proposed Dependency Updates
+
+These are not in the graph above unless they are added to GitHub's structured
+relationships.
+
+- Add #159 as a sub-issue of #61. Its body explicitly says "Child of #61."
+- Add completeness-meta links from #154 to #108, #74, #77, #75, #78, and #162
+  as either `blockedBy` dependencies or sub-issues, depending on whether #154 is
+  meant to be a completion gate or a tracker. #111 is already closed and can stay
+  as historical context in the issue body.
+- Add #162 `blockedBy` #158. #162 says it reuses the in-build Aeneas import from
+  #158, and #158 is still open.
+- Add or identify a live blocker for #151's Arith range-table fidelity work. #151
+  says it is blocked on that work, while the older related #114 is already closed.
