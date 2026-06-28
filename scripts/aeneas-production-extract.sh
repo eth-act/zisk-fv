@@ -4327,6 +4327,10 @@ theorem regs_to_set_width_nat_not_le_one :
     ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) ≤ 1) := by
   native_decide
 
+theorem regs_to_set_width_nat_not_lt_two :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) < 2) := by
+  native_decide
+
 theorem one_int_not_lt_regs_from_set_width :
     ¬ (1 < (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int)) := by
   native_decide
@@ -5034,7 +5038,7 @@ theorem src_a_reg_two_flag
     UScalar.cast,
     lift,
     two_nat_not_lt_regs_from_set_width,
-    regs_to_set_width_nat_not_le_one]
+    regs_to_set_width_nat_not_lt_two]
 
 theorem src_b_reg_two_flag
     (zib : zisk_inst_builder.ZiskInstBuilder) :
@@ -5048,7 +5052,7 @@ theorem src_b_reg_two_flag
     UScalar.cast,
     lift,
     two_nat_not_lt_regs_from_set_width,
-    regs_to_set_width_nat_not_le_one]
+    regs_to_set_width_nat_not_lt_two]
 
 theorem store_reg_one_flag
     (zib : zisk_inst_builder.ZiskInstBuilder) :
