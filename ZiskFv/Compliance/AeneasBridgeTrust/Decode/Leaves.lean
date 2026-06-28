@@ -34,6 +34,17 @@ leaf calls (where `raw` is a folded `rawXType`, not a literal `ofNat`). -/
 @[simp] theorem toU32_shr25 (X : BitVec 32) : toU32 X >>> 25#i32 = ok (toU32 (X >>> 25)) := rfl
 @[simp] theorem toU32_shr26 (X : BitVec 32) : toU32 X >>> 26#i32 = ok (toU32 (X >>> 26)) := rfl
 
+/-! FENCE bridges: the supported-FENCE decoder reads several extra fields. -/
+@[simp] theorem toU32_and28672 (X : BitVec 32) : toU32 X &&& 28672#u32 = toU32 (X &&& 28672#32) := rfl
+@[simp] theorem toU32_and3968 (X : BitVec 32) : toU32 X &&& 3968#u32 = toU32 (X &&& 3968#32) := rfl
+@[simp] theorem toU32_and1015808 (X : BitVec 32) : toU32 X &&& 1015808#u32 = toU32 (X &&& 1015808#32) := rfl
+@[simp] theorem toU32_and4027551616 (X : BitVec 32) :
+    toU32 X &&& 4027551616#u32 = toU32 (X &&& 4027551616#32) := rfl
+@[simp] theorem toU32_shr7 (X : BitVec 32) : toU32 X >>> 7#i32 = ok (toU32 (X >>> 7)) := rfl
+@[simp] theorem toU32_shr15 (X : BitVec 32) : toU32 X >>> 15#i32 = ok (toU32 (X >>> 15)) := rfl
+@[simp] theorem toU32_shr20 (X : BitVec 32) : toU32 X >>> 20#i32 = ok (toU32 (X >>> 20)) := rfl
+@[simp] theorem toU32_shr24 (X : BitVec 32) : toU32 X >>> 24#i32 = ok (toU32 (X >>> 24)) := rfl
+
 /-- `decode_r` is total and pins the opcode: every word decodes (the constant
 shifts always succeed) to a record carrying the passed opcode. -/
 theorem decode_r_ok (inst : Std.U32) (op : RiscvOpcode) :
@@ -221,6 +232,16 @@ theorem decode_i_false_spec (inst : Std.U32) (op : RiscvOpcode) :
   have h : (inst &&& 4293918720#u32).val < 2 ^ 32 := (inst &&& 4293918720#u32).bv.isLt
   simp only [UScalar.val] at h ⊢; omega
 
+theorem decode_i_true_spec (inst : Std.U32) (op : RiscvOpcode) :
+    decode_i inst op true ⦃ d => d.opcode = op ⦄ := by
+  rw [decode_i]
+  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok,
+    if_true, reduceIte]
+  step*
+  rw [i7_post1, Nat.shiftRight_eq_div_pow]
+  have h : (inst &&& 4293918720#u32).val < 2 ^ 32 := (inst &&& 4293918720#u32).bv.isLt
+  simp only [UScalar.val] at h ⊢; omega
+
 theorem add_accepts (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 : rs2 < 32) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawRType 0 rs2 rs1 0 rd 0x33)) = ok true := by
@@ -318,7 +339,13 @@ theorem shift64_family_accepts (rd rs1 shamt funct3 upper : Nat)
     (hfu : (funct3, upper) ∈ [(1, 0), (5, 0), (5, 0x400)]) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawIType (upper ||| shamt) rs1 funct3 rd 0x13)) = ok true := by
-  sorry
+  fin_cases hfu <;>
+    (simp (disch := omega) only [aeneas_extract.extract_rv64im_opcode_supported,
+      aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
+      toU32_and127, toU32_and7, toU32_and63, toU32_shr12, toU32_shr26, toU32_ofNat,
+      rawIType_opcode, rawIType_funct3, rawIType_funct6_zero, rawIType_funct6_sixteen]
+     exact bind_supported (decode_i_true_spec _ _)
+       (by intro d hd; simp only [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im, hd]))
 
 set_option maxHeartbeats 1000000 in
 theorem shift32_family_accepts (rd rs1 shamt funct3 upper : Nat)
@@ -326,12 +353,29 @@ theorem shift32_family_accepts (rd rs1 shamt funct3 upper : Nat)
     (hfu : (funct3, upper) ∈ [(1, 0), (5, 0), (5, 0x400)]) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawIType (upper ||| shamt) rs1 funct3 rd 0x1b)) = ok true := by
-  sorry
+  fin_cases hfu <;>
+    (simp (disch := omega) only [aeneas_extract.extract_rv64im_opcode_supported,
+      aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
+      toU32_and127, toU32_and7, toU32_shr12, toU32_shr25, toU32_ofNat,
+      rawIType_opcode, rawIType_funct3, rawIType_funct7_zero, rawIType_funct7_thirtytwo]
+     exact bind_supported (decode_i_true_spec _ _)
+       (by intro d hd; simp only [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im, hd]))
 
 set_option maxHeartbeats 1000000 in
 theorem fence_family_accepts (pred succ : Nat) (hp : pred < 16) (hs : succ < 16) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawSupportedFence pred succ)) = ok true := by
-  sorry
+  simp (disch := omega) only [aeneas_extract.extract_rv64im_opcode_supported,
+    aeneas_extract.rv64im_decode.decode_32_core,
+    aeneas_extract.rv64im_decode.decode_fence,
+    aeneas_extract.rv64im_decode.DecodedRv64im.new,
+    aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im,
+    lift, bind_assoc, Bind.bind, bind_ok,
+    toU32_and127, toU32_and28672, toU32_and3968, toU32_and1015808, toU32_and4027551616,
+    toU32_and15, toU32_shr12, toU32_shr7, toU32_shr15, toU32_shr20, toU32_shr24, toU32_ofNat,
+    rawSupportedFence_opcode, rawSupportedFence_funct3, rawSupportedFence_zeros]
+  -- funct3 = 0 (FENCE arm), reserved-bits check is `0 != 0 = false`, so the decoder
+  -- returns `ok {opcode := Fence, ..}`; `is_supported Fence = ok true`. All definitional.
+  rfl
 
 end ZiskFv.Compliance.Decode

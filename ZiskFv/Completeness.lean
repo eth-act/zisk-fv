@@ -124,7 +124,10 @@ each a closed `Prop` about a `z`, NOT a per-word ingredient. Discharging all fiv
 
 /-- OBLIGATION (the only one touching the Sail-derived shape domain): every
 in-shape word that is not a known gap is accepted by ZisK's decoder.
-Discharge: eth-act/zisk-fv#111. -/
+Discharge: eth-act/zisk-fv#162 — `ZiskFv.Compliance.Decode.real_decoder_accepts_in_shape`
+proves this in-build for the REAL extracted decoder (`extract_rv64im_opcode_supported`,
+instantiating `decoderAccepts := ziskDecoderAccepts`), kernel-soundly. (Tracked under
+eth-act/zisk-fv#111, the Aeneas decode/lowering connection.) -/
 def OutstandingZiskPredicates.decoderAcceptsInShape (z : OutstandingZiskPredicates) : Prop :=
   ∀ raw, SupportedDecodeShape raw → ¬ z.knownDecodeGap raw → z.decoderAccepts raw
 

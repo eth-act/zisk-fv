@@ -20,11 +20,17 @@ Plan: docs/ai/plan/PLAN_DECODER_162.md   Issue: eth-act/zisk-fv#162
 - [x] P1 make-or-break spike (masking + concrete reduction) — GREEN
 - [x] P2 Foundation: `Decode/Masks.lean` (R/I/S/B/U/J field extraction) + `Decode/Leaves.lean` (toU32, signext_ok, leaf specs, bind_supported)
 - [x] P3a families R/I/S/B/U/J proven (rtype/itype/stype/btype/utype/jtype _family_accepts), clean axioms
-- [ ] P3b shift family (funct6/funct7 + decode_i_true) + fence family
-- [ ] P4 `Decode.lean` — `ziskDecoderAccepts` + `zisk_decoder_accepts_supported_shape` + obligation bridge
-- [ ] P5 wire into `Completeness.lean`; confirm clean kernel-only axiom closure
-- [ ] P6 trust gates (V1 `check-all.sh` + V2 `check-all-semantic.sh`), full `lake build`
+- [~] P3b shift64/shift32/fence families (DELEGATED to background agent a4895cb5063485063; stubbed sorry in Leaves.lean)
+- [x] P4 `Decode.lean` — `ziskDecoderAccepts` + `zisk_decoder_accepts_supported_shape` + `real_decoder_accepts_in_shape` (obligation bridge); compiles
+- [x] P5a integration prep (no-build text edits, pending full build): ZiskFv.lean imports Decode; Completeness.lean doc pointer; bin/TrustGate/Main.lean check-extraction-closure extended to ZiskFv.Compliance.Decode.*
+- [ ] P5b full `lake build` + confirm clean kernel-only axiom closure on headline
+- [ ] P6 trust gates (V1 `check-all.sh` + V2 `check-all-semantic.sh`); regenerate baselines if needed
 - [ ] P7 PR
+
+## Integration notes (pending agent completion of P3b)
+- After agent finishes shift/fence: full `lake build`, `lake exe trust-gate check-extraction-closure`,
+  `#print axioms ZiskFv.Compliance.Decode.zisk_decoder_accepts_supported_shape` (expect propext/Classical.choice/Quot.sound),
+  V1+V2 gates, then PR.
 
 ## Scratch to DELETE before PR
 - `ZiskFv/MaskSpike.lean`

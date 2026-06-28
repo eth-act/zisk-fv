@@ -336,6 +336,14 @@ out of each pin theorem's closure, but the per-theorem axiom-dep baseline gate
 is the missing regression gate. -/
 def extractionNamespace : Name := `ZiskFv.Compliance.Extraction
 
+/-- Namespaces whose every declaration must have a RAW (unfiltered) axiom closure
+⊆ `{propext, Classical.choice, Quot.sound}`. Both import the Aeneas runtime (which
+carries upstream `sorry`s) so they need the raw-closure regression gate:
+`ZiskFv.Compliance.Extraction` (eth-act/zisk-fv#111, opcode→fields decode pins) and
+`ZiskFv.Compliance.Decode` (eth-act/zisk-fv#162, raw-word→opcode decoder acceptance). -/
+def extractionNamespaces : List Name :=
+  [`ZiskFv.Compliance.Extraction, `ZiskFv.Compliance.Decode]
+
 /-- Kernel axioms permitted in an extraction-pin closure. Anything else —
 `sorryAx`, `Lean.ofReduceBool`, `Lean.trustCompiler`, a `ZiskFv.*` project
 axiom, or an external Sail-translation axiom — is a leak and fails the gate. -/
@@ -358,10 +366,10 @@ def cmdCheckExtractionClosure (env : Environment) : IO UInt32 := do
   -- Enumerate every const under the extraction namespace, sorted.
   let mut decls : Array Name :=
     env.constants.fold (init := (#[] : Array Name)) fun out n _ci =>
-      if extractionNamespace.isPrefixOf n then out.push n else out
+      if extractionNamespaces.any (fun ns => ns.isPrefixOf n) then out.push n else out
   decls := decls.qsort (fun a b => a.toString < b.toString)
   if decls.isEmpty then
-    IO.eprintln s!"trust-gate (V2): NO declarations found under {extractionNamespace} — \
+    IO.eprintln s!"trust-gate (V2): NO declarations found under {extractionNamespaces} — \
       the extraction-closure gate would pass vacuously. Did the Aeneas extraction \
       modules fail to import into ZiskFv?"
     return 1
@@ -372,10 +380,10 @@ def cmdCheckExtractionClosure (env : Environment) : IO UInt32 := do
     if !bad.isEmpty then
       offenders := offenders.push (n, bad)
   if offenders.isEmpty then
-    IO.println s!"trust-gate (V2): {decls.size} {extractionNamespace}.* declaration(s) \
+    IO.println s!"trust-gate (V2): {decls.size} extraction/decode declaration(s) \
       checked, all RAW closures ⊆ \{propext, Classical.choice, Quot.sound}."
     return 0
-  IO.eprintln s!"trust-gate (V2): {offenders.size} of {decls.size} {extractionNamespace}.* \
+  IO.eprintln s!"trust-gate (V2): {offenders.size} of {decls.size} extraction/decode \
     declaration(s) have a RAW axiom closure OUTSIDE \{propext, Classical.choice, Quot.sound} — FAIL."
   IO.eprintln "  A leaked external `sorryAx` / `Lean.ofReduceBool` / `Lean.trustCompiler`,"
   IO.eprintln "  or a `ZiskFv.*` project axiom, reached an Aeneas extraction-pin theorem:"
@@ -453,7 +461,7 @@ def usage : IO Unit := do
   IO.println "  print-strong-export-binders    print strong export theorem binder baseline rows"
   IO.println "  check-strong-export-closure PATH  check strong export theorem ZiskFv.* axiom closure == PATH"
   IO.println "  check-strong-export-binders BASELINE FORBIDDEN  check strong export binder baseline + forbidden-type walk"
-  IO.println "  check-extraction-closure       assert every ZiskFv.Compliance.Extraction.* RAW axiom closure ⊆ {propext, Classical.choice, Quot.sound}"
+  IO.println "  check-extraction-closure       assert every ZiskFv.Compliance.{Extraction,Decode}.* RAW axiom closure ⊆ {propext, Classical.choice, Quot.sound}"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
