@@ -27,6 +27,7 @@ open ZiskFv.Compliance.Decode (toU32)
 namespace ZiskFv.Compliance.Extraction
 
 set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
 
 /-! ## 1. Decoder register-field bounds (the 5-bit masks land `< 32`). -/
 
@@ -165,6 +166,89 @@ theorem decode_extract_ok (d : aeneas_extract.rv64im_decode.DecodedRv64im) :
     rw [aeneas_extract.format_id.eq_def]; cases d.format <;> exact ⟨_, rfl⟩
   simp only [aeneas_extract.decode_extract_from_decoded, Bind.bind, bind_ok, hb, hi, hi1]
   exact ⟨_, rfl⟩
+
+/-! ## 5. Immediate-ALU lowering totality (block 3, immediate/shift families).
+
+`immediate_op_typed` is the canonical builder for the plain immediates
+(SLLI/SRLI/SRAI, SLTI/SLTIU, ANDI, ADDIW, SLLIW/SRLIW/SRAIW).  Unlike the
+register builder it uses `src_b_imm` (unconditionally total) for the second
+operand, so its only register-bound branches are `src_a_reg` (on `rs1`) and
+`store_reg` (on `rd`).  Hence totality needs only `rs1 < 32 ∧ rd < 32` (no rs2,
+no `≠ 0`). -/
+
+attribute [local step] ZiskFv.Compliance.Decode.signext_spec
+
+-- `decode_i` is total and its `rd`/`rs1` fields are `< 32` (the 5-bit masks land
+-- `< 32`; the `imm` field's `signext` is discharged via `signext_spec`).  The
+-- `shift_level` flag only affects `imm`, so the bounds hold for either value.
+set_option maxHeartbeats 1000000 in
+theorem decode_i_bounds (raw : Std.U32) (op : RiscvOpcode) (sh : Bool) :
+    ∃ d, decode_i raw op sh = ok d ∧ d.opcode = op ∧ d.rd.val < 32 ∧ d.rs1.val < 32
+      ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 := by
+  have spec : decode_i raw op sh
+      ⦃ d => d.opcode = op ∧ d.rd.val < 32 ∧ d.rs1.val < 32 ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 ⦄ := by
+    rcases sh with _ | _
+    · rw [decode_i]
+      simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok,
+        Bool.false_eq_true, if_false, reduceIte]
+      step*
+      · -- signext precondition: i7 (a 12-bit slice) ≤ 2147483647
+        rw [i7_post1, Nat.shiftRight_eq_div_pow]
+        have h : (↑(raw &&& 4293918720#u32) : Nat) < 2 ^ 32 := by
+          have := (raw &&& 4293918720#u32).bv.isLt; simpa only [UScalar.val] using this
+        omega
+      · refine ⟨?_, ?_, i3_post2⟩
+        · rw [i3_post1, Nat.shiftRight_eq_div_pow]
+          have h : (↑(raw &&& 3968#u32) : Nat) ≤ 3968 := by
+            simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+          omega
+        · rw [i5_post1, Nat.shiftRight_eq_div_pow]
+          have h : (↑(raw &&& 1015808#u32) : Nat) ≤ 1015808 := by
+            simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+          omega
+    · rw [decode_i]
+      simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok,
+        if_true, reduceIte]
+      step*
+      · rw [i7_post1, Nat.shiftRight_eq_div_pow]
+        have h : (↑(raw &&& 4293918720#u32) : Nat) < 2 ^ 32 := by
+          have := (raw &&& 4293918720#u32).bv.isLt; simpa only [UScalar.val] using this
+        omega
+      · refine ⟨?_, ?_, i3_post2⟩
+        · rw [i3_post1, Nat.shiftRight_eq_div_pow]
+          have h : (↑(raw &&& 3968#u32) : Nat) ≤ 3968 := by
+            simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+          omega
+        · rw [i5_post1, Nat.shiftRight_eq_div_pow]
+          have h : (↑(raw &&& 1015808#u32) : Nat) ≤ 1015808 := by
+            simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+          omega
+  obtain ⟨d, hd, hpost⟩ := WP.spec_imp_exists spec
+  exact ⟨d, hd, hpost⟩
+
+/-- `immediate_op_typed` is total for in-range register fields (`rs1 < 32`,
+`rd < 32`).  The second operand is `src_b_imm` (unconditionally total), so the
+only register-bound branches are `src_a_reg` (on `rs1`) and `store_reg` (on `rd`),
+discharged by the same numBits-split technique as the register builder — NO `≠ 0`
+and NO `rs2` side-condition. -/
+theorem immediate_op_typed_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp) (inst_size : Std.U64)
+    (h1 : i.rs1.val < 32) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed self i op inst_size = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_reg_ok z0 (UScalar.cast UScalarTy.U64 i.rs1) false (by rw [cast_u32_u64_val]; exact h1)
+  obtain ⟨z2, hz2⟩ := src_b_imm_ok z1 (IScalar.hcast UScalarTy.U64 i.imm)
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 op
+  obtain ⟨z4, hz4⟩ := store_reg_ok z3 (UScalar.hcast IScalarTy.I64 i.rd) false false
+    (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+    (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+  obtain ⟨z5, hz5⟩ := j_ok z4 (UScalar.hcast IScalarTy.I64 inst_size) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z6, hz6⟩ := build_ok z5
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z6
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
 
 /-- The default lowering context the transpile pipeline threads into the dispatcher. -/
 def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
