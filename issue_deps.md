@@ -33,6 +33,8 @@ flowchart TD
         I119["#119<br/>store RMW byte residual"]:::soundness
         I76["#76<br/>load memory premise reduced"]:::done
         I144["#144<br/>AcceptedZiskTrace numInstructions"]:::soundness
+        I169["#169<br/>Arith range-table fidelity"]:::soundness
+        I171["#171<br/>mainOfTable projection safety"]:::soundness
     end
 
     subgraph Decode["Decode / extraction / completeness"]
@@ -54,10 +56,17 @@ flowchart TD
         I165["#165<br/>CI Aeneas cache optimization"]:::neither
     end
 
-    I74 --> I115 & I100
+    I61 --> I119 & I159 & I151 & I141 & I115 & I111 & I101 & I100 & I74
+    I74 --> I159 & I151 & I141 & I115 & I100
+    I141 --> I101 & I100
     I115 --> I76
     I119 --> I76
+    I151 --> I169
     I159 --> I111
+    I144 --> I171
+
+    I154 --> I162 & I78 & I77 & I75 & I74 & I108
+
     I118 --> I117
 ```
 
@@ -77,12 +86,10 @@ No current issue in the queried set has structured `trackedIssues` /
 These are not in the graph above unless they are added to GitHub's structured
 relationships.
 
-- Add completeness-meta sub-issues under #154 for open completeness/trust work
-  such as #108, #162, #75, #77, and #78 if #154 should serve as a GitHub progress
-  tracker instead of only a narrative meta issue.
-- Add or identify a live issue for the Arith range-table fidelity work, then mark
-  #151 as blocked by it. #151 says it is blocked on that work, while the older
-  related #114 is already closed.
-- Add or identify a live issue for the `mainOfTable` projection/refactor work,
-  then mark #144 as blocked by it. #144 names that refactor as the reason the
-  `AcceptedZiskTrace numInstructions` cleanup is blocked.
+- Add completeness-meta sub-issues under #154 matching its blockers if #154
+  should also serve as a GitHub progress tracker.
+- If there is or will be a large-file-split umbrella issue, use parent/sub-issue
+  grouping for #127 and #128; neither currently blocks the other.
+- Review #158 for closure or retitling. Its body/title originally made it sound
+  like a blocker for #111/#108, but its follow-up comment says the technical
+  sync was implemented and merged via #160.
