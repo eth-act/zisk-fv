@@ -7,7 +7,7 @@ accepts every raw 32-bit word in `SupportedDecodeShape`, and this discharges the
 completeness obligation `OutstandingZiskPredicates.decoderAcceptsInShape`
 (`ZiskFv/Completeness.lean`).
 
-Kernel-sound: NO native_decide / bv_decide / sorry. The closure of
+Kernel-sound: NO `native_decide` / `bv_decide` / `sorry`. The closure of
 `zisk_decoder_accepts_supported_shape` is `[propext, Classical.choice, Quot.sound]`.
 -/
 import ZiskFv.Compliance.AeneasBridgeTrust.Decode.Leaves
