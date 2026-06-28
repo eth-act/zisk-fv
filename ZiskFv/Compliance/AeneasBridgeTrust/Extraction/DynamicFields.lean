@@ -654,4 +654,73 @@ theorem nop_dynamic_pins
   · rw [hz54, hj1]
   · rw [hz54, hj2]
 
+/-! ## 9. Branches.  `create_branch_op_typed` flips the two `j` arguments on
+`neg`: for `neg = false` (BEQ/BLT/BLTU) the CONSTANT slot is `jmp_offset2`
+(`= hcast inst_size`; `jmp_offset1` is the imm branch target), and for
+`neg = true` (BNE/BGE/BGEU) the constant slot is `jmp_offset1`.  The imm-derived
+target slot is OUT OF decode scope and not pinned. -/
+
+set_option maxHeartbeats 2000000 in
+theorem create_branch_op_typed_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (neg : Bool) (inst_size : Std.U64)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
+          self i op neg inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      (neg = false → zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size) ∧
+      (neg = true  → zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size) := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨zib0, h0, h⟩ := bind_eq_ok_imp h   -- new
+  obtain ⟨zib1, h1, h⟩ := bind_eq_ok_imp h   -- src_a_reg
+  obtain ⟨zib2, h2, h⟩ := bind_eq_ok_imp h   -- src_b_reg
+  obtain ⟨zib3, h3, h⟩ := bind_eq_ok_imp h   -- op_zisk
+  obtain ⟨zib4, h4, h⟩ := bind_eq_ok_imp h   -- the (if neg then j … else j …)
+  obtain ⟨zib5, h5, h⟩ := bind_eq_ok_imp h   -- build
+  obtain ⟨s1, h6, h⟩ := bind_eq_ok_imp h     -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  have hb := build_eq _ _ h5
+  split_ifs at h4 with hcond
+  · -- neg = true : `j zib3 (hcast inst_size) (cast imm)`
+    obtain ⟨hjj1, _⟩ := j_jmp _ _ _ _ h4
+    refine ⟨zib5, insert_inst_extract _ _ _ _ h6, ?_, ?_⟩
+    · intro hf; rw [hcond] at hf; exact absurd hf (by decide)
+    · intro _; rw [hb, hjj1]
+  · -- neg = false : `j zib3 (cast imm) (hcast inst_size)`
+    obtain ⟨_, hjj2⟩ := j_jmp _ _ _ _ h4
+    refine ⟨zib5, insert_inst_extract _ _ _ _ h6, ?_, ?_⟩
+    · intro _; rw [hb, hjj2]
+    · intro ht; exact absurd ht hcond
+
+/-- macro: emit `<nm>_dynamic_pins` for a `neg = false` branch (constant slot
+`jmp_offset2`). -/
+local macro "branch_dyn_false" nm:ident "," ropx:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_dynamic_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed self i $ropx false inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+    obtain ⟨zib, hext, hf, _⟩ := create_branch_op_typed_dynamic_pins self i $ropx false inst_size ctx h
+    exact ⟨zib, hext, hf rfl⟩)
+
+/-- macro: emit `<nm>_dynamic_pins` for a `neg = true` branch (constant slot
+`jmp_offset1`). -/
+local macro "branch_dyn_true" nm:ident "," ropx:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_dynamic_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed self i $ropx true inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size := by
+    obtain ⟨zib, hext, _, ht⟩ := create_branch_op_typed_dynamic_pins self i $ropx true inst_size ctx h
+    exact ⟨zib, hext, ht rfl⟩)
+
+branch_dyn_false beq,  zisk_ops.ZiskOp.Eq
+branch_dyn_true  bne,  zisk_ops.ZiskOp.Eq
+branch_dyn_false blt,  zisk_ops.ZiskOp.Lt
+branch_dyn_true  bge,  zisk_ops.ZiskOp.Lt
+branch_dyn_false bltu, zisk_ops.ZiskOp.Ltu
+branch_dyn_true  bgeu, zisk_ops.ZiskOp.Ltu
+
 end ZiskFv.Compliance.Extraction
