@@ -28,11 +28,11 @@ Buckets:
 - (b) Genuine named top-level premise for the trace-level theorem: boot/profile
   assumptions, program binding, `aeneasBridgeTrust`, load memory timeline until
   #76, and `Defects.NoKnownDefect`.
-  - (b)-pending-infrastructure: a *real* semantic fact that is currently a named
-    premise only because the live formal model cannot yet represent the source
-    constraint. The next-PC / cross-row PC handshake is the canonical case (see
-    the cross-row note below); it returns to bucket-(a) once the cross-row
-    capability prerequisite lands.
+  - (b)-pending-infrastructure: a *real* semantic fact that is a named premise
+    only because the live formal model cannot yet represent the source
+    constraint. Historically, the next-PC / cross-row PC handshake was the
+    canonical case; #100 discharges it via accepted-trace certificates (see the
+    cross-row note below).
 - (c) Neither: constructor-carried facts that are not consequences of
   constraints/channel balance and should not appear as standalone public
   assumptions. This includes both the subword-store preserved-byte RMW facts
@@ -65,11 +65,11 @@ facts that are not consequences of constraints/channel balance:
    bucket-(c) section below; it is the same category as class 1, not a parallel
    audit axis.
 
-The previously bucket-(a) "PC/nextPC bus bridge" entry is separately reclassified
-to **bucket-(b)-pending-infrastructure** (a named premise gated on a foundational
-cross-row capability), not bucket-(c) — see the cross-row note below. It is not
-an artifact: `nextPC` is the real semantic effect; it is simply not derivable
-from the live single-row ensemble today.
+The previously bucket-(a) "PC/nextPC bus bridge" entry was separately tracked as
+bucket-(b)-pending-infrastructure, not bucket-(c), because `nextPC` is a real
+semantic effect rather than an exec-bus bookkeeping artifact. #100 discharges
+that premise via accepted-trace PC-transition certificates; see the cross-row
+note below.
 
 ## Bucket (b) Premises
 
@@ -102,14 +102,14 @@ should expose the named defect predicate, not raw contradictions.
 | Load memory timeline | `OpEnvelope.memoryTimelineEvidence` for load arms; `LoadStructuralPromises.withMemoryTimelineEvidence` in dispatch | (b) now, (a) after #76 | Named residual memory boundary |
 | Subword-store preserved bytes | `sb.h_m1..h_m7`, `sh.h_m2..h_m7`, `sw.h_m4..h_m7` | (c) | See bucket-(c) finding (class 1) below |
 | Execution-bus shape artifacts | branch/FENCE `exec_row`, `h_exec_len`, `h_e0_mult`, `h_e1_mult` | (c) | Phantom `Interaction.ExecutionBusEntry` bookkeeping; no ZisK bus carries it. See exec-row bucket-(c) section (class 2) below |
-| PC / next-PC bus bridge | branch/FENCE/jump `h_nextPC_matches`, PC handshake | (b)-pending-infra | Real semantic effect, but cross-row; not derivable from the live single-row ensemble today. See cross-row note below |
+| PC / next-PC bus bridge | former `h_nextPC_matches`, PC handshake | discharged via #100 | Real semantic effect; now derived from accepted-trace PC-transition certificates + per-op decode/provenance. See cross-row note below |
 
 ## Per-Family Classification
 
 | Family / constructors | Bucket (a) constructor burden | Bucket (b) premise source | Bucket (c) |
 |-----------------------|-------------------------------|---------------------------|------------|
-| Branch: `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu` | Branch input, operands, Main row pins | Program binding; `misa.C = 0` as profile invariant; `aeneasBridgeTrust` until imported; PC/nextPC bus bridge as **(b)-pending-infra** (see below) | exec-row shape facts (`exec_len`/`e0_mult`/`e1_mult`); see exec-row bucket-(c) section |
-| FENCE: `fence` | `MainRowPins`, PC bus shape | Machine privilege/profile; `NoKnownDefect` restricts to ZisK's known-good FENCE shape; PC/nextPC bus bridge as **(b)-pending-infra** | `exec_row` exec-bus shape facts; see exec-row bucket-(c) section |
+| Branch: `beq`, `bne`, `blt`, `bge`, `bltu`, `bgeu` | Branch input, operands, Main row pins | Program binding; `misa.C = 0` as profile invariant; `aeneasBridgeTrust` until imported; next-PC now discharged by #100 accepted-trace certificates | exec-row shape facts (`exec_len`/`e0_mult`/`e1_mult`); see exec-row bucket-(c) section |
+| FENCE: `fence` | `MainRowPins`, PC bus shape | Machine privilege/profile; `NoKnownDefect` restricts to ZisK's known-good FENCE shape; next-PC now discharged by #100 accepted-trace certificates | `exec_row` exec-bus shape facts; see exec-row bucket-(c) section |
 | U/J control flow: `lui`, `auipc`, `auipc_x0`, `jal`, `jal_x0`, `jalr` | Store-PC memory witness, row provenance, subset facts, PC/offset finite arithmetic, no-write variants | Program binding; `misa`, privilege, and `mseccfg` profile facts; `aeneasBridgeTrust` | None |
 | Binary/Add/ITYPE: `add_via_binary`, `addi_via_binary`, `addw`, `subw`, `addiw`, `sub`, `and`, `or`, `xor`, `slt`, `sltu`, `andi`, `ori`, `xori`, `slti`, `sltiu` | Static Binary lookup table, provider row, operation-bus match, input-lane bridges, write-lane bridge, R/I-type promises | Program binding and Aeneas bridge | None |
 | Shift: `sll`, `srl`, `sra`, `slli`, `srli`, `srai`, `sllw`, `srlw`, `sraw`, `slliw`, `srliw`, `sraiw` | Static BinaryExtension lookup, shift amount pins, R/shift promise bundles or expanded W-form promise fields | Program binding and Aeneas bridge | None |
@@ -210,7 +210,7 @@ real** fact in the exec-bus cluster: `bus_effect` writes `Register.nextPC` and
 this equates it to the Sail next-PC. Unlike the exec-row artifacts, it is not an
 artifact to be eliminated — it is a real effect. ~~But it is **not derivable from
 the live ensemble today**~~ (pre-#100), so it *was* reclassified from bucket-(a) to
-**bucket-(b)-pending-infrastructure** for **every** opcode (not just branches):
+**bucket-(b)-pending-infrastructure** for **every** opcode (not just branches);
 sequential next-PC = `pc + 4` is *also* a cross-row property.
 
 The blocker is a **cross-row ceiling** in the live model:
@@ -232,14 +232,14 @@ The blocker is a **cross-row ceiling** in the live model:
   only into the dead legacy `[Circuit F ExtF C]` model
   (`build/extraction/Extraction/Main.lean:97`,
   `constraint_18_every_row`, parameterized over the legacy typeclass) — and
-  nothing under `ZiskFv/` imports `Extraction.*`. So `constraint_18` is **not**
-  in `trace.constraints` and `pc_handshake` is **not** derivable today.
+  nothing under `ZiskFv/` imports `Extraction.*`. Before #100, `constraint_18`
+  was **not** in `trace.constraints` and `pc_handshake` was **not** derivable.
 
-Returning `h_nextPC_matches` to bucket-(a) requires a foundational cross-row
+Returning `h_nextPC_matches` to bucket-(a) required a foundational cross-row
 capability for the Clean ensemble (a rotation-capable component or shadow-column
-encoding), filed as a prerequisite (see `trust/p4-construction-closeout.md`).
-The branch next-PC additionally needs a missing Binary-EQ 8-byte aggregation
-lemma. This audit does not claim next-PC is derivable today; it records it as an
+encoding), plus branch flag aggregation. #100 takes the accepted-trace certificate
+route documented in `trust/trusted-base.md` rather than deriving it from
+`constraints_hold`. This historical audit originally recorded next-PC as an
 explicit named premise with a tracked prerequisite.
 
 ## Non-Findings

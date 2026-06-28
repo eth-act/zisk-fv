@@ -40,9 +40,9 @@ reassembled `RowData_<op>` to the matching `stepStrong_<op>`.
 `RowDecode`/`InputsAgree` then compute the matching `Decode_<op>` / `Inputs_<op>`
 residual.  Together (`RowData_<op>`, reassembled by `toRowData_<op>`) they package
 EXACTLY each construction's genuinely-irreducible residual binders (decode pins,
-Sail reads, operand/lane bridges, the `execRow` ∀-binder + exec facts,
-`h_nextPC_matches`; for loads also `MemoryTimelineEvidence` + the Mem-AIR
-provider linkage).  They do NOT package the bucket-(a) op-bus provider-match
+Sail reads, operand/lane bridges, PC-provenance/next-row pins; for loads also
+`MemoryTimelineEvidence` + the Mem-AIR provider linkage).  They do NOT package
+the bucket-(a) op-bus provider-match
 evidence: that is derived INSIDE each construction from `trace.channels_balanced`
 (via the `exists_*_provider_row_matches_*` Layer-A lemmas).
 
