@@ -47,3 +47,6 @@ docs/superpowers/
 /out/
 
 .rgignore
+
+# Per-worktree AI status trail — local-only, never committed (see #162 fdd5b4ef, #159 review P2)
+/STATUS.md

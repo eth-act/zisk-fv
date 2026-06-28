@@ -337,12 +337,16 @@ is the missing regression gate. -/
 def extractionNamespace : Name := `ZiskFv.Compliance.Extraction
 
 /-- Namespaces whose every declaration must have a RAW (unfiltered) axiom closure
-⊆ `{propext, Classical.choice, Quot.sound}`. Both import the Aeneas runtime (which
+⊆ `{propext, Classical.choice, Quot.sound}`. All import the Aeneas runtime (which
 carries upstream `sorry`s) so they need the raw-closure regression gate:
-`ZiskFv.Compliance.Extraction` (eth-act/zisk-fv#111, opcode→fields decode pins) and
-`ZiskFv.Compliance.Decode` (eth-act/zisk-fv#162, raw-word→opcode decoder acceptance). -/
+`ZiskFv.Compliance.Extraction` (eth-act/zisk-fv#111, opcode→fields decode pins),
+`ZiskFv.Compliance.Decode` (eth-act/zisk-fv#162, raw-word→opcode decoder acceptance),
+and `ZiskFv.Compliance.RawProgramBinding` (eth-act/zisk-fv#159, the block-3
+`Decode_*_from_rawProgram` / `transpile_*` bridges that run the real
+`extract_transpile_rv64im_raw` pipeline via `romMessageOfRaw`). -/
 def extractionNamespaces : List Name :=
-  [`ZiskFv.Compliance.Extraction, `ZiskFv.Compliance.Decode]
+  [`ZiskFv.Compliance.Extraction, `ZiskFv.Compliance.Decode,
+   `ZiskFv.Compliance.RawProgramBinding]
 
 /-- Kernel axioms permitted in an extraction-pin closure. Anything else —
 `sorryAx`, `Lean.ofReduceBool`, `Lean.trustCompiler`, a `ZiskFv.*` project
