@@ -9,13 +9,10 @@ set_option linter.unusedVariables false
 /- You can set the `maxHeartbeats` value with the `-max-heartbeats` CLI option -/
 set_option maxHeartbeats 1000000
 
-/- You can set the `maxRecDepth` value with the `-max-recdepth` CLI option -/
-set_option maxRecDepth 2048
-
 namespace zisk_core
 
 /-- [core::marker::PhantomData]
-    Source: '/rustc/library/core/src/marker.rs', lines 811:0-811:39
+    Source: '/rustc/library/core/src/marker.rs', lines 814:0-814:39
     Name pattern: [core::marker::PhantomData]
     Visibility: public -/
 @[reducible, rust_type "core::marker::PhantomData"]
@@ -57,7 +54,7 @@ inductive aeneas_extract.fence_decode.FenceDecodeKind where
 | Reserved : aeneas_extract.fence_decode.FenceDecodeKind
 | NotFence : aeneas_extract.fence_decode.FenceDecodeKind
 
-/-- [zisk_core::aeneas_extract::fence_decode::{impl core::cmp::PartialEq<zisk_core::aeneas_extract::fence_decode::FenceDecodeKind> for zisk_core::aeneas_extract::fence_decode::FenceDecodeKind}::eq]:
+/-- [zisk_core::aeneas_extract::fence_decode::{core::cmp::PartialEq<zisk_core::aeneas_extract::fence_decode::FenceDecodeKind> for zisk_core::aeneas_extract::fence_decode::FenceDecodeKind}::eq]:
     Source: 'core/src/../../riscv/src/fence_decode.rs', lines 1:29-1:38
     Visibility: public -/
 def
@@ -905,7 +902,7 @@ structure aeneas_extract.ZiskInstExtract where
   input_size : Std.U64
   sorted_pc_list_index : Std.Usize
 
-/-- [zisk_core::aeneas_extract::{impl core::default::Default for zisk_core::aeneas_extract::ZiskInstExtract}::default]:
+/-- [zisk_core::aeneas_extract::{core::default::Default for zisk_core::aeneas_extract::ZiskInstExtract}::default]:
     Source: 'core/src/aeneas_extract.rs', lines 14:29-14:36
     Visibility: public -/
 def aeneas_extract.ZiskInstExtract.Insts.CoreDefaultDefault.default
@@ -1792,7 +1789,7 @@ def zisk_ops.ZiskOp.op_type
   | zisk_ops.ZiskOp.Bn254ComplexMul => ok zisk_ops.OpType.ArithEq
   | zisk_ops.ZiskOp.Halt => ok zisk_ops.OpType.Internal
 
-/-- [zisk_core::zisk_ops::{impl core::convert::From<zisk_core::zisk_ops::OpType> for zisk_core::zisk_inst::ZiskOperationType}::from]:
+/-- [zisk_core::zisk_ops::{core::convert::From<zisk_core::zisk_ops::OpType> for zisk_core::zisk_inst::ZiskOperationType}::from]:
     Source: 'core/src/zisk_ops.rs', lines 68:4-86:5
     Visibility: public -/
 def zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from
@@ -1816,7 +1813,7 @@ def zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from
   | zisk_ops.OpType.Blake2 => ok zisk_inst.ZiskOperationType.Blake2
   | zisk_ops.OpType.Profile => ok zisk_inst.ZiskOperationType.Profile
 
-/-- Trait implementation: [zisk_core::zisk_ops::{impl core::convert::From<zisk_core::zisk_ops::OpType> for zisk_core::zisk_inst::ZiskOperationType}]
+/-- Trait implementation: [zisk_core::zisk_ops::{core::convert::From<zisk_core::zisk_ops::OpType> for zisk_core::zisk_inst::ZiskOperationType}]
     Source: 'core/src/zisk_ops.rs', lines 67:0-87:1 -/
 @[reducible]
 def zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType : core.convert.From
@@ -2121,7 +2118,7 @@ def zisk_inst_builder.ZiskInstBuilder.src_a_imm
         }
     }
 
-/-- [zisk_core::zisk_inst::{impl core::default::Default for zisk_core::zisk_inst::ZiskInst}::default]:
+/-- [zisk_core::zisk_inst::{core::default::Default for zisk_core::zisk_inst::ZiskInst}::default]:
     Source: 'core/src/zisk_inst.rs', lines 163:4-201:5
     Visibility: public -/
 def zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default
@@ -2153,7 +2150,7 @@ def zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default
       sorted_pc_list_index := 0#usize
     }
 
-/-- [zisk_core::zisk_inst_builder::{impl core::default::Default for zisk_core::zisk_inst_builder::ZiskInstBuilder}::default]:
+/-- [zisk_core::zisk_inst_builder::{core::default::Default for zisk_core::zisk_inst_builder::ZiskInstBuilder}::default]:
     Source: 'core/src/zisk_inst_builder.rs', lines 17:23-17:30
     Visibility: public -/
 def zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default
@@ -2190,7 +2187,7 @@ structure riscv2zisk_context.Riscv2ZiskContext where
   input_precompile_reg : Option Std.U32
   output_precompile_reg : Option Std.U32
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::insert_inst]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::insert_inst]:
     Source: 'core/src/riscv2zisk_context.rs', lines 106:4-108:5 -/
 def riscv2zisk_context.Riscv2ZiskContext.insert_inst
   (self : riscv2zisk_context.Riscv2ZiskContext) (_rom_address : Std.U64)
@@ -2199,7 +2196,7 @@ def riscv2zisk_context.Riscv2ZiskContext.insert_inst
   := do
   ok { self with extract_inst := (some zib), extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::jal]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::jal]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1418:4-1440:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.jal
@@ -2342,13 +2339,13 @@ def zisk_inst_builder.ZiskInstBuilder.src_b_reg
                 }
             }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::jalr::JALR_MASK]
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::jalr::JALR_MASK]
     Source: 'core/src/riscv2zisk_context.rs', lines 1346:8-1346:50 -/
 @[global_simps, irreducible]
 def riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK : Std.U64 :=
   18446744073709551614#u64
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::jalr]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::jalr]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1315:4-1413:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.jalr
@@ -2411,7 +2408,7 @@ def riscv2zisk_context.Riscv2ZiskContext.jalr
         { self1 with extract_marker := () } rom_address zib13
     ok { self2 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::lui]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::lui]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1288:4-1310:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.lui
@@ -2436,7 +2433,7 @@ def riscv2zisk_context.Riscv2ZiskContext.lui
       { self with extract_marker := () } i.rom_address zib6
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::auipc]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::auipc]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1176:4-1196:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.auipc
@@ -2459,7 +2456,7 @@ def riscv2zisk_context.Riscv2ZiskContext.auipc
       { self with extract_marker := () } i.rom_address zib6
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::copyb]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::copyb]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1155:4-1171:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.copyb
@@ -2564,7 +2561,7 @@ def zisk_inst_builder.ZiskInstBuilder.src_a_reg
                 }
             }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::immediate_op_or_x0_copyb_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::immediate_op_or_x0_copyb_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1125:4-1153:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed
@@ -2593,7 +2590,7 @@ def riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed
       { self with extract_marker := () } i.rom_address zib6
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::immediate_op_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::immediate_op_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1076:4-1089:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed
@@ -2659,7 +2656,7 @@ def zisk_inst_builder.ZiskInstBuilder.store_ind
         }
     }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::store_op_with_reg_offset]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::store_op_with_reg_offset]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1028:4-1049:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset
@@ -2687,7 +2684,7 @@ def riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset
       { self with extract_marker := () } i.rom_address zib7
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::store_op_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::store_op_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 1024:4-1026:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.store_op_typed
@@ -2740,7 +2737,7 @@ def zisk_inst_builder.ZiskInstBuilder.src_b_ind
           }
       }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::load_op_with_reg_offset]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::load_op_with_reg_offset]:
     Source: 'core/src/riscv2zisk_context.rs', lines 969:4-990:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset
@@ -2768,7 +2765,7 @@ def riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset
       { self with extract_marker := () } i.rom_address zib7
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::load_op_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::load_op_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 965:4-967:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.load_op_typed
@@ -2782,7 +2779,7 @@ def riscv2zisk_context.Riscv2ZiskContext.load_op_typed
       { self with extract_marker := () } i op w inst_size 0#i64
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::nop]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::nop]:
     Source: 'core/src/riscv2zisk_context.rs', lines 896:4-916:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.nop
@@ -2804,7 +2801,7 @@ def riscv2zisk_context.Riscv2ZiskContext.nop
       { self with extract_marker := () } i.rom_address zib5
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::hint]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::hint]:
     Source: 'core/src/riscv2zisk_context.rs', lines 880:4-892:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.hint
@@ -2828,7 +2825,7 @@ def riscv2zisk_context.Riscv2ZiskContext.hint
       { self with extract_marker := () } i.rom_address zib5
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::create_branch_op_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::create_branch_op_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 854:4-876:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
@@ -2861,7 +2858,7 @@ def riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
       { self with extract_marker := () } i.rom_address zib5
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::create_precompiled_op_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::create_precompiled_op_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 730:4-760:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.create_precompiled_op_typed
@@ -2886,7 +2883,7 @@ def riscv2zisk_context.Riscv2ZiskContext.create_precompiled_op_typed
       { self with extract_marker := () } i.rom_address zib6
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::create_register_op_typed]:
+/-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::create_register_op_typed]:
     Source: 'core/src/riscv2zisk_context.rs', lines 680:4-698:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed
@@ -2912,7 +2909,7 @@ def riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed
       { self with extract_marker := () } i.rom_address zib6
   ok { self1 with extract_marker := () }
 
-/-- [zisk_core::riscv2zisk_single_row::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::lower_rv64im_single_row_input]:
+/-- [zisk_core::riscv2zisk_single_row::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::lower_rv64im_single_row_input]:
     Source: 'core/src/riscv2zisk_single_row.rs', lines 184:4-424:5
     Visibility: public -/
 def riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
@@ -3479,7 +3476,7 @@ def riscv2zisk_single_row.Rv64imLoweringInput.from_riscv
       imm := i.imm
     }
 
-/-- [zisk_core::riscv2zisk_single_row::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<'_0>}::lower_rv64im_single_row]:
+/-- [zisk_core::riscv2zisk_single_row::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::lower_rv64im_single_row]:
     Source: 'core/src/riscv2zisk_single_row.rs', lines 174:4-182:5
     Visibility: public -/
 def riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row

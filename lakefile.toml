@@ -35,6 +35,16 @@ path = "build/sail-lean"
 name = "Clean"
 path = "build/clean-lean"
 
+# Patched, prebuilt v4.28.0 Aeneas runtime (eth-act/zisk-fv#111). Populated by
+# `nix run .#populate` (toolchain-sync step, depends on eth-act/zisk-fv#158);
+# the `build/aeneas-lean` symlink is gitignored. Reuses the worktree's mathlib
+# (same rev 8f9d9cff). Used by the `ProductionM2` lean_lib (the real Aeneas-
+# extracted ZisK lowerer) and the in-build static-pin discharge under
+# ZiskFv/Compliance/AeneasBridgeTrust/.
+[[require]]
+name = "aeneas"
+path = "build/aeneas-lean"
+
 [[require]]
 name = "repl"
 git = "https://github.com/leanprover-community/repl"
@@ -42,6 +52,13 @@ rev = "v4.28.0"
 
 [[lean_lib]]
 name = "ZiskFv"
+
+# The REAL Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`,
+# `import Aeneas`). Imported by ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean
+# to discharge per-opcode static decode/row-mode pins kernel-soundly.
+[[lean_lib]]
+name = "ProductionM2"
+srcDir = "trust/aeneas"
 
 # V2 trust gate: a Lake exe that consumes oleans, walks elaborated theorem
 # types via `forallTelescope` + reducible-transparency unfolding, and emits

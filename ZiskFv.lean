@@ -158,6 +158,11 @@ import ZiskFv.Compliance.ConstructionBranch
 import ZiskFv.Compliance.ConstructionJump
 import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance
+-- In-build per-opcode static decode/row-mode pin discharge from the real
+-- Aeneas-extracted ZisK lowerer (eth-act/zisk-fv#111). Standalone; not yet
+-- wired into root_soundness. Per-theorem collectAxioms keeps the aeneas runtime
+-- sorries out of every canonical equiv_<OP>/root_soundness closure.
+import ZiskFv.Compliance.AeneasBridgeTrust.Extraction
 import ZiskFv.Soundness
 import ZiskFv.Completeness.Rv
 -- Quarantined aspirational route; kept here so it stays built/verified, but the

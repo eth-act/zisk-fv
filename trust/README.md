@@ -139,5 +139,12 @@ that each Aeneas extraction start is a thin wrapper over the shared production
 `lower_rv64im_single_row` helper and that `Riscv2ZiskContext::convert` delegates
 the same mnemonic to the same helper variant.
 `check-all-semantic.sh` runs the olean-consuming semantic gate after a build.
+It also runs `check-extraction-closure.sh`, which asserts that every
+`ZiskFv.Compliance.Extraction.*` Aeneas-extraction-pin declaration has a RAW,
+UNFILTERED `Lean.collectAxioms` closure ⊆ `{propext, Classical.choice,
+Quot.sound}` — the regression gate the per-theorem axiom-dep baseline cannot
+provide (that gate filters out `sorryAx` and restricts to `ZiskFv.*`), so a
+leaked external `sorryAx` / `ofReduceBool` / `trustCompiler` from the imported
+Aeneas runtime is caught here.
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.

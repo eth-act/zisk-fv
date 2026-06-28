@@ -60,12 +60,20 @@ route obligations.
 
 ## Aeneas Row-Lowering Bridge
 
-The production-backed Aeneas extraction is checked by the repository test path,
-but the generated Aeneas Lean is not yet imported by the main Lake proof to
-derive every row-provenance, row-mode, source-lane, immediate, PC, and link
-bridge fact consumed by the compliance wrappers. Until those generated facts
-are imported and used inside main Lake, the gap is represented by a visible
-global theorem hypothesis:
+The production-backed Aeneas extraction is checked by the repository test path.
+As of eth-act/zisk-fv#111 (PR #160), the generated Aeneas Lean **is** imported
+into the main Lake proof (`ZiskFv.lean` → `ZiskFv/Compliance/AeneasBridgeTrust/Extraction/`),
+and the per-opcode **static** decode/row-mode pins (`op` / `is_external_op` /
+`m32` / `set_pc` / `store_pc`) are proven in-build, kernel-soundly (axioms
+`{propext, Classical.choice, Quot.sound}`, no `native_decide`), from the real
+lowerer (`trust/aeneas/ProductionM2.lean`). Those proven pins are **standalone**:
+they are not yet wired to discharge `h_bridge`. Doing so requires binding the
+committed circuit row to the lowering of the committed program word
+(RomImageBinding, eth-act/zisk-fv#159) plus the dynamic per-arm conjuncts
+(immediates / lanes / byte-chains). The generated Aeneas Lean still does not yet
+derive every row-provenance, source-lane, immediate, PC, and link bridge fact
+consumed by the compliance wrappers, so until that wiring lands the gap is still
+represented by a visible global theorem hypothesis:
 
 ```text
 h_bridge : env.aeneasBridgeTrust
