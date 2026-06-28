@@ -115,6 +115,9 @@ theorem op_zisk_ok (self : zisk_inst_builder.ZiskInstBuilder) (op : zisk_ops.Zis
 theorem new_ok (i : riscv2zisk_single_row.Rv64imLoweringInput) :
     ∃ z, zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering i = ok z := ⟨_, rfl⟩
 
+theorem new_raw_ok (rom : Std.U64) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.new rom = ok z := ⟨_, rfl⟩
+
 theorem j_ok (self : zisk_inst_builder.ZiskInstBuilder) (j1 j2 : Std.I64) :
     ∃ z, zisk_inst_builder.ZiskInstBuilder.j self j1 j2 = ok z := ⟨_, rfl⟩
 
@@ -508,6 +511,229 @@ theorem create_branch_op_typed_ok
     rw [riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed]
     simp only [if_true, reduceIte, lift, Bind.bind, bind_ok,
       hz0, hz1, hz2, hz3, hz4, hz5, hs1]
+
+/-! ## 8. Control lowering totality (block 3, LUI / AUIPC / JAL / JALR / FENCE).
+
+The U-type / J-type decoders give the `rd` field (`< 32`); the control builders
+use `src_a_imm` / `src_b_imm` (unconditional), `store_reg` / `store_pc_reg` (on
+`rd`), `src_b_reg` (on `rs1`, JALR only), and `j` (unconditional).  JALR's
+`i.imm % 4` TWO-ROW split is handled by casing on the remainder; its second-row
+`rom_address + 1` / `inst_size - 1` arithmetic is total at the transpile call
+site (`rom_address = 0`, `inst_size = 4`). -/
+
+/-- `decode_u` is total (no `signext` on the path); `rd` is `< 32` and its bitvec
+recovers the `[7,11]` field (for the symbolic `rd ≠ 0` derivation). -/
+theorem decode_u_bounds (raw : Std.U32) (op : RiscvOpcode) :
+    ∃ d, decode_u raw op = ok d ∧ d.opcode = op ∧ d.rd.val < 32
+      ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 := by
+  refine ⟨_, rfl, rfl, ?_, rfl⟩
+  simp only [UScalar.val]
+  exact and_ushr_toNat_lt raw 3968#32 (7#i32).toNat 32 (by decide)
+
+set_option maxHeartbeats 1000000 in
+/-- `decode_j` is total and its `rd` field is `< 32` (the `imm` field's `signext`
+is discharged exactly as in `decode_j_spec`). -/
+theorem decode_j_bounds (raw : Std.U32) (op : RiscvOpcode) :
+    ∃ d, decode_j raw op = ok d ∧ d.opcode = op ∧ d.rd.val < 32
+      ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 := by
+  have spec : decode_j raw op
+      ⦃ d => d.opcode = op ∧ d.rd.val < 32 ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 ⦄ := by
+    rw [decode_j]
+    simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok]
+    step*
+    · -- signext precondition: ↑(i6 ||| i7 ||| i9 ||| i11) ≤ 2147483647 (verbatim `decode_j_spec`)
+      have hi6 : (i6 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm20.val < 2 ^ 1 := by
+          rw [imm20_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 2147483648#u32).val < 2 ^ 32 := (raw &&& 2147483648#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i6_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm20 * 2 ^ 20) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have hi7 : (i7 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm19_12.val < 2 ^ 8 := by
+          rw [imm19_12_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 1044480#u32).val ≤ 1044480 := by
+            have hand : (raw &&& 1044480#u32).val ≤ (1044480#u32).val := by
+              simp only [UScalar.val, BitVec.toNat_and]; exact Nat.and_le_right
+            have hmval : (1044480#u32).val = 1044480 := by decide
+            omega
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i7_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm19_12 * 2 ^ 12) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have hi9 : (i9 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm11.val < 2 ^ 12 := by
+          rw [imm11_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 1048576#u32).val < 2 ^ 32 := (raw &&& 1048576#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i9_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm11 * 2 ^ 11) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have hi11 : (i11 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm10_1.val < 2 ^ 11 := by
+          rw [imm10_1_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 2145386496#u32).val < 2 ^ 32 := (raw &&& 2145386496#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i11_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm10_1 * 2 ^ 1) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have : (i6 ||| i7 ||| i9 ||| i11).val < 2 ^ 31 := by
+        simp only [UScalar.val, BitVec.toNat_or] at hi6 hi7 hi9 hi11 ⊢
+        exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.or_lt_two_pow hi6 hi7) hi9) hi11
+      simp only [UScalar.val] at this ⊢; omega
+    · refine ⟨?_, i1_post2⟩
+      rw [i1_post1, Nat.shiftRight_eq_div_pow]
+      have h : (↑(raw &&& 3968#u32) : Nat) ≤ 3968 := by
+        simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+      omega
+  obtain ⟨d, hd, hpost⟩ := WP.spec_imp_exists spec
+  exact ⟨d, hd, hpost⟩
+
+theorem src_a_imm_ok (self : zisk_inst_builder.ZiskInstBuilder) (v : Std.U64) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.src_a_imm self v = ok z := ⟨_, rfl⟩
+
+theorem src_b_lastc_ok (self : zisk_inst_builder.ZiskInstBuilder) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.src_b_lastc self = ok z := ⟨_, rfl⟩
+
+theorem set_pc_ok (self : zisk_inst_builder.ZiskInstBuilder) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.set_pc self = ok z := ⟨_, rfl⟩
+
+/-- `store_pc_reg` is `store_reg … spc := true`, hence total for `0 ≤ off < 32`. -/
+theorem store_pc_reg_ok (self : zisk_inst_builder.ZiskInstBuilder) (off : Std.I64) (usp : Bool)
+    (hlo : 0 ≤ off.val) (hhi : off.val < 32) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.store_pc_reg self off usp = ok z := by
+  rw [zisk_inst_builder.ZiskInstBuilder.store_pc_reg]; exact store_reg_ok self off usp true hlo hhi
+
+/-- `lui` is total for `rd < 32` (`src_a_imm`/`src_b_imm` unconditional; `store_reg` on rd). -/
+theorem lui_ok (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (inst_size : Std.U64) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.lui self i inst_size = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_imm_ok z0 0#u64
+  obtain ⟨z2, hz2⟩ := src_b_imm_ok z1 (IScalar.hcast UScalarTy.U64 i.imm)
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.CopyB
+  obtain ⟨z4, hz4⟩ := store_reg_ok z3 (UScalar.hcast IScalarTy.I64 i.rd) false false
+    (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+    (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+  obtain ⟨z5, hz5⟩ := j_ok z4 (UScalar.hcast IScalarTy.I64 inst_size) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z6, hz6⟩ := build_ok z5
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z6
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.lui]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
+
+/-- `auipc` is total for `rd < 32` (`store_pc_reg` on rd; `j 4#i64 (cast imm)`). -/
+theorem auipc_ok (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.auipc self i = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_imm_ok z0 0#u64
+  obtain ⟨z2, hz2⟩ := src_b_imm_ok z1 0#u64
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.Flag
+  obtain ⟨z4, hz4⟩ := store_pc_reg_ok z3 (UScalar.hcast IScalarTy.I64 i.rd) false
+    (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+    (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+  obtain ⟨z5, hz5⟩ := j_ok z4 4#i64 (IScalar.cast IScalarTy.I64 i.imm)
+  obtain ⟨z6, hz6⟩ := build_ok z5
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z6
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.auipc]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
+
+/-- `jal` is total for `rd < 32` (`store_pc_reg` on rd; `j (cast imm) (hcast inst_size)`). -/
+theorem jal_ok (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (inst_size : Std.U64) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.jal self i inst_size = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_imm_ok z0 0#u64
+  obtain ⟨z2, hz2⟩ := src_b_imm_ok z1 0#u64
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.Flag
+  obtain ⟨z4, hz4⟩ := store_pc_reg_ok z3 (UScalar.hcast IScalarTy.I64 i.rd) false
+    (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+    (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+  obtain ⟨z5, hz5⟩ := j_ok z4 (IScalar.cast IScalarTy.I64 i.imm) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z6, hz6⟩ := build_ok z5
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z6
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.jal]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
+
+/-- `nop` is total (no register operands; FENCE lowers here). -/
+theorem nop_ok (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (inst_size : Std.U64) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.nop self i inst_size = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_imm_ok z0 0#u64
+  obtain ⟨z2, hz2⟩ := src_b_imm_ok z1 0#u64
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.Flag
+  obtain ⟨z4, hz4⟩ := j_ok z3 (UScalar.hcast IScalarTy.I64 inst_size) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z5, hz5⟩ := build_ok z4
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z5
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.nop]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hs1]
+
+/-- Second-row `rom_address + 1` is total at the transpile call site (`= 0`). -/
+theorem add_one_at_zero_ok (r : Std.U64) (hr : r = 0#u64) :
+    ∃ z, r + 1#u64 = ok z := by subst hr; exact ⟨_, rfl⟩
+
+/-- Second-row `inst_size - 1` is total at the transpile call site (`inst_size = 4`). -/
+theorem hcast4_sub_one_ok :
+    ∃ z, (UScalar.hcast IScalarTy.I64 4#u64 : Std.I64) - 1#i64 = ok z := ⟨_, rfl⟩
+
+/-- `jalr` is total for `rs1 < 32`, `rd < 32` and `rom_address = 0` (the transpile
+call site).  Handles the `i.imm % 4` TWO-ROW split: Row A emits one instruction,
+Row B emits two (the `rom_address + 1` / `inst_size - 1` arithmetic is total at
+`rom_address = 0`, `inst_size = 4`). -/
+theorem jalr_ok (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput)
+    (h1 : i.rs1.val < 32) (h3 : i.rd.val < 32) (hrom : i.rom_address = 0#u64) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.jalr self i 4#u64 = ok ctx := by
+  rw [riscv2zisk_context.Riscv2ZiskContext.jalr]
+  obtain ⟨m, hm, _⟩ := WP.spec_imp_exists (IScalar.rem_spec i.imm (y := 4#i32) (by decide))
+  simp only [hm, bind_ok, Bind.bind]
+  by_cases hcond : m = 0#i32
+  · rw [if_pos hcond]
+    obtain ⟨z0, hz0⟩ := new_ok i
+    obtain ⟨z1, hz1⟩ := src_a_imm_ok z0 riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK
+    obtain ⟨z2, hz2⟩ := src_b_reg_ok z1 (UScalar.cast UScalarTy.U64 i.rs1) false
+      (by rw [cast_u32_u64_val]; exact h1)
+    obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.And
+    obtain ⟨z4, hz4⟩ := store_pc_reg_ok z3 (UScalar.hcast IScalarTy.I64 i.rd) false
+      (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+      (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+    obtain ⟨z5, hz5⟩ := set_pc_ok z4
+    obtain ⟨z6, hz6⟩ := j_ok z5 (IScalar.cast IScalarTy.I64 i.imm) (UScalar.hcast IScalarTy.I64 4#u64)
+    obtain ⟨z7, hz7⟩ := build_ok z6
+    obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z7
+    refine ⟨{ s1 with extract_marker := () }, ?_⟩
+    simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hz7, hs1]
+  · rw [if_neg hcond]
+    obtain ⟨z0, hz0⟩ := new_ok i
+    obtain ⟨z1, hz1⟩ := src_a_imm_ok z0 (IScalar.hcast UScalarTy.U64 i.imm)
+    obtain ⟨z2, hz2⟩ := src_b_reg_ok z1 (UScalar.cast UScalarTy.U64 i.rs1) false
+      (by rw [cast_u32_u64_val]; exact h1)
+    obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.Add
+    obtain ⟨z4, hz4⟩ := j_ok z3 1#i64 1#i64
+    obtain ⟨z5, hz5⟩ := build_ok z4
+    obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z5
+    obtain ⟨roma, hroma⟩ := add_one_at_zero_ok i.rom_address hrom
+    obtain ⟨z6, hz6⟩ := new_raw_ok roma
+    obtain ⟨z7, hz7⟩ := src_a_imm_ok z6 riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK
+    obtain ⟨z8, hz8⟩ := src_b_lastc_ok z7
+    obtain ⟨z9, hz9⟩ := op_zisk_ok z8 zisk_ops.ZiskOp.And
+    obtain ⟨z10, hz10⟩ := store_pc_reg_ok z9 (UScalar.hcast IScalarTy.I64 i.rd) false
+      (by rw [hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+      (by rw [hcast_u32_i64_val]; exact_mod_cast h3)
+    obtain ⟨z11, hz11⟩ := set_pc_ok z10
+    obtain ⟨six, hsix⟩ := hcast4_sub_one_ok
+    obtain ⟨z12, hz12⟩ := j_ok z11 0#i64 six
+    obtain ⟨z13, hz13⟩ := build_ok z12
+    obtain ⟨s2, hs2⟩ := insert_inst_ok { s1 with extract_marker := () } roma z13
+    refine ⟨{ s2 with extract_marker := () }, ?_⟩
+    simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hs1, hroma,
+      hz6, hz7, hz8, hz9, hz10, hz11, hsix, hz12, hz13, hs2]
 
 /-- The default lowering context the transpile pipeline threads into the dispatcher. -/
 def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
