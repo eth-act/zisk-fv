@@ -165,6 +165,10 @@ import ZiskFv.Compliance
 -- wired into root_soundness. Per-theorem collectAxioms keeps the aeneas runtime
 -- sorries out of every canonical equiv_<OP>/root_soundness closure.
 import ZiskFv.Compliance.AeneasBridgeTrust.Extraction
+-- eth-act/zisk-fv#162: the raw-word→opcode decoder acceptance theorem
+-- (`zisk_decoder_accepts_supported_shape`) + completeness-obligation discharge
+-- (`real_decoder_accepts_in_shape`), proven in-build off the real Aeneas decoder.
+import ZiskFv.Compliance.AeneasBridgeTrust.Decode
 import ZiskFv.Soundness
 import ZiskFv.Completeness.Rv
 -- Quarantined aspirational route; kept here so it stays built/verified, but the
@@ -172,4 +176,5 @@ import ZiskFv.Completeness.Rv
 -- See `ZiskFv/Completeness/Aspirational/README.md`.
 import ZiskFv.Completeness.Aspirational
 import ZiskFv.Completeness.Rv64im.SailDecode
+import ZiskFv.Completeness.Rv64im.SailDecode.ZiskClassifyMatch
 import ZiskFv.Completeness
