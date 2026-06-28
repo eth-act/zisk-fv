@@ -214,4 +214,75 @@ theorem lw_dynamic_pins
   rw [Result.ok.injEq] at h; subst h
   exact load_op_with_reg_offset_dynamic _ _ _ _ _ _ hs1
 
+/-! ## 4. Register-register ALU / M-ext : both jump offsets are the (lifted) cast
+of `inst_size`.  The `j` builder writes `jmp_offset1 = jmp_offset2 =
+UScalar.hcast .I64 inst_size`; only `build` (identity) follows it.  The op is
+irrelevant to the jump-offset slots, so this is uniform over every register
+RV64IM ALU / M opcode. -/
+
+set_option maxHeartbeats 2000000 in
+theorem create_register_op_typed_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed self i op inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_reg
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- src_b_reg
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- op_zisk
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- store_reg
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- j (inst_size casts inlined)
+  obtain ⟨z6, h6, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h7, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨hj1, hj2⟩ := j_jmp _ _ _ _ h5
+  have hz65 := build_eq _ _ h6
+  refine ⟨z6, insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
+  · rw [hz65, hj1]
+  · rw [hz65, hj2]
+
+/-- macro: emit `<nm>_dynamic_pins` for a concrete register op. -/
+local macro "reg_dyn" nm:ident "," ropx:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_dynamic_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed self i $ropx inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+        zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size :=
+    create_register_op_typed_dynamic_pins self i $ropx inst_size ctx h)
+
+reg_dyn add,    zisk_ops.ZiskOp.Add
+reg_dyn sub,    zisk_ops.ZiskOp.Sub
+reg_dyn and,    zisk_ops.ZiskOp.And
+reg_dyn or,     zisk_ops.ZiskOp.Or
+reg_dyn xor,    zisk_ops.ZiskOp.Xor
+reg_dyn slt,    zisk_ops.ZiskOp.Lt
+reg_dyn sltu,   zisk_ops.ZiskOp.Ltu
+reg_dyn sll,    zisk_ops.ZiskOp.Sll
+reg_dyn srl,    zisk_ops.ZiskOp.Srl
+reg_dyn sra,    zisk_ops.ZiskOp.Sra
+reg_dyn addw,   zisk_ops.ZiskOp.AddW
+reg_dyn subw,   zisk_ops.ZiskOp.SubW
+reg_dyn sllw,   zisk_ops.ZiskOp.SllW
+reg_dyn srlw,   zisk_ops.ZiskOp.SrlW
+reg_dyn sraw,   zisk_ops.ZiskOp.SraW
+reg_dyn mul,    zisk_ops.ZiskOp.Mul
+reg_dyn mulh,   zisk_ops.ZiskOp.Mulh
+reg_dyn mulhsu, zisk_ops.ZiskOp.Mulsuh
+reg_dyn mulhu,  zisk_ops.ZiskOp.Muluh
+reg_dyn mulw,   zisk_ops.ZiskOp.MulW
+reg_dyn div,    zisk_ops.ZiskOp.Div
+reg_dyn divu,   zisk_ops.ZiskOp.Divu
+reg_dyn divw,   zisk_ops.ZiskOp.DivW
+reg_dyn divuw,  zisk_ops.ZiskOp.DivuW
+reg_dyn rem,    zisk_ops.ZiskOp.Rem
+reg_dyn remu,   zisk_ops.ZiskOp.Remu
+reg_dyn remw,   zisk_ops.ZiskOp.RemW
+reg_dyn remuw,  zisk_ops.ZiskOp.RemuW
+
 end ZiskFv.Compliance.Extraction
