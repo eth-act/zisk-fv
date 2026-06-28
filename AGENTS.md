@@ -16,8 +16,9 @@ after creation and refresh the canonical graph issue.
 - Use parent/sub-issue relationships only for grouping, umbrella issues, and
   progress tracking. Do not turn hierarchy into dependency edges unless the same
   pair also has a real `blockedBy` relationship.
-- Keep closed blockers only when they are true completed prerequisites. Remove
-  stale closed blockers that no longer explain a build/proof dependency.
+- Keep closed blockers in GitHub only when they are true completed
+  prerequisites. They are intentionally omitted from the visual graph.
+  Remove stale closed blockers that no longer explain a build/proof dependency.
 - If a real blocker exists but is unnamed, create a focused issue for it first,
   then link it as the blocker. Avoid encoding unnamed work only in graph text.
 - Before changing relationships, query node IDs and current links. Do not run
@@ -68,11 +69,10 @@ mutation($blocked:ID!, $blocker:ID!) {
   `subIssues`, label, and state data. Do not hand-invent dependency edges in
   Markdown.
 - Preserve the edge meaning: `A --> B` means issue `A` is blocked by issue `B`.
-- Include every open issue, plus closed issues that are real prerequisite nodes
-  for included issues. Omit unrelated closed issues.
-- Keep node titles, labels, state classes, and the legend current. Label classes
-  should reflect GitHub labels (`soundness`, `completeness`, both, neither);
-  closed prerequisite nodes should use the closed/done class.
+- Include open issues only. Omit all closed issues and any dependency edge whose
+  endpoint is closed.
+- Keep node titles, labels, and classes current. Label classes should reflect
+  GitHub labels (`soundness`, `completeness`, both, neither).
 - List parent/sub-issue relationships separately from the Mermaid dependency
   graph unless they also have structured blocker edges.
 - Refresh the graph issue with:

@@ -3,7 +3,7 @@
 
 The graph is generated from GitHub issue metadata only:
 
-* node classes come from issue labels/state
+* node classes come from open issue labels
 * dependency edges come from structured blockedBy/blocking relationships
 * parent/sub-issue data is rendered as a separate list, not dependency edges
 
@@ -181,8 +181,6 @@ def fetch_issues(client: GitHubClient, owner: str, repo: str) -> dict[int, Issue
 
 
 def classify(issue: Issue) -> str:
-    if issue.state == "CLOSED":
-        return "done"
     has_soundness = "soundness" in issue.labels
     has_completeness = "completeness" in issue.labels
     if has_soundness and has_completeness:
@@ -205,27 +203,25 @@ def mermaid_label(issue: Issue) -> str:
 
 
 def render_mermaid(issues: dict[int, Issue], graph_issue_number: int | None) -> tuple[str, list[tuple[int, int]], set[int]]:
-    edges: set[tuple[int, int]] = set()
-    for issue in issues.values():
-        if graph_issue_number and issue.number == graph_issue_number:
-            continue
-        for blocker in issue.blocked_by:
-            if graph_issue_number and blocker == graph_issue_number:
-                continue
-            edges.add((issue.number, blocker))
-        for blocked in issue.blocking:
-            if graph_issue_number and blocked == graph_issue_number:
-                continue
-            edges.add((blocked, issue.number))
-
-    included = {
+    open_numbers = {
         issue.number
         for issue in issues.values()
         if issue.state == "OPEN" and issue.number != graph_issue_number
     }
-    for blocked, blocker in edges:
-        included.add(blocked)
-        included.add(blocker)
+    edges: set[tuple[int, int]] = set()
+    for issue in issues.values():
+        if issue.number not in open_numbers:
+            continue
+        for blocker in issue.blocked_by:
+            if blocker not in open_numbers:
+                continue
+            edges.add((issue.number, blocker))
+        for blocked in issue.blocking:
+            if blocked not in open_numbers:
+                continue
+            edges.add((blocked, issue.number))
+
+    included = set(open_numbers)
 
     lines = [
         "```mermaid",
@@ -235,7 +231,6 @@ def render_mermaid(issues: dict[int, Issue], graph_issue_number: int | None) -> 
         "    classDef completeness fill:#9ca3af,stroke:#6b7280,color:#fff,font-weight:bold",
         "    classDef both fill:#ef4444,stroke:#b91c1c,color:#fff,font-weight:bold",
         "    classDef neither fill:#22c55e,stroke:#16a34a,color:#fff,font-weight:bold",
-        "    classDef done fill:#000000,stroke:#000000,color:#fff,font-weight:bold",
         "",
     ]
 
@@ -265,7 +260,7 @@ def render_subissues(issues: dict[int, Issue], included: set[int], graph_issue_n
         subs = sorted(
             sub
             for sub in issues[number].sub_issues
-            if sub in issues and sub != graph_issue_number
+            if sub in included
         )
         if subs:
             rendered = ", ".join(f"#{sub}" for sub in subs)
@@ -276,12 +271,12 @@ def render_subissues(issues: dict[int, Issue], included: set[int], graph_issue_n
 
 
 def render_issue_table(issues: dict[int, Issue], included: set[int]) -> str:
-    rows = ["| Issue | State | Labels | Title |", "| --- | --- | --- | --- |"]
+    rows = ["| Issue | Labels | Title |", "| --- | --- | --- |"]
     for number in sorted(included):
         issue = issues[number]
         labels = ", ".join(sorted(issue.labels)) or "-"
         title = html.escape(issue.title)
-        rows.append(f"| [#{number}]({issue.url}) | {issue.state.lower()} | {labels} | {title} |")
+        rows.append(f"| [#{number}]({issue.url}) | {labels} | {title} |")
     return "\n".join(rows)
 
 
@@ -298,9 +293,11 @@ def render_body(
 This issue body is the canonical visual dependency graph for `{owner}/{repo}`.
 It is generated from GitHub issue metadata, not from hand-maintained prose:
 
-- node colors come from issue state plus the `soundness` / `completeness` labels
+- only open issues are shown
+- node colors come from the `soundness` / `completeness` labels
 - solid arrows come from structured `blockedBy` / `blocking` issue relationships
 - `A --> B` means issue `A` is blocked by issue `B`
+- edges to closed issues are omitted with those closed issues
 - parent/sub-issue relationships are listed below, not drawn as dependency edges
 
 {mermaid}
