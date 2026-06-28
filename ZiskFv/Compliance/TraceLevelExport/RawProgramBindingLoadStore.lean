@@ -273,7 +273,27 @@ local macro "load_copyb_op" nm:ident "," f3:term "," rop:term "," srop:term ","
         loadstore_decode_fields_of_binding (trace.program j).line (trace.program j) _ 1#u8 $opc $width $wF ext
           (by simp [$opc:term]) (by simp) hok hop hiw hj1 hj2 hbk
       exact ⟨ho, hj1', hj2', hiwF, hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      rd : Nat
+      rs1 : Nat
+      imm : Nat
+      hrd : rd < 32
+      hrs1 : rs1 < 32
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 $f3 rd 0x03)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.rd b.rs1 b.imm b.hrd b.hrs1 rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 /-! ## Per-op macro (COPYB stores: SB/SH/SW): same shape, S-type word + `store`. -/
 
@@ -341,7 +361,27 @@ local macro "store_op" nm:ident "," f3:term "," rop:term "," srop:term ","
         loadstore_decode_fields_of_binding (trace.program j).line (trace.program j) _ 1#u8 $opc $width $wF ext
           (by simp [$opc:term]) (by simp) hok hop hiw hj1 hj2 hbk
       exact ⟨ho, hj1', hj2', hiwF, hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      rs1 : Nat
+      rs2 : Nat
+      imm : Nat
+      hrs1 : rs1 < 32
+      hrs2 : rs2 < 32
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawSType imm rs2 rs1 $f3)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.rs1 b.rs2 b.imm b.hrs1 b.hrs2 rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 load_copyb_op lbu, 4, RiscvOpcode.Lbu, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lbu, 1#u64, (1 : FGL), ind_width_set1, OP_COPYB
 load_copyb_op lhu, 5, RiscvOpcode.Lhu, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lhu, 2#u64, (2 : FGL), ind_width_set2, OP_COPYB
@@ -412,6 +452,26 @@ noncomputable def Decode_sd_from_rawProgram {n : Nat} (trace : ZiskFv.Compliance
     register_decode_fields_of_binding (trace.program j).line (trace.program j) _ 1#u8 OP_COPYB ext
       (by simp [OP_COPYB]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
+
+structure RawDecode_sd {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_sd trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rs1 : Nat
+  rs2 : Nat
+  imm : Nat
+  hrs1 : rs1 < 32
+  hrs2 : rs2 < 32
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawSType imm rs2 rs1 3
+
+noncomputable def Decode_sd_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_sd trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_sd trace i c rawProgram) : ZiskFv.Compliance.Decode_sd trace i c :=
+  Decode_sd_from_rawProgram trace i c b.h_idx b.rs1 b.rs2 b.imm b.hrs1 b.hrs2 rawProgram hbind b.hLine
 
 /-! ## SIGNEXTEND loads (LB/LH/LW, issue #159 block 3).  These lower to the
     `BinaryE`/`SignExtend*` op (external, `is_external_op = true`), so their ROM
@@ -494,7 +554,37 @@ local macro "load_sext_op" nm:ident "," f3:term "," rop:term "," srop:term ","
         loadstore_decode_fields_of_binding (trace.program j).line (trace.program j) _ $opU8 $opc $width $wF ext
           (by simp [$opc:term]) (by simp) hok hop hiw hj1 hj2 hbk
       exact ⟨ho, hj1', hj2', hiwF, hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+      r_binary : ℕ
+      offset : ℕ
+      env : Environment FGL
+      h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+      h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary)
+      rd : Nat
+      rs1 : Nat
+      imm : Nat
+      hrd : rd < 32
+      hrs1 : rs1 < 32
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 $f3 rd 0x03)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.v b.r_binary b.offset b.env b.h_static b.h_match
+        b.rd b.rs1 b.imm b.hrd b.hrs1 rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 load_sext_op lb, 0, RiscvOpcode.Lb, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lb, zisk_ops.ZiskOp.SignExtendB, 39#u8, false, 1#u64, (1 : FGL), ind_width_set1, OP_SIGNEXTEND_B
 load_sext_op lh, 1, RiscvOpcode.Lh, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lh, zisk_ops.ZiskOp.SignExtendH, 40#u8, false, 2#u64, (2 : FGL), ind_width_set2, OP_SIGNEXTEND_H

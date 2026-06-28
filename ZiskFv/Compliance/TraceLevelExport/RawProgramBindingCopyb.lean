@@ -442,6 +442,31 @@ noncomputable def Decode_add_from_rawProgram {n : Nat} (trace : ZiskFv.Complianc
       (by simp [OP_ADD]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
 
+structure RawDecode_add {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_add trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  rs1 : Nat
+  rs2 : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrs2 : rs2 < 32
+  hrd0 : rd ≠ 0
+  hrs10 : rs1 ≠ 0
+  hrs20 : rs2 ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = rawRType 0 rs2 rs1 0 rd 0x33
+
+noncomputable def Decode_add_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_add trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_add trace i c rawProgram) : ZiskFv.Compliance.Decode_add trace i c :=
+  Decode_add_from_rawProgram trace i c b.h_idx b.rd b.rs1 b.rs2 b.hrd b.hrs1 b.hrs2
+    b.hrd0 b.hrs10 b.hrs20 rawProgram hbind b.hLine
+
 /-! ## 6. OR (register, `rs1 ≠ 0 ∧ rs2 ≠ 0`). -/
 
 theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 : rs2 < 32)
@@ -516,6 +541,30 @@ noncomputable def Decode_or_from_rawProgram {n : Nat} (trace : ZiskFv.Compliance
     register_decode_fields_of_binding (trace.program j).line (trace.program j) _ 15#u8 OP_OR ext
       (by simp [OP_OR]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
+
+structure RawDecode_or {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_or trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  rs1 : Nat
+  rs2 : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrs2 : rs2 < 32
+  hrs10 : rs1 ≠ 0
+  hrs20 : rs2 ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = rawRType 0 rs2 rs1 6 rd 0x33
+
+noncomputable def Decode_or_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_or trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_or trace i c rawProgram) : ZiskFv.Compliance.Decode_or trace i c :=
+  Decode_or_from_rawProgram trace i c b.h_idx b.rd b.rs1 b.rs2 b.hrd b.hrs1 b.hrs2
+    b.hrs10 b.hrs20 rawProgram hbind b.hLine
 
 /-! ## 7. ADDI (immediate, `rd ≠ 0 ∧ imm ≠ 0 ∧ rs1 ≠ 0`; `imm ≠ 0` threaded). -/
 
@@ -596,6 +645,31 @@ noncomputable def Decode_addi_from_rawProgram {n : Nat} (trace : ZiskFv.Complian
       (by simp [OP_ADD]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
 
+structure RawDecode_addi {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_addi trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  rs1 : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrd0 : rd ≠ 0
+  hrs10 : rs1 ≠ 0
+  himm : ∀ d, aeneas_extract.rv64im_decode.decode_i (toU32 (rawIType imm rs1 0 rd 0x13))
+    RiscvOpcode.Addi false = ok d → d.imm ≠ 0#i32
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = rawIType imm rs1 0 rd 0x13
+
+noncomputable def Decode_addi_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_addi trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_addi trace i c rawProgram) : ZiskFv.Compliance.Decode_addi trace i c :=
+  Decode_addi_from_rawProgram trace i c b.h_idx b.rd b.rs1 b.imm b.hrd b.hrs1 b.hrd0 b.hrs10 b.himm
+    rawProgram hbind b.hLine
+
 /-! ## 8. XORI / ORI (immediate, dispatcher-unconditional; op-arm needs `rs1 ≠ 0`). -/
 
 theorem transpile_xori (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs10 : rs1 ≠ 0) :
@@ -660,6 +734,28 @@ noncomputable def Decode_xori_from_rawProgram {n : Nat} (trace : ZiskFv.Complian
       (by simp [OP_XOR]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
 
+structure RawDecode_xori {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_xori trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  rs1 : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrs10 : rs1 ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = rawIType imm rs1 4 rd 0x13
+
+noncomputable def Decode_xori_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_xori trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_xori trace i c rawProgram) : ZiskFv.Compliance.Decode_xori trace i c :=
+  Decode_xori_from_rawProgram trace i c b.h_idx b.rd b.rs1 b.imm b.hrd b.hrs1 b.hrs10
+    rawProgram hbind b.hLine
+
 theorem transpile_ori (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs10 : rs1 ≠ 0) :
     ∃ ext, extract_transpile_rv64im_raw (toU32 (rawIType imm rs1 6 rd 0x13)) = ok ext
       ∧ ext.row.op = 15#u8 ∧ ext.row.is_external_op = true ∧ ext.row.m32 = false
@@ -721,6 +817,28 @@ noncomputable def Decode_ori_from_rawProgram {n : Nat} (trace : ZiskFv.Complianc
     register_decode_fields_of_binding (trace.program j).line (trace.program j) _ 15#u8 OP_OR ext
       (by simp [OP_OR]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
+
+structure RawDecode_ori {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_ori trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  rs1 : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrs10 : rs1 ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = rawIType imm rs1 6 rd 0x13
+
+noncomputable def Decode_ori_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_ori trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_ori trace i c rawProgram) : ZiskFv.Compliance.Decode_ori trace i c :=
+  Decode_ori_from_rawProgram trace i c b.h_idx b.rd b.rs1 b.imm b.hrd b.hrs1 b.hrs10
+    rawProgram hbind b.hLine
 
 section AxiomAudit
 #print axioms transpile_add

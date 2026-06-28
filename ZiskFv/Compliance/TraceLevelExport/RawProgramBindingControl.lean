@@ -328,7 +328,27 @@ local macro "branch_false_op" nm:ident "," f3:term "," rop:term "," srop:term ",
         branch_decode_fields_false (trace.program j).line (trace.program j) _ $opU8 $opc ext
           (by simp [$opc:term]) hok hop hj2 hbk
       exact ⟨ho, hj2', hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      rs1 : Nat
+      rs2 : Nat
+      imm : Nat
+      hrs1 : rs1 < 32
+      hrs2 : rs2 < 32
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawBType imm rs2 rs1 $f3)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.rs1 b.rs2 b.imm b.hrs1 b.hrs2 rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 /-- macro (neg = true branch: BNE/BGE/BGEU; constant slot `jmp_offset1`). -/
 local macro "branch_true_op" nm:ident "," f3:term "," rop:term "," srop:term ","
@@ -396,7 +416,27 @@ local macro "branch_true_op" nm:ident "," f3:term "," rop:term "," srop:term ","
         branch_decode_fields_true (trace.program j).line (trace.program j) _ $opU8 $opc ext
           (by simp [$opc:term]) hok hop hj1 hbk
       exact ⟨ho, hj1', hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      rs1 : Nat
+      rs2 : Nat
+      imm : Nat
+      hrs1 : rs1 < 32
+      hrs2 : rs2 < 32
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawBType imm rs2 rs1 $f3)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.rs1 b.rs2 b.imm b.hrs1 b.hrs2 rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 branch_false_op beq,  0, RiscvOpcode.Beq,  riscv2zisk_single_row.Rv64imSingleRowOpcode.Beq,  zisk_ops.ZiskOp.Eq,  9#u8, OP_EQ
 branch_true_op  bne,  1, RiscvOpcode.Bne,  riscv2zisk_single_row.Rv64imSingleRowOpcode.Bne,  zisk_ops.ZiskOp.Eq,  9#u8, OP_EQ
@@ -504,6 +544,29 @@ noncomputable def Decode_lui_from_rawProgram {n : Nat} (trace : ZiskFv.Complianc
       (by simp [OP_COPYB]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
 
+structure RawDecode_lui {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_lui trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_imm_lo_nat : ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
+    = (c.imm ++ (0 : BitVec 12)).toNat
+  h_imm_hi_nat : ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val).val
+    = (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat / 4294967296
+  rd : Nat
+  imm : Nat
+  hrd : rd < 32
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawUType imm rd 0x37
+
+noncomputable def Decode_lui_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_lui trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_lui trace i c rawProgram) : ZiskFv.Compliance.Decode_lui trace i c :=
+  Decode_lui_from_rawProgram trace i c b.h_idx b.h_imm_lo_nat b.h_imm_hi_nat b.rd b.imm b.hrd
+    rawProgram hbind b.hLine
+
 /-! ## AUIPC (U-type word, `decode_u` → `auipc` → `OP_FLAG`, `store_pc = true`).
 The constant slot is `jmp_offset1 = 4` (`= 4#i64`, defeq `hcast 4#u64`); the
 `store_pc = true` needs `rd ≠ 0`.  jmp_offset2 is the imm target (skipped). -/
@@ -602,6 +665,25 @@ noncomputable def Decode_auipc_from_rawProgram {n : Nat} (trace : ZiskFv.Complia
     branch_decode_fields_true (trace.program j).line (trace.program j) _ 0#u8 OP_FLAG ext
       (by simp [OP_FLAG]) hok hop hj1 hbk
   exact ⟨ho, hj1', hflags⟩
+
+structure RawDecode_auipc {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_auipc trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrd0 : rd ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawUType imm rd 0x17
+
+noncomputable def Decode_auipc_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_auipc trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_auipc trace i c rawProgram) : ZiskFv.Compliance.Decode_auipc trace i c :=
+  Decode_auipc_from_rawProgram trace i c b.h_idx b.rd b.imm b.hrd b.hrd0 rawProgram hbind b.hLine
 
 /-! ## JAL (J-type word, `decode_j` → `jal` → `OP_FLAG`, `store_pc = true`).
 Constant slot `jmp_offset2 = 4`; `store_pc = true` needs `rd ≠ 0`.  jmp_offset1
@@ -702,6 +784,25 @@ noncomputable def Decode_jal_from_rawProgram {n : Nat} (trace : ZiskFv.Complianc
       (by simp [OP_FLAG]) hok hop hj2 hbk
   exact ⟨ho, hj2', hflags⟩
 
+structure RawDecode_jal {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_jal trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrd0 : rd ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawJType imm rd
+
+noncomputable def Decode_jal_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_jal trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_jal trace i c rawProgram) : ZiskFv.Compliance.Decode_jal trace i c :=
+  Decode_jal_from_rawProgram trace i c b.h_idx b.rd b.imm b.hrd b.hrd0 rawProgram hbind b.hLine
+
 /-! ## JALR (I-type word `… 0x67`, `decode_i … false` → `jalr` → `OP_AND`,
 `set_pc = true`, `store_pc = true`).  The `i.imm % 4` TWO-ROW split is handled in
 `jalr_ok`; `Decode_jalr_of_program` pins NO jmp_offset, so the bridge threads only
@@ -797,6 +898,38 @@ noncomputable def Decode_jalr_from_rawProgram {n : Nat} (trace : ZiskFv.Complian
       (by simp [OP_AND]) hok hop hbk
   exact ⟨ho, hflags⟩
 
+structure RawDecode_jalr {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_jalr trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_flag : (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).flag i.val = 0
+  h_a_mask_lo : (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val = 4294967294
+  h_a_mask_hi : (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val = 4294967295
+  h_c1_zero : (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_1 i.val = 0
+  h_offset_bridge : ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val
+    = c.offset_bv.toNat
+  h_offset_even : c.offset_bv &&& 1#64 = 0#64
+  h_no_fgl_wrap : ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0 i.val).val
+    + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val < GL_prime
+  rd : Nat
+  rs1 : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrd0 : rd ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 0 rd 0x67
+
+noncomputable def Decode_jalr_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_jalr trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_jalr trace i c rawProgram) : ZiskFv.Compliance.Decode_jalr trace i c :=
+  Decode_jalr_from_rawProgram trace i c b.h_idx b.h_flag b.h_a_mask_lo b.h_a_mask_hi b.h_c1_zero
+    b.h_offset_bridge b.h_offset_even b.h_no_fgl_wrap b.rd b.rs1 b.imm b.hrd b.hrs1 b.hrd0
+    rawProgram hbind b.hLine
+
 /-! ## FENCE (supported-FENCE word `rawSupportedFence`, `decode_fence` → `nop` →
 `OP_FLAG`).  Both jump slots are the constant fall-through; the claim-side
 `fm = 0` / `rs = x0` / `rd = x0` are threaded as caller hypotheses (the FENCE
@@ -888,6 +1021,29 @@ noncomputable def Decode_fence_from_rawProgram {n : Nat} (trace : ZiskFv.Complia
     register_decode_fields_of_binding (trace.program j).line (trace.program j) _ 0#u8 OP_FLAG ext
       (by simp [OP_FLAG]) hok hop hj1 hj2 hbk
   exact ⟨ho, hjo1, hjo2, hf⟩
+
+structure RawDecode_fence {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_fence trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_fm_zero : c.fm = 0#4
+  h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rs
+  h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rd
+  pred : Nat
+  succ : Nat
+  hp : pred < 16
+  hs : succ < 16
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawSupportedFence pred succ
+
+noncomputable def Decode_fence_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_fence trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_fence trace i c rawProgram) : ZiskFv.Compliance.Decode_fence trace i c :=
+  Decode_fence_from_rawProgram trace i c b.h_idx b.h_fm_zero b.h_rs_x0 b.h_rd_x0 b.pred b.succ b.hp b.hs
+    rawProgram hbind b.hLine
 
 section AxiomAudit
 #print axioms transpile_lui

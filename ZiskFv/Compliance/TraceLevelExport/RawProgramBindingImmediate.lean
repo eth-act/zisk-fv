@@ -209,7 +209,27 @@ local macro "imm_op" nm:ident "," f3:term "," opw:term ","
         register_decode_fields_of_binding (trace.program j).line (trace.program j) _ $opU8 $opc ext
           (by simp [$opc:term]) hok hop hj1 hj2 hbk
       exact ⟨ho, hj1', hj2', hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      rd : Nat
+      rs1 : Nat
+      imm : Nat
+      hrd : rd < 32
+      hrs1 : rs1 < 32
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 $f3 rd $opw)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.rd b.rs1 b.imm b.hrd b.hrs1 rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 /-! ## Per-op macro (shift-immediate): emits the same triple, but the raw word is
     `rawIType (upper ||| shamt) rs1 funct3 rd opcode`, the decode classifies through
@@ -284,7 +304,28 @@ local macro "shift_op" nm:ident "," upper:term "," f3:term "," opw:term ","
         register_decode_fields_of_binding (trace.program j).line (trace.program j) _ $opU8 $opc ext
           (by simp [$opc:term]) hok hop hj1 hj2 hbk
       exact ⟨ho, hj1', hj2', hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      rd : Nat
+      rs1 : Nat
+      shamt : Nat
+      hrd : rd < 32
+      hrs1 : rs1 < 32
+      hsh : shamt < $shbound
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType ($upper ||| shamt) rs1 $f3 rd $opw)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.rd b.rs1 b.shamt b.hrd b.hrs1 b.hsh rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 /-! ## Per-op macro (64-bit shift-immediate SLLI/SRLI/SRAI): same as `shift_op`,
     but `Decode_<op>_of_program` also takes the operand-column shamt low-bits binding
@@ -361,7 +402,30 @@ local macro "shift64_op" nm:ident "," upper:term "," f3:term "," opw:term ","
         register_decode_fields_of_binding (trace.program j).line (trace.program j) _ $opU8 $opc ext
           (by simp [$opc:term]) hok hop hj1 hj2 hbk
       exact ⟨ho, hj1', hj2', hflags⟩)
-  return ⟨Lean.mkNullNode #[t1, t2, t3]⟩
+  let sName := Lean.mkIdent (Lean.Name.mkSimple ("RawDecode_" ++ s))
+  let bName := Lean.mkIdent (Lean.Name.mkSimple ("Decode_" ++ s ++ "_from_rawProgram_b"))
+  let t4 ← `(structure $sName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) where
+      h_idx : i.val + 1 < trace.mainTable.table.length
+      h_b_lo_t : (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val
+          = ZiskFv.Trusted.shamt_b_lo c.shamt
+      rd : Nat
+      rs1 : Nat
+      shamt : Nat
+      hrd : rd < 32
+      hrs1 : rs1 < 32
+      hsh : shamt < 64
+      hLine : ∀ j : Fin n,
+          (trace.program j).line
+            = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType ($upper ||| shamt) rs1 $f3 rd $opw)
+  let t5 ← `(noncomputable def $bName {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+        (i : Fin trace.numInstructions) (c : $claimT trace i)
+        (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+        (b : $sName trace i c rawProgram) : $decodeT trace i c :=
+      $dName trace i c b.h_idx b.h_b_lo_t b.rd b.rs1 b.shamt b.hrd b.hrs1 b.hsh rawProgram hbind b.hLine)
+  return ⟨Lean.mkNullNode #[t1, t2, t3, t4, t5]⟩
 
 open RiscvOpcode riscv2zisk_single_row.Rv64imSingleRowOpcode zisk_ops.ZiskOp zisk_ops.OpType
 open ZiskFv.Trusted
@@ -452,6 +516,27 @@ noncomputable def Decode_addiw_from_rawProgram {n : Nat} (trace : ZiskFv.Complia
     register_decode_fields_of_binding (trace.program j).line (trace.program j) _ 26#u8 OP_ADD_W ext
       (by simp [OP_ADD_W]) hok hop hj1 hj2 hbk
   exact ⟨ho, hj1', hj2', hflags⟩
+
+structure RawDecode_addiw {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_addiw trace i)
+    (rawProgram : Fin n → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  rd : Nat
+  rs1 : Nat
+  imm : Nat
+  hrd : rd < 32
+  hrs1 : rs1 < 32
+  hrd0 : rd ≠ 0
+  hLine : ∀ j : Fin n,
+      (trace.program j).line
+        = (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j = ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 0 rd 0x1b
+
+noncomputable def Decode_addiw_from_rawProgram_b {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_addiw trace i)
+    (rawProgram : Fin n → BitVec 32) (hbind : ProgramBinding trace rawProgram)
+    (b : RawDecode_addiw trace i c rawProgram) : ZiskFv.Compliance.Decode_addiw trace i c :=
+  Decode_addiw_from_rawProgram trace i c b.h_idx b.rd b.rs1 b.imm b.hrd b.hrs1 b.hrd0 rawProgram hbind b.hLine
 
 shift64_op slli, 0, 1, 0x13, rawIType_funct6_zero, RiscvOpcode.Slli, riscv2zisk_single_row.Rv64imSingleRowOpcode.Slli, zisk_ops.ZiskOp.Sll, 33#u8, false, zisk_ops.OpType.BinaryE, OP_SLL
 shift64_op srli, 0, 5, 0x13, rawIType_funct6_zero, RiscvOpcode.Srli, riscv2zisk_single_row.Rv64imSingleRowOpcode.Srli, zisk_ops.ZiskOp.Srl, 34#u8, false, zisk_ops.OpType.BinaryE, OP_SRL
