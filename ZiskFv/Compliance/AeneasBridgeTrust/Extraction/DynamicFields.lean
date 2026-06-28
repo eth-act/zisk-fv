@@ -573,4 +573,85 @@ store_dyn sh, zisk_ops.ZiskOp.CopyB, 2#u64, 2#u64, ind_width_set2
 store_dyn sw, zisk_ops.ZiskOp.CopyB, 4#u64, 4#u64, ind_width_set4
 store_dyn sd, zisk_ops.ZiskOp.CopyB, 8#u64, 8#u64, ind_width_set8
 
+/-! ## 8. LUI / AUIPC / FENCE constant jump arms.
+
+  * LUI  : `j zib4 (hcast inst_size) (hcast inst_size)` — both offsets constant.
+  * AUIPC: `j zib4 4#i64 (cast i.imm)` — jmp_offset1 is the LITERAL 4 (the
+    decode-relevant constant slot); jmp_offset2 is the imm target (skipped).
+  * FENCE (lowered to `nop`): `j zib3 (hcast inst_size) (hcast inst_size)`. -/
+
+set_option maxHeartbeats 2000000 in
+theorem lui_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (inst_size : Std.U64)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.lui self i inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.lui,
+    lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_imm
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- src_b_imm
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- op_zisk CopyB
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- store_reg
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- j
+  obtain ⟨z6, h6, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h7, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨hj1, hj2⟩ := j_jmp _ _ _ _ h5
+  have hz65 := build_eq _ _ h6
+  refine ⟨z6, insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
+  · rw [hz65, hj1]
+  · rw [hz65, hj2]
+
+set_option maxHeartbeats 2000000 in
+theorem auipc_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.auipc self i = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.jmp_offset1 = 4#i64 := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.auipc,
+    lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_imm
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- src_b_imm
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- op_zisk Flag
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- store_pc_reg
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- j zib4 4#i64 (cast imm)
+  obtain ⟨z6, h6, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h7, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨hj1, hj2⟩ := j_jmp _ _ _ _ h5
+  have hz65 := build_eq _ _ h6
+  exact ⟨z6, insert_inst_extract _ _ _ _ h7, by rw [hz65, hj1]⟩
+
+set_option maxHeartbeats 2000000 in
+theorem nop_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (inst_size : Std.U64)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.nop self i inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.nop,
+    lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_imm
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- src_b_imm
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- op_zisk Flag
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- j
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h6, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨hj1, hj2⟩ := j_jmp _ _ _ _ h4
+  have hz54 := build_eq _ _ h5
+  refine ⟨z5, insert_inst_extract _ _ _ _ h6, ?_, ?_⟩
+  · rw [hz54, hj1]
+  · rw [hz54, hj2]
+
 end ZiskFv.Compliance.Extraction
