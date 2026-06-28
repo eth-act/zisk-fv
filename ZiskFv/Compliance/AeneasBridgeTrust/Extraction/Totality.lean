@@ -407,6 +407,108 @@ theorem store_op_typed_ok
   rw [riscv2zisk_context.Riscv2ZiskContext.store_op_typed]
   simp only [Bind.bind, bind_ok, hctx0]
 
+/-! ## 7. Branch lowering totality (block 3, branch family).
+
+`create_branch_op_typed` mirrors `create_register_op_typed` but writes NO `rd`
+(no `store_reg`) and chooses the two `j` offset arguments by the `neg` flag.  Its
+only register-bound branches are `src_a_reg` (on `rs1`) and `src_b_reg` (on `rs2`),
+so totality needs only `rs1 < 32 ∧ rs2 < 32` (no rd, no `≠ 0`).  The `if neg`
+chooses which constant slot is `inst_size`; both arms are `j_ok` (unconditional). -/
+
+set_option maxHeartbeats 1000000 in
+/-- `decode_b` is total and its `rs1`/`rs2` fields are `< 32` (the 5-bit masks land
+`< 32`; the `imm` field's `signext` is discharged exactly as in `decode_b_spec`). -/
+theorem decode_b_bounds (raw : Std.U32) (op : RiscvOpcode) :
+    ∃ d, decode_b raw op = ok d ∧ d.opcode = op ∧ d.rs1.val < 32 ∧ d.rs2.val < 32 := by
+  have spec : decode_b raw op
+      ⦃ d => d.opcode = op ∧ d.rs1.val < 32 ∧ d.rs2.val < 32 ⦄ := by
+    rw [decode_b]
+    simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok]
+    step*
+    · -- signext precondition: ↑(i10 ||| i11 ||| i13 ||| i15) ≤ 2147483647 (verbatim `decode_b_spec`)
+      have hi10 : (i10 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm12.val < 2 ^ 1 := by
+          rw [imm12_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 2147483648#u32).val < 2 ^ 32 := (raw &&& 2147483648#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i10_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm12 * 2 ^ 12) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have hi11 : (i11 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm11.val < 2 ^ 1 := by
+          rw [imm11_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 128#u32).val ≤ 128 := by
+            have hand : (raw &&& 128#u32).val ≤ (128#u32).val := by
+              simp only [UScalar.val, BitVec.toNat_and]; exact Nat.and_le_right
+            have hmval : (128#u32).val = 128 := by decide
+            omega
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i11_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm11 * 2 ^ 11) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have hi13 : (i13 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm10_5.val < 2 ^ 7 := by
+          rw [imm10_5_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 2113929216#u32).val < 2 ^ 32 := (raw &&& 2113929216#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i13_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm10_5 * 2 ^ 5) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have hi15 : (i15 : Std.U32).val < 2 ^ 31 := by
+        have hf : imm4_1.val < 2 ^ 24 := by
+          rw [imm4_1_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 3840#u32).val < 2 ^ 32 := (raw &&& 3840#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i15_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm4_1 * 2 ^ 1) U32.size
+        simp only [UScalar.val] at hf hle ⊢; omega
+      have : (i10 ||| i11 ||| i13 ||| i15).val < 2 ^ 31 := by
+        simp only [UScalar.val, BitVec.toNat_or] at hi10 hi11 hi13 hi15 ⊢
+        exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.or_lt_two_pow hi10 hi11) hi13) hi15
+      simp only [UScalar.val] at this ⊢; omega
+    · refine ⟨?_, ?_⟩
+      · rw [i5_post1, Nat.shiftRight_eq_div_pow]
+        have h : (↑(raw &&& 1015808#u32) : Nat) ≤ 1015808 := by
+          simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+        omega
+      · rw [i7_post1, Nat.shiftRight_eq_div_pow]
+        have h : (↑(raw &&& 32505856#u32) : Nat) ≤ 32505856 := by
+          simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+        omega
+  obtain ⟨d, hd, hpost⟩ := WP.spec_imp_exists spec
+  exact ⟨d, hd, hpost⟩
+
+/-- `create_branch_op_typed` is total for in-range register fields (`rs1 < 32`,
+`rs2 < 32`).  No `rd`, no `≠ 0` side-condition. -/
+theorem create_branch_op_typed_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (neg : Bool) (inst_size : Std.U64)
+    (h1 : i.rs1.val < 32) (h2 : i.rs2.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed self i op neg inst_size
+      = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_reg_ok z0 (UScalar.cast UScalarTy.U64 i.rs1) false
+    (by rw [cast_u32_u64_val]; exact h1)
+  obtain ⟨z2, hz2⟩ := src_b_reg_ok z1 (UScalar.cast UScalarTy.U64 i.rs2) false
+    (by rw [cast_u32_u64_val]; exact h2)
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 op
+  cases neg
+  · obtain ⟨z4, hz4⟩ := j_ok z3 (IScalar.cast IScalarTy.I64 i.imm) (UScalar.hcast IScalarTy.I64 inst_size)
+    obtain ⟨z5, hz5⟩ := build_ok z4
+    obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z5
+    refine ⟨{ s1 with extract_marker := () }, ?_⟩
+    rw [riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed]
+    simp only [Bool.false_eq_true, if_false, reduceIte, lift, Bind.bind, bind_ok,
+      hz0, hz1, hz2, hz3, hz4, hz5, hs1]
+  · obtain ⟨z4, hz4⟩ := j_ok z3 (UScalar.hcast IScalarTy.I64 inst_size) (IScalar.cast IScalarTy.I64 i.imm)
+    obtain ⟨z5, hz5⟩ := build_ok z4
+    obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z5
+    refine ⟨{ s1 with extract_marker := () }, ?_⟩
+    rw [riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed]
+    simp only [if_true, reduceIte, lift, Bind.bind, bind_ok,
+      hz0, hz1, hz2, hz3, hz4, hz5, hs1]
+
 /-- The default lowering context the transpile pipeline threads into the dispatcher. -/
 def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
   { extract_inst := none, extract_marker := (), input_precompile := none,
