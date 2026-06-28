@@ -98,6 +98,108 @@ theorem decode_s_spec (inst : Std.U32) (op : RiscvOpcode) :
     simp only [UScalar.val, BitVec.toNat_or] at hi8 hi40 ⊢; exact Nat.or_lt_two_pow hi8 hi40
   simp only [UScalar.val] at this ⊢; omega
 
+theorem decode_b_spec (inst : Std.U32) (op : RiscvOpcode) :
+    decode_b inst op ⦃ d => d.opcode = op ⦄ := by
+  rw [decode_b]
+  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok]
+  step*
+  -- ⊢ ↑(i10 ||| i11 ||| i13 ||| i15) ≤ 2147483647
+  -- i10 = imm12 <<< 12, imm12 = (inst &&& 2^31) >>> 31    (sl < sr: loose bound)
+  have hi10 : (i10 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm12.val < 2 ^ 1 := by
+      rw [imm12_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 2147483648#u32).val < 2 ^ 32 := (inst &&& 2147483648#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i10_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm12 * 2 ^ 12) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  -- i11 = imm11 <<< 11, imm11 = (inst &&& 128) >>> 7       (sl ≥ sr: tight mask bound)
+  have hi11 : (i11 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm11.val < 2 ^ 1 := by
+      rw [imm11_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 128#u32).val ≤ 128 := by
+        have hand : (inst &&& 128#u32).val ≤ (128#u32).val := by
+          simp only [UScalar.val, BitVec.toNat_and]; exact Nat.and_le_right
+        have hmval : (128#u32).val = 128 := by decide
+        omega
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i11_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm11 * 2 ^ 11) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  -- i13 = imm10_5 <<< 5, imm10_5 = (inst &&& _) >>> 25     (sl < sr: loose bound)
+  have hi13 : (i13 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm10_5.val < 2 ^ 7 := by
+      rw [imm10_5_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 2113929216#u32).val < 2 ^ 32 := (inst &&& 2113929216#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i13_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm10_5 * 2 ^ 5) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  -- i15 = imm4_1 <<< 1, imm4_1 = (inst &&& 3840) >>> 8      (sl < sr: loose bound)
+  have hi15 : (i15 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm4_1.val < 2 ^ 24 := by
+      rw [imm4_1_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 3840#u32).val < 2 ^ 32 := (inst &&& 3840#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i15_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm4_1 * 2 ^ 1) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  have : (i10 ||| i11 ||| i13 ||| i15).val < 2 ^ 31 := by
+    simp only [UScalar.val, BitVec.toNat_or] at hi10 hi11 hi13 hi15 ⊢
+    exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.or_lt_two_pow hi10 hi11) hi13) hi15
+  simp only [UScalar.val] at this ⊢; omega
+
+theorem decode_j_spec (inst : Std.U32) (op : RiscvOpcode) :
+    decode_j inst op ⦃ d => d.opcode = op ⦄ := by
+  rw [decode_j]
+  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok]
+  step*
+  -- ⊢ ↑(i6 ||| i7 ||| i9 ||| i11) ≤ 2147483647
+  -- i6 = imm20 <<< 20, imm20 = (inst &&& 2^31) >>> 31       (sl < sr: loose bound)
+  have hi6 : (i6 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm20.val < 2 ^ 1 := by
+      rw [imm20_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 2147483648#u32).val < 2 ^ 32 := (inst &&& 2147483648#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i6_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm20 * 2 ^ 20) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  -- i7 = imm19_12 <<< 12, imm19_12 = (inst &&& 1044480) >>> 12  (sl = sr: tight mask bound)
+  have hi7 : (i7 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm19_12.val < 2 ^ 8 := by
+      rw [imm19_12_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 1044480#u32).val ≤ 1044480 := by
+        have hand : (inst &&& 1044480#u32).val ≤ (1044480#u32).val := by
+          simp only [UScalar.val, BitVec.toNat_and]; exact Nat.and_le_right
+        have hmval : (1044480#u32).val = 1044480 := by decide
+        omega
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i7_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm19_12 * 2 ^ 12) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  -- i9 = imm11 <<< 11, imm11 = (inst &&& 2^20) >>> 20        (sl < sr: loose bound)
+  have hi9 : (i9 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm11.val < 2 ^ 12 := by
+      rw [imm11_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 1048576#u32).val < 2 ^ 32 := (inst &&& 1048576#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i9_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm11 * 2 ^ 11) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  -- i11 = imm10_1 <<< 1, imm10_1 = (inst &&& _) >>> 21        (sl < sr: loose bound)
+  have hi11 : (i11 : Std.U32).val < 2 ^ 31 := by
+    have hf : imm10_1.val < 2 ^ 11 := by
+      rw [imm10_1_post1, Nat.shiftRight_eq_div_pow]
+      have h : (inst &&& 2145386496#u32).val < 2 ^ 32 := (inst &&& 2145386496#u32).bv.isLt
+      simp only [UScalar.val] at h ⊢; omega
+    rw [i11_post1, Nat.shiftLeft_eq]
+    have hle := Nat.mod_le (↑imm10_1 * 2 ^ 1) U32.size
+    simp only [UScalar.val] at hf hle ⊢; omega
+  have : (i6 ||| i7 ||| i9 ||| i11).val < 2 ^ 31 := by
+    simp only [UScalar.val, BitVec.toNat_or] at hi6 hi7 hi9 hi11 ⊢
+    exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.or_lt_two_pow hi6 hi7) hi9) hi11
+  simp only [UScalar.val] at this ⊢; omega
+
 /-- Bridge from a leaf-decoder spec (which pins the opcode) to acceptance: if the
 leaf decodes (to a record carrying `op`) and `op` is is-supported, then the full
 `decode >>= is_supported` pipeline returns `ok true`. -/
@@ -164,7 +266,12 @@ theorem stype_family_accepts (rs1 rs2 imm funct3 : Nat)
     (hmem : funct3 ∈ [0, 1, 2, 3]) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawSType imm rs2 rs1 funct3)) = ok true := by
-  sorry
+  fin_cases hmem <;>
+    (simp (disch := omega) only [aeneas_extract.extract_rv64im_opcode_supported,
+      aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
+      toU32_and127, toU32_and7, toU32_shr12, toU32_ofNat, rawSType_opcode, rawSType_funct3]
+     exact bind_supported (decode_s_spec _ _)
+       (by intro d hd; simp only [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im, hd]))
 
 set_option maxHeartbeats 1000000 in
 theorem btype_family_accepts (rs1 rs2 imm funct3 : Nat)
@@ -172,7 +279,12 @@ theorem btype_family_accepts (rs1 rs2 imm funct3 : Nat)
     (hmem : funct3 ∈ [0, 1, 4, 5, 6, 7]) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawBType imm rs2 rs1 funct3)) = ok true := by
-  sorry
+  fin_cases hmem <;>
+    (simp (disch := omega) only [aeneas_extract.extract_rv64im_opcode_supported,
+      aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
+      toU32_and127, toU32_and7, toU32_shr12, toU32_ofNat, rawBType_opcode, rawBType_funct3]
+     exact bind_supported (decode_b_spec _ _)
+       (by intro d hd; simp only [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im, hd]))
 
 set_option maxHeartbeats 1000000 in
 theorem utype_family_accepts (rd imm opcode : Nat)
@@ -188,6 +300,10 @@ set_option maxHeartbeats 1000000 in
 theorem jtype_family_accepts (rd imm : Nat) :
     aeneas_extract.extract_rv64im_opcode_supported
       (toU32 (Rv64imShapes.rawJType imm rd)) = ok true := by
-  sorry
+  simp only [aeneas_extract.extract_rv64im_opcode_supported,
+    aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
+    toU32_and127, toU32_ofNat, rawJType_opcode]
+  exact bind_supported (decode_j_spec _ _)
+    (by intro d hd; simp only [aeneas_extract.rv64im_decode.DecodedRv64im.is_supported_rv64im, hd])
 
 end ZiskFv.Compliance.Decode
