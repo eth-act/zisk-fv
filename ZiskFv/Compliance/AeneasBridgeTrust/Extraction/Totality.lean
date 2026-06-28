@@ -147,13 +147,15 @@ theorem create_register_op_typed_ok
   rw [riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed]
   simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
 
-/-- `from_inst` is total and copies the row's decode/row-mode fields. -/
+/-- `from_inst` is total and copies the row's decode/row-mode fields (incl.
+`ind_width`, which the load/store bridge reads). -/
 theorem from_inst_ok (zi : zisk_inst.ZiskInst) :
     ∃ e, aeneas_extract.ZiskInstExtract.from_inst zi = ok e
       ∧ e.op = zi.op ∧ e.is_external_op = zi.is_external_op ∧ e.m32 = zi.m32
       ∧ e.set_pc = zi.set_pc ∧ e.store_pc = zi.store_pc
-      ∧ e.jmp_offset1 = zi.jmp_offset1 ∧ e.jmp_offset2 = zi.jmp_offset2 := by
-  refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rfl
+      ∧ e.jmp_offset1 = zi.jmp_offset1 ∧ e.jmp_offset2 = zi.jmp_offset2
+      ∧ e.ind_width = zi.ind_width := by
+  refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rfl
 
 /-- `decode_extract_from_decoded` is total (every opcode/format arm returns `ok`). -/
 theorem decode_extract_ok (d : aeneas_extract.rv64im_decode.DecodedRv64im) :
@@ -249,6 +251,161 @@ theorem immediate_op_typed_ok
   refine ⟨{ s1 with extract_marker := () }, ?_⟩
   rw [riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed]
   simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hz6, hs1]
+
+/-! ## 6. Load / store lowering totality (block 3, load & store families).
+
+`load_op_typed` / `store_op_typed` are the canonical builders for the memory
+ops.  Both go through a `_with_reg_offset` helper with a literal `0` register
+offset (loads `0#i64`, stores `0#u64`), so totality additionally needs (a) that
+the `ind_width` builder accepts the per-op access-width literal (the `hw`
+hypothesis, discharged `⟨_, rfl⟩` for `w ∈ {1,2,4,8}`), and (b) that the `+ 0`
+offset addition is total and value-preserving (`iscalar_add_zero_ok` /
+`uscalar_add_zero_ok`).  Loads need `rs1 < 32 ∧ rd < 32` (`src_a_reg` on rs1,
+`store_reg` on rd); stores need `rs1 < 32 ∧ rs2 < 32` (`src_a_reg` on rs1,
+`src_b_reg` on rs2 — no rd: the store target is indirect, via `store_ind`). -/
+
+/-- `src_b_ind` is unconditionally total (both `use_sp` branches return `ok`). -/
+theorem src_b_ind_ok (self : zisk_inst_builder.ZiskInstBuilder) (off : Std.U64) (usp : Bool) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.src_b_ind self off usp = ok z := by
+  cases usp <;> exact ⟨_, rfl⟩
+
+/-- `store_ind` is unconditionally total. -/
+theorem store_ind_ok (self : zisk_inst_builder.ZiskInstBuilder) (off : Std.I64) (usp : Bool) :
+    ∃ z, zisk_inst_builder.ZiskInstBuilder.store_ind self off usp = ok z := ⟨_, rfl⟩
+
+/-- Adding the literal `0#i64` offset is total and value-preserving (the register
+offset is `0` in `load_op_typed`'s `_with_reg_offset` call). -/
+theorem iscalar_add_zero_ok (x : Std.I64) : ∃ z, x + 0#i64 = ok z ∧ z.val = x.val := by
+  obtain ⟨z, hz, hv⟩ :=
+    WP.spec_imp_exists (IScalar.add_spec (x := x) (y := 0#i64) (by scalar_tac) (by scalar_tac))
+  exact ⟨z, hz, by simpa using hv⟩
+
+/-- Adding the literal `0#u64` offset is total and value-preserving (the register
+offset is `0` in `store_op_typed`'s `_with_reg_offset` call). -/
+theorem uscalar_add_zero_ok (x : Std.U64) : ∃ z, x + 0#u64 = ok z ∧ z.val = x.val := by
+  obtain ⟨z, hz, hv⟩ :=
+    WP.spec_imp_exists (UScalar.add_spec (x := x) (y := 0#u64) (by scalar_tac))
+  exact ⟨z, hz, by simpa using hv⟩
+
+set_option maxHeartbeats 1000000 in
+/-- `decode_s` is total and its `rs1`/`rs2` fields are `< 32` (the 5-bit masks
+land `< 32`; the `imm` field's `signext` is discharged exactly as in
+`decode_s_spec`). -/
+theorem decode_s_bounds (raw : Std.U32) (op : RiscvOpcode) :
+    ∃ d, decode_s raw op = ok d ∧ d.opcode = op ∧ d.rs1.val < 32 ∧ d.rs2.val < 32 := by
+  have spec : decode_s raw op
+      ⦃ d => d.opcode = op ∧ d.rs1.val < 32 ∧ d.rs2.val < 32 ⦄ := by
+    rw [decode_s]
+    simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok]
+    step*
+    · -- signext precondition: i9 = (i8 ||| imm4_0) ≤ 2147483647 (verbatim `decode_s_spec`)
+      have hi8 : (i8 : Std.U32).val < 2 ^ 31 := by
+        have h11 : imm11_5.val < 2 ^ 7 := by
+          rw [imm11_5_post1, Nat.shiftRight_eq_div_pow]
+          have h : (raw &&& 4261412864#u32).val < 2 ^ 32 := (raw &&& 4261412864#u32).bv.isLt
+          simp only [UScalar.val] at h ⊢; omega
+        rw [i8_post1, Nat.shiftLeft_eq]
+        have hle := Nat.mod_le (↑imm11_5 * 2 ^ 5) U32.size
+        simp only [UScalar.val] at h11 hle ⊢; omega
+      have hi40 : (imm4_0 : Std.U32).val < 2 ^ 31 := by
+        rw [imm4_0_post1]; exact ZiskFv.Compliance.Decode.shr_field_lt raw _ 7 (by norm_num)
+      have : (i8 ||| imm4_0).val < 2 ^ 31 := by
+        simp only [UScalar.val, BitVec.toNat_or] at hi8 hi40 ⊢; exact Nat.or_lt_two_pow hi8 hi40
+      simp only [UScalar.val] at this ⊢; omega
+    · refine ⟨?_, ?_⟩
+      · rw [i4_post1, Nat.shiftRight_eq_div_pow]
+        have h : (↑(raw &&& 1015808#u32) : Nat) ≤ 1015808 := by
+          simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+        omega
+      · rw [i6_post1, Nat.shiftRight_eq_div_pow]
+        have h : (↑(raw &&& 32505856#u32) : Nat) ≤ 32505856 := by
+          simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
+        omega
+  obtain ⟨d, hd, hpost⟩ := WP.spec_imp_exists spec
+  exact ⟨d, hd, hpost⟩
+
+/-- `load_op_with_reg_offset` (the `0#i64`-offset specialization used by
+`load_op_typed`) is total for in-range register fields. -/
+theorem load_op_with_reg_offset_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp) (w inst_size : Std.U64)
+    (hw : ∀ s : zisk_inst_builder.ZiskInstBuilder,
+            ∃ z, zisk_inst_builder.ZiskInstBuilder.ind_width s w = ok z)
+    (h1 : i.rs1.val < 32) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset self i op w inst_size 0#i64
+      = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_reg_ok z0 (UScalar.cast UScalarTy.U64 i.rs1) false
+    (by rw [cast_u32_u64_val]; exact h1)
+  obtain ⟨z2, hz2⟩ := hw z1
+  obtain ⟨z3, hz3⟩ := src_b_ind_ok z2 (IScalar.hcast UScalarTy.U64 i.imm) false
+  obtain ⟨z4, hz4⟩ := op_zisk_ok z3 op
+  obtain ⟨i4, hi4, hi4v⟩ := iscalar_add_zero_ok (UScalar.hcast IScalarTy.I64 i.rd)
+  obtain ⟨z5, hz5⟩ := store_reg_ok z4 i4 false false
+    (by rw [hi4v, hcast_u32_i64_val]; exact_mod_cast Nat.zero_le _)
+    (by rw [hi4v, hcast_u32_i64_val]; exact_mod_cast h3)
+  obtain ⟨z6, hz6⟩ := j_ok z5 (UScalar.hcast IScalarTy.I64 inst_size) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z7, hz7⟩ := build_ok z6
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z7
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hi4, hz5, hz6, hz7, hs1]
+
+/-- `load_op_typed` is total for in-range register fields (`rs1 < 32`, `rd < 32`)
+and a legal access-width literal (`hw`). -/
+theorem load_op_typed_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp) (w inst_size : Std.U64)
+    (hw : ∀ s : zisk_inst_builder.ZiskInstBuilder,
+            ∃ z, zisk_inst_builder.ZiskInstBuilder.ind_width s w = ok z)
+    (h1 : i.rs1.val < 32) (h3 : i.rd.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.load_op_typed self i op w inst_size = ok ctx := by
+  obtain ⟨ctx0, hctx0⟩ :=
+    load_op_with_reg_offset_ok { self with extract_marker := () } i op w inst_size hw h1 h3
+  refine ⟨{ ctx0 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.load_op_typed]
+  simp only [Bind.bind, bind_ok, hctx0]
+
+/-- `store_op_with_reg_offset` (the `0#u64`-offset specialization used by
+`store_op_typed`) is total for in-range register fields (`rs1 < 32`, `rs2 < 32`;
+no rd — the store target is indirect). -/
+theorem store_op_with_reg_offset_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp) (w inst_size : Std.U64)
+    (hw : ∀ s : zisk_inst_builder.ZiskInstBuilder,
+            ∃ z, zisk_inst_builder.ZiskInstBuilder.ind_width s w = ok z)
+    (h1 : i.rs1.val < 32) (h2 : i.rs2.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset self i op w inst_size 0#u64
+      = ok ctx := by
+  obtain ⟨z0, hz0⟩ := new_ok i
+  obtain ⟨z1, hz1⟩ := src_a_reg_ok z0 (UScalar.cast UScalarTy.U64 i.rs1) false
+    (by rw [cast_u32_u64_val]; exact h1)
+  obtain ⟨i3, hi3, hi3v⟩ := uscalar_add_zero_ok (UScalar.cast UScalarTy.U64 i.rs2)
+  obtain ⟨z2, hz2⟩ := src_b_reg_ok z1 i3 false (by rw [hi3v, cast_u32_u64_val]; exact h2)
+  obtain ⟨z3, hz3⟩ := op_zisk_ok z2 op
+  obtain ⟨z4, hz4⟩ := hw z3
+  obtain ⟨z5, hz5⟩ := store_ind_ok z4 (IScalar.cast IScalarTy.I64 i.imm) false
+  obtain ⟨z6, hz6⟩ := j_ok z5 (UScalar.hcast IScalarTy.I64 inst_size) (UScalar.hcast IScalarTy.I64 inst_size)
+  obtain ⟨z7, hz7⟩ := build_ok z6
+  obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z7
+  refine ⟨{ s1 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset]
+  simp only [lift, Bind.bind, bind_ok, hz0, hz1, hi3, hz2, hz3, hz4, hz5, hz6, hz7, hs1]
+
+/-- `store_op_typed` is total for in-range register fields (`rs1 < 32`, `rs2 < 32`)
+and a legal access-width literal (`hw`). -/
+theorem store_op_typed_ok
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp) (w inst_size : Std.U64)
+    (hw : ∀ s : zisk_inst_builder.ZiskInstBuilder,
+            ∃ z, zisk_inst_builder.ZiskInstBuilder.ind_width s w = ok z)
+    (h1 : i.rs1.val < 32) (h2 : i.rs2.val < 32) :
+    ∃ ctx, riscv2zisk_context.Riscv2ZiskContext.store_op_typed self i op w inst_size = ok ctx := by
+  obtain ⟨ctx0, hctx0⟩ :=
+    store_op_with_reg_offset_ok { self with extract_marker := () } i op w inst_size hw h1 h2
+  refine ⟨{ ctx0 with extract_marker := () }, ?_⟩
+  rw [riscv2zisk_context.Riscv2ZiskContext.store_op_typed]
+  simp only [Bind.bind, bind_ok, hctx0]
 
 /-- The default lowering context the transpile pipeline threads into the dispatcher. -/
 def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
