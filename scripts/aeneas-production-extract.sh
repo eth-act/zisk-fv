@@ -289,6 +289,25 @@ if [[ "$AENEAS_CHECK_LEAN" != 0 ]]; then
     chmod -R u+w "$lean_check/aeneas-lean"
   fi
 
+  # Patch the vendored Aeneas runtime to the RELEASE Mathlib rev + toolchain the
+  # main build uses (mirrors nix/aeneas-lean.nix). The pinned aeneas commit
+  # (a2fcf1923d) ships an rc1 Mathlib require + rc1 toolchain, whose ProofWidgets
+  # (6d65c6e0) cloud release does not satisfy `widgetJsAll` (build fails even after
+  # `lake exe cache get`). The release Mathlib (8f9d9cff -> ProofWidgets be3b2e63)
+  # has a working cloud release, as the main FV build demonstrates. Idempotent.
+  if grep -q '@ "v4.28.0-rc1"' "$lean_check/aeneas-lean/lakefile.lean"; then
+    sed -i 's#@ "v4.28.0-rc1"#@ "8f9d9cff6bd728b17a24e163c9402775d9e6a365"#' \
+      "$lean_check/aeneas-lean/lakefile.lean"
+  fi
+  printf 'leanprover/lean4:v4.28.0\n' > "$lean_check/aeneas-lean/lean-toolchain"
+  # Drop the pristine rc1 lake-manifest.json (Mathlib 5352afcc) shipped with the
+  # aeneas runtime. The lean-check has NO root manifest, so this path-dep manifest
+  # would otherwise govern and pull rc1 Mathlib (toolchain v4.28.0-rc1) — which
+  # mismatches the lean-check toolchain (v4.28.0) and makes `lake exe cache get`
+  # refuse ("Mathlib uses a different lean-toolchain"). Removing it forces Lake to
+  # re-resolve Mathlib from the patched `require` (8f9d9cff, toolchain v4.28.0).
+  rm -f "$lean_check/aeneas-lean/lake-manifest.json" "$lean_check/lake-manifest.json"
+
   cat > "$lean_check/lakefile.lean" <<'EOF'
 import Lake
 open Lake DSL
@@ -376,7 +395,7 @@ lean_lib RvCompleteness
 lean_lib RvUpperJumpCompleteness
 EOF
   rm -f "$lean_check/lean-toolchain"
-  cp "$AENEAS_LEAN_SRC/lean-toolchain" "$lean_check/lean-toolchain"
+  printf 'leanprover/lean4:v4.28.0\n' > "$lean_check/lean-toolchain"
 
   cat > "$lean_check/GeneratedChecks.lean" <<'EOF'
 import ProductionM2
@@ -2516,7 +2535,7 @@ theorem extracted_raw_fence_decode_completeness :
 
 end zisk_core_generated_fence_completeness
 EOF
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks FenceCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/RvDecodeCommon.lean" <<'EOF'
 import ProductionM2
@@ -4308,6 +4327,10 @@ theorem regs_to_set_width_nat_not_le_one :
     ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) ≤ 1) := by
   native_decide
 
+theorem regs_to_set_width_nat_not_lt_two :
+    ¬ ((↑(BitVec.setWidth 64 31#System.Platform.numBits#uscalar : Std.U64) : Nat) < 2) := by
+  native_decide
+
 theorem one_int_not_lt_regs_from_set_width :
     ¬ (1 < (↑(BitVec.setWidth 64 1#System.Platform.numBits#iscalar : Std.I64) : Int)) := by
   native_decide
@@ -5015,7 +5038,7 @@ theorem src_a_reg_two_flag
     UScalar.cast,
     lift,
     two_nat_not_lt_regs_from_set_width,
-    regs_to_set_width_nat_not_le_one]
+    regs_to_set_width_nat_not_lt_two]
 
 theorem src_b_reg_two_flag
     (zib : zisk_inst_builder.ZiskInstBuilder) :
@@ -5029,7 +5052,7 @@ theorem src_b_reg_two_flag
     UScalar.cast,
     lift,
     two_nat_not_lt_regs_from_set_width,
-    regs_to_set_width_nat_not_le_one]
+    regs_to_set_width_nat_not_lt_two]
 
 theorem store_reg_one_flag
     (zib : zisk_inst_builder.ZiskInstBuilder) :
@@ -8993,7 +9016,7 @@ EOF
       echo "  · exact lower_jal_reg${rd}_route_ok imm" >> "$lean_check/RvUpperJumpCompleteness.lean"
     done
     printf '\n\nend zisk_core_generated_rv_upper_jump_completeness\n' >> "$lean_check/RvUpperJumpCompleteness.lean"
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks RvRouteSoundness RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks RvRouteSoundness RvDecodeCompleteness RvCompleteness RvUpperJumpCompleteness' bash "$lean_check"
   elif [[ "$AENEAS_CHECK_RV64IM_COMPLETENESS" != 0 ]]; then
     cat > "$lean_check/Rv64imCompleteness.lean" <<'EOF'
 import ProductionM2
@@ -9101,9 +9124,9 @@ example :
 
 end zisk_core_generated_rv64im_completeness
 EOF
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks Rv64imCompleteness' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks Rv64imCompleteness' bash "$lean_check"
   else
-    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
+    nix develop "$ROOT" --command bash -lc 'cd "$1" && lake exe cache get && lake build ProductionM2 GeneratedChecks' bash "$lean_check"
   fi
 fi
 
