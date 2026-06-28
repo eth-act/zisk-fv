@@ -285,4 +285,98 @@ reg_dyn remu,   zisk_ops.ZiskOp.Remu
 reg_dyn remw,   zisk_ops.ZiskOp.RemW
 reg_dyn remuw,  zisk_ops.ZiskOp.RemuW
 
+/-! ## 5. Immediate ALU : both jump offsets are the (lifted) cast of `inst_size`,
+exactly as for the register form. -/
+
+set_option maxHeartbeats 2000000 in
+theorem immediate_op_typed_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed self i op inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_reg
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- src_b_imm
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- op_zisk
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- store_reg
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- j
+  obtain ⟨z6, h6, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h7, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨hj1, hj2⟩ := j_jmp _ _ _ _ h5
+  have hz65 := build_eq _ _ h6
+  refine ⟨z6, insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
+  · rw [hz65, hj1]
+  · rw [hz65, hj2]
+
+/-- macro: emit `<nm>_dynamic_pins` for a concrete immediate op. -/
+local macro "imm_dyn" nm:ident "," ropx:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_dynamic_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed self i $ropx inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+        zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size :=
+    immediate_op_typed_dynamic_pins self i $ropx inst_size ctx h)
+
+imm_dyn slli,  zisk_ops.ZiskOp.Sll
+imm_dyn srli,  zisk_ops.ZiskOp.Srl
+imm_dyn srai,  zisk_ops.ZiskOp.Sra
+imm_dyn slti,  zisk_ops.ZiskOp.Lt
+imm_dyn sltiu, zisk_ops.ZiskOp.Ltu
+imm_dyn andi,  zisk_ops.ZiskOp.And
+imm_dyn addiw, zisk_ops.ZiskOp.AddW
+imm_dyn slliw, zisk_ops.ZiskOp.SllW
+imm_dyn srliw, zisk_ops.ZiskOp.SrlW
+imm_dyn sraiw, zisk_ops.ZiskOp.SraW
+
+/-! ## 6. `immediate_op_or_x0_copyb_typed` (ADDI / XORI / ORI).  The `op_zisk`
+arm branches on `i.rs1 = 0`, but the `j` builder is OUTSIDE that branch, so the
+jump offsets are pinned uniformly without an `rs1` side-condition. -/
+
+set_option maxHeartbeats 2000000 in
+theorem immediate_op_or_x0_copyb_typed_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed self i op inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+      zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h    -- new
+  obtain ⟨z1, h1, h⟩ := bind_eq_ok_imp h    -- src_a_reg
+  obtain ⟨z2, h2, h⟩ := bind_eq_ok_imp h    -- src_b_imm
+  obtain ⟨z3, h3, h⟩ := bind_eq_ok_imp h    -- (if rs1=0 then op_zisk CopyB else op_zisk op)
+  obtain ⟨z4, h4, h⟩ := bind_eq_ok_imp h    -- store_reg
+  obtain ⟨z5, h5, h⟩ := bind_eq_ok_imp h    -- j
+  obtain ⟨z6, h6, h⟩ := bind_eq_ok_imp h    -- build
+  obtain ⟨s1, h7, h⟩ := bind_eq_ok_imp h    -- insert_inst
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨hj1, hj2⟩ := j_jmp _ _ _ _ h5
+  have hz65 := build_eq _ _ h6
+  refine ⟨z6, insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
+  · rw [hz65, hj1]
+  · rw [hz65, hj2]
+
+/-- macro: emit `<nm>_dynamic_pins` for an `immediate_op_or_x0_copyb` op. -/
+local macro "imm_x0_dyn" nm:ident "," ropx:term : command => do
+  let thmNm := Lean.mkIdentFrom nm (nm.getId.appendAfter "_dynamic_pins")
+  `(theorem $thmNm:ident (self i inst_size ctx)
+      (h : riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed self i $ropx inst_size = ok ctx) :
+      ∃ zib, ctx.extract_inst = some zib ∧
+        zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size ∧
+        zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size :=
+    immediate_op_or_x0_copyb_typed_dynamic_pins self i $ropx inst_size ctx h)
+
+imm_x0_dyn addi, zisk_ops.ZiskOp.Add
+imm_x0_dyn xori, zisk_ops.ZiskOp.Xor
+imm_x0_dyn ori,  zisk_ops.ZiskOp.Or
+
 end ZiskFv.Compliance.Extraction
