@@ -723,4 +723,65 @@ branch_dyn_true  bge,  zisk_ops.ZiskOp.Lt
 branch_dyn_false bltu, zisk_ops.ZiskOp.Ltu
 branch_dyn_true  bgeu, zisk_ops.ZiskOp.Ltu
 
+/-! ## 10. JALR : the `i.imm % 4` two-row split (mirrors `jalr_static_pins`).
+
+  * Row A (`i.imm % 4 = 0`) emits ONE instruction whose `j zib5 (cast imm)
+    (hcast inst_size)` pins the constant slot `jmp_offset2 = hcast inst_size`.
+  * Row B (`i.imm % 4 ≠ 0`) emits TWO instructions; `ctx.extract_inst` is the
+    SECOND, whose `j zib11 0#i64 (…)` pins the constant slot `jmp_offset1 =
+    0#i64`.
+
+The decode-relevant constant pin is therefore a per-row disjunction. -/
+
+set_option maxHeartbeats 4000000 in
+theorem jalr_dynamic_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (inst_size : Std.U64)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h : riscv2zisk_context.Riscv2ZiskContext.jalr self i inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      ( zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size
+        ∨ zib.i.jmp_offset1 = 0#i64 ) := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.jalr,
+    lift, bind_ok, Bind.bind] at h
+  obtain ⟨i1, _, h⟩ := bind_eq_ok_imp h   -- i.imm % 4#i32
+  split_ifs at h with hbr
+  · -- Row A (i.imm % 4 = 0) : single instruction, jmp_offset2 = hcast inst_size
+    obtain ⟨za0, _, h⟩ := bind_eq_ok_imp h    -- new
+    obtain ⟨za1, _, h⟩ := bind_eq_ok_imp h    -- src_a_imm JALR_MASK
+    obtain ⟨za2, _, h⟩ := bind_eq_ok_imp h    -- src_b_reg
+    obtain ⟨za3, _, h⟩ := bind_eq_ok_imp h    -- op_zisk And
+    obtain ⟨za4, _, h⟩ := bind_eq_ok_imp h    -- store_pc_reg
+    obtain ⟨za5, _, h⟩ := bind_eq_ok_imp h    -- set_pc
+    obtain ⟨za6, hj, h⟩ := bind_eq_ok_imp h   -- j za5 (cast imm) (hcast inst_size)
+    obtain ⟨za7, hbd, h⟩ := bind_eq_ok_imp h  -- build
+    obtain ⟨sa, hins, h⟩ := bind_eq_ok_imp h  -- insert_inst
+    rw [Result.ok.injEq] at h; subst h
+    obtain ⟨_, hjj2⟩ := j_jmp _ _ _ _ hj
+    have hbeq := build_eq _ _ hbd
+    exact ⟨za7, insert_inst_extract _ _ _ _ hins, Or.inl (by rw [hbeq, hjj2])⟩
+  · -- Row B (i.imm % 4 ≠ 0) : two instructions; the SECOND pins jmp_offset1 = 0
+    obtain ⟨zb0, _, h⟩ := bind_eq_ok_imp h    -- new (first inst)
+    obtain ⟨zb1, _, h⟩ := bind_eq_ok_imp h    -- src_a_imm
+    obtain ⟨zb2, _, h⟩ := bind_eq_ok_imp h    -- src_b_reg
+    obtain ⟨zb3, _, h⟩ := bind_eq_ok_imp h    -- op_zisk Add
+    obtain ⟨zb4, _, h⟩ := bind_eq_ok_imp h    -- j zb3 1 1
+    obtain ⟨zb5, _, h⟩ := bind_eq_ok_imp h    -- build (first)
+    obtain ⟨sf1, _, h⟩ := bind_eq_ok_imp h    -- insert_inst (first)
+    obtain ⟨roma, _, h⟩ := bind_eq_ok_imp h   -- rom_address ← i.rom_address + 1
+    obtain ⟨zb6, _, h⟩ := bind_eq_ok_imp h    -- new (second inst)
+    obtain ⟨zb7, _, h⟩ := bind_eq_ok_imp h    -- src_a_imm JALR_MASK
+    obtain ⟨zb8, _, h⟩ := bind_eq_ok_imp h    -- src_b_lastc
+    obtain ⟨zb9, _, h⟩ := bind_eq_ok_imp h    -- op_zisk And
+    obtain ⟨zb10, _, h⟩ := bind_eq_ok_imp h   -- store_pc_reg
+    obtain ⟨zb11, _, h⟩ := bind_eq_ok_imp h   -- set_pc
+    obtain ⟨i6, _, h⟩ := bind_eq_ok_imp h     -- i6 ← i5 - 1#i64
+    obtain ⟨zb12, hj, h⟩ := bind_eq_ok_imp h  -- j zb11 0#i64 i6
+    obtain ⟨zb13, hbd, h⟩ := bind_eq_ok_imp h -- build (second)
+    obtain ⟨sf2, hins, h⟩ := bind_eq_ok_imp h -- insert_inst (second)
+    rw [Result.ok.injEq] at h; subst h
+    obtain ⟨hjj1, _⟩ := j_jmp _ _ _ _ hj
+    have hbeq := build_eq _ _ hbd
+    exact ⟨zb13, insert_inst_extract _ _ _ _ hins, Or.inr (by rw [hbeq, hjj1])⟩
+
 end ZiskFv.Compliance.Extraction
