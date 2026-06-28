@@ -42,6 +42,82 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
+/-- **`RTypePromises` minus its cross-world `nextPC_matches` field (#100).**
+
+    Identical to `ZiskFv.EquivCore.Promises.RTypePromises` except that the
+    `pure_nextPC` parameter and the `nextPC_matches : (register_type_pc_equiv ▸
+    BitVec.ofNat 64 (exec_row[1]!.pc).val) = pure_nextPC` field are dropped.  The
+    fourteen value/data promises are unchanged, byte-for-byte.
+
+    The next-PC promise is no longer caller-supplied for the bundle-shaped
+    signed-M opcodes (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW): it is DERIVED in the
+    `<op>EnvOf` env-builder from the accepted trace's in-circuit `pcHandshakeBetween`
+    transition certificate via `Pilot.sequential_nextPC_discharged` (the same
+    kernel-only discharge the 56 already-rewired ops use) and re-attached through
+    `withNextPC`.  This is the bundle analogue of the bare-field `h_nextPC_matches`
+    removal performed on the 56 ops; it touches only the next-PC sub-fact and
+    leaves the value/data promises (and the separate value-defect gate) untouched.
+
+    Lives here, next to its only consumers (the signed-M `Inputs_<op>` /
+    `<op>EnvOf`), rather than in `EquivCore/Promises/RType.lean`, to avoid a
+    tree-wide rebuild of the ~250 files downstream of that foundational module. -/
+structure RTypePromisesNoNextPC
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (input_r1_val input_r2_val : BitVec 64) (input_rd : Fin 32)
+    (input_pc : BitVec 64)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL) where
+  input_r1_eq : read_xreg (regidx_to_fin r1) state
+    = EStateM.Result.ok input_r1_val state
+  input_r2_eq : read_xreg (regidx_to_fin r2) state
+    = EStateM.Result.ok input_r2_val state
+  input_rd_eq : input_rd = regidx_to_fin rd
+  input_pc_eq : state.regs.get? Register.PC = .some input_pc
+  exec_len : exec_row.length = 2
+  e0_mult : exec_row[0]!.multiplicity = -1
+  e1_mult : exec_row[1]!.multiplicity = 1
+  m0_mult : e0.multiplicity = -1
+  m0_as : e0.as.val = 1
+  m1_mult : e1.multiplicity = -1
+  m1_as : e1.as.val = 1
+  m2_mult : e2.multiplicity = 1
+  m2_as : e2.as.val = 1
+  rd_idx : input_rd = Transpiler.wrap_to_regidx e2.ptr
+
+/-- Re-attach a discharged next-PC fact to a `RTypePromisesNoNextPC` bundle,
+    recovering the full `RTypePromises`.  The `h_nextPC` proof is sourced in the
+    `<op>EnvOf` env-builder from `Pilot.sequential_nextPC_discharged` (the
+    in-circuit transition certificate), so the caller never supplies it. -/
+def RTypePromisesNoNextPC.withNextPC
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {input_r1_val input_r2_val : BitVec 64} {input_rd : Fin 32}
+    {input_pc : BitVec 64} {r1 r2 rd : regidx}
+    {exec_row : List (Interaction.ExecutionBusEntry FGL)}
+    {e0 e1 e2 : Interaction.MemoryBusEntry FGL}
+    (p : RTypePromisesNoNextPC state input_r1_val input_r2_val input_rd input_pc
+      r1 r2 rd exec_row e0 e1 e2)
+    (pure_nextPC : BitVec 64)
+    (h_nextPC :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = pure_nextPC) :
+    ZiskFv.EquivCore.Promises.RTypePromises state input_r1_val input_r2_val input_rd
+      input_pc pure_nextPC r1 r2 rd exec_row e0 e1 e2 where
+  input_r1_eq := p.input_r1_eq
+  input_r2_eq := p.input_r2_eq
+  input_rd_eq := p.input_rd_eq
+  input_pc_eq := p.input_pc_eq
+  exec_len := p.exec_len
+  e0_mult := p.e0_mult
+  e1_mult := p.e1_mult
+  nextPC_matches := h_nextPC
+  m0_mult := p.m0_mult
+  m0_as := p.m0_as
+  m1_mult := p.m1_mult
+  m1_as := p.m1_as
+  m2_mult := p.m2_mult
+  m2_as := p.m2_as
+  rd_idx := p.rd_idx
+
 structure Claim_add (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   r1 : regidx
   r2 : regidx
@@ -719,6 +795,12 @@ structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
+  -- #100 next-PC transition input: the next Main row exists (so the cross-row
+  -- `pcHandshakeBetween` transition applies at the pair `(i, i+1)`). Together with
+  -- the decode pins `set_pc = 0`, `jmp_offset1 = jmp_offset2 = 4` already above,
+  -- this lets `<op>EnvOf` DERIVE the bundled `nextPC_matches` rather than take it
+  -- from the caller. Terminal row = #103 cross-segment boundary.
+  h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
   bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
@@ -733,9 +815,10 @@ structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_Arith v r_a)
-  promises : ZiskFv.EquivCore.Promises.RTypePromises
+  -- #100: value/data promises only — the cross-world `nextPC_matches` sub-field is
+  -- no longer caller-supplied (DERIVED in `mulEnvOf` via `sequential_nextPC_discharged`).
+  promises : RTypePromisesNoNextPC
       (binding i) mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
-      (PureSpec.execute_MULH_mul_pure mul_input).nextPC
       c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
@@ -751,6 +834,15 @@ structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_not_forge :
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+  -- #100 next-PC transition inputs (consumed by `mulEnvOf`): the committed Main `pc`
+  -- column at row `i` equals the Sail PC (JAL/AUIPC-class provenance bridge), the
+  -- `pc + 4` successor does not wrap FGL, and the bus exec_row is the real committed
+  -- exec-bus row `execRowOf`. None asserts `exec_row[1].pc = …`; the next-PC fact is
+  -- derived from the transition certificate. The value-defect gate is untouched.
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val = mul_input.PC.toNat
+  h_pc_bound : mul_input.PC.toNat < GL_prime - 4
+  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `mul` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mul` bundles them. -/
@@ -790,6 +882,8 @@ structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
+  -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
   bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
@@ -804,9 +898,9 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a)
-  promises : ZiskFv.EquivCore.Promises.RTypePromises
+  -- #100: value/data promises only — `nextPC_matches` DERIVED in `mulhEnvOf`.
+  promises : RTypePromisesNoNextPC
       (binding i) mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
-      (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
       c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
@@ -828,6 +922,11 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_sign_b : (v.nb r_a).val
     = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
         (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0
+  -- #100 next-PC transition inputs (consumed by `mulhEnvOf`); see `Inputs_mul`.
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulh_input.PC.toNat
+  h_pc_bound : mulh_input.PC.toNat < GL_prime - 4
+  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `mulh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulh` bundles them. -/
@@ -867,6 +966,8 @@ structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
+  -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
   bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
@@ -881,9 +982,9 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a)
-  promises : ZiskFv.EquivCore.Promises.RTypePromises
+  -- #100: value/data promises only — `nextPC_matches` DERIVED in `mulhsuEnvOf`.
+  promises : RTypePromisesNoNextPC
       (binding i) mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
-      (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
       c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
@@ -902,6 +1003,11 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
   h_sign_a : (v.na r_a).val
     = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
         (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0
+  -- #100 next-PC transition inputs (consumed by `mulhsuEnvOf`); see `Inputs_mul`.
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulhsu_input.PC.toNat
+  h_pc_bound : mulhsu_input.PC.toNat < GL_prime - 4
+  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `mulhsu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulhsu` bundles them. -/
