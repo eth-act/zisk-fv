@@ -1273,6 +1273,8 @@ structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
+  -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
   pins : ZiskFv.Compliance.MainRowPins
     (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
@@ -1289,9 +1291,9 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a)
-  promises : ZiskFv.EquivCore.Promises.RTypePromises
+  -- #100: value/data promises only — `nextPC_matches` DERIVED in `divwEnvOf`.
+  promises : RTypePromisesNoNextPC
       (binding i) divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
-      (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
       c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
@@ -1356,6 +1358,11 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ¬ (Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
         ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
           = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+  -- #100 next-PC transition inputs (consumed by `divwEnvOf`); see `Inputs_mul`.
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val = divw_input.PC.toNat
+  h_pc_bound : divw_input.PC.toNat < GL_prime - 4
+  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `divw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_divw` bundles them. -/
@@ -1395,6 +1402,8 @@ structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
+  -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
+  h_idx : i.val + 1 < trace.mainTable.table.length
   pins : ZiskFv.Compliance.MainRowPins
     (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
@@ -1411,9 +1420,9 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a)
-  promises : ZiskFv.EquivCore.Promises.RTypePromises
+  -- #100: value/data promises only — `nextPC_matches` DERIVED in `remwEnvOf`.
+  promises : RTypePromisesNoNextPC
       (binding i) remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
-      (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
       c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
@@ -1476,6 +1485,11 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ¬ (Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
         ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
           = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+  -- #100 next-PC transition inputs (consumed by `remwEnvOf`); see `Inputs_mul`.
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val = remw_input.PC.toNat
+  h_pc_bound : remw_input.PC.toNat < GL_prime - 4
+  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `remw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_remw` bundles them. -/

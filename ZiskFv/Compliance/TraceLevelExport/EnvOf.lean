@@ -245,7 +245,15 @@ noncomputable def divwEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.divw d.toInputs.divw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_primary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds
+    d.toInputs.h_match_primary
+    -- #100: DERIVE the bundled `nextPC_matches` (DIVW Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_divw_pure d.toInputs.divw_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.divw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds
     d.toInputs.h_row_constraints d.toInputs.h_boundary d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
     d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
@@ -258,7 +266,15 @@ noncomputable def remwEnvOf
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.remw d.toInputs.remw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
-    d.toInputs.h_match_secondary d.toInputs.promises d.toDecode.arith_mem d.toDecode.bounds
+    d.toInputs.h_match_secondary
+    -- #100: DERIVE the bundled `nextPC_matches` (REMW Sail nextPC = PC + 4#64); see `mulEnvOf`.
+    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_remw_pure d.toInputs.remw_input).nextPC
+      (by
+        rw [d.toInputs.h_exec_row]
+        exact Pilot.sequential_nextPC_discharged trace i d.toInputs.remw_input.PC
+          d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+    d.toDecode.arith_mem d.toDecode.bounds
     d.toInputs.h_row_constraints d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
     d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
