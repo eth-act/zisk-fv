@@ -145,26 +145,37 @@ artifacts export those facts into main Lake.
 | `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs.                                              |
 | `zisk/`                           | ZisK source submodule for the Aeneas extraction branch, based on the same upstream `v0.17.0` revision as the flake-pinned ZisK input. |
 
-## Pipeline
+## Proof-Generation Map
+
+This map follows the ZisK product path from an ELF and inputs to a
+verifier-accepted proof, then marks how `zisk-fv` treats each link. The formal
+claim currently stops at link 7: an accepted modeled RV64IM circuit/AIR
+transition implies a Sail-valid RISC-V transition. Links 8-10 are shown for
+orientation only.
 
 ```text
-flake.lock
-  |
-  v
-nix run .#populate
-  |-- build/sail-lean/                  Sail RV64 spec compiled to Lean
-  |-- build/zisk.pilout                 ZisK PIL2 constraints
-  `-- build/extraction/Extraction/*.lean
-       ^
-       |
-       tools/pil-extract
-
-lake build
-  |
-  v
-ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+[0] ELF + inputs
+  --1--> [1] ROM/program image and initial input state
+  --2--> [2] decoded/lowered ZisK Main/ROM rows
+  --3--> [3] execution trace / minimal trace
+  --4--> [4] full state-machine witness rows
+  --5--> [5] PIL2/AIR constraints, table lookups, and bus checks
+  --6--> [6] accepted modeled RV64IM circuit/AIR transition
+            |--7--> [7] Sail-valid RV64IM transition
+            `--8--> [8] zk-STARK proof bytes
+                    --9--> [9] compressed / aggregated / wrapped proof
+                    --10--> [10] verifier or contract acceptance
 ```
 
-The Sail side comes from the flake-pinned Sail and sail-riscv sources. The ZisK
-side comes from the flake-pinned pilout and generated Lean extraction, wrapped
-by the human-readable AIR and circuit semantics under `ZiskFv/`.
+| Link | Classification | `zisk-fv` status |
+| ---: | --- | --- |
+| 1 | Out of scope | ELF loading, ROM setup, and input plumbing are not proved by the current theorem. |
+| 2 | Extracted, with visible residual bridge assumptions | Production RV64IM decode/lower row-shape facts are checked by the Aeneas extraction harness and partially imported into main Lake. Remaining dynamic bridge facts are still exposed through `env.aeneasBridgeTrust`. |
+| 3 | Out of scope | Executor correctness and trace-production completeness are not the current claim. The proof starts from rows/traces satisfying the modeled circuit obligations. |
+| 4 | Out of scope for generator completeness | Witness generation is not proved complete. Generated/full-ensemble artifacts model and consume witness facts where available, but the theorem does not prove that the production generator always produces them. |
+| 5 | Extracted, with trusted extraction premise | `nix run .#populate` produces `build/zisk.pilout` and `build/extraction/Extraction/*.lean` from flake-pinned ZisK/PIL inputs via `tools/pil-extract`; the readable Clean models under `ZiskFv/AirsClean/` wrap this circuit surface. |
+| 6 | Extracted, with trusted extraction premise | The accepted circuit/AIR transition is the Lean-facing model of the ZisK RV64IM circuit constraints. Faithfulness of the ZisK circuit-to-Lean extraction is part of the stated trusted base. |
+| 7 | Proven in Lean, relying on trusted/extracted specs | `lake build` checks `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The Sail side comes from flake-pinned Sail and sail-riscv sources compiled to Lean under `build/sail-lean/`, whose extraction is trusted. |
+| 8 | Out of scope | STARK proof generation, polynomial commitments, and proofman internals are not modeled by `zisk-fv`. |
+| 9 | Out of scope | Recursive compression, aggregation, and proof-format wrapping are not modeled by `zisk-fv`. |
+| 10 | Out of scope | Native verifiers, on-chain contracts, and verifier-key management are outside the current formal claim. |
