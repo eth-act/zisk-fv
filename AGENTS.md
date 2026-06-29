@@ -65,6 +65,32 @@ generated ledger contents, confirm them from the current tree.
 - Commit semantically meaningful completed chunks, but never include secrets or unrelated dirty
   files.
 
+## Anti-Laundering
+
+Laundering means making apparent progress while the proof obligation has only been moved, renamed,
+weakened, hidden, or transferred into trust. Treat it as a proof failure, not as a partial win.
+
+Rules:
+
+- Do not replace a proof obligation with a renamed assumption, a broader public premise, an
+  overstrong validator, a hidden top-level definition, an allowlist edit, or a theorem weakening and
+  then describe it as discharged.
+- Do not expand trust to close work unless the task is explicitly to change the TCB. That includes
+  adding `axiom`, `opaque`, `constant`, `unsafe`, `partial`, `@[extern]`, `@[implemented_by]`,
+  `sorry`, `admit`, new `native_decide`, generated-ledger suppressions, or equivalent escape hatches.
+- Do not claim issue progress for moving text between issue bodies, opening child issues, changing
+  dependency edges, labels, or milestones, or splitting scope. Those are bookkeeping actions unless
+  the corresponding Lean proof, extraction, generated artifact, or trust-ledger reduction actually
+  landed.
+- Do not move hard proof work into another issue, mark the current issue blocked, close it as
+  superseded, or otherwise change tracking to avoid implementing the requested proof without
+  explicit owner permission.
+- When a proof attempt exposes a missing invariant, prove or expose the invariant in the current
+  workstream by default. If changing scope might be necessary, stop and ask before mutating issues
+  or reframing the deliverable.
+- Progress reports must distinguish clearly between proved facts, code changes, verified gates,
+  issue bookkeeping, and hypotheses still being investigated.
+
 ## Trust Boundary
 
 For any change touching trust, theorem assumptions, generated artifacts, completeness claims, or
