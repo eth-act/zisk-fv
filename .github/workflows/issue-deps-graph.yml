@@ -2,6 +2,11 @@ name: issue dependency graph
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_issue_deps_graph.py
+      - .github/workflows/issue-deps-graph.yml
   issues:
     types: [opened, edited, closed, reopened, labeled, unlabeled, transferred]
   schedule:
@@ -19,7 +24,7 @@ concurrency:
 
 jobs:
   update:
-    name: update canonical graph issue
+    name: update split graph issue
     runs-on: ubuntu-latest
     # The updater edits the graph issue body. Skip the resulting self-edit event
     # to avoid a pointless second run.
@@ -32,7 +37,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Update issue dependency graph
+      - name: Update split issue dependency graphs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
