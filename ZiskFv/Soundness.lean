@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.TraceLevelExport
+import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 
 /-!
 # Root soundness
@@ -24,10 +25,14 @@ namespace ZiskFv.Compliance
 
     For each instruction i the per-step hypotheses split three ways:
     `ziskStep` is what the ZisK machine did (its decoded op + operand/dest
-    indices + committed bus row); `rowDecodes` is the circuit-checkable fact that
-    the row is a well-formed instance of that op; and `inputsAgree` is the
-    cross-world fact that ZisK's inputs equal the Sail model's register / PC /
-    memory state. `hAvoidKnownBugs` excludes the enumerated forge defects.
+    indices + committed bus row); `programDecodes` is the circuit-checkable fact
+    that the row is a well-formed instance of that op, stated about the
+    COMMITTED program `trace.program` (the ROM the circuit already checks): the
+    witness-row decode columns are no longer assumed, they are DERIVED from the
+    program-level decode facts via the in-circuit ROM lookup
+    (`rowDecode_of_programDecode`, block 1); and `inputsAgree` is the cross-world
+    fact that ZisK's inputs equal the Sail model's register / PC / memory state.
+    `hAvoidKnownBugs` excludes the enumerated forge defects.
 
     Every row then satisfies the canonical channel-balance conclusion
     (`= state_effect_via_channels …`). The per-row `OpEnvelope` is constructed
@@ -38,12 +43,13 @@ theorem root_soundness
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (sailTrace : SailTrace numInstructions)
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
-    (rowDecodes : ∀ i : Fin numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (programDecodes : ∀ i : Fin numInstructions, ProgramDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace sailTrace i (ziskStep i) (inputsAgree i)) :
     ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
-    stepSound_of_evidence ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i) (hAvoidKnownBugs i)
+    stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
+      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i) (hAvoidKnownBugs i)
 
 end ZiskFv.Compliance

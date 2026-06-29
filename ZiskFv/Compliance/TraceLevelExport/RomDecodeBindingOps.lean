@@ -1597,9 +1597,6 @@ def Decode_div_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_div trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV)
     (arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2)
@@ -1642,7 +1639,7 @@ def Decode_div_of_program
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_idx := h_idx
-      pins := pins
+      pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
       bounds := bounds }
 
@@ -1655,9 +1652,6 @@ def Decode_rem_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_rem trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM)
     (arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2)
@@ -1700,7 +1694,7 @@ def Decode_rem_of_program
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_idx := h_idx
-      pins := pins
+      pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
       bounds := bounds }
 
@@ -1713,9 +1707,6 @@ def Decode_divw_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_divw trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W)
     (arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2)
@@ -1758,7 +1749,7 @@ def Decode_divw_of_program
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_idx := h_idx
-      pins := pins
+      pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
       bounds := bounds }
 
@@ -1771,9 +1762,6 @@ def Decode_remw_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_remw trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W)
     (arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2)
@@ -1816,7 +1804,7 @@ def Decode_remw_of_program
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_idx := h_idx
-      pins := pins
+      pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
       bounds := bounds }
 
