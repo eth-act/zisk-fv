@@ -1,82 +1,189 @@
-# Issue Dependency Graph Maintenance
+# zisk-fv Agent Guide
 
-Use these rules when maintaining GitHub issue dependencies and the canonical
-`Issue dependency graph` issue. GitHub's structured issue relationships are the
-source of truth; issue prose is only evidence to audit, not a graph input by
-itself.
+This file is the project-specific operating guide for agents. Keep it concise:
+put durable rules here, and point to source-of-truth docs for details that
+change as the proof changes.
 
-When creating an issue, decide whether it has a strict prerequisite before
-leaving the task. If it does, set the GitHub `blockedBy` relationship immediately
-after creation. The canonical graph issue is refreshed automatically by the
-workflow; run the manual updater only when you need an immediate refresh or are
-repairing/debugging the automation.
+## Goal
 
-## GitHub Issue Structure
+`zisk-fv` formalizes the RV64IM part of ZisK against the Sail RISC-V
+specification in Lean 4.
 
-- Use `blockedBy` only for strict build prerequisites: `A` is blocked by `B`
-  when `A` cannot be implemented, proved, or verified until `B` is done.
-- Use parent/sub-issue relationships only for grouping, umbrella issues, and
-  progress tracking. Do not turn hierarchy into dependency edges unless the same
-  pair also has a real `blockedBy` relationship.
-- Keep closed blockers in GitHub only when they are true completed
-  prerequisites. They are intentionally omitted from the visual graph.
-  Remove stale closed blockers that no longer explain a build/proof dependency.
-- If a real blocker exists but is unnamed, create a focused issue for it first,
-  then link it as the blocker. Avoid encoding unnamed work only in graph text.
-- Before changing relationships, query node IDs and current links. Do not run
-  mutations speculatively.
+The long-term shape is two root theorems:
+
+- soundness: every modeled ZisK state transition accepted by the constraints is
+  a valid Sail/RISC-V transition;
+- completeness: every in-scope Sail/RISC-V transition is accepted by the
+  modeled ZisK constraints, with known defects and scope exclusions explicit in
+  the theorem statement.
+
+The current public soundness endpoint is
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The checked-in
+acceptance/coverage endpoints live in `ZiskFv/Completeness.lean`. If this file
+and `README.md` or `trust/README.md` disagree, treat those files and the Lean
+statements as authoritative, then update this guide if needed.
+
+## First Steps
+
+- On entering the worktree, read `STATUS.md` first. Then read the plan file it
+  references. If either is missing, create the minimal local status/plan trail
+  before doing substantial work.
+- Inspect the worktree before editing. Preserve user changes, including dirty
+  files unrelated to your task.
+- Read narrowly. Start with the file you will touch, nearby code, `README.md`,
+  and any specialized doc named below. Do not preload large historical notes
+  unless they are relevant.
+- Keep `STATUS.md` and the active plan checklist current whenever you report
+  progress or complete a coherent chunk.
+
+## Stable Architecture
+
+The stable pipeline is:
+
+1. `flake.lock` pins upstream Sail, sail-riscv, ZisK, PIL tooling, and nixpkgs.
+2. `nix run .#populate` creates the generated inputs under `build/`.
+3. `tools/pil-extract` turns the pinned PIL output into generated Lean
+   constraints under `build/extraction/Extraction/`.
+4. Human-maintained Lean code under `ZiskFv/` gives those generated artifacts
+   proof-facing names, semantics, and theorems.
+5. `trust/` records and checks the proof's trust boundary.
+
+Treat `build/` as generated. Do not hand-edit generated Lean, pilout, Sail
+output, or Aeneas extraction output. Change the generator or source input, then
+rerun the producing command.
+
+Prefer stable contracts over file-by-file lore. Before citing counts, opcode
+sets, check totals, or generated ledger contents, confirm them from the current
+tree.
+
+## Development Rules
+
+- Keep diffs local to the requested change. Match surrounding Lean/Rust/shell
+  style instead of imposing a new one.
+- Do not introduce pass-through layers. A new module or record should own a
+  real invariant, proof obligation, or data boundary.
+- Avoid new names like "bridge" or "wrapper" for vague adapters. Existing
+  directories with those names are historical; new code should name the
+  invariant or transformation it proves.
+- Do not change protected proof interfaces without explicit permission:
+  public theorem statements, `OpEnvelope`-style dispatch surfaces, extraction
+  interfaces, trust policy files, and `Valid_<AIR>` validator fields.
+- `Valid_<AIR>` constraints must mirror actual generated/PIL constraints. Any
+  strengthening needs a source citation and a constructibility argument showing
+  how a real trace can provide it.
+- Prefer deriving facts from existing validators, generated rows, or proved
+  lemmas over adding parameters. New caller-supplied hypotheses are a trust
+  cost, not harmless plumbing.
+- Commit semantically meaningful completed chunks, but never include secrets or
+  unrelated dirty files.
+
+## Trust Boundary
+
+For any change touching trust, theorem assumptions, generated artifacts,
+completeness claims, or extraction boundaries, read:
+
+- `trust/README.md` for workflow and current ledger state;
+- `trust/trusted-base.md` for the narrative trust ledger;
+- `trust/defects.md` for known bugs and theorem exclusions.
+
+Rules:
+
+- Do not add `axiom`, `opaque`, `constant`, `unsafe`, `partial`, `@[extern]`,
+  `@[implemented_by]`, `sorry`, `admit`, or equivalent trust markers unless the
+  task is explicitly to change the TCB.
+- Do not expand use of `native_decide` without explicit permission. Existing
+  uses are part of the current proof/trust surface; new uses need review.
+- Promise discharge must reduce caller-supplied trust. Do not replace one
+  assumption with a renamed assumption, a stronger universal assumption, an
+  overstrong validator, a hidden top-level definition, or an axiom of the same
+  shape.
+- If the trust boundary intentionally changes, update the Lean declaration,
+  generated ledgers, and `trust/trusted-base.md` together. Known defect changes
+  must update `trust/defects.md` and the theorem claim boundary together.
+- Do not edit allowlists or forbidden-shape files to silence a gate. Fix the
+  proof or get explicit approval for a trust-boundary change.
+
+## Build And Test
+
+Bootstrap generated inputs after a fresh clone or relevant input change:
 
 ```bash
-gh api graphql -f owner='eth-act' -f repo='zisk-fv' -F issue=61 -f query='
-query($owner:String!, $repo:String!, $issue:Int!) {
-  repository(owner:$owner, name:$repo) {
-    issue(number:$issue) {
-      id number title state
-      labels(first:20) { nodes { name } }
-      blockedBy(first:50) { nodes { id number title state } }
-      blocking(first:50) { nodes { id number title state } }
-      parent { id number title state }
-      subIssues(first:50) { nodes { id number title state } }
-    }
-  }
-}'
+nix run .#populate
 ```
 
-Mutation examples, after replacing IDs with values from a read-only query:
+Fast proof-development loop:
 
 ```bash
-gh api graphql -f blocked='ISSUE_NODE_ID' -f blocker='BLOCKER_NODE_ID' -f query='
-mutation($blocked:ID!, $blocker:ID!) {
-  addBlockedBy(input:{issueId:$blocked, blockingIssueId:$blocker}) {
-    issue { number }
-    blockingIssue { number }
-  }
-}'
-
-gh api graphql -f blocked='ISSUE_NODE_ID' -f blocker='BLOCKER_NODE_ID' -f query='
-mutation($blocked:ID!, $blocker:ID!) {
-  removeBlockedBy(input:{issueId:$blocked, blockingIssueId:$blocker}) {
-    issue { number }
-    blockingIssue { number }
-  }
-}'
+lake build <target>
 ```
 
-## Canonical Mermaid Graph
+Standard gates before claiming a proof-bearing chunk:
 
-- The only visual dependency graph should be the generated body of the GitHub
-  issue titled `Issue dependency graph`. Do not add a second checked-in Mermaid
-  graph to the repository.
-- Regenerate the graph from GitHub structured `blockedBy`, `blocking`, parent,
-  `subIssues`, label, and state data. Do not hand-invent dependency edges in
-  Markdown.
-- Preserve the edge meaning: `A --> B` means issue `A` is blocked by issue `B`.
-- Include open issues only. Omit all closed issues and any dependency edge whose
-  endpoint is closed.
-- Keep node titles, labels, and classes current. Label classes should reflect
-  GitHub labels (`soundness`, `completeness`, both, neither).
-- List parent/sub-issue relationships separately from the Mermaid dependency
-  graph unless they also have structured blocker edges.
+```bash
+lake build
+trust/scripts/check-all.sh
+trust/scripts/check-all-semantic.sh
+```
+
+Full repository gate:
+
+```bash
+nix run .#test
+```
+
+`lake build` is the formal-verification check. The fast trust gate does not
+need oleans; the semantic trust gate does and should be run after `lake build`.
+Docs-only changes do not require a Lean build unless they affect executable
+examples, generated artifacts, or commands.
+
+Use focused checks while iterating, then run the broader gate after a coherent
+proof or trust-boundary change. Prefer fixing verification failures over
+working around them.
+
+## Lean Guidance
+
+- Use Lean diagnostics, goal state, local search, and small target builds before
+  broad rebuilds.
+- Do not shadow the global `[Field FGL]` instance with a proof-local variable;
+  it can break `ring`.
+- For carry-chain arithmetic, keep large coefficients in the factored form used
+  by nearby proofs. `ring` may treat equal numeric literals with different
+  syntax as different atoms.
+- Over `Fin p`, `(1 - 0) * x` does not always simplify the way it looks. Check
+  nearby established lemmas before forcing a normalization path.
+- For operation-bus composition, prefer the maintained predicates under
+  `ZiskFv/Airs/OperationBus.lean` instead of reviving retired interaction
+  modules.
+
+## Documentation Map
+
+- `README.md`: current project overview, public theorem endpoints, build
+  commands, and layout.
+- `trust/README.md`: trust workflow, generated ledgers, and PR policy.
+- `trust/trusted-base.md`: human-readable trust ledger.
+- `trust/defects.md`: known defects and theorem-scope exclusions.
+- `docs/extraction/`: extractor and AIR orientation notes.
+- `nix/README.md`, `flake.nix`, `flake.lock`: reproducible build inputs and
+  commands.
+- `docs/ai/PROJECTS.md` and `docs/ai/plan/`: agent workstream index and plans.
+
+Historical docs removed from the tree should be recovered with `git show` only
+when needed for the current task; do not paste old plans back into active
+instructions.
+
+## Issue Dependency Graph
+
+GitHub structured issue relationships are the source of truth for dependencies;
+issue prose is only audit evidence.
+
+- Use `blockedBy` only for strict prerequisites: issue A is blocked by issue B
+  when A cannot be implemented, proved, or verified until B is done.
+- Use parent/sub-issue relationships for grouping, not dependency edges, unless
+  the same pair also has a real `blockedBy` relationship.
+- Query node IDs and current links before mutating relationships. Do not run
+  speculative mutations.
+- The only visual graph is the generated body of the GitHub issue titled
+  `Issue dependency graph`; do not add a checked-in Mermaid graph.
 - For an immediate refresh, run:
 
 ```bash
@@ -86,7 +193,3 @@ python3 scripts/update_issue_deps_graph.py \
   --issue-title "Issue dependency graph" \
   --update
 ```
-
-- The workflow `.github/workflows/issue-deps-graph.yml` runs the same updater on
-  issue events and on an hourly schedule, without committing generated Markdown,
-  so it does not trigger push/PR proof CI.
