@@ -55,6 +55,11 @@ construction residual for load arms: the generated replay trace contains the
 selected load row, and the load Sail state aligns with the selected replay
 prefix. Non-load arms impose no memory-timeline obligation.
 
+Sub-doubleword store arms carry their RMW memory residual separately as
+`StoreRmwMemoryCoherenceEvidence` in the store envelope/rowData split. Dispatch
+projects the old preserved-byte facts from that named evidence before calling
+the internal clean store cores.
+
 `zisk_riscv_compliant_program_bus` is the single public global theorem. It is
 defect-aware while `trust/defects.md` contains open claim-weakening defects:
 the `h_known_bugs` binder is orthogonal to the validity witnesses already
