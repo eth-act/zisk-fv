@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   update:
-    name: update split graph issue
+    name: update grouped graph issue
     runs-on: ubuntu-latest
     # The updater edits the graph issue body. Skip the resulting self-edit event
     # to avoid a pointless second run.
@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Update split issue dependency graphs
+      - name: Update grouped issue dependency graph
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

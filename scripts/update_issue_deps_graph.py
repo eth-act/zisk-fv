@@ -30,6 +30,13 @@ DEFAULT_REPO = "zisk-fv"
 DEFAULT_TITLE = "Issue dependency graph"
 GRAPHQL_URL = "https://api.github.com/graphql"
 REST_URL = "https://api.github.com"
+AXIS_ORDER = ("soundness", "completeness", "both", "neither")
+AXIS_TITLES = {
+    "soundness": "Soundness",
+    "completeness": "Completeness",
+    "both": "Soundness + Completeness",
+    "neither": "Unlabeled / Infrastructure",
+}
 
 
 @dataclass
@@ -226,6 +233,32 @@ def dependency_edges(issues: dict[int, Issue], included: set[int]) -> list[tuple
     return sorted(edges)
 
 
+def group_by_axis(issues: dict[int, Issue], included: set[int]) -> dict[str, list[int]]:
+    groups = {axis: [] for axis in AXIS_ORDER}
+    for number in sorted(included):
+        groups[classify(issues[number])].append(number)
+    return groups
+
+
+def render_axis_subgraphs(issues: dict[int, Issue], included: set[int]) -> list[str]:
+    groups = group_by_axis(issues, included)
+    lines: list[str] = []
+    for axis in AXIS_ORDER:
+        numbers = groups[axis]
+        if not numbers:
+            continue
+        lines.append(f'    subgraph Axis_{axis}["{AXIS_TITLES[axis]}"]')
+        lines.append("      direction LR")
+        for number in numbers:
+            issue = issues[number]
+            lines.append(f'      I{number}["{mermaid_label(issue)}"]:::{classify(issue)}')
+        lines.append("    end")
+        lines.append("")
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
 def render_mermaid_graph(
     issues: dict[int, Issue],
     included: set[int],
@@ -242,19 +275,13 @@ def render_mermaid_graph(
         "",
     ]
 
-    for number in sorted(included):
-        issue = issues[number]
-        lines.append(f'    I{number}["{mermaid_label(issue)}"]:::{classify(issue)}')
+    lines.extend(render_axis_subgraphs(issues, included))
 
     if edges:
         lines.append("")
-        by_blocked: dict[int, list[int]] = {}
         for blocked, blocker in edges:
             if blocked in included and blocker in included:
-                by_blocked.setdefault(blocked, []).append(blocker)
-        for blocked in sorted(by_blocked):
-            blockers = " & ".join(f"I{n}" for n in sorted(set(by_blocked[blocked])))
-            lines.append(f"    I{blocked} --> {blockers}")
+                lines.append(f"    I{blocked} --> I{blocker}")
 
     lines.append("```")
     return "\n".join(lines)
@@ -335,8 +362,9 @@ It is generated from GitHub issue metadata, not from hand-maintained prose:
 - solid arrows come from structured `blockedBy` / `blocking` issue relationships
 - `A --> B` means issue `A` is blocked by issue `B`
 - edges to closed issues are omitted with those closed issues
-- the first graph contains open issues with open dependency relationships
-- the second graph contains open issues with no open dependency relationship
+- the first graph contains open issues with open dependency relationships, grouped into stacked
+  axis subgraphs for layout; cross-axis arrows are still dependency relationships
+- the second graph contains open issues with no open dependency relationship, grouped the same way
 - parent/sub-issue relationships are listed below, not drawn as dependency edges
 
 ## Dependency Graph
