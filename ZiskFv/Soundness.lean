@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.TraceLevelExport
-import ZiskFv.Compliance.TraceLevelExport.RawRowDecode
+import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 
 /-!
 # Root soundness
@@ -25,10 +25,14 @@ namespace ZiskFv.Compliance
 
     For each instruction i the per-step hypotheses split three ways:
     `ziskStep` is what the ZisK machine did (its decoded op + operand/dest
-    indices + committed bus row); `rowDecodes` is the circuit-checkable fact that
-    the row is a well-formed instance of that op; and `inputsAgree` is the
-    cross-world fact that ZisK's inputs equal the Sail model's register / PC /
-    memory state. `hAvoidKnownBugs` excludes the enumerated forge defects.
+    indices + committed bus row); `programDecodes` is the circuit-checkable fact
+    that the row is a well-formed instance of that op, stated about the
+    COMMITTED program `trace.program` (the ROM the circuit already checks): the
+    witness-row decode columns are no longer assumed, they are DERIVED from the
+    program-level decode facts via the in-circuit ROM lookup
+    (`rowDecode_of_programDecode`, block 1); and `inputsAgree` is the cross-world
+    fact that ZisK's inputs equal the Sail model's register / PC / memory state.
+    `hAvoidKnownBugs` excludes the enumerated forge defects.
 
     Every row then satisfies the canonical channel-balance conclusion
     (`= state_effect_via_channels …`). The per-row `OpEnvelope` is constructed
@@ -39,47 +43,13 @@ theorem root_soundness
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (sailTrace : SailTrace numInstructions)
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
-    (rowDecodes : ∀ i : Fin numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (programDecodes : ∀ i : Fin numInstructions, ProgramDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace sailTrace i (ziskStep i) (inputsAgree i)) :
     ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
-    stepSound_of_evidence ziskTrace sailTrace i (ziskStep i) (rowDecodes i) (inputsAgree i) (hAvoidKnownBugs i)
-
-/-- ** The load-bearing soundness endpoint: the decode is grounded in the raw
-    RISC-V program.
-
-    Identical to `root_soundness` except the caller-asserted `rowDecodes` family
-    is replaced by two genuinely thinner, soundness-critical inputs:
-    * `rawProgram : Fin numInstructions → BitVec 32` — the raw RISC-V instruction
-      words (a verifier-attached certificate, the binary the trace claims to run);
-    * `hbind : ProgramBinding ziskTrace rawProgram` — the single op-agnostic
-      certificate that the committed ROM holds exactly the serialized real-lowering
-      of each raw word (run once per word, no per-op trust);
-    * `rawRowDecodes : ∀ i, RawRowDecode …` — per row, the op-shaped raw-word fact
-      plus the SAME non-ROM operand witnesses block 1 already carried.
-
-    `rowDecodes_of_rawProgram` DERIVES the full block-1 `rowDecodes` family from
-    these through the real Aeneas decode→lower→serialize pipeline, so the
-    Main-ROM decode columns (op / flags / jmp_offset / ind_width) are no longer
-    assumed — they are now load-bearing on `rawProgram`.  The body is exactly
-    `root_soundness` with that derived `rowDecodes`; `root_soundness` and
-    `AcceptedZiskTrace` are untouched. -/
-theorem root_soundness_rawProgram
-    (numInstructions : Nat)
-    (ziskTrace : AcceptedZiskTrace numInstructions)
-    (sailTrace : SailTrace numInstructions)
-    (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
-    (rawProgram : Fin numInstructions → BitVec 32)
-    (hbind : RawProgramBinding.ProgramBinding ziskTrace rawProgram)
-    (rawRowDecodes : ∀ i : Fin numInstructions, RawRowDecode ziskTrace i rawProgram (ziskStep i))
-    (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
-    (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      RowOutsideDefectRegion ziskTrace sailTrace i (ziskStep i) (inputsAgree i)) :
-    ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
-  root_soundness numInstructions ziskTrace sailTrace ziskStep
-    (rowDecodes_of_rawProgram ziskTrace ziskStep rawProgram hbind rawRowDecodes)
-    inputsAgree hAvoidKnownBugs
+    stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
+      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i) (hAvoidKnownBugs i)
 
 end ZiskFv.Compliance
