@@ -26,6 +26,7 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 import ZiskFv.Compliance.TraceLevelExport.EnvOf
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
+import ZiskFv.Compliance.TraceLevelExport.StepStrongAluArith
 
 namespace ZiskFv.Compliance
 
@@ -765,7 +766,8 @@ theorem stepStrong_mulw
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.mulw d.toInputs.mulw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem h_row_constraints
@@ -882,7 +884,8 @@ theorem stepStrong_mulhu
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.mulhu d.toInputs.mulhu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -996,7 +999,8 @@ theorem stepStrong_divu
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.divu d.toInputs.divu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -1102,7 +1106,8 @@ theorem stepStrong_divuw
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.divuw d.toInputs.divuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -1207,7 +1212,8 @@ theorem stepStrong_remu
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.remu d.toInputs.remu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -1311,7 +1317,8 @@ theorem stepStrong_remuw
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.remuw d.toInputs.remuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints

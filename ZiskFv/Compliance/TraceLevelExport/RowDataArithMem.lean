@@ -704,6 +704,11 @@ structure Decode_mulw (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset2 :
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type where
@@ -720,9 +725,6 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = mulw_input.PC.toNat
   h_pc_bound : mulw_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    mulw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
   h_a23 :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
@@ -1540,6 +1542,11 @@ structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_idx : i.val + 1 < trace.mainTable.table.length
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type where
@@ -1556,9 +1563,6 @@ structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = mulhu_input.PC.toNat
   h_pc_bound : mulhu_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    mulhu_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
   h_rs1_value :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH),
@@ -1617,6 +1621,11 @@ structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_idx : i.val + 1 < trace.mainTable.table.length
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type where
@@ -1633,9 +1642,6 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = divu_input.PC.toNat
   h_pc_bound : divu_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    divu_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU),
@@ -1699,6 +1705,11 @@ structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_idx : i.val + 1 < trace.mainTable.table.length
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type where
@@ -1715,9 +1726,6 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = divuw_input.PC.toNat
   h_pc_bound : divuw_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    divuw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
@@ -1802,6 +1810,11 @@ structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_idx : i.val + 1 < trace.mainTable.table.length
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type where
@@ -1818,9 +1831,6 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = remu_input.PC.toNat
   h_pc_bound : remu_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    remu_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU),
@@ -1884,6 +1894,11 @@ structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   h_idx : i.val + 1 < trace.mainTable.table.length
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type where
@@ -1900,9 +1915,6 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = remuw_input.PC.toNat
   h_pc_bound : remuw_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    remuw_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
