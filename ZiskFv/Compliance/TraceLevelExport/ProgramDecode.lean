@@ -541,12 +541,14 @@ structure ProgramDecode_sllw {numInstructions : Nat}
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SLL_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `srlw`: exactly the inputs
@@ -561,12 +563,14 @@ structure ProgramDecode_srlw {numInstructions : Nat}
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRL_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sraw`: exactly the inputs
@@ -581,12 +585,14 @@ structure ProgramDecode_sraw {numInstructions : Nat}
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRA_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `slliw`: exactly the inputs
@@ -601,12 +607,14 @@ structure ProgramDecode_slliw {numInstructions : Nat}
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SLL_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `srliw`: exactly the inputs
@@ -621,12 +629,14 @@ structure ProgramDecode_srliw {numInstructions : Nat}
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRL_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sraiw`: exactly the inputs
@@ -641,12 +651,14 @@ structure ProgramDecode_sraiw {numInstructions : Nat}
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRA_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `mul`: exactly the inputs
@@ -1587,12 +1599,12 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | subw c => exact RomDecodeBinding.Decode_subw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | addw c => exact RomDecodeBinding.Decode_addw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | addiw c => exact RomDecodeBinding.Decode_addiw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | sllw c => exact RomDecodeBinding.Decode_sllw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | srlw c => exact RomDecodeBinding.Decode_srlw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | sraw c => exact RomDecodeBinding.Decode_sraw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | slliw c => exact RomDecodeBinding.Decode_slliw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | srliw c => exact RomDecodeBinding.Decode_srliw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | sraiw c => exact RomDecodeBinding.Decode_sraiw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | sllw c => exact RomDecodeBinding.Decode_sllw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | srlw c => exact RomDecodeBinding.Decode_srlw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | sraw c => exact RomDecodeBinding.Decode_sraw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | slliw c => exact RomDecodeBinding.Decode_slliw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | srliw c => exact RomDecodeBinding.Decode_srliw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | sraiw c => exact RomDecodeBinding.Decode_sraiw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | mul c => exact RomDecodeBinding.Decode_mul_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | mulh c => exact RomDecodeBinding.Decode_mulh_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | mulhsu c => exact RomDecodeBinding.Decode_mulhsu_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog

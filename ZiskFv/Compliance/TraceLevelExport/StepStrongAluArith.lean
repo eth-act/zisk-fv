@@ -2632,7 +2632,8 @@ theorem stepStrong_sllw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -2654,7 +2655,9 @@ theorem stepStrong_sllw
       (by rfl) (Pilot.sequential_nextPC_discharged trace i d.toInputs.sllw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge d.toInputs.h_pc_bound) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
-      (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+      (by rfl) (d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset))
+      pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
@@ -2732,7 +2735,8 @@ theorem stepStrong_srlw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -2754,7 +2758,9 @@ theorem stepStrong_srlw
       (by rfl) (Pilot.sequential_nextPC_discharged trace i d.toInputs.srlw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge d.toInputs.h_pc_bound) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
-      (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+      (by rfl) (d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset))
+      pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
@@ -2833,7 +2839,8 @@ theorem stepStrong_sraw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -2855,7 +2862,9 @@ theorem stepStrong_sraw
       (by rfl) (Pilot.sequential_nextPC_discharged trace i d.toInputs.sraw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge d.toInputs.h_pc_bound) (by rfl) (by rfl) (by rfl) (by rfl) (by rfl)
-      (by rfl) d.toInputs.h_rd_idx pins h_component h_table_spec h_provider_row h_match
+      (by rfl) (d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset))
+      pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
@@ -2933,7 +2942,8 @@ theorem stepStrong_slliw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -3027,7 +3037,8 @@ theorem stepStrong_srliw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -3122,7 +3133,8 @@ theorem stepStrong_sraiw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
