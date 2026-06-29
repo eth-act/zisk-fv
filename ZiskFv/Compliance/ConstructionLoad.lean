@@ -21,8 +21,10 @@ binders — mirroring `construction_sb_sound` but on the **MemoryBus read side**
 ## Why loads differ from stores (and what is honestly irreducible)
 
 Stores WRITE memory: the store's write entry (`bus.e2`, as = 2) is the Main
-row's own `c` emission, so its match is `matches_memory_entry_refl` and the
-memory-side residual is only the high-byte RMW preservation reads.
+row's own `c` emission, so its match is `matches_memory_entry_refl`; the
+trace-level store interface carries the remaining high-byte RMW obligation as
+`StoreRmwMemoryCoherenceEvidence`, with byte facts projected only for the
+internal clean store cores.
 
 Loads READ memory. Two facts are genuinely irreducible at the per-row Clean
 layer and are carried as **named residuals** (the `#76` memory-timeline

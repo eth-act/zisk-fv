@@ -2005,20 +2005,9 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sb_input.PC.toNat
   h_pc_bound : c.sb_input.PC.toNat < GL_prime - 4
-  h_m1 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 1]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 1 : BitVec 8)
-  h_m2 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 2]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 2 : BitVec 8)
-  h_m3 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 3]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 3 : BitVec 8)
-  h_m4 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 4]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 4 : BitVec 8)
-  h_m5 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 5]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 5 : BitVec 8)
-  h_m6 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 6]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 6 : BitVec 8)
-  h_m7 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 7]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 7 : BitVec 8)
+  h_store_rmw :
+    StoreRmwMemoryCoherenceEvidence (binding i)
+      (busSt trace i (Pilot.execRowOf trace i)).e2 1
 
 /-- Per-op residual bundle for the `sb` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sb` bundles them. -/
@@ -2087,18 +2076,9 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sh_input.PC.toNat
   h_pc_bound : c.sh_input.PC.toNat < GL_prime - 4
-  h_m2 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 2]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 2 : BitVec 8)
-  h_m3 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 3]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 3 : BitVec 8)
-  h_m4 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 4]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 4 : BitVec 8)
-  h_m5 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 5]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 5 : BitVec 8)
-  h_m6 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 6]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 6 : BitVec 8)
-  h_m7 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 7]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 7 : BitVec 8)
+  h_store_rmw :
+    StoreRmwMemoryCoherenceEvidence (binding i)
+      (busSt trace i (Pilot.execRowOf trace i)).e2 2
 
 /-- Per-op residual bundle for the `sh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sh` bundles them. -/
@@ -2167,14 +2147,9 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sw_input.PC.toNat
   h_pc_bound : c.sw_input.PC.toNat < GL_prime - 4
-  h_m4 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 4]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 4 : BitVec 8)
-  h_m5 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 5]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 5 : BitVec 8)
-  h_m6 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 6]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 6 : BitVec 8)
-  h_m7 : (binding i).mem[(busSt trace i (Pilot.execRowOf trace i)).e2.ptr.toNat + 7]?
-    = some (ZiskFv.Channels.MemoryBusBytes.byteAt (busSt trace i (Pilot.execRowOf trace i)).e2 7 : BitVec 8)
+  h_store_rmw :
+    StoreRmwMemoryCoherenceEvidence (binding i)
+      (busSt trace i (Pilot.execRowOf trace i)).e2 4
 
 /-- Per-op residual bundle for the `sw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sw` bundles them. -/

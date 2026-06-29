@@ -145,6 +145,67 @@ open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Compliance
 
+/-! ## Store RMW memory evidence -/
+
+/-- Replay-prefix fact for the bytes a narrow store must preserve.
+
+For `SB`, `firstPreserved = 1`; for `SH`, `firstPreserved = 2`; for `SW`,
+`firstPreserved = 4`. This is stated over replay memory, not directly over the
+Sail state; `storeRmwPreservedByte_of_coherenceEvidence` composes it with the
+Fold-B `RowTraceCoherence` route to recover the byte facts consumed by the
+existing store cores. -/
+@[reducible]
+def StoreRmwPreservedBytesAtPrefix
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (entry : Interaction.MemoryBusEntry FGL)
+    (firstPreserved : Nat) : Prop :=
+  ∀ i : Nat, firstPreserved ≤ i → i < 8 →
+    mem[entry.ptr.toNat + i]? = some (byteAt entry i : BitVec 8)
+
+/-- Named store-side memory residual for sub-doubleword RMW stores.
+
+This is the store analogue of `LoadMemoryTimelineCoherenceEvidence`: it exposes
+the seed-relative replay/coherence boundary once, then keeps the old per-byte
+preservation facts as derived projections. Full derivation of this evidence from
+accepted trace replay remains the #115/#185 follow-on. -/
+@[reducible]
+def StoreRmwMemoryCoherenceEvidence
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : Interaction.MemoryBusEntry FGL)
+    (firstPreserved : Nat) : Prop :=
+  ∃ (initialState : ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (rows : List (Interaction.MemoryBusEntry FGL))
+    (facts : ZiskFv.AirsClean.Mem.GeneratedMemReplayFacts initialState rows)
+    (stateAt : List (Interaction.MemoryBusEntry FGL) →
+      ZiskFv.ZiskCircuit.MemTrace.SailState)
+    (priorRows laterRows : List (Interaction.MemoryBusEntry FGL)),
+      rows = priorRows ++ entry :: laterRows
+        ∧ stateAt [] = initialState
+        ∧ stateAt priorRows = state
+        ∧ ZiskFv.ZiskCircuit.MemTimeline.Spike.RowTraceCoherence stateAt [] priorRows
+        ∧ StoreRmwPreservedBytesAtPrefix
+            (ZiskFv.ZiskCircuit.MemTrace.replayMemoryAfterBusRows
+              facts.initialMemory priorRows)
+            entry firstPreserved
+
+/-- Project one preserved byte from named store RMW evidence. -/
+theorem storeRmwPreservedByte_of_coherenceEvidence
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {firstPreserved i : Nat}
+    (h_coherence : StoreRmwMemoryCoherenceEvidence state entry firstPreserved)
+    (h_first : firstPreserved ≤ i)
+    (h_i : i < 8) :
+    state.mem[entry.ptr.toNat + i]? = some (byteAt entry i : BitVec 8) := by
+  obtain ⟨initialState, rows, facts, stateAt, priorRows, laterRows,
+    _h_traceSplit, h_seed, h_storeState, h_rowCoherence, h_prefix⟩ := h_coherence
+  have h_bytes :=
+    ZiskFv.ZiskCircuit.MemTimeline.Spike.stateBytesAtPrefix_of_rowTraceCoherence
+      (entry := entry) facts stateAt priorRows h_seed h_rowCoherence
+  rw [h_storeState] at h_bytes
+  have h_state_replay := h_bytes i h_i
+  rw [h_prefix i h_first h_i] at h_state_replay
+  exact h_state_replay
 
 /-! ## The `OpEnvelope` sum type
 
@@ -1376,13 +1437,7 @@ inductive OpEnvelope
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
-    (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (byteAt bus.e2 1 : BitVec 8))
-    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8))
-    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8))
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 1) :
       OpEnvelope state m r_main
   -- ============================ SH (store, Main-only) ===================
   | sh
@@ -1413,12 +1468,7 @@ inductive OpEnvelope
         (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
-    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (byteAt bus.e2 2 : BitVec 8))
-    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (byteAt bus.e2 3 : BitVec 8))
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 2) :
       OpEnvelope state m r_main
   -- ============================ SW (store, Main-only) ===================
   | sw
@@ -1449,10 +1499,7 @@ inductive OpEnvelope
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 4) :
       OpEnvelope state m r_main
   -- ============================ SD (store, Main-only) ===================
   | sd

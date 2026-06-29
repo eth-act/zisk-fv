@@ -1269,9 +1269,8 @@ whnf BLOWUP (the `Eq.mpr` cast over a free `MainRowWithRom` motive) because the 
 is a `.const` literal of the committed trace row, not an opaque eval-binder.
 
 Non-vacuous: `execRow` is a genuine ∀-binder; the `c`-emission match is
-`matches_memory_entry_refl` over the real `busSt` row; the high-byte RMW residuals
-(`h_m*`, the #76 sub-doubleword preservation reads) are carried verbatim as
-`RowData_<store>` binders, NOT laundered. -/
+`matches_memory_entry_refl` over the real `busSt` row; the high-byte RMW residual
+is carried as named store memory evidence and projected inside store dispatch. -/
 
 /-- Empty environment used only to instantiate the store `OpEnvelope` arms'
     `{mainEnv}` implicit binder; `eval_mainConstVar` makes the choice irrelevant. -/
@@ -1338,7 +1337,7 @@ theorem stepStrong_sb
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
-      h_b0' h_b1' d.toInputs.h_m1 d.toInputs.h_m2 d.toInputs.h_m3 d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
+      h_b0' h_b1' d.toInputs.h_store_rmw
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
@@ -1404,7 +1403,7 @@ theorem stepStrong_sh
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
-      h_b0' h_b1' d.toInputs.h_m2 d.toInputs.h_m3 d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
+      h_b0' h_b1' d.toInputs.h_store_rmw
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
@@ -1470,7 +1469,7 @@ theorem stepStrong_sw
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
-      h_b0' h_b1' d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
+      h_b0' h_b1' d.toInputs.h_store_rmw
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
