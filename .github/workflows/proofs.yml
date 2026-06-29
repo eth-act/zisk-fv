@@ -25,6 +25,13 @@ on:
       - 'flake.nix'
       - 'flake.lock'
       - 'nix/**'
+      # Trust gate-policy inputs (allowlists, forbidden-shape lists,
+      # baselines, floors, gate scripts). The trust *.md ledgers are
+      # docs and intentionally excluded.
+      - 'trust/*.txt'
+      - 'trust/scripts/**'
+      - 'trust/generated/**'
+      - 'trust/.shrinkage-floor'
       - '.github/workflows/proofs.yml'
   workflow_dispatch:
 
@@ -69,7 +76,7 @@ jobs:
           matched=()
           while IFS= read -r path; do
             case "$path" in
-              *.lean|lake-manifest.json|lakefile.toml|lean-toolchain|flake.nix|flake.lock|nix/*|scripts/aeneas-production-extract.sh|tools/pil-extract/*|zisk|zisk/*)
+              *.lean|lake-manifest.json|lakefile.toml|lean-toolchain|flake.nix|flake.lock|nix/*|scripts/aeneas-production-extract.sh|tools/pil-extract/*|zisk|zisk/*|trust/*.txt|trust/scripts/*|trust/generated/*|trust/.shrinkage-floor)
                 matched+=("$path")
                 ;;
             esac
