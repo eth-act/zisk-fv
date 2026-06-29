@@ -121,6 +121,39 @@ theorem mainSelectorColumns_of_packFlags
     (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
     (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
 
+/-- Writeback destination selector/offset facts derived from the committed
+    program and packed ROM flags for the op-agnostic `mainRowWithRomSub` row. -/
+theorem mainWritebackDestinationFacts_of_program
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (rd : regidx)
+    (h_bits_store_ind : bits.store_ind = false)
+    (h_prog : ∀ j : Fin numInstructions,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc i.val →
+          (trace.program j).store_offset = Transpiler.ind (regidx_to_fin rd)
+        ∧ (trace.program j).flags = packFlags bits) :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  ∧ (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin rd) := by
+  obtain ⟨j, hline, _hop, _hiw, _hj1, _hj2, hflags⟩ :=
+    mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+  obtain ⟨_hpso, hpf⟩ := h_prog j hline
+  obtain ⟨p_store_ind, _, _⟩ :=
+    mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+  have h_store_ind : (mainRowWithRomSub trace i).rom.store_ind = 0 := by
+    simpa [mainRowWithRomSub, h_bits_store_ind, ZiskFv.AirsClean.boolF_false] using p_store_ind
+  have h_store_offset :
+      (mainRowWithRomSub trace i).rom.store_offset =
+        Transpiler.ind (regidx_to_fin rd) := by
+    obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
+    obtain ⟨hpso, _hpf⟩ := h_prog j hline
+    simpa [mainRowWithRomSub] using hstore.symm.trans hpso
+  exact ⟨h_store_ind, h_store_offset⟩
+
 
 /-! ## Family: R/I-type ALU -/
 
@@ -203,12 +236,14 @@ def Decode_and_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_AND
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_and trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -222,10 +257,15 @@ def Decode_and_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
+  have h_dest :=
+    mainWritebackDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+      (fun j hline => by
+        obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
+        exact ⟨hp_store_offset, hpf⟩)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -234,6 +274,8 @@ def Decode_and_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_idx := h_idx }
 
 /-- `Decode_or` rebuilt from the committed program via the ROM lookup
@@ -250,12 +292,14 @@ def Decode_or_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_OR
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_or trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -269,10 +313,15 @@ def Decode_or_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
+  have h_dest :=
+    mainWritebackDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+      (fun j hline => by
+        obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
+        exact ⟨hp_store_offset, hpf⟩)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -281,6 +330,8 @@ def Decode_or_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_idx := h_idx }
 
 /-- `Decode_xor` rebuilt from the committed program via the ROM lookup
@@ -297,12 +348,14 @@ def Decode_xor_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_XOR
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_xor trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -316,10 +369,15 @@ def Decode_xor_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
+  have h_dest :=
+    mainWritebackDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+      (fun j hline => by
+        obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
+        exact ⟨hp_store_offset, hpf⟩)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -328,6 +386,8 @@ def Decode_xor_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_idx := h_idx }
 
 /-- `Decode_slt` rebuilt from the committed program via the ROM lookup
@@ -344,12 +404,14 @@ def Decode_slt_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_slt trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -363,10 +425,15 @@ def Decode_slt_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
+  have h_dest :=
+    mainWritebackDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+      (fun j hline => by
+        obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
+        exact ⟨hp_store_offset, hpf⟩)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -375,6 +442,8 @@ def Decode_slt_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_idx := h_idx }
 
 /-- `Decode_sltu` rebuilt from the committed program via the ROM lookup
@@ -391,12 +460,14 @@ def Decode_sltu_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_sltu trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -410,10 +481,15 @@ def Decode_sltu_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
+  have h_dest :=
+    mainWritebackDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+      (fun j hline => by
+        obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
+        exact ⟨hp_store_offset, hpf⟩)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -422,6 +498,8 @@ def Decode_sltu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_idx := h_idx }
 
 /-- `Decode_andi` rebuilt from the committed program via the ROM lookup
