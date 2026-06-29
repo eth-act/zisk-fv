@@ -25,10 +25,11 @@ import ZiskFv.SailSpec.BusEffect
 >
 > The table pins `nb = 0` (the unsigned operand), so only ONE **SIGN-RANGE
 > RESIDUAL** `h_sign_a` (= `na = MSB(op1)`) is carried, plus the NARROWED
-> forge-exclusion `h_not_forge`.  The sign-range residual stands in for the real
-> ZisK indexed `range_ab` POS/NEG lookup (`arith.pil:286/289/303`) that the FV
-> extraction collapses to the full `rangeTable16`; it is CARRIED, not derived.
-> See `trust/trusted-base.md` (sign-range residual) + `trust/defects.md`.
+> forge-exclusion `h_not_forge`.  #169 exposes the real ZisK indexed `range_ab`
+> POS/NEG lookup (`arith.pil:286/289/303`) in the Clean model; this wrapper still
+> carries the sign binder until #151 wires the row-local indexed facts through the
+> provider path. See `trust/trusted-base.md` (sign-range residual) +
+> `trust/defects.md`.
 -/
 
 namespace ZiskFv.Compliance
@@ -82,7 +83,7 @@ lemma equiv_MULHSU_of_table
     (h_not_forge :
       ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
         ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
-    -- SIGN-RANGE RESIDUAL: `na = MSB(op1)`; op2 is unsigned (table pins nb = 0).
+    -- SIGN-RANGE RESIDUAL: public wrapper binder until #151 wires indexed range facts.
     (h_sign_a : (v.na r_a).val
       = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)

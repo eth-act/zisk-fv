@@ -508,8 +508,9 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
              signed_rs1 := .Unsigned
              signed_rs2 := .Unsigned }))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  -- Unpack FullSpec into its five conjuncts.
-  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_ranges_spec, h_carry_ranges_spec⟩ :=
+  -- Unpack FullSpec into its six conjuncts.
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_ranges_spec, h_carry_ranges_spec,
+    _h_indexed_ranges⟩ :=
     h_full_spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds

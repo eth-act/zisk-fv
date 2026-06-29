@@ -90,9 +90,9 @@ global theorem produces:
    for a real honest signed-M row (the row's own `h_not_forge` field witnesses the
    obligation; anti-vacuity guards `honest_<op>_witness_not_forge`); FENCE is likewise
    satisfiable for an honest FENCE row (`fm=0, rs1=x0, rd=x0`).  A documented
-   sign-range residual `na = MSB` is carried per signed-M row (the real circuit
-   enforces it via the arith.pil indexed range lookup; the FV model collapsed it to
-   FULL — dischargeable, issue #114).
+   sign-range residual `na = MSB` is carried per signed-M public row today. #169
+   exposes the arith.pil indexed range lookup in the Clean model; #151 still has
+   to wire the row-local indexed facts through the public defect/export path.
 
 ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
 

@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
 
 /-!
 # ArithTable projection lemmas from Clean lookup membership
@@ -16,6 +17,96 @@ No axioms.
 namespace ZiskFv.AirsClean.ArithTableProjections
 
 open Goldilocks
+open ZiskFv.PackedBitVec.MulNoWrap (packed4)
+
+@[reducible]
+def packed2 (c₀ c₁ : ℕ) : ℕ :=
+  c₀ + c₁ * 65536
+
+private lemma packed4_msb64_eq_zero_of_high_pos
+    {c₀ c₁ c₂ c₃ : ℕ}
+    (h₀ : c₀ < 65536) (h₁ : c₁ < 65536) (h₂ : c₂ < 65536)
+    (h₃ : c₃ < 32768) :
+    (if 2 ^ 63 ≤ packed4 c₀ c₁ c₂ c₃ then 1 else 0) = 0 := by
+  have hlt : packed4 c₀ c₁ c₂ c₃ < 2 ^ 63 := by
+    unfold packed4
+    norm_num
+    nlinarith [h₀, h₁, h₂, h₃]
+  exact if_neg (Nat.not_le_of_gt hlt)
+
+private lemma packed4_msb64_eq_one_of_high_neg
+    {c₀ c₁ c₂ c₃ : ℕ} (h₃ : 32768 ≤ c₃) :
+    (if 2 ^ 63 ≤ packed4 c₀ c₁ c₂ c₃ then 1 else 0) = 1 := by
+  have hge : 2 ^ 63 ≤ packed4 c₀ c₁ c₂ c₃ := by
+    unfold packed4
+    norm_num
+    nlinarith [h₃, Nat.zero_le c₀, Nat.zero_le c₁, Nat.zero_le c₂]
+  exact if_pos hge
+
+private lemma packed2_msb32_eq_zero_of_high_pos
+    {c₀ c₁ : ℕ} (h₀ : c₀ < 65536) (h₁ : c₁ < 32768) :
+    (if 2 ^ 31 ≤ packed2 c₀ c₁ then 1 else 0) = 0 := by
+  have hlt : packed2 c₀ c₁ < 2 ^ 31 := by
+    unfold packed2
+    norm_num
+    nlinarith [h₀, h₁]
+  exact if_neg (Nat.not_le_of_gt hlt)
+
+private lemma packed2_msb32_eq_one_of_high_neg
+    {c₀ c₁ : ℕ} (h₁ : 32768 ≤ c₁) :
+    (if 2 ^ 31 ≤ packed2 c₀ c₁ then 1 else 0) = 1 := by
+  have hge : 2 ^ 31 ≤ packed2 c₀ c₁ := by
+    unfold packed2
+    norm_num
+    nlinarith [h₁, Nat.zero_le c₀]
+  exact if_pos hge
+
+/-- A POS indexed Arith range lookup proves a 64-bit sign witness is zero. -/
+theorem sign_eq_msb64_of_pos_range_lookup {sign rangeId c₀ c₁ c₂ c₃ : FGL}
+    (h_sign : sign = 0)
+    (h₀ : c₀.val < 65536) (h₁ : c₁.val < 65536) (h₂ : c₂.val < 65536)
+    (h_id : RangeTables.ArithRangePosId rangeId)
+    (h_lookup : RangeTables.arithRangeTable.Spec #v[rangeId, c₃]) :
+    sign.val = if 2 ^ 63 ≤ packed4 c₀.val c₁.val c₂.val c₃.val then 1 else 0 := by
+  have h₃ := RangeTables.arithRangeTable_pos_bound_of_spec h_id h_lookup
+  have hif := packed4_msb64_eq_zero_of_high_pos h₀ h₁ h₂ h₃
+  rw [h_sign]
+  exact hif.symm
+
+/-- A NEG indexed Arith range lookup proves a 64-bit sign witness is one. -/
+theorem sign_eq_msb64_of_neg_range_lookup {sign rangeId c₀ c₁ c₂ c₃ : FGL}
+    (h_sign : sign = 1)
+    (h_id : RangeTables.ArithRangeNegId rangeId)
+    (h_lookup : RangeTables.arithRangeTable.Spec #v[rangeId, c₃]) :
+    sign.val = if 2 ^ 63 ≤ packed4 c₀.val c₁.val c₂.val c₃.val then 1 else 0 := by
+  have h₃ := (RangeTables.arithRangeTable_neg_bound_of_spec h_id h_lookup).1
+  have hif := packed4_msb64_eq_one_of_high_neg (c₀ := c₀.val) (c₁ := c₁.val)
+    (c₂ := c₂.val) h₃
+  rw [h_sign]
+  exact hif.symm
+
+/-- A POS indexed Arith range lookup proves a W-mode sign witness is zero. -/
+theorem sign_eq_msb32_of_pos_range_lookup {sign rangeId c₀ c₁ : FGL}
+    (h_sign : sign = 0)
+    (h₀ : c₀.val < 65536)
+    (h_id : RangeTables.ArithRangePosId rangeId)
+    (h_lookup : RangeTables.arithRangeTable.Spec #v[rangeId, c₁]) :
+    sign.val = if 2 ^ 31 ≤ packed2 c₀.val c₁.val then 1 else 0 := by
+  have h₁ := RangeTables.arithRangeTable_pos_bound_of_spec h_id h_lookup
+  have hif := packed2_msb32_eq_zero_of_high_pos h₀ h₁
+  rw [h_sign]
+  exact hif.symm
+
+/-- A NEG indexed Arith range lookup proves a W-mode sign witness is one. -/
+theorem sign_eq_msb32_of_neg_range_lookup {sign rangeId c₀ c₁ : FGL}
+    (h_sign : sign = 1)
+    (h_id : RangeTables.ArithRangeNegId rangeId)
+    (h_lookup : RangeTables.arithRangeTable.Spec #v[rangeId, c₁]) :
+    sign.val = if 2 ^ 31 ≤ packed2 c₀.val c₁.val then 1 else 0 := by
+  have h₁ := (RangeTables.arithRangeTable_neg_bound_of_spec h_id h_lookup).1
+  have hif := packed2_msb32_eq_one_of_high_neg (c₀ := c₀.val) h₁
+  rw [h_sign]
+  exact hif.symm
 
 namespace Counterexamples
 
@@ -832,6 +923,120 @@ theorem mulw_main_selector_pin_of_lookup_aware_soundness
       offset env (ZiskFv.AirsClean.ArithMul.rowAt v r) h_holds)
     h_op
 
+theorem na_eq_msb64_of_pos_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_chunks : ZiskFv.AirsClean.ArithMul.ChunkRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_na : v.na r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r)) :
+    (v.na r).val =
+      if 2 ^ 63 ≤ packed4 (v.a_0 r).val (v.a_1 r).val (v.a_2 r).val (v.a_3 r).val
+      then 1 else 0 := by
+  rcases h_chunks with ⟨ha0, ha1, ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+    _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3⟩
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_pos_range_lookup h_na
+    (by simpa using ha0) (by simpa using ha1) (by simpa using ha2) h_id ha3_lookup
+
+theorem na_eq_msb64_of_neg_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_na : v.na r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r)) :
+    (v.na r).val =
+      if 2 ^ 63 ≤ packed4 (v.a_0 r).val (v.a_1 r).val (v.a_2 r).val (v.a_3 r).val
+      then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_neg_range_lookup h_na h_id ha3_lookup
+
+theorem nb_eq_msb64_of_pos_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_chunks : ZiskFv.AirsClean.ArithMul.ChunkRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_nb : v.nb r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r + 17)) :
+    (v.nb r).val =
+      if 2 ^ 63 ≤ packed4 (v.b_0 r).val (v.b_1 r).val (v.b_2 r).val (v.b_3 r).val
+      then 1 else 0 := by
+  rcases h_chunks with ⟨_ha0, _ha1, _ha2, _ha3, hb0, hb1, hb2, _hb3,
+    _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3⟩
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_pos_range_lookup h_nb
+    (by simpa using hb0) (by simpa using hb1) (by simpa using hb2) h_id hb3_lookup
+
+theorem nb_eq_msb64_of_neg_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_nb : v.nb r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r + 17)) :
+    (v.nb r).val =
+      if 2 ^ 63 ≤ packed4 (v.b_0 r).val (v.b_1 r).val (v.b_2 r).val (v.b_3 r).val
+      then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_neg_range_lookup h_nb h_id hb3_lookup
+
+theorem na_eq_msb32_of_pos_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_chunks : ZiskFv.AirsClean.ArithMul.ChunkRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_na : v.na r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r + 26)) :
+    (v.na r).val = if 2 ^ 31 ≤ packed2 (v.a_0 r).val (v.a_1 r).val then 1 else 0 := by
+  rcases h_chunks with ⟨ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+    _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3⟩
+  rcases h_indexed with ⟨ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_pos_range_lookup h_na (by simpa using ha0) h_id ha1_lookup
+
+theorem na_eq_msb32_of_neg_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_na : v.na r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r + 26)) :
+    (v.na r).val = if 2 ^ 31 ≤ packed2 (v.a_0 r).val (v.a_1 r).val then 1 else 0 := by
+  rcases h_indexed with ⟨ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_neg_range_lookup h_na h_id ha1_lookup
+
+theorem nb_eq_msb32_of_pos_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_chunks : ZiskFv.AirsClean.ArithMul.ChunkRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_nb : v.nb r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r + 9)) :
+    (v.nb r).val = if 2 ^ 31 ≤ packed2 (v.b_0 r).val (v.b_1 r).val then 1 else 0 := by
+  rcases h_chunks with ⟨_ha0, _ha1, _ha2, _ha3, hb0, _hb1, _hb2, _hb3,
+    _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3⟩
+  rcases h_indexed with ⟨_ha1_lookup, hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_pos_range_lookup h_nb (by simpa using hb0) h_id hb1_lookup
+
+theorem nb_eq_msb32_of_neg_indexed
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_nb : v.nb r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r + 9)) :
+    (v.nb r).val = if 2 ^ 31 ≤ packed2 (v.b_0 r).val (v.b_1 r).val then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_neg_range_lookup h_nb h_id hb1_lookup
+
 end Mul
 
 namespace Div
@@ -1024,6 +1229,108 @@ theorem div_rem_w_main_selector_pin
       | rw [h191] at hop
         have hval := congrArg Fin.val hop
         norm_num at hval
+
+theorem na_eq_msb64_of_pos_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_a0 : (v.a_0 r).val < 65536) (h_a1 : (v.a_1 r).val < 65536)
+    (h_a2 : (v.a_2 r).val < 65536)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_na : v.na r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r)) :
+    (v.na r).val =
+      if 2 ^ 63 ≤ packed4 (v.a_0 r).val (v.a_1 r).val (v.a_2 r).val (v.a_3 r).val
+      then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_pos_range_lookup h_na h_a0 h_a1 h_a2 h_id ha3_lookup
+
+theorem na_eq_msb64_of_neg_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_na : v.na r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r)) :
+    (v.na r).val =
+      if 2 ^ 63 ≤ packed4 (v.a_0 r).val (v.a_1 r).val (v.a_2 r).val (v.a_3 r).val
+      then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_neg_range_lookup h_na h_id ha3_lookup
+
+theorem nb_eq_msb64_of_pos_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_b0 : (v.b_0 r).val < 65536) (h_b1 : (v.b_1 r).val < 65536)
+    (h_b2 : (v.b_2 r).val < 65536)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_nb : v.nb r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r + 17)) :
+    (v.nb r).val =
+      if 2 ^ 63 ≤ packed4 (v.b_0 r).val (v.b_1 r).val (v.b_2 r).val (v.b_3 r).val
+      then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_pos_range_lookup h_nb h_b0 h_b1 h_b2 h_id hb3_lookup
+
+theorem nb_eq_msb64_of_neg_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_nb : v.nb r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r + 17)) :
+    (v.nb r).val =
+      if 2 ^ 63 ≤ packed4 (v.b_0 r).val (v.b_1 r).val (v.b_2 r).val (v.b_3 r).val
+      then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb64_of_neg_range_lookup h_nb h_id hb3_lookup
+
+theorem na_eq_msb32_of_pos_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_a0 : (v.a_0 r).val < 65536)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_na : v.na r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r + 26)) :
+    (v.na r).val = if 2 ^ 31 ≤ packed2 (v.a_0 r).val (v.a_1 r).val then 1 else 0 := by
+  rcases h_indexed with ⟨ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_pos_range_lookup h_na h_a0 h_id ha1_lookup
+
+theorem na_eq_msb32_of_neg_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_na : v.na r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r + 26)) :
+    (v.na r).val = if 2 ^ 31 ≤ packed2 (v.a_0 r).val (v.a_1 r).val then 1 else 0 := by
+  rcases h_indexed with ⟨ha1_lookup, _hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_neg_range_lookup h_na h_id ha1_lookup
+
+theorem nb_eq_msb32_of_pos_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_b0 : (v.b_0 r).val < 65536)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_nb : v.nb r = 0)
+    (h_id : RangeTables.ArithRangePosId (v.range_ab r + 9)) :
+    (v.nb r).val = if 2 ^ 31 ≤ packed2 (v.b_0 r).val (v.b_1 r).val then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_pos_range_lookup h_nb h_b0 h_id hb1_lookup
+
+theorem nb_eq_msb32_of_neg_indexed
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_nb : v.nb r = 1)
+    (h_id : RangeTables.ArithRangeNegId (v.range_ab r + 9)) :
+    (v.nb r).val = if 2 ^ 31 ≤ packed2 (v.b_0 r).val (v.b_1 r).val then 1 else 0 := by
+  rcases h_indexed with ⟨_ha1_lookup, hb1_lookup, _hc1_lookup, _hd1_lookup,
+    _ha3_lookup, _hb3_lookup, _hc3_lookup, _hd3_lookup⟩
+  exact sign_eq_msb32_of_neg_range_lookup h_nb h_id hb1_lookup
 
 end Div
 
