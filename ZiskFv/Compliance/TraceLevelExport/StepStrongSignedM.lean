@@ -99,9 +99,9 @@ theorem stepStrong_mul
     from the trace's `RowData_mulh` and invoke `zisk_riscv_compliant_program_bus`,
     projecting the `exec_eq_remaining` conjunct.  The `NoKnownDefect` obligation is
     the GENUINE `NoKnownDefect (mulhEnvOf …)` of the SPECIFIC env, SATISFIABLE for
-    an honest MULH row (`RowData_mulh.h_not_forge`).  The high-half compliance also
-    consumes the documented SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b` carried by
-    `RowData_mulh`.  Non-vacuous. -/
+    an honest MULH row (`RowData_mulh.h_not_forge`).  High-half operand sign facts
+    are derived in the compliance wrapper from indexed Arith range evidence.
+    Non-vacuous. -/
 theorem stepStrong_mulh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
@@ -129,7 +129,7 @@ theorem stepStrong_mulh
 
 /-- Strengthened `mulhsu` step (channel-balance form), via the OpEnvelope route.
     Companion of `stepStrong_mulh` for the signed × unsigned high multiply
-    (op 179).  Carries ONE sign-range residual `h_sign_a` (op2 unsigned). -/
+    (op 179). -/
 theorem stepStrong_mulhsu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i)

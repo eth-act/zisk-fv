@@ -568,6 +568,47 @@ theorem mulh_basic_mode_pin
       have hval := congrArg Fin.val hop
       norm_num at hval
 
+theorem mulh_range_pins
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_op : v.op r = 181) :
+    (v.na r = 0 → v.nb r = 0 → v.range_ab r = 4)
+      ∧ (v.na r = 1 → v.nb r = 0 → v.range_ab r = 7)
+      ∧ (v.na r = 0 → v.nb r = 1 → v.range_ab r = 5)
+      ∧ (v.na r = 1 → v.nb r = 1 → v.range_ab r = 8) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, hrange_ab,
+      _hrange_cd⟩
+    first
+    | constructor
+      · intro hna0 hnb0
+        rw [hna0] at hna
+        rw [hnb0] at hnb
+        first | exact hrange_ab | contradiction
+      constructor
+      · intro hna1 hnb0
+        rw [hna1] at hna
+        rw [hnb0] at hnb
+        first | exact hrange_ab | contradiction
+      constructor
+      · intro hna0 hnb1
+        rw [hna0] at hna
+        rw [hnb1] at hnb
+        first | exact hrange_ab | contradiction
+      · intro hna1 hnb1
+        rw [hna1] at hna
+        rw [hnb1] at hnb
+        first | exact hrange_ab | contradiction
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
 theorem mulhsu_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
@@ -609,6 +650,33 @@ theorem mulhsu_basic_mode_pin
     | refine ⟨hnb, hnr, hsext, hm32, hdiv, ?_, ?_⟩
       · first | exact Or.inl hna | exact Or.inr hna
       · first | exact Or.inl hnp | exact Or.inr hnp
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+theorem mulhsu_range_pins
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_op : v.op r = 179) :
+    (v.na r = 0 → v.range_ab r = 3)
+      ∧ (v.na r = 1 → v.range_ab r = 6) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, hrange_ab,
+      _hrange_cd⟩
+    first
+    | constructor
+      · intro hna0
+        rw [hna0] at hna
+        first | exact hrange_ab | contradiction
+      · intro hna1
+        rw [hna1] at hna
+        first | exact hrange_ab | contradiction
     | rw [h_op] at hop
       have hval := congrArg Fin.val hop
       norm_num at hval

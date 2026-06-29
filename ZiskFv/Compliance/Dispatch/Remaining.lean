@@ -470,7 +470,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem bounds h_row_constraints arith_table
-        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b =>
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
@@ -484,7 +484,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a h_sign_b
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
          promises arith_mem bounds h_row_constraints arith_table
          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
@@ -498,7 +498,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem bounds h_row_constraints arith_table
-        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a =>
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
@@ -510,7 +510,7 @@ theorem zisk_riscv_compliant_program_bus_remaining
       Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
         promises arith_mem h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
         h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value =>
@@ -926,7 +926,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem bounds h_row_constraints arith_table
-        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b =>
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
@@ -938,7 +938,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a h_sign_b
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
          promises arith_mem bounds h_row_constraints arith_table
          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
@@ -952,7 +952,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem bounds h_row_constraints arith_table
-        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a =>
+        arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
@@ -964,7 +964,7 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       Defects.no_malicious_signed_mul_witness_of_no_known_defect h_known_bugs
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a
+      arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
         promises arith_mem h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
         h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value =>

@@ -13,13 +13,9 @@ The real Sail↔circuit proof lives at `ZiskFv/EquivCore/MulH.lean`.
 ## Trust note
 
 No new axioms.  This theorem is NON-VACUOUS: the former `False` defect binder
-is replaced by (1) the NARROWED forge-exclusion `h_not_forge` (honest rows
-satisfy it) and (2) the **SIGN-RANGE RESIDUAL** `h_sign_a`/`h_sign_b`
-(`na = MSB(op1)`, `nb = MSB(op2)`).  The latter is a caller-supplied hypothesis,
-NOT an axiom: the real ZisK ArithMul circuit enforces it (`arith.pil:286/289/`
-`303`), but the FV extraction collapses the indexed range lookup to the full
-`rangeTable16`, so it is carried (assumed) rather than derived in-model.  See
-`trust/trusted-base.md` (sign-range residual) and `trust/defects.md`.
+is replaced by the NARROWED forge-exclusion `h_not_forge` (honest rows satisfy
+it). Operand sign facts are derived from the indexed Arith range-table evidence
+carried by `arith_table`.
 -/
 
 open ZiskFv.Channels
@@ -64,15 +60,6 @@ theorem equiv_MULH
     (h_not_forge :
       ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
         ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
-    -- SIGN-RANGE RESIDUAL (`na = MSB(op1)`, `nb = MSB(op2)`): caller-supplied
-    -- hypothesis, NOT an axiom; the real circuit enforces it via the indexed
-    -- range lookup (`arith.pil:286/289/303`), the FV extraction can't derive it.
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
-    (h_sign_b : (v.nb r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
@@ -81,6 +68,6 @@ theorem equiv_MULH
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MULH_of_table state mulh_input r1 r2 rd bus m r_main v r_a
     pins h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge h_sign_a h_sign_b
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_not_forge
 
 end ZiskFv.Equivalence.MulH

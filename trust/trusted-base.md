@@ -427,19 +427,14 @@ Active conclusions:
   np=0)` / `(na=0,nb=1,np=0)`); the honest cases are proved non-vacuously
   (`equiv_MUL` / `equiv_MULH` / `equiv_MULHSU`, gate-checked by the
   `Defects.honest_{mul,mulh,mulhsu}_witness_not_malicious` anti-vacuity guards).
-- **Sign-range residual (public MULH/MULHSU surfaces only).** The high-half
-  signed proof still carries `na = MSB(op1)` / `nb = MSB(op2)` as explicit caller
-  hypotheses (`h_sign_a` / `h_sign_b`) at the canonical/wrapper boundary, NOT
-  axioms — the per-theorem `Lean.collectAxioms` closure of
-  `equiv_MULH`/`equiv_MULHSU` is unchanged (0 `ZiskFv.*` axioms). The indexed
-  table evidence is now present in-model: #169 adds `RangeTables.arithRangeTable`,
-  threads the eight upstream Arith range lookups through ArithMul/ArithDiv
-  `IndexedRangeSpec`, and exposes row-local
-  `ArithTableProjections.Mul.na/nb_eq_msb{64,32}_of_{pos,neg}_indexed` lemmas.
-  The remaining residual is the public-surface wiring step for #151, which must
-  use those indexed facts through provider-row accessors before removing the
-  `h_sign_*` binders. The binders remain visible in the canonical and wrapper
-  caller-burden ledgers; details in [`defects.md`](defects.md)
+- **Signed-M sign public binders retired.** `equiv_MULH` and `equiv_MULHSU`
+  no longer expose `h_sign_a` / `h_sign_b` caller hypotheses. The compliance
+  wrappers derive the high-half operand sign facts from #169's indexed Arith
+  range-table evidence (`RangeTables.arithRangeTable`, ArithMul/ArithDiv
+  `IndexedRangeSpec`, and
+  `ArithTableProjections.Mul.na/nb_eq_msb{64,32}_of_{pos,neg}_indexed`). The
+  signed-M forge exclusion itself remains active; details in
+  [`defects.md`](defects.md)
   (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
 
 The active defect boundaries and retirement criteria are in
