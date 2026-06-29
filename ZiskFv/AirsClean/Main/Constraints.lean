@@ -89,6 +89,12 @@ def mainWithOpBus (row : Var MainRow FGL) : Circuit FGL Unit := do
    store_offset, jmp_offset1, jmp_offset2, rom_flags]` tuple against
    the program-parameterised `romStaticTable`.
 
+3. The non-SP address-placement constraints at `main.pil:188-197`:
+   `addr0 = a_offset_imm0`,
+   `addr1 === b_offset_imm0 + b_src_ind * a[0]`,
+   `addr2 = store_offset + store_ind * a[0]`, and
+   `(store_ind + b_src_ind) * a[1] === 0`.
+
 The `rom_flags` slot is computed inline from the 15 boolean witnesses
 per the PIL packing equation at `main.pil:483-486`. -/
 
@@ -246,6 +252,11 @@ def mainWithRom (length : ℕ) (program : Program length)
   assertZero (row.rom.a_src_reg * (1 - row.rom.a_src_reg))
   assertZero (row.rom.b_src_reg * (1 - row.rom.b_src_reg))
   assertZero (row.rom.store_reg * (1 - row.rom.store_reg))
+  -- Non-SP address-placement equations from `main.pil:188-197`.
+  assertZero (row.rom.addr0 - row.rom.a_offset_imm0)
+  assertZero (row.rom.addr1 - (row.rom.b_offset_imm0 + row.rom.b_src_ind * row.core.a_0))
+  assertZero (row.rom.addr2 - (row.rom.store_offset + row.rom.store_ind * row.core.a_0))
+  assertZero ((row.rom.store_ind + row.rom.b_src_ind) * row.core.a_1)
   -- ROM lookup.
   lookup (Table.fromStatic (romStaticTable length program)) (romMessageExpr row)
 

@@ -25,6 +25,7 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 import ZiskFv.Compliance.TraceLevelExport.EnvOf
+import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 
 namespace ZiskFv.Compliance
 
@@ -44,6 +45,52 @@ open Interaction
 seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
+
+/-- Load destination tag derived from Main address-placement constraints and
+    committed-program decode facts. -/
+theorem load_addr2_eq_ind_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : BitVec 5}
+    (h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLd trace i).rom.store_offset =
+        Transpiler.ind (Transpiler.regidxOfBitVec5 rd)) :
+    (mainRowWithRomLd trace i).rom.addr2 =
+      Transpiler.ind (Transpiler.regidxOfBitVec5 rd) := by
+  have h_spec := RomDecodeBinding.mainRowWithRomLd_addressSpec trace i
+  have h_addr2 := h_spec.2.2.1
+  rw [h_addr2, h_store_offset, h_store_ind]
+  simp
+
+/-- Load destination zero-register test derived from `AddressSpec` and decode. -/
+theorem load_addr2_zero_iff_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : BitVec 5}
+    (h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLd trace i).rom.store_offset =
+        Transpiler.ind (Transpiler.regidxOfBitVec5 rd)) :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔ rd = 0 := by
+  rw [load_addr2_eq_ind_of_decode h_store_ind h_store_offset,
+    Transpiler.wrap_to_regidx_ind_bitvec_zero_iff]
+
+/-- Load destination register index derived from `AddressSpec` and decode. -/
+theorem load_addr2_idx_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : BitVec 5}
+    (h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLd trace i).rom.store_offset =
+        Transpiler.ind (Transpiler.regidxOfBitVec5 rd)) :
+    rd.toNat = (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val := by
+  rw [load_addr2_eq_ind_of_decode h_store_ind h_store_offset,
+    Transpiler.wrap_to_regidx_ind_bitvec_idx]
 
 /-! ## Strengthened load arms (LB/LH/LW/LD/LBU/LHU/LWU, channel-balance form)
 
@@ -132,8 +179,8 @@ theorem stepStrong_ld
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -210,8 +257,8 @@ theorem stepStrong_lbu
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -288,8 +335,8 @@ theorem stepStrong_lhu
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -366,8 +413,8 @@ theorem stepStrong_lwu
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -445,8 +492,8 @@ theorem stepStrong_lb
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -524,8 +571,8 @@ theorem stepStrong_lh
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -603,8 +650,8 @@ theorem stepStrong_lw
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline

@@ -33,6 +33,37 @@ namespace Transpiler
       have : val.val / 4 % 32 < 32 := Nat.mod_lt _ (by decide)
       exact this⟩
 
+  def regidxOfBitVec5 (rd : BitVec 5) : Fin 32 :=
+    ⟨rd.toNat, rd.isLt⟩
+
+  theorem regidxOfBitVec5_eq_zero_iff (rd : BitVec 5) :
+      regidxOfBitVec5 rd = 0 ↔ rd = 0 := by
+    constructor
+    · intro h
+      apply BitVec.eq_of_toNat_eq
+      simpa [regidxOfBitVec5] using congrArg Fin.val h
+    · intro h
+      subst h
+      rfl
+
+  theorem wrap_to_regidx_ind (rd : Fin 32) : wrap_to_regidx (ind rd) = rd := by
+    ext
+    simp [wrap_to_regidx, ind]
+
+  theorem wrap_to_regidx_ind_zero_iff (rd : Fin 32) :
+      wrap_to_regidx (ind rd) = 0 ↔ rd = 0 := by
+    rw [wrap_to_regidx_ind]
+
+  theorem wrap_to_regidx_ind_bitvec_zero_iff (rd : BitVec 5) :
+      wrap_to_regidx (ind (regidxOfBitVec5 rd)) = 0 ↔ rd = 0 := by
+    rw [wrap_to_regidx_ind]
+    exact regidxOfBitVec5_eq_zero_iff rd
+
+  theorem wrap_to_regidx_ind_bitvec_idx (rd : BitVec 5) :
+      rd.toNat = (wrap_to_regidx (ind (regidxOfBitVec5 rd))).val := by
+    rw [wrap_to_regidx_ind]
+    simp [regidxOfBitVec5]
+
 end Transpiler
 
 namespace ZiskFv.Trusted

@@ -90,6 +90,11 @@ structure Decode_sub (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sub trace i) : Type where
@@ -131,9 +136,6 @@ structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sub_input.PC.toNat
   h_pc_bound : sub_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    sub_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `sub` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sub` bundles them. -/

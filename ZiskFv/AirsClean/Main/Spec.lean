@@ -20,6 +20,12 @@ set_pc, jmp_offset1, jmp_offset2 multiplexer with Nat.sub saturation
 at row 0; see `ZiskFv/Airs/Main/Main.lean:181-192`) is NOT in this
 per-row Spec — it lives in a separate adjacency theorem in Bridge.
 
+The ROM-backed row also has source-PIL address-placement constraints for
+the non-SP build (`main.pil:188-197`). These are kept as a separate
+`AddressSpec`: opcode soundness can project them when it needs
+memory/register-destination routing, while the older core `Spec` remains the
+nine local Main arithmetic/control constraints.
+
 ## Constructibility audit
 
 Each Spec clause maps to a constraint in
@@ -49,5 +55,16 @@ def Spec (row : MainRow FGL) : Prop :=
   ∧ (1 - row.is_external_op) * (1 - row.op) * (1 - row.flag) = 0
   ∧ (1 - row.is_external_op) * row.op * row.flag = 0
   ∧ row.flag * row.set_pc = 0
+
+/-- Non-SP Main address-placement constraints from `main.pil:188-197`.
+
+The equations tie the memory-bus pointer witnesses to the ROM offset/selector
+columns and the low limb of operand `a`; the high-limb guard is the PIL
+overflow-prevention constraint for indirect addressing. -/
+def AddressSpec (row : MainRowWithRom FGL) : Prop :=
+  row.rom.addr0 = row.rom.a_offset_imm0
+  ∧ row.rom.addr1 = row.rom.b_offset_imm0 + row.rom.b_src_ind * row.core.a_0
+  ∧ row.rom.addr2 = row.rom.store_offset + row.rom.store_ind * row.core.a_0
+  ∧ (row.rom.store_ind + row.rom.b_src_ind) * row.core.a_1 = 0
 
 end ZiskFv.AirsClean.Main
