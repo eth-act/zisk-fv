@@ -275,12 +275,13 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
       refine ⟨?_, ?_⟩
       · obtain ⟨h_c6, h_c7, h_c8, h_c31, h_c32, h_c33, h_c34,
                 h_c35, h_c36, h_c37, h_c38, h_c46, h_lookup,
+                h_ra1, h_rb1, h_rc1, h_rd1, h_ra3, h_rb3, h_rc3, h_rd3,
                 h_a0, h_a1, h_a2, h_a3,
                 h_b0, h_b1, h_b2, h_b3,
                 h_c0, h_c1, h_c2, h_c3,
                 h_d0, h_d1, h_d2, h_d3,
                 h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6⟩ := h_holds
-        refine ⟨?_, ?_, ?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
         · -- Carry-chain Spec (11 clauses).
           refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
           · linear_combination h_c6
@@ -359,6 +360,36 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
                     Table.toRaw, signedCarryRangeTable, h_icy5] using h_cy5,
                  by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
                     Table.toRaw, signedCarryRangeTable, h_icy6] using h_cy6⟩
+        · -- IndexedRangeSpec: eight sign-sensitive Arith range-table lookups.
+          obtain ⟨h_chunks, h_flags, _⟩ := h_input
+          obtain ⟨_h_ia0, h_ia1, _h_ia2, h_ia3, _h_ib0, h_ib1, _h_ib2, h_ib3,
+                  _h_ic0, h_ic1, _h_ic2, h_ic3, _h_id0, h_id1, _h_id2, h_id3⟩ :=
+            h_chunks
+          obtain ⟨_h_na, _h_nb, _h_nr, _h_np, _h_sext, _h_m32, _h_div,
+            _h_div_by_zero, _h_div_overflow, _h_main_div, _h_main_mul, _h_signed,
+            h_range_ab, h_range_cd, _h_op, _h_bus_res1, _h_multiplicity⟩ := h_flags
+          exact ⟨by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, Expression.eval, h_range_ab, h_ia1]
+                    using h_ra1,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, Expression.eval, h_range_ab, h_ib1]
+                    using h_rb1,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, Expression.eval, h_range_cd, h_ic1]
+                    using h_rc1,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, Expression.eval, h_range_cd, h_id1]
+                    using h_rd1,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, h_range_ab, h_ia3] using h_ra3,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, Expression.eval, h_range_ab, h_ib3]
+                    using h_rb3,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, h_range_cd, h_ic3] using h_rc3,
+                 by simpa [IndexedRangeSpec, Lookup.Soundness, Table.fromStatic,
+                    StaticTable.toTable, Table.toRaw, Expression.eval, h_range_cd, h_id3]
+                    using h_rd3⟩
       · intro _
         trivial
     completeness := by

@@ -211,6 +211,17 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
           + row.flags.main_div
               * (row.chunks.a_2 + row.chunks.a_3 * 65536))))
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+  -- Eight indexed `arith_range_table_assumes(range_*, chunk)` lookups
+  -- (`arith.pil:299-306`). These retain the FULL/POS/NEG sign-sensitive
+  -- range ID, unlike the generic 16-bit chunk lookups below.
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 26, row.chunks.a_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 9, row.chunks.b_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 26, row.chunks.c_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 9, row.chunks.d_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab, row.chunks.a_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 17, row.chunks.b_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd, row.chunks.c_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 17, row.chunks.d_3]
   -- Sixteen `bits(16)` chunk column range lookups (`arith.pil:18-21`).
   -- These are shared across signed and unsigned Arith rows, so they are
   -- sound to include in the SHARED component: real arith rows always

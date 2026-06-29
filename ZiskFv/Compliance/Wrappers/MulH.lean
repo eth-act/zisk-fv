@@ -28,10 +28,10 @@ import ZiskFv.SailSpec.BusEffect
 > (the two exceptional product-sign shapes the shared ArithTable admits for op
 > 181 — exactly the malicious signed-MUL witness; an honest row satisfies it) and
 > the **SIGN-RANGE RESIDUAL** `h_sign_a`/`h_sign_b` (`na = MSB(op1)`,
-> `nb = MSB(op2)`).  The real ZisK ArithMul circuit enforces the latter via the
-> indexed `range_ab` POS/NEG lookup (`arith.pil:286/289/303`); the FV extraction
-> collapses that to the full `rangeTable16`, so it is CARRIED (assumed) here, not
-> derived in-model.  See `trust/trusted-base.md` (sign-range residual) +
+> `nb = MSB(op2)`).  #169 exposes the indexed `range_ab` POS/NEG lookup
+> (`arith.pil:286/289/303`) in the Clean model, but this public wrapper still
+> carries the residual until #151 wires the row-local indexed facts through the
+> provider path.  See `trust/trusted-base.md` (sign-range residual) +
 > `trust/defects.md`.
 -/
 
@@ -89,7 +89,7 @@ lemma equiv_MULH_of_table
     (h_not_forge :
       ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
         ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
-    -- SIGN-RANGE RESIDUAL: `na = MSB(op1)`, `nb = MSB(op2)`; carried, not derived.
+    -- SIGN-RANGE RESIDUAL: public wrapper binder until #151 wires indexed range facts.
     (h_sign_a : (v.na r_a).val
       = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)

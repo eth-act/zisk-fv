@@ -169,11 +169,11 @@ theorem ArithMulTableWitness.spec
   ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
 
-/-- Build an `ArithMulTableWitness` from the row's `FullSpec` (its five
+/-- Build an `ArithMulTableWitness` from the row's `FullSpec` (its six
     conjuncts: carry-chain `Spec`, `ArithTableSpec`, `C46Spec`, `ChunkRangeSpec`,
-    `CarryRangeSpec`).  Same fixed-row / dummy-env technique as the Mem
-    family's `rowRangeLookupWitness_of_range_facts`: the lookup circuit is
-    fixed over `rowAt v r`, so the environment/offset are bookkeeping and the
+    `CarryRangeSpec`, `IndexedRangeSpec`).  Same fixed-row / dummy-env technique
+    as the Mem family's `rowRangeLookupWitness_of_range_facts`: the lookup circuit
+    is fixed over `rowAt v r`, so the environment/offset are bookkeeping and the
     substantive content is exactly the `FullSpec` projections a P4 construction
     derives from balance.  Non-vacuous. -/
 def arithMulTableWitness_of_fullSpec
@@ -181,14 +181,17 @@ def arithMulTableWitness_of_fullSpec
     (h : ZiskFv.AirsClean.ArithMul.FullSpec (ZiskFv.AirsClean.ArithMul.rowAt v r)) :
     ArithMulTableWitness v r := by
   refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
-  obtain ⟨h_spec, h_table, h_c46, h_chunks, h_carry⟩ := h
+  obtain ⟨h_spec, h_table, h_c46, h_chunks, h_carry, h_indexed⟩ := h
   obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
   obtain ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
           hcc0, hcc1, hcc2, hcc3, hd0, hd1, hd2, hd3⟩ := h_chunks
   obtain ⟨hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩ := h_carry
+  obtain ⟨hra1, hrb1, hrc1, hrd1, hra3, hrb3, hrc3, hrd3⟩ := h_indexed
   simp only [ZiskFv.AirsClean.ArithMul.mainWithArithTable,
     ZiskFv.AirsClean.ArithMul.main, circuit_norm]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · linear_combination hc6
@@ -208,6 +211,22 @@ def arithMulTableWitness_of_fullSpec
       ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
       Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw]
       using h_table
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hra1
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrb1
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrc1
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrd1
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hra3
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrb3
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrc3
+  · simpa [ZiskFv.AirsClean.ArithMul.constVar, ZiskFv.AirsClean.ArithMul.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrd3
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using ha0
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using ha1
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using ha2
@@ -231,6 +250,14 @@ def arithMulTableWitness_of_fullSpec
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using hcy4
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using hcy5
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using hcy6
+
+theorem ArithMulTableWitness.indexed_ranges
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulTableWitness v r) :
+    ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r) :=
+  ZiskFv.AirsClean.ArithMul.indexed_ranges_of_arith_table_const_soundness
+    w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
 
 /-- Chunk range bounds derived from an `ArithMulTableWitness`.
 
@@ -335,22 +362,31 @@ theorem ArithDivTableWitness.spec
   ZiskFv.AirsClean.ArithDiv.arith_table_spec_of_lookup_aware_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
 
-/-- Build an `ArithDivTableWitness` from the row's `FullSpec` (its two conjuncts:
-    carry-chain `Spec` and `ArithTableSpec`).  ArithDiv's `mainWithArithTable` is
-    just `main row` + the ArithTable lookup, so the witness's `holds` reduces to
-    exactly those two facts (constant-row / dummy-env technique, non-vacuous: the
-    facts are the real `FullSpec` projections a P4 construction derives from
-    balance). -/
+theorem ArithDivTableWitness.indexed_ranges
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivTableWitness v r) :
+    ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r) :=
+  ZiskFv.AirsClean.ArithDiv.indexed_ranges_of_arith_table_const_soundness
+    w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
+
+/-- Build an `ArithDivTableWitness` from the row's `FullSpec` (its three conjuncts:
+    carry-chain `Spec`, `ArithTableSpec`, and `IndexedRangeSpec`).  The witness's
+    `holds` is a constant-row proof for `mainWithArithTable`: carry-chain
+    constraints, the ArithTable lookup, and the eight indexed Arith range-table
+    lookups. -/
 def arithDivTableWitness_of_fullSpec
     {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
     (h : ZiskFv.AirsClean.ArithDiv.FullSpec (ZiskFv.AirsClean.ArithDiv.rowAt v r)) :
     ArithDivTableWitness v r := by
   refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
-  obtain ⟨h_spec, h_table⟩ := h
+  obtain ⟨h_spec, h_table, h_indexed⟩ := h
   obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  obtain ⟨hra1, hrb1, hrc1, hrd1, hra3, hrb3, hrc3, hrd3⟩ := h_indexed
   simp only [ZiskFv.AirsClean.ArithDiv.mainWithArithTable,
     ZiskFv.AirsClean.ArithDiv.main, circuit_norm]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · linear_combination hc6
   · linear_combination hc7
   · linear_combination hc8
@@ -367,6 +403,22 @@ def arithDivTableWitness_of_fullSpec
       ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
       Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw]
       using h_table
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hra1
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrb1
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrc1
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrd1
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hra3
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrb3
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrc3
+  · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
+      Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrd3
 
 /-- Lookup-aware Clean witness for a selected ArithDiv row's sixteen
     `bits(16)` chunk checks. This is the Div-family counterpart of

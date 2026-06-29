@@ -192,12 +192,28 @@ def mainWithPrimaryOpBusAndArithTable (row : Var ArithDivRow FGL) :
     Circuit FGL Unit := do
   mainWithPrimaryOpBus row
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 26, row.chunks.a_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 9, row.chunks.b_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 26, row.chunks.c_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 9, row.chunks.d_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab, row.chunks.a_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 17, row.chunks.b_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd, row.chunks.c_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 17, row.chunks.d_3]
 
 @[circuit_norm]
 def mainWithSecondaryOpBusAndArithTable (row : Var ArithDivRow FGL) :
     Circuit FGL Unit := do
   mainWithSecondaryOpBus row
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 26, row.chunks.a_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 9, row.chunks.b_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 26, row.chunks.c_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 9, row.chunks.d_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab, row.chunks.a_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 17, row.chunks.b_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd, row.chunks.c_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 17, row.chunks.d_3]
 
 /-- Lookup-aware ArithDiv circuit path. This appends the full 15-column
     `arith_table_assumes` ROM lookup after the existing carry-chain
@@ -207,6 +223,16 @@ def mainWithSecondaryOpBusAndArithTable (row : Var ArithDivRow FGL) :
 def mainWithArithTable (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
   main row
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+  -- Eight indexed `arith_range_table_assumes(range_*, chunk)` lookups
+  -- (`arith.pil:299-306`), in upstream PIL order.
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 26, row.chunks.a_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 9, row.chunks.b_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 26, row.chunks.c_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 9, row.chunks.d_1]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab, row.chunks.a_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_ab + 17, row.chunks.b_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd, row.chunks.c_3]
+  lookup (Table.fromStatic arithRangeTable) #v[row.flags.range_cd + 17, row.chunks.d_3]
 
 /-- Lookup-aware ArithDiv path for the sixteen `bits(16)` chunk columns.
     This is the Div-family counterpart of ArithMul's chunk range view. -/

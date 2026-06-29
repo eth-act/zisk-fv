@@ -84,11 +84,70 @@ theorem arith_table_spec_of_lookup_aware_soundness
   simp only [mainWithArithTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
-      _h46, h_lookup, _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      _h46, h_lookup,
+      _hra1, _hrb1, _hrc1, _hrd1, _hra3, _hrb3, _hrc3, _hrd3,
+      _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
       _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3,
       _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
   simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
     ArithTableSpec, arithTableRow] using h_lookup
+
+/-- Extract the eight indexed Arith range-table lookup facts from a
+    `mainWithArithTable` soundness proof. -/
+theorem indexed_ranges_of_arith_table_soundness
+    (offset : ℕ) (env : Environment FGL)
+    (input_var : Var ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable input_var).operations offset)) :
+    RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_ab + 26,
+        Expression.eval env input_var.chunks.a_1]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_ab + 9,
+        Expression.eval env input_var.chunks.b_1]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_cd + 26,
+        Expression.eval env input_var.chunks.c_1]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_cd + 9,
+        Expression.eval env input_var.chunks.d_1]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_ab,
+        Expression.eval env input_var.chunks.a_3]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_ab + 17,
+        Expression.eval env input_var.chunks.b_3]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_cd,
+        Expression.eval env input_var.chunks.c_3]
+    ∧ RangeTables.arithRangeTable.Spec
+      #v[Expression.eval env input_var.flags.range_cd + 17,
+        Expression.eval env input_var.chunks.d_3] := by
+  simp only [mainWithArithTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      _h46, _h_lookup,
+      hra1, hrb1, hrc1, hrd1, hra3, hrb3, hrc3, hrd3,
+      _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3,
+      _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
+  exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hra1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hrb1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hrc1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hrd1,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hra3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hrb3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hrc3,
+         by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+              Table.toRaw] using hrd3⟩
 
 /-- Extract the sixteen 16-bit chunk range bounds from a `mainWithArithTable`
     soundness proof.  After RANK 2a, `mainWithArithTable` includes the chunk
@@ -118,7 +177,9 @@ theorem chunk_ranges_of_arith_table_soundness
   simp only [mainWithArithTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
-      _h46, _h_lookup, ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+      _h46, _h_lookup,
+      _hra1, _hrb1, _hrc1, _hrd1, _hra3, _hrb3, _hrc3, _hrd3,
+      ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
       hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3,
       _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6⟩
   exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
@@ -183,6 +244,16 @@ theorem chunk_ranges_of_arith_table_const_soundness
     ChunkRangeSpec row := by
   have h := chunk_ranges_of_arith_table_soundness offset env (constVar row) h_holds
   simpa [ChunkRangeSpec, constVar] using h
+
+/-- Constant-row specialization of `indexed_ranges_of_arith_table_soundness`. -/
+theorem indexed_ranges_of_arith_table_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable (constVar row)).operations offset)) :
+    IndexedRangeSpec row := by
+  have h := indexed_ranges_of_arith_table_soundness offset env (constVar row) h_holds
+  simpa [IndexedRangeSpec, constVar] using h
 
 /-- Project a `Valid_ArithMul` at row `r` into a Clean `ArithMulRow FGL`.
     The `Valid_ArithMul` record exposes all 28 chunk / flag / carry
@@ -623,9 +694,10 @@ theorem full_spec_of_carry_chain_and_arith_table
     (h_table : ArithTableSpec (rowAt v r))
     (h_c46 : C46Spec (rowAt v r))
     (h_chunk_ranges : ChunkRangeSpec (rowAt v r))
-    (h_carry_ranges : CarryRangeSpec (rowAt v r)) :
+    (h_carry_ranges : CarryRangeSpec (rowAt v r))
+    (h_indexed_ranges : IndexedRangeSpec (rowAt v r)) :
     FullSpec (rowAt v r) := by
   exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table, h_c46, h_chunk_ranges,
-    h_carry_ranges⟩
+    h_carry_ranges, h_indexed_ranges⟩
 
 end ZiskFv.AirsClean.ArithMul

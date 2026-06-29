@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithMul.Row
 import ZiskFv.AirsClean.ArithTable
+import ZiskFv.AirsClean.RangeTables
 
 /-!
 # ArithMul Spec + Assumptions (4-limb MUL-mode carry chain)
@@ -208,13 +209,30 @@ def CarryRangeSpec (row : ArithMulRow FGL) : Prop :=
   ∧ ((row.carries.carry_5).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_5).val)
   ∧ ((row.carries.carry_6).val < 983041 ∨ GL_prime - 983040 ≤ (row.carries.carry_6).val)
 
+/-- The eight indexed `arith_range_table_assumes(range_*, chunk)` lookups
+    (`arith.pil:299-306`).  These are the sign-sensitive lookup facts that
+    distinguish FULL/POS/NEG upper chunks from the generic 16-bit range checks. -/
+@[reducible]
+def IndexedRangeSpec (row : ArithMulRow FGL) : Prop :=
+  RangeTables.arithRangeTable.Spec #v[row.flags.range_ab + 26, row.chunks.a_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_ab + 9, row.chunks.b_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd + 26, row.chunks.c_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd + 9, row.chunks.d_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_ab, row.chunks.a_3]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_ab + 17, row.chunks.b_3]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd, row.chunks.c_3]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd + 17, row.chunks.d_3]
+
 /-- Full ArithMul row contract once the ArithTable lookup, the
     `bus_res1` mux constraint (c46), the sixteen 16-bit chunk range
-    lookups, and the seven signed-carry range lookups are plumbed into
+    lookups, the seven signed-carry range lookups, and the eight indexed
+    Arith range-table lookups are plumbed into
     Compliance: carry-chain algebra + ROM membership + `bus_res1`
-    pinning + 16-bit chunk bounds + signed-carry bounds. -/
+    pinning + 16-bit chunk bounds + signed-carry bounds + indexed sign-range
+    evidence. -/
 @[reducible]
 def FullSpec (row : ArithMulRow FGL) : Prop :=
   Spec row ∧ ArithTableSpec row ∧ C46Spec row ∧ ChunkRangeSpec row ∧ CarryRangeSpec row
+    ∧ IndexedRangeSpec row
 
 end ZiskFv.AirsClean.ArithMul

@@ -661,9 +661,10 @@ theorem stepStrong_mulw
         (ZiskFv.Airs.OperationBus.opBus_row_Main m i.val)
         (ZiskFv.Airs.ArithMul.opBus_row_Arith v 0) :=
     mulwArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
-  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩ := h_full
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec, h_indexed_ranges⟩ := h_full
   let arith_table : ZiskFv.Compliance.ArithMulTableWitness v 0 :=
-    arithMulTableWitness_of_fullSpec ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩
+    arithMulTableWitness_of_fullSpec
+      ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec, h_indexed_ranges⟩
   let arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithMul.chunkRangeLookupWitness_of_spec h_spec h_chunk_spec
   let arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v 0 :=
@@ -774,9 +775,10 @@ theorem stepStrong_mulhu
         (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v 0) :=
     mulhuArow_match trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   -- The three lookup-witnesses, BUILT from FullSpec.
-  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩ := h_full
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec, h_indexed_ranges⟩ := h_full
   let arith_table : ZiskFv.Compliance.ArithMulTableWitness v 0 :=
-    arithMulTableWitness_of_fullSpec ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec⟩
+    arithMulTableWitness_of_fullSpec
+      ⟨h_spec, h_arith_table, h_c46, h_chunk_spec, h_carry_spec, h_indexed_ranges⟩
   let arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithMul.chunkRangeLookupWitness_of_spec h_spec h_chunk_spec
   let arith_carry_ranges : ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v 0 :=
@@ -885,7 +887,8 @@ theorem stepStrong_divu
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
-  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+    h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
     arithDivTableWitness_of_fullSpec h_full_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
@@ -893,9 +896,10 @@ theorem stepStrong_divu
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
   have h_row_constraints :
-      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
     divu_row_constraints_of_arithMul_fullSpec arow
-      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+        h_mul_indexed_ranges⟩
   -- Decode pins bundle.
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_DIVU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
@@ -991,7 +995,8 @@ theorem stepStrong_divuw
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
-  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+    h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
     arithDivTableWitness_of_fullSpec h_full_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
@@ -999,9 +1004,10 @@ theorem stepStrong_divuw
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
   have h_row_constraints :
-      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
     divu_row_constraints_of_arithMul_fullSpec arow
-      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+        h_mul_indexed_ranges⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_DIVU_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
@@ -1094,7 +1100,8 @@ theorem stepStrong_remu
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
-  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+    h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
     arithDivTableWitness_of_fullSpec h_full_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
@@ -1102,9 +1109,10 @@ theorem stepStrong_remu
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
   have h_row_constraints :
-      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
     divu_row_constraints_of_arithMul_fullSpec arow
-      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+        h_mul_indexed_ranges⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_REMU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :
@@ -1196,7 +1204,8 @@ theorem stepStrong_remuw
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
-  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩ := h_full_mul
+  obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+    h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
     arithDivTableWitness_of_fullSpec h_full_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
@@ -1204,9 +1213,10 @@ theorem stepStrong_remuw
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.signedCarryRangeLookupWitness_of_spec h_full_div.1 h_mul_carry
   have h_row_constraints :
-      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v 0 :=
     divu_row_constraints_of_arithMul_fullSpec arow
-      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry⟩
+      ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
+        h_mul_indexed_ranges⟩
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_REMU_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_core_store_pc :

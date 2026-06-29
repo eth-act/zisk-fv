@@ -392,17 +392,20 @@ Active conclusions:
   `Defects.honest_{divw,remw}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
   per-theorem `collectAxioms` closure is unchanged).
 - **Signed remainder-bound residual (DIV/REM only).** The WEAK bound
-  `h_r_le : |r| ≤ |op2|`, the signed operand bridges (`na = MSB`-form
-  `r.toInt = packed4 - sign·2^64`), and the sign-correctness witness `h_r_sign`
-  are caller hypotheses, NOT axioms — same EXTRACTION-FIDELITY residual class as
-  the MULH/MULHSU sign-range residual below. The real ZisK ArithDiv circuit
-  enforces the weak bound via the `LT_ABS_NP`/`LT_ABS_PN` byte-chain comparison
-  (`arith.pil:274`), but the FV model cannot derive it in-model without exposing
-  the `LT_ABS_NP` false positive (`ltAbsNpByteChain_falsePositive_eqAbs256`); the
-  narrowed `|r| = |op2|` defect exclusion upgrades the carried weak bound to the
-  strict bound Sail requires. Visible in the canonical/wrapper caller-burden
-  ledgers; details in [`defects.md`](defects.md)
-  (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`).
+  `h_r_le : |r| ≤ |op2|` and the sign-correctness witness `h_r_sign` remain caller
+  hypotheses, NOT axioms. The operand sign bridges are no longer blocked on
+  indexed range-table extraction: #169 composes `RangeTables.arithRangeTable`
+  into ArithDiv `IndexedRangeSpec` and adds row-local
+  `ArithTableProjections.Div.na/nb_eq_msb{64,32}_of_{pos,neg}_indexed` lemmas.
+  The public signed DIV/REM surfaces may still carry bridge-shaped hypotheses
+  until #151 wires those row-local indexed facts through provider accessors. The
+  real ZisK ArithDiv circuit enforces the weak bound via the
+  `LT_ABS_NP`/`LT_ABS_PN` byte-chain comparison (`arith.pil:274`), but the FV
+  model cannot derive it in-model without exposing the `LT_ABS_NP` false positive
+  (`ltAbsNpByteChain_falsePositive_eqAbs256`); the narrowed `|r| = |op2|` defect
+  exclusion upgrades the carried weak bound to the strict bound Sail requires.
+  Visible in the canonical/wrapper caller-burden ledgers; details in
+  [`defects.md`](defects.md) (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`).
 - **Divisor-zero / signed-overflow boundary discharge (DIV/DIVW/REM/REMW,
   #114, 2026-06-22).** The canonical theorems previously carried caller
   promises `h_op2_ne` (`op2 ≠ 0`) and `h_no_overflow` (¬`INT_MIN`/−1); both are
@@ -424,19 +427,20 @@ Active conclusions:
   np=0)` / `(na=0,nb=1,np=0)`); the honest cases are proved non-vacuously
   (`equiv_MUL` / `equiv_MULH` / `equiv_MULHSU`, gate-checked by the
   `Defects.honest_{mul,mulh,mulhsu}_witness_not_malicious` anti-vacuity guards).
-- **Sign-range residual (MULH/MULHSU only).** The high-half signed proof carries
-  `na = MSB(op1)` / `nb = MSB(op2)` as explicit caller hypotheses (`h_sign_a` /
-  `h_sign_b`), NOT axioms — the per-theorem `Lean.collectAxioms` closure of
-  `equiv_MULH`/`equiv_MULHSU` is unchanged (0 `ZiskFv.*` axioms). The real ZisK
-  ArithMul circuit enforces these via the indexed `range_ab` POS/NEG range lookup
-  on `a[3]` (`zisk/state-machines/arith/pil/arith.pil:286/289/303`), but the FV
-  extraction collapses that indexed lookup to the full `rangeTable16`, so the
-  facts are unprovable in-model and are carried. This is an EXTRACTION-FIDELITY
-  residual of the same class as the Aeneas row-lowering and Sail memory-timeline
-  residuals above: satisfiable for every real trace, dischargeable-in-principle
-  by composing the indexed `ArithRangeTable` lookup into balance. The new binders
-  are visible in the canonical and wrapper caller-burden ledgers; details in
-  [`defects.md`](defects.md) (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
+- **Sign-range residual (public MULH/MULHSU surfaces only).** The high-half
+  signed proof still carries `na = MSB(op1)` / `nb = MSB(op2)` as explicit caller
+  hypotheses (`h_sign_a` / `h_sign_b`) at the canonical/wrapper boundary, NOT
+  axioms — the per-theorem `Lean.collectAxioms` closure of
+  `equiv_MULH`/`equiv_MULHSU` is unchanged (0 `ZiskFv.*` axioms). The indexed
+  table evidence is now present in-model: #169 adds `RangeTables.arithRangeTable`,
+  threads the eight upstream Arith range lookups through ArithMul/ArithDiv
+  `IndexedRangeSpec`, and exposes row-local
+  `ArithTableProjections.Mul.na/nb_eq_msb{64,32}_of_{pos,neg}_indexed` lemmas.
+  The remaining residual is the public-surface wiring step for #151, which must
+  use those indexed facts through provider-row accessors before removing the
+  `h_sign_*` binders. The binders remain visible in the canonical and wrapper
+  caller-burden ledgers; details in [`defects.md`](defects.md)
+  (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).

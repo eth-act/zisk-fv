@@ -148,8 +148,8 @@ theorem arithDiv_fullSpec_of_arithMul_fullSpec
     (h : ZiskFv.AirsClean.ArithMul.FullSpec arow) :
     ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt (vOfDivuRow arow) 0) := by
-  obtain ⟨h_spec, h_table, _h_c46, _h_chunks, _h_carry⟩ := h
-  refine ⟨?_, ?_⟩
+  obtain ⟨h_spec, h_table, _h_c46, _h_chunks, _h_carry, h_indexed⟩ := h
+  refine ⟨?_, ?_, ?_⟩
   · obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · linear_combination hc6
@@ -168,6 +168,9 @@ theorem arithDiv_fullSpec_of_arithMul_fullSpec
       ZiskFv.AirsClean.ArithDiv.rowAt, vOfDivuRow,
       ZiskFv.AirsClean.ArithMul.ArithTableSpec,
       ZiskFv.AirsClean.ArithMul.arithTableRow] using h_table
+  · simpa [ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec,
+      ZiskFv.AirsClean.ArithDiv.rowAt, vOfDivuRow,
+      ZiskFv.AirsClean.ArithMul.IndexedRangeSpec] using h_indexed
 
 /-- The ArithDiv-view `div_row_constraints_with_c46` of a provider `ArithMulRow`,
     derived from the SHARED-ArithMul-provider `FullSpec arow`.  The 11-clause
@@ -178,7 +181,7 @@ theorem divu_row_constraints_of_arithMul_fullSpec
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
     (h : ZiskFv.AirsClean.ArithMul.FullSpec arow) :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 (vOfDivuRow arow) 0 := by
-  obtain ⟨h_spec, _h_table, h_c46, _h_chunks, _h_carry⟩ := h
+  obtain ⟨h_spec, _h_table, h_c46, _h_chunks, _h_carry, _h_indexed⟩ := h
   obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, vOfDivuRow]; linear_combination hc6
@@ -586,8 +589,9 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  -- Unpack FullSpec into its five conjuncts (ArithMul view of `arow`).
-  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_ranges_spec, h_carry_ranges_spec⟩ :=
+  -- Unpack FullSpec into its six conjuncts (ArithMul view of `arow`).
+  obtain ⟨h_spec, h_arith_table, h_c46, h_chunk_ranges_spec, h_carry_ranges_spec,
+    _h_indexed_ranges⟩ :=
     h_full_spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds

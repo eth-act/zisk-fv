@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithDiv.Row
 import ZiskFv.AirsClean.ArithTable
+import ZiskFv.AirsClean.RangeTables
 
 /-!
 # ArithDiv Spec + Assumptions
@@ -165,11 +166,24 @@ def Spec (row : ArithDivRow FGL) : Prop :=
 def ArithTableSpec (row : ArithDivRow FGL) : Prop :=
   ArithTable.arithTable.Spec (arithTableRow row)
 
-/-- Full ArithDiv row contract once the ArithTable lookup is plumbed into
-    Compliance: carry-chain algebra plus ROM membership for the full
-    `arith_table_assumes` tuple. -/
+/-- The eight indexed `arith_range_table_assumes(range_*, chunk)` lookups
+    (`arith.pil:299-306`). -/
+@[reducible]
+def IndexedRangeSpec (row : ArithDivRow FGL) : Prop :=
+  RangeTables.arithRangeTable.Spec #v[row.flags.range_ab + 26, row.chunks.a_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_ab + 9, row.chunks.b_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd + 26, row.chunks.c_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd + 9, row.chunks.d_1]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_ab, row.chunks.a_3]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_ab + 17, row.chunks.b_3]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd, row.chunks.c_3]
+  ∧ RangeTables.arithRangeTable.Spec #v[row.flags.range_cd + 17, row.chunks.d_3]
+
+/-- Full ArithDiv row contract once ArithTable and indexed Arith range-table
+    lookups are plumbed into Compliance: carry-chain algebra plus ROM
+    membership and the indexed sign-range evidence. -/
 @[reducible]
 def FullSpec (row : ArithDivRow FGL) : Prop :=
-  Spec row ∧ ArithTableSpec row
+  Spec row ∧ ArithTableSpec row ∧ IndexedRangeSpec row
 
 end ZiskFv.AirsClean.ArithDiv
