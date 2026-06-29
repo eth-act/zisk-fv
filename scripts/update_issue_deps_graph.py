@@ -240,23 +240,118 @@ def group_by_axis(issues: dict[int, Issue], included: set[int]) -> dict[str, lis
     return groups
 
 
-def render_axis_subgraphs(issues: dict[int, Issue], included: set[int]) -> list[str]:
-    groups = group_by_axis(issues, included)
+def topo_order(items: list[int], edges: list[tuple[int, int]]) -> list[int]:
+    item_set = set(items)
+    successors = {item: set() for item in items}
+    indegree = {item: 0 for item in items}
+    for blocked, blocker in edges:
+        if blocked not in item_set or blocker not in item_set or blocked == blocker:
+            continue
+        if blocker in successors[blocked]:
+            continue
+        successors[blocked].add(blocker)
+        indegree[blocker] += 1
+
+    ready = sorted(item for item in items if indegree[item] == 0)
+    ordered: list[int] = []
+    while ready:
+        item = ready.pop(0)
+        ordered.append(item)
+        for successor in sorted(successors[item]):
+            indegree[successor] -= 1
+            if indegree[successor] == 0:
+                ready.append(successor)
+        ready.sort()
+
+    remaining = sorted(item_set - set(ordered))
+    return ordered + remaining
+
+
+def axis_topo_order(
+    issues: dict[int, Issue],
+    included: set[int],
+    edges: list[tuple[int, int]],
+    groups: dict[str, list[int]],
+) -> list[str]:
+    axes = [axis for axis in AXIS_ORDER if groups[axis]]
+    axis_set = set(axes)
+    axis_index = {axis: index for index, axis in enumerate(AXIS_ORDER)}
+    successors = {axis: set() for axis in axes}
+    indegree = {axis: 0 for axis in axes}
+
+    for blocked, blocker in edges:
+        if blocked not in included or blocker not in included:
+            continue
+        blocked_axis = classify(issues[blocked])
+        blocker_axis = classify(issues[blocker])
+        if (
+            blocked_axis == blocker_axis
+            or blocked_axis not in axis_set
+            or blocker_axis not in axis_set
+        ):
+            continue
+        if blocker_axis in successors[blocked_axis]:
+            continue
+        successors[blocked_axis].add(blocker_axis)
+        indegree[blocker_axis] += 1
+
+    ready = sorted((axis for axis in axes if indegree[axis] == 0), key=axis_index.get)
+    ordered: list[str] = []
+    while ready:
+        axis = ready.pop(0)
+        ordered.append(axis)
+        for successor in sorted(successors[axis], key=axis_index.get):
+            indegree[successor] -= 1
+            if indegree[successor] == 0:
+                ready.append(successor)
+        ready.sort(key=axis_index.get)
+
+    remaining = sorted((axis for axis in axes if axis not in ordered), key=axis_index.get)
+    return ordered + remaining
+
+
+def render_layout_links(
+    numbers: list[int],
+    edge_set: set[tuple[int, int]],
+    indent: str,
+) -> list[str]:
     lines: list[str] = []
-    for axis in AXIS_ORDER:
-        numbers = groups[axis]
+    for left, right in zip(numbers, numbers[1:]):
+        if (left, right) not in edge_set:
+            lines.append(f"{indent}I{left} ~~~ I{right}")
+    return lines
+
+
+def render_axis_subgraphs(
+    issues: dict[int, Issue],
+    included: set[int],
+    edges: list[tuple[int, int]],
+    indent: str,
+) -> tuple[list[str], list[int]]:
+    groups = group_by_axis(issues, included)
+    edge_set = set(edges)
+    child_indent = indent + "  "
+    lines: list[str] = []
+    anchors: list[int] = []
+    for axis in axis_topo_order(issues, included, edges, groups):
+        numbers = topo_order(groups[axis], edges)
         if not numbers:
             continue
-        lines.append(f'    subgraph Axis_{axis}["{AXIS_TITLES[axis]}"]')
-        lines.append("      direction LR")
+        anchors.append(numbers[0])
+        lines.append(f'{indent}subgraph Axis_{axis}["{AXIS_TITLES[axis]}"]')
+        lines.append(f"{child_indent}direction TB")
         for number in numbers:
             issue = issues[number]
-            lines.append(f'      I{number}["{mermaid_label(issue)}"]:::{classify(issue)}')
-        lines.append("    end")
+            lines.append(f'{child_indent}I{number}["{mermaid_label(issue)}"]:::{classify(issue)}')
+        layout_links = render_layout_links(numbers, edge_set, child_indent)
+        if layout_links:
+            lines.append(f"{child_indent}%% Layout-only invisible links keep this axis vertical.")
+            lines.extend(layout_links)
+        lines.append(f"{indent}end")
         lines.append("")
     if lines and lines[-1] == "":
         lines.pop()
-    return lines
+    return lines, anchors
 
 
 def render_mermaid_graph(
@@ -266,7 +361,8 @@ def render_mermaid_graph(
 ) -> str:
     lines = [
         "```mermaid",
-        "%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%",
+        "%%{init: {'themeVariables': { 'fontSize': '18px' }, "
+        "'flowchart': { 'defaultRenderer': 'elk' }}}%%",
         "flowchart TD",
         "    classDef soundness fill:#3b82f6,stroke:#1d4ed8,color:#fff,font-weight:bold",
         "    classDef completeness fill:#9ca3af,stroke:#6b7280,color:#fff,font-weight:bold",
@@ -275,13 +371,23 @@ def render_mermaid_graph(
         "",
     ]
 
-    lines.extend(render_axis_subgraphs(issues, included))
+    lines.append('    subgraph Axis_stack["Dependency Axes"]')
+    lines.append("      direction TB")
+    subgraph_lines, anchors = render_axis_subgraphs(issues, included, edges, "      ")
+    lines.extend(subgraph_lines)
+    layout_links = render_layout_links(anchors, set(edges), "      ")
+    if layout_links:
+        lines.append("")
+        lines.append("      %% Layout-only invisible links keep axis subgraphs")
+        lines.append("      %% stacked top-to-bottom.")
+        lines.extend(layout_links)
 
     if edges:
         lines.append("")
         for blocked, blocker in edges:
             if blocked in included and blocker in included:
-                lines.append(f"    I{blocked} --> I{blocker}")
+                lines.append(f"      I{blocked} --> I{blocker}")
+    lines.append("    end")
 
     lines.append("```")
     return "\n".join(lines)
@@ -372,6 +478,8 @@ It is generated from GitHub issue metadata, not from hand-maintained prose:
 - edges to closed issues are omitted with those closed issues
 - the first graph contains open issues with open dependency relationships, grouped into stacked
   axis subgraphs for layout; cross-axis arrows are still dependency relationships
+- layout-only invisible Mermaid links may be emitted to keep axis subgraphs and sibling nodes
+  vertical; only visible solid arrows are dependency relationships
 - open issues with no open dependency relationship are listed as Markdown bullets
 - parent/sub-issue relationships are listed below, not drawn as dependency edges
 
