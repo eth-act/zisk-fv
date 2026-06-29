@@ -735,9 +735,6 @@ structure ProgramDecode_div {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_div trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
@@ -763,9 +760,6 @@ structure ProgramDecode_rem {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_rem trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
@@ -791,9 +785,6 @@ structure ProgramDecode_divw {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_divw trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
@@ -819,9 +810,6 @@ structure ProgramDecode_remw {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_remw trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  pins :
-    ZiskFv.Compliance.MainRowPins
-      (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
       (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
@@ -1551,10 +1539,10 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | mulhsu c => exact RomDecodeBinding.Decode_mulhsu_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | mulw c => exact RomDecodeBinding.Decode_mulw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | mulhu c => exact RomDecodeBinding.Decode_mulhu_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | div c => exact RomDecodeBinding.Decode_div_of_program ziskTrace i c pd.h_idx pd.pins pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | rem c => exact RomDecodeBinding.Decode_rem_of_program ziskTrace i c pd.h_idx pd.pins pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | divw c => exact RomDecodeBinding.Decode_divw_of_program ziskTrace i c pd.h_idx pd.pins pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | remw c => exact RomDecodeBinding.Decode_remw_of_program ziskTrace i c pd.h_idx pd.pins pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | div c => exact RomDecodeBinding.Decode_div_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | rem c => exact RomDecodeBinding.Decode_rem_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | divw c => exact RomDecodeBinding.Decode_divw_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | remw c => exact RomDecodeBinding.Decode_remw_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | divu c => exact RomDecodeBinding.Decode_divu_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | divuw c => exact RomDecodeBinding.Decode_divuw_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
   | remu c => exact RomDecodeBinding.Decode_remu_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
