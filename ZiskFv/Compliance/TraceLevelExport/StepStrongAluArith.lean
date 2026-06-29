@@ -989,7 +989,8 @@ theorem stepStrong_andi
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1124,7 +1125,8 @@ theorem stepStrong_ori
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1259,7 +1261,8 @@ theorem stepStrong_xori
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1392,7 +1395,8 @@ theorem stepStrong_slti
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -1520,7 +1524,8 @@ theorem stepStrong_sltiu
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
