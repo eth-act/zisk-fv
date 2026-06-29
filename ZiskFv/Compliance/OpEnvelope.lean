@@ -164,10 +164,12 @@ def StoreRmwPreservedBytesAtPrefix
 
 /-- Named store-side memory residual for sub-doubleword RMW stores.
 
-This is the store analogue of `LoadMemoryTimelineCoherenceEvidence`: it exposes
-the seed-relative replay/coherence boundary once, then keeps the old per-byte
-preservation facts as derived projections. Full derivation of this evidence from
-accepted trace replay remains the #115/#185 follow-on. -/
+This is the store analogue of `LoadMemoryTimelineCoherenceEvidence`, but with
+one extra posited store-specific conjunct: the replay memory at the store prefix
+already contains the bytes that the narrow RMW store must preserve. The
+projection theorem below turns that named prefix fact into the old per-byte
+state facts. Full derivation of this evidence from accepted trace replay remains
+the #115/#185 follow-on. -/
 @[reducible]
 def StoreRmwMemoryCoherenceEvidence
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
