@@ -1,9 +1,9 @@
 name: proofs
 
 # Build the proofs from scratch and run the full test suite (cargo +
-# lake + trust gate + nix flake check). A green run is the formal-
-# verification claim that every per-opcode equivalence theorem
-# typechecks against the pinned upstream artifacts.
+# lake + trust gate + nix flake check) when Lean/proof inputs changed.
+# A green proof run is the formal-verification claim that every per-opcode
+# equivalence theorem typechecks against the pinned upstream artifacts.
 #
 # Cost: ~30 min cold (no Nix store cache), ~5 min warm. flake.lock
 # pins every build input (sail/sail-riscv/zisk/pil2-* sources +
@@ -13,8 +13,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'ZiskFv/**'
-      - 'bin/TrustGate/**'
+      - '*.lean'
+      - '**/*.lean'
       - 'tools/pil-extract/**'
       - 'scripts/aeneas-production-extract.sh'
       - 'zisk'
@@ -25,7 +25,13 @@ on:
       - 'flake.nix'
       - 'flake.lock'
       - 'nix/**'
-      - 'trust/**'
+      # Trust gate-policy inputs (allowlists, forbidden-shape lists,
+      # baselines, floors, gate scripts). The trust *.md ledgers are
+      # docs and intentionally excluded.
+      - 'trust/*.txt'
+      - 'trust/scripts/**'
+      - 'trust/generated/**'
+      - 'trust/.shrinkage-floor'
       - '.github/workflows/proofs.yml'
   workflow_dispatch:
 
@@ -34,8 +40,73 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  proof-inputs:
+    name: classify proof inputs
+    runs-on: ubuntu-latest
+    outputs:
+      run_proofs: ${{ steps.classify.outputs.run_proofs }}
+      reason: ${{ steps.classify.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Decide whether to run proof jobs
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_proofs=true" >> "$GITHUB_OUTPUT"
+            echo "reason=manual dispatch" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch: running proof jobs." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          before="${{ github.event.before }}"
+          after="${{ github.sha }}"
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            before="$(git rev-list --max-parents=0 "$after")"
+          fi
+
+          git diff --name-only "$before" "$after" > changed-files.txt
+
+          matched=()
+          while IFS= read -r path; do
+            case "$path" in
+              *.lean|lake-manifest.json|lakefile.toml|lean-toolchain|flake.nix|flake.lock|nix/*|scripts/aeneas-production-extract.sh|tools/pil-extract/*|zisk|zisk/*|trust/*.txt|trust/scripts/*|trust/generated/*|trust/.shrinkage-floor)
+                matched+=("$path")
+                ;;
+            esac
+          done < changed-files.txt
+
+          if [ "${#matched[@]}" -eq 0 ]; then
+            echo "run_proofs=false" >> "$GITHUB_OUTPUT"
+            echo "reason=no Lean/proof input paths changed" >> "$GITHUB_OUTPUT"
+            {
+              echo "No Lean/proof input paths changed; skipping Lake/proof jobs."
+              echo ""
+              echo "Changed files:"
+              sed 's/^/- /' changed-files.txt
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "run_proofs=true" >> "$GITHUB_OUTPUT"
+          echo "reason=Lean/proof input paths changed" >> "$GITHUB_OUTPUT"
+          {
+            echo "Lean/proof input paths changed; running proof jobs."
+            echo ""
+            echo "Matched files:"
+            printf -- '- %s\n' "${matched[@]}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   pick-runner:
     name: probe cachix and select runner
+    needs: proof-inputs
+    if: needs.proof-inputs.outputs.run_proofs == 'true'
     runs-on: ubuntu-latest
     outputs:
       runner: ${{ steps.pick.outputs.runner }}
@@ -78,6 +149,8 @@ jobs:
 
   aeneas-extraction-diff:
     name: Aeneas extraction diff
+    needs: proof-inputs
+    if: needs.proof-inputs.outputs.run_proofs == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -115,7 +188,8 @@ jobs:
 
   lake-build:
     name: lake build (full FV check)
-    needs: pick-runner
+    needs: [proof-inputs, pick-runner]
+    if: needs.proof-inputs.outputs.run_proofs == 'true'
     # Cached `nix populate` runs target the 16 GiB L runner again. The
     # successful 2026-06-02 main run after the sd proof-memory fix peaked
     # at 10.5 GiB kernel used memory with LEAN_NUM_THREADS=4. Cold pilout
@@ -262,6 +336,8 @@ jobs:
   # ------------------------------------------------------------------
   aeneas-production-extraction:
     name: Aeneas production extraction
+    needs: proof-inputs
+    if: needs.proof-inputs.outputs.run_proofs == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
