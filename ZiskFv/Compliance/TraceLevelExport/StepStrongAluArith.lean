@@ -1654,7 +1654,8 @@ theorem stepStrong_sll
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -1753,7 +1754,8 @@ theorem stepStrong_srl
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -1852,7 +1854,8 @@ theorem stepStrong_sra
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -1947,7 +1950,8 @@ theorem stepStrong_slli
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -2046,7 +2050,8 @@ theorem stepStrong_srli
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -2145,7 +2150,8 @@ theorem stepStrong_srai
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row

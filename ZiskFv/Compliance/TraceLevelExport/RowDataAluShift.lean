@@ -1007,6 +1007,11 @@ structure Decode_sll (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_sll (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sll trace i) : Type where
@@ -1043,9 +1048,6 @@ structure Inputs_sll (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sll_input.PC.toNat
   h_pc_bound : sll_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    sll_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `sll` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sll` bundles them. -/
@@ -1092,6 +1094,11 @@ structure Decode_srl (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_srl (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srl trace i) : Type where
@@ -1128,9 +1135,6 @@ structure Inputs_srl (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srl_input.PC.toNat
   h_pc_bound : srl_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    srl_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `srl` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_srl` bundles them. -/
@@ -1177,6 +1181,11 @@ structure Decode_sra (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_sra (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sra trace i) : Type where
@@ -1213,9 +1222,6 @@ structure Inputs_sra (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sra_input.PC.toNat
   h_pc_bound : sra_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    sra_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `sra` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sra` bundles them. -/
@@ -1265,6 +1271,11 @@ structure Decode_slli (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_slli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slli trace i) : Type where
@@ -1289,9 +1300,6 @@ structure Inputs_slli (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = slli_input.PC.toNat
   h_pc_bound : slli_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    slli_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `slli` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_slli` bundles them. -/
@@ -1341,6 +1349,11 @@ structure Decode_srli (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_srli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srli trace i) : Type where
@@ -1365,9 +1378,6 @@ structure Inputs_srli (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srli_input.PC.toNat
   h_pc_bound : srli_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    srli_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `srli` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_srli` bundles them. -/
@@ -1417,6 +1427,11 @@ structure Decode_srai (trace : AcceptedZiskTrace numInstructions)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
 
 structure Inputs_srai (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srai trace i) : Type where
@@ -1441,9 +1456,6 @@ structure Inputs_srai (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srai_input.PC.toNat
   h_pc_bound : srai_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    srai_input.rd =
-      Transpiler.wrap_to_regidx (busSub trace i (Pilot.execRowOf trace i)).e2.ptr
 
 /-- Per-op residual bundle for the `srai` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_srai` bundles them. -/
