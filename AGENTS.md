@@ -18,10 +18,13 @@ The long-term shape is two root theorems:
   the theorem statement.
 
 The current public soundness endpoint is
-`ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The checked-in
-acceptance/coverage endpoints live in `ZiskFv/Completeness.lean`. If this file
-and `README.md` or `trust/README.md` disagree, treat those files and the Lean
-statements as authoritative, then update this guide if needed.
+`ZiskFv.Compliance.root_soundness` in `ZiskFv/Soundness.lean`.
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus` is the older global
+channel-balance theorem that the trace-level export can consume; do not present
+it as the headline root theorem. The checked-in acceptance/coverage endpoints
+live in `ZiskFv/Completeness.lean`. If this file and `README.md` or
+`trust/README.md` disagree, trust the Lean statements first, then update the
+stale docs.
 
 ## First Steps
 
