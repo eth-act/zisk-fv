@@ -7,7 +7,9 @@ itself.
 
 When creating an issue, decide whether it has a strict prerequisite before
 leaving the task. If it does, set the GitHub `blockedBy` relationship immediately
-after creation and refresh the canonical graph issue.
+after creation. The canonical graph issue is refreshed automatically by the
+workflow; run the manual updater only when you need an immediate refresh or are
+repairing/debugging the automation.
 
 ## GitHub Issue Structure
 
@@ -75,7 +77,7 @@ mutation($blocked:ID!, $blocker:ID!) {
   GitHub labels (`soundness`, `completeness`, both, neither).
 - List parent/sub-issue relationships separately from the Mermaid dependency
   graph unless they also have structured blocker edges.
-- Refresh the graph issue with:
+- For an immediate refresh, run:
 
 ```bash
 python3 scripts/update_issue_deps_graph.py \
@@ -85,5 +87,6 @@ python3 scripts/update_issue_deps_graph.py \
   --update
 ```
 
-- The workflow `.github/workflows/issue-deps-graph.yml` runs the same updater
-  without committing generated Markdown, so it does not trigger push/PR proof CI.
+- The workflow `.github/workflows/issue-deps-graph.yml` runs the same updater on
+  issue events and on an hourly schedule, without committing generated Markdown,
+  so it does not trigger push/PR proof CI.
