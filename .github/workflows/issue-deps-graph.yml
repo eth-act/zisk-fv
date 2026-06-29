@@ -7,7 +7,7 @@ on:
   schedule:
     # Dependency-sidebar edits do not always produce a useful workflow event.
     # This cheap, no-commit refresh catches drift without triggering proof CI.
-    - cron: '17 9 * * *'
+    - cron: '17 * * * *'
 
 permissions:
   contents: read
