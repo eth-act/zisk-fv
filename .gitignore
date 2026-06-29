@@ -9,6 +9,10 @@
 /tmp
 .DS_Store
 
+# Per-worktree workstream trail file (see CLAUDE.md / AGENTS.md). One
+# active stream = one local STATUS.md at its root; never committed.
+/STATUS.md
+
 # Local-dev convenience symlink (see CLAUDE.md). Points outside the repo;
 # do not commit.
 .claude/
@@ -48,5 +52,3 @@ docs/superpowers/
 
 .rgignore
 
-# Per-worktree AI status trail — local-only, never committed (see #162 fdd5b4ef, #159 review P2)
-/STATUS.md
