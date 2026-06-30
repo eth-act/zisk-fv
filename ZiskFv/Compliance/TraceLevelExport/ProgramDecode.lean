@@ -1271,6 +1271,7 @@ structure ProgramDecode_jalr {numInstructions : Nat}
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_AND
+        ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1293,6 +1294,8 @@ structure ProgramDecode_sb {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 1
+        ∧ (trace.program j).store_offset =
+            ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sh`: exactly the inputs
@@ -1314,6 +1317,8 @@ structure ProgramDecode_sh {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 2
+        ∧ (trace.program j).store_offset =
+            ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sw`: exactly the inputs
@@ -1335,6 +1340,8 @@ structure ProgramDecode_sw {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 4
+        ∧ (trace.program j).store_offset =
+            ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sd`: exactly the inputs
@@ -1355,6 +1362,8 @@ structure ProgramDecode_sd {numInstructions : Nat}
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset =
+            ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `ld`: exactly the inputs
@@ -1378,6 +1387,8 @@ structure ProgramDecode_ld {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (8 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.ld_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.ld_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1402,6 +1413,8 @@ structure ProgramDecode_lbu {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (1 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.lbu_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lbu_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1426,6 +1439,8 @@ structure ProgramDecode_lhu {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (2 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.lhu_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lhu_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1450,6 +1465,8 @@ structure ProgramDecode_lwu {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (4 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.lwu_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lwu_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1490,6 +1507,8 @@ structure ProgramDecode_lb {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (1 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.lb_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lb_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1530,6 +1549,8 @@ structure ProgramDecode_lh {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (2 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.lh_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lh_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1570,6 +1591,8 @@ structure ProgramDecode_lw {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (4 : FGL)
+        ∧ (trace.program j).b_offset_imm0 =
+            ((BitVec.signExtend 64 c.lw_input.imm).toNat : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lw_input.rd)
         ∧ (trace.program j).flags = packFlags bits
 

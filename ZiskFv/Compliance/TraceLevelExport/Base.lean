@@ -40,6 +40,15 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
+/-- Sequential next-PC theorem-domain range assumption.
+
+This is the explicit soundness-domain condition used by the sequential `PC + 4`
+cast. It is not Sail/ZisK state agreement and not a decoded placement fact, so
+`Inputs_<op>` records should not carry it once the opcode family has been
+factored to `RowOutsideDefectRegion`. -/
+def SequentialPcDomain (pc : BitVec 64) : Prop :=
+  pc.toNat < GL_prime - 4
+
 /-- All-zero `Valid_Binary` — pure data, never consumed by any dispatcher arm
     (the RTYPE/ITYPE/W binary `OpEnvelope` arms carry it as an unused field).
     Building it with `0` lanes is non-vacuous: it imposes no constraint and

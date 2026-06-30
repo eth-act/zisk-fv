@@ -67,6 +67,7 @@ set_option maxHeartbeats 8000000
 theorem stepStrong_mul
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mul_input.PC)
     (h_known : ¬ Defects.SignedMulForge d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -83,7 +84,7 @@ theorem stepStrong_mul
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := mulEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := mulEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -108,6 +109,7 @@ theorem stepStrong_mul
 theorem stepStrong_mulh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulh_input.PC)
     (h_known : ¬ Defects.SignedMulForge d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -124,7 +126,7 @@ theorem stepStrong_mulh
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -139,6 +141,7 @@ theorem stepStrong_mulh
 theorem stepStrong_mulhsu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulhsu_input.PC)
     (h_known : ¬ Defects.SignedMulForge d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -155,7 +158,7 @@ theorem stepStrong_mulhsu
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -187,6 +190,7 @@ theorem stepStrong_mulhsu
 theorem stepStrong_div
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.div_input.PC)
     (h_known : ¬ Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -198,7 +202,7 @@ theorem stepStrong_div
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := divEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := divEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -218,6 +222,7 @@ theorem stepStrong_div
 theorem stepStrong_rem
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.rem_input.PC)
     (h_known : ¬ Defects.DivRemForge d.toInputs.rem_input.r2_val d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -229,7 +234,7 @@ theorem stepStrong_rem
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := remEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := remEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -247,6 +252,7 @@ theorem stepStrong_rem
 theorem stepStrong_divw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.divw_input.PC)
     (h_known : ¬ Defects.DivRemForgeW d.toInputs.divw_input.r2_val d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -258,7 +264,7 @@ theorem stepStrong_divw
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := divwEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := divwEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -273,6 +279,7 @@ theorem stepStrong_divw
 theorem stepStrong_remw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.remw_input.PC)
     (h_known : ¬ Defects.DivRemForgeW d.toInputs.remw_input.r2_val d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -284,7 +291,7 @@ theorem stepStrong_remw
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := remwEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := remwEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
@@ -312,12 +319,13 @@ theorem stepStrong_remw
 theorem stepStrong_fence
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.fence_input.PC)
     (h_known : Defects.FenceKnownGood d.toClaim.fm d.toClaim.rs d.toClaim.rd) :
     execute_instruction (instruction.FENCE (d.toClaim.fm, d.toClaim.fenceP, d.toClaim.fenceS, d.toClaim.rs, d.toClaim.rd)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
-  let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d
+  let env : OpEnvelope state m i.val := fenceEnvOf trace binding i d h_domain
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   -- The threaded `FenceKnownGood` obligation is (defeq, via
