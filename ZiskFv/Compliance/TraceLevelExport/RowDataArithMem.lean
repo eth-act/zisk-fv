@@ -2326,6 +2326,8 @@ structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.ld_input.rd)
 
@@ -2335,8 +2337,8 @@ structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.ld_state_assumptions c.ld_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.ld_input.r1_val.toNat + (BitVec.signExtend 64 c.ld_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
@@ -2404,6 +2406,8 @@ structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lbu_input.rd)
 
@@ -2416,8 +2420,8 @@ structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace i (Pilot.execRowOf trace i)).e1
   h_opcode_assumptions : PureSpec.lbu_state_assumptions c.lbu_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.lbu_input.r1_val.toNat + (BitVec.signExtend 64 c.lbu_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
@@ -2485,6 +2489,8 @@ structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lhu_input.rd)
 
@@ -2497,8 +2503,8 @@ structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace i (Pilot.execRowOf trace i)).e1
   h_opcode_assumptions : PureSpec.lhu_state_assumptions c.lhu_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.lhu_input.r1_val.toNat + (BitVec.signExtend 64 c.lhu_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
@@ -2566,6 +2572,8 @@ structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lwu_input.rd)
 
@@ -2578,8 +2586,8 @@ structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace i (Pilot.execRowOf trace i)).e1
   h_opcode_assumptions : PureSpec.lwu_state_assumptions c.lwu_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.lwu_input.r1_val.toNat + (BitVec.signExtend 64 c.lwu_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
@@ -2658,6 +2666,8 @@ structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lb_input.rd)
 
@@ -2667,8 +2677,8 @@ structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.lb_state_assumptions c.lb_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.lb_input.r1_val.toNat + (BitVec.signExtend 64 c.lb_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
@@ -2747,6 +2757,8 @@ structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lh_input.rd)
 
@@ -2756,8 +2768,8 @@ structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.lh_state_assumptions c.lh_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.lh_input.r1_val.toNat + (BitVec.signExtend 64 c.lh_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
@@ -2836,6 +2848,8 @@ structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg = 1
+  h_b_src_ind :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lw_input.rd)
 
@@ -2845,8 +2859,8 @@ structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   h_opcode_assumptions : PureSpec.lw_state_assumptions c.lw_input (binding i)
-  h_addr1 :
-    (mainRowWithRomLd trace i).rom.addr1.toNat =
+  h_load_addr_arith :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0 + (mainRowWithRomLd trace i).core.a_0).toNat =
       c.lw_input.r1_val.toNat + (BitVec.signExtend 64 c.lw_input.imm).toNat
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg

@@ -2516,6 +2516,28 @@ theorem mainLoadDestinationFacts_of_program
     simpa [mainRowWithRomLd] using hstore.symm.trans hpso
   exact ⟨h_store_ind, h_store_reg, h_store_offset⟩
 
+/-- Load memory-address selector fact derived from the committed program and
+    packed ROM flags. This is the primitive decode fact needed to derive the
+    old `Inputs_*` `addr1` placement pins from `AddressSpec`. -/
+theorem mainLoadBsrcInd_of_program
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
+    (h_prog : ∀ j : Fin numInstructions,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc i.val →
+          (trace.program j).flags = packFlags bits) :
+    (mainRowWithRomLd trace i).rom.b_src_ind = 1 := by
+  obtain ⟨j, hline, _hop, _hiw, _hj1, _hj2, hflags⟩ :=
+    mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+  have hpf := h_prog j hline
+  obtain ⟨_, p_b_src_ind, _⟩ :=
+    mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+  simpa [mainRowWithRomLd, h_bits_b_src_ind, ZiskFv.AirsClean.boolF_true] using p_b_src_ind
+
 
 /-! ## Family: loads -/
 
@@ -2534,6 +2556,7 @@ def Decode_ld_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2573,6 +2596,11 @@ def Decode_ld_of_program
     obtain ⟨_p_store_ind, _, p_store_reg⟩ :=
       mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     simpa [mainRowWithRomLd, h_bits_store_reg, ZiskFv.AirsClean.boolF_true] using p_store_reg
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   have h_store_offset :
       (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.ld_input.rd) := by
     obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
@@ -2589,6 +2617,7 @@ def Decode_ld_of_program
       h_idx := h_idx
       h_store_ind := h_store_ind
       h_store_reg := h_store_reg
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_store_offset }
 
 /-- `Decode_lbu` rebuilt from the committed program via the ROM lookup
@@ -2606,6 +2635,7 @@ def Decode_lbu_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2635,6 +2665,11 @@ def Decode_lbu_of_program
     h_bits_store_ind h_bits_store_reg (fun j hline => by
       obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2646,6 +2681,7 @@ def Decode_lbu_of_program
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_reg := h_dest.2.1
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_dest.2.2 }
 
 /-- `Decode_lhu` rebuilt from the committed program via the ROM lookup
@@ -2663,6 +2699,7 @@ def Decode_lhu_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2692,6 +2729,11 @@ def Decode_lhu_of_program
     h_bits_store_ind h_bits_store_reg (fun j hline => by
       obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2703,6 +2745,7 @@ def Decode_lhu_of_program
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_reg := h_dest.2.1
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_dest.2.2 }
 
 /-- `Decode_lwu` rebuilt from the committed program via the ROM lookup
@@ -2720,6 +2763,7 @@ def Decode_lwu_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2749,6 +2793,11 @@ def Decode_lwu_of_program
     h_bits_store_ind h_bits_store_reg (fun j hline => by
       obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2760,6 +2809,7 @@ def Decode_lwu_of_program
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_reg := h_dest.2.1
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_dest.2.2 }
 
 /-- `Decode_lb` rebuilt from the committed program via the ROM lookup
@@ -2793,6 +2843,7 @@ def Decode_lb_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2822,6 +2873,11 @@ def Decode_lb_of_program
     h_bits_store_ind h_bits_store_reg (fun j hline => by
       obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2839,6 +2895,7 @@ def Decode_lb_of_program
       h_match := h_match
       h_store_ind := h_dest.1
       h_store_reg := h_dest.2.1
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_dest.2.2 }
 
 /-- `Decode_lh` rebuilt from the committed program via the ROM lookup
@@ -2872,6 +2929,7 @@ def Decode_lh_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2901,6 +2959,11 @@ def Decode_lh_of_program
     h_bits_store_ind h_bits_store_reg (fun j hline => by
       obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2918,6 +2981,7 @@ def Decode_lh_of_program
       h_match := h_match
       h_store_ind := h_dest.1
       h_store_reg := h_dest.2.1
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_dest.2.2 }
 
 /-- `Decode_lw` rebuilt from the committed program via the ROM lookup
@@ -2951,6 +3015,7 @@ def Decode_lw_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2980,6 +3045,11 @@ def Decode_lw_of_program
     h_bits_store_ind h_bits_store_reg (fun j hline => by
       obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
+  have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
+    mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
+      (fun j hline => by
+        obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpso, hpf⟩ := h_prog j hline
+        exact hpf)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2997,6 +3067,7 @@ def Decode_lw_of_program
       h_match := h_match
       h_store_ind := h_dest.1
       h_store_reg := h_dest.2.1
+      h_b_src_ind := h_b_src_ind
       h_store_offset := h_dest.2.2 }
 
 

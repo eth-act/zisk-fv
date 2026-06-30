@@ -93,6 +93,25 @@ theorem load_addr2_idx_of_decode
   rw [load_addr2_eq_ind_of_decode h_store_ind h_store_offset,
     Transpiler.wrap_to_regidx_ind_bitvec_idx]
 
+/-- Load `addr1` placement derived from `AddressSpec` and the decoded load selector.
+
+The remaining arithmetic premise is deliberately over the `AddressSpec` right-hand
+side, not over `addr1`: it is the residual Sail/field address representation bridge,
+while this theorem discharges the Main-row address-placement part. -/
+theorem load_addr1_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {target : Nat}
+    (h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1)
+    (h_load_addr_arith :
+      ((mainRowWithRomLd trace i).rom.b_offset_imm0
+        + (mainRowWithRomLd trace i).core.a_0).toNat = target) :
+    (mainRowWithRomLd trace i).rom.addr1.toNat = target := by
+  have h_addr1 := (RomDecodeBinding.mainRowWithRomLd_addressSpec trace i).2.1
+  rw [h_addr1, h_b_src_ind]
+  simpa using h_load_addr_arith
+
 /-! ## Strengthened load arms (LB/LH/LW/LD/LBU/LHU/LWU, channel-balance form)
 
 Same direct-lift route.  The hint's obstacle — the `OpEnvelope` load arm needing
@@ -179,7 +198,9 @@ theorem stepStrong_ld
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
@@ -257,7 +278,9 @@ theorem stepStrong_lbu
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
@@ -335,7 +358,9 @@ theorem stepStrong_lhu
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
@@ -413,7 +438,9 @@ theorem stepStrong_lwu
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
@@ -492,7 +519,9 @@ theorem stepStrong_lb
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
@@ -571,7 +600,9 @@ theorem stepStrong_lh
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
@@ -650,7 +681,9 @@ theorem stepStrong_lw
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
+      (by
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toInputs.h_load_addr_arith)
       (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
