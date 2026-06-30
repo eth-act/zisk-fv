@@ -649,6 +649,11 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
+  h_store_ind :
+    (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomLui trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
@@ -685,7 +690,6 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
-  h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx (eRdLui trace i).ptr
   h_input_imm : jal_input.imm = c.imm
   h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false
   h_pc_bound : jal_input.PC.toNat < GL_prime - 4
@@ -735,6 +739,11 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
+  h_store_ind :
+    (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomLui trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   -- #100 next-PC transition inputs (replace the exec artifacts; the next-PC
   -- residual is now DERIVED via `jalr_setpc_nextPC_discharged`). All are
   -- same-world circuit / decode / ROM pins (no Sail-binding dependency).
@@ -794,7 +803,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
   h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
-  h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx (eRdLui trace i).ptr
   h_input_imm : jalr_input.imm = c.imm
   h_input_rs1 : read_xreg (regidx_to_fin c.rs1) (binding i)
     = EStateM.Result.ok jalr_input.rs1_val (binding i)

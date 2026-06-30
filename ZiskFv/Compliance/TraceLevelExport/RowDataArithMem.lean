@@ -556,6 +556,11 @@ structure Decode_lui (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
+  h_store_ind :
+    (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomLui trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   h_imm_lo_nat :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
       = (c.imm ++ (0 : BitVec 12)).toNat
@@ -585,9 +590,6 @@ structure Inputs_lui (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = lui_input.PC.toNat
   h_pc_bound : lui_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    lui_input.rd =
-      Transpiler.wrap_to_regidx (eRdLui trace i).ptr
 
 /-- Per-op residual bundle for the `lui` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lui` bundles them. -/
@@ -626,6 +628,11 @@ structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 1
+  h_store_ind :
+    (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomLui trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   -- #100 next-PC transition inputs (replace the exec artifacts; AUIPC already
   -- carries h_set_pc above): the next row exists, plus the AUIPC FLAG-row jmp
   -- pin `jmp_offset1 = 4` (Rust lowerer `zib.j(4, imm)`; cf.
@@ -656,9 +663,6 @@ structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   -- ruling out FGL wrap on the next PC. Replaces the cross-world `h_nextPC_matches`,
   -- which is now derived via `Pilot.flag_path_nextPC_discharged`.
   h_pc_bound : auipc_input.PC.toNat < GL_prime - 4
-  h_rd_idx :
-    auipc_input.rd =
-      Transpiler.wrap_to_regidx (eRdLui trace i).ptr
   h_no_wrap : auipc_input.PC.toNat
     + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
       < GL_prime

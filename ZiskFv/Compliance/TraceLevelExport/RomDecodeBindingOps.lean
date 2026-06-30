@@ -154,6 +154,40 @@ theorem mainWritebackDestinationFacts_of_program
     simpa [mainRowWithRomSub] using hstore.symm.trans hpso
   exact ⟨h_store_ind, h_store_offset⟩
 
+/-- Writeback destination selector/offset facts derived from the committed
+    program and packed ROM flags for the `mainRowWithRomLui` row used by
+    LUI/AUIPC/JAL/JALR rd writes. -/
+theorem mainLuiDestinationFacts_of_program
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (rd : regidx)
+    (h_bits_store_ind : bits.store_ind = false)
+    (h_prog : ∀ j : Fin numInstructions,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc i.val →
+          (trace.program j).store_offset = Transpiler.ind (regidx_to_fin rd)
+        ∧ (trace.program j).flags = packFlags bits) :
+    (mainRowWithRomLui trace i).rom.store_ind = 0
+  ∧ (mainRowWithRomLui trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin rd) := by
+  obtain ⟨j, hline, _hop, _hiw, _hj1, _hj2, hflags⟩ :=
+    mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+  obtain ⟨_hpso, hpf⟩ := h_prog j hline
+  obtain ⟨p_store_ind, _, _⟩ :=
+    mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+  have h_store_ind : (mainRowWithRomLui trace i).rom.store_ind = 0 := by
+    simpa [mainRowWithRomLui, h_bits_store_ind, ZiskFv.AirsClean.boolF_false] using p_store_ind
+  have h_store_offset :
+      (mainRowWithRomLui trace i).rom.store_offset =
+        Transpiler.ind (regidx_to_fin rd) := by
+    obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
+    obtain ⟨hpso, _hpf⟩ := h_prog j hline
+    simpa [mainRowWithRomLui] using hstore.symm.trans hpso
+  exact ⟨h_store_ind, h_store_offset⟩
+
 
 /-! ## Family: R/I-type ALU -/
 
@@ -3176,15 +3210,21 @@ def Decode_lui_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lui trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have h_dest := mainLuiDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+    (fun j hline => by
+      obtain ⟨_hpo, _hpj0, _hpj1, hpso, hpf⟩ := h_prog j hline
+      exact ⟨hpso, hpf⟩)
   have key :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_COPYB ∧
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 0 ∧
@@ -3195,7 +3235,7 @@ def Decode_lui_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpj1, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, hpj1, _hpso, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0, hj2.symm.trans hpj1⟩
@@ -3205,6 +3245,8 @@ def Decode_lui_of_program
       h_m32 := key.2.2.1
       h_set_pc := key.2.2.2.1
       h_store_pc := key.2.2.2.2.1
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
       h_idx := h_idx
@@ -3225,14 +3267,20 @@ def Decode_auipc_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = true)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
         ∧ (trace.program j).jmp_offset1 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_auipc trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have h_dest := mainLuiDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+    (fun j hline => by
+      obtain ⟨_hpo, _hpj0, hpso, hpf⟩ := h_prog j hline
+      exact ⟨hpso, hpf⟩)
   have key :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_FLAG ∧
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 0 ∧
@@ -3242,7 +3290,7 @@ def Decode_auipc_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4 := by
     obtain ⟨j, hline, hop, _, hj1, _, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, _hpso, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hj1.symm.trans hpj0⟩
@@ -3252,6 +3300,8 @@ def Decode_auipc_of_program
       h_m32 := key.2.2.1
       h_set_pc := key.2.2.2.1
       h_store_pc := key.2.2.2.2.1
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_jmp1 := key.2.2.2.2.2
       h_idx := h_idx }
 
@@ -3539,14 +3589,20 @@ def Decode_jal_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = true)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_jal trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have h_dest := mainLuiDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+    (fun j hline => by
+      obtain ⟨_hpo, _hpj0, hpso, hpf⟩ := h_prog j hline
+      exact ⟨hpso, hpf⟩)
   have key :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_FLAG ∧
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 0 ∧
@@ -3556,7 +3612,7 @@ def Decode_jal_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, _, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, hpj0, _hpso, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hj2.symm.trans hpj0⟩
@@ -3566,6 +3622,8 @@ def Decode_jal_of_program
       h_m32 := key.2.2.1
       h_set_pc := key.2.2.2.1
       h_store_pc := key.2.2.2.2.1
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_jmp2 := key.2.2.2.2.2
       h_idx := h_idx }
 
@@ -3604,13 +3662,19 @@ def Decode_jalr_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = true)
     (h_bits_store_pc : bits.store_pc = true)
+    (h_bits_store_ind : bits.store_ind = false)
     (h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_AND
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_jalr trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have h_dest := mainLuiDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
+    (fun j hline => by
+      obtain ⟨_hpo, hpso, hpf⟩ := h_prog j hline
+      exact ⟨hpso, hpf⟩)
   have key :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_AND ∧
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 ∧
@@ -3619,7 +3683,7 @@ def Decode_jalr_of_program
       (mainOfTable trace.program trace.mainTable).store_pc i.val = 1 := by
     obtain ⟨j, hline, hop, _, _, _, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, _hpso, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_true], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true]⟩
@@ -3629,6 +3693,8 @@ def Decode_jalr_of_program
       h_m32 := key.2.2.1
       h_set_pc := key.2.2.2.1
       h_store_pc := key.2.2.2.2
+      h_store_ind := h_dest.1
+      h_store_offset := h_dest.2
       h_idx := h_idx
       h_flag := h_flag
       h_a_mask_lo := h_a_mask_lo

@@ -25,6 +25,7 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 import ZiskFv.Compliance.TraceLevelExport.EnvOf
+import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 import ZiskFv.Compliance.Pilot.JalrNextPC
 import ZiskFv.Compliance.Pilot.BranchNextPC
 import ZiskFv.EquivCore.Bridge.BranchFlag
@@ -47,6 +48,25 @@ open Interaction
 seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
+
+/-- `eRdLui` destination register index derived from `AddressSpec` and decode. -/
+theorem eRdLui_rd_idx_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : regidx}
+    (h_store_ind : (mainRowWithRomLui trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLui trace i).rom.store_offset =
+        Transpiler.ind (regidx_to_fin rd)) :
+    regidx_to_fin rd =
+      Transpiler.wrap_to_regidx (eRdLui trace i).ptr := by
+  have h_spec := RomDecodeBinding.mainAddressSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+  have h_addr2 := h_spec.2.2.1
+  rw [eRdLui, ZiskFv.AirsClean.Main.cMemMessage,
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
+  rw [h_addr2, h_store_offset, h_store_ind]
+  simp [Transpiler.wrap_to_regidx_ind]
 
 /-! ## Strengthened control-flow + U-type arms (branches, JAL/JALR, LUI/AUIPC)
 
@@ -814,7 +834,8 @@ theorem stepStrong_lui
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.lui d.toInputs.lui_input d.toClaim.imm d.toClaim.rd next_pc (Pilot.execRowOf trace i) e_rd store_pc_mem
       provenance row_mode h_lui_subset d.toDecode.h_imm_lo_nat d.toDecode.h_imm_hi_nat promises
@@ -912,7 +933,8 @@ theorem stepStrong_auipc
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.auipc d.toInputs.auipc_input d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd
       (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC next_pc store_pc_mem
@@ -1051,7 +1073,8 @@ theorem stepStrong_jal
       rd_as := by rfl
       success := d.toInputs.h_success
       nextPC_option := d.toInputs.h_nextPC_option
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.jal d.toInputs.jal_input d.toClaim.imm d.toClaim.rd d.toInputs.misa_val next_pc (Pilot.execRowOf trace i) e_rd
       d.toInputs.nextPC_val store_pc_mem provenance row_mode h_jal_subset d.toDecode.h_jmp2 d.toInputs.h_pc_bridge
@@ -1235,7 +1258,8 @@ theorem stepStrong_jalr
       rd_as := by rfl
       success := d.toInputs.h_success
       nextPC_option := d.toInputs.h_nextPC_option
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.jalr d.toInputs.jalr_input d.toClaim.imm d.toClaim.rs1 d.toClaim.rd d.toInputs.misa_val d.toInputs.mseccfg (Pilot.execRowOf trace i) e_rd
       d.toInputs.nextPC_val next_pc store_pc_mem pins d.toDecode.h_flag d.toDecode.h_m32 d.toDecode.h_set_pc d.toDecode.h_store_pc
