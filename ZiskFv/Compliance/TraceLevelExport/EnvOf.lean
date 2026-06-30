@@ -116,7 +116,7 @@ noncomputable def mulEnvOf
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
-/-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
+/-- **Instantiated satisfiability / non-vacuity witness for the threaded MUL obligation.**
 
     The matcher-instantiated MUL obligation corresponds to
     `Defects.NoKnownDefect (mulEnvOf …)` and is DISCHARGED from
@@ -125,9 +125,12 @@ noncomputable def mulEnvOf
     `False` and the FENCE defect predicate's negation is `True`, while the
     arith-mul defect predicate is exactly the two exceptional product-sign shapes
     that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
-    every honest MUL row, so the `.mul` arm of `root_soundness`
-    is NON-VACUOUS (it is not discharged by a contradictory binder).  This lemma is
-    the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
+    the concrete `RowData_mul` witness, so the `.mul` arm of `root_soundness`
+    does not rely on a contradictory binder.  The full trace-local
+    `RowOutsideDefectRegion` premise is stronger: it requires this forge
+    negation for every arith witness row whose operation-bus entry, including
+    result lanes, matches the accepted Main row.  This lemma is the Lean-checked
+    anti-vacuity guard for the instantiated strong-export MUL arm. -/
 theorem mul_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
@@ -189,10 +192,12 @@ noncomputable def mulhsuEnvOf
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
-/-- **Non-vacuity / satisfiability witness for the threaded MULH obligation.**
+/-- **Instantiated non-vacuity / satisfiability witness for the threaded MULH obligation.**
     For an honest MULH row, `h_not_forge` rules out the two exceptional shapes the
     narrowed `MaliciousSignedMulWitnessShape` admits for op 181, so
-    `NoKnownDefect (mulhEnvOf …)` is TRUE — the `.mulh` strong arm is NON-VACUOUS. -/
+    `NoKnownDefect (mulhEnvOf …)` is TRUE for the concrete row-data witness.  The
+    trace-local exported premise additionally universally excludes every matching
+    arith witness row for the accepted Main row. -/
 theorem mulh_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
@@ -208,7 +213,7 @@ theorem mulh_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhEnvOf]
 
-/-- Satisfiability witness for the threaded MULHSU obligation (companion of
+/-- Instantiated satisfiability witness for the threaded MULHSU obligation (companion of
     `mulh_noKnownDefect_of_rowData`). -/
 theorem mulhsu_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -325,7 +330,7 @@ noncomputable def remwEnvOf
     d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
     d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
 
-/-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
+/-- **Instantiated non-vacuity / satisfiability witness for the threaded DIV obligation.**
 
     The matcher-instantiated DIV obligation corresponds to
     `Defects.NoKnownDefect (divEnvOf …)` and is DISCHARGED from
@@ -335,8 +340,12 @@ noncomputable def remwEnvOf
     predicate's negation is `True`, while the arith-DIV defect predicate is exactly
     the nonzero-divisor `|r| = |op2|` false-positive forge that `h_not_forge` rules
     out.  Hence the threaded obligation is SATISFIABLE for honest signed DIV rows,
-    including divisor-zero rows handled by the boundary constraints.  This is the
-    Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
+    including divisor-zero rows handled by the boundary constraints, when
+    instantiated at the concrete `RowData_div` witness.  The full trace-local
+    premise is the stronger universal over every matching ArithDiv witness row;
+    operation-bus matching pins result lanes, so a forge witness with a different
+    result cannot match the honest Main row.  This is the Lean-checked
+    anti-vacuity guard for the instantiated strong-export DIV arm. -/
 theorem div_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
@@ -352,7 +361,7 @@ theorem div_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divEnvOf]
 
-/-- Satisfiability witness for the threaded REM obligation (companion of
+/-- Instantiated satisfiability witness for the threaded REM obligation (companion of
     `div_noKnownDefect_of_rowData`; secondary remainder lane). -/
 theorem rem_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -371,7 +380,7 @@ theorem rem_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remEnvOf]
 
-/-- Satisfiability witness for the threaded DIVW obligation (W-mode analogue of
+/-- Instantiated satisfiability witness for the threaded DIVW obligation (W-mode analogue of
     `div_noKnownDefect_of_rowData`; narrowed shape `|r₃₂| ≠ |op2₃₂|`). -/
 theorem divw_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -388,7 +397,7 @@ theorem divw_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divwEnvOf]
 
-/-- Satisfiability witness for the threaded REMW obligation (companion of
+/-- Instantiated satisfiability witness for the threaded REMW obligation (companion of
     `divw_noKnownDefect_of_rowData`; W-mode secondary remainder lane). -/
 theorem remw_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
