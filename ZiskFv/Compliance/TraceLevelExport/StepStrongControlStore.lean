@@ -1019,7 +1019,8 @@ theorem stepStrong_jal
             (d.toInputs.jal_input.PC + BitVec.signExtend 64 d.toInputs.jal_input.imm)[0]! == 0#1)
           = false := by
       have h_t : (PureSpec.execute_JAL_pure d.toInputs.jal_input).throws = false :=
-        d.toInputs.h_not_throws
+        PureSpec.execute_JAL_pure_succ_throws
+          d.toInputs.jal_input d.toInputs.h_success
       simp only [PureSpec.execute_JAL_pure] at h_t
       exact h_t
     have h_bit1_neg :
@@ -1106,10 +1107,13 @@ theorem stepStrong_jal
       nextPC_option := d.toInputs.h_nextPC_option
       rd_idx := d.toInputs.h_input_rd.trans
         (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
+  have h_not_throws : (PureSpec.execute_JAL_pure d.toInputs.jal_input).throws = false :=
+    PureSpec.execute_JAL_pure_succ_throws
+      d.toInputs.jal_input d.toInputs.h_success
   let env : OpEnvelope state m i.val :=
     OpEnvelope.jal d.toInputs.jal_input d.toClaim.imm d.toClaim.rd d.toInputs.misa_val next_pc (Pilot.execRowOf trace i) e_rd
       d.toInputs.nextPC_val store_pc_mem provenance row_mode h_jal_subset d.toDecode.h_jmp2 d.toInputs.h_pc_bridge
-      promises d.toInputs.h_input_imm d.toInputs.h_not_throws d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
+      promises d.toInputs.h_input_imm h_not_throws d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨⟨provenance⟩, row_mode, d.toDecode.h_jmp2, d.toInputs.h_pc_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial

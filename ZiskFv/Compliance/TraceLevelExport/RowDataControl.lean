@@ -685,7 +685,6 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
   h_input_imm : jal_input.imm = c.imm
-  h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false
   h_pc_bound : jal_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
 
