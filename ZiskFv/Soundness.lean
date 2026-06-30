@@ -46,7 +46,7 @@ theorem root_soundness
     (programDecodes : ∀ i : Fin numInstructions, ProgramDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      RowOutsideDefectRegion ziskTrace sailTrace i (ziskStep i) (inputsAgree i)) :
+      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
     stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)

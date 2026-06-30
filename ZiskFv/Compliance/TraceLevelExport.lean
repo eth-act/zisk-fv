@@ -18,8 +18,8 @@ This is the achievable closure of #61.  It exports the per-opcode
 given an accepted full-ensemble trace and a program binding, with each row's
 residual split three ways — `ziskStep i : ZiskStep` (which op decoded + its
 `Claim_<op>`), `rowDecodes i : RowDecode` (the circuit-checkable `Decode_<op>`),
-`inputsAgree i : InputsAgree` (the cross-world `Inputs_<op>`) — plus the per-row
-defect-exclusion obligation `h_known_bugs`, EVERY row of the trace satisfies the
+`inputsAgree i : InputsAgree` (the cross-world `Inputs_<op>`) — plus the
+trace-local per-row defect-exclusion obligation `h_known_bugs`, EVERY row satisfies the
 canonical per-step channel-balance conclusion (`= state_effect_via_channels …`)
 — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
 produces — with NO caller-supplied `OpEnvelope`.  The envelope for each row is
@@ -86,33 +86,46 @@ global theorem produces:
    the np-forge `np=0 ∧ na⊕nb=1` (`SignedMulForge`, defeq `MaliciousSignedMulWitnessShape`);
    DIV/REM/DIVW/REMW exclude only the `|r|=|d|` `LT_ABS_NP` false positive
    (`DivRemForge` / `DivRemForgeW`, defeq `ArithDivDynamicWitnessShape`,
-   codygunton/zisk#5).  Honest rows are NEVER excluded, so every arm is SATISFIABLE
-   for a real honest signed-M row (the row's own `h_not_forge` field witnesses the
-   obligation; anti-vacuity guards `honest_<op>_witness_not_forge`); FENCE is likewise
-   satisfiable for an honest FENCE row (`fm=0, rs1=x0, rd=x0`).  A documented
-   MULH/MULHSU sign facts are derived from the indexed Arith range-table evidence
-   exposed by #169. #151's remaining work is making `RowOutsideDefectRegion`
-   trace-local instead of `InputsAgree`-based.
+   codygunton/zisk#5).  The row-data bridge lemmas below still show the
+   instantiated step evidence is not contradictory: for the concrete arith
+   witness row carried by `RowData_<op>`, the matcher-instantiated predicate is
+   exactly the `NoKnownDefect` fact needed by the corresponding `OpEnvelope`.
+   The exported defect gate (`RowOutsideDefectRegion`) is stronger than that
+   instantiated fact: it is now trace-local and universally ranges over arith
+   witness rows whose operation-bus entry matches the accepted Main row.  This
+   universal is satisfiable for honest traces because an operation-bus match pins
+   the result lanes as well as opcode/operands; a forged witness computing a
+   different result cannot match the honest Main row.  A forge-shaped witness
+   that happened to match the honest result is conservatively excluded too.  For
+   DIV/REM, divisor values are reconstructed from witness chunks rather than
+   from `InputsAgree` or Sail operands.  FENCE remains row-local through the
+   honest pins (`fm=0, rs1=x0, rd=x0`), and MULH/MULHSU sign facts are derived
+   from the indexed Arith range-table evidence exposed by #169.
 
 ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
 
-The `h_known_bugs` premise is the per-row defect-exclusion obligation
-(`RowOutsideDefectRegion`), stated DIRECTLY over the row data (no `OpEnvelope`
-detour).  It is threaded — via `stepSound_of_evidence` — to each
+The `h_known_bugs` premise is the per-step defect-exclusion obligation
+(`RowOutsideDefectRegion`), stated over the accepted ZisK trace row (no
+`OpEnvelope`, `SailTrace`, or `InputsAgree` detour).  It is threaded — via
+`stepSound_of_evidence` — to each
 `stepStrong_<op>`.  It takes two shapes across the 63 arms, all SATISFIABLE for
-an honest row (so this export is NOT vacuous):
+honest traces with honest Main-row results (so this export is NOT vacuous):
   * **Non-defect arms** (op-bus ALU + M-ext-unsigned + control-flow / U-type /
     store / load): no defect obligation — the arm is `True`.  Each `stepStrong_<op>`
     builds `NoKnownDefect` of its own env locally via `noKnownDefect_of_shapes`
     (the three defect shapes are vacuous for a non-defect constructor).
   * **8 defect-capable arms** (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW + FENCE): the
-    row-data forge-negation (`¬ SignedMulForge` / `¬ DivRemForge` /
-    `¬ DivRemForgeW`) or FENCE-known-good (`FenceKnownGood`), read off the arith
-    witness / claim fields.  Each is DEFINITIONALLY equal to the corresponding
-    `<op>EnvOf` `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas
-    `signedMulForge_iff_*` / `divRemForge*_iff_*` / `fenceKnownGood_iff_fenceShape`
-    in `EnvOf`), and is true for any honest row (the row's `h_not_forge` field /
-    honest FENCE pins `fm=0, rs1=x0, rd=x0`).
+    trace-local matcher requires the forge-negation (`¬ SignedMulForge` /
+    `¬ DivRemForge` / `¬ DivRemForgeW`) for every arith witness row whose
+    operation-bus row matches the accepted Main row, or FENCE-known-good
+    (`FenceKnownGood`) directly from the decoded Main row.  This universal is a
+    strict trace-side obligation, not merely the old caller-supplied row fact:
+    `matches_entry` includes the result lanes, so an honest Main row is not
+    matched by a forge witness that computes a different result.  The dispatcher
+    later instantiates the universal with the arith row evidence already present
+    in `Inputs_<op>`; each instantiated predicate is definitionally equal to the
+    corresponding `<op>EnvOf` `OpEnvelope` defect shape via the bridge lemmas in
+    `EnvOf`, proving the strong step still receives the exact fact it expects.
 
 ## Non-vacuity
 

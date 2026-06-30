@@ -64,10 +64,11 @@ theorem busSub_rd_idx_of_decode
   rw [h_addr2, h_store_offset, h_store_ind]
   simp [Transpiler.wrap_to_regidx_ind]
 
-/-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  Both the
-    `RowOutsideDefectRegion` fence obligation AND `stepStrong_fence` reference THIS env,
-    so the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
-    exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
+/-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  The
+    trace-local `RowOutsideDefectRegion` FENCE arm and `stepStrong_fence` both use
+    these decoded row pins, so the threaded `NoKnownDefect` obligation is the
+    genuine `NoKnownDefect` of the exact env the proof feeds to
+    `zisk_riscv_compliant_program_bus`. -/
 noncomputable def fenceEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
@@ -86,11 +87,12 @@ noncomputable def fenceEnvOf
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge h_domain }
 
-/-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
-    `RowOutsideDefectRegion` mul obligation AND `stepStrong_mul` reference THIS env, so
-    the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
-    exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
-    `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
+/-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Once the dispatcher
+    instantiates the trace-local `RowOutsideDefectRegion` MUL matcher with this
+    row's arith witness, the resulting predicate is the genuine `NoKnownDefect` of
+    the exact env `stepStrong_mul` feeds to `zisk_riscv_compliant_program_bus`.
+    (Mirrors `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest
+    row.) -/
 noncomputable def mulEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
@@ -114,17 +116,21 @@ noncomputable def mulEnvOf
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
-/-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
+/-- **Instantiated satisfiability / non-vacuity witness for the threaded MUL obligation.**
 
-    The `RowOutsideDefectRegion (.mul d)` obligation — `Defects.NoKnownDefect (mulEnvOf
-    …)` — is DISCHARGED from `RowData_mul.h_not_forge` (the honest product-sign
-    shape).  Concretely: for the `.mul` env, the arith-div defect predicate is
+    The matcher-instantiated MUL obligation corresponds to
+    `Defects.NoKnownDefect (mulEnvOf …)` and is DISCHARGED from
+    `RowData_mul.h_not_forge` (the honest product-sign shape).  Concretely: for
+    the `.mul` env, the arith-div defect predicate is
     `False` and the FENCE defect predicate's negation is `True`, while the
     arith-mul defect predicate is exactly the two exceptional product-sign shapes
     that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
-    every honest MUL row, so the `.mul` arm of `root_soundness`
-    is NON-VACUOUS (it is not discharged by a contradictory binder).  This lemma is
-    the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
+    the concrete `RowData_mul` witness, so the `.mul` arm of `root_soundness`
+    does not rely on a contradictory binder.  The full trace-local
+    `RowOutsideDefectRegion` premise is stronger: it requires this forge
+    negation for every arith witness row whose operation-bus entry, including
+    result lanes, matches the accepted Main row.  This lemma is the Lean-checked
+    anti-vacuity guard for the instantiated strong-export MUL arm. -/
 theorem mul_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
@@ -186,10 +192,12 @@ noncomputable def mulhsuEnvOf
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
-/-- **Non-vacuity / satisfiability witness for the threaded MULH obligation.**
+/-- **Instantiated non-vacuity / satisfiability witness for the threaded MULH obligation.**
     For an honest MULH row, `h_not_forge` rules out the two exceptional shapes the
     narrowed `MaliciousSignedMulWitnessShape` admits for op 181, so
-    `NoKnownDefect (mulhEnvOf …)` is TRUE — the `.mulh` strong arm is NON-VACUOUS. -/
+    `NoKnownDefect (mulhEnvOf …)` is TRUE for the concrete row-data witness.  The
+    trace-local exported premise additionally universally excludes every matching
+    arith witness row for the accepted Main row. -/
 theorem mulh_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
@@ -205,7 +213,7 @@ theorem mulh_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhEnvOf]
 
-/-- Satisfiability witness for the threaded MULHSU obligation (companion of
+/-- Instantiated satisfiability witness for the threaded MULHSU obligation (companion of
     `mulh_noKnownDefect_of_rowData`). -/
 theorem mulhsu_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -222,12 +230,12 @@ theorem mulhsu_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhsuEnvOf]
 
-/-- The `OpEnvelope.div` env CONSTRUCTED from a `RowData_div`.  Both the
-    `RowOutsideDefectRegion` div obligation AND `stepStrong_div` reference THIS env, so
-    the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
-    exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
-    `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed DIV
-    row whose `|r| ≠ |op2|`.) -/
+/-- The `OpEnvelope.div` env CONSTRUCTED from a `RowData_div`.  Once the dispatcher
+    instantiates the trace-local `RowOutsideDefectRegion` DIV matcher with this
+    row's ArithDiv witness and witness-derived divisor, the resulting predicate is
+    the genuine `NoKnownDefect` of the exact env `stepStrong_div` feeds to
+    `zisk_riscv_compliant_program_bus`.  (Mirrors `mulEnvOf`: a specific-env
+    obligation, SATISFIABLE for an honest signed DIV row whose `|r| ≠ |op2|`.) -/
 noncomputable def divEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
@@ -322,17 +330,22 @@ noncomputable def remwEnvOf
     d.toInputs.h_a23 d.toInputs.h_b23 d.toInputs.h_d23 d.toInputs.h_c23 d.toInputs.h_byte_lo d.toInputs.h_sext_choice
     d.toInputs.h_rs1_value d.toInputs.h_rs2_value d.toInputs.h_r_le d.toInputs.h_r_sign
 
-/-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
+/-- **Instantiated non-vacuity / satisfiability witness for the threaded DIV obligation.**
 
-    The `RowOutsideDefectRegion (.div d)` obligation — `Defects.NoKnownDefect (divEnvOf
-    …)` — is DISCHARGED from `RowData_div.h_not_forge` (the narrowed honest shape
-    nonzero-divisor `|r| ≠ |op2|` shape).  Concretely: for the `.div` env the
+    The matcher-instantiated DIV obligation corresponds to
+    `Defects.NoKnownDefect (divEnvOf …)` and is DISCHARGED from
+    `RowData_div.h_not_forge` (the narrowed honest shape nonzero-divisor
+    `|r| ≠ |op2|` shape).  Concretely: for the `.div` env the
     arith-MUL defect predicate is `False` (not a mul env) and the FENCE defect
     predicate's negation is `True`, while the arith-DIV defect predicate is exactly
     the nonzero-divisor `|r| = |op2|` false-positive forge that `h_not_forge` rules
     out.  Hence the threaded obligation is SATISFIABLE for honest signed DIV rows,
-    including divisor-zero rows handled by the boundary constraints.  This is the
-    Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
+    including divisor-zero rows handled by the boundary constraints, when
+    instantiated at the concrete `RowData_div` witness.  The full trace-local
+    premise is the stronger universal over every matching ArithDiv witness row;
+    operation-bus matching pins result lanes, so a forge witness with a different
+    result cannot match the honest Main row.  This is the Lean-checked
+    anti-vacuity guard for the instantiated strong-export DIV arm. -/
 theorem div_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
@@ -348,7 +361,7 @@ theorem div_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divEnvOf]
 
-/-- Satisfiability witness for the threaded REM obligation (companion of
+/-- Instantiated satisfiability witness for the threaded REM obligation (companion of
     `div_noKnownDefect_of_rowData`; secondary remainder lane). -/
 theorem rem_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -367,7 +380,7 @@ theorem rem_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remEnvOf]
 
-/-- Satisfiability witness for the threaded DIVW obligation (W-mode analogue of
+/-- Instantiated satisfiability witness for the threaded DIVW obligation (W-mode analogue of
     `div_noKnownDefect_of_rowData`; narrowed shape `|r₃₂| ≠ |op2₃₂|`). -/
 theorem divw_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -384,7 +397,7 @@ theorem divw_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divwEnvOf]
 
-/-- Satisfiability witness for the threaded REMW obligation (companion of
+/-- Instantiated satisfiability witness for the threaded REMW obligation (companion of
     `divw_noKnownDefect_of_rowData`; W-mode secondary remainder lane). -/
 theorem remw_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
@@ -403,14 +416,13 @@ theorem remw_noKnownDefect_of_rowData
 
 /-! ### Bridge lemmas: row-data forge predicates ≡ OpEnvelope defect shapes
 
-Each bridge is `Iff.rfl`: the row-data predicate (over the `Inputs_<op>` arith
-witness / `Claim_<op>` fields) and the `OpEnvelope`-based defect shape at the
-corresponding `<op>EnvOf` env are DEFINITIONALLY the same proposition.  These are
-the faithfulness audit for the `RowOutsideDefectRegion` re-expression (plan step B):
-they witness that lifting the three known-defect conditions off `OpEnvelope`
-onto the row data changed no meaning — the `Iff.rfl` proofs would fail if the
-re-expressed predicate were even slightly weaker or stronger than the original
-`OpEnvelope` shape. -/
+Each bridge is `Iff.rfl`: once the dispatcher instantiates the trace-local
+`RowOutsideDefectRegion` matcher with the arith witness row already present in
+`RowData_<op>`, the resulting row-data predicate and the `OpEnvelope`-based defect
+shape at the corresponding `<op>EnvOf` env are DEFINITIONALLY the same
+proposition.  These are the faithfulness audit for the re-expression: the
+`Iff.rfl` proofs would fail if the instantiated predicate were even slightly
+weaker or stronger than the original `OpEnvelope` shape. -/
 
 theorem signedMulForge_iff_mulShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
