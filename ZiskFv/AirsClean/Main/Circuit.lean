@@ -217,7 +217,8 @@ def packFlags (bits : RomFlagBits) : FGL :=
     and flag bits are copied from the selected program row and `RomFlagBits`;
     dependent `c_*`/`flag` columns are selected by `MainRomExecKind`. Address
     columns are computed by `mainRomRowOf` from the source PIL placement
-    equations, not supplied as free data. -/
+    equations, not supplied as free data. Immediate-selected operand lanes are
+    guarded by `MainRomSourceGuard`. -/
 structure MainRomFreeCols where
   a_0 : FGL
   a_1 : FGL
@@ -315,6 +316,18 @@ def mainRomRowOf (msg : ZiskFv.Channels.ZiskRomBus.ZiskRomMessage FGL)
 def MainRomAddressGuard (bits : RomFlagBits) (free : MainRomFreeCols) : Prop :=
   (boolF bits.store_ind + boolF bits.b_src_ind) * free.a_1 = 0
 
+/-- Immediate-source constructibility conditions from `main.pil:389-390`.
+
+When a ROM flag selects an immediate operand source, the honest row's operand
+limb must be the corresponding committed program immediate limb. -/
+def MainRomSourceGuard
+    (msg : ZiskFv.Channels.ZiskRomBus.ZiskRomMessage FGL)
+    (bits : RomFlagBits) (free : MainRomFreeCols) : Prop :=
+  boolF bits.a_src_imm * (free.a_0 + -1 * msg.a_offset_imm0) = 0
+  ∧ boolF bits.a_src_imm * (free.a_1 + -1 * msg.a_imm1) = 0
+  ∧ boolF bits.b_src_imm * (free.b_0 + -1 * msg.b_offset_imm0) = 0
+  ∧ boolF bits.b_src_imm * (free.b_1 + -1 * msg.b_imm1) = 0
+
 /-- The extra boolean obligations introduced by `mainWithRom`, beyond the
     original nine Main constraints. These are not part of Main's per-row
     soundness `Spec`; a future honest-prover completeness project may consume
@@ -348,8 +361,9 @@ theorem mainWithRomAndMemBus_soundness (length : ℕ) (program : Program length)
   · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, _h_m32, _h_set_pc,
       _h_store_pc, _h_a_src_imm, _h_a_src_mem, _h_is_precompiled,
       _h_b_src_imm, _h_b_src_mem, _h_store_mem, _h_store_ind, _h_b_src_ind,
-      _h_a_src_reg, _h_b_src_reg, _h_store_reg, _h_addr0, _h_addr1, _h_addr2,
-      _h_addr_guard, _h_rom⟩ := h_holds
+      _h_a_src_reg, _h_b_src_reg, _h_store_reg, _h_a_src_imm0, _h_a_src_imm1,
+      _h_b_src_imm0, _h_b_src_imm1, _h_addr0, _h_addr1, _h_addr2, _h_addr_guard,
+      _h_rom⟩ := h_holds
     exact ⟨ by simpa [sub_eq_add_neg] using h0
           , by simpa [sub_eq_add_neg] using h1
           , by simpa [sub_eq_add_neg] using h2
@@ -452,6 +466,49 @@ theorem addressSpec_of_mainWithRomAndMemBus_constraints
     ProvableType.eval_field]
   exact ⟨h_addr0, h_addr1, h_addr2, by simpa only [Expression.eval] using h_guard⟩
 
+/-- Project the source-PIL immediate-source constraints carried by
+`mainWithRomAndMemBus` to the evaluated Main row. -/
+theorem sourceSpec_of_mainWithRomAndMemBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomAndMemBus length program row).operations offset)) :
+    SourceSpec (eval env row) := by
+  simp only [mainWithRomAndMemBus, mainWithRom, main, circuit_norm] at h_holds
+  have h_a0 :
+      env (row.rom.a_src_imm * (row.core.a_0 - row.rom.a_offset_imm0)) = 0 :=
+    h_holds.1 (row.rom.a_src_imm * (row.core.a_0 - row.rom.a_offset_imm0)) (by simp)
+  have h_a1 :
+      env (row.rom.a_src_imm * (row.core.a_1 - row.rom.a_imm1)) = 0 :=
+    h_holds.1 (row.rom.a_src_imm * (row.core.a_1 - row.rom.a_imm1)) (by simp)
+  have h_b0 :
+      env (row.rom.b_src_imm * (row.core.b_0 - row.rom.b_offset_imm0)) = 0 :=
+    h_holds.1 (row.rom.b_src_imm * (row.core.b_0 - row.rom.b_offset_imm0)) (by simp)
+  have h_b1 :
+      env (row.rom.b_src_imm * (row.core.b_1 - row.rom.b_imm1)) = 0 :=
+    h_holds.1 (row.rom.b_src_imm * (row.core.b_1 - row.rom.b_imm1)) (by simp)
+  simp only [SourceSpec, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field]
+  exact ⟨ by
+          have h := h_a0
+          simp only [Expression.eval] at h
+          simpa only [SourceSpec] using h
+        , by
+          have h := h_a1
+          simp only [Expression.eval] at h
+          simpa only [SourceSpec] using h
+        , by
+          have h := h_b0
+          simp only [Expression.eval] at h
+          simpa only [SourceSpec] using h
+        , by
+          have h := h_b1
+          simp only [Expression.eval] at h
+          simpa only [SourceSpec] using h ⟩
+
 /-- Project the ROM lookup carried by `mainWithRomAndMemBus` constraints to
     exact program-ROM membership for the evaluated row message. -/
 theorem romSpec_of_mainWithRomAndMemBus_constraints
@@ -485,6 +542,7 @@ theorem mainWithRomAndMemBus_completeness (length : ℕ) (program : Program leng
         ∃ i bits kind free,
           (program i).flags = packFlags bits
           ∧ MainRomExecKind.Coherent (program i) bits kind
+          ∧ MainRomSourceGuard (program i) bits free
           ∧ MainRomAddressGuard bits free
           ∧ row = mainRomRowOf (program i) bits kind free)
       (fun _ _ _ => True) := by
@@ -492,8 +550,10 @@ theorem mainWithRomAndMemBus_completeness (length : ℕ) (program : Program leng
   simp only [mainWithRomAndMemBus, mainWithRom, main, circuit_norm,
     romMessageExpr, romFlagsExpr, aMemMessageExpr, bMemMessageExpr,
     cMemMessageExpr, aMemOpExpr, bMemOpExpr, cMemOpExpr, storeValueLoExpr,
-    storeValueHiExpr, MemBusChannel, Lookup.completeness_def]
-  obtain ⟨i, bits, kind, free, h_flags, h_coherent, h_addr_guard, hrow⟩ := h_assumptions
+  storeValueHiExpr, MemBusChannel, Lookup.completeness_def]
+  obtain ⟨i, bits, kind, free, h_flags, h_coherent, h_source_guard, h_addr_guard, hrow⟩ :=
+    h_assumptions
+  rcases h_source_guard with ⟨h_src_a0, h_src_a1, h_src_b0, h_src_b1⟩
   rw [hrow] at h_input
   simp only [circuit_norm] at h_input
   cases kind with
@@ -550,6 +610,7 @@ def circuitWithRomAndMemBus
       ∃ i bits kind free,
         (program i).flags = packFlags bits
         ∧ MainRomExecKind.Coherent (program i) bits kind
+        ∧ MainRomSourceGuard (program i) bits free
         ∧ MainRomAddressGuard bits free
         ∧ row = mainRomRowOf (program i) bits kind free
     ProverSpec := fun _ _ _ => True
@@ -595,6 +656,7 @@ theorem mainWithRomMemAndOpBus_completeness (length : ℕ) (program : Program le
         ∃ i bits kind free,
           (program i).flags = packFlags bits
           ∧ MainRomExecKind.Coherent (program i) bits kind
+          ∧ MainRomSourceGuard (program i) bits free
           ∧ MainRomAddressGuard bits free
           ∧ row = mainRomRowOf (program i) bits kind free)
       (fun _ _ _ => True) := by
@@ -622,6 +684,7 @@ def circuitWithRomMemAndOpBus
       ∃ i bits kind free,
         (program i).flags = packFlags bits
         ∧ MainRomExecKind.Coherent (program i) bits kind
+        ∧ MainRomSourceGuard (program i) bits free
         ∧ MainRomAddressGuard bits free
         ∧ row = mainRomRowOf (program i) bits kind free
     ProverSpec := fun _ _ _ => True
@@ -745,6 +808,17 @@ theorem addressSpec_of_mainWithRomMemAndOpBus_constraints
   exact addressSpec_of_mainWithRomAndMemBus_constraints length program row offset env (by
     simpa only [mainWithRomMemAndOpBus] using h_holds)
 
+/-- Project source-PIL immediate-source placement from unified Main row constraints. -/
+theorem sourceSpec_of_mainWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomMemAndOpBus length program row).operations offset)) :
+    SourceSpec (eval env row) := by
+  exact sourceSpec_of_mainWithRomAndMemBus_constraints length program row offset env (by
+    simpa only [mainWithRomMemAndOpBus] using h_holds)
+
 theorem is_external_op_boolean_of_componentWithRomMemAndOpBus_constraints
     (length : ℕ) (program : Program length)
     (env : Environment FGL)
@@ -825,6 +899,25 @@ theorem addressSpec_of_componentWithRomAndMemBus_constraints
       simpa only [componentWithRomAndMemBus, circuitWithRomAndMemBus,
         Component.rowOperations] using h_row)
 
+/-- Component-level projection of source-PIL immediate-source placement for Main plus
+ROM/memory buses. -/
+theorem sourceSpec_of_componentWithRomAndMemBus_constraints
+    (length : ℕ) (program : Program length)
+    (env : Environment FGL)
+    (h_holds :
+      (componentWithRomAndMemBus length program).operations.ConstraintsHold env) :
+    SourceSpec (eval env (componentWithRomAndMemBus length program).rowInputVar) := by
+  have h_row :
+      (componentWithRomAndMemBus length program).rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff
+      (component := componentWithRomAndMemBus length program) env).mp h_holds
+  exact sourceSpec_of_mainWithRomAndMemBus_constraints
+    length program
+    (componentWithRomAndMemBus length program).rowInputVar
+    (componentWithRomAndMemBus length program).rowOffset env (by
+      simpa only [componentWithRomAndMemBus, circuitWithRomAndMemBus,
+        Component.rowOperations] using h_row)
+
 /-- Project the ROM lookup carried by the unified Main component's row
     constraints to exact program-ROM membership for the evaluated row message. -/
 theorem romSpec_of_componentWithRomMemAndOpBus_constraints
@@ -862,6 +955,26 @@ theorem addressSpec_of_componentWithRomMemAndOpBus_constraints
       (component := componentWithRomMemAndOpBus length program) env).mp h_holds
   exact
     addressSpec_of_mainWithRomMemAndOpBus_constraints
+      length program
+      (componentWithRomMemAndOpBus length program).rowInputVar
+      (componentWithRomMemAndOpBus length program).rowOffset env
+      (by
+        simpa only [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+          Component.rowOperations] using h_row)
+
+/-- Component-level projection of source-PIL immediate-source placement for unified Main. -/
+theorem sourceSpec_of_componentWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (env : Environment FGL)
+    (h_holds :
+      (componentWithRomMemAndOpBus length program).operations.ConstraintsHold env) :
+    SourceSpec (eval env (componentWithRomMemAndOpBus length program).rowInputVar) := by
+  have h_row :
+      (componentWithRomMemAndOpBus length program).rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff
+      (component := componentWithRomMemAndOpBus length program) env).mp h_holds
+  exact
+    sourceSpec_of_mainWithRomMemAndOpBus_constraints
       length program
       (componentWithRomMemAndOpBus length program).rowInputVar
       (componentWithRomMemAndOpBus length program).rowOffset env

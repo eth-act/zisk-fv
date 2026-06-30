@@ -89,7 +89,14 @@ def mainWithOpBus (row : Var MainRow FGL) : Circuit FGL Unit := do
    store_offset, jmp_offset1, jmp_offset2, rom_flags]` tuple against
    the program-parameterised `romStaticTable`.
 
-3. The non-SP address-placement constraints at `main.pil:188-197`:
+3. The non-SP immediate-source constraints at `main.pil:389-390`,
+   unfolded across the two RV64 limbs:
+   `a_src_imm * (a[0] - a_offset_imm0) === 0`,
+   `a_src_imm * (a[1] - a_imm1) === 0`,
+   `b_src_imm * (b[0] - b_offset_imm0) === 0`, and
+   `b_src_imm * (b[1] - b_imm1) === 0`.
+
+4. The non-SP address-placement constraints at `main.pil:188-197`:
    `addr0 = a_offset_imm0`,
    `addr1 === b_offset_imm0 + b_src_ind * a[0]`,
    `addr2 = store_offset + store_ind * a[0]`, and
@@ -252,6 +259,11 @@ def mainWithRom (length : ℕ) (program : Program length)
   assertZero (row.rom.a_src_reg * (1 - row.rom.a_src_reg))
   assertZero (row.rom.b_src_reg * (1 - row.rom.b_src_reg))
   assertZero (row.rom.store_reg * (1 - row.rom.store_reg))
+  -- Immediate-source lane equations from `main.pil:389-390`.
+  assertZero (row.rom.a_src_imm * (row.core.a_0 - row.rom.a_offset_imm0))
+  assertZero (row.rom.a_src_imm * (row.core.a_1 - row.rom.a_imm1))
+  assertZero (row.rom.b_src_imm * (row.core.b_0 - row.rom.b_offset_imm0))
+  assertZero (row.rom.b_src_imm * (row.core.b_1 - row.rom.b_imm1))
   -- Non-SP address-placement equations from `main.pil:188-197`.
   assertZero (row.rom.addr0 - row.rom.a_offset_imm0)
   assertZero (row.rom.addr1 - (row.rom.b_offset_imm0 + row.rom.b_src_ind * row.core.a_0))

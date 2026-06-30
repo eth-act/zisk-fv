@@ -180,6 +180,21 @@ theorem mainAddressSpec_at
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get trace.program trace.mainTable idx]
   exact h_spec
 
+/-- The source-PIL Main immediate-source equations hold for every in-range
+    concrete Main-table row, derived from accepted trace constraints. -/
+theorem mainSourceSpec_at
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (idx : Fin trace.mainTable.table.length) :
+    ZiskFv.AirsClean.Main.SourceSpec
+      (mainTableRowAtOrZero trace.program trace.mainTable idx.val) := by
+  have h_holds := mainOperationsConstraintsHold_at trace idx
+  have h_spec :=
+    ZiskFv.AirsClean.Main.sourceSpec_of_componentWithRomMemAndOpBus_constraints
+      numInstructions trace.program
+      (trace.mainTable.environment (trace.mainTable.table.get idx)) h_holds
+  rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get trace.program trace.mainTable idx]
+  exact h_spec
+
 /-- Store-row alias of `mainAddressSpec_at`. -/
 theorem mainRowWithRomSt_addressSpec
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
@@ -195,6 +210,38 @@ theorem mainRowWithRomLd_addressSpec
     ZiskFv.AirsClean.Main.AddressSpec (mainRowWithRomLd trace i) := by
   simpa [mainRowWithRomLd] using
     mainAddressSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- ALU-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomSub_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomSub trace i) := by
+  simpa [mainRowWithRomSub] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- Store-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomSt_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomSt trace i) := by
+  simpa [mainRowWithRomSt] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- Load-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomLd_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomLd trace i) := by
+  simpa [mainRowWithRomLd] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- eRdLui-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomLui_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomLui trace i) := by
+  simpa [mainRowWithRomLui] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
 
 /-- **The reusable binding lemma (deliverable 1).**
 
@@ -540,6 +587,60 @@ theorem romSelectorColumns_of_romFlags_eq_packFlags
   have hbits := packFlags_inj (hpack.symm.trans h)
   subst hbits
   exact ⟨e_store_ind, e_b_src_ind, e_store_reg⟩
+
+/-- **Unpacking the immediate source selector from the packed `flags` slot.**
+
+This is the same `packFlags` injectivity argument as
+`romFlagColumns_of_romFlags_eq_packFlags`, but exposing the `b_src_imm` selector
+needed to turn `SourceSpec` into an I-type immediate-lane proof. -/
+theorem romBSourceImmColumn_of_romFlags_eq_packFlags
+    (row : MainRowWithRom FGL) (bits : RomFlagBits)
+    (hbool :
+      row.core.is_external_op * (1 - row.core.is_external_op) = 0
+    ∧ row.core.m32 * (1 - row.core.m32) = 0
+    ∧ row.core.set_pc * (1 - row.core.set_pc) = 0
+    ∧ row.core.store_pc * (1 - row.core.store_pc) = 0
+    ∧ row.rom.a_src_imm * (1 - row.rom.a_src_imm) = 0
+    ∧ row.rom.a_src_mem * (1 - row.rom.a_src_mem) = 0
+    ∧ row.rom.is_precompiled * (1 - row.rom.is_precompiled) = 0
+    ∧ row.rom.b_src_imm * (1 - row.rom.b_src_imm) = 0
+    ∧ row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0
+    ∧ row.rom.store_mem * (1 - row.rom.store_mem) = 0
+    ∧ row.rom.store_ind * (1 - row.rom.store_ind) = 0
+    ∧ row.rom.b_src_ind * (1 - row.rom.b_src_ind) = 0
+    ∧ row.rom.a_src_reg * (1 - row.rom.a_src_reg) = 0
+    ∧ row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0
+    ∧ row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h : romFlags row = packFlags bits) :
+    row.rom.b_src_imm = ZiskFv.AirsClean.boolF bits.b_src_imm := by
+  obtain ⟨hb_ieo, hb_m32, hb_set_pc, hb_store_pc, hb_a_src_imm, hb_a_src_mem,
+    hb_is_precompiled, hb_b_src_imm, hb_b_src_mem, hb_store_mem, hb_store_ind,
+    hb_b_src_ind, hb_a_src_reg, hb_b_src_reg, hb_store_reg⟩ := hbool
+  obtain ⟨d_ieo, e_ieo⟩ := bool_of_booleanity hb_ieo
+  obtain ⟨d_m32, e_m32⟩ := bool_of_booleanity hb_m32
+  obtain ⟨d_set_pc, e_set_pc⟩ := bool_of_booleanity hb_set_pc
+  obtain ⟨d_store_pc, e_store_pc⟩ := bool_of_booleanity hb_store_pc
+  obtain ⟨d_a_src_imm, e_a_src_imm⟩ := bool_of_booleanity hb_a_src_imm
+  obtain ⟨d_a_src_mem, e_a_src_mem⟩ := bool_of_booleanity hb_a_src_mem
+  obtain ⟨d_is_precompiled, e_is_precompiled⟩ := bool_of_booleanity hb_is_precompiled
+  obtain ⟨d_b_src_imm, e_b_src_imm⟩ := bool_of_booleanity hb_b_src_imm
+  obtain ⟨d_b_src_mem, e_b_src_mem⟩ := bool_of_booleanity hb_b_src_mem
+  obtain ⟨d_store_mem, e_store_mem⟩ := bool_of_booleanity hb_store_mem
+  obtain ⟨d_store_ind, e_store_ind⟩ := bool_of_booleanity hb_store_ind
+  obtain ⟨d_b_src_ind, e_b_src_ind⟩ := bool_of_booleanity hb_b_src_ind
+  obtain ⟨d_a_src_reg, e_a_src_reg⟩ := bool_of_booleanity hb_a_src_reg
+  obtain ⟨d_b_src_reg, e_b_src_reg⟩ := bool_of_booleanity hb_b_src_reg
+  obtain ⟨d_store_reg, e_store_reg⟩ := bool_of_booleanity hb_store_reg
+  have hpack : romFlags row =
+      packFlags ⟨d_a_src_imm, d_a_src_mem, d_is_precompiled, d_b_src_imm,
+        d_b_src_mem, d_ieo, d_store_pc, d_store_mem, d_store_ind, d_set_pc,
+        d_m32, d_b_src_ind, d_a_src_reg, d_b_src_reg, d_store_reg⟩ := by
+    simp only [romFlags, packFlags, e_ieo, e_m32, e_set_pc, e_store_pc,
+      e_a_src_imm, e_a_src_mem, e_is_precompiled, e_b_src_imm, e_b_src_mem,
+      e_store_mem, e_store_ind, e_b_src_ind, e_a_src_reg, e_b_src_reg, e_store_reg]
+  have hbits := packFlags_inj (hpack.symm.trans h)
+  subst hbits
+  exact e_b_src_imm
 
 /-! ## ADD pilot: reconstruct `Decode_add` from the committed program
 

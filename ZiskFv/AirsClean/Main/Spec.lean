@@ -20,11 +20,15 @@ set_pc, jmp_offset1, jmp_offset2 multiplexer with Nat.sub saturation
 at row 0; see `ZiskFv/Airs/Main/Main.lean:181-192`) is NOT in this
 per-row Spec — it lives in a separate adjacency theorem in Bridge.
 
-The ROM-backed row also has source-PIL address-placement constraints for
-the non-SP build (`main.pil:188-197`). These are kept as a separate
-`AddressSpec`: opcode soundness can project them when it needs
-memory/register-destination routing, while the older core `Spec` remains the
-nine local Main arithmetic/control constraints.
+The ROM-backed row also has source-PIL operand/address routing constraints for
+the non-SP build. These are kept as separate specs:
+
+* `SourceSpec` tracks immediate-source lane placement from `main.pil:389-390`;
+* `AddressSpec` tracks address-placement constraints from `main.pil:188-197`.
+
+Opcode soundness can project them when it needs operand, memory, or
+register-destination routing, while the older core `Spec` remains the nine
+local Main arithmetic/control constraints.
 
 ## Constructibility audit
 
@@ -66,5 +70,15 @@ def AddressSpec (row : MainRowWithRom FGL) : Prop :=
   ∧ row.rom.addr1 = row.rom.b_offset_imm0 + row.rom.b_src_ind * row.core.a_0
   ∧ row.rom.addr2 = row.rom.store_offset + row.rom.store_ind * row.core.a_0
   ∧ (row.rom.store_ind + row.rom.b_src_ind) * row.core.a_1 = 0
+
+/-- Non-SP Main immediate-source lane constraints from `main.pil:389-390`.
+
+When an operand source is the instruction immediate, the corresponding `a` or
+`b` low/high limbs must equal the ROM immediate limbs. -/
+def SourceSpec (row : MainRowWithRom FGL) : Prop :=
+  row.rom.a_src_imm * (row.core.a_0 + -1 * row.rom.a_offset_imm0) = 0
+  ∧ row.rom.a_src_imm * (row.core.a_1 + -1 * row.rom.a_imm1) = 0
+  ∧ row.rom.b_src_imm * (row.core.b_0 + -1 * row.rom.b_offset_imm0) = 0
+  ∧ row.rom.b_src_imm * (row.core.b_1 + -1 * row.rom.b_imm1) = 0
 
 end ZiskFv.AirsClean.Main

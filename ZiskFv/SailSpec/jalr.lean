@@ -36,6 +36,24 @@ namespace PureSpec
       success := (bit1_valid)
     }
 
+  lemma execute_JALR_pure_succ_nextPC
+    (input : JalrInput)
+  :
+    let output := execute_JALR_pure input
+    output.success = true →
+      output.nextPC =
+        .some (0xFFFFFFFFFFFFFFFE &&&
+          (input.rs1_val + BitVec.signExtend 64 input.imm))
+  := by
+    simp only [execute_JALR_pure]
+    intro h_valid
+    have h_eq :
+        BitVec.ofBool
+            (input.rs1_val + BitVec.signExtend 64 input.imm)[1]
+          = 0#1 := by
+      simpa only [beq_iff_eq] using h_valid
+    rw [if_neg (by simp [h_eq])]
+
   -- JALR Sail-equivalence. Direct port of the `execute_JAL_pure_equiv`
   -- proof shape, adapted for JALR's pre-masked target
   -- (`BitVec.update target 0 0#1` clears bit 0, so the
