@@ -446,11 +446,15 @@ theorem stepStrong_beq
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_off_bridge :
+            (m.jmp_offset1 i.val).val =
+              (BitVec.signExtend 64 d.toInputs.beq_input.imm).toNat := by
+          simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
         have h_cast := Pilot.branch_nextPC_flag1_taken trace i
           (d.toInputs.beq_input.r1_val == d.toInputs.beq_input.r2_val)
           d.toInputs.beq_input.PC (BitVec.signExtend 64 d.toInputs.beq_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
-          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
           d.toInputs.h_pc_bound
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
@@ -508,11 +512,15 @@ theorem stepStrong_bne
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_off_bridge :
+            (m.jmp_offset2 i.val).val =
+              (BitVec.signExtend 64 d.toInputs.bne_input.imm).toNat := by
+          simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
         have h_cast := Pilot.branch_nextPC_flag0_taken trace i
           (d.toInputs.bne_input.r1_val == d.toInputs.bne_input.r2_val)
           d.toInputs.bne_input.PC (BitVec.signExtend 64 d.toInputs.bne_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
-          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
           d.toInputs.h_pc_bound
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
@@ -570,11 +578,15 @@ theorem stepStrong_blt
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_off_bridge :
+            (m.jmp_offset1 i.val).val =
+              (BitVec.signExtend 64 d.toInputs.blt_input.imm).toNat := by
+          simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
         have h_cast := Pilot.branch_nextPC_flag1_taken trace i
           (BitVec.slt d.toInputs.blt_input.r1_val d.toInputs.blt_input.r2_val)
           d.toInputs.blt_input.PC (BitVec.signExtend 64 d.toInputs.blt_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
-          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
           d.toInputs.h_pc_bound
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
@@ -632,11 +644,15 @@ theorem stepStrong_bge
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_off_bridge :
+            (m.jmp_offset2 i.val).val =
+              (BitVec.signExtend 64 d.toInputs.bge_input.imm).toNat := by
+          simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
         have h_cast := Pilot.branch_nextPC_flag0_taken trace i
           (BitVec.slt d.toInputs.bge_input.r1_val d.toInputs.bge_input.r2_val)
           d.toInputs.bge_input.PC (BitVec.signExtend 64 d.toInputs.bge_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
-          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
           d.toInputs.h_pc_bound
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
@@ -697,11 +713,15 @@ theorem stepStrong_bltu
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_off_bridge :
+            (m.jmp_offset1 i.val).val =
+              (BitVec.signExtend 64 d.toInputs.bltu_input.imm).toNat := by
+          simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
         have h_cast := Pilot.branch_nextPC_flag1_taken trace i
           (BitVec.ult d.toInputs.bltu_input.r1_val d.toInputs.bltu_input.r2_val)
           d.toInputs.bltu_input.PC (BitVec.signExtend 64 d.toInputs.bltu_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
-          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
           d.toInputs.h_pc_bound
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
@@ -762,11 +782,15 @@ theorem stepStrong_bgeu
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+        have h_off_bridge :
+            (m.jmp_offset2 i.val).val =
+              (BitVec.signExtend 64 d.toInputs.bgeu_input.imm).toNat := by
+          simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
         have h_cast := Pilot.branch_nextPC_flag0_taken trace i
           (BitVec.ult d.toInputs.bgeu_input.r1_val d.toInputs.bgeu_input.r2_val)
           d.toInputs.bgeu_input.PC (BitVec.signExtend 64 d.toInputs.bgeu_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
-          d.toInputs.h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
+          h_off_bridge d.toInputs.h_pc_bridge d.toInputs.h_no_wrap
           d.toInputs.h_pc_bound
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))

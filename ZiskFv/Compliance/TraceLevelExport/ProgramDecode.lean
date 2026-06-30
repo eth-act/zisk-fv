@@ -1056,6 +1056,7 @@ structure ProgramDecode_beq {numInstructions : Nat}
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_EQ
+        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1076,6 +1077,7 @@ structure ProgramDecode_bne {numInstructions : Nat}
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_EQ
         ∧ (trace.program j).jmp_offset1 = 4
+        ∧ ((trace.program j).jmp_offset2).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `blt`: exactly the inputs
@@ -1094,6 +1096,7 @@ structure ProgramDecode_blt {numInstructions : Nat}
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
+        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1114,6 +1117,7 @@ structure ProgramDecode_bge {numInstructions : Nat}
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
         ∧ (trace.program j).jmp_offset1 = 4
+        ∧ ((trace.program j).jmp_offset2).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `bltu`: exactly the inputs
@@ -1132,6 +1136,7 @@ structure ProgramDecode_bltu {numInstructions : Nat}
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
+        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).flags = packFlags bits
 
@@ -1152,6 +1157,7 @@ structure ProgramDecode_bgeu {numInstructions : Nat}
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
         ∧ (trace.program j).jmp_offset1 = 4
+        ∧ ((trace.program j).jmp_offset2).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `lui`: exactly the inputs

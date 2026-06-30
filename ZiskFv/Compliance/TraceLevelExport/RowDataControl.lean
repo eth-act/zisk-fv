@@ -66,6 +66,10 @@ structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_jmp_offset1_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+        i.val).val
+      = (BitVec.signExtend 64 c.imm).toNat
   -- #100: taken on flag=1 (`r1 == r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
@@ -102,13 +106,8 @@ structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: taken-offset bridge (`jmp_offset1 = signExtend imm`) + PC bridge /
-  -- no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED via
-  -- `Pilot.branch_nextPC_flag1_taken` + `branch_flag_eq_provided`.
-  h_off_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 beq_input.imm).toNat
+  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
+  -- via `Pilot.branch_nextPC_flag1_taken` + `branch_flag_eq_provided`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = beq_input.PC.toNat
@@ -161,6 +160,10 @@ structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
+  h_jmp_offset2_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+        i.val).val
+      = (BitVec.signExtend 64 c.imm).toNat
   -- #100: `neg` polarity (taken on flag=0, `r1 ≠ r2`); the taken offset rides on
   -- `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
@@ -198,13 +201,8 @@ structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: taken-offset bridge on `jmp_offset2` (the flag=0 side) + PC bridge /
-  -- no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED via
-  -- `Pilot.branch_nextPC_flag0_taken` + `branch_flag_eq_provided`.
-  h_off_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 bne_input.imm).toNat
+  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
+  -- via `Pilot.branch_nextPC_flag0_taken` + `branch_flag_eq_provided`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bne_input.PC.toNat
@@ -257,6 +255,10 @@ structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_jmp_offset1_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+        i.val).val
+      = (BitVec.signExtend 64 c.imm).toNat
   -- #100: taken on flag=1 (signed `r1 <s r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
@@ -293,13 +295,8 @@ structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: taken-offset bridge (`jmp_offset1 = signExtend imm`) + PC bridge /
-  -- no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED via
-  -- `Pilot.branch_nextPC_flag1_taken` + `branch_flag_lt_provided`.
-  h_off_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 blt_input.imm).toNat
+  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
+  -- via `Pilot.branch_nextPC_flag1_taken` + `branch_flag_lt_provided`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = blt_input.PC.toNat
@@ -352,6 +349,10 @@ structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
+  h_jmp_offset2_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+        i.val).val
+      = (BitVec.signExtend 64 c.imm).toNat
   -- #100: `neg` polarity (taken on flag=0, signed `r1 ≥s r2`); the taken offset
   -- rides on `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
@@ -389,13 +390,8 @@ structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: taken-offset bridge on `jmp_offset2` (the flag=0 side) + PC bridge /
-  -- no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED via
-  -- `Pilot.branch_nextPC_flag0_taken` + `branch_flag_lt_provided`.
-  h_off_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 bge_input.imm).toNat
+  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
+  -- via `Pilot.branch_nextPC_flag0_taken` + `branch_flag_lt_provided`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bge_input.PC.toNat
@@ -448,10 +444,14 @@ structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
+  h_jmp_offset1_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+        i.val).val
+      = (BitVec.signExtend 64 c.imm).toNat
   -- #100 next-PC transition input (replaces the exec artifacts): the next row
-  -- exists. The taken-offset pin (`jmp_offset1 = signExtend imm`) and the no-wrap
-  -- bound live in `Inputs` (they reference `bltu_input`). `flag = comparison` is
-  -- DERIVED in `stepStrong_bltu` from the LTU Binary provider.
+  -- exists. The taken-offset pin (`jmp_offset1 = signExtend imm`) is decoded from
+  -- the committed program; `flag = comparison` is DERIVED in `stepStrong_bltu`
+  -- from the LTU Binary provider.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
@@ -488,14 +488,9 @@ structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: the taken-offset decode/ROM bridge (`jmp_offset1 = signExtend imm`),
-  -- the PC provenance bridge, the taken-target no-wrap bound, and the PC
-  -- trajectory bound. These replace the cross-world `h_nextPC_matches`, now
-  -- DERIVED via `Pilot.branch_nextPC_flag1_taken` + `branch_flag_ltu_provided`.
-  h_off_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 bltu_input.imm).toNat
+  -- #100: PC bridge, taken-target no-wrap bound, and PC trajectory bound. These
+  -- replace the cross-world `h_nextPC_matches`, now DERIVED via
+  -- `Pilot.branch_nextPC_flag1_taken` + `branch_flag_ltu_provided`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bltu_input.PC.toNat
@@ -548,10 +543,14 @@ structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
   h_jmp_offset1 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
+  h_jmp_offset2_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+        i.val).val
+      = (BitVec.signExtend 64 c.imm).toNat
   -- #100 next-PC transition input (replaces the exec artifacts): the next row
   -- exists. BGEU is the `create_branch_op`-`neg` polarity (taken on `flag = 0`):
-  -- the taken offset rides on `jmp_offset2` (`Inputs`); `jmp_offset1 = 4` is the
-  -- fall-through side. `flag = comparison` is DERIVED in `stepStrong_bgeu`.
+  -- the taken offset rides on `jmp_offset2`; `jmp_offset1 = 4` is the fall-through
+  -- side. `flag = comparison` is DERIVED in `stepStrong_bgeu`.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
@@ -587,14 +586,8 @@ structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: the taken-offset decode/ROM bridge — for BGEU the taken offset rides
-  -- on `jmp_offset2` (the `flag = 0` side) — plus PC bridge / no-wrap / bound.
-  -- These replace `h_nextPC_matches`, now DERIVED via
-  -- `Pilot.branch_nextPC_flag0_taken` + `branch_flag_ltu_provided`.
-  h_off_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 bgeu_input.imm).toNat
+  -- #100: PC bridge / no-wrap / bound. These replace `h_nextPC_matches`, now
+  -- DERIVED via `Pilot.branch_nextPC_flag0_taken` + `branch_flag_ltu_provided`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bgeu_input.PC.toNat
