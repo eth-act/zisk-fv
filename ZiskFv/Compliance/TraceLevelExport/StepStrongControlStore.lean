@@ -908,7 +908,7 @@ theorem stepStrong_bgeu
 theorem stepStrong_lui
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lui trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.lui_input.PC) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.LUI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
@@ -968,7 +968,7 @@ theorem stepStrong_lui
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
@@ -997,7 +997,7 @@ theorem stepStrong_lui
 theorem stepStrong_auipc
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_auipc trace binding i)
-    (_h_known : True) :
+    (h_domain : AuipcRangeDomain d.toInputs.auipc_input) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.AUIPC)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
@@ -1071,7 +1071,7 @@ theorem stepStrong_auipc
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag
         rw [hstep, d.toDecode.h_jmp1]
         exact Pilot.ofNat_fgl_pc_plus_4_eq _ d.toInputs.auipc_input.PC
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain.h_pc_bound
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
@@ -1081,7 +1081,7 @@ theorem stepStrong_auipc
     OpEnvelope.auipc d.toInputs.auipc_input d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd
       (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC next_pc store_pc_mem
       provenance row_mode h_auipc_subset h_offset_bridge d.toInputs.h_pc_bridge promises
-      d.toInputs.h_no_wrap d.toInputs.h_pc_offset_lt_2_32
+      h_domain.h_no_wrap h_domain.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨⟨provenance⟩, row_mode, h_offset_bridge, d.toInputs.h_pc_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1102,7 +1102,7 @@ theorem stepStrong_auipc
 theorem stepStrong_jal
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_jal trace binding i)
-    (_h_known : True) :
+    (h_domain : JalRangeDomain d.toInputs.jal_input) :
     execute_instruction (instruction.JAL (d.toClaim.imm, d.toClaim.rd)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
@@ -1138,7 +1138,7 @@ theorem stepStrong_jal
             i.val).val
         < GL_prime := by
     rw [d.toInputs.h_pc_bridge, h_offset_bridge]
-    exact d.toInputs.h_no_fgl_wrap
+    exact h_domain.h_no_fgl_wrap
   let next_pc : FGL :=
     m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
       + (1 - m.set_pc i.val) * (m.pc i.val + m.jmp_offset2 i.val)
@@ -1207,7 +1207,8 @@ theorem stepStrong_jal
   let env : OpEnvelope state m i.val :=
     OpEnvelope.jal d.toInputs.jal_input d.toClaim.imm d.toClaim.rd d.toInputs.misa_val next_pc (Pilot.execRowOf trace i) e_rd
       nextPC_val store_pc_mem provenance row_mode h_jal_subset d.toDecode.h_jmp2 d.toInputs.h_pc_bridge
-      promises d.toInputs.h_input_imm h_not_throws d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
+      promises d.toInputs.h_input_imm h_not_throws h_domain.h_pc_bound
+      h_domain.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨⟨provenance⟩, row_mode, d.toDecode.h_jmp2, d.toInputs.h_pc_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1227,7 +1228,7 @@ theorem stepStrong_jal
 theorem stepStrong_jalr
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_jalr trace binding i)
-    (_h_known : True) :
+    (h_domain : JalrRangeDomain d.toInputs.jalr_input) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.JALR (d.toClaim.imm, d.toClaim.rs1, d.toClaim.rd))) (binding i)
@@ -1383,12 +1384,12 @@ theorem stepStrong_jalr
       rd_idx := d.toInputs.h_input_rd.trans
         (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   have h_link_bridge :=
-    jalr_link_bridge_of_decode d.toInputs.h_pc_bridge d.toDecode.h_jmp2 d.toInputs.h_pc_bound
+    jalr_link_bridge_of_decode d.toInputs.h_pc_bridge d.toDecode.h_jmp2 h_domain.h_pc_bound
   let env : OpEnvelope state m i.val :=
     OpEnvelope.jalr d.toInputs.jalr_input d.toClaim.imm d.toClaim.rs1 d.toClaim.rd d.toInputs.misa_val d.toInputs.mseccfg (Pilot.execRowOf trace i) e_rd
       nextPC_val next_pc store_pc_mem pins d.toDecode.h_flag d.toDecode.h_m32 d.toDecode.h_set_pc d.toDecode.h_store_pc
       h_jalr_subset promises d.toInputs.h_input_imm d.toInputs.h_input_rs1 d.toInputs.h_cur_privilege d.toInputs.h_mseccfg
-      h_link_bridge d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
+      h_link_bridge h_domain.h_pc_bound h_domain.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨d.toDecode.h_flag, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, h_link_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1431,7 +1432,7 @@ private def emptyMainEnv : Environment FGL :=
 theorem stepStrong_sb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sb trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sb_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sb_input.imm, regidx.Regidx d.toClaim.sb_input.r2, regidx.Regidx d.toClaim.sb_input.r1, 1))
         (binding i)
@@ -1472,7 +1473,7 @@ theorem stepStrong_sb
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1504,7 +1505,7 @@ theorem stepStrong_sb
 theorem stepStrong_sh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sh trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sh_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sh_input.imm, regidx.Regidx d.toClaim.sh_input.r2, regidx.Regidx d.toClaim.sh_input.r1, 2))
         (binding i)
@@ -1545,7 +1546,7 @@ theorem stepStrong_sh
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1577,7 +1578,7 @@ theorem stepStrong_sh
 theorem stepStrong_sw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sw trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sw_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sw_input.imm, regidx.Regidx d.toClaim.sw_input.r2, regidx.Regidx d.toClaim.sw_input.r1, 4))
         (binding i)
@@ -1618,7 +1619,7 @@ theorem stepStrong_sw
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1650,7 +1651,7 @@ theorem stepStrong_sw
 theorem stepStrong_sd
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sd trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sd_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sd_input.imm, regidx.Regidx d.toClaim.sd_input.r2, regidx.Regidx d.toClaim.sd_input.r1, 8))
         (binding i)
@@ -1691,7 +1692,7 @@ theorem stepStrong_sd
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
