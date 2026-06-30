@@ -68,21 +68,70 @@ theorem eRdLui_rd_idx_of_decode
   rw [h_addr2, h_store_offset, h_store_ind]
   simp [Transpiler.wrap_to_regidx_ind]
 
+/-- The store address arithmetic bridge reconstructed from decoded ROM offset,
+    the source-lane value, and an explicit natural effective-address bound. -/
+theorem store_addr_arith_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {imm : BitVec 12}
+    {r1_val : BitVec 64}
+    (h_store_offset_imm :
+      (mainRowWithRomSt trace i).rom.store_offset =
+        ((BitVec.signExtend 64 imm).toNat : FGL))
+    (h_a0_value : (mainRowWithRomSt trace i).core.a_0 = lane_lo r1_val)
+    (h_addr_bound :
+      r1_val.toNat + (BitVec.signExtend 64 imm).toNat < ZiskPhysicalAddressSpaceSize) :
+    ((mainRowWithRomSt trace i).rom.store_offset
+        + (mainRowWithRomSt trace i).core.a_0).toNat =
+      (r1_val + BitVec.signExtend 64 imm).toNat := by
+  have h_bound32 : r1_val.toNat + (BitVec.signExtend 64 imm).toNat < 4294967296 := by
+    simpa using h_addr_bound
+  have h_r1_lt32 : r1_val.toNat < 4294967296 := by omega
+  have h_imm_lt32 : (BitVec.signExtend 64 imm).toNat < 4294967296 := by omega
+  have h_r1_lt_gl : r1_val.toNat < GL_prime := by omega
+  have h_imm_lt_gl : (BitVec.signExtend 64 imm).toNat < GL_prime := by omega
+  have h_sum_lt_gl : r1_val.toNat + (BitVec.signExtend 64 imm).toNat < GL_prime := by omega
+  have h_sum_lt64 : r1_val.toNat + (BitVec.signExtend 64 imm).toNat < 2 ^ 64 := by omega
+  have h_bv_sum :
+      (r1_val + BitVec.signExtend 64 imm).toNat =
+        r1_val.toNat + (BitVec.signExtend 64 imm).toNat := by
+    rw [BitVec.toNat_add]
+    exact Nat.mod_eq_of_lt h_sum_lt64
+  rw [h_store_offset_imm, h_a0_value]
+  change ((((BitVec.signExtend 64 imm).toNat : FGL) + lane_lo r1_val : FGL).val) =
+    (r1_val + BitVec.signExtend 64 imm).toNat
+  rw [h_bv_sum]
+  rw [Fin.val_add, Fin.val_natCast]
+  unfold lane_lo
+  rw [Fin.val_mk]
+  rw [Nat.mod_eq_of_lt h_imm_lt_gl]
+  rw [Nat.mod_eq_of_lt h_r1_lt32]
+  rw [Nat.mod_eq_of_lt]
+  · omega
+  · omega
+
 /-- Store `addr2` placement derived from `AddressSpec` and the decoded store selector.
 
-The remaining arithmetic premise is deliberately over the `AddressSpec` right-hand
-side, not over `addr2`: it is the residual Sail/field address representation bridge,
-while this theorem discharges the Main-row address-placement part. -/
+The arithmetic equality is reconstructed locally from decode, source-lane
+agreement, and the explicit natural effective-address bound. -/
 theorem store_addr2_of_decode
     {numInstructions : Nat}
     {trace : AcceptedZiskTrace numInstructions}
     {i : Fin trace.numInstructions}
-    {target : Nat}
+    {imm : BitVec 12}
+    {r1_val : BitVec 64}
     (h_store_ind : (mainRowWithRomSt trace i).rom.store_ind = 1)
-    (h_store_addr_arith :
-      ((mainRowWithRomSt trace i).rom.store_offset
-        + (mainRowWithRomSt trace i).core.a_0).toNat = target) :
-    (mainRowWithRomSt trace i).rom.addr2.toNat = target := by
+    (h_store_offset_imm :
+      (mainRowWithRomSt trace i).rom.store_offset =
+        ((BitVec.signExtend 64 imm).toNat : FGL))
+    (h_a0_value : (mainRowWithRomSt trace i).core.a_0 = lane_lo r1_val)
+    (h_addr_bound :
+      r1_val.toNat + (BitVec.signExtend 64 imm).toNat < ZiskPhysicalAddressSpaceSize) :
+    (mainRowWithRomSt trace i).rom.addr2.toNat =
+      (r1_val + BitVec.signExtend 64 imm).toNat := by
+  have h_store_addr_arith :=
+    store_addr_arith_of_decode h_store_offset_imm h_a0_value h_addr_bound
   have h_addr2 := (RomDecodeBinding.mainRowWithRomSt_addressSpec trace i).2.2.1
   rw [h_addr2, h_store_ind]
   simpa using h_store_addr_arith
@@ -1402,8 +1451,13 @@ theorem stepStrong_sb
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
+        have h_a0_value :
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sb_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         simpa only [eval_mainConstVar] using
-          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
+          store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
+            h_a0_value d.toInputs.h_store_addr_bound)
       h_b0' h_b1' d.toInputs.h_m1 d.toInputs.h_m2 d.toInputs.h_m3 d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1470,8 +1524,13 @@ theorem stepStrong_sh
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
+        have h_a0_value :
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sh_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         simpa only [eval_mainConstVar] using
-          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
+          store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
+            h_a0_value d.toInputs.h_store_addr_bound)
       h_b0' h_b1' d.toInputs.h_m2 d.toInputs.h_m3 d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1538,8 +1597,13 @@ theorem stepStrong_sw
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
+        have h_a0_value :
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sw_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         simpa only [eval_mainConstVar] using
-          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
+          store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
+            h_a0_value d.toInputs.h_store_addr_bound)
       h_b0' h_b1' d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1606,8 +1670,13 @@ theorem stepStrong_sd
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
+        have h_a0_value :
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sd_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         simpa only [eval_mainConstVar] using
-          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
+          store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
+            h_a0_value d.toInputs.h_store_addr_bound)
       h_b0' h_b1'
   have h_bridge : env.aeneasBridgeTrust := ⟨h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
