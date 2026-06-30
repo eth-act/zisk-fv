@@ -118,7 +118,6 @@ structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : Sail
           i.val).val
       < GL_prime
   h_pc_bound : beq_input.PC.toNat < 18446744069414584321 - 4
-  h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false
   h_success : (PureSpec.execute_BEQ_pure beq_input).success = true
 
 /-- Per-op residual bundle for the `beq` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -215,7 +214,6 @@ structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : Sail
           i.val).val
       < GL_prime
   h_pc_bound : bne_input.PC.toNat < 18446744069414584321 - 4
-  h_not_throws : (PureSpec.execute_BNE_pure bne_input).throws = false
   h_success : (PureSpec.execute_BNE_pure bne_input).success = true
 
 /-- Per-op residual bundle for the `bne` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -311,7 +309,6 @@ structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : Sail
           i.val).val
       < GL_prime
   h_pc_bound : blt_input.PC.toNat < 18446744069414584321 - 4
-  h_not_throws : (PureSpec.execute_BLT_pure blt_input).throws = false
   h_success : (PureSpec.execute_BLT_pure blt_input).success = true
 
 /-- Per-op residual bundle for the `blt` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -408,7 +405,6 @@ structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : Sail
           i.val).val
       < GL_prime
   h_pc_bound : bge_input.PC.toNat < 18446744069414584321 - 4
-  h_not_throws : (PureSpec.execute_BGE_pure bge_input).throws = false
   h_success : (PureSpec.execute_BGE_pure bge_input).success = true
 
 /-- Per-op residual bundle for the `bge` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -509,7 +505,6 @@ structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
           i.val).val
       < GL_prime
   h_pc_bound : bltu_input.PC.toNat < 18446744069414584321 - 4
-  h_not_throws : (PureSpec.execute_BLTU_pure bltu_input).throws = false
   h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
 
 /-- Per-op residual bundle for the `bltu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -609,7 +604,6 @@ structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
           i.val).val
       < GL_prime
   h_pc_bound : bgeu_input.PC.toNat < 18446744069414584321 - 4
-  h_not_throws : (PureSpec.execute_BGEU_pure bgeu_input).throws = false
   h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
 
 /-- Per-op residual bundle for the `bgeu` archetype: the 3-way `Claim`/`Decode`/`Inputs`

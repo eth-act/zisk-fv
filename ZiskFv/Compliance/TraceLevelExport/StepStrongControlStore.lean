@@ -458,7 +458,9 @@ theorem stepStrong_beq
         rw [h_cast]
         exact (PureSpec.execute_BEQ_pure_nextPC_of_success
           d.toInputs.beq_input d.toInputs.h_success).symm
-      not_throws := d.toInputs.h_not_throws
+      not_throws :=
+        PureSpec.execute_BEQ_pure_succ_throws
+          d.toInputs.beq_input d.toInputs.h_success
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.beq d.toInputs.beq_input ops promises
   have h_bridge : env.aeneasBridgeTrust :=
@@ -518,7 +520,9 @@ theorem stepStrong_bne
         rw [h_cast]
         exact (PureSpec.execute_BNE_pure_nextPC_of_success
           d.toInputs.bne_input d.toInputs.h_success).symm
-      not_throws := d.toInputs.h_not_throws
+      not_throws :=
+        PureSpec.execute_BNE_pure_succ_throws
+          d.toInputs.bne_input d.toInputs.h_success
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.bne d.toInputs.bne_input ops promises
   have h_bridge : env.aeneasBridgeTrust :=
@@ -578,7 +582,9 @@ theorem stepStrong_blt
         rw [h_cast]
         exact (PureSpec.execute_BLT_pure_nextPC_of_success
           d.toInputs.blt_input d.toInputs.h_success).symm
-      not_throws := d.toInputs.h_not_throws
+      not_throws :=
+        PureSpec.execute_BLT_pure_succ_throws
+          d.toInputs.blt_input d.toInputs.h_success
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.blt d.toInputs.blt_input ops promises
   have h_bridge : env.aeneasBridgeTrust :=
@@ -638,7 +644,9 @@ theorem stepStrong_bge
         rw [h_cast]
         exact (PureSpec.execute_BGE_pure_nextPC_of_success
           d.toInputs.bge_input d.toInputs.h_success).symm
-      not_throws := d.toInputs.h_not_throws
+      not_throws :=
+        PureSpec.execute_BGE_pure_succ_throws
+          d.toInputs.bge_input d.toInputs.h_success
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.bge d.toInputs.bge_input ops promises
   have h_bridge : env.aeneasBridgeTrust :=
@@ -701,7 +709,9 @@ theorem stepStrong_bltu
         rw [h_cast]
         exact (PureSpec.execute_BLTU_pure_nextPC_of_success
           d.toInputs.bltu_input d.toInputs.h_success).symm
-      not_throws := d.toInputs.h_not_throws
+      not_throws :=
+        PureSpec.execute_BLTU_pure_succ_throws
+          d.toInputs.bltu_input d.toInputs.h_success
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.bltu d.toInputs.bltu_input ops promises
   have h_bridge : env.aeneasBridgeTrust :=
@@ -764,7 +774,9 @@ theorem stepStrong_bgeu
         rw [h_cast]
         exact (PureSpec.execute_BGEU_pure_nextPC_of_success
           d.toInputs.bgeu_input d.toInputs.h_success).symm
-      not_throws := d.toInputs.h_not_throws
+      not_throws :=
+        PureSpec.execute_BGEU_pure_succ_throws
+          d.toInputs.bgeu_input d.toInputs.h_success
       success := d.toInputs.h_success }
   let env : OpEnvelope state m i.val := OpEnvelope.bgeu d.toInputs.bgeu_input ops promises
   have h_bridge : env.aeneasBridgeTrust :=

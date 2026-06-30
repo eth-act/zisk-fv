@@ -30,6 +30,15 @@ namespace PureSpec
       : BltuOutput
     }
 
+  lemma execute_BLTU_pure_succ_throws
+    (input : BltuInput)
+  :
+    let output := execute_BLTU_pure input
+    output.success = true → output.throws = false
+  := by
+    simp [execute_BLTU_pure]
+    grind
+
   set_option maxHeartbeats 400000 in
   /-- BLTU Sail-equivalence: unsigned less-than sibling of BLT. Sail's
       `zopz0zI_u` unfolds to `.toNatInt <b .toNatInt`, and
