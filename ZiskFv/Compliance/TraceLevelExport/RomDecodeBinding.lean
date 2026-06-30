@@ -180,6 +180,21 @@ theorem mainAddressSpec_at
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get trace.program trace.mainTable idx]
   exact h_spec
 
+/-- The source-PIL Main immediate-source equations hold for every in-range
+    concrete Main-table row, derived from accepted trace constraints. -/
+theorem mainSourceSpec_at
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (idx : Fin trace.mainTable.table.length) :
+    ZiskFv.AirsClean.Main.SourceSpec
+      (mainTableRowAtOrZero trace.program trace.mainTable idx.val) := by
+  have h_holds := mainOperationsConstraintsHold_at trace idx
+  have h_spec :=
+    ZiskFv.AirsClean.Main.sourceSpec_of_componentWithRomMemAndOpBus_constraints
+      numInstructions trace.program
+      (trace.mainTable.environment (trace.mainTable.table.get idx)) h_holds
+  rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get trace.program trace.mainTable idx]
+  exact h_spec
+
 /-- Store-row alias of `mainAddressSpec_at`. -/
 theorem mainRowWithRomSt_addressSpec
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
@@ -195,6 +210,38 @@ theorem mainRowWithRomLd_addressSpec
     ZiskFv.AirsClean.Main.AddressSpec (mainRowWithRomLd trace i) := by
   simpa [mainRowWithRomLd] using
     mainAddressSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- ALU-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomSub_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomSub trace i) := by
+  simpa [mainRowWithRomSub] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- Store-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomSt_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomSt trace i) := by
+  simpa [mainRowWithRomSt] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- Load-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomLd_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomLd trace i) := by
+  simpa [mainRowWithRomLd] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+
+/-- eRdLui-row alias of `mainSourceSpec_at`. -/
+theorem mainRowWithRomLui_sourceSpec
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    ZiskFv.AirsClean.Main.SourceSpec (mainRowWithRomLui trace i) := by
+  simpa [mainRowWithRomLui] using
+    mainSourceSpec_at trace ⟨i.val, trace.mainTable_index i⟩
 
 /-- **The reusable binding lemma (deliverable 1).**
 
