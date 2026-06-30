@@ -622,6 +622,13 @@ structure Decode_andi (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_andi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_andi trace i) : Type where
@@ -642,9 +649,6 @@ structure Inputs_andi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_andi_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val andi_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = andi_input.PC.toNat
@@ -700,6 +704,13 @@ structure Decode_ori (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_ori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ori trace i) : Type where
@@ -720,9 +731,6 @@ structure Inputs_ori (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_ori_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val ori_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = ori_input.PC.toNat
@@ -778,6 +786,13 @@ structure Decode_xori (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_xori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_xori trace i) : Type where
@@ -798,9 +813,6 @@ structure Inputs_xori (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_xori_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val xori_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = xori_input.PC.toNat
@@ -856,6 +868,13 @@ structure Decode_slti (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_slti (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slti trace i) : Type where
@@ -876,9 +895,6 @@ structure Inputs_slti (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_slti_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val slti_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = slti_input.PC.toNat
@@ -934,6 +950,13 @@ structure Decode_sltiu (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sltiu trace i) : Type where
@@ -954,9 +977,6 @@ structure Inputs_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_sltiu_subset : itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val sltiu_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sltiu_input.PC.toNat

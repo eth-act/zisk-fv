@@ -22,6 +22,7 @@ import ZiskFv.Compliance
 import ZiskFv.Compliance.Defects
 import ZiskFv.Compliance.TraceLevelExport.Base
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
+import ZiskFv.Compliance.TraceLevelExport.RomDecodeBindingOps
 import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
@@ -66,6 +67,23 @@ trace's `mainOfTable` row; `execRow` remains a genuine ∀-binder inside the
 `RowData_<op>`; `NoKnownDefect` is a TRUE fact (not a contradictory hypothesis);
 no `False.elim` or contradictory pair is used.
 -/
+
+private theorem itype_imm_subset_of_decode
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (inputImm claimImm : BitVec 12)
+    (h_input_imm : inputImm = claimImm)
+    (h_b_src_imm : (mainRowWithRomSub trace i).rom.b_src_imm = 1)
+    (h_b_imm :
+      BitVec.signExtend 64 claimImm =
+        BitVec.ofNat 64
+          (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+            + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)) :
+    itype_imm_subset_holds_main (mainOfTable trace.program trace.mainTable) i.val inputImm := by
+  refine RomDecodeBinding.itypeImmSubset_of_sourceSpec trace i inputImm
+    (RomDecodeBinding.mainRowWithRomSub_sourceSpec trace i) h_b_src_imm ?_
+  simpa [h_input_imm] using h_b_imm
 
 /-- Strengthened `sub` step: the channel-balance conclusion (the OLD global
     theorem's per-arm output) proven by CONSTRUCTING the `OpEnvelope.sub` arm
@@ -1014,17 +1032,20 @@ theorem stepStrong_andi
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.andi_input.r1_val
         h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+  have h_andi_subset :=
+    itype_imm_subset_of_decode trace i d.toInputs.andi_input.imm d.toClaim.imm
+      d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
   have h_input_imm_row :
       BitVec.signExtend 64 d.toInputs.andi_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
         m providerInput i.val d.toInputs.andi_input.imm h_matches h_m32_zero h_match
-        d.toInputs.h_andi_subset
+        h_andi_subset
   let env : OpEnvelope state m i.val :=
     OpEnvelope.andi d.toInputs.andi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_input_r1_row h_input_imm_row d.toInputs.h_andi_subset h_lane_rd promises
+      h_input_r1_row h_input_imm_row h_andi_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -1150,17 +1171,20 @@ theorem stepStrong_ori
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.ori_input.r1_val
         h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+  have h_ori_subset :=
+    itype_imm_subset_of_decode trace i d.toInputs.ori_input.imm d.toClaim.imm
+      d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
   have h_input_imm_row :
       BitVec.signExtend 64 d.toInputs.ori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
         m providerInput i.val d.toInputs.ori_input.imm h_matches h_m32_zero h_match
-        d.toInputs.h_ori_subset
+        h_ori_subset
   let env : OpEnvelope state m i.val :=
     OpEnvelope.ori d.toInputs.ori_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_input_r1_row h_input_imm_row d.toInputs.h_ori_subset h_lane_rd promises
+      h_input_r1_row h_input_imm_row h_ori_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -1284,17 +1308,20 @@ theorem stepStrong_xori
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xori_input.r1_val
         h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+  have h_xori_subset :=
+    itype_imm_subset_of_decode trace i d.toInputs.xori_input.imm d.toClaim.imm
+      d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
   have h_input_imm_row :
       BitVec.signExtend 64 d.toInputs.xori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
         m providerInput i.val d.toInputs.xori_input.imm h_matches h_m32_zero h_match
-        d.toInputs.h_xori_subset
+        h_xori_subset
   let env : OpEnvelope state m i.val :=
     OpEnvelope.xori d.toInputs.xori_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_input_r1_row h_input_imm_row d.toInputs.h_xori_subset h_lane_rd promises
+      h_input_r1_row h_input_imm_row h_xori_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -1420,10 +1447,13 @@ theorem stepStrong_slti
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slti_input.r1_val
         h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+  have h_slti_subset :=
+    itype_imm_subset_of_decode trace i d.toInputs.slti_input.imm d.toClaim.imm
+      d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
   let env : OpEnvelope state m i.val :=
     OpEnvelope.slti d.toInputs.slti_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_m32_zero h_input_r1_row d.toInputs.h_slti_subset h_lane_rd promises
+      h_m32_zero h_input_r1_row h_slti_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_m32_zero, h_input_r1_row⟩
@@ -1549,10 +1579,13 @@ theorem stepStrong_sltiu
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltiu_input.r1_val
         h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+  have h_sltiu_subset :=
+    itype_imm_subset_of_decode trace i d.toInputs.sltiu_input.imm d.toClaim.imm
+      d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sltiu d.toInputs.sltiu_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
-      h_m32_zero h_input_r1_row d.toInputs.h_sltiu_subset h_lane_rd promises
+      h_m32_zero h_input_r1_row h_sltiu_subset h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := by
     show _ ∧ _
     exact ⟨h_m32_zero, h_input_r1_row⟩
@@ -2527,9 +2560,12 @@ theorem stepStrong_addiw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
+  have h_addiw_subset :=
+    itype_imm_subset_of_decode trace i d.toInputs.addiw_input.imm d.toClaim.imm
+      d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
   let env : OpEnvelope state m i.val :=
     OpEnvelope.addiw d.toInputs.addiw_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm zeroValidBinary bus pins
-      d.toInputs.h_addiw_subset providerTable providerRow h_component h_table_spec h_provider_row
+      h_addiw_subset providerTable providerRow h_component h_table_spec h_provider_row
       h_match h_input_r1_extract h_lane_rd promises
   have h_bridge : env.aeneasBridgeTrust := h_input_r1_extract
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -3418,17 +3454,20 @@ theorem stepStrong_addi
         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
           m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addi_input.r1_val
           h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+    have h_addi_subset :=
+      itype_imm_subset_of_decode trace i d.toInputs.addi_input.imm d.toClaim.imm
+        d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
     have h_input_imm_row :
         BitVec.signExtend 64 d.toInputs.addi_input.imm
           = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
         ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
           m providerInput i.val d.toInputs.addi_input.imm h_matches h_m32_zero h_match
-          d.toInputs.h_addi_subset
+          h_addi_subset
     let env : OpEnvelope state m i.val :=
       OpEnvelope.addi_via_binary d.toInputs.addi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        d.toInputs.h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
+        h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _
       exact ⟨h_input_r1_row, h_input_imm_row⟩
@@ -3438,10 +3477,13 @@ theorem stepStrong_addi
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
+    have h_addi_subset :=
+      itype_imm_subset_of_decode trace i d.toInputs.addi_input.imm d.toClaim.imm
+        d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
     let env : OpEnvelope state m i.val :=
       OpEnvelope.addi_via_binaryadd d.toInputs.addi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        h_add_subset d.toInputs.h_addi_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_m32_zero h_set_pc_zero
+        h_add_subset h_addi_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_m32_zero h_set_pc_zero
         h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _ ∧ _ ∧ _

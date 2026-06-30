@@ -238,6 +238,13 @@ structure Decode_addi (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type where
@@ -258,9 +265,6 @@ structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_addi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val addi_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addi_input.PC.toNat
@@ -490,6 +494,13 @@ structure Decode_addiw (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_imm :
+    BitVec.signExtend 64 c.imm =
+      BitVec.ofNat 64
+        (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
+          + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
 structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addiw trace i) : Type where
@@ -510,9 +521,6 @@ structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
-  h_addiw_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-    i.val addiw_input.imm
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addiw_input.PC.toNat
