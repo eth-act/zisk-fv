@@ -41,6 +41,16 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
+/-- Branch theorem-domain range assumptions.
+
+This is not a decoded placement fact: it is the explicit soundness-domain condition needed by the
+branch next-PC cast. Keeping it separate from `Inputs_<branch>` leaves those input records focused
+on Sail/ZisK state and value agreement. -/
+def BranchRangeDomain (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (pc : BitVec 64) (takenOffset : FGL) : Prop :=
+  ((mainOfTable trace.program trace.mainTable).pc i.val).val + takenOffset.val < GL_prime
+    ∧ pc.toNat < GL_prime - 4
+
 structure Claim_beq (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
@@ -106,17 +116,11 @@ structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
-  -- via `Pilot.branch_nextPC_flag1_taken` + `branch_flag_eq_provided`.
+  -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
+  -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = beq_input.PC.toNat
-  h_no_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-          i.val).val
-      < GL_prime
-  h_pc_bound : beq_input.PC.toNat < 18446744069414584321 - 4
   h_success : (PureSpec.execute_BEQ_pure beq_input).success = true
 
 /-- Per-op residual bundle for the `beq` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -201,17 +205,11 @@ structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
-  -- via `Pilot.branch_nextPC_flag0_taken` + `branch_flag_eq_provided`.
+  -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
+  -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bne_input.PC.toNat
-  h_no_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-          i.val).val
-      < GL_prime
-  h_pc_bound : bne_input.PC.toNat < 18446744069414584321 - 4
   h_success : (PureSpec.execute_BNE_pure bne_input).success = true
 
 /-- Per-op residual bundle for the `bne` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -295,17 +293,11 @@ structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
-  -- via `Pilot.branch_nextPC_flag1_taken` + `branch_flag_lt_provided`.
+  -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
+  -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = blt_input.PC.toNat
-  h_no_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-          i.val).val
-      < GL_prime
-  h_pc_bound : blt_input.PC.toNat < 18446744069414584321 - 4
   h_success : (PureSpec.execute_BLT_pure blt_input).success = true
 
 /-- Per-op residual bundle for the `blt` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -390,17 +382,11 @@ structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: PC bridge / no-wrap / bound. Replace `h_nextPC_matches`, now DERIVED
-  -- via `Pilot.branch_nextPC_flag0_taken` + `branch_flag_lt_provided`.
+  -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
+  -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bge_input.PC.toNat
-  h_no_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-          i.val).val
-      < GL_prime
-  h_pc_bound : bge_input.PC.toNat < 18446744069414584321 - 4
   h_success : (PureSpec.execute_BGE_pure bge_input).success = true
 
 /-- Per-op residual bundle for the `bge` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -488,18 +474,11 @@ structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: PC bridge, taken-target no-wrap bound, and PC trajectory bound. These
-  -- replace the cross-world `h_nextPC_matches`, now DERIVED via
-  -- `Pilot.branch_nextPC_flag1_taken` + `branch_flag_ltu_provided`.
+  -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
+  -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bltu_input.PC.toNat
-  h_no_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-          i.val).val
-      < GL_prime
-  h_pc_bound : bltu_input.PC.toNat < 18446744069414584321 - 4
   h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
 
 /-- Per-op residual bundle for the `bltu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
@@ -586,17 +565,11 @@ structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: PC bridge / no-wrap / bound. These replace `h_nextPC_matches`, now
-  -- DERIVED via `Pilot.branch_nextPC_flag0_taken` + `branch_flag_ltu_provided`.
+  -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
+  -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bgeu_input.PC.toNat
-  h_no_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-          i.val).val
-      < GL_prime
-  h_pc_bound : bgeu_input.PC.toNat < 18446744069414584321 - 4
   h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
 
 /-- Per-op residual bundle for the `bgeu` archetype: the 3-way `Claim`/`Decode`/`Inputs`

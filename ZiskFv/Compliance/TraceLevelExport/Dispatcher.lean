@@ -259,17 +259,22 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
 /-- Per-row known-defect exclusion obligation, stated DIRECTLY over the row data
     (no `OpEnvelope` detour).
 
-    The 8 defect-capable arms carry the genuine forge exclusion, read off the
+    The defect-capable arms carry the genuine forge exclusion, read off the
     arith witness / claim fields that live in `ia` (the `inputsAgree` half) or in
     the matched `ZiskStep` claim payload:
       * MUL / MULH / MULHSU → `¬ SignedMulForge` of the ArithMul sign witnesses;
       * DIV / REM → `¬ DivRemForge` of the 64-bit remainder/divisor magnitudes;
       * DIVW / REMW → `¬ DivRemForgeW` of the 32-bit remainder/divisor magnitudes;
       * FENCE → `FenceKnownGood` of the claim's `fm` / `rs` / `rd`.
+
+    The six branch arms carry theorem-domain PC range assumptions separately
+    from `InputsAgree`: these are not state/value agreement facts, and they are
+    not derived placement facts.  They preserve the old branch no-wrap / PC-bound
+    obligations at the explicit theorem-domain surface.
     Each is DEFINITIONALLY the same proposition as the corresponding `<op>EnvOf`
     `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas in `EnvOf`), so the
     re-expression off `OpEnvelope` carries no change of meaning.  Every other
-    (non-defect) arm carries no defect obligation (`True`). -/
+    arm carries no additional theorem-domain obligation (`True`). -/
 def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
@@ -281,6 +286,24 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions) (sail
   | .rem _, ia => ¬ Defects.DivRemForge ia.rem_input.r2_val ia.v ia.r_a
   | .divw _, ia => ¬ Defects.DivRemForgeW ia.divw_input.r2_val ia.v ia.r_a
   | .remw _, ia => ¬ Defects.DivRemForgeW ia.remw_input.r2_val ia.v ia.r_a
+  | .beq _, ia =>
+      BranchRangeDomain ziskTrace i ia.beq_input.PC
+        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
+  | .bne _, ia =>
+      BranchRangeDomain ziskTrace i ia.bne_input.PC
+        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
+  | .blt _, ia =>
+      BranchRangeDomain ziskTrace i ia.blt_input.PC
+        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
+  | .bge _, ia =>
+      BranchRangeDomain ziskTrace i ia.bge_input.PC
+        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
+  | .bltu _, ia =>
+      BranchRangeDomain ziskTrace i ia.bltu_input.PC
+        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
+  | .bgeu _, ia =>
+      BranchRangeDomain ziskTrace i ia.bgeu_input.PC
+        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
   | .fence c, _ => Defects.FenceKnownGood c.fm c.rs c.rd
   | _, _ => True
 
