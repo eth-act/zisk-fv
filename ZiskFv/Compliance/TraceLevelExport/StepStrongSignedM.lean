@@ -55,13 +55,13 @@ set_option maxHeartbeats 8000000
     obligation is trivial (the rd-write is the unified-memory rd lane already
     witnessed by `arith_mem`).
 
-    The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
-    `h_known : Defects.NoKnownDefect (mulEnvOf …)` (= `RowOutsideDefectRegion`'s mul
-    arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
-    global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
-    SATISFIABLE: for an honest MUL row (`RowData_mul.h_not_forge`, i.e.
-    `np = na XOR nb`) the row is outside the forge shape, so `NoKnownDefect` is TRUE
-    and the caller proves it.  Non-vacuous: the narrowed MUL exclusion is exactly
+    The `NoKnownDefect` obligation comes from the trace-local
+    `RowOutsideDefectRegion` matcher instantiated by the dispatcher on this row's
+    arith witness; this proof receives the resulting `¬ SignedMulForge` fact for
+    the SPECIFIC env it feeds to the global theorem.  It is SATISFIABLE: for an
+    honest MUL row (`RowData_mul.h_not_forge`, i.e. `np = na XOR nb`) the row is
+    outside the forge shape, so `NoKnownDefect` is TRUE.  Non-vacuous: the
+    narrowed MUL exclusion is exactly
     the two exceptional product-sign shapes the ArithTable admits for op 180, so an
     honest signed MUL row supplies all binders. -/
 theorem stepStrong_mul
@@ -177,14 +177,14 @@ theorem stepStrong_mulhsu
     obligation is trivial (the rd-write is the unified-memory rd lane already
     witnessed by `arith_mem`).
 
-    The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
-    `h_known : Defects.NoKnownDefect (divEnvOf …)` (= `RowOutsideDefectRegion`'s div
-    arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
-    global theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
-    SATISFIABLE: for an honest signed DIV row (`RowData_div.h_not_forge`, i.e.
-    nonzero-divisor `|r| ≠ |op2|`) the row is outside the `|r| = |op2|`
-    `LT_ABS_NP` false-positive, so `NoKnownDefect` is TRUE and the caller proves
-    it.  Non-vacuous: the narrowed DIV exclusion is exactly the genuine circuit-bug
+    The `NoKnownDefect` obligation comes from the trace-local
+    `RowOutsideDefectRegion` matcher instantiated by the dispatcher on this row's
+    ArithDiv witness and witness-derived divisor value; this proof receives the
+    resulting `¬ DivRemForge` fact for the SPECIFIC env it feeds to the global
+    theorem.  It is SATISFIABLE: for an honest signed DIV row
+    (`RowData_div.h_not_forge`, i.e. nonzero-divisor `|r| ≠ |op2|`) the row is
+    outside the `|r| = |op2|` `LT_ABS_NP` false-positive, so `NoKnownDefect` is
+    TRUE.  Non-vacuous: the narrowed DIV exclusion is exactly the genuine circuit-bug
     forge (codygunton/zisk#5), and divisor-zero rows are handled by
     `h_boundary`; signed overflow is handled by the signed DIV bridge. -/
 theorem stepStrong_div
@@ -216,9 +216,10 @@ theorem stepStrong_div
 
 /-- Strengthened `rem` step (channel-balance form), via the OpEnvelope route.
     Companion of `stepStrong_div` for the signed 64-bit remainder (op `185`,
-    secondary ArithDiv lane).  Same OpEnvelope-route pattern; the caller-supplied
-    `h_known` is the GENUINE `NoKnownDefect (remEnvOf …)`, SATISFIABLE for an honest
-    signed REM row (`RowData_rem.h_not_forge`).  Non-vacuous. -/
+    secondary ArithDiv lane).  Same OpEnvelope-route pattern; `h_known` is the
+    trace-local matcher-instantiated forge exclusion for
+    `NoKnownDefect (remEnvOf …)`, SATISFIABLE for an honest signed REM row
+    (`RowData_rem.h_not_forge`).  Non-vacuous. -/
 theorem stepStrong_rem
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_rem trace binding i)
@@ -246,9 +247,9 @@ theorem stepStrong_rem
 /-- Strengthened `divw` step (channel-balance form), via the OpEnvelope route.
     W-mode analogue of `stepStrong_div` (signed 32-bit division, op `188`,
     `m32 = 1`).  Carries the W-mode chunk-zero pins + sign-extension choice via
-    `RowData_divw`; the caller-supplied `h_known` is the GENUINE
-    `NoKnownDefect (divwEnvOf …)`, SATISFIABLE for an honest signed DIVW row
-    (`RowData_divw.h_not_forge`, `|r₃₂| ≠ |op2₃₂|`).  Non-vacuous. -/
+    `RowData_divw`; `h_known` is the trace-local matcher-instantiated forge
+    exclusion for `NoKnownDefect (divwEnvOf …)`, SATISFIABLE for an honest signed
+    DIVW row (`RowData_divw.h_not_forge`, `|r₃₂| ≠ |op2₃₂|`).  Non-vacuous. -/
 theorem stepStrong_divw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divw trace binding i)
@@ -308,14 +309,12 @@ theorem stepStrong_remw
     (`.2.2.2.1`).  `aeneasBridgeTrust` is the two flat decode pins; the
     memory-timeline obligation is trivial (FENCE has no memory entry).
 
-    The `NoKnownDefect` obligation is supplied DIRECTLY by the caller as
-    `h_known : Defects.NoKnownDefect (fenceEnvOf …)` (= `RowOutsideDefectRegion`'s fence
-    arm) — the GENUINE `NoKnownDefect` of the SPECIFIC env this proof feeds to the
-    old theorem, NOT a selector-∀ and NOT a contradictory `False`-binder.  It is
-    SATISFIABLE: for an honest FENCE row (`RowData_fence.h_fm_zero` / `h_rs_x0` /
-    `h_rd_x0`) the env is the honest env, so `NoKnownDefect` is TRUE and the caller
-    proves it.  Non-vacuous: the malicious FENCE shapes are excluded exactly by the
-    honest-shape pins the caller supplies, as the FENCE defect ledger documents. -/
+    The `NoKnownDefect` obligation comes from `RowOutsideDefectRegion`'s
+    trace-local FENCE arm over the decoded Main row pins.  It is SATISFIABLE: for
+    an honest FENCE row (`RowData_fence.h_fm_zero` / `h_rs_x0` / `h_rd_x0`) the env
+    is the honest env, so `NoKnownDefect` is TRUE.  Non-vacuous: the malicious
+    FENCE shapes are excluded exactly by the honest-shape pins, as the FENCE defect
+    ledger documents. -/
 theorem stepStrong_fence
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)

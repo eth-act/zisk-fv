@@ -256,110 +256,260 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
 
 
 
-/-- Per-row known-defect exclusion obligation, stated DIRECTLY over the row data
-    (no `OpEnvelope` detour).
+/-- Per-row known-defect exclusion obligation, stated over the accepted ZisK row
+    only (no `OpEnvelope`, `SailTrace`, or `InputsAgree` detour).
 
-    The defect-capable arms carry the genuine forge exclusion, read off the
-    arith witness / claim fields that live in `ia` (the `inputsAgree` half) or in
-    the matched `ZiskStep` claim payload:
-      * MUL / MULH / MULHSU → `¬ SignedMulForge` of the ArithMul sign witnesses;
-      * DIV / REM → `¬ DivRemForge` of the 64-bit remainder/divisor magnitudes;
-      * DIVW / REMW → `¬ DivRemForgeW` of the 32-bit remainder/divisor magnitudes;
-      * FENCE → `FenceKnownGood` of the claim's `fm` / `rs` / `rd`.
+    The defect-capable arith arms quantify over arith witness rows whose
+    operation-bus entry matches the accepted Main row:
+      * MUL uses the primary ArithMul lane;
+      * MULH / MULHSU use the secondary ArithMul lane;
+      * DIV / DIVW use the primary ArithDiv lane;
+      * REM / REMW use the secondary ArithDiv lane.
 
-    The sequential, branch, and jump-like arms that have been factored carry
-    theorem-domain PC range assumptions separately from `InputsAgree`: these are
-    not state/value agreement facts, and they are not derived placement facts.
-    They preserve the old no-wrap / PC-bound obligations at the explicit
-    theorem-domain surface.
-    For defect-gated arms, the defect component is DEFINITIONALLY the same
-    proposition as the corresponding `<op>EnvOf` `OpEnvelope` defect shape (the
-    `Iff.rfl` bridge lemmas in `EnvOf`), so the re-expression off `OpEnvelope`
-    carries no change of meaning.  The separate sequential-domain component is
-    the old PC-bound obligation factored out of `InputsAgree`. -/
-def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
-    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
-    (ia : InputsAgree ziskTrace sailTrace i zs) : Prop :=
-  match zs, ia with
-  | .mul _, ia => SequentialPcDomain ia.mul_input.PC ∧ ¬ Defects.SignedMulForge ia.v ia.r_a
-  | .mulh _, ia => SequentialPcDomain ia.mulh_input.PC ∧ ¬ Defects.SignedMulForge ia.v ia.r_a
-  | .mulhsu _, ia => SequentialPcDomain ia.mulhsu_input.PC ∧ ¬ Defects.SignedMulForge ia.v ia.r_a
-  | .div _, ia =>
-      SequentialPcDomain ia.div_input.PC ∧ ¬ Defects.DivRemForge ia.div_input.r2_val ia.v ia.r_a
-  | .rem _, ia =>
-      SequentialPcDomain ia.rem_input.PC ∧ ¬ Defects.DivRemForge ia.rem_input.r2_val ia.v ia.r_a
-  | .divw _, ia =>
-      SequentialPcDomain ia.divw_input.PC ∧ ¬ Defects.DivRemForgeW ia.divw_input.r2_val ia.v ia.r_a
-  | .remw _, ia =>
-      SequentialPcDomain ia.remw_input.PC ∧ ¬ Defects.DivRemForgeW ia.remw_input.r2_val ia.v ia.r_a
-  | .mulw _, ia => SequentialPcDomain ia.mulw_input.PC
-  | .mulhu _, ia => SequentialPcDomain ia.mulhu_input.PC
-  | .divu _, ia => SequentialPcDomain ia.divu_input.PC
-  | .divuw _, ia => SequentialPcDomain ia.divuw_input.PC
-  | .remu _, ia => SequentialPcDomain ia.remu_input.PC
-  | .remuw _, ia => SequentialPcDomain ia.remuw_input.PC
-  | .sub _, ia => SequentialPcDomain ia.sub_input.PC
-  | .and _, ia => SequentialPcDomain ia.and_input.PC
-  | .or _, ia => SequentialPcDomain ia.or_input.PC
-  | .xor _, ia => SequentialPcDomain ia.xor_input.PC
-  | .slt _, ia => SequentialPcDomain ia.slt_input.PC
-  | .sltu _, ia => SequentialPcDomain ia.sltu_input.PC
-  | .andi _, ia => SequentialPcDomain ia.andi_input.PC
-  | .ori _, ia => SequentialPcDomain ia.ori_input.PC
-  | .xori _, ia => SequentialPcDomain ia.xori_input.PC
-  | .slti _, ia => SequentialPcDomain ia.slti_input.PC
-  | .sltiu _, ia => SequentialPcDomain ia.sltiu_input.PC
-  | .sll _, ia => SequentialPcDomain ia.sll_input.PC
-  | .srl _, ia => SequentialPcDomain ia.srl_input.PC
-  | .sra _, ia => SequentialPcDomain ia.sra_input.PC
-  | .slli _, ia => SequentialPcDomain ia.slli_input.PC
-  | .srli _, ia => SequentialPcDomain ia.srli_input.PC
-  | .srai _, ia => SequentialPcDomain ia.srai_input.PC
-  | .add _, ia => SequentialPcDomain ia.add_input.PC
-  | .addi _, ia => SequentialPcDomain ia.addi_input.PC
-  | .subw _, ia => SequentialPcDomain ia.subw_input.PC
-  | .addw _, ia => SequentialPcDomain ia.addw_input.PC
-  | .addiw _, ia => SequentialPcDomain ia.addiw_input.PC
-  | .sllw _, ia => SequentialPcDomain ia.sllw_input.PC
-  | .srlw _, ia => SequentialPcDomain ia.srlw_input.PC
-  | .sraw _, ia => SequentialPcDomain ia.sraw_input.PC
-  | .slliw c, _ => SequentialPcDomain c.slliw_input.PC
-  | .srliw c, _ => SequentialPcDomain c.srliw_input.PC
-  | .sraiw c, _ => SequentialPcDomain c.sraiw_input.PC
-  | .beq _, ia =>
-      BranchRangeDomain ziskTrace i ia.beq_input.PC
+    DIV/REM divisor operands are tied to the witness chunks via
+    `Defects.signedDivisorInt` / `Defects.signedDivisorIntW`, so the defect gate
+    no longer reads Sail operand values from `Inputs_<op>`.  The dispatcher later
+    instantiates this trace-local predicate with the arith row already present in
+    the existing step evidence; the predicate itself is independent of that
+    evidence.
+
+    The sequential, branch, and jump-like arms also carry their theorem-domain
+    range assumptions, but phrased over trace-local row facts.  The dispatcher
+    later bridges them to the matching `Inputs_<op>` PC through the per-op
+    `h_pc_bridge` fields; this keeps `InputsAgree` out of the residual while
+    preserving the explicit domain obligations from the step theorems. -/
+
+noncomputable def mainPcVal (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Nat :=
+  ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val
+
+def MainSequentialPcDomain (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Prop :=
+  mainPcVal ziskTrace i < GL_prime - 4
+
+def MainBranchRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) (takenOffset : FGL) : Prop :=
+  mainPcVal ziskTrace i + takenOffset.val < GL_prime ∧
+    MainSequentialPcDomain ziskTrace i
+
+structure MainAuipcRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) (imm : BitVec 20) : Prop where
+  h_pc_bound : MainSequentialPcDomain ziskTrace i
+  h_no_wrap :
+    mainPcVal ziskTrace i + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat
+      < GL_prime
+  h_pc_offset_lt_2_32 :
+    ∀ pc : BitVec 64, mainPcVal ziskTrace i = pc.toNat →
+      (pc + BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat < 4294967296
+
+structure MainJalRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) (imm : BitVec 21) : Prop where
+  h_no_fgl_wrap : mainPcVal ziskTrace i + (BitVec.signExtend 64 imm).toNat < GL_prime
+  h_pc_bound : MainSequentialPcDomain ziskTrace i
+  h_pc_offset_lt_2_32 :
+    ∀ pc : BitVec 64, mainPcVal ziskTrace i = pc.toNat →
+      (pc + 4#64).toNat < 4294967296
+
+structure MainJalrRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Prop where
+  h_pc_bound : MainSequentialPcDomain ziskTrace i
+  h_pc_offset_lt_2_32 :
+    ∀ pc : BitVec 64, mainPcVal ziskTrace i = pc.toNat →
+      (pc + 4#64).toNat < 4294967296
+
+theorem sequentialPcDomain_of_main
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions} {pc : BitVec 64}
+    (h_bridge : mainPcVal ziskTrace i = pc.toNat)
+    (h_domain : MainSequentialPcDomain ziskTrace i) :
+    SequentialPcDomain pc := by
+  unfold SequentialPcDomain
+  rw [← h_bridge]
+  simpa [MainSequentialPcDomain] using h_domain
+
+theorem branchRangeDomain_of_main
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions} {pc : BitVec 64} {takenOffset : FGL}
+    (h_bridge : mainPcVal ziskTrace i = pc.toNat)
+    (h_domain : MainBranchRangeDomain ziskTrace i takenOffset) :
+    BranchRangeDomain ziskTrace i pc takenOffset := by
+  constructor
+  · simpa [BranchRangeDomain, MainBranchRangeDomain, mainPcVal] using h_domain.1
+  · simpa [SequentialPcDomain] using sequentialPcDomain_of_main h_bridge h_domain.2
+
+theorem auipcRangeDomain_of_main
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions} {imm : BitVec 20}
+    {auipc_input : PureSpec.AuipcInput}
+    (h_input_imm : auipc_input.imm = imm)
+    (h_bridge : mainPcVal ziskTrace i = auipc_input.PC.toNat)
+    (h_domain : MainAuipcRangeDomain ziskTrace i imm) :
+    AuipcRangeDomain auipc_input where
+  h_pc_bound := sequentialPcDomain_of_main h_bridge h_domain.h_pc_bound
+  h_no_wrap := by
+    rw [h_input_imm, ← h_bridge]
+    exact h_domain.h_no_wrap
+  h_pc_offset_lt_2_32 := by
+    simpa [h_input_imm] using h_domain.h_pc_offset_lt_2_32 auipc_input.PC h_bridge
+
+theorem jalRangeDomain_of_main
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions} {imm : BitVec 21}
+    {jal_input : PureSpec.JalInput}
+    (h_input_imm : jal_input.imm = imm)
+    (h_bridge : mainPcVal ziskTrace i = jal_input.PC.toNat)
+    (h_domain : MainJalRangeDomain ziskTrace i imm) :
+    JalRangeDomain jal_input where
+  h_no_fgl_wrap := by
+    rw [h_input_imm, ← h_bridge]
+    exact h_domain.h_no_fgl_wrap
+  h_pc_bound := sequentialPcDomain_of_main h_bridge h_domain.h_pc_bound
+  h_pc_offset_lt_2_32 := h_domain.h_pc_offset_lt_2_32 jal_input.PC h_bridge
+
+theorem jalrRangeDomain_of_main
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions} {jalr_input : PureSpec.JalrInput}
+    (h_bridge : mainPcVal ziskTrace i = jalr_input.PC.toNat)
+    (h_domain : MainJalrRangeDomain ziskTrace i) :
+    JalrRangeDomain jalr_input where
+  h_pc_bound := sequentialPcDomain_of_main h_bridge h_domain.h_pc_bound
+  h_pc_offset_lt_2_32 := h_domain.h_pc_offset_lt_2_32 jalr_input.PC h_bridge
+
+def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
+  | .mul _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithMul.opBus_row_Arith v r_a) →
+          ¬ Defects.SignedMulForge v r_a
+  | .mulh _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a) →
+          ¬ Defects.SignedMulForge v r_a
+  | .mulhsu _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r_a) →
+          ¬ Defects.SignedMulForge v r_a
+  | .div _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+            (op2 : BitVec 64),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a) →
+          op2.toInt = Defects.signedDivisorInt v r_a →
+          ¬ Defects.DivRemForge op2 v r_a
+  | .rem _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+            (op2 : BitVec 64),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a) →
+          op2.toInt = Defects.signedDivisorInt v r_a →
+          ¬ Defects.DivRemForge op2 v r_a
+  | .divw _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+            (op2 : BitVec 64),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a) →
+          (Sail.BitVec.extractLsb op2 31 0).toInt = Defects.signedDivisorIntW v r_a →
+          ¬ Defects.DivRemForgeW op2 v r_a
+  | .remw _ =>
+      MainSequentialPcDomain ziskTrace i ∧
+        ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+            (op2 : BitVec 64),
+          ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
+            (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a) →
+          (Sail.BitVec.extractLsb op2 31 0).toInt = Defects.signedDivisorIntW v r_a →
+          ¬ Defects.DivRemForgeW op2 v r_a
+  | .mulw _ => MainSequentialPcDomain ziskTrace i
+  | .mulhu _ => MainSequentialPcDomain ziskTrace i
+  | .divu _ => MainSequentialPcDomain ziskTrace i
+  | .divuw _ => MainSequentialPcDomain ziskTrace i
+  | .remu _ => MainSequentialPcDomain ziskTrace i
+  | .remuw _ => MainSequentialPcDomain ziskTrace i
+  | .sub _ => MainSequentialPcDomain ziskTrace i
+  | .and _ => MainSequentialPcDomain ziskTrace i
+  | .or _ => MainSequentialPcDomain ziskTrace i
+  | .xor _ => MainSequentialPcDomain ziskTrace i
+  | .slt _ => MainSequentialPcDomain ziskTrace i
+  | .sltu _ => MainSequentialPcDomain ziskTrace i
+  | .andi _ => MainSequentialPcDomain ziskTrace i
+  | .ori _ => MainSequentialPcDomain ziskTrace i
+  | .xori _ => MainSequentialPcDomain ziskTrace i
+  | .slti _ => MainSequentialPcDomain ziskTrace i
+  | .sltiu _ => MainSequentialPcDomain ziskTrace i
+  | .sll _ => MainSequentialPcDomain ziskTrace i
+  | .srl _ => MainSequentialPcDomain ziskTrace i
+  | .sra _ => MainSequentialPcDomain ziskTrace i
+  | .slli _ => MainSequentialPcDomain ziskTrace i
+  | .srli _ => MainSequentialPcDomain ziskTrace i
+  | .srai _ => MainSequentialPcDomain ziskTrace i
+  | .add _ => MainSequentialPcDomain ziskTrace i
+  | .addi _ => MainSequentialPcDomain ziskTrace i
+  | .subw _ => MainSequentialPcDomain ziskTrace i
+  | .addw _ => MainSequentialPcDomain ziskTrace i
+  | .addiw _ => MainSequentialPcDomain ziskTrace i
+  | .sllw _ => MainSequentialPcDomain ziskTrace i
+  | .srlw _ => MainSequentialPcDomain ziskTrace i
+  | .sraw _ => MainSequentialPcDomain ziskTrace i
+  | .slliw c => SequentialPcDomain c.slliw_input.PC
+  | .srliw c => SequentialPcDomain c.srliw_input.PC
+  | .sraiw c => SequentialPcDomain c.sraiw_input.PC
+  | .beq _ =>
+      MainBranchRangeDomain ziskTrace i
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
-  | .bne _, ia =>
-      BranchRangeDomain ziskTrace i ia.bne_input.PC
+  | .bne _ =>
+      MainBranchRangeDomain ziskTrace i
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
-  | .blt _, ia =>
-      BranchRangeDomain ziskTrace i ia.blt_input.PC
+  | .blt _ =>
+      MainBranchRangeDomain ziskTrace i
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
-  | .bge _, ia =>
-      BranchRangeDomain ziskTrace i ia.bge_input.PC
+  | .bge _ =>
+      MainBranchRangeDomain ziskTrace i
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
-  | .bltu _, ia =>
-      BranchRangeDomain ziskTrace i ia.bltu_input.PC
+  | .bltu _ =>
+      MainBranchRangeDomain ziskTrace i
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
-  | .bgeu _, ia =>
-      BranchRangeDomain ziskTrace i ia.bgeu_input.PC
+  | .bgeu _ =>
+      MainBranchRangeDomain ziskTrace i
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
-  | .auipc _, ia => AuipcRangeDomain ia.auipc_input
-  | .jal _, ia => JalRangeDomain ia.jal_input
-  | .jalr _, ia => JalrRangeDomain ia.jalr_input
-  | .lui _, ia => SequentialPcDomain ia.lui_input.PC
-  | .sb c, _ => SequentialPcDomain c.sb_input.PC
-  | .sh c, _ => SequentialPcDomain c.sh_input.PC
-  | .sw c, _ => SequentialPcDomain c.sw_input.PC
-  | .sd c, _ => SequentialPcDomain c.sd_input.PC
-  | .ld c, _ => SequentialPcDomain c.ld_input.PC
-  | .lbu c, _ => SequentialPcDomain c.lbu_input.PC
-  | .lhu c, _ => SequentialPcDomain c.lhu_input.PC
-  | .lwu c, _ => SequentialPcDomain c.lwu_input.PC
-  | .lb c, _ => SequentialPcDomain c.lb_input.PC
-  | .lh c, _ => SequentialPcDomain c.lh_input.PC
-  | .lw c, _ => SequentialPcDomain c.lw_input.PC
-  | .fence c, ia => SequentialPcDomain ia.fence_input.PC ∧ Defects.FenceKnownGood c.fm c.rs c.rd
+  | .auipc c => MainAuipcRangeDomain ziskTrace i c.imm
+  | .jal c => MainJalRangeDomain ziskTrace i c.imm
+  | .jalr _ => MainJalrRangeDomain ziskTrace i
+  | .lui _ => MainSequentialPcDomain ziskTrace i
+  | .sb c => SequentialPcDomain c.sb_input.PC
+  | .sh c => SequentialPcDomain c.sh_input.PC
+  | .sw c => SequentialPcDomain c.sw_input.PC
+  | .sd c => SequentialPcDomain c.sd_input.PC
+  | .ld c => SequentialPcDomain c.ld_input.PC
+  | .lbu c => SequentialPcDomain c.lbu_input.PC
+  | .lhu c => SequentialPcDomain c.lhu_input.PC
+  | .lwu c => SequentialPcDomain c.lwu_input.PC
+  | .lb c => SequentialPcDomain c.lb_input.PC
+  | .lh c => SequentialPcDomain c.lh_input.PC
+  | .lw c => SequentialPcDomain c.lw_input.PC
+  | .fence c => MainSequentialPcDomain ziskTrace i ∧
+      Defects.FenceKnownGood c.fm c.rs c.rd
 
 def StepSound
     (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
@@ -852,71 +1002,180 @@ def StepSound
 /-- Per-row dispatch to the matching strengthened step theorem.
 
     The `hAvoidKnownBugs` parameter carries the per-row defect-exclusion obligation
-    (`RowOutsideDefectRegion`), stated directly over the row data.  For the 8
-    defect-capable arms it is the row-data forge-negation / FENCE-known-good
-    fact; the dispatcher hands it straight to the corresponding `stepStrong_<op>`,
-    which assembles `NoKnownDefect (<op>EnvOf …)` from it (via
-    `noKnownDefect_of_shapes`) and feeds that to
-    `zisk_riscv_compliant_program_bus`.  For every other (non-defect) arm the
-    obligation is `True` and is ignored — the arm builds its own `NoKnownDefect`. -/
+    (`RowOutsideDefectRegion`), stated over the accepted ZisK trace row without
+    `SailTrace` or `InputsAgree`.  For the 8 defect-capable arms it universally
+    excludes forge shapes for arith witness rows whose op-bus entry matches the
+    Main row, or requires FENCE-known-good pins directly from the decoded row.  The
+    dispatcher instantiates that trace-local matcher with the arith row evidence
+    already present in the step evidence and hands the resulting forge-negation to
+    the matching `stepStrong_<op>`, which assembles `NoKnownDefect (<op>EnvOf …)`
+    from it.  For every other (non-defect) arm the obligation is `True` and is
+    ignored — the arm builds its own `NoKnownDefect`. -/
 
 theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
-    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace sailTrace i zs ia) :
+    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs) :
     StepSound ziskTrace sailTrace i zs := by
   cases zs with
-  | sub c => exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia) hAvoidKnownBugs
-  | and c => exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia) hAvoidKnownBugs
-  | or c => exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia) hAvoidKnownBugs
-  | xor c => exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia) hAvoidKnownBugs
-  | slt c => exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia) hAvoidKnownBugs
-  | sltu c => exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia) hAvoidKnownBugs
-  | andi c => exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia) hAvoidKnownBugs
-  | ori c => exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia) hAvoidKnownBugs
-  | xori c => exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia) hAvoidKnownBugs
-  | slti c => exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia) hAvoidKnownBugs
-  | sltiu c => exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia) hAvoidKnownBugs
-  | sll c => exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia) hAvoidKnownBugs
-  | srl c => exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia) hAvoidKnownBugs
-  | sra c => exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia) hAvoidKnownBugs
-  | slli c => exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia) hAvoidKnownBugs
-  | srli c => exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia) hAvoidKnownBugs
-  | srai c => exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia) hAvoidKnownBugs
-  | add c => exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia) hAvoidKnownBugs
-  | addi c => exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia) hAvoidKnownBugs
-  | subw c => exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia) hAvoidKnownBugs
-  | addw c => exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia) hAvoidKnownBugs
-  | addiw c => exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia) hAvoidKnownBugs
-  | sllw c => exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia) hAvoidKnownBugs
-  | srlw c => exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia) hAvoidKnownBugs
-  | sraw c => exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia) hAvoidKnownBugs
+  | sub c =>
+      exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | and c =>
+      exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | or c =>
+      exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | xor c =>
+      exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | slt c =>
+      exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sltu c =>
+      exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | andi c =>
+      exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | ori c =>
+      exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | xori c =>
+      exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | slti c =>
+      exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sltiu c =>
+      exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sll c =>
+      exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | srl c =>
+      exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sra c =>
+      exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | slli c =>
+      exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | srli c =>
+      exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | srai c =>
+      exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | add c =>
+      exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | addi c =>
+      exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | subw c =>
+      exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | addw c =>
+      exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | addiw c =>
+      exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sllw c =>
+      exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | srlw c =>
+      exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sraw c =>
+      exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | slliw c => exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia) hAvoidKnownBugs
   | srliw c => exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia) hAvoidKnownBugs
   | sraiw c => exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia) hAvoidKnownBugs
-  | mul c => exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | mulh c => exact stepStrong_mulh ziskTrace sailTrace i (toRowData_mulh c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | mulhsu c => exact stepStrong_mulhsu ziskTrace sailTrace i (toRowData_mulhsu c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | mulw c => exact stepStrong_mulw ziskTrace sailTrace i (toRowData_mulw c rd ia) hAvoidKnownBugs
-  | mulhu c => exact stepStrong_mulhu ziskTrace sailTrace i (toRowData_mulhu c rd ia) hAvoidKnownBugs
-  | div c => exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | rem c => exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | divw c => exact stepStrong_divw ziskTrace sailTrace i (toRowData_divw c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | remw c => exact stepStrong_remw ziskTrace sailTrace i (toRowData_remw c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
-  | divu c => exact stepStrong_divu ziskTrace sailTrace i (toRowData_divu c rd ia) hAvoidKnownBugs
-  | divuw c => exact stepStrong_divuw ziskTrace sailTrace i (toRowData_divuw c rd ia) hAvoidKnownBugs
-  | remu c => exact stepStrong_remu ziskTrace sailTrace i (toRowData_remu c rd ia) hAvoidKnownBugs
-  | remuw c => exact stepStrong_remuw ziskTrace sailTrace i (toRowData_remuw c rd ia) hAvoidKnownBugs
-  | beq c => exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia) hAvoidKnownBugs
-  | bne c => exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia) hAvoidKnownBugs
-  | blt c => exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia) hAvoidKnownBugs
-  | bge c => exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia) hAvoidKnownBugs
-  | bltu c => exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia) hAvoidKnownBugs
-  | bgeu c => exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia) hAvoidKnownBugs
-  | lui c => exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia) hAvoidKnownBugs
-  | auipc c => exact stepStrong_auipc ziskTrace sailTrace i (toRowData_auipc c rd ia) hAvoidKnownBugs
-  | jal c => exact stepStrong_jal ziskTrace sailTrace i (toRowData_jal c rd ia) hAvoidKnownBugs
-  | jalr c => exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia) hAvoidKnownBugs
+  | mul c =>
+      exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.h_match_primary)
+  | mulh c =>
+      exact stepStrong_mulh ziskTrace sailTrace i (toRowData_mulh c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.h_match_secondary)
+  | mulhsu c =>
+      exact stepStrong_mulhsu ziskTrace sailTrace i (toRowData_mulhsu c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.h_match_secondary)
+  | mulw c =>
+      exact stepStrong_mulw ziskTrace sailTrace i (toRowData_mulw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | mulhu c =>
+      exact stepStrong_mulhu ziskTrace sailTrace i (toRowData_mulhu c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | div c =>
+      exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.div_input.r2_val ia.h_match_primary
+          (by simpa [Defects.signedDivisorInt] using ia.h_rs2_value))
+  | rem c =>
+      exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.rem_input.r2_val ia.h_match_secondary
+          (by simpa [Defects.signedDivisorInt] using ia.h_rs2_value))
+  | divw c =>
+      exact stepStrong_divw ziskTrace sailTrace i (toRowData_divw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.divw_input.r2_val ia.h_match_primary
+          (by simpa [Defects.signedDivisorIntW] using ia.h_rs2_value))
+  | remw c =>
+      exact stepStrong_remw ziskTrace sailTrace i (toRowData_remw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.remw_input.r2_val ia.h_match_secondary
+          (by simpa [Defects.signedDivisorIntW] using ia.h_rs2_value))
+  | divu c =>
+      exact stepStrong_divu ziskTrace sailTrace i (toRowData_divu c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | divuw c =>
+      exact stepStrong_divuw ziskTrace sailTrace i (toRowData_divuw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | remu c =>
+      exact stepStrong_remu ziskTrace sailTrace i (toRowData_remu c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | remuw c =>
+      exact stepStrong_remuw ziskTrace sailTrace i (toRowData_remuw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | beq c =>
+      exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia)
+        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | bne c =>
+      exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia)
+        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | blt c =>
+      exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia)
+        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | bge c =>
+      exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia)
+        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | bltu c =>
+      exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia)
+        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | bgeu c =>
+      exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia)
+        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | lui c =>
+      exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | auipc c =>
+      exact stepStrong_auipc ziskTrace sailTrace i (toRowData_auipc c rd ia)
+        (auipcRangeDomain_of_main ia.h_input_imm ia.h_pc_bridge hAvoidKnownBugs)
+  | jal c =>
+      exact stepStrong_jal ziskTrace sailTrace i (toRowData_jal c rd ia)
+        (jalRangeDomain_of_main ia.h_input_imm ia.h_pc_bridge hAvoidKnownBugs)
+  | jalr c =>
+      exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia)
+        (jalrRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) hAvoidKnownBugs
   | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) hAvoidKnownBugs
   | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) hAvoidKnownBugs
@@ -928,6 +1187,9 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
   | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) hAvoidKnownBugs
   | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) hAvoidKnownBugs
   | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) hAvoidKnownBugs
-  | fence c => exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia) hAvoidKnownBugs.1 hAvoidKnownBugs.2
+  | fence c =>
+      exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
+        hAvoidKnownBugs.2
 
 end ZiskFv.Compliance

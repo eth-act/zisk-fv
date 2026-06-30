@@ -64,10 +64,11 @@ theorem busSub_rd_idx_of_decode
   rw [h_addr2, h_store_offset, h_store_ind]
   simp [Transpiler.wrap_to_regidx_ind]
 
-/-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  Both the
-    `RowOutsideDefectRegion` fence obligation AND `stepStrong_fence` reference THIS env,
-    so the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
-    exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
+/-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  The
+    trace-local `RowOutsideDefectRegion` FENCE arm and `stepStrong_fence` both use
+    these decoded row pins, so the threaded `NoKnownDefect` obligation is the
+    genuine `NoKnownDefect` of the exact env the proof feeds to
+    `zisk_riscv_compliant_program_bus`. -/
 noncomputable def fenceEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_fence trace binding i)
@@ -86,11 +87,12 @@ noncomputable def fenceEnvOf
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge h_domain }
 
-/-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
-    `RowOutsideDefectRegion` mul obligation AND `stepStrong_mul` reference THIS env, so
-    the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
-    exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
-    `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
+/-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Once the dispatcher
+    instantiates the trace-local `RowOutsideDefectRegion` MUL matcher with this
+    row's arith witness, the resulting predicate is the genuine `NoKnownDefect` of
+    the exact env `stepStrong_mul` feeds to `zisk_riscv_compliant_program_bus`.
+    (Mirrors `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest
+    row.) -/
 noncomputable def mulEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mul trace binding i)
@@ -116,9 +118,10 @@ noncomputable def mulEnvOf
 
 /-- **Satisfiability / non-vacuity witness for the threaded MUL obligation.**
 
-    The `RowOutsideDefectRegion (.mul d)` obligation — `Defects.NoKnownDefect (mulEnvOf
-    …)` — is DISCHARGED from `RowData_mul.h_not_forge` (the honest product-sign
-    shape).  Concretely: for the `.mul` env, the arith-div defect predicate is
+    The matcher-instantiated MUL obligation corresponds to
+    `Defects.NoKnownDefect (mulEnvOf …)` and is DISCHARGED from
+    `RowData_mul.h_not_forge` (the honest product-sign shape).  Concretely: for
+    the `.mul` env, the arith-div defect predicate is
     `False` and the FENCE defect predicate's negation is `True`, while the
     arith-mul defect predicate is exactly the two exceptional product-sign shapes
     that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
@@ -222,12 +225,12 @@ theorem mulhsu_noKnownDefect_of_rowData
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhsuEnvOf]
 
-/-- The `OpEnvelope.div` env CONSTRUCTED from a `RowData_div`.  Both the
-    `RowOutsideDefectRegion` div obligation AND `stepStrong_div` reference THIS env, so
-    the threaded `NoKnownDefect` obligation is the genuine `NoKnownDefect` of the
-    exact env the proof feeds to `zisk_riscv_compliant_program_bus`.  (Mirrors
-    `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed DIV
-    row whose `|r| ≠ |op2|`.) -/
+/-- The `OpEnvelope.div` env CONSTRUCTED from a `RowData_div`.  Once the dispatcher
+    instantiates the trace-local `RowOutsideDefectRegion` DIV matcher with this
+    row's ArithDiv witness and witness-derived divisor, the resulting predicate is
+    the genuine `NoKnownDefect` of the exact env `stepStrong_div` feeds to
+    `zisk_riscv_compliant_program_bus`.  (Mirrors `mulEnvOf`: a specific-env
+    obligation, SATISFIABLE for an honest signed DIV row whose `|r| ≠ |op2|`.) -/
 noncomputable def divEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
@@ -324,9 +327,10 @@ noncomputable def remwEnvOf
 
 /-- **Non-vacuity / satisfiability witness for the threaded DIV obligation.**
 
-    The `RowOutsideDefectRegion (.div d)` obligation — `Defects.NoKnownDefect (divEnvOf
-    …)` — is DISCHARGED from `RowData_div.h_not_forge` (the narrowed honest shape
-    nonzero-divisor `|r| ≠ |op2|` shape).  Concretely: for the `.div` env the
+    The matcher-instantiated DIV obligation corresponds to
+    `Defects.NoKnownDefect (divEnvOf …)` and is DISCHARGED from
+    `RowData_div.h_not_forge` (the narrowed honest shape nonzero-divisor
+    `|r| ≠ |op2|` shape).  Concretely: for the `.div` env the
     arith-MUL defect predicate is `False` (not a mul env) and the FENCE defect
     predicate's negation is `True`, while the arith-DIV defect predicate is exactly
     the nonzero-divisor `|r| = |op2|` false-positive forge that `h_not_forge` rules
@@ -403,14 +407,13 @@ theorem remw_noKnownDefect_of_rowData
 
 /-! ### Bridge lemmas: row-data forge predicates ≡ OpEnvelope defect shapes
 
-Each bridge is `Iff.rfl`: the row-data predicate (over the `Inputs_<op>` arith
-witness / `Claim_<op>` fields) and the `OpEnvelope`-based defect shape at the
-corresponding `<op>EnvOf` env are DEFINITIONALLY the same proposition.  These are
-the faithfulness audit for the `RowOutsideDefectRegion` re-expression (plan step B):
-they witness that lifting the three known-defect conditions off `OpEnvelope`
-onto the row data changed no meaning — the `Iff.rfl` proofs would fail if the
-re-expressed predicate were even slightly weaker or stronger than the original
-`OpEnvelope` shape. -/
+Each bridge is `Iff.rfl`: once the dispatcher instantiates the trace-local
+`RowOutsideDefectRegion` matcher with the arith witness row already present in
+`RowData_<op>`, the resulting row-data predicate and the `OpEnvelope`-based defect
+shape at the corresponding `<op>EnvOf` env are DEFINITIONALLY the same
+proposition.  These are the faithfulness audit for the re-expression: the
+`Iff.rfl` proofs would fail if the instantiated predicate were even slightly
+weaker or stronger than the original `OpEnvelope` shape. -/
 
 theorem signedMulForge_iff_mulShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)

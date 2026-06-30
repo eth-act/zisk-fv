@@ -18,8 +18,8 @@ This is the achievable closure of #61.  It exports the per-opcode
 given an accepted full-ensemble trace and a program binding, with each row's
 residual split three ways — `ziskStep i : ZiskStep` (which op decoded + its
 `Claim_<op>`), `rowDecodes i : RowDecode` (the circuit-checkable `Decode_<op>`),
-`inputsAgree i : InputsAgree` (the cross-world `Inputs_<op>`) — plus the per-row
-defect-exclusion obligation `h_known_bugs`, EVERY row of the trace satisfies the
+`inputsAgree i : InputsAgree` (the cross-world `Inputs_<op>`) — plus the
+trace-local per-row defect-exclusion obligation `h_known_bugs`, EVERY row satisfies the
 canonical per-step channel-balance conclusion (`= state_effect_via_channels …`)
 — the SAME conclusion the OLD global theorem `zisk_riscv_compliant_program_bus`
 produces — with NO caller-supplied `OpEnvelope`.  The envelope for each row is
@@ -87,18 +87,20 @@ global theorem produces:
    DIV/REM/DIVW/REMW exclude only the `|r|=|d|` `LT_ABS_NP` false positive
    (`DivRemForge` / `DivRemForgeW`, defeq `ArithDivDynamicWitnessShape`,
    codygunton/zisk#5).  Honest rows are NEVER excluded, so every arm is SATISFIABLE
-   for a real honest signed-M row (the row's own `h_not_forge` field witnesses the
-   obligation; anti-vacuity guards `honest_<op>_witness_not_forge`); FENCE is likewise
-   satisfiable for an honest FENCE row (`fm=0, rs1=x0, rd=x0`).  A documented
-   MULH/MULHSU sign facts are derived from the indexed Arith range-table evidence
-   exposed by #169. #151's remaining work is making `RowOutsideDefectRegion`
-   trace-local instead of `InputsAgree`-based.
+   for a real honest signed-M row; FENCE is likewise satisfiable for an honest
+   FENCE row (`fm=0, rs1=x0, rd=x0`).  MULH/MULHSU sign facts are derived from the
+   indexed Arith range-table evidence exposed by #169.  The exported defect gate
+   (`RowOutsideDefectRegion`) is now trace-local: it ranges over accepted-trace
+   arith witness rows whose operation-bus entry matches the Main row and, for
+   DIV/REM, reconstructs divisor values from the witness chunks rather than from
+   `InputsAgree` or Sail operands.
 
 ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
 
 The `h_known_bugs` premise is the per-row defect-exclusion obligation
-(`RowOutsideDefectRegion`), stated DIRECTLY over the row data (no `OpEnvelope`
-detour).  It is threaded — via `stepSound_of_evidence` — to each
+(`RowOutsideDefectRegion`), stated over the accepted ZisK trace row (no
+`OpEnvelope`, `SailTrace`, or `InputsAgree` detour).  It is threaded — via
+`stepSound_of_evidence` — to each
 `stepStrong_<op>`.  It takes two shapes across the 63 arms, all SATISFIABLE for
 an honest row (so this export is NOT vacuous):
   * **Non-defect arms** (op-bus ALU + M-ext-unsigned + control-flow / U-type /
@@ -106,13 +108,14 @@ an honest row (so this export is NOT vacuous):
     builds `NoKnownDefect` of its own env locally via `noKnownDefect_of_shapes`
     (the three defect shapes are vacuous for a non-defect constructor).
   * **8 defect-capable arms** (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW + FENCE): the
-    row-data forge-negation (`¬ SignedMulForge` / `¬ DivRemForge` /
-    `¬ DivRemForgeW`) or FENCE-known-good (`FenceKnownGood`), read off the arith
-    witness / claim fields.  Each is DEFINITIONALLY equal to the corresponding
-    `<op>EnvOf` `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas
-    `signedMulForge_iff_*` / `divRemForge*_iff_*` / `fenceKnownGood_iff_fenceShape`
-    in `EnvOf`), and is true for any honest row (the row's `h_not_forge` field /
-    honest FENCE pins `fm=0, rs1=x0, rd=x0`).
+    trace-local matcher requires the forge-negation (`¬ SignedMulForge` /
+    `¬ DivRemForge` / `¬ DivRemForgeW`) for every matching arith witness row, or
+    FENCE-known-good (`FenceKnownGood`) directly from the decoded Main row.  The
+    dispatcher instantiates the matcher with the arith row evidence already
+    present in `Inputs_<op>`; each instantiated predicate is definitionally equal
+    to the corresponding `<op>EnvOf` `OpEnvelope` defect shape via the bridge
+    lemmas in `EnvOf`, and is true for any honest row (or honest FENCE pins
+    `fm=0, rs1=x0, rd=x0`).
 
 ## Non-vacuity
 

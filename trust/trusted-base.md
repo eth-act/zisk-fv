@@ -440,6 +440,13 @@ Active conclusions:
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
 
+Trace-level export note (2026-06-30): `RowOutsideDefectRegion` for the strong
+trace theorem is now stated over the accepted ZisK trace row, not over
+`SailTrace` or `InputsAgree`. The signed-MUL and signed-DIV/REM defect gates
+range over matching Arith witness rows from the operation bus, with DIV/REM
+divisors reconstructed from witness chunks; the active defect predicates
+themselves are unchanged.
+
 ## Active Caller Burden
 
 The live per-canonical-theorem trust footprint is the axiom-closure ledger:

@@ -94,6 +94,21 @@ def signedRemainderInt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : 
 def signedRemainderIntW (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=
   ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - (v.nr r_a).val * (2:ℤ)^32
 
+/-- Signed 64-bit divisor reconstructed from the circuit's `b[]` divisor chunks
+    and `nb` sign witness.  This is the trace-side value used by the
+    trace-local DIV/REM defect gate; callers no longer supply the Sail operand to
+    `RowOutsideDefectRegion`. -/
+def signedDivisorInt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=
+  (ZiskFv.PackedBitVec.MulNoWrap.packed4
+      (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+    - (v.nb r_a).val * (2:ℤ)^64
+
+/-- W-mode signed divisor reconstructed from the low 32-bit `b[]` chunks and
+    the `nb` sign witness. -/
+def signedDivisorIntW (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=
+  ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+    - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32
+
 /-- **Narrowed marker for the signed DIV/REM remainder-bound false positive.**
 
 The retired `arith_table_op_*` and `arith_div_*` assumptions connected row
@@ -150,10 +165,12 @@ def ArithDivDynamicWitnessShape
 The four predicates below state the SAME conditions as the `OpEnvelope`-based
 shapes above (`MaliciousSignedMulWitnessShape`, `ArithDivDynamicWitnessShape`,
 `FenceKnownGoodShape`), re-expressed directly over the arith witness / claim
-fields that live in the `Inputs_<op>` / `Claim_<op>` row data.  This lets the
-threaded `RowOutsideDefectRegion` obligation read the defect condition off the row
-data without the `OpEnvelope` detour.  The faithfulness of the re-expression is
-the content of the bridge lemmas `signedMulForge_iff_shape` /
+fields.  `RowOutsideDefectRegion` now quantifies over arith witness rows matching
+the accepted Main row's operation-bus entry, and ties DIV/REM divisor operands to
+`signedDivisorInt` / `signedDivisorIntW` instead of reading Sail inputs.  This
+lets the threaded defect obligation read the condition from trace-local row data
+without the `OpEnvelope` detour.  The faithfulness of the re-expression is the
+content of the bridge lemmas `signedMulForge_iff_shape` /
 `divRemForge_iff_shape` / `divRemForgeW_iff_shape` / `fenceKnownGood_iff_shape`
 in `ZiskFv.Compliance.TraceLevelExport.EnvOf`, each proved by `Iff.rfl`. -/
 
