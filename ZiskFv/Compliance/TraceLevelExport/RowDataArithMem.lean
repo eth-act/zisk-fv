@@ -42,21 +42,20 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
-/-- **`RTypePromises` minus its cross-world `nextPC_matches` field (#100).**
+/-- **`RTypePromises` minus derived next-PC and rd-placement fields (#100/#141).**
 
     Identical to `ZiskFv.EquivCore.Promises.RTypePromises` except that the
     `pure_nextPC` parameter and the `nextPC_matches : (register_type_pc_equiv ▸
-    BitVec.ofNat 64 (exec_row[1]!.pc).val) = pure_nextPC` field are dropped.  The
-    fourteen value/data promises are unchanged, byte-for-byte.
+    BitVec.ofNat 64 (exec_row[1]!.pc).val) = pure_nextPC` field are dropped, and
+    the rd-write placement field `rd_idx` is also dropped.
 
     The next-PC promise is no longer caller-supplied for the bundle-shaped
     signed-M opcodes (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW): it is DERIVED in the
     `<op>EnvOf` env-builder from the accepted trace's in-circuit `pcHandshakeBetween`
     transition certificate via `Pilot.sequential_nextPC_discharged` (the same
     kernel-only discharge the 56 already-rewired ops use) and re-attached through
-    `withNextPC`.  This is the bundle analogue of the bare-field `h_nextPC_matches`
-    removal performed on the 56 ops; it touches only the next-PC sub-fact and
-    leaves the value/data promises (and the separate value-defect gate) untouched.
+    `withNextPC`. The rd-placement promise is likewise DERIVED in `<op>EnvOf`
+    from the decoded ROM/Main `store_ind`/`store_offset` facts plus `AddressSpec`.
 
     Lives here, next to its only consumers (the signed-M `Inputs_<op>` /
     `<op>EnvOf`), rather than in `EquivCore/Promises/RType.lean`, to avoid a
@@ -83,12 +82,11 @@ structure RTypePromisesNoNextPC
   m1_as : e1.as.val = 1
   m2_mult : e2.multiplicity = 1
   m2_as : e2.as.val = 1
-  rd_idx : input_rd = Transpiler.wrap_to_regidx e2.ptr
 
-/-- Re-attach a discharged next-PC fact to a `RTypePromisesNoNextPC` bundle,
-    recovering the full `RTypePromises`.  The `h_nextPC` proof is sourced in the
-    `<op>EnvOf` env-builder from `Pilot.sequential_nextPC_discharged` (the
-    in-circuit transition certificate), so the caller never supplies it. -/
+/-- Re-attach discharged next-PC and rd-placement facts to a `RTypePromisesNoNextPC`
+    bundle, recovering the full `RTypePromises`. The `h_nextPC` proof is sourced in
+    `<op>EnvOf` from `Pilot.sequential_nextPC_discharged`; the `h_rd_idx` proof is
+    sourced there from the decoded writeback destination and `AddressSpec`. -/
 def RTypePromisesNoNextPC.withNextPC
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     {input_r1_val input_r2_val : BitVec 64} {input_rd : Fin 32}
@@ -99,7 +97,8 @@ def RTypePromisesNoNextPC.withNextPC
       r1 r2 rd exec_row e0 e1 e2)
     (pure_nextPC : BitVec 64)
     (h_nextPC :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = pure_nextPC) :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = pure_nextPC)
+    (h_rd_idx : input_rd = Transpiler.wrap_to_regidx e2.ptr) :
     ZiskFv.EquivCore.Promises.RTypePromises state input_r1_val input_r2_val input_rd
       input_pc pure_nextPC r1 r2 rd exec_row e0 e1 e2 where
   input_r1_eq := p.input_r1_eq
@@ -116,7 +115,7 @@ def RTypePromisesNoNextPC.withNextPC
   m1_as := p.m1_as
   m2_mult := p.m2_mult
   m2_as := p.m2_as
-  rd_idx := p.rd_idx
+  rd_idx := h_rd_idx
 
 structure Claim_add (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   r1 : regidx
@@ -793,7 +792,6 @@ structure Claim_mul (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   rd : regidx
   srs1 : Signedness
   srs2 : Signedness
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mul trace i) : Type where
@@ -817,9 +815,15 @@ structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
   -- this lets `<op>EnvOf` DERIVE the bundled `nextPC_matches` rather than take it
   -- from the caller. Terminal row = #103 cross-segment boundary.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mul trace i) : Type where
@@ -835,7 +839,10 @@ structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   -- no longer caller-supplied (DERIVED in `mulEnvOf` via `sequential_nextPC_discharged`).
   promises : RTypePromisesNoNextPC
       (binding i) mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a
@@ -858,7 +865,6 @@ structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mul_input.PC.toNat
   h_pc_bound : mul_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `mul` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mul` bundles them. -/
@@ -880,7 +886,6 @@ structure Claim_mulh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   r1 : regidx
   r2 : regidx
   rd : regidx
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulh trace i) : Type where
@@ -900,9 +905,15 @@ structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulh trace i) : Type where
@@ -917,7 +928,10 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `mulhEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a
@@ -942,7 +956,6 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulh_input.PC.toNat
   h_pc_bound : mulh_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `mulh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulh` bundles them. -/
@@ -964,7 +977,6 @@ structure Claim_mulhsu (trace : AcceptedZiskTrace numInstructions) (i : Fin trac
   r1 : regidx
   r2 : regidx
   rd : regidx
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhsu trace i) : Type where
@@ -984,9 +996,15 @@ structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhsu trace i) : Type where
@@ -1001,7 +1019,10 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `mulhsuEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a
@@ -1023,7 +1044,6 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulhsu_input.PC.toNat
   h_pc_bound : mulhsu_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `mulhsu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulhsu` bundles them. -/
@@ -1045,7 +1065,6 @@ structure Claim_div (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   r1 : regidx
   r2 : regidx
   rd : regidx
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_div (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_div trace i) : Type where
@@ -1065,11 +1084,17 @@ structure Decode_div (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   pins : ZiskFv.Compliance.MainRowPins
     (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_div trace i) : Type where
@@ -1084,7 +1109,10 @@ structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `divEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) div_input.r1_val div_input.r2_val div_input.rd div_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   h_boundary :
@@ -1138,7 +1166,6 @@ structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = div_input.PC.toNat
   h_pc_bound : div_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `div` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_div` bundles them. -/
@@ -1160,7 +1187,6 @@ structure Claim_rem (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.n
   r1 : regidx
   r2 : regidx
   rd : regidx
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_rem (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_rem trace i) : Type where
@@ -1180,11 +1206,17 @@ structure Decode_rem (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   pins : ZiskFv.Compliance.MainRowPins
     (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_rem trace i) : Type where
@@ -1199,7 +1231,10 @@ structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `remEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
@@ -1249,7 +1284,6 @@ structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = rem_input.PC.toNat
   h_pc_bound : rem_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `rem` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_rem` bundles them. -/
@@ -1271,7 +1305,6 @@ structure Claim_divw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   r1 : regidx
   r2 : regidx
   rd : regidx
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divw trace i) : Type where
@@ -1291,11 +1324,17 @@ structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   pins : ZiskFv.Compliance.MainRowPins
     (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_DIV_W
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divw trace i) : Type where
@@ -1310,7 +1349,10 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `divwEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   h_boundary :
@@ -1338,21 +1380,33 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
   h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0
   h_byte_lo :
-    (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 0).val
-        + (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 1).val * 256
-        + (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 2).val * 65536
-        + (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 3).val * 16777216
+    (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 0).val
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 1).val * 256
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 2).val * 65536
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 3).val * 16777216
       = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536
   h_sext_choice :
-    (((ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 4).val = 0
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 5).val = 0
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 6).val = 0
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 7).val = 0)
+    (((ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 4).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 5).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 6).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 7).val = 0)
       ∧ (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648)
-    ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 4).val = 255
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 5).val = 255
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 6).val = 255
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 7).val = 255)
+    ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 4).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 5).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 6).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 7).val = 255)
       ∧ (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648)
   h_rs1_value :
     (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
@@ -1378,7 +1432,6 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = divw_input.PC.toNat
   h_pc_bound : divw_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `divw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_divw` bundles them. -/
@@ -1400,7 +1453,6 @@ structure Claim_remw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
   r1 : regidx
   r2 : regidx
   rd : regidx
-  bus : ZiskFv.Compliance.BusRows
 
 structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remw trace i) : Type where
@@ -1420,11 +1472,17 @@ structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
     (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
   -- #100 next-PC transition input (next Main row exists); see `Decode_mul.h_idx`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_ind :
+    (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_offset :
+    (mainRowWithRomSub trace i).rom.store_offset =
+      Transpiler.ind (regidx_to_fin c.rd)
   pins : ZiskFv.Compliance.MainRowPins
     (mainOfTable trace.program trace.mainTable) i.val 1 ZiskFv.Trusted.OP_REM_W
   arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
-  bounds : ZiskFv.Compliance.ByteBounds c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
+  bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
 structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remw trace i) : Type where
@@ -1439,7 +1497,10 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `remwEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
-      c.r1 c.r2 c.rd c.bus.exec_row c.bus.e0 c.bus.e1 c.bus.e2
+      c.r1 c.r2 c.rd (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   h_row_constraints :
     ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
   arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
@@ -1465,21 +1526,33 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_d23 : (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
   h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0
   h_byte_lo :
-    (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 0).val
-        + (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 1).val * 256
-        + (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 2).val * 65536
-        + (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 3).val * 16777216
+    (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 0).val
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 1).val * 256
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 2).val * 65536
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 3).val * 16777216
       = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
   h_sext_choice :
-    (((ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 4).val = 0
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 5).val = 0
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 6).val = 0
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 7).val = 0)
+    (((ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 4).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 5).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 6).val = 0
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 7).val = 0)
       ∧ (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648)
-    ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 4).val = 255
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 5).val = 255
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 6).val = 255
-        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt c.bus.e2 7).val = 255)
+    ∨ (((ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 4).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 5).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 6).val = 255
+        ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt
+          (busSub trace i (Pilot.execRowOf trace i)).e2 7).val = 255)
       ∧ (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648)
   h_rs1_value :
     (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
@@ -1505,7 +1578,6 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = remw_input.PC.toNat
   h_pc_bound : remw_input.PC.toNat < GL_prime - 4
-  h_exec_row : c.bus.exec_row = Pilot.execRowOf trace i
 
 /-- Per-op residual bundle for the `remw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_remw` bundles them. -/

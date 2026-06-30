@@ -46,25 +46,6 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
-theorem busSub_rd_idx_of_decode
-    {numInstructions : Nat}
-    {trace : AcceptedZiskTrace numInstructions}
-    {i : Fin trace.numInstructions}
-    {execRow : List (Interaction.ExecutionBusEntry FGL)}
-    {rd : regidx}
-    (h_store_ind : (mainRowWithRomSub trace i).rom.store_ind = 0)
-    (h_store_offset :
-      (mainRowWithRomSub trace i).rom.store_offset =
-        Transpiler.ind (regidx_to_fin rd)) :
-    regidx_to_fin rd =
-      Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr := by
-  have h_spec := RomDecodeBinding.mainAddressSpec_at trace ⟨i.val, trace.mainTable_index i⟩
-  have h_addr2 := h_spec.2.2.1
-  rw [busSub, ZiskFv.AirsClean.Main.cMemMessage,
-    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
-  rw [h_addr2, h_store_offset, h_store_ind]
-  simp [Transpiler.wrap_to_regidx_ind]
-
 /-! ## Trace-level export: env-constructed channel-balance form
 
 The theorems below are the trace-level export over the accepted trace.  For each

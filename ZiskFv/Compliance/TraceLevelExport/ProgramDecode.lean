@@ -676,20 +676,23 @@ structure ProgramDecode_mul {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MUL
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `mulh`: exactly the inputs
@@ -701,20 +704,23 @@ structure ProgramDecode_mulh {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MULH
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `mulhsu`: exactly the inputs
@@ -726,20 +732,23 @@ structure ProgramDecode_mulhsu {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MULSUH
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `mulw`: exactly the inputs
@@ -797,20 +806,23 @@ structure ProgramDecode_div {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_DIV
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `rem`: exactly the inputs
@@ -822,20 +834,23 @@ structure ProgramDecode_rem {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_REM
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `divw`: exactly the inputs
@@ -847,20 +862,23 @@ structure ProgramDecode_divw {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_DIV_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `remw`: exactly the inputs
@@ -872,20 +890,23 @@ structure ProgramDecode_remw {numInstructions : Nat}
   h_idx : i.val + 1 < trace.mainTable.table.length
   arith_mem :
     ZiskFv.Compliance.ExternalArithMemoryWitness
-      (mainOfTable trace.program trace.mainTable) i.val c.bus.e2
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds :
-    ZiskFv.Compliance.ByteBounds c.bus.e2
+    ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = true
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
+  h_bits_store_ind : bits.store_ind = false
   h_prog : ∀ j : Fin numInstructions,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_REM_W
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `divu`: exactly the inputs
@@ -1642,15 +1663,15 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | slliw c => exact RomDecodeBinding.Decode_slliw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | srliw c => exact RomDecodeBinding.Decode_srliw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | sraiw c => exact RomDecodeBinding.Decode_sraiw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | mul c => exact RomDecodeBinding.Decode_mul_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | mulh c => exact RomDecodeBinding.Decode_mulh_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | mulhsu c => exact RomDecodeBinding.Decode_mulhsu_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | mul c => exact RomDecodeBinding.Decode_mul_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | mulh c => exact RomDecodeBinding.Decode_mulh_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | mulhsu c => exact RomDecodeBinding.Decode_mulhsu_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | mulw c => exact RomDecodeBinding.Decode_mulw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | mulhu c => exact RomDecodeBinding.Decode_mulhu_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | div c => exact RomDecodeBinding.Decode_div_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | rem c => exact RomDecodeBinding.Decode_rem_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | divw c => exact RomDecodeBinding.Decode_divw_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
-  | remw c => exact RomDecodeBinding.Decode_remw_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_prog
+  | div c => exact RomDecodeBinding.Decode_div_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | rem c => exact RomDecodeBinding.Decode_rem_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | divw c => exact RomDecodeBinding.Decode_divw_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | remw c => exact RomDecodeBinding.Decode_remw_of_program ziskTrace i c pd.h_idx pd.arith_mem pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | divu c => exact RomDecodeBinding.Decode_divu_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | divuw c => exact RomDecodeBinding.Decode_divuw_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | remu c => exact RomDecodeBinding.Decode_remu_of_program ziskTrace i c pd.h_idx pd.bounds pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog

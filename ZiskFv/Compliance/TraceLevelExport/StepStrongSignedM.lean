@@ -77,7 +77,10 @@ theorem stepStrong_mul
              signed_rs1 := d.toClaim.srs1
              signed_rs2 := d.toClaim.srs2 }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulEnvOf trace binding i d
@@ -115,7 +118,10 @@ theorem stepStrong_mulh
              signed_rs1 := .Signed
              signed_rs2 := .Signed }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulhEnvOf trace binding i d
@@ -143,7 +149,10 @@ theorem stepStrong_mulhsu
              signed_rs1 := .Signed
              signed_rs2 := .Unsigned }))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := mulhsuEnvOf trace binding i d
@@ -183,7 +192,10 @@ theorem stepStrong_div
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := divEnvOf trace binding i d
@@ -211,7 +223,10 @@ theorem stepStrong_rem
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := remEnvOf trace binding i d
@@ -237,7 +252,10 @@ theorem stepStrong_divw
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := divwEnvOf trace binding i d
@@ -260,7 +278,10 @@ theorem stepStrong_remw
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
-          ⟨d.toClaim.bus.exec_row, [d.toClaim.bus.e0, d.toClaim.bus.e1, d.toClaim.bus.e2]⟩ (binding i) := by
+          ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
+           [ (busSub trace i (Pilot.execRowOf trace i)).e0
+           , (busSub trace i (Pilot.execRowOf trace i)).e1
+           , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let env : OpEnvelope state m i.val := remwEnvOf trace binding i d

@@ -21,6 +21,7 @@ import ZiskFv.Compliance.ConstructionJump
 import ZiskFv.Compliance
 import ZiskFv.Compliance.Defects
 import ZiskFv.Compliance.TraceLevelExport.Base
+import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
@@ -43,6 +44,25 @@ open Interaction
 seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
+
+theorem busSub_rd_idx_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {execRow : List (Interaction.ExecutionBusEntry FGL)}
+    {rd : regidx}
+    (h_store_ind : (mainRowWithRomSub trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomSub trace i).rom.store_offset =
+        Transpiler.ind (regidx_to_fin rd)) :
+    regidx_to_fin rd =
+      Transpiler.wrap_to_regidx (busSub trace i execRow).e2.ptr := by
+  have h_spec := RomDecodeBinding.mainAddressSpec_at trace ⟨i.val, trace.mainTable_index i⟩
+  have h_addr2 := h_spec.2.2.1
+  rw [busSub, ZiskFv.AirsClean.Main.cMemMessage,
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
+  rw [h_addr2, h_store_offset, h_store_ind]
+  simp [Transpiler.wrap_to_regidx_ind]
 
 /-- The `OpEnvelope.fence` env CONSTRUCTED from a `RowData_fence`.  Both the
     `RowOutsideDefectRegion` fence obligation AND `stepStrong_fence` reference THIS env,
@@ -75,7 +95,8 @@ noncomputable def mulEnvOf
     (d : RowData_mul trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.mul d.toInputs.mul_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.srs1 d.toClaim.srs2 d.toClaim.bus d.toInputs.v d.toInputs.r_a
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.mul d.toInputs.mul_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.srs1 d.toClaim.srs2 bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     d.toInputs.h_match_primary
     -- #100: DERIVE the bundled `nextPC_matches` from the in-circuit transition
@@ -83,10 +104,11 @@ noncomputable def mulEnvOf
     -- the 14 caller-supplied value/data promises. MUL's Sail nextPC = PC + 4#64.
     (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mul_pure d.toInputs.mul_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mul_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
 
@@ -123,16 +145,18 @@ noncomputable def mulhEnvOf
     (d : RowData_mulh trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.mulh d.toInputs.mulh_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.mulh d.toInputs.mulh_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (MULH Sail nextPC = PC + 4#64); see `mulEnvOf`.
     (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mulh_pure d.toInputs.mulh_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulh_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
     d.toInputs.h_sign_a d.toInputs.h_sign_b
@@ -144,16 +168,18 @@ noncomputable def mulhsuEnvOf
     (d : RowData_mulhsu trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.mulhsu d.toInputs.mulhsu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.mulhsu d.toInputs.mulhsu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (MULHSU Sail nextPC = PC + 4#64); see `mulEnvOf`.
     (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mulhsu_pure d.toInputs.mulhsu_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulhsu_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
     d.toInputs.h_sign_a
@@ -203,16 +229,18 @@ noncomputable def divEnvOf
     (d : RowData_div trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.div d.toInputs.div_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.div d.toInputs.div_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_primary
     -- #100: DERIVE the bundled `nextPC_matches` (DIV Sail nextPC = PC + 4#64); see `mulEnvOf`.
     -- The DivRemForge value-defect gate is untouched.
     (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_div_pure d.toInputs.div_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.div_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
@@ -224,15 +252,17 @@ noncomputable def remEnvOf
     (d : RowData_rem trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.rem d.toInputs.rem_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.rem d.toInputs.rem_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (REM Sail nextPC = PC + 4#64); see `mulEnvOf`.
     (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_rem_pure d.toInputs.rem_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.rem_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin
@@ -244,15 +274,17 @@ noncomputable def divwEnvOf
     (d : RowData_divw trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.divw d.toInputs.divw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.divw d.toInputs.divw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_primary
     -- #100: DERIVE the bundled `nextPC_matches` (DIVW Sail nextPC = PC + 4#64); see `mulEnvOf`.
     (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_divw_pure d.toInputs.divw_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.divw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds
     d.toInputs.h_row_constraints d.toInputs.h_boundary d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
@@ -265,15 +297,17 @@ noncomputable def remwEnvOf
     (d : RowData_remw trace binding i) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
-  OpEnvelope.remw d.toInputs.remw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
+  let bus := busSub trace i (Pilot.execRowOf trace i)
+  OpEnvelope.remw d.toInputs.remw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (REMW Sail nextPC = PC + 4#64); see `mulEnvOf`.
     (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_remw_pure d.toInputs.remw_input).nextPC
       (by
-        rw [d.toInputs.h_exec_row]
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.remw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound))
+          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+      (d.toInputs.promises.input_rd_eq.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds
     d.toInputs.h_row_constraints d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges
     d.toInputs.h_na_bool d.toInputs.h_nb_bool d.toInputs.h_nr_bool d.toInputs.h_np_xor d.toInputs.h_nr_pin d.toInputs.h_m32_v d.toInputs.h_div_v
