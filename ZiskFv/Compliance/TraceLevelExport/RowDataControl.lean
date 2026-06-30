@@ -662,7 +662,6 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
   jal_input : PureSpec.JalInput
   misa_val : RegisterType Register.misa
-  nextPC_val : BitVec 64
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = jal_input.PC.toNat
@@ -683,7 +682,6 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
-  h_nextPC_option : (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
   h_input_imm : jal_input.imm = c.imm
   h_pc_bound : jal_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
@@ -775,7 +773,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   jalr_input : PureSpec.JalrInput
   misa_val : RegisterType Register.misa
   mseccfg : RegisterType Register.mseccfg
-  nextPC_val : BitVec 64
   -- #100: the per-lowering operand identity replacing the cross-world
   -- `h_nextPC_matches`. The committed Main `b`-lane (`b_0 + b_1 · 2^32`) plus
   -- `offset_bv` equals Sail's pre-mask target `rs1_val + signExtend 64 imm`:
@@ -795,7 +792,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
-  h_nextPC_option : (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
   h_input_imm : jalr_input.imm = c.imm
   h_input_rs1 : read_xreg (regidx_to_fin c.rs1) (binding i)
     = EStateM.Result.ok jalr_input.rs1_val (binding i)
