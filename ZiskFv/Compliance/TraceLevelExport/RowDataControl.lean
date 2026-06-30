@@ -51,6 +51,23 @@ def BranchRangeDomain (trace : AcceptedZiskTrace numInstructions)
   ((mainOfTable trace.program trace.mainTable).pc i.val).val + takenOffset.val < GL_prime
     ∧ pc.toNat < GL_prime - 4
 
+/-- JAL theorem-domain range assumptions.
+
+These preserve the old JAL target no-wrap, PC-bound, and 32-bit next-PC obligations at the explicit
+soundness theorem boundary instead of mixing them into `Inputs_jal` state/value agreement. -/
+structure JalRangeDomain (jal_input : PureSpec.JalInput) : Prop where
+  h_no_fgl_wrap : jal_input.PC.toNat + (BitVec.signExtend 64 jal_input.imm).toNat < GL_prime
+  h_pc_bound : jal_input.PC.toNat < GL_prime - 4
+  h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
+
+/-- JALR theorem-domain range assumptions.
+
+These preserve the old JALR link-PC range obligations at the explicit soundness theorem boundary
+instead of mixing them into `Inputs_jalr` state/value agreement. -/
+structure JalrRangeDomain (jalr_input : PureSpec.JalrInput) : Prop where
+  h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
+  h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296
+
 structure Claim_beq (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 13
   r1 : regidx
@@ -635,20 +652,14 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = jal_input.PC.toNat
-  -- #100: JAL-target no-wrap bound (target stays below the GL bound). Together with
-  -- decode's committed-program offset fact, this replaces the cross-world `h_nextPC_matches`,
-  -- now DERIVED via
-  -- `Pilot.flag_path_nextPC_discharged` + `Pilot.ofNat_fgl_pc_plus_offset_eq`.
-  h_no_fgl_wrap :
-    jal_input.PC.toNat + (BitVec.signExtend 64 jal_input.imm).toNat < GL_prime
+  -- #100: PC bridge. The JAL range/domain facts live in `RowOutsideDefectRegion`
+  -- as `JalRangeDomain`.
   h_input_rd : jal_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jal_input.PC
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_input_imm : jal_input.imm = c.imm
-  h_pc_bound : jal_input.PC.toNat < GL_prime - 4
-  h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
 
 /-- Per-op residual bundle for the `jal` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_jal` bundles them. -/
@@ -769,8 +780,8 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     = EStateM.Result.ok Privilege.Machine (binding i)
   h_mseccfg : Sail.readReg Register.mseccfg (binding i)
     = EStateM.Result.ok mseccfg (binding i)
-  h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
-  h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296
+  -- #100: JALR link-PC range/domain facts live in `RowOutsideDefectRegion`
+  -- as `JalrRangeDomain`.
 
 /-- Per-op residual bundle for the `jalr` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_jalr` bundles them. -/

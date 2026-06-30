@@ -42,6 +42,20 @@ seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
+/-- AUIPC theorem-domain range assumptions.
+
+These are explicit soundness-domain conditions, not decoded placement facts or Sail/ZisK value
+agreement. Keeping them separate from `Inputs_auipc` leaves the input record focused on state and
+value agreement while preserving the same AUIPC range obligations at the theorem boundary. -/
+structure AuipcRangeDomain (auipc_input : PureSpec.AuipcInput) : Prop where
+  h_pc_bound : auipc_input.PC.toNat < GL_prime - 4
+  h_no_wrap : auipc_input.PC.toNat
+    + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+      < GL_prime
+  h_pc_offset_lt_2_32 :
+    (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+      < 4294967296
+
 /-- **`RTypePromises` minus derived next-PC and rd-placement fields (#100/#141).**
 
     Identical to `ZiskFv.EquivCore.Promises.RTypePromises` except that the
@@ -665,17 +679,8 @@ structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = auipc_input.PC.toNat
-  -- #100: the JAL/AUIPC-style PC-trajectory no-wrap bound on the `pc + 4`
-  -- sequential successor (mirrors `Pilot.ofNat_fgl_pc_plus_4_eq`'s precondition),
-  -- ruling out FGL wrap on the next PC. Replaces the cross-world `h_nextPC_matches`,
-  -- which is now derived via `Pilot.flag_path_nextPC_discharged`.
-  h_pc_bound : auipc_input.PC.toNat < GL_prime - 4
-  h_no_wrap : auipc_input.PC.toNat
-    + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-      < GL_prime
-  h_pc_offset_lt_2_32 :
-    (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-      < 4294967296
+  -- #100: PC bridge. The AUIPC range/domain facts live in `RowOutsideDefectRegion`
+  -- as `AuipcRangeDomain`.
 
 /-- Per-op residual bundle for the `auipc` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_auipc` bundles them. -/

@@ -267,9 +267,9 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
       * DIVW / REMW → `¬ DivRemForgeW` of the 32-bit remainder/divisor magnitudes;
       * FENCE → `FenceKnownGood` of the claim's `fm` / `rs` / `rd`.
 
-    The six branch arms carry theorem-domain PC range assumptions separately
-    from `InputsAgree`: these are not state/value agreement facts, and they are
-    not derived placement facts.  They preserve the old branch no-wrap / PC-bound
+    The branch and jump-like arms carry theorem-domain PC range assumptions
+    separately from `InputsAgree`: these are not state/value agreement facts, and
+    they are not derived placement facts. They preserve the old no-wrap / PC-bound
     obligations at the explicit theorem-domain surface.
     Each is DEFINITIONALLY the same proposition as the corresponding `<op>EnvOf`
     `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas in `EnvOf`), so the
@@ -304,6 +304,9 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions) (sail
   | .bgeu _, ia =>
       BranchRangeDomain ziskTrace i ia.bgeu_input.PC
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
+  | .auipc _, ia => AuipcRangeDomain ia.auipc_input
+  | .jal _, ia => JalRangeDomain ia.jal_input
+  | .jalr _, ia => JalrRangeDomain ia.jalr_input
   | .fence c, _ => Defects.FenceKnownGood c.fm c.rs c.rd
   | _, _ => True
 
