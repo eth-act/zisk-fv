@@ -70,7 +70,8 @@ theorem busSub_rd_idx_of_decode
     exact env the proof feeds to `zisk_riscv_compliant_program_bus`. -/
 noncomputable def fenceEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_fence trace binding i) :
+    (d : RowData_fence trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.fence_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   OpEnvelope.fence d.toInputs.fence_input d.toClaim.fm d.toClaim.fenceP d.toClaim.fenceS d.toClaim.rs d.toClaim.rd (Pilot.execRowOf trace i)
@@ -83,7 +84,7 @@ noncomputable def fenceEnvOf
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound }
+          d.toInputs.h_pc_bridge h_domain }
 
 /-- The `OpEnvelope.mul` env CONSTRUCTED from a `RowData_mul`.  Both the
     `RowOutsideDefectRegion` mul obligation AND `stepStrong_mul` reference THIS env, so
@@ -92,7 +93,8 @@ noncomputable def fenceEnvOf
     `fenceEnvOf`: a specific-env obligation, SATISFIABLE for an honest row.) -/
 noncomputable def mulEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mul trace binding i) :
+    (d : RowData_mul trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mul_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -106,7 +108,7 @@ noncomputable def mulEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mul_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
@@ -125,8 +127,9 @@ noncomputable def mulEnvOf
     the Lean-checked anti-vacuity guard for the strong-export MUL arm. -/
 theorem mul_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mul trace binding i) :
-    Defects.NoKnownDefect (mulEnvOf trace binding i d) := by
+    (d : RowData_mul trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mul_input.PC) :
+    Defects.NoKnownDefect (mulEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -142,7 +145,8 @@ theorem mul_noKnownDefect_of_rowData
     row.  Carries the SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b`. -/
 noncomputable def mulhEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mulh trace binding i) :
+    (d : RowData_mulh trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulh_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -154,7 +158,7 @@ noncomputable def mulhEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulh_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
@@ -165,7 +169,8 @@ noncomputable def mulhEnvOf
     sign-range residual `h_sign_a` (op2 unsigned, table-pinned `nb = 0`). -/
 noncomputable def mulhsuEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mulhsu trace binding i) :
+    (d : RowData_mulhsu trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulhsu_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -177,7 +182,7 @@ noncomputable def mulhsuEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulhsu_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
@@ -190,8 +195,9 @@ noncomputable def mulhsuEnvOf
     `NoKnownDefect (mulhEnvOf …)` is TRUE — the `.mulh` strong arm is NON-VACUOUS. -/
 theorem mulh_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mulh trace binding i) :
-    Defects.NoKnownDefect (mulhEnvOf trace binding i d) := by
+    (d : RowData_mulh trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulh_input.PC) :
+    Defects.NoKnownDefect (mulhEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -206,8 +212,9 @@ theorem mulh_noKnownDefect_of_rowData
     `mulh_noKnownDefect_of_rowData`). -/
 theorem mulhsu_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mulhsu trace binding i) :
-    Defects.NoKnownDefect (mulhsuEnvOf trace binding i d) := by
+    (d : RowData_mulhsu trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulhsu_input.PC) :
+    Defects.NoKnownDefect (mulhsuEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -226,7 +233,8 @@ theorem mulhsu_noKnownDefect_of_rowData
     row whose `|r| ≠ |op2|`.) -/
 noncomputable def divEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_div trace binding i) :
+    (d : RowData_div trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.div_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -238,7 +246,7 @@ noncomputable def divEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.div_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints d.toInputs.h_boundary
@@ -249,7 +257,8 @@ noncomputable def divEnvOf
 /-- The `OpEnvelope.rem` env CONSTRUCTED from a `RowData_rem` (secondary lane). -/
 noncomputable def remEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_rem trace binding i) :
+    (d : RowData_rem trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.rem_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -260,7 +269,7 @@ noncomputable def remEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.rem_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
@@ -271,7 +280,8 @@ noncomputable def remEnvOf
 /-- The `OpEnvelope.divw` env CONSTRUCTED from a `RowData_divw` (W-mode primary). -/
 noncomputable def divwEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_divw trace binding i) :
+    (d : RowData_divw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.divw_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -282,7 +292,7 @@ noncomputable def divwEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.divw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds
@@ -294,7 +304,8 @@ noncomputable def divwEnvOf
 /-- The `OpEnvelope.remw` env CONSTRUCTED from a `RowData_remw` (W-mode secondary). -/
 noncomputable def remwEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_remw trace binding i) :
+    (d : RowData_remw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.remw_input.PC) :
     OpEnvelope (binding i)
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable) i.val :=
   let bus := busSub trace i (Pilot.execRowOf trace i)
@@ -305,7 +316,7 @@ noncomputable def remwEnvOf
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.remw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound)
+          d.toInputs.h_pc_bridge h_domain)
       (d.toInputs.promises.input_rd_eq.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds
@@ -327,8 +338,9 @@ noncomputable def remwEnvOf
     Lean-checked anti-vacuity guard for the strong-export DIV arm. -/
 theorem div_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_div trace binding i) :
-    Defects.NoKnownDefect (divEnvOf trace binding i d) := by
+    (d : RowData_div trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.div_input.PC) :
+    Defects.NoKnownDefect (divEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -343,8 +355,9 @@ theorem div_noKnownDefect_of_rowData
     `div_noKnownDefect_of_rowData`; secondary remainder lane). -/
 theorem rem_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_rem trace binding i) :
-    Defects.NoKnownDefect (remEnvOf trace binding i d) := by
+    (d : RowData_rem trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.rem_input.PC) :
+    Defects.NoKnownDefect (remEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -361,8 +374,9 @@ theorem rem_noKnownDefect_of_rowData
     `div_noKnownDefect_of_rowData`; narrowed shape `|r₃₂| ≠ |op2₃₂|`). -/
 theorem divw_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_divw trace binding i) :
-    Defects.NoKnownDefect (divwEnvOf trace binding i d) := by
+    (d : RowData_divw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.divw_input.PC) :
+    Defects.NoKnownDefect (divwEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -377,8 +391,9 @@ theorem divw_noKnownDefect_of_rowData
     `divw_noKnownDefect_of_rowData`; W-mode secondary remainder lane). -/
 theorem remw_noKnownDefect_of_rowData
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_remw trace binding i) :
-    Defects.NoKnownDefect (remwEnvOf trace binding i d) := by
+    (d : RowData_remw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.remw_input.PC) :
+    Defects.NoKnownDefect (remwEnvOf trace binding i d h_domain) := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness =>
@@ -402,51 +417,59 @@ re-expressed predicate were even slightly weaker or stronger than the original
 
 theorem signedMulForge_iff_mulShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mul trace binding i) :
+    (d : RowData_mul trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mul_input.PC) :
     Defects.SignedMulForge d.toInputs.v d.toInputs.r_a
-      ↔ Defects.MaliciousSignedMulWitnessShape (mulEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.MaliciousSignedMulWitnessShape (mulEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem signedMulForge_iff_mulhShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mulh trace binding i) :
+    (d : RowData_mulh trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulh_input.PC) :
     Defects.SignedMulForge d.toInputs.v d.toInputs.r_a
-      ↔ Defects.MaliciousSignedMulWitnessShape (mulhEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.MaliciousSignedMulWitnessShape (mulhEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem signedMulForge_iff_mulhsuShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_mulhsu trace binding i) :
+    (d : RowData_mulhsu trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.mulhsu_input.PC) :
     Defects.SignedMulForge d.toInputs.v d.toInputs.r_a
-      ↔ Defects.MaliciousSignedMulWitnessShape (mulhsuEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.MaliciousSignedMulWitnessShape (mulhsuEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem divRemForge_iff_divShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_div trace binding i) :
+    (d : RowData_div trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.div_input.PC) :
     Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a
-      ↔ Defects.ArithDivDynamicWitnessShape (divEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.ArithDivDynamicWitnessShape (divEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem divRemForge_iff_remShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_rem trace binding i) :
+    (d : RowData_rem trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.rem_input.PC) :
     Defects.DivRemForge d.toInputs.rem_input.r2_val d.toInputs.v d.toInputs.r_a
-      ↔ Defects.ArithDivDynamicWitnessShape (remEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.ArithDivDynamicWitnessShape (remEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem divRemForgeW_iff_divwShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_divw trace binding i) :
+    (d : RowData_divw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.divw_input.PC) :
     Defects.DivRemForgeW d.toInputs.divw_input.r2_val d.toInputs.v d.toInputs.r_a
-      ↔ Defects.ArithDivDynamicWitnessShape (divwEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.ArithDivDynamicWitnessShape (divwEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem divRemForgeW_iff_remwShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_remw trace binding i) :
+    (d : RowData_remw trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.remw_input.PC) :
     Defects.DivRemForgeW d.toInputs.remw_input.r2_val d.toInputs.v d.toInputs.r_a
-      ↔ Defects.ArithDivDynamicWitnessShape (remwEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.ArithDivDynamicWitnessShape (remwEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem fenceKnownGood_iff_fenceShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
-    (d : RowData_fence trace binding i) :
+    (d : RowData_fence trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.fence_input.PC) :
     Defects.FenceKnownGood d.toClaim.fm d.toClaim.rs d.toClaim.rd
-      ↔ Defects.FenceKnownGoodShape (fenceEnvOf trace binding i d) := Iff.rfl
+      ↔ Defects.FenceKnownGoodShape (fenceEnvOf trace binding i d h_domain) := Iff.rfl
 
 
 end ZiskFv.Compliance
