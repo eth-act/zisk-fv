@@ -588,6 +588,60 @@ theorem romSelectorColumns_of_romFlags_eq_packFlags
   subst hbits
   exact ⟨e_store_ind, e_b_src_ind, e_store_reg⟩
 
+/-- **Unpacking the immediate source selector from the packed `flags` slot.**
+
+This is the same `packFlags` injectivity argument as
+`romFlagColumns_of_romFlags_eq_packFlags`, but exposing the `b_src_imm` selector
+needed to turn `SourceSpec` into an I-type immediate-lane proof. -/
+theorem romBSourceImmColumn_of_romFlags_eq_packFlags
+    (row : MainRowWithRom FGL) (bits : RomFlagBits)
+    (hbool :
+      row.core.is_external_op * (1 - row.core.is_external_op) = 0
+    ∧ row.core.m32 * (1 - row.core.m32) = 0
+    ∧ row.core.set_pc * (1 - row.core.set_pc) = 0
+    ∧ row.core.store_pc * (1 - row.core.store_pc) = 0
+    ∧ row.rom.a_src_imm * (1 - row.rom.a_src_imm) = 0
+    ∧ row.rom.a_src_mem * (1 - row.rom.a_src_mem) = 0
+    ∧ row.rom.is_precompiled * (1 - row.rom.is_precompiled) = 0
+    ∧ row.rom.b_src_imm * (1 - row.rom.b_src_imm) = 0
+    ∧ row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0
+    ∧ row.rom.store_mem * (1 - row.rom.store_mem) = 0
+    ∧ row.rom.store_ind * (1 - row.rom.store_ind) = 0
+    ∧ row.rom.b_src_ind * (1 - row.rom.b_src_ind) = 0
+    ∧ row.rom.a_src_reg * (1 - row.rom.a_src_reg) = 0
+    ∧ row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0
+    ∧ row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h : romFlags row = packFlags bits) :
+    row.rom.b_src_imm = ZiskFv.AirsClean.boolF bits.b_src_imm := by
+  obtain ⟨hb_ieo, hb_m32, hb_set_pc, hb_store_pc, hb_a_src_imm, hb_a_src_mem,
+    hb_is_precompiled, hb_b_src_imm, hb_b_src_mem, hb_store_mem, hb_store_ind,
+    hb_b_src_ind, hb_a_src_reg, hb_b_src_reg, hb_store_reg⟩ := hbool
+  obtain ⟨d_ieo, e_ieo⟩ := bool_of_booleanity hb_ieo
+  obtain ⟨d_m32, e_m32⟩ := bool_of_booleanity hb_m32
+  obtain ⟨d_set_pc, e_set_pc⟩ := bool_of_booleanity hb_set_pc
+  obtain ⟨d_store_pc, e_store_pc⟩ := bool_of_booleanity hb_store_pc
+  obtain ⟨d_a_src_imm, e_a_src_imm⟩ := bool_of_booleanity hb_a_src_imm
+  obtain ⟨d_a_src_mem, e_a_src_mem⟩ := bool_of_booleanity hb_a_src_mem
+  obtain ⟨d_is_precompiled, e_is_precompiled⟩ := bool_of_booleanity hb_is_precompiled
+  obtain ⟨d_b_src_imm, e_b_src_imm⟩ := bool_of_booleanity hb_b_src_imm
+  obtain ⟨d_b_src_mem, e_b_src_mem⟩ := bool_of_booleanity hb_b_src_mem
+  obtain ⟨d_store_mem, e_store_mem⟩ := bool_of_booleanity hb_store_mem
+  obtain ⟨d_store_ind, e_store_ind⟩ := bool_of_booleanity hb_store_ind
+  obtain ⟨d_b_src_ind, e_b_src_ind⟩ := bool_of_booleanity hb_b_src_ind
+  obtain ⟨d_a_src_reg, e_a_src_reg⟩ := bool_of_booleanity hb_a_src_reg
+  obtain ⟨d_b_src_reg, e_b_src_reg⟩ := bool_of_booleanity hb_b_src_reg
+  obtain ⟨d_store_reg, e_store_reg⟩ := bool_of_booleanity hb_store_reg
+  have hpack : romFlags row =
+      packFlags ⟨d_a_src_imm, d_a_src_mem, d_is_precompiled, d_b_src_imm,
+        d_b_src_mem, d_ieo, d_store_pc, d_store_mem, d_store_ind, d_set_pc,
+        d_m32, d_b_src_ind, d_a_src_reg, d_b_src_reg, d_store_reg⟩ := by
+    simp only [romFlags, packFlags, e_ieo, e_m32, e_set_pc, e_store_pc,
+      e_a_src_imm, e_a_src_mem, e_is_precompiled, e_b_src_imm, e_b_src_mem,
+      e_store_mem, e_store_ind, e_b_src_ind, e_a_src_reg, e_b_src_reg, e_store_reg]
+  have hbits := packFlags_inj (hpack.symm.trans h)
+  subst hbits
+  exact e_b_src_imm
+
 /-! ## ADD pilot: reconstruct `Decode_add` from the committed program
 
 `Decode_add_of_program` rebuilds the `Decode_add` decode pins from
