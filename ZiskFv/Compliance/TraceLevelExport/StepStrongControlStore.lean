@@ -908,7 +908,7 @@ theorem stepStrong_bgeu
 theorem stepStrong_lui
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lui trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.lui_input.PC) :
     execute_instruction (instruction.UTYPE (d.toClaim.imm, d.toClaim.rd, uop.LUI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨Pilot.execRowOf trace i, [eRdLui trace i]⟩ (binding i) := by
@@ -968,7 +968,7 @@ theorem stepStrong_lui
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       rd_mult := by rfl
       rd_as := by rfl
       nextPC_eq := rfl
@@ -1432,7 +1432,7 @@ private def emptyMainEnv : Environment FGL :=
 theorem stepStrong_sb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sb trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sb_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sb_input.imm, regidx.Regidx d.toClaim.sb_input.r2, regidx.Regidx d.toClaim.sb_input.r1, 1))
         (binding i)
@@ -1473,7 +1473,7 @@ theorem stepStrong_sb
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1505,7 +1505,7 @@ theorem stepStrong_sb
 theorem stepStrong_sh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sh trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sh_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sh_input.imm, regidx.Regidx d.toClaim.sh_input.r2, regidx.Regidx d.toClaim.sh_input.r1, 2))
         (binding i)
@@ -1546,7 +1546,7 @@ theorem stepStrong_sh
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1578,7 +1578,7 @@ theorem stepStrong_sh
 theorem stepStrong_sw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sw trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sw_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sw_input.imm, regidx.Regidx d.toClaim.sw_input.r2, regidx.Regidx d.toClaim.sw_input.r1, 4))
         (binding i)
@@ -1619,7 +1619,7 @@ theorem stepStrong_sw
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -1651,7 +1651,7 @@ theorem stepStrong_sw
 theorem stepStrong_sd
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sd trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.sd_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sd_input.imm, regidx.Regidx d.toClaim.sd_input.r2, regidx.Regidx d.toClaim.sd_input.r1, 8))
         (binding i)
@@ -1692,7 +1692,7 @@ theorem stepStrong_sd
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl

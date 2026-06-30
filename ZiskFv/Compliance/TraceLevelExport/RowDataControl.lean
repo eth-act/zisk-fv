@@ -843,7 +843,6 @@ structure Inputs_fence (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = fence_input.PC.toNat
-  h_pc_bound : fence_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `fence` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_fence` bundles them. -/
