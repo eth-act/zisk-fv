@@ -136,6 +136,34 @@ theorem store_addr2_of_decode
   rw [h_addr2, h_store_ind]
   simpa using h_store_addr_arith
 
+/-- JALR link-value bridge reconstructed from the PC bridge and decoded fallthrough offset. -/
+theorem jalr_link_bridge_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {pc : BitVec 64}
+    (h_pc_bridge :
+      ((mainOfTable trace.program trace.mainTable).pc i.val).val = pc.toNat)
+    (h_jmp2 : (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4)
+    (h_pc_bound : pc.toNat < GL_prime - 4) :
+    ((mainOfTable trace.program trace.mainTable).pc i.val
+        + (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val
+      = (pc + 4#64).toNat := by
+  rw [h_jmp2]
+  have h_bv_eq :=
+    Pilot.ofNat_fgl_pc_plus_4_eq
+      ((mainOfTable trace.program trace.mainTable).pc i.val) pc h_pc_bridge h_pc_bound
+  have h_toNat := congrArg BitVec.toNat h_bv_eq
+  have h_gl_lt64 : GL_prime < 2 ^ 64 := by
+    have h_lit := ZiskFv.PackedBitVec.WidePCNoWrap.GL_prime_lt_pow_64
+    have h_two64 : 2 ^ 64 = 18446744073709551616 := by norm_num
+    omega
+  have h_val_lt64 : (((mainOfTable trace.program trace.mainTable).pc i.val + 4 : FGL).val)
+      < 2 ^ 64 :=
+    Nat.lt_trans (Fin.isLt _) h_gl_lt64
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h_val_lt64] at h_toNat
+  exact h_toNat
+
 /-! ## Strengthened control-flow + U-type arms (branches, JAL/JALR, LUI/AUIPC)
 
 These arms reach the same channel-balance conclusion as the 22 above, but via a
@@ -1348,13 +1376,15 @@ theorem stepStrong_jalr
       nextPC_option := h_nextPC_option
       rd_idx := d.toInputs.h_input_rd.trans
         (eRdLui_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
+  have h_link_bridge :=
+    jalr_link_bridge_of_decode d.toInputs.h_pc_bridge d.toDecode.h_jmp2 d.toInputs.h_pc_bound
   let env : OpEnvelope state m i.val :=
     OpEnvelope.jalr d.toInputs.jalr_input d.toClaim.imm d.toClaim.rs1 d.toClaim.rd d.toInputs.misa_val d.toInputs.mseccfg (Pilot.execRowOf trace i) e_rd
       nextPC_val next_pc store_pc_mem pins d.toDecode.h_flag d.toDecode.h_m32 d.toDecode.h_set_pc d.toDecode.h_store_pc
       h_jalr_subset promises d.toInputs.h_input_imm d.toInputs.h_input_rs1 d.toInputs.h_cur_privilege d.toInputs.h_mseccfg
-      d.toInputs.h_link_bridge d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
+      h_link_bridge d.toInputs.h_pc_bound d.toInputs.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.toDecode.h_flag, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toInputs.h_link_bridge⟩
+    ⟨d.toDecode.h_flag, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, h_link_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
     noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial

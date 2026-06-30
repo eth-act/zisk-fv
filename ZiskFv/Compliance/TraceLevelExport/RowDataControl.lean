@@ -746,6 +746,9 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
   h_c1_zero :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_1
       i.val = 0
+  h_jmp2 :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = 4
   --   * the `jmp_offset1` field ↔ `offset_bv` bridge (unsigned-equal offset
   --     contract, same shape AUIPC/JAL use) + the evenness ROM guard
   --     (aligned `imm % 4 == 0` ⇒ `offset_bv` even; trivial for unaligned
@@ -780,6 +783,9 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       = jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm
   h_input_rd : jalr_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = jalr_input.PC.toNat
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
@@ -790,11 +796,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     = EStateM.Result.ok Privilege.Machine (binding i)
   h_mseccfg : Sail.readReg Register.mseccfg (binding i)
     = EStateM.Result.ok mseccfg (binding i)
-  h_link_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val
-      + (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-          i.val).val
-      = (jalr_input.PC + 4#64).toNat
   h_pc_bound : jalr_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296
 
