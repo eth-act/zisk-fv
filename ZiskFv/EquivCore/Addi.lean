@@ -230,8 +230,8 @@ lemma equiv_ADDI_of_wf
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
     (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
-    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
-    (h_addi_subset :
+    (_h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
+    (_h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
     (c0 c1 c2 c3 c4 c5 c6 c7

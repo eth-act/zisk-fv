@@ -54,7 +54,7 @@ def loadForbiddenTypes (path : System.FilePath) : IO NameSet := do
   let content ← IO.FS.readFile path
   let mut s : NameSet := {}
   for raw in content.splitOn "\n" do
-    let line := raw.trim
+    let line := raw.trimAscii.toString
     if line.isEmpty || line.startsWith "#" then continue
     s := s.insert line.toName
   return s
@@ -110,7 +110,7 @@ def loadEntryPoints (path : System.FilePath) : IO (List Name) := do
   let content ← IO.FS.readFile path
   let mut out : Array Name := #[]
   for raw in content.splitOn "\n" do
-    let line := raw.trim
+    let line := raw.trimAscii.toString
     if line.isEmpty || line.startsWith "#" then continue
     out := out.push line.toName
   return out.toList
@@ -144,7 +144,7 @@ def loadBaselineAxioms (path : System.FilePath) : IO (Array String) := do
   let content ← IO.FS.readFile path
   let mut out : Array String := #[]
   for raw in content.splitOn "\n" do
-    let line := raw.trim
+    let line := raw.trimAscii.toString
     if line.isEmpty || line.startsWith "#" then continue
     -- Take the last whitespace-separated token.
     let parts := line.splitToList (·.isWhitespace) |>.filter (!·.isEmpty)
@@ -162,7 +162,7 @@ def loadAxiomList (path : System.FilePath) : IO (Array String) := do
   let content ← IO.FS.readFile path
   let mut out : Array String := #[]
   for raw in content.splitOn "\n" do
-    let line := raw.trim
+    let line := raw.trimAscii.toString
     if line.isEmpty || line.startsWith "#" then continue
     out := out.push line
   return out
@@ -258,7 +258,7 @@ def cmdCheckStrongExportClosure (env : Environment) (path : String) : IO UInt32 
   let content ← IO.FS.readFile path
   let mut baseline : Array String := #[]
   for raw in content.splitOn "\n" do
-    let line := raw.trim
+    let line := raw.trimAscii.toString
     if line.isEmpty || line.startsWith "#" then continue
     baseline := baseline.push line
   let baselineSorted := baseline.qsort (· < ·)

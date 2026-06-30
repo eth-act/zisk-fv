@@ -1347,7 +1347,7 @@ lemma div_signed_chain_witnesses
              ZiskFv.Airs.ArithDiv.carry_eq_4_div, ZiskFv.Airs.ArithDiv.carry_eq_5_div,
              ZiskFv.Airs.ArithDiv.carry_eq_6_div, ZiskFv.Airs.ArithDiv.carry_eq_7_div,
              ← h_fab_def, ← h_nafb_def, ← h_nbfa_def,
-             h_m32, h_div, mul_zero, zero_mul, add_zero, sub_zero, mul_one, sub_self]
+             h_m32, h_div, mul_zero, add_zero, sub_zero, mul_one, sub_self]
     at h31 h32 h33 h34 h35 h36 h37 h38
   set γ : FGL := 1 - 2 * v.np r_a with hγ
   set δ : FGL := 1 - 2 * v.nr r_a with hδ

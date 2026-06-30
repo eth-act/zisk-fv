@@ -83,8 +83,7 @@ lemma equiv_ADDW
   have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (0x1A : FGL) := by
     have h_lane_eqs := h_match
     simp only [matches_entry, opBus_row_Main,
-      ZiskFv.AirsClean.Binary.opBusMessage,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry] at h_lane_eqs
+      ] at h_lane_eqs
     obtain ⟨_, h_op_match, _, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
     rw [← h_op_match]
     simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op_addw

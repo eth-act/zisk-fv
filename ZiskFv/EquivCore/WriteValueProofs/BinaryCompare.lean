@@ -133,7 +133,7 @@ private lemma cout_lane_decode
     (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
     (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
     (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
-    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256) :
+    (_h_e2_6 : (byteAt e2 6).val < 256) (_h_e2_7 : (byteAt e2 7).val < 256) :
     (byteAt e2 0).val = cout ∧ (byteAt e2 1).val = 0
     ∧ (byteAt e2 2).val = 0 ∧ (byteAt e2 3).val = 0
     ∧ (byteAt e2 4).val = 0 ∧ (byteAt e2 5).val = 0

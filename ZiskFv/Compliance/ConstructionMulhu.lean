@@ -618,7 +618,7 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
     `main_request_mulhu_provided`.
     Mirrors `mulwArow`. -/
 noncomputable def mulhuArow
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :

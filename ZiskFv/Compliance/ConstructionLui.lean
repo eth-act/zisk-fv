@@ -83,7 +83,7 @@ noncomputable def eRdLui
 /-- The Main per-row `Spec` at trace index `i`, derived from `trace.spec_holds`.
     (Standalone version of the in-wrapper `h_main_spec` derivation.) -/
 theorem mainSpec_at
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     ZiskFv.AirsClean.Main.Spec
       (ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)

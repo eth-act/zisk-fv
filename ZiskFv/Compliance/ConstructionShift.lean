@@ -1351,7 +1351,7 @@ theorem shift_m32_1_shift_pin_row_of_facts
       (Sail.BitVec.extractLsb r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = r2_val.toNat % 2 ^ 32 := by
     simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
-          BitVec.toNat_ofNat, Nat.mod_mod_of_dvd]
+          ]
   rw [h_extract] at h
   rw [Nat.mod_mod_of_dvd _ (by decide : (32 : ℕ) ∣ 2 ^ 32)] at h
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,

@@ -104,7 +104,7 @@ lemma equiv_REMU
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0)
     (h_div : v.div r_a = 1)
     (h_byte_lo :
       (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
@@ -151,7 +151,7 @@ lemma equiv_REMU
     intro h_zero
     have : ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val
           (v.d_2 r_a).val (v.d_3 r_a).val < 0 := by
-      simpa [h_zero] using h_d_lt_b
+      simp [h_zero] at h_d_lt_b
     omega
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,

@@ -97,7 +97,7 @@ lemma equiv_SUB_of_wf
     -- hypotheses, and 2 input-bridge promise hypotheses from origin/main.
     (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
-    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
+    (_h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     -- Loose output bytes c_i and per-byte carry/flag/pos quantifiers stay;
     -- the rd-value derivation lemma consumes them as-is.
     (c0 c1 c2 c3 c4 c5 c6 c7

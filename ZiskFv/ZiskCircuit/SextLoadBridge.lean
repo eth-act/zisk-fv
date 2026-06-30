@@ -343,10 +343,10 @@ private lemma c_lift_to_byte_sum
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
-    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
-    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
-    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256) :
+    (_h_e2_0 : (byteAt e2 0).val < 256) (_h_e2_1 : (byteAt e2 1).val < 256)
+    (_h_e2_2 : (byteAt e2 2).val < 256) (_h_e2_3 : (byteAt e2 3).val < 256)
+    (_h_e2_4 : (byteAt e2 4).val < 256) (_h_e2_5 : (byteAt e2 5).val < 256)
+    (_h_e2_6 : (byteAt e2 6).val < 256) (_h_e2_7 : (byteAt e2 7).val < 256) :
     (byteAt e2 0).val + (byteAt e2 1).val * 256
       + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
     + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776

@@ -81,7 +81,7 @@ lemma equiv_SLTI_of_wf
     -- immediate is caller-routed by the explicit SLTI subset facts.)
     (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
-    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
+    (_h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (c0 c1 c2 c3 c4 c5 c6 c7
      cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
      fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7

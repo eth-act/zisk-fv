@@ -59,21 +59,21 @@ lemma equiv_DIVW_of_table
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
-    (h_match_primary :
+    (_pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
+    (_h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
+    (_arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_boundary :
       ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
-    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (_arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)

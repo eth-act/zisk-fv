@@ -1466,7 +1466,7 @@ lemma w_mode_sext_choice_and_carry_7_zero_of_static_row
     simpa [ZiskFv.AirsClean.Binary.lookupMessage3Row] using h_b_op
   have h_pos3 :
       (ZiskFv.AirsClean.Binary.lookupMessage3Row row).pos_ind.val = 1 := by
-    simp [ZiskFv.AirsClean.Binary.lookupMessage3Row, h_mode32_one]
+    simp [h_mode32_one]
   have h_flags3 :=
     ZiskFv.AirsClean.BinaryTable.spec_add_sub_final_flags_eq_sign hs3 h_op3 h_pos3
   have h_flags3_eq :

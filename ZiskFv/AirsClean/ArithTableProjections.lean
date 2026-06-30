@@ -746,8 +746,6 @@ theorem mulhsu_np_xor_or_zero_product_shape
     first
     | right; left
       exact ⟨hna, hnb, hnp⟩
-    | right; right
-      exact ⟨hna, hnb, hnp⟩
     | left
       rw [hna, hnb, hnp]
       norm_num

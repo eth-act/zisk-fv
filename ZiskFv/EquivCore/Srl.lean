@@ -91,13 +91,13 @@ lemma equiv_SRL_of_wf
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
-    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (_h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_input_r1_circuit :
       srl_input.r1_val = ZiskFv.AirsClean.BinaryExtension.validA64 v r_binary)
     (h_shift_pin :
       srl_input.r2_val.toNat % 64 =
         ZiskFv.AirsClean.BinaryExtension.validShiftAmount v r_binary)
-    (h_b0_range : (v.b_0 r_binary).val < 2 ^ 24) :
+    (_h_b0_range : (v.b_0 r_binary).val < 2 ^ 24) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRL)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
