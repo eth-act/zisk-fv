@@ -2002,16 +2002,7 @@ inductive OpEnvelope
           (v.a_2 r_a).val (v.a_3 r_a).val)
     (h_rs2_value : mulh_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    -- SIGN-RANGE RESIDUAL: `na = MSB(op1)`, `nb = MSB(op2)`.  Carried, not
-    -- derived (the real circuit pins it via `arith.pil:286/289/303`; the FV
-    -- extraction collapses the indexed lookup to the full `rangeTable16`).
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
-    (h_sign_b : (v.nb r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main
   -- ============================ MULHU ===================================
   | mulhu
@@ -2069,11 +2060,7 @@ inductive OpEnvelope
           (v.a_2 r_a).val (v.a_3 r_a).val)
     (h_rs2_value : mulhsu_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    -- SIGN-RANGE RESIDUAL on op1 only (op2 unsigned, table pins `nb = 0`).
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main
   -- ============================ MULW ====================================
   | mulw

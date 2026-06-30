@@ -137,18 +137,12 @@ def OpEnvelope.mulhOfExtractedShape
           (v.a_2 r_a).val (v.a_3 r_a).val)
     (h_rs2_value : mulh_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
-    (h_sign_b : (v.nb r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main :=
   OpEnvelope.mulh mulh_input r1 r2 rd bus v r_a
     (MainRowProvenance.mulHPins_of_extracted_shape provenance h_op h_external)
     h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value
 
 /-- The MULH bridge predicate is derivable from extracted row-shape equalities
 and the remaining dynamic ArithMul facts. -/
@@ -185,18 +179,12 @@ theorem OpEnvelope.aeneasBridgeTrust_mulhOfExtractedShape
           (v.a_2 r_a).val (v.a_3 r_a).val)
     (h_rs2_value : mulh_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
-    (h_sign_b : (v.nb r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     (OpEnvelope.mulhOfExtractedShape
       mulh_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_secondary
       promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
-      arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b).aeneasBridgeTrust := by
+      arith_carry_ranges h_rs1_value h_rs2_value).aeneasBridgeTrust := by
   unfold OpEnvelope.mulhOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.mulHPins_of_extracted_shape provenance h_op h_external
   let controls :=
@@ -331,15 +319,12 @@ def OpEnvelope.mulhsuOfExtractedShape
           (v.a_2 r_a).val (v.a_3 r_a).val)
     (h_rs2_value : mulhsu_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     OpEnvelope state m r_main :=
   OpEnvelope.mulhsu mulhsu_input r1 r2 rd bus v r_a
     (MainRowProvenance.mulSUHPins_of_extracted_shape provenance h_op h_external)
     h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a
+    arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value
 
 /-- The MULHSU bridge predicate is derivable from extracted row-shape
 equalities and the remaining dynamic ArithMul facts. -/
@@ -376,15 +361,12 @@ theorem OpEnvelope.aeneasBridgeTrust_mulhsuOfExtractedShape
           (v.a_2 r_a).val (v.a_3 r_a).val)
     (h_rs2_value : mulhsu_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0) :
+          (v.b_2 r_a).val (v.b_3 r_a).val) :
     (OpEnvelope.mulhsuOfExtractedShape
       mulhsu_input r1 r2 rd bus v r_a provenance h_op h_external h_m32
       h_set_pc h_store_pc h_jmp_offset1 h_jmp_offset2 h_match_secondary
       promises arith_mem bounds h_row_constraints arith_table arith_chunk_ranges
-      arith_carry_ranges h_rs1_value h_rs2_value h_sign_a).aeneasBridgeTrust := by
+      arith_carry_ranges h_rs1_value h_rs2_value).aeneasBridgeTrust := by
   unfold OpEnvelope.mulhsuOfExtractedShape OpEnvelope.aeneasBridgeTrust
   let pins := MainRowProvenance.mulSUHPins_of_extracted_shape provenance h_op h_external
   let controls :=

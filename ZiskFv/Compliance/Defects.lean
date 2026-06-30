@@ -66,8 +66,7 @@ ArithTable admits for op 181 / 179 (`Counterexamples.mulh_np_xor_not_static`,
 `Counterexamples.mulhsu_np_xor_not_static`).  An honest high-half MUL row
 (`np = na XOR nb`) is NOT in this shape, so the canonical `equiv_MULH` /
 `equiv_MULHSU` are non-vacuous under `¬ MaliciousSignedMulWitnessShape`.  The
-high-half proof additionally consumes the documented SIGN-RANGE RESIDUAL
-(`na = MSB`, `nb = MSB`); see `trust/defects.md` (sign-range residual entry). -/
+high-half proof now derives the needed sign facts from indexed Arith range-table evidence. -/
 def MaliciousSignedMulWitnessShape
     : OpEnvelope state m r_main → Prop
   | .mul _ _ _ _ _ _ _ v r_a .. =>
@@ -304,17 +303,11 @@ theorem honest_mulh_witness_not_malicious
     (h_rs2_value : mulh_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
-    (h_sign_b : (v.nb r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-          (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0)
     (h_honest : v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0) :
     ¬ MaliciousSignedMulWitnessShape
         (OpEnvelope.mulh mulh_input r1 r2 rd bus v r_a pins
           h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a h_sign_b) := by
+          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value) := by
   obtain ⟨ha, hb, _hp⟩ := h_honest
   rintro (⟨ha1, _, _⟩ | ⟨_, hb1, _⟩)
   · rw [ha] at ha1; exact absurd ha1 (by decide)
@@ -349,14 +342,11 @@ theorem honest_mulhsu_witness_not_malicious
     (h_rs2_value : mulhsu_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val)
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
     (h_honest : v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0) :
     ¬ MaliciousSignedMulWitnessShape
         (OpEnvelope.mulhsu mulhsu_input r1 r2 rd bus v r_a pins
           h_match_secondary promises arith_mem bounds h_row_constraints arith_table
-          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value h_sign_a) := by
+          arith_chunk_ranges arith_carry_ranges h_rs1_value h_rs2_value) := by
   obtain ⟨ha, hb, _hp⟩ := h_honest
   rintro (⟨ha1, _, _⟩ | ⟨_, hb1, _⟩)
   · rw [ha] at ha1; exact absurd ha1 (by decide)

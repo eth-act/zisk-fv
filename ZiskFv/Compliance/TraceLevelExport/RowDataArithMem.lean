@@ -951,12 +951,6 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_not_forge :
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
-  h_sign_a : (v.na r_a).val
-    = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-        (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0
-  h_sign_b : (v.nb r_a).val
-    = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
-        (v.b_2 r_a).val (v.b_3 r_a).val then 1 else 0
   -- #100 next-PC transition inputs (consumed by `mulhEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulh_input.PC.toNat
@@ -1041,9 +1035,6 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
   h_not_forge :
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
-  h_sign_a : (v.na r_a).val
-    = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-        (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0
   -- #100 next-PC transition inputs (consumed by `mulhsuEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulhsu_input.PC.toNat

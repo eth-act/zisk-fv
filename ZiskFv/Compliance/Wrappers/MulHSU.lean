@@ -23,13 +23,10 @@ import ZiskFv.SailSpec.BusEffect
 > **Status:** Promise-discharge wrapper for the signed × unsigned high-half MUL
 > (MULHSU = MULSUH = op 0xb3 = 179).  No longer `False.elim`.
 >
-> The table pins `nb = 0` (the unsigned operand), so only ONE **SIGN-RANGE
-> RESIDUAL** `h_sign_a` (= `na = MSB(op1)`) is carried, plus the NARROWED
-> forge-exclusion `h_not_forge`.  #169 exposes the real ZisK indexed `range_ab`
-> POS/NEG lookup (`arith.pil:286/289/303`) in the Clean model; this wrapper still
-> carries the sign binder until #151 wires the row-local indexed facts through the
-> provider path. See `trust/trusted-base.md` (sign-range residual) +
-> `trust/defects.md`.
+> The table pins `nb = 0` (the unsigned operand), and the NARROWED
+> forge-exclusion `h_not_forge` rules out the exceptional signed-witness shapes.
+> Operand-A sign is derived here from the indexed `range_ab` POS/NEG lookup
+> exposed by #169.
 -/
 
 namespace ZiskFv.Compliance
@@ -47,8 +44,8 @@ open ZiskFv.EquivCore.Promises
 /-- **Promise-discharge wrapper for `equiv_MULHSU`.**
 
     Mirrors `equiv_MULH_of_table` but for the signed × unsigned high half: the
-    table pins `nb = 0` (`mulhsu_basic_mode_pin`), so only `h_sign_a` is carried
-    as the SIGN-RANGE RESIDUAL.  `h_not_forge` selects the honest branch of
+    table pins `nb = 0` (`mulhsu_basic_mode_pin`), indexed range facts derive
+    `na = MSB(op1)`, and `h_not_forge` selects the honest branch of
     `mulhsu_np_xor_or_zero_product_shape`. -/
 lemma equiv_MULHSU_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -83,10 +80,6 @@ lemma equiv_MULHSU_of_table
     (h_not_forge :
       ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
         ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
-    -- SIGN-RANGE RESIDUAL: public wrapper binder until #151 wires indexed range facts.
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -119,6 +112,9 @@ lemma equiv_MULHSU_of_table
   obtain ⟨h_nb_zero, h_nr, h_sext, h_m32, h_div, h_na_bool, h_np_bool⟩ :=
     ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_basic_mode_pin
       v r_a h_arith_table h_op_arith_mulhsu
+  obtain ⟨h_range_na0, h_range_na1⟩ :=
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_range_pins
+      v r_a h_arith_table h_op_arith_mulhsu
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============
   obtain ⟨h_main_mul_zero, h_main_div_zero⟩ :=
     ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_main_selector_pin
@@ -147,6 +143,26 @@ lemma equiv_MULHSU_of_table
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ :=
     arith_chunk_ranges.ranges
   have h_arith_chunk_ranges := arith_chunk_ranges.ranges
+  have h_arith_indexed_ranges := arith_table.indexed_ranges
+  have h_arith_chunk_spec :
+      ZiskFv.AirsClean.ArithMul.ChunkRangeSpec
+        (ZiskFv.AirsClean.ArithMul.rowAt v r_a) := by
+    simpa [ZiskFv.AirsClean.ArithMul.ChunkRangeSpec,
+      ZiskFv.AirsClean.ArithMul.rowAt] using h_arith_chunk_ranges
+  have h_sign_a : (v.na r_a).val
+      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val
+          (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0 := by
+    rcases h_na_bool with hna | hna
+    · apply ZiskFv.AirsClean.ArithTableProjections.Mul.na_eq_msb64_of_pos_indexed
+        v r_a h_arith_chunk_spec h_arith_indexed_ranges hna
+      have hrange := h_range_na0 hna
+      rw [hrange]
+      simp [ZiskFv.AirsClean.RangeTables.ArithRangePosId]
+    · apply ZiskFv.AirsClean.ArithTableProjections.Mul.na_eq_msb64_of_neg_indexed
+        v r_a h_arith_indexed_ranges hna
+      have hrange := h_range_na1 hna
+      rw [hrange]
+      simp [ZiskFv.AirsClean.RangeTables.ArithRangeNegId]
   have h_arith_carry_ranges := arith_carry_ranges.ranges
   have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
       + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
@@ -215,9 +231,6 @@ lemma equiv_MULHSU
     (h_not_forge :
       ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
         ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0)))
-    (h_sign_a : (v.na r_a).val
-      = if 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
-          (v.a_2 r_a).val (v.a_3 r_a).val then 1 else 0)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -232,6 +245,6 @@ lemma equiv_MULHSU
   equiv_MULHSU_of_table
     state mulhsu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem
     bounds h_row_constraints arith_table arith_chunk_ranges arith_carry_ranges
-    h_rs1_value h_rs2_value h_not_forge h_sign_a
+    h_rs1_value h_rs2_value h_not_forge
 
 end ZiskFv.Compliance

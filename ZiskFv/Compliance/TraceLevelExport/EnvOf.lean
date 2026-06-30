@@ -142,7 +142,7 @@ theorem mul_noKnownDefect_of_rowData
 
 /-- The `OpEnvelope.mulh` env CONSTRUCTED from a `RowData_mulh`.  Mirrors
     `mulEnvOf`: a specific-env obligation, SATISFIABLE for an honest signed MULH
-    row.  Carries the SIGN-RANGE RESIDUAL `h_sign_a`/`h_sign_b`. -/
+    row. -/
 noncomputable def mulhEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulh trace binding i)
@@ -163,10 +163,8 @@ noncomputable def mulhEnvOf
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
-    d.toInputs.h_sign_a d.toInputs.h_sign_b
 
-/-- The `OpEnvelope.mulhsu` env CONSTRUCTED from a `RowData_mulhsu`.  Only ONE
-    sign-range residual `h_sign_a` (op2 unsigned, table-pinned `nb = 0`). -/
+/-- The `OpEnvelope.mulhsu` env CONSTRUCTED from a `RowData_mulhsu`. -/
 noncomputable def mulhsuEnvOf
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhsu trace binding i)
@@ -187,7 +185,6 @@ noncomputable def mulhsuEnvOf
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)))
     d.toDecode.arith_mem d.toDecode.bounds d.toInputs.h_row_constraints
     d.toInputs.arith_table d.toInputs.arith_chunk_ranges d.toInputs.arith_carry_ranges d.toInputs.h_rs1_value d.toInputs.h_rs2_value
-    d.toInputs.h_sign_a
 
 /-- **Non-vacuity / satisfiability witness for the threaded MULH obligation.**
     For an honest MULH row, `h_not_forge` rules out the two exceptional shapes the
