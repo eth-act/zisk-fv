@@ -30,6 +30,15 @@ namespace PureSpec
       : BgeuOutput
     }
 
+  lemma execute_BGEU_pure_succ_throws
+    (input : BgeuInput)
+  :
+    let output := execute_BGEU_pure input
+    output.success = true → output.throws = false
+  := by
+    simp [execute_BGEU_pure]
+    grind
+
   set_option maxHeartbeats 400000 in
   /-- BGEU Sail-equivalence: unsigned greater-equal sibling of BGE /
       BLTU. Closure shape identical to BLTU with `≥` swapped for `<`. -/
@@ -116,7 +125,7 @@ namespace PureSpec
           else bi.PC + BitVec.signExtend 64 bi.imm := by
     have hult : BitVec.ult bi.r1_val bi.r2_val
         = !(bi.r1_val.toNat ≥b bi.r2_val.toNat) := by
-      simp [BitVec.ult, ge_iff_le, ← decide_not, Nat.not_le]
+      simp [BitVec.ult, ge_iff_le, ← decide_not]
     rw [hult]
     cases h : bi.r1_val.toNat ≥b bi.r2_val.toNat with
     | false => simp [execute_BGEU_pure, h]

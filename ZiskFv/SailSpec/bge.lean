@@ -30,6 +30,15 @@ namespace PureSpec
       : BgeOutput
     }
 
+  lemma execute_BGE_pure_succ_throws
+    (input : BgeInput)
+  :
+    let output := execute_BGE_pure input
+    output.success = true → output.throws = false
+  := by
+    simp [execute_BGE_pure]
+    grind
+
   set_option maxHeartbeats 400000 in
   /-- BGE Sail-equivalence: BLT sibling with `≥b` instead of `<b`.
       Sail's `execute_BTYPE` BGE arm emits `zopz0zKzJ_s (rX rs1) (rX rs2)`
@@ -119,7 +128,7 @@ namespace PureSpec
           else bi.PC + BitVec.signExtend 64 bi.imm := by
     have hslt : BitVec.slt bi.r1_val bi.r2_val
         = !(bi.r1_val.toInt ≥b bi.r2_val.toInt) := by
-      simp [BitVec.slt, ge_iff_le, ← decide_not, Int.not_le]
+      simp [BitVec.slt, ge_iff_le, ← decide_not]
     rw [hslt]
     cases h : bi.r1_val.toInt ≥b bi.r2_val.toInt with
     | false => simp [execute_BGE_pure, h]
