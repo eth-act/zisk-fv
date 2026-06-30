@@ -2081,7 +2081,7 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_ind = 1
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sb_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2104,9 +2104,9 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo c.sb_input.r1_val
-  h_store_addr_bound :
-    c.sb_input.r1_val.toNat + (BitVec.signExtend 64 c.sb_input.imm).toNat
-      < ZiskPhysicalAddressSpaceSize
+  h_a1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi c.sb_input.r1_val
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo c.sb_input.r2_val
@@ -2171,7 +2171,7 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_ind = 1
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sh_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2194,9 +2194,9 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo c.sh_input.r1_val
-  h_store_addr_bound :
-    c.sh_input.r1_val.toNat + (BitVec.signExtend 64 c.sh_input.imm).toNat
-      < ZiskPhysicalAddressSpaceSize
+  h_a1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi c.sh_input.r1_val
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo c.sh_input.r2_val
@@ -2259,7 +2259,7 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_ind = 1
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sw_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2282,9 +2282,9 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo c.sw_input.r1_val
-  h_store_addr_bound :
-    c.sw_input.r1_val.toNat + (BitVec.signExtend 64 c.sw_input.imm).toNat
-      < ZiskPhysicalAddressSpaceSize
+  h_a1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi c.sw_input.r1_val
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo c.sw_input.r2_val
@@ -2340,7 +2340,7 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_ind = 1
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sd_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2363,9 +2363,9 @@ structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
       ZiskFv.Trusted.lane_lo c.sd_input.r1_val
-  h_store_addr_bound :
-    c.sd_input.r1_val.toNat + (BitVec.signExtend 64 c.sd_input.imm).toNat
-      < ZiskPhysicalAddressSpaceSize
+  h_a1_value :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi c.sd_input.r1_val
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo c.sd_input.r2_val

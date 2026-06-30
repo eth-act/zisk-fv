@@ -3430,7 +3430,7 @@ def Decode_sb_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 1
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sb_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_sb trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -3457,7 +3457,7 @@ def Decode_sb_of_program
     simpa [mainRowWithRomSt, h_bits_store_ind, ZiskFv.AirsClean.boolF_true] using p_store_ind
   have h_store_offset_imm :
       (mainRowWithRomSt trace i).rom.store_offset =
-        ((BitVec.signExtend 64 c.sb_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomSt] using hstore.symm.trans hpso
@@ -3495,7 +3495,7 @@ def Decode_sh_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 2
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sh_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_sh trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -3522,7 +3522,7 @@ def Decode_sh_of_program
     simpa [mainRowWithRomSt, h_bits_store_ind, ZiskFv.AirsClean.boolF_true] using p_store_ind
   have h_store_offset_imm :
       (mainRowWithRomSt trace i).rom.store_offset =
-        ((BitVec.signExtend 64 c.sh_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomSt] using hstore.symm.trans hpso
@@ -3560,7 +3560,7 @@ def Decode_sw_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 4
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sw_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_sw trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -3587,7 +3587,7 @@ def Decode_sw_of_program
     simpa [mainRowWithRomSt, h_bits_store_ind, ZiskFv.AirsClean.boolF_true] using p_store_ind
   have h_store_offset_imm :
       (mainRowWithRomSt trace i).rom.store_offset =
-        ((BitVec.signExtend 64 c.sw_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomSt] using hstore.symm.trans hpso
@@ -3624,7 +3624,7 @@ def Decode_sd_of_program
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sd_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_sd trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -3650,7 +3650,7 @@ def Decode_sd_of_program
     simpa [mainRowWithRomSt, h_bits_store_ind, ZiskFv.AirsClean.boolF_true] using p_store_ind
   have h_store_offset_imm :
       (mainRowWithRomSt trace i).rom.store_offset =
-        ((BitVec.signExtend 64 c.sd_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomSt] using hstore.symm.trans hpso
