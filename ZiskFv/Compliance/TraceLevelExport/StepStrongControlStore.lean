@@ -954,6 +954,10 @@ theorem stepStrong_auipc
       (by simpa [ZiskFv.Compliance.boolF] using d.toDecode.h_store_pc)
   let row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance :=
     { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
+  have h_offset_bridge :
+      (m.jmp_offset2 i.val).val =
+        (BitVec.signExtend 64 (d.toInputs.auipc_input.imm ++ (0 : BitVec 12))).toNat := by
+    simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
   have h_row_core :
       (mainRowWithRomLui trace i).core =
         ZiskFv.AirsClean.Main.rowAt m i.val := by
@@ -993,10 +997,10 @@ theorem stepStrong_auipc
   let env : OpEnvelope state m i.val :=
     OpEnvelope.auipc d.toInputs.auipc_input d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd
       (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC next_pc store_pc_mem
-      provenance row_mode h_auipc_subset d.toInputs.h_offset_bridge d.toInputs.h_pc_bridge promises
+      provenance row_mode h_auipc_subset h_offset_bridge d.toInputs.h_pc_bridge promises
       d.toInputs.h_no_wrap d.toInputs.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
-    ⟨⟨provenance⟩, row_mode, d.toInputs.h_offset_bridge, d.toInputs.h_pc_bridge⟩
+    ⟨⟨provenance⟩, row_mode, h_offset_bridge, d.toInputs.h_pc_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
     noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial

@@ -1206,6 +1206,8 @@ structure ProgramDecode_auipc {numInstructions : Nat}
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
         ∧ (trace.program j).jmp_offset1 = 4
+        ∧ ((trace.program j).jmp_offset2).val =
+          (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat
         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 

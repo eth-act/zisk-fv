@@ -640,10 +640,14 @@ structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomLui trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_jmp_offset2_imm :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+        i.val).val
+      = (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat
   -- #100 next-PC transition inputs (replace the exec artifacts; AUIPC already
   -- carries h_set_pc above): the next row exists, plus the AUIPC FLAG-row jmp
-  -- pin `jmp_offset1 = 4` (Rust lowerer `zib.j(4, imm)`; cf.
-  -- `RowShape/Contract.lean` AUIPC arm, line 246). With set_pc=0 and flag=1
+  -- pin `jmp_offset1 = 4` and committed-program `jmp_offset2 = signExtend imm`
+  -- (Rust lowerer `zib.j(4, imm)`; cf. `RowShape/Contract.lean` AUIPC arm). With set_pc=0 and flag=1
   -- the handshake mux selects the taken offset `jmp_offset1 = 4`, so
   -- next_pc = pc + 4. `flag = 1` is NOT pinned here: it is derived in
   -- `stepStrong_auipc` from the OP_FLAG decode pins + `internal_op0_sets_flag`.
@@ -658,10 +662,6 @@ structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_input_imm : auipc_input.imm = c.imm
   h_input_rd : auipc_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some auipc_input.PC
-  h_offset_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = auipc_input.PC.toNat
