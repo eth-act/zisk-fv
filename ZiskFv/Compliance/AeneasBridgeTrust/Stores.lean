@@ -41,13 +41,7 @@ def OpEnvelope.sbOfExtractedShape
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
-    (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1 : BitVec 8))
-    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
-    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 1) :
     OpEnvelope state m r_main :=
   OpEnvelope.sb sb_input regs bus
     (MainRowProvenance.copybPins_of_extracted_shape provenance h_op h_internal)
@@ -56,7 +50,7 @@ def OpEnvelope.sbOfExtractedShape
     h_opcode_assumptions promises h_main_row h_main_spec
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
-    h_main_c_match h_addr2 h_b0_value h_b1_value h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+    h_main_c_match h_addr2 h_b0_value h_b1_value h_store_rmw
 
 /-- Construct the SH store envelope while deriving its Main store shape fields
 from extracted row-shape equalities. -/
@@ -90,12 +84,7 @@ def OpEnvelope.shOfExtractedShape
         (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
-    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
-    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 2) :
     OpEnvelope state m r_main :=
   OpEnvelope.sh sh_input regs bus
     (MainRowProvenance.copybPins_of_extracted_shape provenance h_op h_internal)
@@ -104,7 +93,7 @@ def OpEnvelope.shOfExtractedShape
     h_opcode_assumptions promises h_main_row h_main_spec
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
-    h_main_c_match h_addr2 h_b0_value h_b1_value h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+    h_main_c_match h_addr2 h_b0_value h_b1_value h_store_rmw
 
 /-- Construct the SW store envelope while deriving its Main store shape fields
 from extracted row-shape equalities. -/
@@ -138,10 +127,7 @@ def OpEnvelope.swOfExtractedShape
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 4) :
     OpEnvelope state m r_main :=
   OpEnvelope.sw sw_input regs bus
     (MainRowProvenance.copybPins_of_extracted_shape provenance h_op h_internal)
@@ -150,7 +136,7 @@ def OpEnvelope.swOfExtractedShape
     h_opcode_assumptions promises h_main_row h_main_spec
     (MainRowProvenance.cleanStorePcZero_of_extracted_shape provenance
       h_store_pc_shape h_main_row)
-    h_main_c_match h_addr2 h_b0_value h_b1_value h_m4 h_m5 h_m6 h_m7
+    h_main_c_match h_addr2 h_b0_value h_b1_value h_store_rmw
 
 /-- Construct the SD store envelope while deriving its Main `OP_COPYB` pins and
 Clean `store_pc` fact from extracted row-shape equalities. -/
@@ -223,19 +209,12 @@ theorem OpEnvelope.aeneasBridgeTrust_sbOfExtractedShape
         (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sb_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sb_input.r2_val)
-    (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1 : BitVec 8))
-    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
-    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 1) :
     (OpEnvelope.sbOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       sb_input regs bus provenance h_op h_internal h_width h_store_pc_shape
       h_opcode_assumptions promises h_main_row h_main_spec h_main_c_match
-      h_addr2 h_b0_value h_b1_value h_m1 h_m2 h_m3 h_m4 h_m5 h_m6
-      h_m7).aeneasBridgeTrust := by
+      h_addr2 h_b0_value h_b1_value h_store_rmw).aeneasBridgeTrust := by
   unfold OpEnvelope.sbOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨by simpa [natF] using
     MainRowProvenance.indWidth_of_extracted_shape provenance h_width,
@@ -273,18 +252,12 @@ theorem OpEnvelope.aeneasBridgeTrust_shOfExtractedShape
         (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sh_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sh_input.r2_val)
-    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
-    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 2) :
     (OpEnvelope.shOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       sh_input regs bus provenance h_op h_internal h_width h_store_pc_shape
       h_opcode_assumptions promises h_main_row h_main_spec h_main_c_match
-      h_addr2 h_b0_value h_b1_value h_m2 h_m3 h_m4 h_m5 h_m6
-      h_m7).aeneasBridgeTrust := by
+      h_addr2 h_b0_value h_b1_value h_store_rmw).aeneasBridgeTrust := by
   unfold OpEnvelope.shOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨by simpa [natF] using
     MainRowProvenance.indWidth_of_extracted_shape provenance h_width,
@@ -322,15 +295,12 @@ theorem OpEnvelope.aeneasBridgeTrust_swOfExtractedShape
         (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
     (h_b0_value : m.b_0 r_main = ZiskFv.Trusted.lane_lo sw_input.r2_val)
     (h_b1_value : m.b_1 r_main = ZiskFv.Trusted.lane_hi sw_input.r2_val)
-    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
-    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
-    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
-    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    (h_store_rmw : StoreRmwMemoryCoherenceEvidence state bus.e2 4) :
     (OpEnvelope.swOfExtractedShape
       (state := state) (m := m) (r_main := r_main)
       sw_input regs bus provenance h_op h_internal h_width h_store_pc_shape
       h_opcode_assumptions promises h_main_row h_main_spec h_main_c_match
-      h_addr2 h_b0_value h_b1_value h_m4 h_m5 h_m6 h_m7).aeneasBridgeTrust := by
+      h_addr2 h_b0_value h_b1_value h_store_rmw).aeneasBridgeTrust := by
   unfold OpEnvelope.swOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨by simpa [natF] using
     MainRowProvenance.indWidth_of_extracted_shape provenance h_width,

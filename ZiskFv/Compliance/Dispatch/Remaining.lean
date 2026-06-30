@@ -252,10 +252,24 @@ theorem zisk_riscv_compliant_program_bus_remaining
       state lwu_input regs m mem r_main bus align pins h_width promises' w
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_b0_value h_b1_value h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7 =>
+      h_b0_value h_b1_value h_store_rmw =>
     change execute_instruction (instruction.STORE (
         sb_input.imm, regidx.Regidx sb_input.r2, regidx.Regidx sb_input.r1, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    have h_m1 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 1) (by norm_num) (by norm_num)
+    have h_m2 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 2) (by norm_num) (by norm_num)
+    have h_m3 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 3) (by norm_num) (by norm_num)
+    have h_m4 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 4) (by norm_num) (by norm_num)
+    have h_m5 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 5) (by norm_num) (by norm_num)
+    have h_m6 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 6) (by norm_num) (by norm_num)
+    have h_m7 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 7) (by norm_num) (by norm_num)
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.sbCleanWitness_of_full_ensemble_main_c
       m r_main bus state sb_input h_main_row h_main_spec h_store_pc
@@ -266,10 +280,22 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_opcode_assumptions promises w
   | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_b0_value h_b1_value h_m2 h_m3 h_m4 h_m5 h_m6 h_m7 =>
+      h_b0_value h_b1_value h_store_rmw =>
     change execute_instruction (instruction.STORE (
         sh_input.imm, regidx.Regidx sh_input.r2, regidx.Regidx sh_input.r1, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    have h_m2 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 2) (by norm_num) (by norm_num)
+    have h_m3 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 3) (by norm_num) (by norm_num)
+    have h_m4 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 4) (by norm_num) (by norm_num)
+    have h_m5 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 5) (by norm_num) (by norm_num)
+    have h_m6 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 6) (by norm_num) (by norm_num)
+    have h_m7 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 7) (by norm_num) (by norm_num)
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.shCleanWitness_of_full_ensemble_main_c
       m r_main bus state sh_input h_main_row h_main_spec h_store_pc
@@ -280,10 +306,18 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_opcode_assumptions promises w
   | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_b0_value h_b1_value h_m4 h_m5 h_m6 h_m7 =>
+      h_b0_value h_b1_value h_store_rmw =>
     change execute_instruction (instruction.STORE (
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    have h_m4 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 4) (by norm_num) (by norm_num)
+    have h_m5 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 5) (by norm_num) (by norm_num)
+    have h_m6 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 6) (by norm_num) (by norm_num)
+    have h_m7 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 7) (by norm_num) (by norm_num)
     let w :=
       ZiskFv.EquivCore.Bridge.MemClean.swCleanWitness_of_full_ensemble_main_c
       m r_main bus state sw_input h_main_row h_main_spec h_store_pc
@@ -685,10 +719,24 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       h_addr2_idx h_mem_sel h_mem_wr
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_b0_value h_b1_value h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7 =>
+      h_b0_value h_b1_value h_store_rmw =>
     change execute_instruction (instruction.STORE (
         sb_input.imm, regidx.Regidx sb_input.r2, regidx.Regidx sb_input.r1, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    have h_m1 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 1) (by norm_num) (by norm_num)
+    have h_m2 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 2) (by norm_num) (by norm_num)
+    have h_m3 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 3) (by norm_num) (by norm_num)
+    have h_m4 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 4) (by norm_num) (by norm_num)
+    have h_m5 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 5) (by norm_num) (by norm_num)
+    have h_m6 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 6) (by norm_num) (by norm_num)
+    have h_m7 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 7) (by norm_num) (by norm_num)
     exact ZiskFv.Compliance.sb_eq_of_full_ensemble_main_c
       state sb_input regs m r_main bus pins h_main_ind_width
       h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
@@ -696,10 +744,22 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
   | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_b0_value h_b1_value h_m2 h_m3 h_m4 h_m5 h_m6 h_m7 =>
+      h_b0_value h_b1_value h_store_rmw =>
     change execute_instruction (instruction.STORE (
         sh_input.imm, regidx.Regidx sh_input.r2, regidx.Regidx sh_input.r1, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    have h_m2 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 2) (by norm_num) (by norm_num)
+    have h_m3 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 3) (by norm_num) (by norm_num)
+    have h_m4 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 4) (by norm_num) (by norm_num)
+    have h_m5 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 5) (by norm_num) (by norm_num)
+    have h_m6 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 6) (by norm_num) (by norm_num)
+    have h_m7 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 7) (by norm_num) (by norm_num)
     exact ZiskFv.Compliance.sh_eq_of_full_ensemble_main_c
       state sh_input regs m r_main bus pins h_main_ind_width
       h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
@@ -707,10 +767,18 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
   | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises
       h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
-      h_b0_value h_b1_value h_m4 h_m5 h_m6 h_m7 =>
+      h_b0_value h_b1_value h_store_rmw =>
     change execute_instruction (instruction.STORE (
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+    have h_m4 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 4) (by norm_num) (by norm_num)
+    have h_m5 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 5) (by norm_num) (by norm_num)
+    have h_m6 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 6) (by norm_num) (by norm_num)
+    have h_m7 := storeRmwPreservedByte_of_coherenceEvidence h_store_rmw
+      (i := 7) (by norm_num) (by norm_num)
     exact ZiskFv.Compliance.sw_eq_of_full_ensemble_main_c
       state sw_input regs m r_main bus pins h_main_ind_width
       h_opcode_assumptions promises h_main_row h_main_spec h_store_pc

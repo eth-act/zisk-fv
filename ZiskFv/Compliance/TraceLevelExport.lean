@@ -127,8 +127,9 @@ a contradictory hypothesis pair; no `False.elim` is used.
 
 The irreducible residuals carried per arm bottom out in the existing project
 residuals — none introduces a new `ZiskFv.*` axiom:
-* loads/stores `h_memory_timeline` / RMW-preservation reads → **#76** (memory
-  timeline), plus the Mem-AIR `h_mem_*` provider linkage;
+* loads `h_memory_timeline` and sub-doubleword store
+  `StoreRmwMemoryCoherenceEvidence` → **#76** (memory timeline), plus the
+  Mem-AIR `h_mem_*` provider linkage on loads;
 * `h_nextPC_matches` (conditional next-PC) → **#100 — now DISCHARGED** for ALL 63
   opcodes: derived from the `AcceptedZiskTrace.transitions_hold` PC-handshake
   certificate (`Compliance/MainTransition.lean`, `Compliance/Pilot/*NextPC.lean`),

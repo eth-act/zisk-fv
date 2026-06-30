@@ -16,6 +16,11 @@ full-ensemble trace plus an explicit, named, top-level set of residual
 binders — mirroring `construction_add_sound` but on the **MemoryBus write
 side** instead of the operation bus.
 
+These `*_claimed_dead` helpers are lower-level construction witnesses. The
+current trace-level rowData/`OpEnvelope` store interface carries the RMW memory
+obligation as `StoreRmwMemoryCoherenceEvidence`; dispatch then projects the
+byte facts consumed by these clean store witnesses.
+
 ## Why stores differ from the ALU/M-ext constructions
 
 ALU/M-ext ops READ their operands off register-bus MemBus entries and write
@@ -62,14 +67,13 @@ the structural counterpart, derived from the real trace row.
   - Sail-side: `regs : ModeRegsFull`, `h_opcode_assumptions`
     (`s*_state_assumptions`), and the `RISC_V_assumptions` / exec / next-PC
     fields carried inside the `StorePromises` bundle.
-  - **memory-side residual** (SB/SH/SW only): the high-byte RMW reads
-    `m1..m7` / `m2..m7` / `m4..m7`. These read the bytes OUTSIDE the written
-    width from current memory and assert they equal the bus entry's preserved
-    bytes. They are the genuinely-irreducible store residual: the byte-local
-    read-modify-write preservation is NOT balance-derivable from the store
-    Main row alone (it is a fact about the memory state at the store, the
-    load / replay-side `#76` timeline). SD writes the full doubleword, so it
-    carries NO `m*` residual.
+  - **memory-side residual** (SB/SH/SW only): these low-level helpers still
+    consume the projected high-byte RMW reads `m1..m7` / `m2..m7` / `m4..m7`.
+    The live trace-level interface names the source obligation once as
+    `StoreRmwMemoryCoherenceEvidence`. The byte-local read-modify-write
+    preservation is NOT balance-derivable from the store Main row alone; it is
+    a fact about the memory state at the store, via the replay-side `#76`
+    timeline. SD writes the full doubleword, so it carries NO `m*` residual.
 
 * **(c) artifact**: the `execRow : List (ExecutionBusEntry FGL)` **∀-binder**
   plus its length/multiplicity fields inside `StorePromises`.
@@ -153,8 +157,8 @@ theorem mainRowWithRomSt_core
     The memory-bus write entry `bus.e2` is the Main row's own `c` emission
     (`busSt`/`eRdSt`), so the `SbCleanWitness.main_c_match` is
     `matches_memory_entry_refl` (derived, NOT a balance/provider fact). The
-    high-byte RMW preservation reads `m1..m7` are the genuinely-irreducible
-    memory-side residual (named binders). -/
+    legacy clean witness below still consumes the projected high-byte RMW
+    preservation reads `m1..m7`. -/
 theorem construction_sb_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
