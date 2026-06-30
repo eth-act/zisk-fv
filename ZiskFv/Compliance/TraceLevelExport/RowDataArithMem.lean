@@ -1997,6 +1997,8 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
   h_main_ind_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 1
+  h_store_ind :
+    (mainRowWithRomSt trace i).rom.store_ind = 1
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2016,8 +2018,8 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sb_state_assumptions c.sb_input (binding i)
-  h_addr2 :
-    (mainRowWithRomSt trace i).rom.addr2.toNat =
+  h_store_addr_arith :
+    ((mainRowWithRomSt trace i).rom.store_offset + (mainRowWithRomSt trace i).core.a_0).toNat =
       (c.sb_input.r1_val + BitVec.signExtend 64 c.sb_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -2079,6 +2081,8 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
   h_main_ind_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 2
+  h_store_ind :
+    (mainRowWithRomSt trace i).rom.store_ind = 1
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2098,8 +2102,8 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sh_state_assumptions c.sh_input (binding i)
-  h_addr2 :
-    (mainRowWithRomSt trace i).rom.addr2.toNat =
+  h_store_addr_arith :
+    ((mainRowWithRomSt trace i).rom.store_offset + (mainRowWithRomSt trace i).core.a_0).toNat =
       (c.sh_input.r1_val + BitVec.signExtend 64 c.sh_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -2159,6 +2163,8 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
   h_main_ind_width :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).ind_width
       i.val = 4
+  h_store_ind :
+    (mainRowWithRomSt trace i).rom.store_ind = 1
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2178,8 +2184,8 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sw_state_assumptions c.sw_input (binding i)
-  h_addr2 :
-    (mainRowWithRomSt trace i).rom.addr2.toNat =
+  h_store_addr_arith :
+    ((mainRowWithRomSt trace i).rom.store_offset + (mainRowWithRomSt trace i).core.a_0).toNat =
       (c.sw_input.r1_val + BitVec.signExtend 64 c.sw_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
@@ -2232,6 +2238,8 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
+  h_store_ind :
+    (mainRowWithRomSt trace i).rom.store_ind = 1
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2251,8 +2259,8 @@ structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sd_state_assumptions c.sd_input (binding i)
-  h_addr2 :
-    (mainRowWithRomSt trace i).rom.addr2.toNat =
+  h_store_addr_arith :
+    ((mainRowWithRomSt trace i).rom.store_offset + (mainRowWithRomSt trace i).core.a_0).toNat =
       (c.sd_input.r1_val + BitVec.signExtend 64 c.sd_input.imm).toNat
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =

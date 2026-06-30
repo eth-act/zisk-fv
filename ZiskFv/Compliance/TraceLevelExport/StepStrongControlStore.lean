@@ -68,6 +68,25 @@ theorem eRdLui_rd_idx_of_decode
   rw [h_addr2, h_store_offset, h_store_ind]
   simp [Transpiler.wrap_to_regidx_ind]
 
+/-- Store `addr2` placement derived from `AddressSpec` and the decoded store selector.
+
+The remaining arithmetic premise is deliberately over the `AddressSpec` right-hand
+side, not over `addr2`: it is the residual Sail/field address representation bridge,
+while this theorem discharges the Main-row address-placement part. -/
+theorem store_addr2_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {target : Nat}
+    (h_store_ind : (mainRowWithRomSt trace i).rom.store_ind = 1)
+    (h_store_addr_arith :
+      ((mainRowWithRomSt trace i).rom.store_offset
+        + (mainRowWithRomSt trace i).core.a_0).toNat = target) :
+    (mainRowWithRomSt trace i).rom.addr2.toNat = target := by
+  have h_addr2 := (RomDecodeBinding.mainRowWithRomSt_addressSpec trace i).2.2.1
+  rw [h_addr2, h_store_ind]
+  simpa using h_store_addr_arith
+
 /-! ## Strengthened control-flow + U-type arms (branches, JAL/JALR, LUI/AUIPC)
 
 These arms reach the same channel-balance conclusion as the 22 above, but via a
@@ -1287,8 +1306,9 @@ mainRowVar` appears in five hypotheses (`h_main_row`/`h_main_spec`/`h_store_pc`/
 `eval` reduces to the concrete trace row `mainRowWithRomSt trace i`, so the
 five hypotheses become exactly the facts `construction_<store>_sound` already
 proves (Spec at the row, `store_pc = 0`, the self-referential `c`-emission match,
-the `addr2` bridge).  This `mainConstVar`-of-the-real-row pattern is the analogue
-of the M-ext/control "placeholder-env + real row" build and sidesteps the prior
+and the derived `addr2` placement bridge).  This `mainConstVar`-of-the-real-row
+pattern is the analogue of the M-ext/control "placeholder-env + real row" build
+and sidesteps the prior
 whnf BLOWUP (the `Eq.mpr` cast over a free `MainRowWithRom` motive) because the row
 is a `.const` literal of the committed trace row, not an opaque eval-binder.
 
@@ -1361,7 +1381,9 @@ theorem stepStrong_sb
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
+      (by
+        simpa only [eval_mainConstVar] using
+          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
       h_b0' h_b1' d.toInputs.h_m1 d.toInputs.h_m2 d.toInputs.h_m3 d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1427,7 +1449,9 @@ theorem stepStrong_sh
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
+      (by
+        simpa only [eval_mainConstVar] using
+          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
       h_b0' h_b1' d.toInputs.h_m2 d.toInputs.h_m3 d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1493,7 +1517,9 @@ theorem stepStrong_sw
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
+      (by
+        simpa only [eval_mainConstVar] using
+          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
       h_b0' h_b1' d.toInputs.h_m4 d.toInputs.h_m5 d.toInputs.h_m6 d.toInputs.h_m7
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
@@ -1559,7 +1585,9 @@ theorem stepStrong_sd
       (by simpa only [eval_mainConstVar] using h_main_spec)
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2)
+      (by
+        simpa only [eval_mainConstVar] using
+          store_addr2_of_decode d.toDecode.h_store_ind d.toInputs.h_store_addr_arith)
       h_b0' h_b1'
   have h_bridge : env.aeneasBridgeTrust := ⟨h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
