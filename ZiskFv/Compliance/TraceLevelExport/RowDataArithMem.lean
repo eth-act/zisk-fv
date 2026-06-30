@@ -200,7 +200,6 @@ structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = add_input.PC.toNat
-  h_pc_bound : add_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `add` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_add` bundles them. -/
@@ -282,7 +281,6 @@ structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addi_input.PC.toNat
-  h_pc_bound : addi_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `addi` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addi` bundles them. -/
@@ -369,7 +367,6 @@ structure Inputs_subw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = subw_input.PC.toNat
-  h_pc_bound : subw_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `subw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_subw` bundles them. -/
@@ -456,7 +453,6 @@ structure Inputs_addw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addw_input.PC.toNat
-  h_pc_bound : addw_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `addw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addw` bundles them. -/
@@ -538,7 +534,6 @@ structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addiw_input.PC.toNat
-  h_pc_bound : addiw_input.PC.toNat < GL_prime - 4
 
 /-- Per-op residual bundle for the `addiw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_addiw` bundles them. -/

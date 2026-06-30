@@ -267,10 +267,11 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
       * DIVW / REMW → `¬ DivRemForgeW` of the 32-bit remainder/divisor magnitudes;
       * FENCE → `FenceKnownGood` of the claim's `fm` / `rs` / `rd`.
 
-    The branch and jump-like arms carry theorem-domain PC range assumptions
-    separately from `InputsAgree`: these are not state/value agreement facts, and
-    they are not derived placement facts. They preserve the old no-wrap / PC-bound
-    obligations at the explicit theorem-domain surface.
+    The sequential, branch, and jump-like arms that have been factored carry
+    theorem-domain PC range assumptions separately from `InputsAgree`: these are
+    not state/value agreement facts, and they are not derived placement facts.
+    They preserve the old no-wrap / PC-bound obligations at the explicit
+    theorem-domain surface.
     Each is DEFINITIONALLY the same proposition as the corresponding `<op>EnvOf`
     `OpEnvelope` defect shape (the `Iff.rfl` bridge lemmas in `EnvOf`), so the
     re-expression off `OpEnvelope` carries no change of meaning.  Every other
@@ -286,6 +287,34 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions) (sail
   | .rem _, ia => ¬ Defects.DivRemForge ia.rem_input.r2_val ia.v ia.r_a
   | .divw _, ia => ¬ Defects.DivRemForgeW ia.divw_input.r2_val ia.v ia.r_a
   | .remw _, ia => ¬ Defects.DivRemForgeW ia.remw_input.r2_val ia.v ia.r_a
+  | .sub _, ia => SequentialPcDomain ia.sub_input.PC
+  | .and _, ia => SequentialPcDomain ia.and_input.PC
+  | .or _, ia => SequentialPcDomain ia.or_input.PC
+  | .xor _, ia => SequentialPcDomain ia.xor_input.PC
+  | .slt _, ia => SequentialPcDomain ia.slt_input.PC
+  | .sltu _, ia => SequentialPcDomain ia.sltu_input.PC
+  | .andi _, ia => SequentialPcDomain ia.andi_input.PC
+  | .ori _, ia => SequentialPcDomain ia.ori_input.PC
+  | .xori _, ia => SequentialPcDomain ia.xori_input.PC
+  | .slti _, ia => SequentialPcDomain ia.slti_input.PC
+  | .sltiu _, ia => SequentialPcDomain ia.sltiu_input.PC
+  | .sll _, ia => SequentialPcDomain ia.sll_input.PC
+  | .srl _, ia => SequentialPcDomain ia.srl_input.PC
+  | .sra _, ia => SequentialPcDomain ia.sra_input.PC
+  | .slli _, ia => SequentialPcDomain ia.slli_input.PC
+  | .srli _, ia => SequentialPcDomain ia.srli_input.PC
+  | .srai _, ia => SequentialPcDomain ia.srai_input.PC
+  | .add _, ia => SequentialPcDomain ia.add_input.PC
+  | .addi _, ia => SequentialPcDomain ia.addi_input.PC
+  | .subw _, ia => SequentialPcDomain ia.subw_input.PC
+  | .addw _, ia => SequentialPcDomain ia.addw_input.PC
+  | .addiw _, ia => SequentialPcDomain ia.addiw_input.PC
+  | .sllw _, ia => SequentialPcDomain ia.sllw_input.PC
+  | .srlw _, ia => SequentialPcDomain ia.srlw_input.PC
+  | .sraw _, ia => SequentialPcDomain ia.sraw_input.PC
+  | .slliw c, _ => SequentialPcDomain c.slliw_input.PC
+  | .srliw c, _ => SequentialPcDomain c.srliw_input.PC
+  | .sraiw c, _ => SequentialPcDomain c.sraiw_input.PC
   | .beq _, ia =>
       BranchRangeDomain ziskTrace i ia.beq_input.PC
         ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
