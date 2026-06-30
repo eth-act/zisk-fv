@@ -1041,12 +1041,16 @@ theorem stepStrong_jal
   -- #100: the field-level no-wrap bound (`pc.val + jmp_offset1.val < GL_prime`),
   -- in column form for `ofNat_fgl_pc_plus_offset_eq`, from the input-facing
   -- target bound via the PC / offset row-shape bridges.
+  have h_offset_bridge :
+      (m.jmp_offset1 i.val).val =
+        (BitVec.signExtend 64 d.toInputs.jal_input.imm).toNat := by
+    simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
   have h_no_wrap_fgl :
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
         + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
             i.val).val
         < GL_prime := by
-    rw [d.toInputs.h_pc_bridge, d.toInputs.h_offset_bridge]
+    rw [d.toInputs.h_pc_bridge, h_offset_bridge]
     exact d.toInputs.h_no_fgl_wrap
   let next_pc : FGL :=
     m.set_pc i.val * (m.c_0 i.val + m.jmp_offset1 i.val)
@@ -1103,7 +1107,7 @@ theorem stepStrong_jal
         rw [hstep]
         simpa [nextPC_val] using (Pilot.ofNat_fgl_pc_plus_offset_eq _ _
           d.toInputs.jal_input.PC (BitVec.signExtend 64 d.toInputs.jal_input.imm)
-          d.toInputs.h_pc_bridge d.toInputs.h_offset_bridge h_no_wrap_fgl)
+          d.toInputs.h_pc_bridge h_offset_bridge h_no_wrap_fgl)
       rd_mult := by rfl
       rd_as := by rfl
       success := d.toInputs.h_success

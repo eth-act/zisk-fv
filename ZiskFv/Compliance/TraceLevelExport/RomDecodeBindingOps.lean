@@ -4014,6 +4014,7 @@ def Decode_jal_of_program
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
+        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
@@ -4021,7 +4022,7 @@ def Decode_jal_of_program
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
   have h_dest := mainLuiDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
     (fun j hline => by
-      obtain ⟨_hpo, _hpj0, hpso, hpf⟩ := h_prog j hline
+      obtain ⟨_hpo, _hpj1_imm, _hpj0, hpso, hpf⟩ := h_prog j hline
       exact ⟨hpso, hpf⟩)
   have key :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_FLAG ∧
@@ -4032,10 +4033,17 @@ def Decode_jal_of_program
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
     obtain ⟨j, hline, hop, _, _, hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
-    obtain ⟨hpo, hpj0, _hpso, hpf⟩ := h_prog j hline
+    obtain ⟨hpo, _hpj1_imm, hpj0, _hpso, hpf⟩ := h_prog j hline
     obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hj2.symm.trans hpj0⟩
+  have h_jmp_offset1_imm :
+      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val =
+        (BitVec.signExtend 64 c.imm).toNat := by
+    obtain ⟨j, hline, _hop, _, hj1, _, _hflags⟩ :=
+      mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+    obtain ⟨_hpo, hpj1_imm, _hpj0, _hpso, _hpf⟩ := h_prog j hline
+    simpa only [← hj1] using hpj1_imm
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -4044,6 +4052,7 @@ def Decode_jal_of_program
       h_store_pc := key.2.2.2.2.1
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_jmp_offset1_imm := h_jmp_offset1_imm
       h_jmp2 := key.2.2.2.2.2
       h_idx := h_idx }
 
