@@ -25,6 +25,8 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 import ZiskFv.Compliance.TraceLevelExport.EnvOf
+import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
+import ZiskFv.Compliance.TraceLevelExport.StepStrongAluArith
 
 namespace ZiskFv.Compliance
 
@@ -44,6 +46,113 @@ open Interaction
 seal mulwArow mulhuArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
+
+/-- Load destination tag derived from Main address-placement constraints and
+    committed-program decode facts. -/
+theorem load_addr2_eq_ind_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : BitVec 5}
+    (h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLd trace i).rom.store_offset =
+        Transpiler.ind (Transpiler.regidxOfBitVec5 rd)) :
+    (mainRowWithRomLd trace i).rom.addr2 =
+      Transpiler.ind (Transpiler.regidxOfBitVec5 rd) := by
+  have h_spec := RomDecodeBinding.mainRowWithRomLd_addressSpec trace i
+  have h_addr2 := h_spec.2.2.1
+  rw [h_addr2, h_store_offset, h_store_ind]
+  simp
+
+/-- Load destination zero-register test derived from `AddressSpec` and decode. -/
+theorem load_addr2_zero_iff_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : BitVec 5}
+    (h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLd trace i).rom.store_offset =
+        Transpiler.ind (Transpiler.regidxOfBitVec5 rd)) :
+    Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2 = 0 ↔ rd = 0 := by
+  rw [load_addr2_eq_ind_of_decode h_store_ind h_store_offset,
+    Transpiler.wrap_to_regidx_ind_bitvec_zero_iff]
+
+/-- Load destination register index derived from `AddressSpec` and decode. -/
+theorem load_addr2_idx_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {rd : BitVec 5}
+    (h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0)
+    (h_store_offset :
+      (mainRowWithRomLd trace i).rom.store_offset =
+        Transpiler.ind (Transpiler.regidxOfBitVec5 rd)) :
+    rd.toNat = (Transpiler.wrap_to_regidx (mainRowWithRomLd trace i).rom.addr2).val := by
+  rw [load_addr2_eq_ind_of_decode h_store_ind h_store_offset,
+    Transpiler.wrap_to_regidx_ind_bitvec_idx]
+
+/-- The load address arithmetic bridge reconstructed from decoded ROM offset, the
+    source-lane value, and the existing load precondition bound. -/
+theorem load_addr_arith_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {imm : BitVec 12}
+    {r1_val : BitVec 64}
+    (h_b_offset_imm0 :
+      (mainRowWithRomLd trace i).rom.b_offset_imm0 =
+        ((BitVec.signExtend 64 imm).toNat : FGL))
+    (h_a0_value : (mainRowWithRomLd trace i).core.a_0 = lane_lo r1_val)
+    (h_addr_bound :
+      r1_val.toNat + (BitVec.signExtend 64 imm).toNat < ZiskPhysicalAddressSpaceSize) :
+    ((mainRowWithRomLd trace i).rom.b_offset_imm0
+        + (mainRowWithRomLd trace i).core.a_0).toNat =
+      r1_val.toNat + (BitVec.signExtend 64 imm).toNat := by
+  have h_bound32 : r1_val.toNat + (BitVec.signExtend 64 imm).toNat < 4294967296 := by
+    simpa using h_addr_bound
+  have h_r1_lt32 : r1_val.toNat < 4294967296 := by omega
+  have h_imm_lt32 : (BitVec.signExtend 64 imm).toNat < 4294967296 := by omega
+  have h_r1_lt_gl : r1_val.toNat < GL_prime := by omega
+  have h_imm_lt_gl : (BitVec.signExtend 64 imm).toNat < GL_prime := by omega
+  have h_sum_lt_gl : r1_val.toNat + (BitVec.signExtend 64 imm).toNat < GL_prime := by omega
+  rw [h_b_offset_imm0, h_a0_value]
+  change ((((BitVec.signExtend 64 imm).toNat : FGL) + lane_lo r1_val : FGL).val) =
+    r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+  rw [Fin.val_add, Fin.val_natCast]
+  unfold lane_lo
+  rw [Fin.val_mk]
+  rw [Nat.mod_eq_of_lt h_imm_lt_gl]
+  rw [Nat.mod_eq_of_lt h_r1_lt32]
+  rw [Nat.mod_eq_of_lt]
+  · omega
+  · omega
+
+/-- Load `addr1` placement derived from `AddressSpec` and the decoded load selector.
+
+The arithmetic equality is now reconstructed locally from decode, source-lane
+agreement, and the load precondition bound. -/
+theorem load_addr1_of_decode
+    {numInstructions : Nat}
+    {trace : AcceptedZiskTrace numInstructions}
+    {i : Fin trace.numInstructions}
+    {imm : BitVec 12}
+    {r1_val : BitVec 64}
+    (h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1)
+    (h_b_offset_imm0 :
+      (mainRowWithRomLd trace i).rom.b_offset_imm0 =
+        ((BitVec.signExtend 64 imm).toNat : FGL))
+    (h_a0_value : (mainRowWithRomLd trace i).core.a_0 = lane_lo r1_val)
+    (h_addr_bound :
+      r1_val.toNat + (BitVec.signExtend 64 imm).toNat < ZiskPhysicalAddressSpaceSize) :
+    (mainRowWithRomLd trace i).rom.addr1.toNat =
+      r1_val.toNat + (BitVec.signExtend 64 imm).toNat := by
+  have h_load_addr_arith :=
+    load_addr_arith_of_decode h_b_offset_imm0 h_a0_value h_addr_bound
+  have h_addr1 := (RomDecodeBinding.mainRowWithRomLd_addressSpec trace i).2.1
+  rw [h_addr1, h_b_src_ind]
+  simpa using h_load_addr_arith
 
 /-! ## Strengthened load arms (LB/LH/LW/LD/LBU/LHU/LWU, channel-balance form)
 
@@ -66,7 +175,7 @@ records are real `Valid_Mem`/`Valid_BinaryExtension` rows. -/
 theorem stepStrong_ld
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_ld trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.ld_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.ld_input.imm, regidx.Regidx d.toClaim.ld_input.r1, regidx.Regidx d.toClaim.ld_input.rd, false, 8))
         (binding i)
@@ -110,7 +219,7 @@ theorem stepStrong_ld
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -131,9 +240,23 @@ theorem stepStrong_ld
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.ld_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.ld_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.ld_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with
+            ⟨_, _, _, _, _, _, _, _, _, _, h_bound, _, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -144,7 +267,7 @@ theorem stepStrong_ld
 theorem stepStrong_lbu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lbu trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.lbu_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lbu_input.imm, regidx.Regidx d.toClaim.lbu_input.r1, regidx.Regidx d.toClaim.lbu_input.rd, true, 1))
         (binding i)
@@ -188,7 +311,7 @@ theorem stepStrong_lbu
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -209,9 +332,22 @@ theorem stepStrong_lbu
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lbu_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.lbu_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.lbu_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, h_bound, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -222,7 +358,7 @@ theorem stepStrong_lbu
 theorem stepStrong_lhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lhu trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.lhu_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lhu_input.imm, regidx.Regidx d.toClaim.lhu_input.r1, regidx.Regidx d.toClaim.lhu_input.rd, true, 2))
         (binding i)
@@ -266,7 +402,7 @@ theorem stepStrong_lhu
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -287,9 +423,22 @@ theorem stepStrong_lhu
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lhu_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.lhu_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.lhu_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, _, h_bound, _, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -300,7 +449,7 @@ theorem stepStrong_lhu
 theorem stepStrong_lwu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lwu trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.lwu_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lwu_input.imm, regidx.Regidx d.toClaim.lwu_input.r1, regidx.Regidx d.toClaim.lwu_input.rd, true, 4))
         (binding i)
@@ -344,7 +493,7 @@ theorem stepStrong_lwu
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -365,9 +514,23 @@ theorem stepStrong_lwu
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lwu_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.lwu_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.lwu_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with
+            ⟨_, _, _, _, _, _, h_bound, _, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -378,7 +541,7 @@ theorem stepStrong_lwu
 theorem stepStrong_lb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lb trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.lb_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lb_input.imm, regidx.Regidx d.toClaim.lb_input.r1, regidx.Regidx d.toClaim.lb_input.rd, false, 1))
         (binding i)
@@ -422,7 +585,7 @@ theorem stepStrong_lb
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -444,9 +607,22 @@ theorem stepStrong_lb
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lb_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.lb_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.lb_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, h_bound, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -457,7 +633,7 @@ theorem stepStrong_lb
 theorem stepStrong_lh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lh trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.lh_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lh_input.imm, regidx.Regidx d.toClaim.lh_input.r1, regidx.Regidx d.toClaim.lh_input.rd, false, 2))
         (binding i)
@@ -501,7 +677,7 @@ theorem stepStrong_lh
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -523,9 +699,22 @@ theorem stepStrong_lh
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lh_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.lh_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.lh_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, _, h_bound, _, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -536,7 +725,7 @@ theorem stepStrong_lh
 theorem stepStrong_lw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lw trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toClaim.lw_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lw_input.imm, regidx.Regidx d.toClaim.lw_input.r1, regidx.Regidx d.toClaim.lw_input.rd, false, 4))
         (binding i)
@@ -580,7 +769,7 @@ theorem stepStrong_lw
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i _ d.toDecode.h_idx
           d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
@@ -602,9 +791,23 @@ theorem stepStrong_lw
       (by simpa only [eval_mainConstVar] using h_core_store_pc)
       (by simpa only [eval_mainConstVar] using h_main_b_match)
       (by simpa only [eval_mainConstVar] using h_main_c_match)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr1)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_zero_iff)
-      (by simpa only [eval_mainConstVar] using d.toInputs.h_addr2_idx)
+      (by
+        have h_a0_value :
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lw_input.r1_val := by
+          rw [h_core]
+          simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
+        have h_addr_bound :
+            d.toClaim.lw_input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.lw_input.imm).toNat
+              < ZiskPhysicalAddressSpaceSize := by
+          rcases d.toInputs.h_opcode_assumptions with
+            ⟨_, _, _, _, _, _, h_bound, _, _⟩
+          exact h_bound
+        simpa only [eval_mainConstVar] using
+          load_addr1_of_decode d.toDecode.h_b_src_ind d.toDecode.h_b_offset_imm0
+            h_a0_value h_addr_bound)
+      (by simpa only [eval_mainConstVar] using load_addr2_zero_iff_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
+      (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
   have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
@@ -642,7 +845,7 @@ the real `busSub` row.  These are strictly stronger than the corresponding
 theorem stepStrong_mulw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulw trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.mulw_input.PC) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.MULW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd))) (binding i)
@@ -711,14 +914,15 @@ theorem stepStrong_mulw
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i d.toInputs.mulw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.mulw d.toInputs.mulw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem h_row_constraints
@@ -749,7 +953,7 @@ theorem stepStrong_mulw
 theorem stepStrong_mulhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_mulhu trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.mulhu_input.PC) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
@@ -828,14 +1032,15 @@ theorem stepStrong_mulhu
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i d.toInputs.mulhu_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.mulhu d.toInputs.mulhu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -862,7 +1067,7 @@ theorem stepStrong_mulhu
 theorem stepStrong_divu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divu trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.divu_input.PC) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -942,14 +1147,15 @@ theorem stepStrong_divu
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i d.toInputs.divu_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.divu d.toInputs.divu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -972,7 +1178,7 @@ theorem stepStrong_divu
 theorem stepStrong_divuw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_divuw trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.divuw_input.PC) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -1048,14 +1254,15 @@ theorem stepStrong_divuw
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i d.toInputs.divuw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.divuw d.toInputs.divuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_primary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -1077,7 +1284,7 @@ theorem stepStrong_divuw
 theorem stepStrong_remu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remu trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.remu_input.PC) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -1153,14 +1360,15 @@ theorem stepStrong_remu
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i d.toInputs.remu_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.remu d.toInputs.remu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints
@@ -1181,7 +1389,7 @@ theorem stepStrong_remu
 theorem stepStrong_remuw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_remuw trace binding i)
-    (_h_known : True) :
+    (h_domain : SequentialPcDomain d.toInputs.remuw_input.PC) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, true))) (binding i)
@@ -1257,14 +1465,15 @@ theorem stepStrong_remuw
       nextPC_matches :=
         Pilot.sequential_nextPC_discharged trace i d.toInputs.remuw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
-          d.toInputs.h_pc_bridge d.toInputs.h_pc_bound
+          d.toInputs.h_pc_bridge h_domain
       m0_mult := by rfl
       m0_as := by rfl
       m1_mult := by rfl
       m1_as := by rfl
       m2_mult := by rfl
       m2_as := by rfl
-      rd_idx := d.toInputs.h_rd_idx }
+      rd_idx := d.toInputs.h_input_rd.trans
+        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let env : OpEnvelope state m i.val :=
     OpEnvelope.remuw d.toInputs.remuw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd (busSub trace i (Pilot.execRowOf trace i)) v 0
       pins h_match_secondary promises arith_mem d.toDecode.bounds h_row_constraints

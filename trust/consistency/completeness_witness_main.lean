@@ -3,6 +3,7 @@ import ZiskFv.AirsClean.Main.Circuit
 namespace ZiskFv.TrustConsistency
 
 open Goldilocks
+open ZiskFv.AirsClean (boolF)
 open ZiskFv.AirsClean.Main
 
 private def mainFree : MainFreeCols :=
@@ -26,9 +27,6 @@ private def mainRomFree : MainRomFreeCols :=
     b_1 := 21
     im_high_degree_2 := 0
     segment_l1 := 0
-    addr0 := 100
-    addr1 := 200
-    addr2 := 300
     main_step := 7 }
 
 private def finOne : Fin 1 := ⟨0, by decide⟩
@@ -150,48 +148,60 @@ private theorem romMemExternalWitness :
       (circuitWithRomAndMemBus 1 externalProgram).ProverAssumptions row data hint := by
   refine ⟨romExternalRow, ?_⟩
   intro data hint
-  refine ⟨finOne, externalBits, .external true 30 31, mainRomFree, rfl, ?_, rfl⟩
-  simp [MainRomExecKind.Coherent, externalBits]
+  refine ⟨finOne, externalBits, .external true 30 31, mainRomFree, rfl, ?_, ?_, ?_, rfl⟩
+  · simp [MainRomExecKind.Coherent, externalBits]
+  · simp [MainRomSourceGuard, externalBits, boolF]
+  · simp [MainRomAddressGuard, externalBits, boolF]
 
 private theorem romMemInternalFlagWitness :
     ∃ row : MainRowWithRom FGL, ∀ data hint,
       (circuitWithRomAndMemBus 1 internalFlagProgram).ProverAssumptions row data hint := by
   refine ⟨romInternalFlagRow, ?_⟩
   intro data hint
-  refine ⟨finOne, internalFlagBits, .internalFlag, mainRomFree, rfl, ?_, rfl⟩
-  simp [MainRomExecKind.Coherent, internalFlagBits, internalFlagProgram, romMsgOf]
+  refine ⟨finOne, internalFlagBits, .internalFlag, mainRomFree, rfl, ?_, ?_, ?_, rfl⟩
+  · simp [MainRomExecKind.Coherent, internalFlagBits, internalFlagProgram, romMsgOf]
+  · simp [MainRomSourceGuard, internalFlagBits, boolF]
+  · simp [MainRomAddressGuard, internalFlagBits, boolF]
 
 private theorem romMemInternalCopyWitness :
     ∃ row : MainRowWithRom FGL, ∀ data hint,
       (circuitWithRomAndMemBus 1 internalCopyProgram).ProverAssumptions row data hint := by
   refine ⟨romInternalCopyRow, ?_⟩
   intro data hint
-  refine ⟨finOne, internalCopyBits, .internalCopyB, mainRomFree, rfl, ?_, rfl⟩
-  simp [MainRomExecKind.Coherent, internalCopyBits, internalCopyProgram, romMsgOf]
+  refine ⟨finOne, internalCopyBits, .internalCopyB, mainRomFree, rfl, ?_, ?_, ?_, rfl⟩
+  · simp [MainRomExecKind.Coherent, internalCopyBits, internalCopyProgram, romMsgOf]
+  · simp [MainRomSourceGuard, internalCopyBits, boolF]
+  · simp [MainRomAddressGuard, internalCopyBits, boolF]
 
 private theorem romMemOpExternalWitness :
     ∃ row : MainRowWithRom FGL, ∀ data hint,
       (circuitWithRomMemAndOpBus 1 externalProgram).ProverAssumptions row data hint := by
   refine ⟨romExternalRow, ?_⟩
   intro data hint
-  refine ⟨finOne, externalBits, .external true 30 31, mainRomFree, rfl, ?_, rfl⟩
-  simp [MainRomExecKind.Coherent, externalBits]
+  refine ⟨finOne, externalBits, .external true 30 31, mainRomFree, rfl, ?_, ?_, ?_, rfl⟩
+  · simp [MainRomExecKind.Coherent, externalBits]
+  · simp [MainRomSourceGuard, externalBits, boolF]
+  · simp [MainRomAddressGuard, externalBits, boolF]
 
 private theorem romMemOpInternalFlagWitness :
     ∃ row : MainRowWithRom FGL, ∀ data hint,
       (circuitWithRomMemAndOpBus 1 internalFlagProgram).ProverAssumptions row data hint := by
   refine ⟨romInternalFlagRow, ?_⟩
   intro data hint
-  refine ⟨finOne, internalFlagBits, .internalFlag, mainRomFree, rfl, ?_, rfl⟩
-  simp [MainRomExecKind.Coherent, internalFlagBits, internalFlagProgram, romMsgOf]
+  refine ⟨finOne, internalFlagBits, .internalFlag, mainRomFree, rfl, ?_, ?_, ?_, rfl⟩
+  · simp [MainRomExecKind.Coherent, internalFlagBits, internalFlagProgram, romMsgOf]
+  · simp [MainRomSourceGuard, internalFlagBits, boolF]
+  · simp [MainRomAddressGuard, internalFlagBits, boolF]
 
 private theorem romMemOpInternalCopyWitness :
     ∃ row : MainRowWithRom FGL, ∀ data hint,
       (circuitWithRomMemAndOpBus 1 internalCopyProgram).ProverAssumptions row data hint := by
   refine ⟨romInternalCopyRow, ?_⟩
   intro data hint
-  refine ⟨finOne, internalCopyBits, .internalCopyB, mainRomFree, rfl, ?_, rfl⟩
-  simp [MainRomExecKind.Coherent, internalCopyBits, internalCopyProgram, romMsgOf]
+  refine ⟨finOne, internalCopyBits, .internalCopyB, mainRomFree, rfl, ?_, ?_, ?_, rfl⟩
+  · simp [MainRomExecKind.Coherent, internalCopyBits, internalCopyProgram, romMsgOf]
+  · simp [MainRomSourceGuard, internalCopyBits, boolF]
+  · simp [MainRomAddressGuard, internalCopyBits, boolF]
 
 theorem completeness_witness_main :
     (∃ row : MainRow FGL, ∀ data hint, circuit.ProverAssumptions row data hint)

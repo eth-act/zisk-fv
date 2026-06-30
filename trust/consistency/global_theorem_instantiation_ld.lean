@@ -156,9 +156,6 @@ private def ldMainFree : MainRomFreeCols :=
     b_1 := 0
     im_high_degree_2 := 0
     segment_l1 := 0
-    addr0 := 0
-    addr1 := 0
-    addr2 := 0
     main_step := 0 }
 
 private def ldMainRow : MainRowWithRom FGL :=

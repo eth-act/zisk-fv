@@ -37,6 +37,25 @@ namespace PureSpec
       throws := !bit0_valid
     }
 
+  lemma execute_JAL_pure_succ_throws
+    (input : JalInput)
+  :
+    let output := execute_JAL_pure input
+    output.success = true → output.throws = false
+  := by
+    simp [execute_JAL_pure]
+    grind
+
+  lemma execute_JAL_pure_succ_nextPC
+    (input : JalInput)
+  :
+    let output := execute_JAL_pure input
+    output.success = true →
+      output.nextPC = .some (input.PC + BitVec.signExtend 64 input.imm)
+  := by
+    simp [execute_JAL_pure]
+    grind
+
   /-- Dispatcher-unfold: `execute (.JAL …)` reduces to `execute_JAL`.
       Mirrors `RV32D/jal.lean`'s `rv32d_execute_jal` lemma. -/
   lemma rv64d_execute_jal :

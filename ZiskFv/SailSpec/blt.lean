@@ -30,6 +30,15 @@ namespace PureSpec
       : BltOutput
     }
 
+  lemma execute_BLT_pure_succ_throws
+    (input : BltInput)
+  :
+    let output := execute_BLT_pure input
+    output.success = true → output.throws = false
+  := by
+    simp [execute_BLT_pure]
+    grind
+
   set_option maxHeartbeats 400000 in
   /-- BLT Sail-equivalence: the `do` block consisting of a default
       `nextPC ← PC + 4` write followed by `execute (.BTYPE imm r2 r1 BLT)`
