@@ -8,6 +8,8 @@ import ZiskFv.Compliance.TraceLevelExport.StepStrongControlStore
 import ZiskFv.Compliance.TraceLevelExport.StepStrongLoadMext
 import ZiskFv.Compliance.TraceLevelExport.StepStrongSignedM
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
+import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeed
+import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeedWitness
 
 /-!
 # TraceLevelExport.lean — P5 trace-level export (channel-balance form)

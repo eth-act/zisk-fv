@@ -2095,9 +2095,6 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sb_input.PC.toNat
-  h_store_rmw :
-    StoreRmwMemoryCoherenceEvidence (binding i)
-      (busSt trace i (Pilot.execRowOf trace i)).e2 1
 
 /-- Per-op residual bundle for the `sb` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sb` bundles them. -/
@@ -2173,9 +2170,6 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sh_input.PC.toNat
-  h_store_rmw :
-    StoreRmwMemoryCoherenceEvidence (binding i)
-      (busSt trace i (Pilot.execRowOf trace i)).e2 2
 
 /-- Per-op residual bundle for the `sh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sh` bundles them. -/
@@ -2251,9 +2245,6 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sw_input.PC.toNat
-  h_store_rmw :
-    StoreRmwMemoryCoherenceEvidence (binding i)
-      (busSt trace i (Pilot.execRowOf trace i)).e2 4
 
 /-- Per-op residual bundle for the `sw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sw` bundles them. -/
@@ -2400,9 +2391,6 @@ structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.ld_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
@@ -2485,9 +2473,6 @@ structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.lbu_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
@@ -2570,9 +2555,6 @@ structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.lhu_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
@@ -2655,9 +2637,6 @@ structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.lwu_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
@@ -2748,9 +2727,6 @@ structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.lb_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
@@ -2841,9 +2817,6 @@ structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.lh_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
@@ -2934,9 +2907,6 @@ structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.lw_input.PC.toNat
-  h_memory_timeline :
-    LoadMemoryTimelineCoherenceEvidence (binding i)
-      (busLd trace i (Pilot.execRowOf trace i)).e1
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)

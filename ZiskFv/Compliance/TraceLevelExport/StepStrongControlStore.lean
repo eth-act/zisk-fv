@@ -1555,6 +1555,8 @@ private def emptyMainEnv : Environment FGL :=
 theorem stepStrong_sb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sb trace binding i)
+    (h_store_rmw_ev : StoreRmwMemoryCoherenceEvidence (binding i)
+      (busSt trace i (Pilot.execRowOf trace i)).e2 1)
     (h_domain : SequentialPcDomain d.toClaim.sb_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sb_input.imm, regidx.Regidx d.toClaim.sb_input.r2, regidx.Regidx d.toClaim.sb_input.r1, 1))
@@ -1626,7 +1628,7 @@ theorem stepStrong_sb
         simpa only [eval_mainConstVar] using
           store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
             h_a0_value h_a1_value h_addr_bound)
-      h_b0' h_b1' d.toInputs.h_store_rmw
+      h_b0' h_b1' h_store_rmw_ev
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
@@ -1636,6 +1638,8 @@ theorem stepStrong_sb
 theorem stepStrong_sh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sh trace binding i)
+    (h_store_rmw_ev : StoreRmwMemoryCoherenceEvidence (binding i)
+      (busSt trace i (Pilot.execRowOf trace i)).e2 2)
     (h_domain : SequentialPcDomain d.toClaim.sh_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sh_input.imm, regidx.Regidx d.toClaim.sh_input.r2, regidx.Regidx d.toClaim.sh_input.r1, 2))
@@ -1707,7 +1711,7 @@ theorem stepStrong_sh
         simpa only [eval_mainConstVar] using
           store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
             h_a0_value h_a1_value h_addr_bound)
-      h_b0' h_b1' d.toInputs.h_store_rmw
+      h_b0' h_b1' h_store_rmw_ev
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
@@ -1717,6 +1721,8 @@ theorem stepStrong_sh
 theorem stepStrong_sw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sw trace binding i)
+    (h_store_rmw_ev : StoreRmwMemoryCoherenceEvidence (binding i)
+      (busSt trace i (Pilot.execRowOf trace i)).e2 4)
     (h_domain : SequentialPcDomain d.toClaim.sw_input.PC) :
     execute_instruction (instruction.STORE
         (d.toClaim.sw_input.imm, regidx.Regidx d.toClaim.sw_input.r2, regidx.Regidx d.toClaim.sw_input.r1, 4))
@@ -1788,7 +1794,7 @@ theorem stepStrong_sw
         simpa only [eval_mainConstVar] using
           store_addr2_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset_imm
             h_a0_value h_a1_value h_addr_bound)
-      h_b0' h_b1' d.toInputs.h_store_rmw
+      h_b0' h_b1' h_store_rmw_ev
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial

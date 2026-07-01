@@ -34,6 +34,20 @@ namespace ZiskFv.Compliance
     fact that ZisK's inputs equal the Sail model's register / PC / memory state.
     `hAvoidKnownBugs` excludes the enumerated forge defects.
 
+    `bootSeed` is the single named **cross-row memory seed** premise: the segment's
+    initial memory state at segment entry, together with the one consistent
+    per-row memory-evolution chain (`RowTraceCoherence` over the whole consumed
+    memory-bus row sequence).  Every load's and store's memory-coherence fact is
+    *derived* from this one seed (`memEvidence_of_bootSeed`), rather than each of
+    the ten memory ops carrying its own copy.  It is a named external-trust premise
+    (the same class as channel-balance), documented in
+    `trust/trusted-base.md` — it is genuinely irreducible at the single-segment
+    level (a segment does not contain its own starting state; it is carried in from
+    the previous segment / boot), and driving it to zero is #115 / #119.  It is a
+    *memory* seed: the coherence chain constrains only memory; PC / registers are
+    pinned only incidentally through the initial-state snapshot (per-step next-PC is
+    discharged separately by the `AcceptedZiskTrace` PC-handshake certificate).
+
     Every row then satisfies the canonical channel-balance conclusion
     (`= state_effect_via_channels …`). The per-row `OpEnvelope` is constructed
     from the trace inside each `stepStrong_<op>` — nothing is caller-supplied
@@ -45,11 +59,13 @@ theorem root_soundness
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
     (programDecodes : ∀ i : Fin numInstructions, ProgramDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
+    (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
     stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
-      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i) (hAvoidKnownBugs i)
+      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i)
+      (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
 
 end ZiskFv.Compliance
