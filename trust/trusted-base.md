@@ -40,7 +40,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Sail memory timeline          | 0            | 0                 | Load arm reduced to the memory-only `RowTraceCoherence` trace-coherence floor (#76 Fold-B; see below). Discharge by the #100 whole-execution memory replay/timeline induction. |
+| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` trace-coherence floor (#76 Fold-B; see below), and on `root_soundness` unified into one named `BootSegmentMemorySeed` premise (#185; per-op residuals derived from it). Discharge by the #115/#119 whole-execution memory replay/timeline induction. |
 | Clean completeness            | 0            | 0                 | Retired from source trust; false/circular fields are visible non-claims.                                  |
 
 
@@ -320,6 +320,56 @@ only inside dispatchers, as the load residual is). Reducing them requires an
 store cores, which touches the caller-burden / hypothesis-count baselines for
 the store opcodes. They are therefore **deferred** to a follow-up; only the load
 residual is reduced here.
+
+### One named seed premise (`BootSegmentMemorySeed`) — #185 legibility MVP
+
+The headline theorem `ZiskFv.Compliance.root_soundness` no longer carries the
+memory-coherence residual as **ten scattered per-op fields**. Previously each of
+the ten memory ops (seven loads carrying
+`LoadMemoryTimelineCoherenceEvidence`, and `sb`/`sh`/`sw` carrying
+`StoreRmwMemoryCoherenceEvidence`, after #119) was an `Inputs_<op>` field, each an
+independent existential re-positing its *own* `initialState` / `rows` / `stateAt`
+/ `RowTraceCoherence` chain — nothing forced the ten copies to describe the same
+execution.
+
+* **After (live):** `root_soundness` takes **one** binder
+  `bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep`
+  (`ZiskFv/Compliance/TraceLevelExport/BootSegmentMemorySeed.lean`). It bundles a
+  single `initialState` / `rows` / `GeneratedMemReplayFacts` / cursor-indexed
+  `stateAt`, the whole-sequence chain `RowTraceCoherence stateAt [] rows`, and a
+  per-memory-op `placement` (where each op's bus entry sits in `rows`, that its
+  Sail state is the cursor state there, and — for narrow stores — the preserved
+  high bytes). `memEvidence_of_bootSeed` **derives** every op's per-op residual
+  from this one seed, restricting the whole-sequence coherence to the op's prefix
+  via `rowTraceCoherence_of_append`. The ten `Inputs_<op>` memory fields are
+  **removed**; the dispatcher threads the seed-derived `MemoryOpEvidenceFor` into
+  each `stepStrong_<op>`.
+
+**Trust class.** Identical to the `RowTraceCoherence` trace-coherence floor
+above — a named external-trust premise (the class of channel-balance), **not** an
+axiom and **not** a defect. `root_soundness`'s `ZiskFv.*` axiom closure is
+unchanged (empty — see `baseline-strong-export-closure.txt`); only its binder
+list gains `bootSeed` (`baseline-strong-export-binders.txt`). The seed is
+genuinely irreducible at the single-segment level (a segment does not contain its
+own initial state — it is carried in from the previous segment / boot); driving
+it to zero by replaying the trace's writes is the follow-on **#115** (loads) /
+**#119** (store byte facts, already reduced to the coherence shape).
+
+**Memory, not memory+PC.** The coherence chain constrains only `.mem`; the seed's
+`initialState` snapshot pins PC / registers only incidentally, and per-step
+next-PC is discharged separately (the `AcceptedZiskTrace` PC-handshake
+certificate, #100/#163). Naming it a *memory* seed keeps the premise from
+promising more than the proof delivers.
+
+**Non-vacuity (both halves).** The premise is inhabitable non-degenerately. The
+load half is `ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_memoryTraceAgreement`
+(over empty seed memory). The store half — which the empty-memory Spike witness
+cannot supply, since a narrow store's `StoreRmwPreservedBytesAtPrefix` floor is
+false over empty memory — is `witnessStore_evidence`: a concrete
+`StoreRmwMemoryCoherenceEvidence` whose preserved bytes come from a **non-empty**
+seed memory, with the post-store cursor state differing from the initial state in
+`regs` **and** `cycleCount` (`witnessStore_nondegenerate`), so it is not the
+frozen-state floor. Both depend on kernel axioms only.
 
 ## Platform Profile
 
