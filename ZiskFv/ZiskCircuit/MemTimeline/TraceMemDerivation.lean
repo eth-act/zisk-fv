@@ -208,4 +208,64 @@ theorem exists_flatMap_range_split_of_singleton
 
 #print axioms exists_flatMap_range_split_of_singleton
 
+/-! ## Phase B — the named memory-timeline premise + in-export load discharge.
+
+This is the honest residual for issue #115. The load memory obligation splits into two halves:
+
+* **State-pin half** (derived here): the Sail memory at each step is the execution-order replay of
+  the earlier memory rows. This is *derived* from ONE trace-global execution-successor premise
+  (`step`) + boot (`boot`) via `exec_order_fold_fin` — collapsing the 7 opaque per-load whole-Sail-
+  state `RowTraceCoherence` obligations into one named, mem-only, trace-global premise.
+* **Read-soundness half** (`readSound`): "each memory read returns the execution-order replayed
+  value". This is the memory-bus **read-soundness**, which is NOT derivable from the accepted-trace
+  certificate (`constraints_hold`/`channels_balanced`) — it is the out-of-scope ExtF memory-bus
+  **permutation** trust (see `trust/trusted-base.md`; `Airs/MemoryBus/MemBridge.lean`). It is carried
+  here as a single named premise of that existing trust class, in execution order and mem-only —
+  strictly sharper than the opaque whole-`SailState` `RowTraceCoherence` it replaces (no existential
+  `stateAt`, regs/PC/cycleCount free), and non-degenerate (see `CoherenceSpike.witness_*`). -/
+structure MemoryTimelinePremises (n : ℕ) (binding : Fin n → SailState) : Type where
+  /-- The per-instruction memory-bus rows (as=2). Pinned to the trace's real rows at each load
+      discharge site via `rowsOf i = [busLd … .e1]` (the anti-laundering tie-in). -/
+  rowsOf : ℕ → List (MemoryBusEntry FGL)
+  /-- The segment boot memory. -/
+  memInit : Std.ExtHashMap Nat (BitVec 8)
+  h_pos : 0 < n
+  /-- Boot seed: the initial Sail memory is the segment boot memory. -/
+  boot : (binding ⟨0, h_pos⟩).mem = memInit
+  /-- Execution-successor: each Sail step's memory is the replay of that step's memory rows onto the
+      previous step's memory (the memory-execution-coherence trust). -/
+  step : ∀ (j : ℕ) (h : j + 1 < n),
+      (binding ⟨j + 1, h⟩).mem
+        = replayMemoryAfterBusRows (binding ⟨j, Nat.lt_of_succ_lt h⟩).mem (rowsOf j)
+  /-- Memory-bus read-soundness over the full execution-order row list (existing memory-bus
+      permutation trust class, stated mem-only and in execution order). -/
+  readSound :
+    MemoryBusRowsPrefixReadSound memInit ((List.range n).flatMap rowsOf)
+
+/-- **In-export load discharge.** From the trace-global memory-timeline premise plus the per-load
+tie-in `rowsOf i = [entry]` (proven at the call site from the load's real bus emission), the full
+`LoadMemoryTimelineCoherenceEvidence (binding i) entry` is derived — no per-load caller obligation.
+Composes the committed `exec_order_fold_fin` (state-pin) + `exists_flatMap_range_split_of_singleton`
+(the read's boundary split) + `CoherenceSpike.loadEvidence_of_loadMemReplay` (the reduction). -/
+theorem loadTimelineEvidence_of_premises
+    {n : ℕ} {binding : Fin n → SailState}
+    (premises : MemoryTimelinePremises n binding)
+    (i : Fin n) (entry : MemoryBusEntry FGL)
+    (h_rows_i : premises.rowsOf i.val = [entry]) :
+    ZiskFv.Compliance.LoadMemoryTimelineCoherenceEvidence (binding i) entry := by
+  obtain ⟨laterRows, h_split⟩ :=
+    exists_flatMap_range_split_of_singleton premises.rowsOf i.val i.isLt entry h_rows_i
+  refine CoherenceSpike.loadEvidence_of_loadMemReplay
+    (initialState := binding ⟨0, premises.h_pos⟩)
+    (facts :=
+      { initialMemory := premises.memInit
+        prefixReadSound := premises.readSound
+        initialAgreement := fun _ => by rw [premises.boot] })
+    (priorRows := (List.range i.val).flatMap premises.rowsOf) (laterRows := laterRows)
+    h_split ?_
+  exact exec_order_fold_fin binding premises.memInit premises.rowsOf premises.h_pos
+    premises.boot premises.step i
+
+#print axioms loadTimelineEvidence_of_premises
+
 end ZiskFv.ZiskCircuit.MemTimeline.TraceMemDerivation
