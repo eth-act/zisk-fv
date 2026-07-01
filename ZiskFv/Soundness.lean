@@ -45,11 +45,13 @@ theorem root_soundness
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
     (programDecodes : ∀ i : Fin numInstructions, ProgramDecode ziskTrace i (ziskStep i))
     (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
+    (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
   fun i =>
     stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
-      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i) (hAvoidKnownBugs i)
+      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i)
+      (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
 
 end ZiskFv.Compliance

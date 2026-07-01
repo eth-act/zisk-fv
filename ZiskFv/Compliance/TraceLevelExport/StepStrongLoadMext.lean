@@ -175,6 +175,8 @@ records are real `Valid_Mem`/`Valid_BinaryExtension` rows. -/
 theorem stepStrong_ld
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_ld trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.ld_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.ld_input.imm, regidx.Regidx d.toClaim.ld_input.r1, regidx.Regidx d.toClaim.ld_input.rd, false, 8))
@@ -259,7 +261,7 @@ theorem stepStrong_ld
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.1
 
@@ -267,6 +269,8 @@ theorem stepStrong_ld
 theorem stepStrong_lbu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lbu trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.lbu_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lbu_input.imm, regidx.Regidx d.toClaim.lbu_input.r1, regidx.Regidx d.toClaim.lbu_input.rd, true, 1))
@@ -350,7 +354,7 @@ theorem stepStrong_lbu
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -358,6 +362,8 @@ theorem stepStrong_lbu
 theorem stepStrong_lhu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lhu trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.lhu_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lhu_input.imm, regidx.Regidx d.toClaim.lhu_input.r1, regidx.Regidx d.toClaim.lhu_input.rd, true, 2))
@@ -441,7 +447,7 @@ theorem stepStrong_lhu
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -449,6 +455,8 @@ theorem stepStrong_lhu
 theorem stepStrong_lwu
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lwu trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.lwu_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lwu_input.imm, regidx.Regidx d.toClaim.lwu_input.r1, regidx.Regidx d.toClaim.lwu_input.rd, true, 4))
@@ -533,7 +541,7 @@ theorem stepStrong_lwu
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
@@ -541,6 +549,8 @@ theorem stepStrong_lwu
 theorem stepStrong_lb
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lb trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.lb_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lb_input.imm, regidx.Regidx d.toClaim.lb_input.r1, regidx.Regidx d.toClaim.lb_input.rd, false, 1))
@@ -625,7 +635,7 @@ theorem stepStrong_lb
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
@@ -633,6 +643,8 @@ theorem stepStrong_lb
 theorem stepStrong_lh
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lh trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.lh_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lh_input.imm, regidx.Regidx d.toClaim.lh_input.r1, regidx.Regidx d.toClaim.lh_input.rd, false, 2))
@@ -717,7 +729,7 @@ theorem stepStrong_lh
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
@@ -725,6 +737,8 @@ theorem stepStrong_lh
 theorem stepStrong_lw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_lw trace binding i)
+    (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
+      (busLd trace i (Pilot.execRowOf trace i)).e1)
     (h_domain : SequentialPcDomain d.toClaim.lw_input.PC) :
     execute_instruction (instruction.LOAD
         (d.toClaim.lw_input.imm, regidx.Regidx d.toClaim.lw_input.r1, regidx.Regidx d.toClaim.lw_input.rd, false, 4))
@@ -810,7 +824,7 @@ theorem stepStrong_lw
       (by simpa only [eval_mainConstVar] using load_addr2_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset)
       d.toInputs.h_mem_sel d.toInputs.h_mem_wr
   have h_bridge : env.aeneasBridgeTrust := d.toDecode.h_width
-  have h_mem : env.memoryTimelineConstructionEvidence := d.toInputs.h_memory_timeline
+  have h_mem : env.memoryTimelineConstructionEvidence := h_mem_ev
   have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 

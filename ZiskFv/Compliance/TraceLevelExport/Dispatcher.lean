@@ -1040,6 +1040,7 @@ def StepSound
 theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
+    (memEv : MemoryOpEvidenceFor ziskTrace sailTrace i zs)
     (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs) :
     StepSound ziskTrace sailTrace i zs := by
   cases zs with
@@ -1201,17 +1202,17 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
   | jalr c =>
       exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia)
         (jalrRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
-  | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) hAvoidKnownBugs
-  | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) hAvoidKnownBugs
-  | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) hAvoidKnownBugs
+  | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) memEv hAvoidKnownBugs
+  | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) memEv hAvoidKnownBugs
+  | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) memEv hAvoidKnownBugs
   | sd c => exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia) hAvoidKnownBugs
-  | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) hAvoidKnownBugs
-  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) hAvoidKnownBugs
-  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) hAvoidKnownBugs
-  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) hAvoidKnownBugs
-  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) hAvoidKnownBugs
-  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) hAvoidKnownBugs
-  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) hAvoidKnownBugs
+  | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) memEv hAvoidKnownBugs
+  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) memEv hAvoidKnownBugs
+  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) memEv hAvoidKnownBugs
+  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) memEv hAvoidKnownBugs
+  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) memEv hAvoidKnownBugs
+  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) memEv hAvoidKnownBugs
+  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) memEv hAvoidKnownBugs
   | fence c =>
       exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
