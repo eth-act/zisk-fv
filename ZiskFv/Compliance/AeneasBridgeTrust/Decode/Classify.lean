@@ -130,7 +130,7 @@ theorem rtype_family_classifies (funct7 funct3 opcode rd rs1 rs2 : Nat)
 set_option maxHeartbeats 1000000 in
 /-- **I-type classification** (JALR, immediate ALU, ADDIW, loads). -/
 theorem itype_family_classifies (rd rs1 imm funct3 opcode : Nat)
-    (hrd : rd < 32) (hrs1 : rs1 < 32) (himm : imm < 4096)
+    (hrd : rd < 32) (_hrs1 : rs1 < 32) (_himm : imm < 4096)
     (hmem : (funct3, opcode) ∈ [
       (0, 0x67), (0, 0x13), (2, 0x13), (3, 0x13), (4, 0x13),
       (6, 0x13), (7, 0x13), (0, 0x1b), (0, 0x03), (1, 0x03),
@@ -145,7 +145,7 @@ theorem itype_family_classifies (rd rs1 imm funct3 opcode : Nat)
 set_option maxHeartbeats 1000000 in
 /-- **S-type classification** (stores). -/
 theorem stype_family_classifies (rs1 rs2 imm funct3 : Nat)
-    (hrs1 : rs1 < 32) (hrs2 : rs2 < 32) (himm : imm < 4096)
+    (_hrs1 : rs1 < 32) (_hrs2 : rs2 < 32) (_himm : imm < 4096)
     (hmem : funct3 ∈ [0, 1, 2, 3]) :
     ∃ d, decode_32_core (toU32 (rawSType imm rs2 rs1 funct3)) = ok d ∧
          d.opcode = stypeOpcode funct3 := by
@@ -157,7 +157,7 @@ theorem stype_family_classifies (rs1 rs2 imm funct3 : Nat)
 set_option maxHeartbeats 1000000 in
 /-- **B-type classification** (branches). -/
 theorem btype_family_classifies (rs1 rs2 imm funct3 : Nat)
-    (hrs1 : rs1 < 32) (hrs2 : rs2 < 32) (himm : imm < 8192)
+    (_hrs1 : rs1 < 32) (_hrs2 : rs2 < 32) (_himm : imm < 8192)
     (hmem : funct3 ∈ [0, 1, 4, 5, 6, 7]) :
     ∃ d, decode_32_core (toU32 (rawBType imm rs2 rs1 funct3)) = ok d ∧
          d.opcode = btypeOpcode funct3 := by
@@ -169,7 +169,7 @@ theorem btype_family_classifies (rs1 rs2 imm funct3 : Nat)
 set_option maxHeartbeats 1000000 in
 /-- **U-type classification** (LUI / AUIPC). -/
 theorem utype_family_classifies (rd imm opcode : Nat)
-    (hrd : rd < 32) (hmem : opcode ∈ [0x37, 0x17]) :
+    (_hrd : rd < 32) (hmem : opcode ∈ [0x37, 0x17]) :
     ∃ d, decode_32_core (toU32 (rawUType imm rd opcode)) = ok d ∧
          d.opcode = utypeOpcode opcode := by
   fin_cases hmem <;>

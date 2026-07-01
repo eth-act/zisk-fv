@@ -88,8 +88,8 @@ lemma equiv_SRLI_of_wf
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
-    (h_op_is_shift : v.op_is_shift r_binary = 1)
-    (h_b0_range : (v.b_0 r_binary).val < 2 ^ 24)
+    (_h_op_is_shift : v.op_is_shift r_binary = 1)
+    (_h_b0_range : (v.b_0 r_binary).val < 2 ^ 24)
     (h_input_r1_circuit :
       srli_input.r1_val = ZiskFv.AirsClean.BinaryExtension.validA64 v r_binary)
     (h_shift_pin :

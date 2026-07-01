@@ -132,7 +132,7 @@ theorem zisk_decoder_classifies_supported_shape (raw : BitVec 32)
   refine ⟨d, hd, ?_⟩
   have hacc := zisk_decoder_accepts_supported_shape raw h
   simp only [ziskDecoderAccepts, aeneas_extract.extract_rv64im_opcode_supported, hd,
-    bind_ok] at hacc
+    ] at hacc
   exact hacc
 
 end ZiskFv.Compliance.Decode

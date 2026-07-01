@@ -199,8 +199,8 @@ theorem binary_table_specs_of_static_lookup_const_soundness
         , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
                     Table.toRaw] using h6
         , by
-            simp [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
-              Table.toRaw, lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h7 ⊢
+            simp [
+              lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h7 ⊢
             exact h7 ⟩
 
 open ZiskFv.Airs.Tables.BinaryTable in
@@ -448,7 +448,7 @@ theorem static_table_b_op_or_sext_eq_of_xor_emit
       rw [h_one] at h_emit
       simpa using (add_right_cancel h_emit)
     have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
-    exact False.elim (h_ne (by simp [lookupMessage3Row, h_bop_zero]))
+    exact False.elim (h_ne (by simp [h_bop_zero]))
 
 /-- Exact static BinaryTable membership also pins the low-byte opcode and
     `mode32` for an emitted XOR row. -/
@@ -482,7 +482,7 @@ theorem static_table_xor_mode_pins_of_emit
       rw [h_one] at h_emit
       simpa using (add_right_cancel h_emit)
     have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
-    exact False.elim (h_ne (by simp [lookupMessage3Row, h_bop_zero]))
+    exact False.elim (h_ne (by simp [h_bop_zero]))
 
 /-- Exact static BinaryTable membership plus the Binary boolean/core row
     constraints pin the 64-bit logic op-bus shapes without the legacy

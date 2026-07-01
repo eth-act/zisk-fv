@@ -1634,7 +1634,7 @@ theorem rowOfIndex_wf_LT_ABS_NP (i : Fin tableSize) :
     dsimp [rowOfIndex, BinaryTableMessage.toEntry, coutOfIndex, posIndOfIndex]
     rw [h_block]
     simp [coutLt, hlow_mod, hhigh_mod, hcin_mod]
-    aesop
+    aesop (config := { warnOnNonterminal := false })
     all_goals omega
 
 set_option maxHeartbeats 800000 in
@@ -1685,7 +1685,7 @@ theorem rowOfIndex_wf_LT_ABS_PN (i : Fin tableSize) :
     dsimp [rowOfIndex, BinaryTableMessage.toEntry, coutOfIndex, posIndOfIndex]
     rw [h_block]
     simp [coutLt, hlow_mod, hhigh_mod, hcin_mod]
-    aesop
+    aesop (config := { warnOnNonterminal := false })
     all_goals omega
 
 open ZiskFv.Airs.Tables.BinaryTable in

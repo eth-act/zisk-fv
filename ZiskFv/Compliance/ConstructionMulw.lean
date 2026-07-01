@@ -145,7 +145,7 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
     `vOfMulwRow (mulwArow …)`. The Arith witnesses for this row are derived
     inside `construction_mulw_sound`; nothing about the row is caller-supplied. -/
 noncomputable def mulwArow
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :

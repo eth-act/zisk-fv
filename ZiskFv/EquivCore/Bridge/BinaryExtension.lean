@@ -300,7 +300,7 @@ lemma shift_pin_eq_of_shift_match_m32_0_of_b0_range
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
-    (h_m32 : m.m32 r_main = 0)
+    (_h_m32 : m.m32 r_main = 0)
     (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_b_hi_t : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
@@ -403,7 +403,7 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
-    (h_m32 : m.m32 r_main = 1)
+    (_h_m32 : m.m32 r_main = 1)
     (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
     (h_a_hi_t : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
@@ -583,8 +583,8 @@ No new trust-ledger axioms. Pure-Lean composition of:
     `< 256`. -/
 private theorem byte_pack4_inj
     (a0 a1 a2 a3 b0 b1 b2 b3 : ℕ)
-    (ha0 : a0 < 256) (ha1 : a1 < 256) (ha2 : a2 < 256) (ha3 : a3 < 256)
-    (hb0 : b0 < 256) (hb1 : b1 < 256) (hb2 : b2 < 256) (hb3 : b3 < 256)
+    (ha0 : a0 < 256) (ha1 : a1 < 256) (ha2 : a2 < 256) (_ha3 : a3 < 256)
+    (hb0 : b0 < 256) (hb1 : b1 < 256) (hb2 : b2 < 256) (_hb3 : b3 < 256)
     (h : a0 + a1 * 256 + a2 * 65536 + a3 * 16777216
        = b0 + b1 * 256 + b2 * 65536 + b3 * 16777216) :
     a0 = b0 ∧ a1 = b1 ∧ a2 = b2 ∧ a3 = b3 := by

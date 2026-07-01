@@ -91,7 +91,7 @@ lemma equiv_ANDI_of_static_row
     (h_input_imm_row :
       BitVec.signExtend 64 andi_input.imm = ZiskFv.EquivCore.Add.binaryRowB64 row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (h_andi_subset :
+    (_h_andi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main andi_input.imm) :
     (do

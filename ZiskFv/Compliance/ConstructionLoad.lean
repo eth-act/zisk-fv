@@ -129,7 +129,7 @@ noncomputable def busLd
 /-- The Main row provenance at trace index `i`: `mainRowWithRomLd`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all seven loads. -/
 theorem mainRowWithRomLd_core
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     (mainRowWithRomLd trace i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)

@@ -236,51 +236,51 @@ private theorem binary_extension_op_is_shift_pin_of_e0_wf
   · intro h_op
     rcases h_op with h_op | h_op | h_op | h_op | h_op | h_op
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SLL, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL]
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SLL, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL]
       have h_flag := (hSLL h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRL, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL]
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SRL, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL]
       have h_flag := (hSRL h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRA, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA]
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SRA, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA]
       have h_flag := (hSRA h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SLL_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W]
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SLL_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W]
       have h_flag := (hSLLW h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRL_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W]
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SRL_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W]
       have h_flag := (hSRLW h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRA_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W]
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SRA_W, ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W]
       have h_flag := (hSRAW h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
   · intro h_op
     rcases h_op with h_op | h_op | h_op
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_B,
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_B,
           ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B]
       have h_flag := (hSEXTB h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_H,
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_H,
           ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H]
       have h_flag := (hSEXTH h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
     · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
-        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_W,
+        simp [hbytes, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_W,
           ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W]
       have h_flag := (hSEXTW h_op_val).2.2
       ext
@@ -4610,32 +4610,32 @@ lemma binary_extension_sext_b_chunks_eq_signextend_nat_of_wf
   rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
       show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
-  simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h1
+  simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false] at h1
   have h2 := sext_b_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
   rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
       show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
       show e2.c_hi_byte.val = (v.free_in_c_5 row).val from by rw [hch2]] at h2
-  simp only [show ((2 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h2
+  simp only [show ((2 : ℕ) = 0) ↔ False from by decide, if_false] at h2
   have h3 := sext_b_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
   rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
       show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
-  simp only [show ((3 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h3
+  simp only [show ((3 : ℕ) = 0) ↔ False from by decide, if_false] at h3
   have h4 := sext_b_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
   rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
       show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4],
       show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h4
-  simp only [show ((4 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h4
+  simp only [show ((4 : ℕ) = 0) ↔ False from by decide, if_false] at h4
   have h5 := sext_b_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
   rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
       show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5],
       show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h5
-  simp only [show ((5 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h5
+  simp only [show ((5 : ℕ) = 0) ↔ False from by decide, if_false] at h5
   have h6 := sext_b_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
   rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
       show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6],
       show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h6
-  simp only [show ((6 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h6
+  simp only [show ((6 : ℕ) = 0) ↔ False from by decide, if_false] at h6
   have h7 := sext_b_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
   rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
       show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7],
@@ -4784,7 +4784,7 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
       show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
   simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false,
-             show ((1 : ℕ) = 1) ↔ True from by decide, if_true] at h1
+             if_true] at h1
   have h2 := sext_h_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
   rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
       show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
@@ -4868,7 +4868,7 @@ lemma binary_extension_sext_h_c_sums_lt_of_wf
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
       show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
   simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false,
-             show ((1 : ℕ) = 1) ↔ True from by decide, if_true] at h1
+             if_true] at h1
   have h2 := sext_h_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
   rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
       show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
@@ -4917,7 +4917,7 @@ lemma binary_extension_sext_h_c_sums_lt_of_wf
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
       show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1d
   simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false,
-             show ((1 : ℕ) = 1) ↔ True from by decide, if_true] at h1d
+             if_true] at h1d
   obtain ⟨h1lo, h1hi, _⟩ := h1d
   by_cases hsign : (v.free_in_a_1 row).val ≥ 128
   · simp only [if_pos hsign] at h1
@@ -5012,7 +5012,7 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
       show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
   simp only [show ((3 : ℕ) < 4) ↔ True from by decide, if_true,
-             show ((3 : ℕ) = 3) ↔ True from by decide, true_and,
+             true_and,
              show (256 ^ 3 : ℕ) = 16777216 from by decide] at h3
   have h4 := sext_w_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
   rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
@@ -5099,7 +5099,7 @@ lemma binary_extension_sext_w_c_sums_lt_of_wf
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
       show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
   simp only [show ((3 : ℕ) < 4) ↔ True from by decide, if_true,
-             show ((3 : ℕ) = 3) ↔ True from by decide, true_and,
+             true_and,
              show (256 ^ 3 : ℕ) = 16777216 from by decide] at h3
   have h4 := sext_w_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
   rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
@@ -5139,7 +5139,7 @@ lemma binary_extension_sext_w_c_sums_lt_of_wf
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
       show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3d
   simp only [show ((3 : ℕ) < 4) ↔ True from by decide, if_true,
-             show ((3 : ℕ) = 3) ↔ True from by decide, true_and,
+             true_and,
              show (256 ^ 3 : ℕ) = 16777216 from by decide] at h3d
   obtain ⟨h3lo, h3hi, _⟩ := h3d
   by_cases hsign : (v.free_in_a_3 row).val ≥ 128

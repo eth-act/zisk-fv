@@ -579,7 +579,7 @@ theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row
     (h_div : v.div r = 0) (h_main_mul : v.main_mul r = 1) (h_main_div : v.main_div r = 0) :
     OpBusMessage.toEntry (primaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
       ZiskFv.Airs.ArithMul.opBus_row_Arith v r := by
-  simp only [OpBusMessage.toEntry, primaryOpBusMessage, rowAt,
+  simp only [OpBusMessage.toEntry, primaryOpBusMessage,
     ZiskFv.Airs.ArithMul.opBus_row_Arith, h_div, h_main_mul, h_main_div]
   ring
 

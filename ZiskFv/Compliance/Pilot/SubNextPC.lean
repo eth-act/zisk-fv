@@ -297,7 +297,7 @@ theorem setpc_path_nextPC_discharged
     `PC + 4#64` conclusion *is* `(execute_RTYPE_sub_pure sub_input).nextPC`. -/
 theorem sub_nextPC_discharged
     (trace : AcceptedZiskTrace numInstructions)
-    (binding : SailTrace trace.numInstructions)
+    (_binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)
     (sub_input : PureSpec.SubInput)
     (h_idx : i.val + 1 < trace.mainTable.table.length)

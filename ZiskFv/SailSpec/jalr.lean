@@ -105,7 +105,6 @@ namespace PureSpec
       LeanRV64D.Functions.execute,
       LeanRV64D.Functions.execute_JALR,
       LeanRV64D.Functions.get_next_pc,
-      readReg_succ (writeReg_read_same _),
     ]
     have h_priv_post :
       Sail.readReg Register.cur_privilege (write_reg_state state Register.nextPC (input.PC + 4#64))
@@ -122,7 +121,7 @@ namespace PureSpec
       (mseccfg := mseccfg)
       (rs1 := rs1)
       h_priv_post h_mseccfg_post]
-    simp [LeanRV64D.Functions.get_next_pc, readReg_succ (writeReg_read_same _)]
+    simp [readReg_succ (writeReg_read_same _)]
     -- read rs1_val from the mutated state.
     obtain ⟨⟨rs1_fin: Fin 32⟩⟩ := rs1
     rewrite [rX_read_xreg_equiv _ ⟨⟨rs1_fin⟩⟩ rs1_fin (by simp)]

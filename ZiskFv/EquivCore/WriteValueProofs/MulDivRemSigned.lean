@@ -592,10 +592,10 @@ lemma h_rd_val_mdrs_mul_low_chunked
 private lemma mdrs_mulh_core_data
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (e : Interaction.MemoryBusEntry FGL)
-    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
-    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
-    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
-    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (_h0 : (byteAt e 0).val < 256) (_h1 : (byteAt e 1).val < 256)
+    (_h2 : (byteAt e 2).val < 256) (_h3 : (byteAt e 3).val < 256)
+    (_h4 : (byteAt e 4).val < 256) (_h5 : (byteAt e 5).val < 256)
+    (_h6 : (byteAt e 6).val < 256) (_h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 0)
@@ -2065,7 +2065,7 @@ lemma h_rd_val_mdrs_divw_by_zero_chunked
       ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
     (h_boundary :
       ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
-    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (_h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_byte_lo :

@@ -114,10 +114,10 @@ lemma equiv_DIVUW
       ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
-    (h_m32 : v.m32 r_a = 1)
+    (_h_m32 : v.m32 r_a = 1)
     (h_div : v.div r_a = 1)
     -- Op-pin (TRANSPILE-PIN): DIVUW = op 188.
-    (h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191)
+    (_h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     -- Bus c-chunk W-pin (CIRCUIT-CONSTRAINT): dividend in W-mode is the
     -- zero-extended r1_lo32, so c_2 = c_3 = 0 by bus encoding.

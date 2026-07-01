@@ -2146,7 +2146,7 @@ lemma abs_euclidean_to_signed_euclidean_div_rem
     (h_nr_pin : nr = np ∨ D = 0)
     (h_A_lb : 0 ≤ A) (h_A_ub : A < 2^64)
     (h_B_lb : 0 ≤ B) (h_B_ub : B < 2^64)
-    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (_h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
     (h_D_lb : 0 ≤ D) (h_D_ub : D < 2^64)
     (h_r1 : r1.toInt = C - np * 2^64)
     (h_r2 : r2.toInt = B - nb * 2^64)
@@ -2211,7 +2211,7 @@ lemma abs_euclidean_to_signed_euclidean_div_rem
       -- So C ≤ 2^128 + 2^128 - 2^65 + 1 - 0*2^64 = 2*2^128 - 2^65 + 1 (assuming A+B ≥ 0).
       -- And C ≥ 2^128 + 0 - (2*(2^64-1))*2^64 = 2^128 - 2^129 + 2^65.
       -- With C < 2^64, we get a polynomial contradiction.
-      nlinarith [h_chain, h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
+      nlinarith [h_chain, _h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
                  h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^64)]
 
 /-! ## Part 9.W — Abs-Euclidean → signed-Euclidean linker (DIVW / REMW)
@@ -2249,7 +2249,7 @@ lemma abs_euclidean_to_signed_euclidean_div_rem_w
     (h_nr_pin : nr = np ∨ D = 0)
     (h_A_lb : 0 ≤ A) (h_A_ub : A < 2^32)
     (h_B_lb : 0 ≤ B) (h_B_ub : B < 2^32)
-    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^32)
+    (_h_C_lb : 0 ≤ C) (h_C_ub : C < 2^32)
     (h_D_lb : 0 ≤ D) (h_D_ub : D < 2^32)
     (h_r1 : r1_lo32.toInt = C - np * 2^32)
     (h_r2 : r2_lo32.toInt = B - nb * 2^32)
@@ -2302,7 +2302,7 @@ lemma abs_euclidean_to_signed_euclidean_div_rem_w
       have h_B_le : B ≤ 2^32 - 1 := by linarith
       have h_AB_le : A * B ≤ (2^32 - 1) * (2^32 - 1) :=
         Int.mul_le_mul h_A_le h_B_le h_B_lb (by linarith)
-      nlinarith [h_chain, h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
+      nlinarith [h_chain, _h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
                  h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^32)]
 
 end ZiskFv.PackedBitVec.SignedChunkLift

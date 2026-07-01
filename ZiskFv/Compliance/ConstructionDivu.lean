@@ -184,20 +184,20 @@ theorem divu_row_constraints_of_arithMul_fullSpec
   obtain ⟨h_spec, _h_table, h_c46, _h_chunks, _h_carry, _h_indexed⟩ := h
   obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
-  · simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, vOfDivuRow]; linear_combination hc6
-  · simp only [ZiskFv.Airs.ArithDiv.na_fb_eq_div, vOfDivuRow]; linear_combination hc7
-  · simp only [ZiskFv.Airs.ArithDiv.nb_fa_eq_div, vOfDivuRow]; linear_combination hc8
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div, vOfDivuRow]; linear_combination hc31
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_1_div, vOfDivuRow]; linear_combination hc32
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_2_div, vOfDivuRow]; linear_combination hc33
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_3_div, vOfDivuRow]; linear_combination hc34
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_4_div, vOfDivuRow]; linear_combination hc35
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_5_div, vOfDivuRow]; linear_combination hc36
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_6_div, vOfDivuRow]; linear_combination hc37
-  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_7_div, vOfDivuRow]; linear_combination hc38
-  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div, vOfDivuRow,
+  · simp only [ZiskFv.Airs.ArithDiv.fab_eq_div]; linear_combination hc6
+  · simp only [ZiskFv.Airs.ArithDiv.na_fb_eq_div]; linear_combination hc7
+  · simp only [ZiskFv.Airs.ArithDiv.nb_fa_eq_div]; linear_combination hc8
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div]; linear_combination hc31
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_1_div]; linear_combination hc32
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_2_div]; linear_combination hc33
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_3_div]; linear_combination hc34
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_4_div]; linear_combination hc35
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_5_div]; linear_combination hc36
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_6_div]; linear_combination hc37
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_7_div]; linear_combination hc38
+  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div,
       ZiskFv.AirsClean.ArithMul.C46Spec,
-      ZiskFv.Airs.ArithMul.mul_constraint_46_named] at h_c46 ⊢
+      ] at h_c46 ⊢
     linear_combination h_c46
 
 /-- DIVU-mode op-bus bridge: the FAITHFUL muxed ArithMul primary message
@@ -219,7 +219,7 @@ theorem primaryOpBusMessage_toEntry_eq_opBus_row_ArithDiv
       ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv (vOfDivuRow arow) 0 := by
   simp only [ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
     ZiskFv.AirsClean.ArithMul.primaryOpBusMessage,
-    ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv, vOfDivuRow,
+    ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv,
     h_div, h_main_div, h_main_mul]
   ring
 
@@ -278,7 +278,7 @@ private lemma divu_chain_eqs_claimed_dead
     ∧ (arow.carries.carry_6 = 0) := by
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named,
-             vOfMulwRow, h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
+             h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
   have h_fab : arow.carries.fab = (1 : FGL) := by linear_combination h6
   have h_nafb : arow.carries.na_fb = (0 : FGL) := by linear_combination h7
   have h_nbfa : arow.carries.nb_fa = (0 : FGL) := by linear_combination h8
@@ -286,7 +286,7 @@ private lemma divu_chain_eqs_claimed_dead
              mul_constraint_33_named, mul_constraint_34_named,
              mul_constraint_35_named, mul_constraint_36_named,
              mul_constraint_37_named, mul_constraint_38_named,
-             vOfMulwRow, h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero, mul_one, one_mul]
     at h31 h32 h33 h34 h35 h36 h37 h38
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -342,8 +342,8 @@ private lemma divu_carry_bounds_claimed_dead
   -- Normalize the chunk/carry hypotheses from the `vOfDivuRow` view to the bare
   -- `arow.chunks.*` / `arow.carries.*` form, so `omega` and
   -- `unsigned_carry_step_nat` see the same atoms as the chunk equations.
-  simp only [vOfDivuRow] at ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hc0 hc1 hc2 hc3 hd0 hd1 hd2 hd3
-  simp only [vOfDivuRow] at hs0 hs1 hs2 hs3 hs4 hs5 hs6
+  simp only [] at ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hc0 hc1 hc2 hc3 hd0 hd1 hd2 hd3
+  simp only [] at hs0 hs1 hs2 hs3 hs4 hs5 hs6
   -- Each step: bound the accumulated column value `N` below `983040·2^16` and
   -- apply `unsigned_carry_step_nat`.  Chunk `.val`s are `< 65536` and `d`-lanes
   -- add at most one more `< 65536` term; the carry-in is `< 983041` by induction.
@@ -441,7 +441,7 @@ private lemma divu_carry_bounds_claimed_dead
     `main_request_divu_provided`.
     Mirrors `mulwArow`. -/
 noncomputable def divuArow
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :
@@ -648,7 +648,7 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
     intro h_zero
     have : ZiskFv.PackedBitVec.MulNoWrap.packed4 (arow.chunks.d_0).val (arow.chunks.d_1).val
           (arow.chunks.d_2).val (arow.chunks.d_3).val < 0 := by
-      simpa [h_zero] using h_d_lt_b
+      simp [h_zero] at h_d_lt_b
     omega
   -- ============ DISCHARGE h_byte_lo / h_byte_hi (quotient a-lanes) ============
   obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
@@ -669,8 +669,8 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
       (by
         -- c46 (ArithDiv form) from the ArithMul-view C46Spec on the same row.
         simp only [ZiskFv.AirsClean.ArithMul.C46Spec,
-          ZiskFv.Airs.ArithMul.mul_constraint_46_named] at h_c46
-        simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div, vOfDivuRow]
+          ] at h_c46
+        simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div]
         linear_combination h_c46)
       h_sext h_m32 h_main_mul_arow h_main_div_arow
   have h_byte_hi_to_c1 : (byteAt e2 4).val + (byteAt e2 5).val * 256

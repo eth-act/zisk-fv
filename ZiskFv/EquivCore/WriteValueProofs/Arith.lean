@@ -426,10 +426,10 @@ private lemma byte_sum_from_chain_lane_match
     (h_match_chi : m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)
     (h_lo_match : m.c_0 r_main = memory_entry_lo e2)
     (h_hi_match : m.c_1 r_main = memory_entry_hi e2)
-    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
-    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
-    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
-    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
+    (_h_e2_0 : (byteAt e2 0).val < 256) (_h_e2_1 : (byteAt e2 1).val < 256)
+    (_h_e2_2 : (byteAt e2 2).val < 256) (_h_e2_3 : (byteAt e2 3).val < 256)
+    (_h_e2_4 : (byteAt e2 4).val < 256) (_h_e2_5 : (byteAt e2 5).val < 256)
+    (_h_e2_6 : (byteAt e2 6).val < 256) (_h_e2_7 : (byteAt e2 7).val < 256)
     (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
     (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256) :
     (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216

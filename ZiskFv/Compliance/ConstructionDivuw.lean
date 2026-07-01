@@ -146,7 +146,7 @@ private lemma divuw_chain_eqs_claimed_dead
     ∧ (arow.carries.carry_6 = 0) := by
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named,
-             vOfMulwRow, h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
+             h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
   have h_fab : arow.carries.fab = (1 : FGL) := by linear_combination h6
   have h_nafb : arow.carries.na_fb = (0 : FGL) := by linear_combination h7
   have h_nbfa : arow.carries.nb_fa = (0 : FGL) := by linear_combination h8
@@ -154,7 +154,7 @@ private lemma divuw_chain_eqs_claimed_dead
              mul_constraint_33_named, mul_constraint_34_named,
              mul_constraint_35_named, mul_constraint_36_named,
              mul_constraint_37_named, mul_constraint_38_named,
-             vOfMulwRow, h_na, h_nb, h_np, h_nr, h_div, h_fab, h_nafb, h_nbfa,
+             h_na, h_nb, h_np, h_nr, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero, mul_one, one_mul]
     at h31 h32 h33 h34 h35 h36 h37 h38
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -206,8 +206,8 @@ private lemma divuw_carry_bounds_claimed_dead
           hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩ := h_chunks
   obtain ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6⟩ := h_csgn
   obtain ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ := heqs
-  simp only [vOfDivuRow] at ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hc0 hc1 hc2 hc3 hd0 hd1 hd2 hd3
-  simp only [vOfDivuRow] at hs0 hs1 hs2 hs3 hs4 hs5 hs6
+  simp only [] at ha0 ha1 ha2 ha3 hb0 hb1 hb2 hb3 hc0 hc1 hc2 hc3 hd0 hd1 hd2 hd3
+  simp only [] at hs0 hs1 hs2 hs3 hs4 hs5 hs6
   have b0 : (arow.carries.carry_0).val < 983041 := by
     refine unsigned_carry_step_nat_claimed_dead
       ((arow.chunks.a_0).val * (arow.chunks.b_0).val + (arow.chunks.d_0).val)
@@ -302,7 +302,7 @@ private lemma divuw_carry_bounds_claimed_dead
     `main_request_divuw_provided`.
     Mirrors `divuArow`. -/
 noncomputable def divuwArow
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
       (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
     (h_main_op :

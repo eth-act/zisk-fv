@@ -141,7 +141,7 @@ noncomputable def busSt
 /-- The Main row provenance at trace index `i`: `mainRowWithRomSt`'s `.core`
     equals the honest `rowAt (mainOfTable …) i`. Shared by all four stores. -/
 theorem mainRowWithRomSt_core
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) :
     (mainRowWithRomSt trace i).core =
       ZiskFv.AirsClean.Main.rowAt
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
