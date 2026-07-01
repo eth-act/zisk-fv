@@ -152,4 +152,60 @@ theorem readAgreement_of_lastSameAddrWrite
 
 #print axioms readAgreement_of_lastSameAddrWrite
 
+/-! ## Phase B — Fin-indexed fold + range split for the real trace.
+
+The live `binding : SailTrace n = Fin n → SailState` is Fin-indexed, so `exec_order_fold` (ℕ-indexed)
+needs a Fin-aware sibling. And the load's single memory row sits at a clean `flatMap` boundary of the
+full execution-order row list, so the evidence's existential `rows` split is a `List.range` split. -/
+
+/-- Fin-indexed execution-order fold: the Sail memory at instruction `i` is the replay of every
+strictly-earlier instruction's memory rows, from the boot memory. -/
+theorem exec_order_fold_fin
+    {n : ℕ} (binding : Fin n → SailState)
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h0 : 0 < n)
+    (h_boot : (binding ⟨0, h0⟩).mem = initialMemory)
+    (h_step : ∀ (j : ℕ) (h : j + 1 < n),
+        (binding ⟨j + 1, h⟩).mem
+          = replayMemoryAfterBusRows (binding ⟨j, Nat.lt_of_succ_lt h⟩).mem (rowsOf j)) :
+    ∀ (i : Fin n),
+      (binding i).mem
+        = replayMemoryAfterBusRows initialMemory ((List.range i.val).flatMap rowsOf) := by
+  suffices H : ∀ iv (hi : iv < n),
+      (binding ⟨iv, hi⟩).mem
+        = replayMemoryAfterBusRows initialMemory ((List.range iv).flatMap rowsOf) by
+    intro i; simpa using H i.val i.isLt
+  intro iv
+  induction iv with
+  | zero => intro hi; simpa using h_boot
+  | succ k ih =>
+      intro hi
+      have hk : k < n := Nat.lt_of_succ_lt hi
+      rw [h_step k hi, ih hk, List.range_succ, List.flatMap_append]
+      simp
+
+#print axioms exec_order_fold_fin
+
+/-- The full execution-order row list splits at instruction `i` whose memory row list is a single
+entry: everything before `i`, then that entry, then the rest. Used to instantiate the evidence's
+existential `rows`/`priorRows`/`laterRows` at the load's read. -/
+theorem exists_flatMap_range_split_of_singleton
+    {n : ℕ} (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (i : ℕ) (hi : i < n) (entry : MemoryBusEntry FGL)
+    (h_row : rowsOf i = [entry]) :
+    ∃ laterRows,
+      (List.range n).flatMap rowsOf
+        = (List.range i).flatMap rowsOf ++ entry :: laterRows := by
+  refine ⟨((List.range (n - (i + 1))).map (fun x => i + 1 + x)).flatMap rowsOf, ?_⟩
+  have hn : n = (i + 1) + (n - (i + 1)) := by omega
+  have hsplit :
+      List.range n = List.range i ++ i :: (List.range (n - (i + 1))).map (fun x => i + 1 + x) := by
+    conv_lhs => rw [hn, List.range_add, List.range_succ]
+    simp [List.append_assoc]
+  rw [hsplit, List.flatMap_append, List.flatMap_cons, h_row]
+  simp
+
+#print axioms exists_flatMap_range_split_of_singleton
+
 end ZiskFv.ZiskCircuit.MemTimeline.TraceMemDerivation
