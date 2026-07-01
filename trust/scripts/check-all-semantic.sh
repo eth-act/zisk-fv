@@ -54,25 +54,35 @@ run_witnesses() {
   return $ok
 }
 
-run "1/14 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
-run "2/14 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
-run "3/14 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
-run "4/14 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
-run "5/14 strong-export axiom closure (V2)" "$dir/check-strong-export-closure.sh"
-run "6/14 strong-export binders + forbidden types (V2)" "$dir/check-strong-export-binders.sh"
-run "7/14 consistency false probe rejected" reject_false_probe
-run "8/14 Sail memory timeline witness" \
+run_root_soundness_instantiations() {
+  local ok=0
+  for f in trust/consistency/root_soundness_instantiation_*.lean; do
+    [ -e "$f" ] || continue
+    run_lean_no_sorry "$f" || ok=1
+  done
+  return $ok
+}
+
+run "1/15 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
+run "2/15 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
+run "3/15 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
+run "4/15 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
+run "5/15 strong-export axiom closure (V2)" "$dir/check-strong-export-closure.sh"
+run "6/15 strong-export binders + forbidden types (V2)" "$dir/check-strong-export-binders.sh"
+run "7/15 consistency false probe rejected" reject_false_probe
+run "8/15 Sail memory timeline witness" \
   run_lean_no_sorry trust/consistency/load_byte_agreement_witness.lean
-run "9/14 memory timeline construction witness" \
+run "9/15 memory timeline construction witness" \
   run_lean_no_sorry trust/consistency/memory_timeline_construction_witness.lean
-run "10/14 memory prefix alignment witness" \
+run "10/15 memory prefix alignment witness" \
   run_lean_no_sorry trust/consistency/memory_prefix_alignment_witness.lean
-run "11/14 global ADD theorem instantiation" \
+run "11/15 global ADD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_add.lean
-run "12/14 global LD theorem instantiation" \
+run "12/15 global LD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_ld.lean
-run "13/14 Clean completeness witnesses" run_witnesses
-run "14/14 Aeneas extraction-pin raw axiom closure (V2)" \
+run "13/15 root_soundness instantiation witnesses" run_root_soundness_instantiations
+run "14/15 Clean completeness witnesses" run_witnesses
+run "15/15 Aeneas extraction-pin raw axiom closure (V2)" \
   "$dir/check-extraction-closure.sh"
 
 if [ $overall -eq 0 ]; then

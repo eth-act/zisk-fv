@@ -157,7 +157,8 @@ import ZiskFv.Compliance.ConstructionLoad
 import ZiskFv.Compliance.ConstructionBranch
 import ZiskFv.Compliance.ConstructionJump
 import ZiskFv.Compliance.TraceLevelExport
-import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
+import ZiskFv.Compliance
+import ZiskFv.Compliance.EnsembleWitnessBuilder.TraceLevelExport.RomDecodeBinding
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBindingOps
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance
