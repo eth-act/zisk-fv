@@ -124,4 +124,32 @@ theorem loadEvidence_of_execOrder
 
 #print axioms loadEvidence_of_execOrder
 
+/-! ## Step 1 (Phase B) — single-address read agreement from the last same-address write.
+
+The read-soundness `loadEvidence_of_execOrder` needs — `ReadEventReplayAgreement (replay im rows) entry`
+for the execution-order rows — reduces to: the last active write to the read's address matches the
+read's value, and every row after it is byte-disjoint from the read. This is the projection that lets
+us reuse the Mem AIR's read-soundness in execution order without a whole-map permutation argument. -/
+theorem readAgreement_of_lastSameAddrWrite
+    (im : Std.ExtHashMap Nat (BitVec 8))
+    (before after : List (MemoryBusEntry FGL))
+    (writeEntry entry : MemoryBusEntry FGL)
+    (h_write_as : writeEntry.as = (2 : FGL)) (h_write_mult : writeEntry.multiplicity = (1 : FGL))
+    (h_ptr : entry.ptr = writeEntry.ptr)
+    (h_v0 : entry.value_0 = writeEntry.value_0) (h_v1 : entry.value_1 = writeEntry.value_1)
+    (h_after_disjoint : ∀ row ∈ after, MemoryBusEntryByteDisjoint entry row) :
+    ReadEventReplayAgreement
+      (replayMemoryAfterBusRows im (before ++ writeEntry :: after)) (eventOfEntry entry) := by
+  rw [replayMemoryAfterBusRows_append]
+  show ReadEventReplayAgreement
+    (replayMemoryAfterBusRows
+      (replayMemoryAfterBusRow (replayMemoryAfterBusRows im before) writeEntry) after)
+    (eventOfEntry entry)
+  rw [replayMemoryAfterBusRow, if_pos h_write_as, if_pos h_write_mult,
+    replayStoreEvent_storeEventOfEntry]
+  refine readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint ?_ h_after_disjoint
+  exact readEventReplayAgreement_of_writeMemoryOfEntry_same _ h_ptr h_v0 h_v1
+
+#print axioms readAgreement_of_lastSameAddrWrite
+
 end ZiskFv.ZiskCircuit.MemTimeline.TraceMemDerivation
