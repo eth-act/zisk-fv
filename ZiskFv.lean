@@ -161,6 +161,7 @@ import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBindingOps
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance
+import ZiskFv.Compliance.EnsembleWitnessBuilder
 -- In-build per-opcode static decode/row-mode pin discharge from the real
 -- Aeneas-extracted ZisK lowerer (eth-act/zisk-fv#111). Standalone; not yet
 -- wired into root_soundness. Per-theorem collectAxioms keeps the aeneas runtime
