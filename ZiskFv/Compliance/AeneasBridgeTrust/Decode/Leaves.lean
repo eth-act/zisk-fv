@@ -225,7 +225,7 @@ theorem bind_supported {m : Result DecodedRv64im} {op : RiscvOpcode}
 theorem decode_i_false_spec (inst : Std.U32) (op : RiscvOpcode) :
     decode_i inst op false ⦃ d => d.opcode = op ⦄ := by
   rw [decode_i]
-  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, 
+  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift,
     Bool.false_eq_true, if_false]
   step*
   rw [i7_post1, Nat.shiftRight_eq_div_pow]
@@ -235,7 +235,7 @@ theorem decode_i_false_spec (inst : Std.U32) (op : RiscvOpcode) :
 theorem decode_i_true_spec (inst : Std.U32) (op : RiscvOpcode) :
     decode_i inst op true ⦃ d => d.opcode = op ⦄ := by
   rw [decode_i]
-  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, 
+  simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift,
     if_true]
   step*
   rw [i7_post1, Nat.shiftRight_eq_div_pow]

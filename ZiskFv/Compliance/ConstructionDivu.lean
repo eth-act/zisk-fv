@@ -195,7 +195,7 @@ theorem divu_row_constraints_of_arithMul_fullSpec
   · simp only [ZiskFv.Airs.ArithDiv.carry_eq_5_div]; linear_combination hc36
   · simp only [ZiskFv.Airs.ArithDiv.carry_eq_6_div]; linear_combination hc37
   · simp only [ZiskFv.Airs.ArithDiv.carry_eq_7_div]; linear_combination hc38
-  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div, 
+  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div,
       ZiskFv.AirsClean.ArithMul.C46Spec,
       ] at h_c46 ⊢
     linear_combination h_c46
@@ -219,7 +219,7 @@ theorem primaryOpBusMessage_toEntry_eq_opBus_row_ArithDiv
       ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv (vOfDivuRow arow) 0 := by
   simp only [ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
     ZiskFv.AirsClean.ArithMul.primaryOpBusMessage,
-    ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv, 
+    ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv,
     h_div, h_main_div, h_main_mul]
   ring
 

@@ -106,7 +106,7 @@ theorem primaryOpBusMessage_toEntry_eq_opBus_row_ArithDivSecondary
       ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary (vOfDivuRow arow) 0 := by
   simp only [ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
     ZiskFv.AirsClean.ArithMul.primaryOpBusMessage,
-    ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary, 
+    ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary,
     h_div, h_main_div, h_main_mul]
   ring
 
