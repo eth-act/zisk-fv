@@ -61,4 +61,67 @@ theorem store_bus_effect_mem
 
 #print axioms store_bus_effect_mem
 
+/-! ## Step 3 (crux) — the execution-order fold.
+
+The load evidence existentially quantifies its row list `rows`, so we are free to take it in
+**execution order** — the per-instruction memory-bus rows concatenated by instruction index — rather
+than the Mem AIR's address-major sort. In execution order the whole-map alignment
+`(binding i).mem = replay(initialMemory, rows-before-i)` is not only satisfiable but *forced* by a
+single named per-step premise: that each Sail step's memory is the replay of that instruction's
+memory-bus rows onto the previous step's memory. Given that premise (`h_step`, the mem-projected
+execution-successor) and the boot seed (`h_boot`), the alignment is a one-line induction. -/
+theorem exec_order_fold
+    (binding : ℕ → SailState)
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h_boot : (binding 0).mem = initialMemory)
+    (h_step : ∀ j, (binding (j + 1)).mem
+        = replayMemoryAfterBusRows (binding j).mem (rowsOf j)) :
+    ∀ i, (binding i).mem
+        = replayMemoryAfterBusRows initialMemory ((List.range i).flatMap rowsOf) := by
+  intro i
+  induction i with
+  | zero => simpa using h_boot
+  | succ k ih =>
+      rw [h_step k, ih, List.range_succ, List.flatMap_append]
+      simp
+
+#print axioms exec_order_fold
+
+/-! ## Step 4 (crux, end-to-end) — the fold discharges the load evidence.
+
+Composing `exec_order_fold` with `CoherenceSpike.loadEvidence_of_loadMemReplay`: for a load at
+execution position `i` whose read row sits after the execution-order prefix `(range i).flatMap rowsOf`,
+the full `LoadMemoryTimelineCoherenceEvidence` is discharged from the named boot seed + execution-
+successor premise, the trace's read-soundness over the execution-order rows, and the structural fact
+that the load's read row is at position `i`. This CLOSES the crux modulo exactly:
+* `h_boot`, `h_step` — the named boot seed + mem-projected execution-successor (the honest external
+  trust, to become the new `root_soundness` binder);
+* `prefixReadSound` over the execution-order rows — the read-soundness reconciliation (Phase-B
+  plumbing: reconcile the Mem AIR's address-major read-soundness with execution order);
+* `h_rows_split` — the load's read row is at execution position `i` (a structural trace fact). -/
+theorem loadEvidence_of_execOrder
+    (binding : ℕ → SailState)
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h_boot : (binding 0).mem = initialMemory)
+    (h_step : ∀ j, (binding (j + 1)).mem
+        = replayMemoryAfterBusRows (binding j).mem (rowsOf j))
+    (i : ℕ) (entry : MemoryBusEntry FGL) (laterRows rows : List (MemoryBusEntry FGL))
+    (h_rows_split : rows = (List.range i).flatMap rowsOf ++ entry :: laterRows)
+    (h_readSound : MemoryBusRowsPrefixReadSound initialMemory rows) :
+    ZiskFv.Compliance.LoadMemoryTimelineCoherenceEvidence (binding i) entry := by
+  refine CoherenceSpike.loadEvidence_of_loadMemReplay
+    (initialState := binding 0)
+    (facts :=
+      { initialMemory := initialMemory
+        prefixReadSound := h_readSound
+        initialAgreement := fun addr => by rw [h_boot] })
+    (priorRows := (List.range i).flatMap rowsOf) (laterRows := laterRows)
+    h_rows_split ?_
+  -- h_load_mem : (binding i).mem = replay initialMemory ((range i).flatMap rowsOf)
+  exact exec_order_fold binding initialMemory rowsOf h_boot h_step i
+
+#print axioms loadEvidence_of_execOrder
+
 end ZiskFv.ZiskCircuit.MemTimeline.TraceMemDerivation
