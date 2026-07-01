@@ -254,6 +254,31 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
   | .lw c => Inputs_lw ziskTrace sailTrace i c
   | .fence c => Inputs_fence ziskTrace sailTrace i c
 
+/-- The per-op memory-coherence residual each memory `stepStrong_<op>` core
+    consumes, dispatched by op-kind: the load memory-timeline evidence for the
+    seven loads, the sub-doubleword RMW evidence for `sb`/`sh`/`sw`, and `True`
+    for every non-memory op (and `sd`, a full-doubleword store that overwrites the
+    whole lane).  A single seed-derived value of this type is threaded through
+    `stepSound_of_evidence` in place of the ten former per-op `Inputs_<op>` memory
+    fields — see `BootSegmentMemorySeed` / `memEvidence_of_bootSeed`. -/
+def MemoryOpEvidenceFor
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _ =>
+      LoadMemoryTimelineCoherenceEvidence (sailTrace i)
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  | .sb _ =>
+      StoreRmwMemoryCoherenceEvidence (sailTrace i)
+        (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2 1
+  | .sh _ =>
+      StoreRmwMemoryCoherenceEvidence (sailTrace i)
+        (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2 2
+  | .sw _ =>
+      StoreRmwMemoryCoherenceEvidence (sailTrace i)
+        (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2 4
+  | _ => True
+
 
 
 /-- Per-row known-defect exclusion obligation, stated over the accepted ZisK row
