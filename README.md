@@ -145,13 +145,13 @@ artifacts export those facts into main Lake.
 | `nix/`, `flake.nix`, `flake.lock` | Reproducible build definitions and pinned upstream inputs.                                              |
 | `zisk/`                           | ZisK source submodule for the Aeneas extraction branch, based on the same upstream `v0.17.0` revision as the flake-pinned ZisK input. |
 
-## Proof-Generation Map
+## Extraction Pipeline Map
 
 This map follows the ZisK product path from an ELF and inputs to a
-verifier-accepted proof, then marks how `zisk-fv` treats each link. The formal
-claim currently stops at link 7: an accepted modeled RV64IM circuit/AIR
-transition implies a Sail-valid RISC-V transition. Links 8-10 are shown for
-orientation only. Aeneas covers link 2's production Rust RV64IM decode/lower
+verifier-accepted proof, then marks how `zisk-fv` treats each step. The formal
+claim currently stops at step 7: an accepted modeled RV64IM circuit/AIR
+transition implies a Sail-valid RISC-V transition. Steps 8-10 are shown for
+orientation only. Aeneas covers step 2's production Rust RV64IM decode/lower
 surface, not the full executor trace-generation loop.
 
 ```text
@@ -168,15 +168,15 @@ surface, not the full executor trace-generation loop.
                     --10--> [10] verifier or contract acceptance
 ```
 
-| Link | Classification | `zisk-fv` status |
-| ---: | --- | --- |
-| 1 | Out of scope | ELF loading, ROM setup, and input plumbing are not proved by the current theorem. |
-| 2 | Extracted, with visible residual bridge assumptions | Aeneas extracts the production Rust RV64IM decode/lower wrapper surface over `Riscv2ZiskContext::lower_rv64im_single_row`; generated row-shape facts are checked by the harness and partially imported into main Lake. Remaining dynamic bridge facts are still exposed through `env.aeneasBridgeTrust`. |
-| 3 | Out of scope | The full executor loop that turns a ROM/input execution into a complete trace or minimal trace is not currently extracted/proved. The theorem starts from rows/traces satisfying the modeled circuit obligations; Aeneas contributes the link-2 row-shape surface. |
-| 4 | Out of scope for generator completeness | Witness generation is not proved complete. Generated/full-ensemble artifacts model and consume witness facts where available, but the theorem does not prove that the production generator always produces them. |
-| 5 | Extracted, with trusted extraction premise | `nix run .#populate` produces `build/zisk.pilout` and `build/extraction/Extraction/*.lean` from flake-pinned ZisK/PIL inputs via `tools/pil-extract`; the readable Clean models under `ZiskFv/AirsClean/` wrap this circuit surface. |
-| 6 | Extracted, with trusted extraction premise | The accepted circuit/AIR transition is the Lean-facing model of the ZisK RV64IM circuit constraints. Faithfulness of the ZisK circuit-to-Lean extraction is part of the stated trusted base. |
-| 7 | Proven in Lean, relying on trusted/extracted specs | `lake build` checks `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The Sail side comes from flake-pinned Sail and sail-riscv sources compiled to Lean under `build/sail-lean/`, whose extraction is trusted. |
-| 8 | Out of scope | STARK proof generation, polynomial commitments, and proofman internals are not modeled by `zisk-fv`. |
-| 9 | Out of scope | Recursive compression, aggregation, and proof-format wrapping are not modeled by `zisk-fv`. |
-| 10 | Out of scope | Native verifiers, on-chain contracts, and verifier-key management are outside the current formal claim. |
+| Step (#) | Scope (soundness; completeness; both) | Status (done; partial; not started) | Ref (single file link or empty) | Notes (all other info) |
+| ---: | --- | --- | --- | --- |
+| 1 | completeness | not started | | ELF loading, ROM setup, and input plumbing are not proved by the current theorem. |
+| 2 | both | partial | [script](scripts/aeneas-production-extract.sh) | Aeneas extracts the production Rust RV64IM decode/lower wrapper surface over `Riscv2ZiskContext::lower_rv64im_single_row`; generated row-shape facts are checked by the harness and partially imported into main Lake. Remaining dynamic bridge facts are still exposed through `env.aeneasBridgeTrust`. |
+| 3 | completeness | not started | | The full executor loop that turns a ROM/input execution into a complete trace or minimal trace is not currently extracted/proved. The theorem starts from rows/traces satisfying the modeled circuit obligations; Aeneas contributes the step-2 row-shape surface. |
+| 4 | completeness | partial | | Witness generation is not proved complete. Generated/full-ensemble artifacts model and consume witness facts where available, but the theorem does not prove that the production generator always produces them. |
+| 5 | both | partial | [notes](docs/extraction/extractor-notes.md) | `nix run .#populate` produces `build/zisk.pilout` and `build/extraction/Extraction/*.lean` from flake-pinned ZisK/PIL inputs via `tools/pil-extract`; the readable Clean models under `ZiskFv/AirsClean/` wrap this circuit surface. |
+| 6 | soundness | partial | [trust](trust/trusted-base.md) | The accepted circuit/AIR transition is the Lean-facing model of the ZisK RV64IM circuit constraints. Faithfulness of the ZisK circuit-to-Lean extraction is part of the stated trusted base. |
+| 7 | soundness | done | [theorem](ZiskFv/Compliance.lean) | `lake build` checks `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The Sail side comes from flake-pinned Sail and sail-riscv sources compiled to Lean under `build/sail-lean/`, whose extraction is trusted. |
+| 8 | soundness | not started | | STARK proof generation, polynomial commitments, and proofman internals are not modeled by `zisk-fv`. |
+| 9 | soundness | not started | | Recursive compression, aggregation, and proof-format wrapping are not modeled by `zisk-fv`. |
+| 10 | soundness | not started | | Native verifiers, on-chain contracts, and verifier-key management are outside the current formal claim. |
