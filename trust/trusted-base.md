@@ -390,7 +390,10 @@ lists the concrete register MemBus messages for the minimal no-prelude real
 register witness `add x1,x1,x1`: x1's boot/read/read/write/reload timeline plus
 the idle boot/reload zero pairs for tracked registers x2..x31. It proves that
 every listed message appears once as a pull and once as a push, so the register
-MemBus contribution balances. The semantic trust gate discovers the wrapper
+MemBus contribution balances. This is an explicit-message telescoping artifact;
+it does not yet extract the register messages from real ensemble rows or
+construct a trace-level `BalancedChannels` witness, which is the #219 follow-up.
+The semantic trust gate discovers the wrapper
 `trust/consistency/register_mem_bus_add_x1_x1_x1.lean`; its axiom closure is
 kernel-only (`propext`, `Classical.choice`, `Quot.sound`) and adds no project
 axioms.
