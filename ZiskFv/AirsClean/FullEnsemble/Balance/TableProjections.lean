@@ -61,7 +61,12 @@ def zeroMainRowWithRom : ZiskFv.AirsClean.Main.MainRowWithRom FGL where
     addr0 := 0
     addr1 := 0
     addr2 := 0
-    main_step := 0 }
+    main_step := 0
+    a_reg_prev_mem_step := 0
+    b_reg_prev_mem_step := 0
+    store_reg_prev_mem_step := 0
+    store_reg_prev_value_0 := 0
+    store_reg_prev_value_1 := 0 }
 
 /-- Project row `row` of a concrete Clean Main table to its unified Main+ROM
     row input. Out-of-range rows use `zeroMainRowWithRom` only to keep the

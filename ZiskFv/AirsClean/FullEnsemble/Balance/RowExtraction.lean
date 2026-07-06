@@ -130,9 +130,74 @@ theorem main_op_row_eval_mem_interactionsWith
     h_singleton]
   exact ⟨row, h_row, rfl⟩
 
+/-- The six row-local Main memory-bus interactions exposed by the unified
+    component: previous-register pushes interleaved with current-access pulls. -/
+@[reducible]
+def MainMemBusRowInteractionEval
+    {length : ℕ} (program : Program length)
+    (table : Table FGL) (row : Array FGL) (interaction : Interaction FGL) : Prop :=
+  interaction =
+      ((MemBusChannel.emitted
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.rom.a_src_reg
+        (ZiskFv.AirsClean.Main.aRegPreMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).toRaw).eval
+        (table.environment row)
+    ∨ interaction =
+      ((MemBusChannel.emitted
+        (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_reg))
+        (ZiskFv.AirsClean.Main.aMemMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).toRaw).eval
+        (table.environment row)
+    ∨ interaction =
+      ((MemBusChannel.emitted
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.rom.b_src_reg
+        (ZiskFv.AirsClean.Main.bRegPreMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).toRaw).eval
+        (table.environment row)
+    ∨ interaction =
+      ((MemBusChannel.emitted
+        (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_ind
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_reg))
+        (ZiskFv.AirsClean.Main.bMemMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).toRaw).eval
+        (table.environment row)
+    ∨ interaction =
+      ((MemBusChannel.emitted
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar.rom.store_reg
+        (ZiskFv.AirsClean.Main.cRegPreMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).toRaw).eval
+        (table.environment row)
+    ∨ interaction =
+      ((MemBusChannel.emitted
+        (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_mem
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_ind
+          + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_reg))
+        (ZiskFv.AirsClean.Main.cMemMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).toRaw).eval
+        (table.environment row)
+
 /-- Row extraction for the unified Main memory-bus interactions in the full
-    ensemble. Main exposes three memory interactions (`a`, `b`, and
-    `c/store`), so the result keeps that side disjunction explicit. -/
+    ensemble. Main exposes six row-local memory interactions, so the result
+    keeps the side disjunction behind `MainMemBusRowInteractionEval`. -/
 theorem exists_main_mem_row_eval_of_interaction_mem
     {length : ℕ} {program : Program length}
     {table : Table FGL}
@@ -142,49 +207,14 @@ theorem exists_main_mem_row_eval_of_interaction_mem
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
     ∃ row ∈ table.table,
-      interaction =
-          ((MemBusChannel.emitted
-            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.a_src_mem
-              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.a_src_reg))
-            (ZiskFv.AirsClean.Main.aMemMessageExpr
-              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar)).toRaw).eval
-            (table.environment row)
-        ∨ interaction =
-          ((MemBusChannel.emitted
-            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.b_src_mem
-              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.b_src_ind
-              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.b_src_reg))
-            (ZiskFv.AirsClean.Main.bMemMessageExpr
-              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar)).toRaw).eval
-            (table.environment row)
-        ∨ interaction =
-          ((MemBusChannel.emitted
-            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.store_mem
-              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.store_ind
-              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar.rom.store_reg))
-            (ZiskFv.AirsClean.Main.cMemMessageExpr
-              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                length program).rowInputVar)).toRaw).eval
-            (table.environment row) := by
+      MainMemBusRowInteractionEval program table row interaction := by
   have h_interactions :=
     ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus
       length program
   simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
     h_component, h_interactions] at h_mem
-  rcases h_mem with ⟨row, h_row, h_eq | h_eq | h_eq⟩
-  · exact ⟨row, h_row, Or.inl h_eq⟩
-  · exact ⟨row, h_row, Or.inr (Or.inl h_eq)⟩
-  · exact ⟨row, h_row, Or.inr (Or.inr h_eq)⟩
+  rcases h_mem with ⟨row, h_row, h_eval⟩
+  exact ⟨row, h_row, h_eval⟩
 
 /-- Row extraction for a BinaryAdd operation-bus provider interaction in the
     full ensemble. -/
