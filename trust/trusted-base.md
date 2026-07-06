@@ -371,35 +371,6 @@ seed memory, with the post-store cursor state differing from the initial state i
 `regs` **and** `cycleCount` (`witnessStore_nondegenerate`), so it is not the
 frozen-state floor. Both depend on kernel axioms only.
 
-### Register MemBus balance (`MEMORY_REG_OP`) — #225 constructibility slice
-
-The Clean Main component now models the row-local register-consistency emissions
-that real ZisK sends on the shared MemBus: for `a`, `b`, and `store` register
-accesses, Main emits the previous register access as a `MEMORY_REG_OP`
-push-prev message in addition to the existing current-access pull. These are
-PIL-backed fidelity emissions, not a new trust premise and not a new AIR or Mem
-component behavior.
-
-The boot and reload ends of the register chain remain boundary-shaped terms:
-ZisK's boot `global_init_mem` contributes the step-0 zero register pulls, while
-the per-segment reload contributes the final register pushes. Those are not
-modeled as ordinary per-row Main-table emissions. Instead, the checked
-constructibility artifact
-`ZiskFv.Compliance.RegisterMemBusBalance.addX1X1X1_registerMemBus_balanced`
-lists the concrete register MemBus messages for the minimal no-prelude real
-register witness `add x1,x1,x1`: x1's boot/read/read/write/reload timeline plus
-the idle boot/reload zero pairs for tracked registers x2..x31. It proves that
-every listed message appears once as a pull and once as a push, so the register
-MemBus contribution balances. The semantic trust gate discovers the wrapper
-`trust/consistency/register_mem_bus_add_x1_x1_x1.lean`; its axiom closure is
-kernel-only (`propext`, `Classical.choice`, `Quot.sound`) and adds no project
-axioms.
-
-This slice does **not** claim register/memory access-ordering soundness. The
-monotone previous-step range checks are range/table obligations, not MemBus
-channel messages, and their full composition remains on the #169/#19
-range-fidelity axis.
-
 ## Platform Profile
 
 There are no project axioms for the current platform profile. PMP, PMA,

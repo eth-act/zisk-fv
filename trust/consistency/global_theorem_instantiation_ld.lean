@@ -156,12 +156,7 @@ private def ldMainFree : MainRomFreeCols :=
     b_1 := 0
     im_high_degree_2 := 0
     segment_l1 := 0
-    main_step := 0
-    a_reg_prev_mem_step := 0
-    b_reg_prev_mem_step := 0
-    store_reg_prev_mem_step := 0
-    store_reg_prev_value_0 := 0
-    store_reg_prev_value_1 := 0 }
+    main_step := 0 }
 
 private def ldMainRow : MainRowWithRom FGL :=
   mainRomRowOf ldRomMessage ldRomBits .internalCopyB ldMainFree
@@ -231,12 +226,7 @@ private def ldMainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
         addr0 := .const ldMainRow.rom.addr0
         addr1 := .const ldMainRow.rom.addr1
         addr2 := .const ldMainRow.rom.addr2
-        main_step := .const ldMainRow.rom.main_step
-        a_reg_prev_mem_step := .const ldMainRow.rom.a_reg_prev_mem_step
-        b_reg_prev_mem_step := .const ldMainRow.rom.b_reg_prev_mem_step
-        store_reg_prev_mem_step := .const ldMainRow.rom.store_reg_prev_mem_step
-        store_reg_prev_value_0 := .const ldMainRow.rom.store_reg_prev_value_0
-        store_reg_prev_value_1 := .const ldMainRow.rom.store_reg_prev_value_1 } }
+        main_step := .const ldMainRow.rom.main_step } }
 
 private def ldMemRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL :=
   ZiskFv.AirsClean.Mem.constVar ldMemRow

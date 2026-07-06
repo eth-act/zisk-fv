@@ -138,37 +138,13 @@ private def sail : SailTrace 0 := nofun
 
 private def step : ∀ i : Fin 0, ZiskStep trace i := nofun
 
-private def emptySeedState : ZiskFv.ZiskCircuit.MemTrace.SailState :=
-  default
-
-private def emptySeedFacts :
-    ZiskFv.AirsClean.Mem.GeneratedMemReplayFacts emptySeedState [] :=
-  { initialMemory := emptySeedState.mem
-    prefixReadSound := by
-      intro priorRows _row _laterRows h_split _h_as _h_mult
-      cases priorRows <;> simp at h_split
-    initialAgreement := by
-      intro _addr
-      rfl }
-
-private def emptyBootSeed : BootSegmentMemorySeed trace sail step :=
-  { initialState := emptySeedState
-    rows := []
-    facts := emptySeedFacts
-    stateAt := fun _ => emptySeedState
-    h_seed := rfl
-    coherence := trivial
-    placement := by
-      intro i
-      exact i.elim0 }
-
 /-- `root_soundness` applied to a concrete (degenerate) accepted trace. The `Fin 0`
     conclusion is vacuous, but the term genuinely constructs an `AcceptedZiskTrace`
     and feeds it through the headline theorem — witnessing that the object
     `root_soundness` quantifies over is inhabited and accepted. -/
 theorem root_soundness_instantiation_degenerate :
     ∀ i : Fin 0, StepSound trace sail i (step i) :=
-  root_soundness 0 trace sail step nofun nofun emptyBootSeed nofun
+  root_soundness 0 trace sail step nofun nofun nofun
 
 #print axioms root_soundness_instantiation_degenerate
 
