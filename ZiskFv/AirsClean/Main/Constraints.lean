@@ -289,24 +289,20 @@ def mainWithRom (length : ℕ) (program : Program length)
 
 /-! ## T4.0.6 — memory-bus emission extension
 
-`mainWithMemBus` extends `mainWithRom` with the per-row memory-bus
-emissions matching `main.pil:277,284,293,300,316,323`:
+`mainWithMemBus` extends `mainWithRom` with the 3 per-row memory-bus
+consumer emissions matching `main.pil:284,300,323`:
 
-1. **a-side prev** (`main.pil:277-280`) — register previous-access proof.
-2. **a-side current** (`main.pil:284-288`) — register read of rs1 (`a_src_reg`)
+1. **a-side** (`main.pil:284-288`) — register read of rs1 (`a_src_reg`)
    or memory read at `addr0` (`a_src_mem`).
-3. **b-side prev** (`main.pil:293-296`) — register previous-access proof.
-4. **b-side current** (`main.pil:300-305`) — register read of rs2 (`b_src_reg`)
+2. **b-side** (`main.pil:300-305`) — register read of rs2 (`b_src_reg`)
    or memory access at `addr1` (`b_src_mem + b_src_ind`).
-5. **c-side prev** (`main.pil:316-319`) — register previous-access proof.
-6. **c-side current / store** (`main.pil:323-328`) — register write to rd
+3. **c-side / store** (`main.pil:323-328`) — register write to rd
    (`store_reg`) or memory write at `addr2` (`store_mem + store_ind`).
 
-Each `reg_pre_*` PIL macro lowers to `mem_proves` and is modelled as
-`MemBusChannel.emit sel` (producer side). Each `mem_op` PIL macro lowers to
-`permutation_assumes(MEMORY_ID, [mem_op, addr, mem_step, bytes, value_0,
-value_1], sel: …)` and is modelled as `MemBusChannel.emit (-sel)` (consumer
-side) using the unified 6-slot PIL `MemBusMessage`.
+Each `mem_op` PIL macro lowers to a `permutation_assumes(MEMORY_ID,
+[mem_op, addr, mem_step, bytes, value_0, value_1], sel: …)` push.
+Modelled here as a `MemBusChannel.emit` with multiplicity `-sel`
+(consumer side) using the unified 6-slot PIL `MemBusMessage`.
 
 Memory operation codes (`mem.pil:71-73`):
 * `MEMORY_LOAD_OP = 1`
@@ -392,64 +388,25 @@ def cMemMessageExpr (row : Var MainRowWithRom FGL) :
     value_0 := storeValueLoExpr row
     value_1 := storeValueHiExpr row }
 
-/-- a-side register previous-access producer message (`main.pil:277-280`). -/
-@[reducible]
-def aRegPreMessageExpr (row : Var MainRowWithRom FGL) :
-    MemBusMessage (Expression FGL) :=
-  { mem_op := 3
-    ptr := row.rom.a_offset_imm0
-    timestamp := row.rom.a_reg_prev_mem_step
-    width := 8
-    value_0 := row.core.a_0
-    value_1 := row.core.a_1 }
-
-/-- b-side register previous-access producer message (`main.pil:293-296`). -/
-@[reducible]
-def bRegPreMessageExpr (row : Var MainRowWithRom FGL) :
-    MemBusMessage (Expression FGL) :=
-  { mem_op := 3
-    ptr := row.rom.b_offset_imm0
-    timestamp := row.rom.b_reg_prev_mem_step
-    width := 8
-    value_0 := row.core.b_0
-    value_1 := row.core.b_1 }
-
-/-- c-side register previous-access producer message (`main.pil:316-319`). -/
-@[reducible]
-def cRegPreMessageExpr (row : Var MainRowWithRom FGL) :
-    MemBusMessage (Expression FGL) :=
-  { mem_op := 3
-    ptr := row.rom.store_offset
-    timestamp := row.rom.store_reg_prev_mem_step
-    width := 8
-    value_0 := row.rom.store_reg_prev_value_0
-    value_1 := row.rom.store_reg_prev_value_1 }
-
-/-- Main constraints + ROM lookup + row-local memory-bus emissions.
-    Composes `mainWithRom` with the six `MemBusChannel.emit` interactions
-    matching `main.pil:277,284,293,300,316,323`. -/
+/-- Main constraints + ROM lookup + 3 memory-bus consumer emissions.
+    Composes `mainWithRom` with the 3 `MemBusChannel.emit` pushes
+    matching `main.pil:284,300,323`. -/
 @[circuit_norm]
 def mainWithRomAndMemBus (length : ℕ) (program : Program length)
     (row : Var MainRowWithRom FGL) : Circuit FGL Unit := do
   mainWithRom length program row
-  -- a-side register previous-access push (active when a_src_reg).
-  MemBusChannel.emit row.rom.a_src_reg (aRegPreMessageExpr row)
-  -- a-side current pull (active when a_src_mem ∨ a_src_reg).
+  -- a-side push (active when a_src_mem ∨ a_src_reg).
   MemBusChannel.emit (-(row.rom.a_src_mem + row.rom.a_src_reg))
     (aMemMessageExpr row)
-  -- b-side register previous-access push (active when b_src_reg).
-  MemBusChannel.emit row.rom.b_src_reg (bRegPreMessageExpr row)
-  -- b-side current pull (active when b_src_mem ∨ b_src_ind ∨ b_src_reg).
+  -- b-side push (active when b_src_mem ∨ b_src_ind ∨ b_src_reg).
   MemBusChannel.emit (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
     (bMemMessageExpr row)
-  -- c-side register previous-access push (active when store_reg).
-  MemBusChannel.emit row.rom.store_reg (cRegPreMessageExpr row)
-  -- c-side current pull (active when store_mem ∨ store_ind ∨ store_reg).
+  -- c-side push (active when store_mem ∨ store_ind ∨ store_reg).
   MemBusChannel.emit (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
     (cMemMessageExpr row)
 
-/-- Elaborated `mainWithRomAndMemBus` circuit. Exposes the six row-local
-    mem-bus interactions as channel emissions; the ROM lookup is an
+/-- Elaborated `mainWithRomAndMemBus` circuit. Exposes the 3 mem-bus
+    consumer interactions as channel emissions; the ROM lookup is an
     internal `Table.fromStatic` consumer push and does not surface as
     a channel interaction. -/
 @[reducible] def mainWithRomAndMemBusElaborated
@@ -461,23 +418,16 @@ def mainWithRomAndMemBus (length : ℕ) (program : Program length)
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
-      [ MemBusChannel.emitted row.rom.a_src_reg
-          (aRegPreMessageExpr row)
-      , MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
+      [ MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
           (aMemMessageExpr row)
-      , MemBusChannel.emitted row.rom.b_src_reg
-          (bRegPreMessageExpr row)
       , MemBusChannel.emitted (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
           (bMemMessageExpr row)
-      , MemBusChannel.emitted row.rom.store_reg
-          (cRegPreMessageExpr row)
       , MemBusChannel.emitted (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
           (cMemMessageExpr row) ]
   channelsLawful := by
     simp only [circuit_norm, mainWithRomAndMemBus, mainWithRom, main,
       romMessageExpr, romFlagsExpr, romStaticTable,
       aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
-      aRegPreMessageExpr, bRegPreMessageExpr, cRegPreMessageExpr,
       aMemOpExpr, bMemOpExpr, cMemOpExpr,
       storeValueLoExpr, storeValueHiExpr, MemBusChannel]
 
@@ -513,16 +463,10 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
   channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
-      [ MemBusChannel.emitted row.rom.a_src_reg
-          (aRegPreMessageExpr row)
-      , MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
+      [ MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
           (aMemMessageExpr row)
-      , MemBusChannel.emitted row.rom.b_src_reg
-          (bRegPreMessageExpr row)
       , MemBusChannel.emitted (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
           (bMemMessageExpr row)
-      , MemBusChannel.emitted row.rom.store_reg
-          (cRegPreMessageExpr row)
       , MemBusChannel.emitted (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
           (cMemMessageExpr row) ]
     ++ expose OpBusChannel
@@ -532,7 +476,6 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
     simp [circuit_norm, mainWithRomMemAndOpBus, mainWithRomAndMemBus,
       mainWithRom, main, romMessageExpr, romFlagsExpr, romStaticTable,
       aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
-      aRegPreMessageExpr, bRegPreMessageExpr, cRegPreMessageExpr,
       aMemOpExpr, bMemOpExpr, cMemOpExpr,
       storeValueLoExpr, storeValueHiExpr, opBusMessageExpr,
       MemBusChannel, OpBusChannel]

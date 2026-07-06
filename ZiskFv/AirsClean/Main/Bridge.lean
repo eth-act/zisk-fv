@@ -191,33 +191,6 @@ def cMemMessage (row : MainRowWithRom FGL) : MemBusMessage FGL :=
         (row.core.pc + row.core.jmp_offset2 - row.core.c_0) + row.core.c_0
     value_1 := (1 - row.core.store_pc) * row.core.c_1 }
 
-@[reducible]
-def aRegPreMessage (row : MainRowWithRom FGL) : MemBusMessage FGL :=
-  { mem_op := 3
-    ptr := row.rom.a_offset_imm0
-    timestamp := row.rom.a_reg_prev_mem_step
-    width := 8
-    value_0 := row.core.a_0
-    value_1 := row.core.a_1 }
-
-@[reducible]
-def bRegPreMessage (row : MainRowWithRom FGL) : MemBusMessage FGL :=
-  { mem_op := 3
-    ptr := row.rom.b_offset_imm0
-    timestamp := row.rom.b_reg_prev_mem_step
-    width := 8
-    value_0 := row.core.b_0
-    value_1 := row.core.b_1 }
-
-@[reducible]
-def cRegPreMessage (row : MainRowWithRom FGL) : MemBusMessage FGL :=
-  { mem_op := 3
-    ptr := row.rom.store_offset
-    timestamp := row.rom.store_reg_prev_mem_step
-    width := 8
-    value_0 := row.rom.store_reg_prev_value_0
-    value_1 := row.rom.store_reg_prev_value_1 }
-
 theorem eval_aMemMessageExpr
     (env : Environment FGL) (row : Var MainRowWithRom FGL) :
     eval env (aMemMessageExpr row) = aMemMessage (eval env row) := by
@@ -251,39 +224,6 @@ theorem eval_cMemMessageExpr
     ProvableStruct.toComponents, ProvableStruct.eval.go,
     ProvableType.eval_field, Expression.eval]
   repeat constructor <;> simp <;> ring_nf
-
-theorem eval_aRegPreMessageExpr
-    (env : Environment FGL) (row : Var MainRowWithRom FGL) :
-    eval env (aRegPreMessageExpr row) = aRegPreMessage (eval env row) := by
-  rw [MemBusMessage.mk.injEq]
-  simp only [aRegPreMessageExpr,
-    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-    ProvableStruct.fromComponents, ProvableStruct.components,
-    ProvableStruct.toComponents, ProvableStruct.eval.go,
-    ProvableType.eval_field, Expression.eval]
-  repeat constructor <;> simp
-
-theorem eval_bRegPreMessageExpr
-    (env : Environment FGL) (row : Var MainRowWithRom FGL) :
-    eval env (bRegPreMessageExpr row) = bRegPreMessage (eval env row) := by
-  rw [MemBusMessage.mk.injEq]
-  simp only [bRegPreMessageExpr,
-    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-    ProvableStruct.fromComponents, ProvableStruct.components,
-    ProvableStruct.toComponents, ProvableStruct.eval.go,
-    ProvableType.eval_field, Expression.eval]
-  repeat constructor <;> simp
-
-theorem eval_cRegPreMessageExpr
-    (env : Environment FGL) (row : Var MainRowWithRom FGL) :
-    eval env (cRegPreMessageExpr row) = cRegPreMessage (eval env row) := by
-  rw [MemBusMessage.mk.injEq]
-  simp only [cRegPreMessageExpr,
-    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-    ProvableStruct.fromComponents, ProvableStruct.components,
-    ProvableStruct.toComponents, ProvableStruct.eval.go,
-    ProvableType.eval_field, Expression.eval]
-  repeat constructor <;> simp
 
 /-! ### Legacy lane facts from PIL-shaped Main memory messages -/
 

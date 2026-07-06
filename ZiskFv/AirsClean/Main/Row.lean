@@ -111,17 +111,6 @@ structure MainRomRow (F : Type) where
       segment public + the SEGMENT_STEP fixed column is a cross-row
       concern outside the per-row Spec. -/
   main_step : F
-  -- #225 register-consistency additions: row-local previous-access columns.
-  /-- Previous a-register access memory step (`main.pil:261,277-279`). -/
-  a_reg_prev_mem_step : F
-  /-- Previous b-register access memory step (`main.pil:262,293-295`). -/
-  b_reg_prev_mem_step : F
-  /-- Previous store-register access memory step (`main.pil:263,316-318`). -/
-  store_reg_prev_mem_step : F
-  /-- Low lane of previous store-register value (`main.pil:264,316-319`). -/
-  store_reg_prev_value_0 : F
-  /-- High lane of previous store-register value (`main.pil:264,316-319`). -/
-  store_reg_prev_value_1 : F
 deriving ProvableStruct
 
 /-- The combined Main + ROM witness layout, used by `mainWithRom`. -/

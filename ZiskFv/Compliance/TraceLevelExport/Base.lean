@@ -138,12 +138,7 @@ noncomputable def mainRowProvenance_of_pins
       a_src_reg := ZiskFv.Compliance.selectorF er.aSrc ZiskFv.Compliance.ExtractedConst.srcReg
       b_src_reg := ZiskFv.Compliance.selectorF er.bSrc ZiskFv.Compliance.ExtractedConst.srcReg
       store_reg := ZiskFv.Compliance.selectorF er.store ZiskFv.Compliance.ExtractedConst.storeReg
-      addr0 := 0, addr1 := 0, addr2 := 0, main_step := 0
-      a_reg_prev_mem_step := 0
-      b_reg_prev_mem_step := 0
-      store_reg_prev_mem_step := 0
-      store_reg_prev_value_0 := 0
-      store_reg_prev_value_1 := 0 }
+      addr0 := 0, addr1 := 0, addr2 := 0, main_step := 0 }
   { mainRow := { core := ZiskFv.AirsClean.Main.rowAt m r, rom := rom }
     extractedRow := er
     row_eq := rfl
@@ -196,12 +191,7 @@ noncomputable def mainConstVar (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL) 
         b_src_ind := .const row.rom.b_src_ind, a_src_reg := .const row.rom.a_src_reg
         b_src_reg := .const row.rom.b_src_reg, store_reg := .const row.rom.store_reg
         addr0 := .const row.rom.addr0, addr1 := .const row.rom.addr1
-        addr2 := .const row.rom.addr2, main_step := .const row.rom.main_step
-        a_reg_prev_mem_step := .const row.rom.a_reg_prev_mem_step
-        b_reg_prev_mem_step := .const row.rom.b_reg_prev_mem_step
-        store_reg_prev_mem_step := .const row.rom.store_reg_prev_mem_step
-        store_reg_prev_value_0 := .const row.rom.store_reg_prev_value_0
-        store_reg_prev_value_1 := .const row.rom.store_reg_prev_value_1 } }
+        addr2 := .const row.rom.addr2, main_step := .const row.rom.main_step } }
 
 /-- `eval env (mainConstVar row) = row` for any `env`: every leaf is a `.const`,
     so `eval` distributes to the carried concrete value. -/
