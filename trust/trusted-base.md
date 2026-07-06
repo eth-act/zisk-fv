@@ -351,18 +351,26 @@ independent existential re-positing its *own* `initialState` / `rows` / `stateAt
 / `RowTraceCoherence` chain — nothing forced the ten copies to describe the same
 execution.
 
-* **After (live):** `root_soundness` takes **one** binder
+* **After (live, #115 concrete form):** `root_soundness` takes **one** binder
   `bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep`
-  (`ZiskFv/Compliance/TraceLevelExport/BootSegmentMemorySeed.lean`). It bundles a
-  single `initialState` / `rows` / `GeneratedMemReplayFacts` / cursor-indexed
-  `stateAt`, the whole-sequence chain `RowTraceCoherence stateAt [] rows`, and a
-  per-memory-op `placement` (where each op's bus entry sits in `rows`, that its
-  Sail state is the cursor state there, and — for narrow stores — the preserved
-  high bytes). `memEvidence_of_bootSeed` **derives** every op's per-op residual
-  from this one seed, restricting the whole-sequence coherence to the op's prefix
-  via `rowTraceCoherence_of_append`. The ten `Inputs_<op>` memory fields are
-  **removed**; the dispatcher threads the seed-derived `MemoryOpEvidenceFor` into
-  each `stepStrong_<op>`.
+  (`ZiskFv/Compliance/TraceLevelExport/BootSegmentMemorySeed.lean`). It bundles the
+  **concrete** fields `memInit` + `boot` (boot / cross-segment seed memory),
+  `step` (the per-step execution-successor: each Sail step's memory is the replay
+  of that step's memory rows), `readSound` (memory-bus read-soundness over the
+  whole execution-order row list), and a *structural* `placement` (each memory
+  op's real bus row — a load's read `busLd .. .e1`, a narrow store's write
+  `busSt .. .e2` + preserved bytes). `memEvidence_of_bootSeed` **derives** every
+  op's per-op residual by the execution-order fold (`Spike.exec_order_fold_fin`
+  gives the per-op state pin from `boot` + `step`;
+  `Spike.exists_flatMap_range_split_of_singleton` locates the op's row;
+  `loadEvidence_of_loadMemReplay` / `storeEvidence_of_loadMemReplay` build the
+  evidence, re-choosing the opaque cursor `stateAt` as the uniform replay via
+  `Spike.rowTraceCoherence_of_uniformReplayMem`). The ten `Inputs_<op>` memory
+  fields are **removed**; the dispatcher threads the seed-derived
+  `MemoryOpEvidenceFor` into each `stepStrong_<op>`. #115 replaced the earlier
+  opaque `stateAt` / `RowTraceCoherence` seed fields with these concrete ones —
+  **net-zero on trust strength** (`coherence ⟺ step + boot`), a *constructibility*
+  step (see the #115 note under the floor section).
 
 **Trust class.** Identical to the `RowTraceCoherence` trace-coherence floor
 above — a named external-trust premise (the class of channel-balance), **not** an
@@ -370,9 +378,11 @@ axiom and **not** a defect. `root_soundness`'s `ZiskFv.*` axiom closure is
 unchanged (empty — see `baseline-strong-export-closure.txt`); only its binder
 list gains `bootSeed` (`baseline-strong-export-binders.txt`). The seed is
 genuinely irreducible at the single-segment level (a segment does not contain its
-own initial state — it is carried in from the previous segment / boot); driving
-it to zero by replaying the trace's writes is the follow-on **#115** (loads) /
-**#119** (store byte facts, already reduced to the coherence shape).
+own initial state — it is carried in from the previous segment / boot). **#115**
+restated the seed concretely (`memInit`/`boot`/`step`/`readSound`; net-zero on
+trust strength, a constructibility step for #221/#74); its residual read-soundness
+half is the memory-bus **permutation** trust, whose full discharge is a separate
+epic. **#119** reduced the store byte facts to the coherence shape.
 
 **Memory, not memory+PC.** The coherence chain constrains only `.mem`; the seed's
 `initialState` snapshot pins PC / registers only incidentally, and per-step
