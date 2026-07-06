@@ -168,15 +168,26 @@ surface, not the full executor trace-generation loop.
                     --10--> [10] verifier or contract acceptance
 ```
 
-| Step (#) | Scope (soundness; completeness; both) | Status (done; partial; not started) | Ref (single file link or empty) | Notes (all other info) |
+| Step | Scope | Status | Ref | Notes |
 | ---: | --- | --- | --- | --- |
 | 1 | completeness | not started | | ELF loading, ROM setup, and input plumbing are not proved by the current theorem. |
-| 2 | both | partial | [script](scripts/aeneas-production-extract.sh) | Aeneas extracts the production Rust RV64IM decode/lower wrapper surface over `Riscv2ZiskContext::lower_rv64im_single_row`; generated row-shape facts are checked by the harness and partially imported into main Lake. Remaining dynamic bridge facts are still exposed through `env.aeneasBridgeTrust`. |
+| 2 | both | partial | A | Aeneas extracts the production Rust RV64IM decode/lower wrapper surface over `Riscv2ZiskContext::lower_rv64im_single_row`; generated row-shape facts are checked by the harness and partially imported into main Lake. Remaining dynamic bridge facts are still exposed through `env.aeneasBridgeTrust`. |
 | 3 | completeness | not started | | The full executor loop that turns a ROM/input execution into a complete trace or minimal trace is not currently extracted/proved. The theorem starts from rows/traces satisfying the modeled circuit obligations; Aeneas contributes the step-2 row-shape surface. |
 | 4 | completeness | partial | | Witness generation is not proved complete. Generated/full-ensemble artifacts model and consume witness facts where available, but the theorem does not prove that the production generator always produces them. |
-| 5 | both | partial | [notes](docs/extraction/extractor-notes.md) | `nix run .#populate` produces `build/zisk.pilout` and `build/extraction/Extraction/*.lean` from flake-pinned ZisK/PIL inputs via `tools/pil-extract`; the readable Clean models under `ZiskFv/AirsClean/` wrap this circuit surface. |
-| 6 | soundness | partial | [trust](trust/trusted-base.md) | The accepted circuit/AIR transition is the Lean-facing model of the ZisK RV64IM circuit constraints. Faithfulness of the ZisK circuit-to-Lean extraction is part of the stated trusted base. |
-| 7 | soundness | done | [theorem](ZiskFv/Compliance.lean) | `lake build` checks `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The Sail side comes from flake-pinned Sail and sail-riscv sources compiled to Lean under `build/sail-lean/`, whose extraction is trusted. |
+| 5 | both | partial | B | `nix run .#populate` produces `build/zisk.pilout` and `build/extraction/Extraction/*.lean` from flake-pinned ZisK/PIL inputs via `tools/pil-extract`; the readable Clean models under `ZiskFv/AirsClean/` wrap this circuit surface. |
+| 6 | soundness | partial | C | The accepted circuit/AIR transition is the Lean-facing model of the ZisK RV64IM circuit constraints. Faithfulness of the ZisK circuit-to-Lean extraction is part of the stated trusted base. |
+| 7 | soundness | done | D | `lake build` checks `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`. The Sail side comes from flake-pinned Sail and sail-riscv sources compiled to Lean under `build/sail-lean/`, whose extraction is trusted. |
 | 8 | soundness | not started | | STARK proof generation, polynomial commitments, and proofman internals are not modeled by `zisk-fv`. |
 | 9 | soundness | not started | | Recursive compression, aggregation, and proof-format wrapping are not modeled by `zisk-fv`. |
 | 10 | soundness | not started | | Native verifiers, on-chain contracts, and verifier-key management are outside the current formal claim. |
+
+Scope values are `soundness`, `completeness`, or `both`. Status values are
+`done`, `partial`, or `not started`. Ref values map to one file below; an empty
+ref means there is no focused file reference for that step.
+
+Refs:
+
+- A: [scripts/aeneas-production-extract.sh](scripts/aeneas-production-extract.sh)
+- B: [docs/extraction/extractor-notes.md](docs/extraction/extractor-notes.md)
+- C: [trust/trusted-base.md](trust/trusted-base.md)
+- D: [ZiskFv/Compliance.lean](ZiskFv/Compliance.lean)
