@@ -227,6 +227,11 @@ structure MainRomFreeCols where
   im_high_degree_2 : FGL
   segment_l1 : FGL
   main_step : FGL
+  a_reg_prev_mem_step : FGL
+  b_reg_prev_mem_step : FGL
+  store_reg_prev_mem_step : FGL
+  store_reg_prev_value_0 : FGL
+  store_reg_prev_value_1 : FGL
 
 /-- Main execution shapes for rows whose instruction data comes from the ROM
     program row. The operation code itself is copied from the selected ROM
@@ -309,7 +314,12 @@ def mainRomRowOf (msg : ZiskFv.Channels.ZiskRomBus.ZiskRomMessage FGL)
         addr0 := msg.a_offset_imm0
         addr1 := msg.b_offset_imm0 + boolF bits.b_src_ind * free.a_0
         addr2 := msg.store_offset + boolF bits.store_ind * free.a_0
-        main_step := free.main_step } }
+        main_step := free.main_step
+        a_reg_prev_mem_step := free.a_reg_prev_mem_step
+        b_reg_prev_mem_step := free.b_reg_prev_mem_step
+        store_reg_prev_mem_step := free.store_reg_prev_mem_step
+        store_reg_prev_value_0 := free.store_reg_prev_value_0
+        store_reg_prev_value_1 := free.store_reg_prev_value_1 } }
 
 /-- The remaining address-placement constructibility condition from
 `main.pil:197`: indirect addressing must not overflow the low limb. -/
@@ -722,14 +732,23 @@ theorem componentWithRomMemAndOpBus_interactionsWith_memBus
     (componentWithRomMemAndOpBus length program).operations.interactionsWith
         MemBusChannel.toRaw =
       [ ((MemBusChannel.emitted
+            (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg
+            (aRegPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
             (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
             (aMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg
+            (bRegPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
             (bMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg
+            (cRegPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
@@ -738,14 +757,23 @@ theorem componentWithRomMemAndOpBus_interactionsWith_memBus
   apply Component.interactionsWith_of_exposedChannels
   change ⟨MemBusChannel.toRaw,
       [ ((MemBusChannel.emitted
+            (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg
+            (aRegPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
             (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
             (aMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg
+            (bRegPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
             (bMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg
+            (cRegPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
               + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
@@ -987,14 +1015,23 @@ theorem componentWithRomAndMemBus_interactionsWith_memBus
     (componentWithRomAndMemBus length program).operations.interactionsWith
         MemBusChannel.toRaw =
       [ ((MemBusChannel.emitted
+            (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg
+            (aRegPreMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
             (-((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_mem
               + (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg))
             (aMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg
+            (bRegPreMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_mem
               + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_ind
               + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg))
             (bMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomAndMemBus length program).rowInputVar.rom.store_reg
+            (cRegPreMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomAndMemBus length program).rowInputVar.rom.store_mem
               + (componentWithRomAndMemBus length program).rowInputVar.rom.store_ind
@@ -1003,14 +1040,23 @@ theorem componentWithRomAndMemBus_interactionsWith_memBus
   apply Component.interactionsWith_of_exposedChannels
   change ⟨MemBusChannel.toRaw,
       [ ((MemBusChannel.emitted
+            (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg
+            (aRegPreMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
             (-((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_mem
               + (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg))
             (aMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg
+            (bRegPreMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_mem
               + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_ind
               + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg))
             (bMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (componentWithRomAndMemBus length program).rowInputVar.rom.store_reg
+            (cRegPreMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
       , ((MemBusChannel.emitted
             (-((componentWithRomAndMemBus length program).rowInputVar.rom.store_mem
               + (componentWithRomAndMemBus length program).rowInputVar.rom.store_ind
