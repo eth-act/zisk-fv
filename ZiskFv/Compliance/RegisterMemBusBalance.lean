@@ -15,6 +15,12 @@ messages (boot at step 0, then the two reads and write at steps 1/2/3).  The
 other tracked registers x2..x31 are idle and contribute only the boot/reload
 zero-value pair.  Every listed message appears once as a pull and once as a push,
 so the MemBus contribution balances constructively.
+
+This is intentionally a balance theorem over an explicit list of register MemBus
+messages.  It demonstrates the telescoping shape needed by #225, but it does not
+yet extract those messages from `fullRv64imEnsemble` rows or construct the full
+trace-level `BalancedChannels` witness; that connection is the follow-up handoff
+to #219.
 -/
 
 open Goldilocks
@@ -114,9 +120,10 @@ as immediate/no-op register accesses, so it emits no register `mem_op = 3` traff
 def addX1X1X1RegisterMessages : List (MemBusMessage FGL) :=
   addX1TimelineMessages ++ idleRegisterMessages
 
-/-- Concrete constructible MemBus balance for the register contribution of
+/-- Concrete explicit-message MemBus balance for the register contribution of
     `add x1,x1,x1`: each boot/current message is paired with the corresponding
-    push-prev/reload message, and the idle registers have boot/reload zero pairs. -/
+    push-prev/reload message, and the idle registers have boot/reload zero pairs.
+    This theorem does not claim extraction from the real ensemble rows. -/
 theorem addX1X1X1_registerMemBus_balanced :
     BalancedInteractions (pairedInteractions addX1X1X1RegisterMessages) := by
   apply pairedInteractions_balanced
