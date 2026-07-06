@@ -40,7 +40,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` trace-coherence floor (#76 Fold-B; see below), and on `root_soundness` unified into one named `BootSegmentMemorySeed` premise (#185; per-op residuals derived from it). Discharge by the #115/#119 whole-execution memory replay/timeline induction. |
+| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` floor (#76 Fold-B; see below), unified on `root_soundness` into one named `BootSegmentMemorySeed` premise (#185), then restated **concretely** (#115) as `memInit`+`boot` (boot/cross-segment seed) + `step` (per-step execution-successor) + `readSound` (memory-bus read-soundness), with the opaque cursor `stateAt`/`RowTraceCoherence` now *derived* by the execution-order fold. Net-zero on trust strength (`coherence ⟺ step+boot`, `Spike.rowTraceCoherence_of_uniformReplayMem`); the residual `readSound` half is the memory-bus **permutation** trust, whose full discharge is a separate epic. See below. |
 | Clean completeness            | 0            | 0                 | Retired from source trust; false/circular fields are visible non-claims.                                  |
 
 
@@ -251,6 +251,25 @@ address 0 with later timestamp, selected read at byte address 8 with earlier
 timestamp) so the old whole-state boundary shape cannot return silently.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
+
+> **#115 update (concrete seed form).** On `root_soundness` the whole-segment
+> memory premise `BootSegmentMemorySeed`
+> (`ZiskFv/Compliance/TraceLevelExport/BootSegmentMemorySeed.lean`) no longer
+> carries the opaque free cursor `stateAt` + whole-sequence
+> `coherence : RowTraceCoherence stateAt [] rows` described below.  It now carries
+> the **concrete** `memInit` + `boot` (boot/cross-segment seed) + `step` (per-step
+> execution-successor) + `readSound` (memory-bus read-soundness) + a structural
+> `placement` (each memory op's real bus row).  `memEvidence_of_bootSeed` *derives*
+> the opaque `stateAt`/`RowTraceCoherence` per op via the execution-order fold
+> (`Spike.exec_order_fold_fin` + `Spike.rowTraceCoherence_of_uniformReplayMem`).
+> This is **net-zero on trust strength** (`coherence ⟺ step + boot`, proven), NOT a
+> reduction — its value is *constructibility*: the memory premise is now concrete,
+> with no opaque `stateAt` existential, which is the seam the non-degenerate load
+> instantiation (#221 → #74) needs.  The residual read-soundness half (`readSound`
+> = `prefixReadSound`) is the out-of-scope ExtF memory-bus **permutation** trust;
+> its full derivation from `constraints_hold`/`channels_balanced` is a separate
+> epic.  The `LoadMemoryTimelineCoherenceEvidence` *evidence type* below is
+> unchanged — only how the seed supplies it changed.
 
 The load-arm memory residual of the global theorem
 `zisk_riscv_compliant_program_bus` has been reduced from a **whole-`SailState`**

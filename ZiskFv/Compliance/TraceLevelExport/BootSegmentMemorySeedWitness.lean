@@ -100,37 +100,21 @@ noncomputable def witnessStoreFacts
     prefixReadSound := witnessStore_prefixReadSound
     initialAgreement := fun _ => rfl }
 
-/-- Whole-sequence coherence over `[witnessStoreRow]`: the single write step is
-    discharged from the canonical write-entry transition. -/
-theorem witnessStore_rowTraceCoherence
-    (regs0 regs1 : Std.ExtDHashMap Register RegisterType)
-    (cs0 : Sail.trivialChoiceSource.α) :
-    ZiskFv.ZiskCircuit.MemTimeline.Spike.RowTraceCoherence
-      (witnessStoreStateAt regs0 regs1 cs0) [] [witnessStoreRow] := by
-  refine ⟨?_, trivial⟩
-  intro mem h_agree
-  exact ZiskFv.ZiskCircuit.MemTimeline.Spike.rowStep_store_entry
-    (witnessStoreStateAt regs0 regs1 cs0 [])
-    (witnessStoreStateAt regs0 regs1 cs0 ([] ++ [witnessStoreRow]))
-    witnessStoreRow (by simp [witnessStoreRow]) (by simp [witnessStoreRow])
-    rfl mem h_agree
-
 /-- **The store residual is non-vacuously inhabited.** A concrete
     `StoreRmwMemoryCoherenceEvidence` for the store, with the preserved bytes
     supplied by the (non-empty) seed memory — the store half the empty-memory
-    Spike witness cannot provide.  The load half is
+    Spike witness cannot provide.  Built directly from the concrete-seed reduction
+    `storeEvidence_of_loadMemReplay` (the store is the first op, so `priorRows = []`
+    and the clean mem-replay equation is `rfl`).  The load half is
     `ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_memoryTraceAgreement`; together
-    both `MemoryOpEvidenceFor` residuals are inhabitable from seed-shaped data. -/
+    both `MemoryOpEvidenceFor` residuals are inhabitable from concrete-seed data. -/
 theorem witnessStore_evidence
-    (regs0 regs1 : Std.ExtDHashMap Register RegisterType)
+    (regs0 : Std.ExtDHashMap Register RegisterType)
     (cs0 : Sail.trivialChoiceSource.α) (firstPreserved : Nat) :
     StoreRmwMemoryCoherenceEvidence
       (witnessStoreInitState regs0 cs0) witnessStoreRow firstPreserved :=
-  storeCoherence_of_shared (priorRows := []) (laterRows := [])
+  storeEvidence_of_loadMemReplay (priorRows := []) (laterRows := [])
     (witnessStoreFacts regs0 cs0)
-    (witnessStoreStateAt regs0 regs1 cs0)
-    rfl
-    (witnessStore_rowTraceCoherence regs0 regs1 cs0)
     rfl
     rfl
     (by
