@@ -4,17 +4,24 @@ import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeed
 # Non-vacuity witness for `BootSegmentMemorySeed` (issue #185)
 
 The load-only Spike witness (`ZiskFv/ZiskCircuit/MemTimeline/Spike.lean`) exhibits
-the shared-seed data (`GeneratedMemReplayFacts`, `RowTraceCoherence`) and the load
-residual over **empty** initial memory.  But a narrow store's
+the load residual over **empty** initial memory.  But a narrow store's
 `StoreRmwPreservedBytesAtPrefix` floor is **false** over empty memory — its
 preserved high bytes must already be present.  This module supplies the missing
 store half: the preserved-byte floor is satisfiable off a NON-empty seed memory
-(the bytes carried in from the previous segment / boot), and hence a concrete
-`StoreRmwMemoryCoherenceEvidence` is non-vacuously inhabited — with the store's
-Sail state genuinely differing from the initial state in `regs` and `cycleCount`,
-so this is not the frozen-state laundering floor.  Together with the Spike load
-witness this shows both per-op residuals of `memEvidence_of_bootSeed` are
-inhabitable from shared-seed-shaped data. -/
+(the bytes carried in from the previous segment / boot), so a concrete
+`StoreRmwMemoryCoherenceEvidence` is **non-vacuously** inhabited — this is the
+store-side anti-laundering crux (the empty-memory floor is genuinely false).
+Together with the Spike load witness this shows both per-op residuals of
+`memEvidence_of_bootSeed` are inhabitable from concrete-seed data.
+
+(The concrete-seed evidence uses the uniform-replay cursor
+`stateAt X := { state with mem := replay im X }`, so regs / PC / cycleCount are
+carried by the load/store's own Sail `state` and only `.mem` evolves; the earlier
+`witnessStore_nondegenerate` side-claim about a mutating cursor described a cursor
+the evidence no longer uses and was dropped. The "not a frozen whole-state floor"
+property is a property of the `LoadMemoryTimelineCoherenceEvidence` *type* — which
+constrains only `.mem`, leaving regs/PC free — established under the #76 floor
+section of `trust/trusted-base.md`, not something this witness must re-exhibit.) -/
 
 namespace ZiskFv.Compliance
 
@@ -66,17 +73,6 @@ noncomputable def witnessStoreInitState
   { regs := regs0, choiceState := cs0, mem := witnessSeedMem, tags := (),
     cycleCount := 0, sailOutput := #[] }
 
-/-- Cursor-indexed state: after the store, `regs` and `cycleCount` are mutated. -/
-noncomputable def witnessStoreStateAt
-    (regs0 regs1 : Std.ExtDHashMap Register RegisterType)
-    (cs0 : Sail.trivialChoiceSource.α) :
-    List (MemoryBusEntry FGL) → SailState
-  | [] => witnessStoreInitState regs0 cs0
-  | _ =>
-      { regs := regs1, choiceState := cs0,
-        mem := writeMemoryOfEntry witnessSeedMem witnessStoreRow,
-        tags := (), cycleCount := 99, sailOutput := #[] }
-
 /-- `prefixReadSound` for `[witnessStoreRow]` is vacuous: the only row is a write
     (`multiplicity = 1 ≠ -1`), so there is no read to constrain. -/
 theorem witnessStore_prefixReadSound :
@@ -120,19 +116,5 @@ theorem witnessStore_evidence
     (by
       simpa [witnessStoreFacts, witnessSeedMem, replayMemoryAfterBusRows] using
         storeRmwPreservedBytes_nonvacuous witnessStoreRow firstPreserved)
-
-/-- **Non-degeneracy.** With `regs1 ≠ regs0`, the post-store cursor state's `regs`
-    and `cycleCount` both differ from the segment initial state's — the non-frozen
-    case the whole-state alignment cannot express. -/
-theorem witnessStore_nondegenerate
-    (regs0 regs1 : Std.ExtDHashMap Register RegisterType)
-    (cs0 : Sail.trivialChoiceSource.α) (h_regs : regs1 ≠ regs0) :
-    (witnessStoreStateAt regs0 regs1 cs0 [witnessStoreRow]).regs
-        ≠ (witnessStoreStateAt regs0 regs1 cs0 []).regs
-    ∧ (witnessStoreStateAt regs0 regs1 cs0 [witnessStoreRow]).cycleCount
-        ≠ (witnessStoreStateAt regs0 regs1 cs0 []).cycleCount := by
-  refine ⟨?_, ?_⟩
-  · simpa [witnessStoreStateAt, witnessStoreInitState] using h_regs
-  · simp [witnessStoreStateAt, witnessStoreInitState]
 
 end ZiskFv.Compliance

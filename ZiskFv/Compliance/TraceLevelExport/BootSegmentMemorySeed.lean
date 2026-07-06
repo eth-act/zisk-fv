@@ -27,14 +27,18 @@ cursor function `stateAt : List rows → SailState` plus a whole-sequence
 `Spike.exists_flatMap_range_split_of_singleton` locates the op's row; `loadEvidence_of_loadMemReplay` /
 `storeEvidence_of_loadMemReplay` build the evidence).
 
-This is **net-zero on trust strength** versus #185's opaque form — `coherence ⟺ step + boot`
-(`Spike.rowTraceCoherence_of_uniformReplayMem`), and `readSound` is the same read-soundness `facts`
-already carried.  Its value is *constructibility*: the memory premise is now concrete, with NO opaque
-`stateAt` existential and NO whole-sequence `RowTraceCoherence` on the assumed surface (#115 acceptance
-"named premises, not an opaque whole-Sail-state equality"), which is the seam the non-degenerate load
-instantiation (#221 → #74) needs.  It is a named external-trust premise (same class as channel-balance),
-NOT an axiom and NOT a defect; the read-soundness half remains the memory-bus permutation trust, whose
-full derivation from `constraints_hold`/`channels_balanced` is a separate epic. -/
+This is a **constructibility restatement, net-zero-to-marginally-stronger on trust** versus #185's
+opaque form — NOT a reduction.  `Spike.rowTraceCoherence_of_uniformReplayMem` mechanizes only the
+reconstruction direction (`step + boot` ⟹ the uniform-replay cursor satisfies `RowTraceCoherence`;
+there is no converse), and the concrete `step` pins `binding.mem` at *every* index where the opaque
+chain tied it only at memory-op indices — a difference real traces satisfy trivially (no vacuity).
+`readSound` is the same read-soundness `facts` already carried.  The value is *constructibility*: the
+memory premise is now concrete, with NO opaque `stateAt` existential and NO whole-sequence
+`RowTraceCoherence` on the assumed surface (#115 acceptance "named premises, not an opaque whole-Sail-
+state equality"), which is the seam the non-degenerate load instantiation (#221 → #74) needs.  It is a
+named external-trust premise (same class as channel-balance), NOT an axiom and NOT a defect; the
+read-soundness half remains the memory-bus permutation trust, whose full derivation from
+`constraints_hold`/`channels_balanced` is a separate epic. -/
 
 namespace ZiskFv.Compliance
 

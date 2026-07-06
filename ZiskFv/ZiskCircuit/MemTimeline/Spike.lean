@@ -415,11 +415,15 @@ theorem witness_memoryTraceAgreement
 /-! ## Concrete execution-order fold (issue #115)
 
 A `BootSegmentMemorySeed`'s whole-sequence `RowTraceCoherence` chain over an opaque `stateAt` is
-equivalent to a concrete execution-order fold: choosing `stateAt X := { base with mem := replay im X }`
-makes the coherence chain hold unconditionally (`rowTraceCoherence_of_uniformReplayMem`), and the
-per-step memory alignment then follows from a boot seed + a per-step execution-successor by a one-line
-induction (`exec_order_fold_fin`). This lets `memEvidence_of_bootSeed` derive each op's residual from a
-concrete, constructible seed (named `boot`/`step`/`readSound`) instead of a free `stateAt`. -/
+*reconstructed* by a concrete execution-order fold: choosing `stateAt X := { base with mem := replay im X }`
+makes the coherence chain hold unconditionally (`rowTraceCoherence_of_uniformReplayMem` — this is the
+one direction actually mechanized: the uniform-replay cursor built from the concrete data *satisfies*
+`RowTraceCoherence`; there is no converse), and the per-step memory alignment then follows from a boot
+seed + a per-step execution-successor by a one-line induction (`exec_order_fold_fin`). This lets
+`memEvidence_of_bootSeed` derive each op's residual from a concrete, constructible seed (named
+`boot`/`step`/`readSound`) instead of a free `stateAt`. The concrete `step` is net-zero-to-marginally-
+*stronger* than the opaque chain (it pins `binding.mem` at every index, not only at memory-op indices),
+which real traces satisfy trivially — so this is a constructibility restatement, not a trust reduction. -/
 
 /-- A uniform replay-memory `stateAt X := { base with mem := replay im X }` satisfies
 `RowTraceCoherence` for any prefix `done` and any remaining rows — every store step is definitionally
