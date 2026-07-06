@@ -138,29 +138,20 @@ private def sail : SailTrace 0 := nofun
 
 private def step : ∀ i : Fin 0, ZiskStep trace i := nofun
 
-private def emptySeedState : ZiskFv.ZiskCircuit.MemTrace.SailState :=
-  default
-
-private def emptySeedFacts :
-    ZiskFv.AirsClean.Mem.GeneratedMemReplayFacts emptySeedState [] :=
-  { initialMemory := emptySeedState.mem
-    prefixReadSound := by
-      intro priorRows _row _laterRows h_split _h_as _h_mult
-      cases priorRows <;> simp at h_split
-    initialAgreement := by
-      intro _addr
-      rfl }
-
-private def emptyBootSeed : BootSegmentMemorySeed trace sail step :=
-  { initialState := emptySeedState
-    rows := []
-    facts := emptySeedFacts
-    stateAt := fun _ => emptySeedState
-    h_seed := rfl
-    coherence := trivial
-    placement := by
-      intro i
-      exact i.elim0 }
+/-- The degenerate boot / cross-segment memory seed: empty boot memory, no rows,
+    and every per-instruction obligation vacuous over `Fin 0`.  With the concrete
+    seed form (#115) the seed carries real fields (`memInit`/`rowsOf`/`readSound`),
+    so it is given explicitly rather than the old `nomatch`. -/
+private def seed : BootSegmentMemorySeed trace sail step where
+  memInit := {}
+  rowsOf := fun _ => []
+  boot := fun h => absurd h (Nat.not_lt_zero _)
+  step := fun _ h => absurd h (Nat.not_lt_zero _)
+  readSound := by
+    intro priorRows row laterRows h_split _ _
+    simp only [AcceptedZiskTrace.numInstructions, List.range_zero, List.flatMap_nil] at h_split
+    exact absurd h_split (by simp)
+  placement := fun i => i.elim0
 
 /-- `root_soundness` applied to a concrete (degenerate) accepted trace. The `Fin 0`
     conclusion is vacuous, but the term genuinely constructs an `AcceptedZiskTrace`
@@ -168,7 +159,7 @@ private def emptyBootSeed : BootSegmentMemorySeed trace sail step :=
     `root_soundness` quantifies over is inhabited and accepted. -/
 theorem root_soundness_instantiation_degenerate :
     ∀ i : Fin 0, StepSound trace sail i (step i) :=
-  root_soundness 0 trace sail step nofun nofun emptyBootSeed nofun
+  root_soundness 0 trace sail step nofun nofun seed nofun
 
 #print axioms root_soundness_instantiation_degenerate
 

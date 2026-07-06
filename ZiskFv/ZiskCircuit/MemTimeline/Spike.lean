@@ -412,4 +412,101 @@ theorem witness_memoryTraceAgreement
 #print axioms witness_nondegenerate
 #print axioms witness_memoryTraceAgreement
 
+/-! ## Concrete execution-order fold (issue #115)
+
+A `BootSegmentMemorySeed`'s whole-sequence `RowTraceCoherence` chain over an opaque `stateAt` is
+*reconstructed* by a concrete execution-order fold: choosing `stateAt X := { base with mem := replay im X }`
+makes the coherence chain hold unconditionally (`rowTraceCoherence_of_uniformReplayMem` — this is the
+one direction actually mechanized: the uniform-replay cursor built from the concrete data *satisfies*
+`RowTraceCoherence`; there is no converse), and the per-step memory alignment then follows from a boot
+seed + a per-step execution-successor by a one-line induction (`exec_order_fold_fin`). This lets
+`memEvidence_of_bootSeed` derive each op's residual from a concrete, constructible seed (named
+`boot`/`step`/`readSound`) instead of a free `stateAt`. The concrete `step` is net-zero-to-marginally-
+*stronger* than the opaque chain (it pins `binding.mem` at every index, not only at memory-op indices),
+which real traces satisfy trivially — so this is a constructibility restatement, not a trust reduction. -/
+
+/-- A uniform replay-memory `stateAt X := { base with mem := replay im X }` satisfies
+`RowTraceCoherence` for any prefix `done` and any remaining rows — every store step is definitionally
+`writeMemoryOfEntry` and every non-store step leaves memory fixed. -/
+theorem rowTraceCoherence_of_uniformReplayMem
+    (base : SailState) (im : Std.ExtHashMap Nat (BitVec 8)) :
+    ∀ (done rows : List (MemoryBusEntry FGL)),
+      RowTraceCoherence (fun X => { base with mem := replayMemoryAfterBusRows im X }) done rows := by
+  intro done rows
+  induction rows generalizing done with
+  | nil => trivial
+  | cons row rest ih =>
+      refine ⟨?_, ih (done ++ [row])⟩
+      intro mem h_agree
+      by_cases h : row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL)
+      · refine rowStep_store_entry _ _ row h.1 h.2 ?_ mem h_agree
+        show replayMemoryAfterBusRows im (done ++ [row])
+            = writeMemoryOfEntry (replayMemoryAfterBusRows im done) row
+        rw [replayMemoryAfterBusRows_append]
+        show replayMemoryAfterBusRow (replayMemoryAfterBusRows im done) row
+            = writeMemoryOfEntry (replayMemoryAfterBusRows im done) row
+        rw [replayMemoryAfterBusRow, if_pos h.1, if_pos h.2, replayStoreEvent_storeEventOfEntry]
+      · refine rowStep_mem_invariant _ _ row h ?_ mem h_agree
+        show replayMemoryAfterBusRows im (done ++ [row]) = replayMemoryAfterBusRows im done
+        rw [replayMemoryAfterBusRows_append]
+        show replayMemoryAfterBusRow (replayMemoryAfterBusRows im done) row
+            = replayMemoryAfterBusRows im done
+        unfold replayMemoryAfterBusRow
+        by_cases h_as : row.as = (2 : FGL)
+        · by_cases h_w : row.multiplicity = (1 : FGL)
+          · exact absurd ⟨h_as, h_w⟩ h
+          · simp [h_as, h_w]
+        · simp [h_as]
+
+/-- Fin-indexed execution-order fold: the Sail memory at instruction `i` is the replay of every
+strictly-earlier instruction's memory rows, from the boot memory. Matches the live
+`binding : SailTrace n = Fin n → SailState`. -/
+theorem exec_order_fold_fin
+    {n : ℕ} (binding : Fin n → SailState)
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h0 : 0 < n)
+    (h_boot : (binding ⟨0, h0⟩).mem = initialMemory)
+    (h_step : ∀ (j : ℕ) (h : j + 1 < n),
+        (binding ⟨j + 1, h⟩).mem
+          = replayMemoryAfterBusRows (binding ⟨j, Nat.lt_of_succ_lt h⟩).mem (rowsOf j)) :
+    ∀ (i : Fin n),
+      (binding i).mem
+        = replayMemoryAfterBusRows initialMemory ((List.range i.val).flatMap rowsOf) := by
+  suffices H : ∀ iv (hi : iv < n),
+      (binding ⟨iv, hi⟩).mem
+        = replayMemoryAfterBusRows initialMemory ((List.range iv).flatMap rowsOf) by
+    intro i; simpa using H i.val i.isLt
+  intro iv
+  induction iv with
+  | zero => intro hi; simpa using h_boot
+  | succ k ih =>
+      intro hi
+      have hk : k < n := Nat.lt_of_succ_lt hi
+      rw [h_step k hi, ih hk, List.range_succ, List.flatMap_append]
+      simp
+
+/-- The full execution-order row list splits at instruction `i` whose memory row list is a single
+entry: everything before `i`, then that entry, then the rest. Instantiates the evidence's existential
+`rows`/`priorRows`/`laterRows` at a memory op's read/write row. -/
+theorem exists_flatMap_range_split_of_singleton
+    {n : ℕ} (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (i : ℕ) (hi : i < n) (entry : MemoryBusEntry FGL)
+    (h_row : rowsOf i = [entry]) :
+    ∃ laterRows,
+      (List.range n).flatMap rowsOf
+        = (List.range i).flatMap rowsOf ++ entry :: laterRows := by
+  refine ⟨((List.range (n - (i + 1))).map (fun x => i + 1 + x)).flatMap rowsOf, ?_⟩
+  have hn : n = (i + 1) + (n - (i + 1)) := by omega
+  have hsplit :
+      List.range n = List.range i ++ i :: (List.range (n - (i + 1))).map (fun x => i + 1 + x) := by
+    conv_lhs => rw [hn, List.range_add, List.range_succ]
+    simp [List.append_assoc]
+  rw [hsplit, List.flatMap_append, List.flatMap_cons, h_row]
+  simp
+
+#print axioms rowTraceCoherence_of_uniformReplayMem
+#print axioms exec_order_fold_fin
+#print axioms exists_flatMap_range_split_of_singleton
+
 end ZiskFv.ZiskCircuit.MemTimeline.Spike
