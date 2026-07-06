@@ -27,7 +27,12 @@ private def mainRomFree : MainRomFreeCols :=
     b_1 := 21
     im_high_degree_2 := 0
     segment_l1 := 0
-    main_step := 7 }
+    main_step := 7
+    a_reg_prev_mem_step := 0
+    b_reg_prev_mem_step := 0
+    store_reg_prev_mem_step := 0
+    store_reg_prev_value_0 := 0
+    store_reg_prev_value_1 := 0 }
 
 private def finOne : Fin 1 := ⟨0, by decide⟩
 

@@ -404,9 +404,45 @@ load half is `ZiskFv.ZiskCircuit.MemTimeline.Spike.witness_memoryTraceAgreement`
 cannot supply, since a narrow store's `StoreRmwPreservedBytesAtPrefix` floor is
 false over empty memory — is `witnessStore_evidence`: a concrete
 `StoreRmwMemoryCoherenceEvidence` whose preserved bytes come from a **non-empty**
-seed memory, with the post-store cursor state differing from the initial state in
-`regs` **and** `cycleCount` (`witnessStore_nondegenerate`), so it is not the
-frozen-state floor. Both depend on kernel axioms only.
+seed memory. This is the store-side anti-laundering crux (the empty-memory floor
+is genuinely false). Both depend on kernel axioms only. (The "not a frozen
+whole-state floor" property is a property of the `LoadMemoryTimelineCoherenceEvidence`
+*type* — it constrains only `.mem`, leaving regs / PC free — established under the
+#76 floor section above; #115's concrete-seed evidence uses the uniform-replay
+cursor, so the earlier `witnessStore_nondegenerate` regs/cycleCount side-claim was
+dropped as describing a cursor the evidence no longer uses.)
+
+### Register MemBus balance (`MEMORY_REG_OP`) — #225 constructibility slice
+
+The Clean Main component now models the row-local register-consistency emissions
+that real ZisK sends on the shared MemBus: for `a`, `b`, and `store` register
+accesses, Main emits the previous register access as a `MEMORY_REG_OP`
+push-prev message in addition to the existing current-access pull. These are
+PIL-backed fidelity emissions, not a new trust premise and not a new AIR or Mem
+component behavior.
+
+The boot and reload ends of the register chain remain boundary-shaped terms:
+ZisK's boot `global_init_mem` contributes the step-0 zero register pulls, while
+the per-segment reload contributes the final register pushes. Those are not
+modeled as ordinary per-row Main-table emissions. Instead, the checked
+constructibility artifact
+`ZiskFv.Compliance.RegisterMemBusBalance.addX1X1X1_registerMemBus_balanced`
+lists the concrete register MemBus messages for the minimal no-prelude real
+register witness `add x1,x1,x1`: x1's boot/read/read/write/reload timeline plus
+the idle boot/reload zero pairs for tracked registers x2..x31. It proves that
+every listed message appears once as a pull and once as a push, so the register
+MemBus contribution balances. This is an explicit-message telescoping artifact;
+it does not yet extract the register messages from real ensemble rows or
+construct a trace-level `BalancedChannels` witness, which is the #219 follow-up.
+The semantic trust gate discovers the wrapper
+`trust/consistency/register_mem_bus_add_x1_x1_x1.lean`; its axiom closure is
+kernel-only (`propext`, `Classical.choice`, `Quot.sound`) and adds no project
+axioms.
+
+This slice does **not** claim register/memory access-ordering soundness. The
+monotone previous-step range checks are range/table obligations, not MemBus
+channel messages, and their full composition remains on the #169/#19
+range-fidelity axis.
 
 ## Platform Profile
 
