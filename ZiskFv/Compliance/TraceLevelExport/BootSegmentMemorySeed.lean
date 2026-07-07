@@ -319,6 +319,56 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
     h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
     h_no_nonmutable h_entry h_covers
 
+/-- Branch-split version of
+`BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry`.
+
+This keeps the remaining non-mutable-provider residue decomposed into the
+MemAlign-family, Main-self, and RegisterBoundary cases instead of accepting the
+aggregate non-mutable exclusion directly. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_active_interaction :
+      (loadBMemMainInteraction ziskTrace i).mult = -1)
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_main :
+      ¬ ActiveMainSelfMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_regBoundary :
+      ¬ ActiveMainRegisterBoundaryProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_covers :
+      FullWitnessMemReplayBridgeCoversMutableMemTables
+        (ziskTrace.memReplayBridge h_nonempty)) :
+    (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_loadBMemProviderEntry i h_b_src_ind h_active h_active_interaction
+    (activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
+      h_no_marb h_no_mab h_no_memAlign h_no_main h_no_regBoundary)
+    h_covers
+
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
     (ziskTrace : AcceptedZiskTrace numInstructions)
