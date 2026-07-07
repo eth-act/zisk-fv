@@ -114,6 +114,37 @@ def MutableActiveMemReplayRowsEmbeddedInTrace
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
       ActiveMemReplayRowsEmbeddedInTrace table rows
 
+/-- Structural source-correlation certificate for the selected full-witness
+    Mem replay bridge: every mutable-Mem table in the full witness is the
+    bridge's selected table. This is table identity, not memory read
+    agreement. -/
+def FullWitnessMemReplayBridgeCoversMutableMemTables
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (bridge : FullWitnessMemReplayBridge witness rows) : Prop :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      table = bridge.table
+
+/-- A selected full-witness replay bridge gives witness-level active replay
+    embedding once the bridge table is known to cover every mutable-Mem table
+    in the full witness. -/
+theorem mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (bridge : FullWitnessMemReplayBridge witness rows)
+    (h_covers : FullWitnessMemReplayBridgeCoversMutableMemTables bridge) :
+    MutableActiveMemReplayRowsEmbeddedInTrace witness rows := by
+  intro table h_table h_component entry h_entry
+  have h_eq : table = bridge.table :=
+    h_covers table h_table h_component
+  subst table
+  rw [bridge.rows_eq]
+  exact h_entry
+
 /-- A primary read projection is the polarity-preserving primary replay row
     when the concrete Mem row is a read. -/
 theorem memPrimaryReadReplayEntryOfRow_eq_primaryReplayEntryOfRow_of_wr_zero
