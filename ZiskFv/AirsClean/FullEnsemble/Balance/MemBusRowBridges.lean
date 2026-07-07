@@ -1591,6 +1591,238 @@ def ActiveMainSelfMemProviderRowMatchSpec
                 program providerTable providerRow providerInteraction mainMsg
                 (mainTable.environment mainRow) multiplicity as
 
+/-- Main self-provider a-current memory branch of
+    `ActiveMainSelfMemProviderRowMatchSpec`. -/
+def ActiveMainSelfAMemProviderRowMatchSpec
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (mainTable : Table FGL)
+    (mainRow : Array FGL)
+    (mainInteraction : Interaction FGL)
+    (mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL))
+    (multiplicity as : FGL) : Prop :=
+  ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+    providerInteraction.msg = mainInteraction.msg
+      ∧ providerInteraction.mult ≠ -1
+      ∧ providerInteraction.mult ≠ 0
+      ∧ ∃ providerTable ∈ witness.allTables,
+        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
+          ∧ ∃ providerRow ∈ providerTable.table,
+            providerTable.component.Spec (providerTable.environment providerRow)
+              ∧ providerTable.component =
+                ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+              ∧ providerInteraction =
+                ((MemBusChannel.emitted
+                  (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.a_src_mem
+                    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.a_src_reg))
+                  (ZiskFv.AirsClean.Main.aMemMessageExpr
+                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar)).toRaw).eval
+                  (providerTable.environment providerRow)
+              ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry
+                (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                  (eval (mainTable.environment mainRow) mainMsg) multiplicity as)
+                (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                  (eval (providerTable.environment providerRow)
+                    (ZiskFv.AirsClean.Main.aMemMessageExpr
+                      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                        length program).rowInputVar))
+                  multiplicity as)
+
+/-- Main self-provider b-current memory branch of
+    `ActiveMainSelfMemProviderRowMatchSpec`. -/
+def ActiveMainSelfBMemProviderRowMatchSpec
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (mainTable : Table FGL)
+    (mainRow : Array FGL)
+    (mainInteraction : Interaction FGL)
+    (mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL))
+    (multiplicity as : FGL) : Prop :=
+  ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+    providerInteraction.msg = mainInteraction.msg
+      ∧ providerInteraction.mult ≠ -1
+      ∧ providerInteraction.mult ≠ 0
+      ∧ ∃ providerTable ∈ witness.allTables,
+        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
+          ∧ ∃ providerRow ∈ providerTable.table,
+            providerTable.component.Spec (providerTable.environment providerRow)
+              ∧ providerTable.component =
+                ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+              ∧ providerInteraction =
+                ((MemBusChannel.emitted
+                  (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.b_src_mem
+                    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.b_src_ind
+                    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.b_src_reg))
+                  (ZiskFv.AirsClean.Main.bMemMessageExpr
+                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar)).toRaw).eval
+                  (providerTable.environment providerRow)
+              ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry
+                (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                  (eval (mainTable.environment mainRow) mainMsg) multiplicity as)
+                (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                  (eval (providerTable.environment providerRow)
+                    (ZiskFv.AirsClean.Main.bMemMessageExpr
+                      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                        length program).rowInputVar))
+                  multiplicity as)
+
+/-- Main self-provider c-current memory branch of
+    `ActiveMainSelfMemProviderRowMatchSpec`. -/
+def ActiveMainSelfCMemProviderRowMatchSpec
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (mainTable : Table FGL)
+    (mainRow : Array FGL)
+    (mainInteraction : Interaction FGL)
+    (mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL))
+    (multiplicity as : FGL) : Prop :=
+  ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+    providerInteraction.msg = mainInteraction.msg
+      ∧ providerInteraction.mult ≠ -1
+      ∧ providerInteraction.mult ≠ 0
+      ∧ ∃ providerTable ∈ witness.allTables,
+        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
+          ∧ ∃ providerRow ∈ providerTable.table,
+            providerTable.component.Spec (providerTable.environment providerRow)
+              ∧ providerTable.component =
+                ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+              ∧ providerInteraction =
+                ((MemBusChannel.emitted
+                  (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.store_mem
+                    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.store_ind
+                    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar.rom.store_reg))
+                  (ZiskFv.AirsClean.Main.cMemMessageExpr
+                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      length program).rowInputVar)).toRaw).eval
+                  (providerTable.environment providerRow)
+              ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry
+                (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                  (eval (mainTable.environment mainRow) mainMsg) multiplicity as)
+                (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+                  (eval (providerTable.environment providerRow)
+                    (ZiskFv.AirsClean.Main.cMemMessageExpr
+                      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                        length program).rowInputVar))
+                  multiplicity as)
+
+/-- For a Main-side load message (`mem_op = 1`), the register-pre Main-self
+branches are impossible (`mem_op = 3`). Ruling out the three current-access
+Main memory branches rules out the aggregate Main-self branch. -/
+theorem not_activeMainSelfMemProviderRowMatchSpec_of_main_mem_op_one_no_memory_branches
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 1)
+    (h_no_a_mem :
+      ¬ ActiveMainSelfAMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as)
+    (h_no_b_mem :
+      ¬ ActiveMainSelfBMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as)
+    (h_no_c_mem :
+      ¬ ActiveMainSelfCMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as) :
+    ¬ ActiveMainSelfMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as := by
+  intro h_self
+  rcases h_self with
+    ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_match⟩
+  rcases h_match with h_a_reg | h_a_mem | h_b_reg | h_b_mem | h_c_reg | h_c_mem
+  · have h_raw :
+        (((MemBusChannel.emitted
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.a_src_reg
+          (ZiskFv.AirsClean.Main.aRegPreMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_a_reg.1, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Main.aRegPreMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr] at h_provider_mem_op
+    simp [h_main_mem_op] at h_provider_mem_op
+  · exact h_no_a_mem ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
+      h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_a_mem⟩
+  · have h_raw :
+        (((MemBusChannel.emitted
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.b_src_reg
+          (ZiskFv.AirsClean.Main.bRegPreMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_b_reg.1, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Main.bRegPreMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr] at h_provider_mem_op
+    simp [h_main_mem_op] at h_provider_mem_op
+  · exact h_no_b_mem ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
+      h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_b_mem⟩
+  · have h_raw :
+        (((MemBusChannel.emitted
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar.rom.store_reg
+          (ZiskFv.AirsClean.Main.cRegPreMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_c_reg.1, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Main.cRegPreMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr] at h_provider_mem_op
+    simp [h_main_mem_op] at h_provider_mem_op
+  · exact h_no_c_mem ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
+      h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_c_mem⟩
+
 /-- Register-boundary provider branch of `ActiveMainNonMutableMemProviderRowMatchSpec`.
 
 The register `mem_op=3` boot/reload emission carried structurally: it records only that the
