@@ -101,6 +101,19 @@ def MutableMemReplayRowsEmbeddedInTrace
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
       MemReplayRowsEmbeddedInTrace table rows
 
+/-- Witness-level embedding obligation for active mutable-Mem replay rows,
+    including selected primary writes and selected dual reads. This is the
+    active-row variant used when channel balance has already selected a
+    concrete mutable-Mem provider branch. -/
+def MutableActiveMemReplayRowsEmbeddedInTrace
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      ActiveMemReplayRowsEmbeddedInTrace table rows
+
 /-- A primary read projection is the polarity-preserving primary replay row
     when the concrete Mem row is a read. -/
 theorem memPrimaryReadReplayEntryOfRow_eq_primaryReplayEntryOfRow_of_wr_zero

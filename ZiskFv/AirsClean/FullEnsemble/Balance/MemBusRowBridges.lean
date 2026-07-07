@@ -1130,6 +1130,64 @@ theorem activeMainMutableMemProviderRowMatchSpec_replay_branch_cases
         h_providerSpec, h_providerComponent, by simpa [component, providerEnv] using h_sel_dual,
         by simpa [providerEnv] using h_match⟩
 
+/-- Active mutable-Mem provider coverage places the concrete Main-side entry
+    in the accepted chronological row trace, once callers supply the active
+    mutable-Mem replay embedding and the narrow primary-read polarity fact.
+
+The primary `wr = 0` hypothesis is intentionally separate: active replay
+embedding proves row presence, while read/write polarity still has to come
+from the selected Mem message facts or a narrow syntactic certificate. -/
+theorem activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_mutable :
+      ActiveMainMutableMemProviderRowMatchSpec program witness mainTable mainRow
+        mainInteraction mainMsg (-1) 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) (-1) 2))
+    (h_embedded :
+      MutableActiveMemReplayRowsEmbeddedInTrace witness rows)
+    (h_primary_read :
+      ∀ providerTable providerRow,
+        providerTable ∈ witness.allTables →
+        providerRow ∈ providerTable.table →
+        providerTable.component.Spec (providerTable.environment providerRow) →
+        providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1 →
+        ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+          (memPrimaryReadReplayEntryOfRow
+            (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)) →
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 0) :
+    entry ∈ rows := by
+  rcases activeMainMutableMemProviderRowMatchSpec_replay_branch_cases h_mutable h_entry with
+    h_primary | h_dual
+  · rcases h_primary with
+      ⟨providerTable, h_providerTable_mem, providerRow, h_providerRow_mem,
+        h_providerSpec, h_providerComponent, h_sel, h_match⟩
+    exact mem_primary_read_replay_entry_mem_of_active_replay_embedded_trace_row_match
+      (h_embedded providerTable h_providerTable_mem h_providerComponent)
+      h_providerRow_mem h_sel
+      (h_primary_read providerTable providerRow h_providerTable_mem h_providerRow_mem
+        h_providerSpec h_providerComponent h_sel h_match)
+      h_match
+  · rcases h_dual with
+      ⟨providerTable, h_providerTable_mem, providerRow, h_providerRow_mem,
+        _h_providerSpec, h_providerComponent, h_sel_dual, h_match⟩
+    exact mem_dual_read_replay_entry_mem_of_active_replay_embedded_trace_row_match
+      (h_embedded providerTable h_providerTable_mem h_providerComponent)
+      h_providerRow_mem h_sel_dual h_match
+
 /-- Non-mutable provider branches of `ActiveMainMemProviderRowMatchSpec`.
 
 For subword loads, some MemAlign branches are legitimate intermediate routes
