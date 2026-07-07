@@ -110,13 +110,29 @@ theorem storeEvidence_of_loadMemReplay
 
 /-! ## The seed and its per-op derivation -/
 
+/-- Explicit structural certificate for the remaining sorted-to-execution order
+residue in the current #115 surface.
+
+This states that the execution-order memory rows are obtainable from the
+accepted Mem replay rows by replay-safe adjacent swaps. It is not a read-value
+agreement predicate: final #115 work must either derive this certificate from
+row correspondence plus Mem ordering facts, or land it only after explicit
+scope approval as a PIL/checkable order certificate. -/
+abbrev BootSegmentReplaySafeOrderCertificate
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h_nonempty : 0 < ziskTrace.numInstructions) : Prop :=
+  MemoryBusRowsReplaySafePermutation
+    (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+      (ziskTrace.memReplayBridge h_nonempty)).rows
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+
 /-- Nonsemantic inputs needed to derive execution-order seed read-soundness
 from accepted Mem replay evidence.
 
 The accepted trace supplies the guarded Mem replay bridge. `initialMemory_eq` is
-the explicit boot/cross-segment memory bridge. `order` is the structural
-order-transfer proof: execution rows are obtained from the accepted rows by
-replay-safe adjacent swaps. -/
+the explicit boot/cross-segment memory bridge. `order` is the named structural
+order-transfer certificate `BootSegmentReplaySafeOrderCertificate`. -/
 structure BootSegmentReadSoundInputs
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (memInit : Std.ExtHashMap Nat (BitVec 8))
@@ -126,11 +142,7 @@ structure BootSegmentReadSoundInputs
     memInit =
       (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
         (ziskTrace.memReplayBridge h_nonempty)).initialMemory
-  order :
-    MemoryBusRowsReplaySafePermutation
-      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-        (ziskTrace.memReplayBridge h_nonempty)).rows
-      ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+  order : BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty
 
 /-- Assemble the exact seed-level execution-order read-soundness predicate from
 accepted Mem replay evidence plus the explicit initial-memory and order-transfer
