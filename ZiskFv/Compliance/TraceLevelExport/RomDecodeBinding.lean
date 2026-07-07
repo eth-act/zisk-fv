@@ -492,6 +492,25 @@ theorem bMemMessage_mem_op_eq_one_of_active_b_src_ind
     simp [h_mem, h_reg, h_b_src_ind, ZiskFv.AirsClean.boolF_true,
       ZiskFv.AirsClean.boolF_false] at h_active ⊢
 
+/-- Load-row specialization of `bMemMessage_mem_op_eq_one_of_active_b_src_ind`
+using accepted-trace Main flag Booleanity. -/
+theorem mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd trace i).rom.b_src_mem
+        + (mainRowWithRomLd trace i).rom.b_src_ind
+        + (mainRowWithRomLd trace i).rom.b_src_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.bMemMessage (mainRowWithRomLd trace i)).mem_op = 1 := by
+  obtain ⟨_, _, _, _, _, _, _, _, h_b_src_mem_bool, _, _, _, _, h_b_src_reg_bool, _⟩ :=
+    mainRow_flags_boolean trace ⟨i.val, trace.mainTable_index i⟩
+  exact bMemMessage_mem_op_eq_one_of_active_b_src_ind (mainRowWithRomLd trace i)
+    (by simpa [mainRowWithRomLd] using h_b_src_mem_bool)
+    (by simpa [mainRowWithRomLd] using h_b_src_reg_bool)
+    h_b_src_ind h_active
+
 /-- **Unpacking the four ADD decode flags from the packed `flags` slot.**
 
 Given that the concrete Main row's packed `romFlags` equals `packFlags bits`
