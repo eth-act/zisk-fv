@@ -1612,6 +1612,71 @@ def ActiveMainRegisterBoundaryProviderRowMatchSpec
         providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
           ∧ providerTable.component = ZiskFv.AirsClean.RegisterBoundary.component
 
+/-- A data-memory Main pull (`mem_op = 1`) cannot be matched by RegisterBoundary.
+
+RegisterBoundary emits only register-memory (`mem_op = 3`) boot/reload messages. This derives the
+load-side RegisterBoundary exclusion from message equality rather than carrying it as a caller
+residue. -/
+theorem not_activeMainRegisterBoundaryProviderRowMatchSpec_of_main_mem_op_one
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 1) :
+    ¬ ActiveMainRegisterBoundaryProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as := by
+  intro h_regBoundary
+  rcases h_regBoundary with
+    ⟨providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, _h_providerTable, h_providerInteraction, h_providerComponent⟩
+  rcases exists_registerBoundary_mem_row_eval_of_interaction_mem
+      h_providerComponent h_providerInteraction with h_boot | h_reload
+  · rcases h_boot with ⟨providerRow, _h_providerRow, h_providerEval⟩
+    have h_raw :
+        (((MemBusChannel.emitted (-1)
+          (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_providerEval, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.RegisterBoundary.eval_bootMessageExpr] at h_provider_mem_op
+    simp [h_main_mem_op] at h_provider_mem_op
+  · rcases h_reload with ⟨providerRow, _h_providerRow, h_providerEval⟩
+    have h_raw :
+        (((MemBusChannel.emitted 1
+          (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_providerEval, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.RegisterBoundary.eval_reloadMessageExpr] at h_provider_mem_op
+    simp [h_main_mem_op] at h_provider_mem_op
+
 /-- Branch split for the non-mutable active-Main provider family. -/
 theorem activeMainNonMutableMemProviderRowMatchSpec_branch_cases
     {length : ℕ} {program : Program length}

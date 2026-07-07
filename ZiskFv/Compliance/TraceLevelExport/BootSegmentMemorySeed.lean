@@ -371,8 +371,9 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
 `BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry`.
 
 This keeps the remaining non-mutable-provider residue decomposed into the
-MemAlign-family, Main-self, and RegisterBoundary cases instead of accepting the
-aggregate non-mutable exclusion directly. -/
+MemAlign-family and Main-self cases instead of accepting the aggregate
+non-mutable exclusion directly. The RegisterBoundary case is discharged from
+the load's `mem_op = 1` message. -/
 theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
@@ -400,14 +401,41 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
     (h_no_main :
       ¬ ActiveMainSelfMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
-        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
-    (h_no_regBoundary :
-      ¬ ActiveMainRegisterBoundaryProviderRowMatchSpec ziskTrace.program ziskTrace.witness
-        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
-      ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
-  inputs.mem_executionRows_of_loadBMemProviderEntry i h_b_src_ind h_active
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  have h_row_eval :
+      eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            numInstructions ziskTrace.program).rowInputVar =
+        mainRowWithRomLd ziskTrace i := by
+    simpa [loadBMemMainRow, mainRowWithRomLd] using
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
+        ziskTrace.program ziskTrace.mainTable
+        ⟨i.val, ziskTrace.mainTable_index i⟩).symm
+  have h_msg_eval :
+      eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (loadBMemMainMessage ziskTrace) =
+        ZiskFv.AirsClean.Main.bMemMessage (mainRowWithRomLd ziskTrace i) := by
+    rw [loadBMemMainMessage, ZiskFv.AirsClean.Main.eval_bMemMessageExpr, h_row_eval]
+  have h_main_mem_op :
+      (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+        (loadBMemMainMessage ziskTrace)).mem_op = 1 := by
+    rw [h_msg_eval]
+    exact RomDecodeBinding.mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
+      ziskTrace i h_b_src_ind h_active
+  have h_mainEval :
+      loadBMemMainInteraction ziskTrace i =
+        ((MemBusChannel.emitted (loadBMemMainMultiplicity ziskTrace)
+          (loadBMemMainMessage ziskTrace)).toRaw).eval
+          (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i)) := rfl
+  have h_no_regBoundary :
+      ¬ ActiveMainRegisterBoundaryProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2 :=
+    not_activeMainRegisterBoundaryProviderRowMatchSpec_of_main_mem_op_one
+      h_mainEval h_main_mem_op
+  exact inputs.mem_executionRows_of_loadBMemProviderEntry i h_b_src_ind h_active
     (activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
       h_no_marb h_no_mab h_no_memAlign h_no_main h_no_regBoundary)
 

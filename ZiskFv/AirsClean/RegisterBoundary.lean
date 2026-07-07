@@ -96,6 +96,28 @@ def reloadMessage (row : RegisterBoundaryRow FGL) : MemBusMessage FGL :=
     value_0 := row.reloadValue_0
     value_1 := row.reloadValue_1 }
 
+theorem eval_bootMessageExpr
+    (env : Environment FGL) (row : Var RegisterBoundaryRow FGL) :
+    eval env (bootMessageExpr row) = bootMessage (eval env row) := by
+  rw [MemBusMessage.mk.injEq]
+  simp only [bootMessageExpr,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  repeat constructor
+
+theorem eval_reloadMessageExpr
+    (env : Environment FGL) (row : Var RegisterBoundaryRow FGL) :
+    eval env (reloadMessageExpr row) = reloadMessage (eval env row) := by
+  rw [MemBusMessage.mk.injEq]
+  simp only [reloadMessageExpr,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  repeat constructor
+
 /-- The two boundary emissions: boot pull (`-1`) then reload push (`+1`).  Bare `emit`s
     (`assumeGuarantees = false`), exactly like Main's mem emits. -/
 @[circuit_norm]
