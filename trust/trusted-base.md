@@ -252,16 +252,18 @@ address 0 with later timestamp, selected read at byte address 8 with earlier
 timestamp) so the old whole-state boundary shape cannot return silently.
 Current #115 surface note: `AcceptedZiskTrace.mem_replay_table` now separately
 selects the concrete mutable-Mem table, witness membership, component identity,
-and nonempty-table proof. `mem_replay_source` carries generated Mem source facts
-only for that selected table, and the `memReplaySource`/`memReplayBridge`
-accessors rebuild `FullWitnessMemAirSource` and `FullWitnessMemReplayBridge`
-downstream. This is narrower than carrying the replay bridge or a full
-`FullWitnessMemAirSource` directly, and fixed-column shape is no longer
+and nonempty-table proof. `mem_replay_source` now carries the raw generated Mem
+source sidecar for that selected table: stage-2 sidecar columns, split generated
+constraint facts, row range facts, and segment range facts. The
+`memReplaySource`/`memReplayBridge` accessors rebuild `FullWitnessMemAirSource`
+and `FullWitnessMemReplayBridge` downstream. This is narrower than carrying the
+replay bridge, a full `FullWitnessMemAirSource`, or the typed
+`MemTableGeneratedAirSource` directly, and fixed-column shape is no longer
 accepted-trace residue, but it still strengthens nonempty `AcceptedZiskTrace`
-construction until the remaining Mem generated-source/cross-row facts are split
-or derived. `mem_replay_source_covers` is the matching structural
-source-correlation certificate: every mutable-Mem table in the witness is the
-selected source table.
+construction until the remaining Mem generated-source/cross-row facts are
+derived or explicitly approved. `mem_replay_source_covers` is the matching
+structural source-correlation certificate: every mutable-Mem table in the
+witness is the selected source table.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
@@ -415,9 +417,9 @@ raw `readSound` field has been replaced by accepted Mem replay evidence plus
 explicit initial-memory and named replay-safe order certificates. This reduces the
 seed-side read-value assumption, but it also adds a nonempty accepted-trace
 constructor burden: `mem_replay_table` must select the concrete mutable Mem AIR
-table and nonempty proof, `mem_replay_source` must provide generated Mem source
-facts for that selected table, and `mem_replay_source_covers` must certify
-structural coverage of mutable-Mem tables by that selected table. **#119**
+table and nonempty proof, `mem_replay_source` must provide the raw generated Mem
+source sidecar for that selected table, and `mem_replay_source_covers` must
+certify structural coverage of mutable-Mem tables by that selected table. **#119**
 reduced the store byte facts to the
 coherence shape.
 
@@ -664,7 +666,7 @@ trust surface even though they add no axiom.
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
 | `mem_replay_table` (**#115**, guarded by `0 < numInstructions`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
-| `mem_replay_source` (**#115**, guarded by `0 < numInstructions`) | Mem generated row/range source facts for the selected mutable Mem table; deterministic Mem `SEGMENT_L1` shape is derived via `segmentWithFixedL1` | supplies generated-source facts for `mem_replay_table`, so downstream accessors can rebuild `FullWitnessMemAirSource`, derive the `FullWitnessMemReplayBridge`, and obtain accepted table-order replay soundness |
+| `mem_replay_source` (**#115**, guarded by `0 < numInstructions`) | Raw Mem generated source sidecar for the selected mutable Mem table; deterministic Mem `SEGMENT_L1` shape is derived via `segmentWithFixedL1` | supplies stage-2 sidecar columns, split generated constraint facts, row range facts, and segment range facts for `mem_replay_table`, so downstream accessors can rebuild `FullWitnessMemAirSource`, derive the `FullWitnessMemReplayBridge`, and obtain accepted table-order replay soundness |
 | `mem_replay_source_covers` (**#115**, guarded by `0 < numInstructions`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
 
 **#115 constructor-burden note.** Removing the raw seed

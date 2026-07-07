@@ -60,16 +60,16 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       table ∈ witness.allTables ∧
         table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
           0 < table.table.length }
-  /-- Guarded Mem generated row/range source facts for the selected mutable-Mem table.
+  /-- Guarded raw Mem generated source sidecar for the selected mutable-Mem table.
 
       This is not a read-soundness predicate and does not carry the accepted replay bridge directly:
-      together with `mem_replay_table`, it supplies the PIL-generated row/range source facts from
-      which the replay bridge and table-order replay soundness are derived downstream. The
-      deterministic `SEGMENT_L1` fixed-column shape is derived by the bridge rather than carried
-      here. Empty traces do not need or generally have a nonempty Mem replay table, so the field is
-      guarded. -/
+      together with `mem_replay_table`, it supplies the sidecar columns plus split generated
+      constraint and range facts from which the typed Mem AIR source, replay bridge, and table-order
+      replay soundness are derived downstream. The deterministic `SEGMENT_L1` fixed-column shape is
+      derived by the bridge rather than carried here. Empty traces do not need or generally have a
+      nonempty Mem replay table, so the field is guarded. -/
   mem_replay_source : ∀ (h : 0 < numInstructions),
-    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedAirSource
+    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedRawSourceSidecar
       (mem_replay_table h).1
   /-- Structural source-correlation certificate for the guarded Mem AIR source:
       every mutable-Mem table in the accepted witness is the selected source
@@ -131,14 +131,14 @@ def AcceptedZiskTrace.memReplayTable {n : Nat} (trace : AcceptedZiskTrace n)
   (trace.mem_replay_table h_nonempty).1
 
 /-- The guarded Mem AIR source selected for a nonempty accepted trace, rebuilt
-from the split table-selection and generated-source fields. -/
+from the split table-selection and raw sidecar fields. -/
 def AcceptedZiskTrace.memReplaySource {n : Nat} (trace : AcceptedZiskTrace n)
     (h_nonempty : 0 < trace.numInstructions) :
     ZiskFv.AirsClean.FullEnsemble.FullWitnessMemAirSource trace.witness :=
   { table := trace.memReplayTable h_nonempty
     table_mem := (trace.mem_replay_table h_nonempty).2.1
     component := (trace.mem_replay_table h_nonempty).2.2.1
-    source := trace.mem_replay_source h_nonempty }
+    source := (trace.mem_replay_source h_nonempty).toAirSource }
 
 /-- The accepted Mem replay rows selected for a nonempty accepted trace. -/
 def AcceptedZiskTrace.memReplayRows {n : Nat} (trace : AcceptedZiskTrace n)
