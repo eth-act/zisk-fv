@@ -304,9 +304,9 @@ def MainMemBusRowInteractionMatchEval
     concrete full-ensemble table row.
 
 The provider side keeps the unified Main branch explicit. This mirrors
-    `exists_matching_mem_component_of_active_main_interaction`: excluding
-    Main memory self-matches still needs selector legality that is not yet
-    available from Clean Main row soundness. -/
+    `exists_matching_mem_component_of_active_main_interaction`; load-specific
+    wrappers below discharge the Main self-matches from accepted row
+    constraints and the Main-side `mem_op = 1` fact. -/
 theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
     {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
