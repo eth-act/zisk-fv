@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.FullEnsemble.Balance.TimelineEvidence
+import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 
 /-!
@@ -44,6 +45,8 @@ replay-safe order bridges. -/
 namespace ZiskFv.Compliance
 
 open Interaction
+open ZiskFv.AirsClean.FullEnsemble
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.ZiskCircuit.MemTrace
 open ZiskFv.ZiskCircuit.MemTimeline.Spike
 
@@ -164,9 +167,52 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_memReplayRows
   have h_source :
       entry ∈
         (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-          (ziskTrace.memReplayBridge h_nonempty)).rows := by
+      (ziskTrace.memReplayBridge h_nonempty)).rows := by
     simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows] using h_entry
   exact inputs.order.mem_target_of_mem_source h_source
+
+/-- Accepted mutable-Mem provider coverage plus the seed order certificate
+places the selected active Main memory entry in execution order.
+
+The remaining hypotheses are all syntactic/certificate residues: exclusion of
+non-mutable providers for this Main message, selected bridge-table coverage, and
+the explicit replay-safe order certificate already carried by `inputs`. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    {mainRow : Array FGL}
+    (h_mainRow : mainRow ∈ ziskTrace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ ziskTrace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (ziskTrace.mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_mem_op :
+      (eval (ziskTrace.mainTable.environment mainRow) mainMsg).mem_op = 1)
+    {entry : MemoryBusEntry FGL}
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable mainRow mainInteraction mainMsg (-1) 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (ziskTrace.mainTable.environment mainRow) mainMsg) (-1) 2))
+    (h_covers :
+      FullWitnessMemReplayBridgeCoversMutableMemTables
+        (ziskTrace.memReplayBridge h_nonempty)) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_one
+      h_nonempty h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op
+      h_no_nonmutable h_entry h_covers)
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
