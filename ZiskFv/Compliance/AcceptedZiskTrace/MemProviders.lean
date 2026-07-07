@@ -75,4 +75,57 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderRowMatchSpec_of_active_mai
     activeMainMutableMemProviderRowMatchSpec_of_no_nonmutable
       h_match.2 h_no_nonmutable⟩
 
+/-- Accepted-trace wrapper exposing the mutable-Mem provider branch as exact
+    primary/dual Mem replay-row alternatives for a concrete Main-side memory
+    entry.
+
+This is still a row-correspondence step, not a read-soundness assumption: it
+only combines accepted channel balance with the explicit non-mutable-branch
+exclusion and a caller-supplied match between the concrete execution entry and
+the selected Main memory-bus message.  Selector-to-active-row extraction and
+primary `wr = 0` remain visible downstream. -/
+theorem AcceptedZiskTrace.activeMainMutableMemProviderReplayBranchCases_of_active_main_eval_no_nonmutable
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {mainRow : Array FGL}
+    (h_mainRow : mainRow ∈ trace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (trace.mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec trace.program trace.witness
+        trace.mainTable mainRow mainInteraction mainMsg (-1) 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (trace.mainTable.environment mainRow) mainMsg) (-1) 2)) :
+    (∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component.Spec (providerTable.environment providerRow)
+          ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+          ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+              (memPrimaryReadReplayEntryOfRow
+                (eval (providerTable.environment providerRow)
+                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+    ∨
+    (∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component.Spec (providerTable.environment providerRow)
+          ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+          ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+              (memDualReadReplayEntryOfRow
+                (eval (providerTable.environment providerRow)
+                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) := by
+  have h_mutable :=
+    (trace.activeMainMutableMemProviderRowMatchSpec_of_active_main_eval_no_nonmutable
+      h_mainRow h_mainInteraction h_mainEval h_active h_no_nonmutable).2
+  exact activeMainMutableMemProviderRowMatchSpec_replay_branch_cases h_mutable h_entry
+
 end ZiskFv.Compliance

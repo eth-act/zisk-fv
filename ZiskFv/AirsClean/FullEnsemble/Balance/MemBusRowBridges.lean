@@ -996,6 +996,79 @@ def ActiveMainMutableMemProviderRowMatchSpec
                           ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))
                       multiplicity as)))
 
+/-- Normalize the mutable-Mem provider branch to the replay-row alternatives
+    used by chronological memory replay.
+
+This deliberately stops at message/replay-row equality.  To turn either branch
+into active-row membership, callers still have to connect the Clean emission
+multiplicity back to the concrete selector column; for primary rows they also
+have to prove `wr = 0` before using the active read/write replay surface. -/
+theorem activeMainMutableMemProviderRowMatchSpec_replay_branch_cases
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_mutable :
+      ActiveMainMutableMemProviderRowMatchSpec program witness mainTable mainRow
+        mainInteraction mainMsg (-1) 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) (-1) 2)) :
+    (∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component.Spec (providerTable.environment providerRow)
+          ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+          ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+              (memPrimaryReadReplayEntryOfRow
+                (eval (providerTable.environment providerRow)
+                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)))
+    ∨
+    (∃ providerTable ∈ witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component.Spec (providerTable.environment providerRow)
+          ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+          ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+              (memDualReadReplayEntryOfRow
+                (eval (providerTable.environment providerRow)
+                  ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) := by
+  rcases h_mutable with
+    ⟨providerInteraction, _h_providerInteraction_mem, _h_msg, _h_provider_non_pull,
+      _h_provider_nonzero, providerTable, h_providerTable_mem, _h_providerInteraction_table,
+      providerRow, h_providerRow_mem, h_providerSpec, h_providerComponent,
+      h_branch⟩
+  let providerEnv := providerTable.environment providerRow
+  rcases h_branch with h_primary | h_dual
+  · rcases h_primary with ⟨_h_eval, h_provider_match⟩
+    have h_match :
+        ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+          (memPrimaryReadReplayEntryOfRow
+            (eval providerEnv
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)) := by
+      have h_trans :=
+        ZiskFv.Airs.MemoryBus.matches_memory_entry_trans h_entry h_provider_match
+      simpa [providerEnv, memPrimaryReadReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.eval_memBusMessageExpr] using h_trans
+    exact Or.inl
+      ⟨providerTable, h_providerTable_mem, providerRow, h_providerRow_mem,
+        h_providerSpec, h_providerComponent, by simpa [providerEnv] using h_match⟩
+  · rcases h_dual with ⟨_h_eval, h_provider_match⟩
+    have h_match :
+        ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+          (memDualReadReplayEntryOfRow
+            (eval providerEnv
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)) := by
+      have h_trans :=
+        ZiskFv.Airs.MemoryBus.matches_memory_entry_trans h_entry h_provider_match
+      simpa [providerEnv, memDualReadReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] using h_trans
+    exact Or.inr
+      ⟨providerTable, h_providerTable_mem, providerRow, h_providerRow_mem,
+        h_providerSpec, h_providerComponent, by simpa [providerEnv] using h_match⟩
+
 /-- Non-mutable provider branches of `ActiveMainMemProviderRowMatchSpec`.
 
 For subword loads, some MemAlign branches are legitimate intermediate routes
