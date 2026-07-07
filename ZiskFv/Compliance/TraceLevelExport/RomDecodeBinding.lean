@@ -139,9 +139,11 @@ end ZiskFv.AirsClean.Main
 
 namespace ZiskFv.Compliance.RomDecodeBinding
 
+open Air.Flat
 open ZiskFv.Compliance
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable mainTableRowAtOrZero)
 open ZiskFv.AirsClean.Main (componentWithRomMemAndOpBus romMessage romMessageExpr)
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 
 /-- **Per-row Main constraints projection.**
@@ -510,6 +512,31 @@ theorem mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
     (by simpa [mainRowWithRomLd] using h_b_src_mem_bool)
     (by simpa [mainRowWithRomLd] using h_b_src_reg_bool)
     h_b_src_ind h_active
+
+/-- The concrete Main `b` memory-bus interaction for a load row is present in
+the accepted Main table's memory-bus interaction list. -/
+theorem mainRowWithRomLd_bMemInteraction_mem
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_mem
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_ind
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_reg))
+      (ZiskFv.AirsClean.Main.bMemMessageExpr
+        (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
+      (trace.mainTable.environment
+        (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
+      ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw := by
+  have h_row_mem :
+      trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩ ∈ trace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, trace.mainTable_index i⟩, rfl⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ?_
+  refine ⟨trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩, h_row_mem, ?_⟩
+  simp [AcceptedZiskTrace.numInstructions, Operations.interactionValuesWith_eq_map,
+    trace.mainTable_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
 
 /-- **Unpacking the four ADD decode flags from the packed `flags` slot.**
 
