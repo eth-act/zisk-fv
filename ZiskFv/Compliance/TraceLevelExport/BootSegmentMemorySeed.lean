@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.FullEnsemble.Balance.TimelineEvidence
 import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
+import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 
 /-!
 # The boot / cross-segment memory seed (`BootSegmentMemorySeed`)
@@ -213,6 +214,110 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProv
     (ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_one
       h_nonempty h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op
       h_no_nonmutable h_entry h_covers)
+
+@[reducible] noncomputable def loadBMemMainRow
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Array FGL :=
+  ziskTrace.mainTable.table.get ⟨i.val, ziskTrace.mainTable_index i⟩
+
+@[reducible] def loadBMemMainMessage
+    (ziskTrace : AcceptedZiskTrace numInstructions) :
+    ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL) :=
+  ZiskFv.AirsClean.Main.bMemMessageExpr
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+      numInstructions ziskTrace.program).rowInputVar
+
+@[reducible] def loadBMemMainMultiplicity
+    (ziskTrace : AcceptedZiskTrace numInstructions) : Expression FGL :=
+  -((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg)
+
+@[reducible] noncomputable def loadBMemMainInteraction
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Interaction FGL :=
+  (((MemBusChannel.emitted (loadBMemMainMultiplicity ziskTrace)
+    (loadBMemMainMessage ziskTrace)).toRaw).eval
+    (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i)))
+
+/-- Load-specific wrapper for the accepted mutable-Mem provider path.
+
+The generic theorem still needs an active Main interaction, its evaluated
+message equality, and the load `mem_op = 1` fact. For the concrete load b-side
+memory row, the interaction membership, evaluated message equality, `mem_op = 1`,
+and entry match are derived from accepted Main table structure and the
+load-decoder/active-pull facts. The remaining residues are still explicit:
+active interaction multiplicity, non-mutable provider exclusion, and bridge-table
+coverage. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_active_interaction :
+      (loadBMemMainInteraction ziskTrace i).mult = -1)
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_covers :
+      FullWitnessMemReplayBridgeCoversMutableMemTables
+        (ziskTrace.memReplayBridge h_nonempty)) :
+    (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  have h_mainRow : loadBMemMainRow ziskTrace i ∈ ziskTrace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, ziskTrace.mainTable_index i⟩, rfl⟩
+  have h_mainInteraction :
+      loadBMemMainInteraction ziskTrace i ∈
+        ziskTrace.mainTable.interactionsWith MemBusChannel.toRaw := by
+    simpa [loadBMemMainInteraction, loadBMemMainRow, loadBMemMainMessage] using
+      RomDecodeBinding.mainRowWithRomLd_bMemInteraction_mem ziskTrace i
+  have h_mainEval :
+      loadBMemMainInteraction ziskTrace i =
+        ((MemBusChannel.emitted (loadBMemMainMultiplicity ziskTrace)
+          (loadBMemMainMessage ziskTrace)).toRaw).eval
+          (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i)) := rfl
+  have h_row_eval :
+      eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            numInstructions ziskTrace.program).rowInputVar =
+        mainRowWithRomLd ziskTrace i := by
+    simpa [loadBMemMainRow, mainRowWithRomLd] using
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
+        ziskTrace.program ziskTrace.mainTable
+        ⟨i.val, ziskTrace.mainTable_index i⟩).symm
+  have h_msg_eval :
+      eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (loadBMemMainMessage ziskTrace) =
+        ZiskFv.AirsClean.Main.bMemMessage (mainRowWithRomLd ziskTrace i) := by
+    rw [loadBMemMainMessage, ZiskFv.AirsClean.Main.eval_bMemMessageExpr, h_row_eval]
+  have h_main_mem_op :
+      (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+        (loadBMemMainMessage ziskTrace)).mem_op = 1 := by
+    rw [h_msg_eval]
+    exact RomDecodeBinding.mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
+      ziskTrace i h_b_src_ind h_active
+  have h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+            (loadBMemMainMessage ziskTrace)) (-1) 2) := by
+    rw [h_msg_eval]
+    simp
+  exact inputs.mem_executionRows_of_activeMainMutableMemProviderEntry
+    h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
+    h_no_nonmutable h_entry h_covers
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
