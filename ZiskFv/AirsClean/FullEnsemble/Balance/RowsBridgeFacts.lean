@@ -402,6 +402,19 @@ def rows
   activeMemReplayRowsOfTable source.table
 
 @[reducible]
+def replayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (source : FullWitnessMemAirSource witness)
+    (h_nonempty : 0 < source.table.table.length) :
+    FullWitnessMemReplayBridge witness source.rows :=
+  fullWitnessMemReplayBridge_of_memAirSource
+    source.table_mem
+    source.component
+    source.source
+    h_nonempty
+
+@[reducible]
 def replayBridgeOfTraceSplit
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -410,11 +423,9 @@ def replayBridgeOfTraceSplit
     (source : FullWitnessMemAirSource witness)
     (h_traceSplit : source.rows = priorRows ++ entry :: laterRows) :
     FullWitnessMemReplayBridge witness source.rows :=
-  fullWitnessMemReplayBridge_of_memAirSource_traceSplit
-    source.table_mem
-    source.component
-    source.source
-    h_traceSplit
+  source.replayBridge
+    (table_nonempty_of_activeMemReplayRowsOfTable_nonempty
+      (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit))
 
 end FullWitnessMemAirSource
 

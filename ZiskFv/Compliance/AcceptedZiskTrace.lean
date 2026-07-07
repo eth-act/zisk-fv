@@ -50,14 +50,15 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
-  /-- Guarded Mem replay bridge for nonempty traces. This is not a read-soundness predicate: it
-      selects the concrete mutable Mem table and carries the PIL-generated row/range facts from
-      which table-order replay soundness is derived downstream. The deterministic `SEGMENT_L1`
-      fixed-column shape is derived by the bridge rather than carried here. Empty traces do not need
-      or generally have a nonempty Mem replay table, so the field is guarded. -/
+  /-- Guarded Mem AIR source for nonempty traces. This is not a read-soundness predicate and does
+      not carry the accepted replay bridge directly: it selects the concrete mutable Mem table and
+      carries the PIL-generated row/range source facts from which the replay bridge and table-order
+      replay soundness are derived downstream. The deterministic `SEGMENT_L1` fixed-column shape is
+      derived by the bridge rather than carried here. Empty traces do not need or generally have a
+      nonempty Mem replay table, so the field is guarded. -/
   mem_replay_source : ∀ (_h : 0 < numInstructions),
-    Σ rows : List (Interaction.MemoryBusEntry FGL),
-      ZiskFv.AirsClean.FullEnsemble.FullWitnessMemReplayBridge witness rows
+    { source : ZiskFv.AirsClean.FullEnsemble.FullWitnessMemAirSource witness //
+      0 < source.table.table.length }
   /-- The Main AIR's cross-row PC-handshake transition constraint (`main.pil:409-410`) holds on every
       consecutive Main-table row pair. This polynomial transition CANNOT be expressed by the single-row
       Clean `Air.Flat` per-row `Constraints` (which is exactly why it was dropped from the per-row Spec);
@@ -107,13 +108,14 @@ def AcceptedZiskTrace.numInstructions {n : Nat} (_ : AcceptedZiskTrace n) : Nat 
 def AcceptedZiskTrace.memReplayRows {n : Nat} (trace : AcceptedZiskTrace n)
     (h_nonempty : 0 < trace.numInstructions) :
     List (Interaction.MemoryBusEntry FGL) :=
-  (trace.mem_replay_source h_nonempty).1
+  (trace.mem_replay_source h_nonempty).1.rows
 
 /-- The accepted Mem replay bridge selected for a nonempty accepted trace. -/
 def AcceptedZiskTrace.memReplayBridge {n : Nat} (trace : AcceptedZiskTrace n)
     (h_nonempty : 0 < trace.numInstructions) :
     ZiskFv.AirsClean.FullEnsemble.FullWitnessMemReplayBridge
       trace.witness (trace.memReplayRows h_nonempty) :=
-  (trace.mem_replay_source h_nonempty).2
+  (trace.mem_replay_source h_nonempty).1.replayBridge
+    (trace.mem_replay_source h_nonempty).2
 
 end ZiskFv.Compliance
