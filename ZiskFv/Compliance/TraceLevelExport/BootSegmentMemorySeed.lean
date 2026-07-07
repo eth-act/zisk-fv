@@ -1,3 +1,4 @@
+import ZiskFv.AirsClean.FullEnsemble.Balance.TimelineEvidence
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 
 /-!
@@ -212,6 +213,52 @@ theorem rowsOf_eq_memoryRowsOfStep_of_placement
     first
     | exact h_placement
     | exact h_placement.1
+
+/-- Nonsemantic inputs needed to derive execution-order seed read-soundness
+from accepted Mem replay evidence.
+
+`replayBridge` derives table-order prefix read-soundness from generated Mem AIR
+facts. `initialMemory_eq` is the explicit boot/cross-segment memory bridge.
+`order` is the structural order-transfer proof: execution rows are obtained
+from the accepted rows by replay-safe adjacent swaps. -/
+structure BootSegmentReadSoundInputs
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (memInit : Std.ExtHashMap Nat (BitVec 8))
+    (rowsOf : ℕ → List (MemoryBusEntry FGL)) : Type 2 where
+  rows : List (MemoryBusEntry FGL)
+  replayBridge :
+    ZiskFv.AirsClean.FullEnsemble.FullWitnessMemReplayBridge
+      ziskTrace.witness rows
+  initialMemory_eq :
+    memInit =
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        replayBridge).initialMemory
+  order :
+    MemoryBusRowsReplaySafePermutation
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        replayBridge).rows
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+
+/-- Assemble the exact seed-level execution-order read-soundness predicate from
+accepted Mem replay evidence plus the explicit initial-memory and order-transfer
+bridges. -/
+theorem readSound_of_bootSegmentReadSoundInputs
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  let acceptedReplay :=
+    ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+      inputs.replayBridge
+  have h_prefix :
+      MemoryBusRowsPrefixReadSound
+        acceptedReplay.initialMemory
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+    memoryBusRowsPrefixReadSound_of_replaySafePermutation
+      acceptedReplay.initialMemory inputs.order acceptedReplay.prefixReadSound
+  rwa [inputs.initialMemory_eq]
 
 /-! ## Per-op discharge via the execution-order fold. -/
 
