@@ -82,8 +82,8 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderRowMatchSpec_of_active_mai
 This is still a row-correspondence step, not a read-soundness assumption: it
 only combines accepted channel balance with the explicit non-mutable-branch
 exclusion and a caller-supplied match between the concrete execution entry and
-the selected Main memory-bus message.  Selector-to-active-row extraction and
-primary `wr = 0` remain visible downstream. -/
+the selected Main memory-bus message. Primary `wr = 0` remains visible
+downstream. -/
 theorem AcceptedZiskTrace.activeMainMutableMemProviderReplayBranchCases_of_active_main_eval_no_nonmutable
     {n : Nat} (trace : AcceptedZiskTrace n)
     {mainRow : Array FGL}
@@ -110,6 +110,8 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderReplayBranchCases_of_activ
       ∃ providerRow ∈ providerTable.table,
         providerTable.component.Spec (providerTable.environment providerRow)
           ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+          ∧ (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1
           ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry entry
               (memPrimaryReadReplayEntryOfRow
                 (eval (providerTable.environment providerRow)
@@ -119,6 +121,8 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderReplayBranchCases_of_activ
       ∃ providerRow ∈ providerTable.table,
         providerTable.component.Spec (providerTable.environment providerRow)
           ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+          ∧ (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel_dual = 1
           ∧ ZiskFv.Airs.MemoryBus.matches_memory_entry entry
               (memDualReadReplayEntryOfRow
                 (eval (providerTable.environment providerRow)
