@@ -19,8 +19,9 @@ cursor function `stateAt : List rows → SailState` plus a whole-sequence
 * `readSound` — memory-bus **read-soundness** over the whole execution-order row list.  This is the
   out-of-scope ExtF memory-bus **permutation** trust (see `trust/trusted-base.md`;
   `Airs/MemoryBus/MemBridge.lean`), carried as a named premise of that existing class;
-* `placement` — the *structural* tie pinning `rowsOf i` to each op's real memory-bus row (a load's
-  read `busLd .. .e1`, a narrow store's write `busSt .. .e2` plus its preserved-byte prefix fact).
+* `placement` — the *structural* tie pinning `rowsOf i` to each op's real memory-bus rows: loads
+  use their read `busLd .. .e1`, stores use their write `busSt .. .e2`, non-memory ops emit no rows,
+  and narrow stores additionally carry their preserved-byte prefix fact.
 
 `memEvidence_of_bootSeed` derives each op's `MemoryOpEvidenceFor` residual by the execution-order fold
 (`Spike.exec_order_fold_fin` gives the per-op state pin from `boot` + `step`;
@@ -106,13 +107,32 @@ theorem storeEvidence_of_loadMemReplay
 
 /-! ## The seed and its per-op derivation -/
 
+/-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
+noncomputable def memoryRowsOfStep
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → List (MemoryBusEntry FGL)
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _ =>
+      [(busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1]
+  | .sb _ | .sh _ | .sw _ | .sd _ =>
+      [(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]
+  | .sub _ | .and _ | .or _ | .xor _ | .slt _ | .sltu _
+  | .andi _ | .ori _ | .xori _ | .slti _ | .sltiu _
+  | .sll _ | .srl _ | .sra _ | .slli _ | .srli _ | .srai _
+  | .add _ | .addi _ | .subw _ | .addw _ | .addiw _
+  | .sllw _ | .srlw _ | .sraw _ | .slliw _ | .srliw _ | .sraiw _
+  | .mul _ | .mulh _ | .mulhsu _ | .mulw _ | .mulhu _
+  | .div _ | .rem _ | .divw _ | .remw _ | .divu _ | .divuw _
+  | .remu _ | .remuw _
+  | .beq _ | .bne _ | .blt _ | .bge _ | .bltu _ | .bgeu _
+  | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
+      []
+
 /-- Per-memory-op placement relative to the concrete seed: the *structural* tie pinning `rowsOf i` to
-    this op's real memory-bus row — a load's read `busLd .. .e1`, a narrow store's write `busSt .. .e2`
-    (plus the preserved high bytes already present in the replay memory at that op's execution-order
-    prefix `(List.range i).flatMap rowsOf`).  Non-narrow-store / non-load ops impose nothing here:
-    their `rowsOf` is pinned by `step`'s satisfiability (a store must change memory, a non-memory op
-    must not).  The split, cursor tie, and coherence chain #185 carried are now *derived*, not
-    assumed. -/
+    this op's real memory-bus rows. Loads use the read row `busLd .. .e1`; all stores use the write
+    row `busSt .. .e2`; non-memory ops emit no memory rows. Narrow stores additionally require the
+    preserved high bytes already present in the replay memory at that op's execution-order prefix
+    `(List.range i).flatMap rowsOf`. The split, cursor tie, and coherence chain #185 carried are now
+    *derived*, not assumed. -/
 def MemoryOpPlacement
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (rowsOf : ℕ → List (MemoryBusEntry FGL))
@@ -135,7 +155,19 @@ def MemoryOpPlacement
         ∧ StoreRmwPreservedBytesAtPrefix
             (replayMemoryAfterBusRows memInit ((List.range i.val).flatMap rowsOf))
             (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2 4
-  | _ => True
+  | .sd _ =>
+      rowsOf i.val = [(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]
+  | .sub _ | .and _ | .or _ | .xor _ | .slt _ | .sltu _
+  | .andi _ | .ori _ | .xori _ | .slti _ | .sltiu _
+  | .sll _ | .srl _ | .sra _ | .slli _ | .srli _ | .srai _
+  | .add _ | .addi _ | .subw _ | .addw _ | .addiw _
+  | .sllw _ | .srlw _ | .sraw _ | .slliw _ | .srliw _ | .sraiw _
+  | .mul _ | .mulh _ | .mulhsu _ | .mulw _ | .mulhu _
+  | .div _ | .rem _ | .divw _ | .remw _ | .divu _ | .divuw _
+  | .remu _ | .remuw _
+  | .beq _ | .bne _ | .blt _ | .bge _ | .bltu _ | .bgeu _
+  | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
+      rowsOf i.val = []
 
 /-- **The single named boot / cross-segment memory seed premise of `root_soundness`.**
 
@@ -163,9 +195,23 @@ structure BootSegmentMemorySeed
   /-- Memory-bus read-soundness over the whole execution-order row list. -/
   readSound :
     MemoryBusRowsPrefixReadSound memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf)
-  /-- Structural placement pinning `rowsOf` to each memory op's real bus row (+ narrow-store bytes). -/
+  /-- Structural placement pinning `rowsOf` to each op's real bus rows (+ narrow-store bytes). -/
   placement : ∀ i : Fin ziskTrace.numInstructions,
     MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i)
+
+theorem rowsOf_eq_memoryRowsOfStep_of_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    (i : Fin ziskTrace.numInstructions)
+    (step : ZiskStep ziskTrace i)
+    (h_placement : MemoryOpPlacement ziskTrace rowsOf memInit i step) :
+    rowsOf i.val = memoryRowsOfStep ziskTrace i step := by
+  cases step <;> simp [memoryRowsOfStep, MemoryOpPlacement] at h_placement ⊢
+  all_goals
+    first
+    | exact h_placement
+    | exact h_placement.1
 
 /-! ## Per-op discharge via the execution-order fold. -/
 
@@ -217,7 +263,8 @@ theorem storeEvidence_of_seed
     h_bytes
 
 /-- Derive each memory op's residual (`MemoryOpEvidenceFor`) from the one shared seed, via the
-    execution-order fold.  Non-memory ops and `sd` get the trivial residual. -/
+    execution-order fold. Non-memory ops and `sd` still have trivial residuals, but their placement
+    facts now constrain `rowsOf` for row-correspondence. -/
 def memEvidence_of_bootSeed
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {binding : SailTrace ziskTrace.numInstructions}

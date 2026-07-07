@@ -451,6 +451,84 @@ theorem readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
   · simpa [eventOfEntry] using
       h_lookup 7 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.2)
 
+/-- The converse of
+`readEventReplayAgreement_of_writeMemoryOfEntry_disjoint`: if a disjoint
+eight-byte write leaves the selected read bytes sound afterward, they were
+already sound before the write. -/
+theorem readEventReplayAgreement_before_of_writeMemoryOfEntry_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {writeEntry readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (writeMemoryOfEntry mem writeEntry)
+        (eventOfEntry readEntry))
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry writeEntry) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  unfold ReadEventReplayAgreement at h_read ⊢
+  have h_write_ne_read :
+      ∀ i j, i < 8 → j < 8 →
+        writeEntry.ptr.toNat + j ≠ readEntry.ptr.toNat + i := by
+    intro i j hi hj h_eq
+    exact h_disjoint i j hi hj h_eq.symm
+  have h_lookup :
+      ∀ i, i < 8 →
+        (writeMemoryOfEntry mem writeEntry)[readEntry.ptr.toNat + i]? =
+            .some ((eventOfEntry readEntry).byteAt i) →
+          mem[readEntry.ptr.toNat + i]? =
+            .some ((eventOfEntry readEntry).byteAt i) := by
+    intro i hi h_lane
+    have h0 : writeEntry.ptr.toNat ≠ readEntry.ptr.toNat + i := by
+      simpa using h_write_ne_read i 0 hi (by norm_num)
+    have h1 : writeEntry.ptr.toNat + 1 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 1 hi (by norm_num)
+    have h2 : writeEntry.ptr.toNat + 2 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 2 hi (by norm_num)
+    have h3 : writeEntry.ptr.toNat + 3 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 3 hi (by norm_num)
+    have h4 : writeEntry.ptr.toNat + 4 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 4 hi (by norm_num)
+    have h5 : writeEntry.ptr.toNat + 5 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 5 hi (by norm_num)
+    have h6 : writeEntry.ptr.toNat + 6 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 6 hi (by norm_num)
+    have h7 : writeEntry.ptr.toNat + 7 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 7 hi (by norm_num)
+    simpa only [writeMemoryOfEntry, Std.ExtHashMap.getElem?_insert,
+      beq_iff_eq, h0, h1, h2, h3, h4, h5, h6, h7] using h_lane
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simpa [eventOfEntry] using
+      h_lookup 0 (by norm_num) (by simpa [eventOfEntry] using h_read.1)
+  · simpa [eventOfEntry] using
+      h_lookup 1 (by norm_num) (by simpa [eventOfEntry] using h_read.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 2 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 3 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 4 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 5 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 6 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 7 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.2)
+
+/-- A byte-disjoint eight-byte write does not change whether a selected read
+agreement holds. -/
+theorem readEventReplayAgreement_writeMemoryOfEntry_disjoint_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {writeEntry readEntry : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry writeEntry) :
+    ReadEventReplayAgreement (writeMemoryOfEntry mem writeEntry)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_writeMemoryOfEntry_disjoint
+      h_read h_disjoint
+  · intro h_read
+    exact readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
+      h_read h_disjoint
+
 /-- After preloading zero bytes at a row pointer, a zero-valued read at that
 pointer is replay-sound. This is the first-read/address-change counterpart to
 the write→read replay theorem. -/
@@ -821,6 +899,21 @@ def replayMemoryAfterBusRow
   else
     mem
 
+/-- A raw memory-bus row that is not an active memory write leaves replay
+memory unchanged. -/
+theorem replayMemoryAfterBusRow_eq_self_of_not_active_write
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (row : MemoryBusEntry FGL)
+    (h_not_write :
+      ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL))) :
+    replayMemoryAfterBusRow mem row = mem := by
+  by_cases h_as : row.as = (2 : FGL)
+  · have h_mult : ¬row.multiplicity = (1 : FGL) := by
+      intro h_mult
+      exact h_not_write ⟨h_as, h_mult⟩
+    simp [replayMemoryAfterBusRow, h_as, h_mult]
+  · simp [replayMemoryAfterBusRow, h_as]
+
 /-- A selected read memory-bus row does not mutate replay memory. -/
 theorem replayMemoryAfterBusRow_eq_self_of_read
     (mem : Std.ExtHashMap Nat (BitVec 8))
@@ -834,6 +927,30 @@ theorem replayMemoryAfterBusRow_eq_self_of_read
       decide
     exact h_one_ne_neg_one (h_write.symm.trans h_read)
   simp [replayMemoryAfterBusRow, h_as, h_not_write]
+
+/-- A replay-neutral left row commutes with any right row. -/
+theorem replayMemoryAfterBusRow_commute_of_left_not_active_write
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL))) :
+    replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+      replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left := by
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write mem left h_left_not_write]
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write
+    (replayMemoryAfterBusRow mem right) left h_left_not_write]
+
+/-- A replay-neutral right row commutes with any left row. -/
+theorem replayMemoryAfterBusRow_commute_of_right_not_active_write
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL))) :
+    replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+      replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left := by
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write
+    (replayMemoryAfterBusRow mem left) right h_right_not_write]
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write mem right h_right_not_write]
 
 /-- Replay memory after a chronological prefix of raw memory-bus rows. -/
 @[reducible]
@@ -862,6 +979,45 @@ theorem readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
     · simpa [replayMemoryAfterBusRow, h_as, h_write] using h_read
   · simpa [replayMemoryAfterBusRow, h_as] using h_read
 
+/-- Converse preservation for one raw row: if replaying a byte-disjoint row
+leaves the selected read agreement true, then it was true before replaying the
+row. Non-write rows are definitional. -/
+theorem readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+        (eventOfEntry readEntry))
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  by_cases h_as : row.as = (2 : FGL)
+  · by_cases h_write : row.multiplicity = (1 : FGL)
+    · exact
+        readEventReplayAgreement_before_of_writeMemoryOfEntry_disjoint
+          (by
+            simpa [replayMemoryAfterBusRow, h_as, h_write,
+              replayStoreEvent_storeEventOfEntry] using h_read)
+          h_disjoint
+    · simpa [replayMemoryAfterBusRow, h_as, h_write] using h_read
+  · simpa [replayMemoryAfterBusRow, h_as] using h_read
+
+/-- Replaying a byte-disjoint raw row does not change whether a selected read
+agreement holds. -/
+theorem readEventReplayAgreement_replayMemoryAfterBusRow_disjoint_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+      h_read h_disjoint
+  · intro h_read
+    exact readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
+      h_read h_disjoint
+
 /-- Replaying a prefix of raw memory-bus rows preserves a read agreement when
 all rows in the prefix are byte-disjoint from the read entry. -/
 theorem readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
@@ -889,6 +1045,54 @@ theorem readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
         intro restRow h_rest
         exact h_disjoint restRow (by simp [h_rest])
       simpa [replayMemoryAfterBusRows] using ih h_head h_tail
+
+/-- Converse preservation for a raw-row prefix: if replaying only byte-disjoint
+rows leaves the selected read agreement true, then the agreement was true before
+the prefix. -/
+theorem readEventReplayAgreement_before_of_replayMemoryAfterBusRows_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (replayMemoryAfterBusRows mem rows)
+        (eventOfEntry readEntry))
+    (h_disjoint :
+      ∀ row, row ∈ rows → MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  induction rows generalizing mem with
+  | nil =>
+      simpa [replayMemoryAfterBusRows] using h_read
+  | cons row rest ih =>
+      have h_tail :
+          ∀ restRow, restRow ∈ rest →
+            MemoryBusEntryByteDisjoint readEntry restRow := by
+        intro restRow h_rest
+        exact h_disjoint restRow (by simp [h_rest])
+      have h_after_head :
+          ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+            (eventOfEntry readEntry) := by
+        exact ih (by simpa [replayMemoryAfterBusRows] using h_read) h_tail
+      exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+        h_after_head (h_disjoint row (by simp))
+
+/-- Replaying only byte-disjoint raw rows does not change whether a selected
+read agreement holds. -/
+theorem readEventReplayAgreement_replayMemoryAfterBusRows_disjoint_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_disjoint :
+      ∀ row, row ∈ rows → MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRows mem rows)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRows_disjoint
+      h_read h_disjoint
+  · intro h_read
+    exact readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
+      h_read h_disjoint
 
 /-- Replaying raw memory-bus rows is the same memory update as replaying their
     projected read/write event list. This lets AIR-facing proofs reason over
@@ -987,6 +1191,42 @@ def MemoryBusRowsPrefixReadSound
             (replayMemoryAfterBusRows initialMemory priorRows)
             (eventOfEntry row)
 
+/-- Transfer prefix read soundness between two row lists once every selected
+read in the target list has a selected read in the source list with the same
+payload and the same replay memory before the read.
+
+This is deliberately not the Stage-0 order theorem by itself: the hard work is
+to prove the `h_match` replay-prefix equality from sorted/execution-order
+correspondence. Keeping that obligation explicit prevents replacing
+read-soundness with another semantic premise. -/
+theorem memoryBusRowsPrefixReadSound_transfer_of_read_replay_match
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (sourceRows targetRows : List (MemoryBusEntry FGL))
+    (h_source : MemoryBusRowsPrefixReadSound initialMemory sourceRows)
+    (h_match :
+      ∀ targetPrior targetRead targetLater,
+        targetRows = targetPrior ++ targetRead :: targetLater →
+          targetRead.as = (2 : FGL) →
+            targetRead.multiplicity = (-1 : FGL) →
+              ∃ sourcePrior sourceRead sourceLater,
+                sourceRows = sourcePrior ++ sourceRead :: sourceLater
+                  ∧ sourceRead.as = (2 : FGL)
+                  ∧ sourceRead.multiplicity = (-1 : FGL)
+                  ∧ targetRead.ptr = sourceRead.ptr
+                  ∧ targetRead.value_0 = sourceRead.value_0
+                  ∧ targetRead.value_1 = sourceRead.value_1
+                  ∧ replayMemoryAfterBusRows initialMemory targetPrior =
+                    replayMemoryAfterBusRows initialMemory sourcePrior) :
+    MemoryBusRowsPrefixReadSound initialMemory targetRows := by
+  intro targetPrior targetRead targetLater h_target_split h_as h_mult
+  obtain ⟨sourcePrior, sourceRead, sourceLater, h_source_split,
+    h_source_as, h_source_mult, h_ptr, h_value_0, h_value_1, h_replay⟩ :=
+    h_match targetPrior targetRead targetLater h_target_split h_as h_mult
+  rw [h_replay]
+  exact readEventReplayAgreement_of_entry_same
+    (h_source sourcePrior sourceRead sourceLater h_source_split h_source_as h_source_mult)
+    h_ptr h_value_0 h_value_1
+
 /-- Prefix-indexed read soundness implies the recursive row-level replay
     predicate consumed by the memory-bus trace bridge. -/
 theorem memoryBusRowsReadWriteSound_of_prefixReadSound
@@ -1041,6 +1281,221 @@ theorem memoryBusRowsPrefixReadSound_of_readWriteSound
             ih (replayMemoryAfterBusRow initialMemory row) rest
               h_tail h_rest
           simpa [replayMemoryAfterBusRows] using h_selected
+
+/-- Swap two adjacent rows at the head of a recursive replay-sound list.
+
+The disjointness assumptions make read agreements insensitive to moving one row
+across the other. The explicit replay-commutation assumption is the non-read
+part needed for the suffix memory cursor. -/
+theorem memoryBusRowsReadWriteSound_swap_adjacent_head
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsReadWriteSound initialMemory (left :: right :: suffix))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left)
+    (h_commute :
+      ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) :
+    MemoryBusRowsReadWriteSound initialMemory (right :: left :: suffix) := by
+  simp only [MemoryBusRowsReadWriteSound] at h_rows ⊢
+  constructor
+  · intro h_as h_mult
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+      (h_rows.2.1 h_as h_mult) h_right_left_disjoint
+  · constructor
+    · intro h_as h_mult
+      exact readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
+        (h_rows.1 h_as h_mult) h_left_right_disjoint
+    · simpa [h_commute initialMemory] using h_rows.2.2
+
+/-- Swap two adjacent rows after an arbitrary prefix of a recursive
+replay-sound list. -/
+theorem memoryBusRowsReadWriteSound_swap_adjacent
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsReadWriteSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left)
+    (h_commute :
+      ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) :
+    MemoryBusRowsReadWriteSound initialMemory (pref ++ right :: left :: suffix) := by
+  induction pref generalizing initialMemory with
+  | nil =>
+      simpa using
+        memoryBusRowsReadWriteSound_swap_adjacent_head
+          initialMemory left right suffix h_rows h_left_right_disjoint
+          h_right_left_disjoint h_commute
+  | cons row pref ih =>
+      simp only [List.cons_append, MemoryBusRowsReadWriteSound] at h_rows ⊢
+      constructor
+      · exact h_rows.1
+      · exact ih (replayMemoryAfterBusRow initialMemory row) h_rows.2
+
+/-- Prefix read-soundness is stable under swapping adjacent byte-disjoint rows
+whose replay effects commute. This is the local order-transfer step for
+turning a sorted Mem-table replay proof into an execution-order replay proof. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left)
+    (h_commute :
+      ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_of_readWriteSound initialMemory
+    (pref ++ right :: left :: suffix)
+    (memoryBusRowsReadWriteSound_swap_adjacent initialMemory pref left right suffix
+      (memoryBusRowsReadWriteSound_of_prefixReadSound initialMemory
+        (pref ++ left :: right :: suffix) h_rows)
+      h_left_right_disjoint h_right_left_disjoint h_commute)
+
+/-- Adjacent-swap corollary when the left row is replay-neutral. The
+disjointness hypotheses still protect read agreement if the right row is a
+write moved before a selected read. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent_of_left_not_active_write
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+    h_rows h_left_right_disjoint h_right_left_disjoint
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_left_not_active_write
+        mem left right h_left_not_write)
+
+/-- Adjacent-swap corollary when the right row is replay-neutral. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent_of_right_not_active_write
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL)))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+    h_rows h_left_right_disjoint h_right_left_disjoint
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_right_not_active_write
+        mem left right h_right_not_write)
+
+/-- A proof-relevant, replay-safe adjacent-swap relation between two memory-bus
+row lists.
+
+This is the Stage-0 order-transfer target: later row-correspondence facts should
+show that execution-order rows are obtained from table-order Mem replay rows by
+swapping only byte-disjoint rows whose replay effects commute.  The relation is
+deliberately structural; it does not mention read values or replay agreement. -/
+inductive MemoryBusRowsReplaySafePermutation :
+    List (MemoryBusEntry FGL) → List (MemoryBusEntry FGL) → Prop where
+  | refl (rows : List (MemoryBusEntry FGL)) :
+      MemoryBusRowsReplaySafePermutation rows rows
+  | swap
+      {source : List (MemoryBusEntry FGL)}
+      (pref : List (MemoryBusEntry FGL))
+      (left right : MemoryBusEntry FGL)
+      (suffix : List (MemoryBusEntry FGL)) :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix) →
+      MemoryBusEntryByteDisjoint left right →
+      MemoryBusEntryByteDisjoint right left →
+      (∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) →
+      MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix)
+
+/-- Replay-safe adjacent swaps are ordinary list permutations. -/
+theorem MemoryBusRowsReplaySafePermutation.perm
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    source.Perm target := by
+  induction h_order with
+  | refl =>
+      exact List.Perm.refl _
+  | swap pref left right suffix h_prev _h_left_right _h_right_left _h_commute ih =>
+      exact ih.trans
+        (List.Perm.append_left pref (List.Perm.swap left right suffix).symm)
+
+/-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
+
+This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into
+the reusable order-transfer form needed to move from Mem table order to
+execution order. -/
+theorem memoryBusRowsPrefixReadSound_of_replaySafePermutation
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    {sourceRows targetRows : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation sourceRows targetRows)
+    (h_source : MemoryBusRowsPrefixReadSound initialMemory sourceRows) :
+    MemoryBusRowsPrefixReadSound initialMemory targetRows := by
+  induction h_order generalizing initialMemory with
+  | refl =>
+      exact h_source
+  | swap pref left right suffix h_prev h_left_right h_right_left h_commute ih =>
+      exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+        (ih initialMemory h_source) h_left_right h_right_left h_commute
+
+/-- Constructor helper for a replay-safe swap when the left row is not an
+active write. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_left_not_active_write
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    h_left_right_disjoint h_right_left_disjoint
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_left_not_active_write
+        mem left right h_left_not_write)
+
+/-- Constructor helper for a replay-safe swap when the right row is not an
+active write. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_right_not_active_write
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL)))
+    (h_left_right_disjoint : MemoryBusEntryByteDisjoint left right)
+    (h_right_left_disjoint : MemoryBusEntryByteDisjoint right left) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    h_left_right_disjoint h_right_left_disjoint
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_right_not_active_write
+        mem left right h_right_not_write)
 
 @[simp]
 theorem replayMemoryAfterBusRows_append

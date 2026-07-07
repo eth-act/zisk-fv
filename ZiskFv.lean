@@ -134,6 +134,7 @@ import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedZiskTrace
 import ZiskFv.Compliance.AcceptedZiskTrace.Spec
+import ZiskFv.Compliance.AcceptedZiskTrace.MemTable
 import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.OpBusProviderMatch
 import ZiskFv.Compliance.ConstructionSub
