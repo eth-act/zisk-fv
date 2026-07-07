@@ -473,6 +473,25 @@ private lemma bool_of_booleanity {col : FGL} (h : col * (1 - col) = 0) :
   · exact ⟨false, by simpa [ZiskFv.AirsClean.boolF] using h0⟩
   · exact ⟨true, by simp only [ZiskFv.AirsClean.boolF_true]; exact (sub_eq_zero.mp h1).symm⟩
 
+/-- An active Main `b`-side load selector gives the PIL memory opcode literal `1`.
+
+The active pull multiplicity pins `b_src_mem + b_src_ind + b_src_reg = 1`. When
+load decode gives `b_src_ind = 1`, Booleanity forces the register/direct-memory
+alternatives off, so Main's `bMemMessage.mem_op` is the load opcode. -/
+theorem bMemMessage_mem_op_eq_one_of_active_b_src_ind
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_b_src_mem_bool : row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0)
+    (h_b_src_reg_bool : row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0)
+    (h_b_src_ind : row.rom.b_src_ind = 1)
+    (h_active :
+      -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.bMemMessage row).mem_op = 1 := by
+  obtain ⟨d_mem, h_mem⟩ := bool_of_booleanity h_b_src_mem_bool
+  obtain ⟨d_reg, h_reg⟩ := bool_of_booleanity h_b_src_reg_bool
+  cases d_mem <;> cases d_reg <;>
+    simp [h_mem, h_reg, h_b_src_ind, ZiskFv.AirsClean.boolF_true,
+      ZiskFv.AirsClean.boolF_false] at h_active ⊢
+
 /-- **Unpacking the four ADD decode flags from the packed `flags` slot.**
 
 Given that the concrete Main row's packed `romFlags` equals `packFlags bits`
