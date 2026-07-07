@@ -1,47 +1,53 @@
 import Clean.Air.Balance
 import ZiskFv.Channels.MemoryBus
 import ZiskFv.Compliance.EnsembleWitnessBuilder
+import ZiskFv.AirsClean.Main.Bridge
+import ZiskFv.AirsClean.RegisterBoundary
 
 /-!
-# Register MemBus boundary balance for the `add x1,x1,x1` witness
+# Register MemBus balance for the `add x1,x1,x1` witness (from real component emissions)
 
-Issue #225's register traffic is a telescoping MemBus argument.  Main's ordinary
-row-local register accesses supply the interior push-prev / pull-current pairs;
-boot and reload are boundary terms, not normal per-row Main-table emissions.
+Issue #225's register traffic is a telescoping MemBus argument.  For a register-register
+instruction Main emits, per operand, a `MEMORY_REG_OP` (`mem_op = 3`) push-prev (the previous
+register access) and a pull-current (the current access); the two chain-closing boundary terms —
+boot (`global_init_mem`) and reload (`reg_pre_load`) — are emitted by the RegisterBoundary
+component (`ZiskFv/AirsClean/RegisterBoundary.lean`).  All of these are now real composed-table
+emissions in `fullRv64imEnsemble` (see `AirsClean/FullEnsemble.lean`).
 
-This file records the checked boundary-shaped register contribution for the
-minimal real-register witness `add x1,x1,x1`.  Register x1 has four timeline
-messages (boot at step 0, then the two reads and write at steps 1/2/3).  The
-other tracked registers x2..x31 are idle and contribute only the boot/reload
-zero-value pair.  Every listed message appears once as a pull and once as a push,
-so the MemBus contribution balances constructively.
+This file proves that the register (`mem_op = 3`) partition of those emissions **telescopes to
+zero** for the minimal no-prelude real-register witness `add x1,x1,x1`.  Unlike the earlier
+shape-demo, the balanced messages here are the **real component emission definitions**
+(`aRegPreMessage`/`aMemMessage`/… from `Main/Bridge.lean`, `bootMessage`/`reloadMessage` from
+RegisterBoundary) instantiated at a concrete `add x1,x1,x1` `MainRowWithRom`, not hand-authored
+literals.  Their multiplicities are the emissions' own selectors: for `add x1,x1,x1` the push-prev
+selectors `a_src_reg`/`b_src_reg`/`store_reg` are `1` and the pull selectors
+`-(…_mem + … + …_reg)` are `-1`, matching `pushedValue` / `pulledValue`.
 
-This is intentionally a balance theorem over an explicit list of register MemBus
-messages.  It demonstrates the telescoping shape needed by #225, but it does not
-yet extract those messages from `fullRv64imEnsemble` rows or construct the full
-trace-level `BalancedChannels` witness; that connection is the follow-up handoff
-to #219.
+**Scope.** This is the register-partition balance (`BalancedInteractions` over the `mem_op = 3`
+messages), the object #219 consumes.  It does **not** build the whole-channel
+`witness.BalancedChannels` or the constraint-satisfying accepted trace — those stay #219.  The
+balance is conditional on the previous-step timestamp chain (`a_reg_prev_mem_step = 0`,
+`b_reg_prev_mem_step = 1`, `store_reg_prev_mem_step = 2`, reload at `3`), which ZisK's ordering/range
+checks enforce (the #169/#19 axis, `main.pil:447`), pinned here in the concrete row.  `x0` is not
+used: ZisK decodes `x0` operands as immediate/no-op register accesses emitting no `mem_op = 3`
+traffic, so `x1,x1,x1` is the minimal real-register witness.
+
+## Trust note
+
+No axioms.  `pulledValue` / `pushedValue` are Clean's `-1` / `+1` value-level channel interactions.
 -/
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus
+open ZiskFv.AirsClean.Main (MainRowWithRom aRegPreMessage aMemMessage bRegPreMessage bMemMessage
+  cRegPreMessage cMemMessage)
+open ZiskFv.AirsClean.RegisterBoundary (RegisterBoundaryRow bootMessage reloadMessage)
 
 namespace ZiskFv.Compliance.RegisterMemBusBalance
 
-/-- The PIL register-memory message `[MEMORY_REG_OP, reg, step, 8, v0, v1]`. -/
-def regMsg (reg step value0 value1 : FGL) : MemBusMessage FGL :=
-  { mem_op := 3
-    ptr := reg
-    timestamp := step
-    width := 8
-    value_0 := value0
-    value_1 := value1 }
+/-! ## Paired-interaction balance infrastructure (message-agnostic) -/
 
-/-- The all-zero register message used by the no-prelude `add x1,x1,x1` witness. -/
-def zeroRegMsg (reg step : FGL) : MemBusMessage FGL :=
-  regMsg reg step 0 0
-
-/-- One pull/push pair for the same MemBus message. -/
+/-- One pull/push pair for the same MemBus message balances. -/
 def pairedInteraction (msg : MemBusMessage FGL) : List (Interaction FGL) :=
   [MemBusChannel.pulledValue msg, MemBusChannel.pushedValue msg]
 
@@ -100,35 +106,93 @@ theorem pairedInteractions_balanced
       exact balancedInteractions_append_of_balanced
         (pairedInteraction_balanced msg) (ih h_rest_len) (by simpa [pairedInteractions] using h_len)
 
-/-- The x1 register timeline for `add x1,x1,x1`:
-    boot at 0, read-a at 1, read-b at 2, store-c at 3. -/
-def addX1TimelineMessages : List (MemBusMessage FGL) :=
-  [ zeroRegMsg 1 0
-  , zeroRegMsg 1 1
-  , zeroRegMsg 1 2
-  , zeroRegMsg 1 3 ]
+/-! ## The concrete `add x1,x1,x1` row and boundary rows -/
 
-/-- Idle tracked registers x2..x31, each at the zero boot/reload point. -/
-def idleRegisterMessages : List (MemBusMessage FGL) :=
-  (List.range 30).map fun i => zeroRegMsg ((i + 2 : Nat) : FGL) 0
+/-- The concrete register-register `add x1,x1,x1` Main row.  Register operands x1: the six MemBus
+    pointers (`a_offset_imm0`/`b_offset_imm0`/`store_offset` and `addr0`/`addr1`/`addr2`) are `1`;
+    the three register selectors are `1` and the memory selectors `0`; the previous-step chain is
+    `0/1/2`; all values `0`; `store_pc = 0` collapses the c-value to `c_0 = 0`. -/
+def addX1Row : MainRowWithRom FGL :=
+  { core :=
+      { a_0 := 0, a_1 := 0, b_0 := 0, b_1 := 0, c_0 := 0, c_1 := 0,
+        flag := 0, pc := 0, is_external_op := 1, op := 0, m32 := 0,
+        ind_width := 8, set_pc := 0, jmp_offset1 := 0, jmp_offset2 := 0,
+        store_pc := 0, im_high_degree_2 := 0, segment_l1 := 1 }
+    rom :=
+      { a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 1, b_imm1 := 0,
+        store_offset := 1, a_src_imm := 0, a_src_mem := 0, is_precompiled := 0,
+        b_src_imm := 0, b_src_mem := 0, store_mem := 0, store_ind := 0,
+        b_src_ind := 0, a_src_reg := 1, b_src_reg := 1, store_reg := 1,
+        addr0 := 1, addr1 := 1, addr2 := 1, main_step := 0,
+        a_reg_prev_mem_step := 0, b_reg_prev_mem_step := 1,
+        store_reg_prev_mem_step := 2, store_reg_prev_value_0 := 0,
+        store_reg_prev_value_1 := 0 } }
 
-/-- The faithful register message set for the no-prelude `add x1,x1,x1` target.
+/-- Boundary row for register x1: reload closes the chain at the last access (ts 3), value 0. -/
+def boundaryRowX1 : RegisterBoundaryRow FGL :=
+  { reg := 1, reloadTimestamp := 3, reloadValue_0 := 0, reloadValue_1 := 0 }
 
-`add x0,x0,x0` is intentionally not used here: ZisK decodes x0 register operands
-as immediate/no-op register accesses, so it emits no register `mem_op = 3` traffic.
--/
-def addX1X1X1RegisterMessages : List (MemBusMessage FGL) :=
-  addX1TimelineMessages ++ idleRegisterMessages
+/-- Boundary row for an idle tracked register `r`: boot and reload both at ts 0, value 0. -/
+def boundaryRowIdle (r : FGL) : RegisterBoundaryRow FGL :=
+  { reg := r, reloadTimestamp := 0, reloadValue_0 := 0, reloadValue_1 := 0 }
 
-/-- Concrete explicit-message MemBus balance for the register contribution of
-    `add x1,x1,x1`: each boot/current message is paired with the corresponding
-    push-prev/reload message, and the idle registers have boot/reload zero pairs.
-    This theorem does not claim extraction from the real ensemble rows. -/
+/-! ## The real-emission register interaction list for `add x1,x1,x1` -/
+
+/-- Main's six register `mem_op=3` emissions for `add x1,x1,x1`, as value-level interactions with
+    the emissions' own multiplicities: push-prev (selector `1`) as `pushedValue`, pull-current
+    (selector `-1`) as `pulledValue`.  The messages are the real `Main/Bridge.lean` emission
+    definitions instantiated at `addX1Row`. -/
+def mainRegisterInteractions : List (Interaction FGL) :=
+  [ MemBusChannel.pushedValue (aRegPreMessage addX1Row)
+  , MemBusChannel.pulledValue (aMemMessage addX1Row)
+  , MemBusChannel.pushedValue (bRegPreMessage addX1Row)
+  , MemBusChannel.pulledValue (bMemMessage addX1Row)
+  , MemBusChannel.pushedValue (cRegPreMessage addX1Row)
+  , MemBusChannel.pulledValue (cMemMessage addX1Row) ]
+
+/-- One register's boundary contribution: boot pull + reload push (real RegisterBoundary emission
+    definitions), as value-level interactions. -/
+def boundaryInteractions (row : RegisterBoundaryRow FGL) : List (Interaction FGL) :=
+  [ MemBusChannel.pulledValue (bootMessage row)
+  , MemBusChannel.pushedValue (reloadMessage row) ]
+
+/-- Idle tracked registers x2..x31, each contributing a self-balancing boot/reload zero pair. -/
+def idleBoundaryInteractions : List (Interaction FGL) :=
+  (List.range 30).flatMap fun i => boundaryInteractions (boundaryRowIdle ((i + 2 : Nat) : FGL))
+
+/-- The full register (`mem_op=3`) MemBus interaction list for `add x1,x1,x1`: Main's six emissions,
+    x1's boot/reload, and the idle registers' boot/reload pairs. -/
+def addX1X1X1RegisterInteractions : List (Interaction FGL) :=
+  mainRegisterInteractions ++ boundaryInteractions boundaryRowX1 ++ idleBoundaryInteractions
+
+/-! ## The register consistency equalities (the telescoping content)
+
+Each Main emission message equals the boundary/adjacent emission it cancels against, because the
+previous-step chain lines the timestamps up.  These are `rfl` at the concrete `addX1Row`. -/
+
+theorem aRegPre_eq_boot : aRegPreMessage addX1Row = bootMessage boundaryRowX1 := rfl
+theorem aMem_eq_bRegPre : aMemMessage addX1Row = bRegPreMessage addX1Row := rfl
+theorem bMem_eq_cRegPre : bMemMessage addX1Row = cRegPreMessage addX1Row := rfl
+theorem cMem_eq_reload : cMemMessage addX1Row = reloadMessage boundaryRowX1 := rfl
+
+/-! ## The balance -/
+
+/-- The register (`mem_op=3`) partition of the ensemble's MemBus emissions telescopes to zero for
+    `add x1,x1,x1`, from the real component emission definitions: every distinct register message
+    appears once as a pull and once as a push. -/
 theorem addX1X1X1_registerMemBus_balanced :
-    BalancedInteractions (pairedInteractions addX1X1X1RegisterMessages) := by
-  apply pairedInteractions_balanced
-  left
-  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-  decide
+    BalancedInteractions addX1X1X1RegisterInteractions := by
+  -- Order-agnostic: over the messages actually present, every register message's ±1
+  -- pull/push multiplicities sum to zero (the aRegPre↔boot, aMem↔bRegPre, bMem↔cRegPre,
+  -- cMem↔reload chain plus the idle boot↔reload pairs — see the consistency equalities above).
+  refine Air.Flat.balancedInteractions_of_present ?_
+    (addX1X1X1RegisterInteractions.map (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro i hi
+    exact List.mem_map_of_mem hi
+  · -- bounded quantifier over the concrete message list — decidable
+    decide
 
 end ZiskFv.Compliance.RegisterMemBusBalance
