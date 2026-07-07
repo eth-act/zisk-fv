@@ -131,6 +131,7 @@ private def trace : AcceptedZiskTrace 0 where
   constraints_hold := wit_constraints
   channels_balanced := wit_balanced
   mem_replay_source := fun h => absurd h (Nat.not_lt_zero _)
+  mem_replay_source_covers := fun h => absurd h (Nat.not_lt_zero _)
   transitions_hold := wit_transitions
   main_height := by intro table _ _ i; exact i.elim0
   segment_l1_fixed := wit_segment_l1

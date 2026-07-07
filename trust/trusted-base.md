@@ -256,6 +256,8 @@ guarded `FullWitnessMemAirSource` plus nonempty-table proof, and derives the
 the replay bridge directly, and fixed-column shape is no longer accepted-trace
 residue, but it still strengthens nonempty `AcceptedZiskTrace` construction until
 the remaining Mem generated-source/cross-row facts are split or derived.
+`mem_replay_source_covers` is the matching structural source-correlation
+certificate: every mutable-Mem table in the witness is the selected source table.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
@@ -275,8 +277,10 @@ the remaining Mem generated-source/cross-row facts are split or derived.
 > the seed carries only the explicit boot/initial-memory bridge and replay-safe
 > sorted-to-execution order certificate. It is not free on the accepted-trace
 > side: every nonempty `AcceptedZiskTrace` constructor must now supply the guarded
-> Mem AIR source from which the replay bridge is derived, unless later #115 work
-> derives or splits those source facts into narrower PIL/checkable certificates.
+> Mem AIR source from which the replay bridge is derived, plus the structural
+> certificate that every mutable-Mem table in the witness is that selected
+> source table, unless later #115 work derives or splits those source facts into
+> narrower PIL/checkable certificates.
 > It remains a constructibility
 > restatement for the Sail execution-memory cursor itself:
 > `rowTraceCoherence_of_uniformReplayMem` mechanizes only the reconstruction
@@ -404,8 +408,10 @@ raw `readSound` field has been replaced by accepted Mem replay evidence plus
 explicit initial-memory and replay-safe order certificates. This reduces the
 seed-side read-value assumption, but it also adds a nonempty accepted-trace
 constructor burden: `mem_replay_source` must select the concrete mutable Mem AIR
-source and table-nonempty proof from which the replay bridge is derived. **#119**
-reduced the store byte facts to the coherence shape.
+source and table-nonempty proof from which the replay bridge is derived, and
+`mem_replay_source_covers` must certify structural coverage of mutable-Mem
+tables by that selected source. **#119** reduced the store byte facts to the
+coherence shape.
 
 **Memory, not memory+PC.** The coherence chain constrains only `.mem`; the seed's
 `initialState` snapshot pins PC / registers only incidentally, and per-step
@@ -650,6 +656,7 @@ trust surface even though they add no axiom.
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
 | `mem_replay_source` (**#115**, guarded by `0 < numInstructions`) | Mem generated row/range source facts for the witness-selected mutable Mem table; deterministic Mem `SEGMENT_L1` shape is derived via `segmentWithFixedL1` | selects the concrete `FullWitnessMemAirSource` and proves the table is nonempty, so downstream code can derive the `FullWitnessMemReplayBridge` and accepted table-order replay soundness |
+| `mem_replay_source_covers` (**#115**, guarded by `0 < numInstructions`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_source` table; this is table identity only, not read-value agreement |
 
 **#115 constructor-burden note.** Removing the raw seed
 `MemoryBusRowsPrefixReadSound` field moved real proof work into checked Mem
@@ -658,9 +665,11 @@ nonempty traces. A constructor such as #219's single-ADD witness must now build
 the guarded `mem_replay_source` field in addition to
 `constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`/fixed
 columns. That field is not a read-value agreement predicate, and it no longer
-carries deterministic Mem fixed columns, but its remaining generated-source and
-cross-row residue must either be split into narrower PIL/checkable fields or
-derived before #115 is called complete.
+carries deterministic Mem fixed columns. The paired `mem_replay_source_covers`
+field is a structural table-coverage certificate that removes this residue from
+seed-layer wrappers. The remaining generated-source and cross-row residue must
+either be split into narrower PIL/checkable fields or derived before #115 is
+called complete.
 
 **#100 trust-surface change (honest accounting — a SHIFT, documented as such).**
 The next-PC discharge does **not** derive `h_nextPC_matches` from the existing

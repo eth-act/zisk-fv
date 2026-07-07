@@ -175,9 +175,9 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_memReplayRows
 /-- Accepted mutable-Mem provider coverage plus the seed order certificate
 places the selected active Main memory entry in execution order.
 
-The remaining hypotheses are all syntactic/certificate residues: exclusion of
-non-mutable providers for this Main message, selected bridge-table coverage, and
-the explicit replay-safe order certificate already carried by `inputs`. -/
+The remaining hypotheses are syntactic/certificate residues: exclusion of
+non-mutable providers for this Main message and the explicit replay-safe order
+certificate already carried by `inputs`. -/
 theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProviderEntry
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
@@ -205,15 +205,12 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProv
     (h_entry :
       ZiskFv.Airs.MemoryBus.matches_memory_entry entry
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (eval (ziskTrace.mainTable.environment mainRow) mainMsg) (-1) 2))
-    (h_covers :
-      FullWitnessMemReplayBridgeCoversMutableMemTables
-        (ziskTrace.memReplayBridge h_nonempty)) :
+          (eval (ziskTrace.mainTable.environment mainRow) mainMsg) (-1) 2)) :
     entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
   inputs.mem_executionRows_of_memReplayRows
     (ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_one
       h_nonempty h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op
-      h_no_nonmutable h_entry h_covers)
+      h_no_nonmutable h_entry)
 
 @[reducible] noncomputable def loadBMemMainRow
     (ziskTrace : AcceptedZiskTrace numInstructions)
@@ -250,8 +247,7 @@ message equality, and the load `mem_op = 1` fact. For the concrete load b-side
 memory row, the interaction membership, evaluated message equality, `mem_op = 1`,
 and entry match are derived from accepted Main table structure and the
 load-decoder/active-pull facts. The remaining residues are still explicit:
-active interaction multiplicity, non-mutable provider exclusion, and bridge-table
-coverage. -/
+active interaction multiplicity and non-mutable provider exclusion. -/
 theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
@@ -269,10 +265,7 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
     (h_no_nonmutable :
       ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
-        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
-    (h_covers :
-      FullWitnessMemReplayBridgeCoversMutableMemTables
-        (ziskTrace.memReplayBridge h_nonempty)) :
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
       ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
   have h_mainRow : loadBMemMainRow ziskTrace i ∈ ziskTrace.mainTable.table :=
@@ -317,7 +310,7 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
     simp
   exact inputs.mem_executionRows_of_activeMainMutableMemProviderEntry
     h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
-    h_no_nonmutable h_entry h_covers
+    h_no_nonmutable h_entry
 
 /-- Branch-split version of
 `BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry`.
@@ -358,16 +351,12 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
     (h_no_regBoundary :
       ¬ ActiveMainRegisterBoundaryProviderRowMatchSpec ziskTrace.program ziskTrace.witness
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
-        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
-    (h_covers :
-      FullWitnessMemReplayBridgeCoversMutableMemTables
-        (ziskTrace.memReplayBridge h_nonempty)) :
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
       ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
   inputs.mem_executionRows_of_loadBMemProviderEntry i h_b_src_ind h_active h_active_interaction
     (activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
       h_no_marb h_no_mab h_no_memAlign h_no_main h_no_regBoundary)
-    h_covers
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
