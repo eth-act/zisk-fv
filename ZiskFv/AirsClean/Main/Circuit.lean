@@ -813,6 +813,32 @@ theorem is_external_op_boolean_of_mainWithRomMemAndOpBus_constraints
   exact h_holds.1 (row.core.is_external_op * (1 - row.core.is_external_op))
     (Or.inr (Or.inl rfl))
 
+/-- Row-level 14-flag booleanity for the OpBus-extended Main circuit, by
+    delegating to the `mainWithRomAndMemBus` variant (the added op-bus emission
+    contributes no constraint). -/
+theorem romBoolSpec_of_mainWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomMemAndOpBus length program row).operations offset)) :
+    env (row.core.m32 * (1 - row.core.m32)) = 0
+  ∧ env (row.core.set_pc * (1 - row.core.set_pc)) = 0
+  ∧ env (row.core.store_pc * (1 - row.core.store_pc)) = 0
+  ∧ env (row.rom.a_src_imm * (1 - row.rom.a_src_imm)) = 0
+  ∧ env (row.rom.a_src_mem * (1 - row.rom.a_src_mem)) = 0
+  ∧ env (row.rom.is_precompiled * (1 - row.rom.is_precompiled)) = 0
+  ∧ env (row.rom.b_src_imm * (1 - row.rom.b_src_imm)) = 0
+  ∧ env (row.rom.b_src_mem * (1 - row.rom.b_src_mem)) = 0
+  ∧ env (row.rom.store_mem * (1 - row.rom.store_mem)) = 0
+  ∧ env (row.rom.store_ind * (1 - row.rom.store_ind)) = 0
+  ∧ env (row.rom.b_src_ind * (1 - row.rom.b_src_ind)) = 0
+  ∧ env (row.rom.a_src_reg * (1 - row.rom.a_src_reg)) = 0
+  ∧ env (row.rom.b_src_reg * (1 - row.rom.b_src_reg)) = 0
+  ∧ env (row.rom.store_reg * (1 - row.rom.store_reg)) = 0 :=
+  romBoolSpec_of_mainWithRomAndMemBus_constraints length program row offset env
+    (by simpa only [mainWithRomMemAndOpBus] using h_holds)
+
 /-- Project the ROM lookup carried by unified Main row constraints to exact
     program-ROM membership for the evaluated row message. -/
 theorem romSpec_of_mainWithRomMemAndOpBus_constraints
@@ -864,6 +890,91 @@ theorem is_external_op_boolean_of_componentWithRomMemAndOpBus_constraints
     (componentWithRomMemAndOpBus length program).rowOffset env (by
       simpa only [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
         Component.rowOperations] using h_row)
+
+/-- Component-level 14-flag booleanity for the unified Main component. -/
+theorem romBoolSpec_of_componentWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (env : Environment FGL)
+    (h_holds :
+      (componentWithRomMemAndOpBus length program).operations.ConstraintsHold env) :
+    env ((componentWithRomMemAndOpBus length program).rowInputVar.core.m32
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.m32)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.core.set_pc
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.set_pc)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.core.store_pc
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.store_pc)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_imm
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_imm)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.is_precompiled
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.is_precompiled)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_imm
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_imm)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)) = 0
+  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)) = 0 := by
+  have h_row :
+      (componentWithRomMemAndOpBus length program).rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff
+      (component := componentWithRomMemAndOpBus length program) env).mp h_holds
+  exact romBoolSpec_of_mainWithRomMemAndOpBus_constraints
+    length program
+    (componentWithRomMemAndOpBus length program).rowInputVar
+    (componentWithRomMemAndOpBus length program).rowOffset env (by
+      simpa only [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+        Component.rowOperations] using h_row)
+
+/-- Per-field commutation of `Expression.eval` with the `core`/`rom` flag
+    projections, in `x * (1 - x)` booleanity shape, for an abstract row var. -/
+lemma eval_flagBool_bridge (env : Environment FGL)
+    (var : Var MainRowWithRom FGL) :
+    (Expression.eval env (var.core.is_external_op * (1 - var.core.is_external_op))
+        = (eval env var).core.is_external_op * (1 - (eval env var).core.is_external_op))
+  ∧ (Expression.eval env (var.core.m32 * (1 - var.core.m32))
+        = (eval env var).core.m32 * (1 - (eval env var).core.m32))
+  ∧ (Expression.eval env (var.core.set_pc * (1 - var.core.set_pc))
+        = (eval env var).core.set_pc * (1 - (eval env var).core.set_pc))
+  ∧ (Expression.eval env (var.core.store_pc * (1 - var.core.store_pc))
+        = (eval env var).core.store_pc * (1 - (eval env var).core.store_pc))
+  ∧ (Expression.eval env (var.rom.a_src_imm * (1 - var.rom.a_src_imm))
+        = (eval env var).rom.a_src_imm * (1 - (eval env var).rom.a_src_imm))
+  ∧ (Expression.eval env (var.rom.a_src_mem * (1 - var.rom.a_src_mem))
+        = (eval env var).rom.a_src_mem * (1 - (eval env var).rom.a_src_mem))
+  ∧ (Expression.eval env (var.rom.is_precompiled * (1 - var.rom.is_precompiled))
+        = (eval env var).rom.is_precompiled * (1 - (eval env var).rom.is_precompiled))
+  ∧ (Expression.eval env (var.rom.b_src_imm * (1 - var.rom.b_src_imm))
+        = (eval env var).rom.b_src_imm * (1 - (eval env var).rom.b_src_imm))
+  ∧ (Expression.eval env (var.rom.b_src_mem * (1 - var.rom.b_src_mem))
+        = (eval env var).rom.b_src_mem * (1 - (eval env var).rom.b_src_mem))
+  ∧ (Expression.eval env (var.rom.store_mem * (1 - var.rom.store_mem))
+        = (eval env var).rom.store_mem * (1 - (eval env var).rom.store_mem))
+  ∧ (Expression.eval env (var.rom.store_ind * (1 - var.rom.store_ind))
+        = (eval env var).rom.store_ind * (1 - (eval env var).rom.store_ind))
+  ∧ (Expression.eval env (var.rom.b_src_ind * (1 - var.rom.b_src_ind))
+        = (eval env var).rom.b_src_ind * (1 - (eval env var).rom.b_src_ind))
+  ∧ (Expression.eval env (var.rom.a_src_reg * (1 - var.rom.a_src_reg))
+        = (eval env var).rom.a_src_reg * (1 - (eval env var).rom.a_src_reg))
+  ∧ (Expression.eval env (var.rom.b_src_reg * (1 - var.rom.b_src_reg))
+        = (eval env var).rom.b_src_reg * (1 - (eval env var).rom.b_src_reg))
+  ∧ (Expression.eval env (var.rom.store_reg * (1 - var.rom.store_reg))
+        = (eval env var).rom.store_reg * (1 - (eval env var).rom.store_reg)) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+      ProvableStruct.fromComponents, ProvableStruct.components,
+      ProvableStruct.toComponents, ProvableStruct.eval.go,
+      ProvableType.eval_field, circuit_norm, sub_eq_add_neg]
 
 theorem romBoolSpec_of_componentWithRomAndMemBus_constraints
     (length : ℕ) (program : Program length)

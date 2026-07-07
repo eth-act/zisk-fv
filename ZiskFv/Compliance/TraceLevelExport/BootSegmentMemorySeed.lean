@@ -371,9 +371,9 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
 `BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry`.
 
 This keeps the remaining non-mutable-provider residue decomposed into the
-MemAlign-family and Main current-access memory cases instead of accepting the
-aggregate non-mutable exclusion directly. The RegisterBoundary and Main
-register-pre cases are discharged from the load's `mem_op = 1` message. -/
+MemAlign-family cases instead of accepting the aggregate non-mutable exclusion
+directly. The RegisterBoundary and Main self-provider cases are discharged from
+the load's `mem_op = 1` message plus accepted Main selector Booleanity. -/
 theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
@@ -396,18 +396,6 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
     (h_no_memAlign :
       ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
-        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
-        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
-    (h_no_main_a_mem :
-      ¬ ActiveMainSelfAMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
-        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
-        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
-    (h_no_main_b_mem :
-      ¬ ActiveMainSelfBMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
-        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
-        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
-    (h_no_main_c_mem :
-      ¬ ActiveMainSelfCMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
@@ -447,8 +435,8 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
       ¬ ActiveMainSelfMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2 :=
-    not_activeMainSelfMemProviderRowMatchSpec_of_main_mem_op_one_no_memory_branches
-      h_mainEval h_main_mem_op h_no_main_a_mem h_no_main_b_mem h_no_main_c_mem
+    not_activeMainSelfMemProviderRowMatchSpec_of_main_mem_op_one
+      ziskTrace.constraints_hold h_mainEval h_main_mem_op
   exact inputs.mem_executionRows_of_loadBMemProviderEntry i h_b_src_ind h_active
     (activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
       h_no_marb h_no_mab h_no_memAlign h_no_main h_no_regBoundary)
