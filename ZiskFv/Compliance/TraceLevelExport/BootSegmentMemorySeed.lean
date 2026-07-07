@@ -15,11 +15,12 @@ cursor function `stateAt : List rows → SailState` plus a whole-sequence
 
 * `memInit` + `boot` — the segment's boot / cross-segment seed memory (irreducible at the single-
   segment level: a segment does not contain its own starting state, it is carried in from boot);
-* `step` — the per-step **execution-successor**: each Sail step's memory is the replay of that step's
-  memory-bus rows onto the previous step's memory (cross-row memory coherence);
-* `readSound` — memory-bus **read-soundness** over the whole execution-order row list.  This is the
-  out-of-scope ExtF memory-bus **permutation** trust (see `trust/trusted-base.md`;
-  `Airs/MemoryBus/MemBridge.lean`), carried as a named premise of that existing class;
+* `step` — the per-step **execution-successor**: each Sail step's memory is the replay of that
+  step's memory-bus rows onto the previous step's memory (cross-row memory coherence);
+* `readSoundInputs` — narrow, nonsemantic replay/order inputs from which memory-bus
+  **read-soundness** over the whole execution-order row list is derived for nonempty segments.  This
+  keeps the accepted Mem replay bridge, the explicit boot/cross-segment initial-memory bridge, and
+  the replay-safe order-transfer certificate visible instead of carrying raw read-soundness;
 * `placement` — the *structural* tie pinning `rowsOf i` to each op's real memory-bus rows: loads
   use their read `busLd .. .e1`, stores use their write `busSt .. .e2`, non-memory ops emit no rows,
   and narrow stores additionally carry their preserved-byte prefix fact.
@@ -34,14 +35,11 @@ reduction — versus #185's free-`stateAt` / `RowTraceCoherence` form.
 `Spike.rowTraceCoherence_of_uniformReplayMem` mechanizes only the reconstruction direction
 (`step + boot` ⟹ the uniform-replay cursor satisfies `RowTraceCoherence`; there is no converse), and
 the concrete `step` pins `binding.mem` at *every* index where the free-cursor chain tied it only at
-memory-op indices — a difference real traces satisfy trivially (no vacuity).  `readSound` is the same
-read-soundness `facts` already carried.  The value is *constructibility*: the memory premise is now
-concrete, with no free `stateAt` existential and no whole-sequence `RowTraceCoherence` on the assumed
-surface (#115 acceptance "named premises, not a whole-Sail-state equality"), which is the seam the
-non-degenerate load instantiation (#221 → #74) needs.  It is a
-named external-trust premise (same class as channel-balance), NOT an axiom and NOT a defect; the
-read-soundness half remains the memory-bus permutation trust, whose full derivation from
-`constraints_hold`/`channels_balanced` is a separate epic. -/
+memory-op indices — a difference real traces satisfy trivially (no vacuity).  The value is
+*constructibility*: the memory premise is now concrete, with no free `stateAt` existential, no
+whole-sequence `RowTraceCoherence`, and no raw read-soundness predicate on the assumed surface.  The
+read-soundness half is assembled from accepted Mem replay evidence plus explicit initial-memory and
+replay-safe order bridges. -/
 
 namespace ZiskFv.Compliance
 
@@ -107,6 +105,50 @@ theorem storeEvidence_of_loadMemReplay
     rw [← h_load_mem]
 
 /-! ## The seed and its per-op derivation -/
+
+/-- Nonsemantic inputs needed to derive execution-order seed read-soundness
+from accepted Mem replay evidence.
+
+The accepted trace supplies the guarded Mem replay bridge. `initialMemory_eq` is
+the explicit boot/cross-segment memory bridge. `order` is the structural
+order-transfer proof: execution rows are obtained from the accepted rows by
+replay-safe adjacent swaps. -/
+structure BootSegmentReadSoundInputs
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (memInit : Std.ExtHashMap Nat (BitVec 8))
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h_nonempty : 0 < ziskTrace.numInstructions) : Type 2 where
+  initialMemory_eq :
+    memInit =
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        (ziskTrace.memReplayBridge h_nonempty)).initialMemory
+  order :
+    MemoryBusRowsReplaySafePermutation
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        (ziskTrace.memReplayBridge h_nonempty)).rows
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+
+/-- Assemble the exact seed-level execution-order read-soundness predicate from
+accepted Mem replay evidence plus the explicit initial-memory and order-transfer
+bridges. -/
+theorem readSound_of_bootSegmentReadSoundInputs
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  let acceptedReplay :=
+    ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+      (ziskTrace.memReplayBridge h_nonempty)
+  have h_prefix :
+      MemoryBusRowsPrefixReadSound
+        acceptedReplay.initialMemory
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+    memoryBusRowsPrefixReadSound_of_replaySafePermutation
+      acceptedReplay.initialMemory inputs.order acceptedReplay.prefixReadSound
+  rwa [inputs.initialMemory_eq]
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
@@ -174,10 +216,11 @@ def MemoryOpPlacement
 
     One shared assumption for the whole segment, replacing the ten former per-op memory residuals,
     stated concretely (see the module header): `memInit`/`boot` (boot seed), `step` (execution-
-    successor), `readSound` (memory-bus read-soundness), and the structural `placement`.
+    successor), derived read-soundness inputs, and the structural `placement`.
     `memEvidence_of_bootSeed` derives every op's `MemoryOpEvidenceFor` residual from it by the
-    execution-order fold.  Named external-trust premise (same class as channel-balance), NOT an axiom;
-    driving the residual read-soundness half to zero is the memory-bus permutation epic. -/
+    execution-order fold.  The read-soundness field is no longer an opaque semantic predicate: it is
+    reconstructed from accepted Mem replay evidence, the explicit initial-memory bridge, and a
+    replay-safe order certificate. -/
 structure BootSegmentMemorySeed
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace ziskTrace.numInstructions)
@@ -193,12 +236,24 @@ structure BootSegmentMemorySeed
   step : ∀ (j : ℕ) (h : j + 1 < ziskTrace.numInstructions),
       (binding ⟨j + 1, h⟩).mem
         = replayMemoryAfterBusRows (binding ⟨j, Nat.lt_of_succ_lt h⟩).mem (rowsOf j)
-  /-- Memory-bus read-soundness over the whole execution-order row list. -/
-  readSound :
-    MemoryBusRowsPrefixReadSound memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+  /-- Narrow replay/order inputs from which nonempty-segment read-soundness is derived. The guard
+      keeps the empty-segment inhabitation witness from fabricating a nonempty Mem replay bridge. -/
+  readSoundInputs :
+    ∀ (h : 0 < ziskTrace.numInstructions), BootSegmentReadSoundInputs ziskTrace memInit rowsOf h
   /-- Structural placement pinning `rowsOf` to each op's real bus rows (+ narrow-store bytes). -/
   placement : ∀ i : Fin ziskTrace.numInstructions,
     MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i)
+
+/-- Derived memory-bus read-soundness for a nonempty concrete seed. -/
+theorem readSound_of_bootSeed
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions) :
+    MemoryBusRowsPrefixReadSound
+      seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs (seed.readSoundInputs h_nonempty)
 
 theorem rowsOf_eq_memoryRowsOfStep_of_placement
     {ziskTrace : AcceptedZiskTrace numInstructions}
@@ -213,52 +268,6 @@ theorem rowsOf_eq_memoryRowsOfStep_of_placement
     first
     | exact h_placement
     | exact h_placement.1
-
-/-- Nonsemantic inputs needed to derive execution-order seed read-soundness
-from accepted Mem replay evidence.
-
-`replayBridge` derives table-order prefix read-soundness from generated Mem AIR
-facts. `initialMemory_eq` is the explicit boot/cross-segment memory bridge.
-`order` is the structural order-transfer proof: execution rows are obtained
-from the accepted rows by replay-safe adjacent swaps. -/
-structure BootSegmentReadSoundInputs
-    (ziskTrace : AcceptedZiskTrace numInstructions)
-    (memInit : Std.ExtHashMap Nat (BitVec 8))
-    (rowsOf : ℕ → List (MemoryBusEntry FGL)) : Type 2 where
-  rows : List (MemoryBusEntry FGL)
-  replayBridge :
-    ZiskFv.AirsClean.FullEnsemble.FullWitnessMemReplayBridge
-      ziskTrace.witness rows
-  initialMemory_eq :
-    memInit =
-      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-        replayBridge).initialMemory
-  order :
-    MemoryBusRowsReplaySafePermutation
-      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-        replayBridge).rows
-      ((List.range ziskTrace.numInstructions).flatMap rowsOf)
-
-/-- Assemble the exact seed-level execution-order read-soundness predicate from
-accepted Mem replay evidence plus the explicit initial-memory and order-transfer
-bridges. -/
-theorem readSound_of_bootSegmentReadSoundInputs
-    {ziskTrace : AcceptedZiskTrace numInstructions}
-    {memInit : Std.ExtHashMap Nat (BitVec 8)}
-    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
-    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf) :
-    MemoryBusRowsPrefixReadSound
-      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
-  let acceptedReplay :=
-    ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
-      inputs.replayBridge
-  have h_prefix :
-      MemoryBusRowsPrefixReadSound
-        acceptedReplay.initialMemory
-        ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
-    memoryBusRowsPrefixReadSound_of_replaySafePermutation
-      acceptedReplay.initialMemory inputs.order acceptedReplay.prefixReadSound
-  rwa [inputs.initialMemory_eq]
 
 /-! ## Per-op discharge via the execution-order fold. -/
 
@@ -278,7 +287,7 @@ theorem loadEvidence_of_seed
   exact loadEvidence_of_loadMemReplay
     (initialState := binding ⟨0, hpos⟩)
     { initialMemory := seed.memInit
-      prefixReadSound := seed.readSound
+      prefixReadSound := readSound_of_bootSeed seed hpos
       initialAgreement := fun _ => by rw [seed.boot hpos] }
     h_split
     (exec_order_fold_fin binding seed.memInit seed.rowsOf hpos (seed.boot hpos) seed.step i)
@@ -303,7 +312,7 @@ theorem storeEvidence_of_seed
   exact storeEvidence_of_loadMemReplay
     (initialState := binding ⟨0, hpos⟩)
     { initialMemory := seed.memInit
-      prefixReadSound := seed.readSound
+      prefixReadSound := readSound_of_bootSeed seed hpos
       initialAgreement := fun _ => by rw [seed.boot hpos] }
     h_split
     (exec_order_fold_fin binding seed.memInit seed.rowsOf hpos (seed.boot hpos) seed.step i)

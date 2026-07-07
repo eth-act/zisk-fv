@@ -130,6 +130,7 @@ private def trace : AcceptedZiskTrace 0 where
   witness := wit
   constraints_hold := wit_constraints
   channels_balanced := wit_balanced
+  mem_replay_source := fun h => absurd h (Nat.not_lt_zero _)
   transitions_hold := wit_transitions
   main_height := by intro table _ _ i; exact i.elim0
   segment_l1_fixed := wit_segment_l1
@@ -140,17 +141,14 @@ private def step : ∀ i : Fin 0, ZiskStep trace i := nofun
 
 /-- The degenerate boot / cross-segment memory seed: empty boot memory, no rows,
     and every per-instruction obligation vacuous over `Fin 0`.  With the concrete
-    seed form (#115) the seed carries real fields (`memInit`/`rowsOf`/`readSound`),
-    so it is given explicitly rather than the old `nomatch`. -/
+    seed form (#115) the seed carries real fields (`memInit`/`rowsOf` plus guarded
+    read-soundness inputs), so it is given explicitly rather than the old `nomatch`. -/
 private def seed : BootSegmentMemorySeed trace sail step where
   memInit := {}
   rowsOf := fun _ => []
   boot := fun h => absurd h (Nat.not_lt_zero _)
   step := fun _ h => absurd h (Nat.not_lt_zero _)
-  readSound := by
-    intro priorRows row laterRows h_split _ _
-    simp only [AcceptedZiskTrace.numInstructions, List.range_zero, List.flatMap_nil] at h_split
-    exact absurd h_split (by simp)
+  readSoundInputs := fun h => absurd h (Nat.not_lt_zero _)
   placement := fun i => i.elim0
 
 /-- `root_soundness` applied to a concrete (degenerate) accepted trace. The `Fin 0`
