@@ -51,8 +51,9 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
   /-- Guarded Mem replay bridge for nonempty traces. This is not a read-soundness predicate: it
-      selects the concrete mutable Mem table and carries the PIL-generated row/range/fixed-column
-      facts from which table-order replay soundness is derived downstream. Empty traces do not need
+      selects the concrete mutable Mem table and carries the PIL-generated row/range facts from
+      which table-order replay soundness is derived downstream. The deterministic `SEGMENT_L1`
+      fixed-column shape is derived by the bridge rather than carried here. Empty traces do not need
       or generally have a nonempty Mem replay table, so the field is guarded. -/
   mem_replay_source : ∀ (_h : 0 < numInstructions),
     Σ rows : List (Interaction.MemoryBusEntry FGL),

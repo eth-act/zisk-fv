@@ -242,10 +242,11 @@ entry's eight bytes equals the last same-address accepted write in step order
 the bridge is named as `MemTableGeneratedRowsBridge`, which connects Clean
 `table.table` positions to `rowAt mem idx` and the row-indexed
 `generated_every_row` constraints. `FullWitnessMemReplayBridge` packages the
-concrete full-ensemble Mem table, generated-row/range/fixed-column facts,
-active-row equality, and nonempty segment evidence; its constructor derives the
-accepted replay subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is
-no longer a bare global-boundary assumption. The semantic trust gate includes a
+concrete full-ensemble Mem table, generated-row/range facts, active-row equality,
+and nonempty segment evidence; deterministic fixed-column shape is derived
+through `segmentWithFixedL1`. Its constructor derives the accepted replay
+subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is no longer a bare
+global-boundary assumption. The semantic trust gate includes a
 two-address witness with an addr-sorted/time-reversed prefix (write at byte
 address 0 with later timestamp, selected read at byte address 8 with earlier
 timestamp) so the old whole-state boundary shape cannot return silently.
