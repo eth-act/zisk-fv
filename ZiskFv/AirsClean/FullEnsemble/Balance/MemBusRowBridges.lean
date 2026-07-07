@@ -348,7 +348,12 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
                   providerTable.component =
                     ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
                     ∧ MainMemBusRowInteractionEval
-                      program providerTable providerRow providerInteraction)) := by
+                      program providerTable providerRow providerInteraction)
+                -- Register boundary provider (register `mem_op=3` boot/reload emission).
+                -- Carried structurally; excluded for data-memory (`mem_op∈{1,2}`) mains downstream
+                -- by `mem_op` disjointness (`registerBoundary` msgs have `mem_op=3`).
+                ∨ providerTable.component =
+                    ZiskFv.AirsClean.RegisterBoundary.component) := by
   have h_main_mem_witness :
       mainInteraction ∈ witness.interactionsWith MemBusChannel.toRaw := by
     rw [EnsembleWitness.mem_interactionsWith]
@@ -362,7 +367,7 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
   refine ⟨mainRow, h_mainRow, h_mainEval, providerInteraction,
     h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable, h_providerTable,
     h_providerInteraction, ?_⟩
-  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main
+  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main | h_regBoundary
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_memAlignReadByte_row_eval_of_interaction_mem
         h_marb h_providerInteraction
@@ -399,7 +404,15 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
     right
     right
     right
+    left
     exact ⟨providerRow, h_providerRow, h_main, h_providerEval⟩
+  · -- RegisterBoundary provider: carried structurally (register mem_op=3 emission).
+    right
+    right
+    right
+    right
+    right
+    exact h_regBoundary
 
 /-- Spec-carrying variant of
     `exists_mem_provider_row_msg_eq_of_active_main_table_interaction`.
@@ -481,7 +494,10 @@ theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
                       ∧ providerTable.component =
                         ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
                       ∧ MainMemBusRowInteractionEval
-                        program providerTable providerRow providerInteraction)) := by
+                        program providerTable providerRow providerInteraction)
+                  -- Register boundary provider (register `mem_op=3` emission), carried structurally.
+                  ∨ providerTable.component =
+                      ZiskFv.AirsClean.RegisterBoundary.component) := by
   obtain ⟨mainRow, h_mainRow, h_mainEval, providerInteraction,
       h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable, h_providerTable,
       h_providerInteraction, h_providerComponent⟩ :=
@@ -495,7 +511,7 @@ theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
     h_providerTable, h_providerInteraction, ?_⟩
   have h_providerSpecs : providerTable.Spec :=
     h_specs providerTable h_providerTable
-  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main
+  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main | h_regBoundary
   · rcases h_marb with ⟨providerRow, h_providerRow, h_component, h_eval⟩
     left
     exact ⟨providerRow, h_providerRow,
@@ -523,8 +539,16 @@ theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
     right
     right
     right
+    left
     exact ⟨providerRow, h_providerRow,
       h_providerSpecs providerRow h_providerRow, h_component, h_eval⟩
+  · -- RegisterBoundary provider: carried structurally (register mem_op=3 emission).
+    right
+    right
+    right
+    right
+    right
+    exact h_regBoundary
 
 /-- Selected-branch legacy-entry view of the full-ensemble memory-bus bridge.
 
@@ -657,7 +681,10 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
                       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
                     ∧ MainMemBusRowInteractionMatchEval
                       program providerTable providerRow providerInteraction mainMsg
-                      (mainTable.environment mainRow) multiplicity as)) := by
+                      (mainTable.environment mainRow) multiplicity as)
+                -- Register boundary provider (register `mem_op=3` emission), carried structurally.
+                ∨ providerTable.component =
+                    ZiskFv.AirsClean.RegisterBoundary.component) := by
   have h_main_mem_witness :
       mainInteraction ∈ witness.interactionsWith MemBusChannel.toRaw := by
     rw [EnsembleWitness.mem_interactionsWith]
@@ -674,7 +701,7 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
     h_providerInteraction, ?_⟩
   have h_providerSpecs : providerTable.Spec :=
     h_specs providerTable h_providerTable
-  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main
+  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main | h_regBoundary
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_memAlignReadByte_row_eval_of_interaction_mem
         h_marb h_providerInteraction
@@ -735,6 +762,7 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
     right
     right
     right
+    left
     refine ⟨providerRow, h_providerRow,
       h_providerSpecs providerRow h_providerRow, h_main, ?_⟩
     rcases h_providerEval with h_a_prev | h_a | h_b_prev | h_b | h_c_prev | h_c
@@ -782,6 +810,13 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
       apply ZiskFv.Airs.MemoryBus.matches_memory_entry_of_eval_emitted_provider_msg_eq
       rw [← h_c, ← h_mainEval]
       exact h_msg
+  · -- RegisterBoundary provider: carried structurally (register mem_op=3 emission).
+    right
+    right
+    right
+    right
+    right
+    exact h_regBoundary
 
 /-- Named provider-row coverage produced by a balanced active Main memory-bus
     interaction.
@@ -901,7 +936,10 @@ def ActiveMainMemProviderRowMatchSpec
                   ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
                 ∧ MainMemBusRowInteractionMatchEval
                   program providerTable providerRow providerInteraction mainMsg
-                  (mainTable.environment mainRow) multiplicity as))
+                  (mainTable.environment mainRow) multiplicity as)
+            -- Register boundary provider (register `mem_op=3` emission), carried structurally.
+            ∨ providerTable.component =
+                ZiskFv.AirsClean.RegisterBoundary.component)
 
 /-- Mutable-Mem branch of `ActiveMainMemProviderRowMatchSpec`.
 
@@ -1040,7 +1078,10 @@ def ActiveMainNonMutableMemProviderRowMatchSpec
                   ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
                 ∧ MainMemBusRowInteractionMatchEval
                   program providerTable providerRow providerInteraction mainMsg
-                  (mainTable.environment mainRow) multiplicity as))
+                  (mainTable.environment mainRow) multiplicity as)
+            -- Register boundary provider (register `mem_op=3` emission), carried structurally.
+            ∨ providerTable.component =
+                ZiskFv.AirsClean.RegisterBoundary.component)
 
 /-- MemAlignReadByte branch of
     `ActiveMainNonMutableMemProviderRowMatchSpec`. -/
@@ -1171,6 +1212,27 @@ def ActiveMainSelfMemProviderRowMatchSpec
                 program providerTable providerRow providerInteraction mainMsg
                 (mainTable.environment mainRow) multiplicity as
 
+/-- Register-boundary provider branch of `ActiveMainNonMutableMemProviderRowMatchSpec`.
+
+The register `mem_op=3` boot/reload emission carried structurally: it records only that the
+same-message counterpart lives in a RegisterBoundary table.  For data-memory (`mem_op∈{1,2}`) mains
+this branch is unreachable by `mem_op` disjointness, but this repackaging layer stays general. -/
+def ActiveMainRegisterBoundaryProviderRowMatchSpec
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (_mainTable : Table FGL)
+    (_mainRow : Array FGL)
+    (mainInteraction : Interaction FGL)
+    (_mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL))
+    (_multiplicity _as : FGL) : Prop :=
+  ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+    providerInteraction.msg = mainInteraction.msg
+      ∧ providerInteraction.mult ≠ -1
+      ∧ providerInteraction.mult ≠ 0
+      ∧ ∃ providerTable ∈ witness.allTables,
+        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
+          ∧ providerTable.component = ZiskFv.AirsClean.RegisterBoundary.component
+
 /-- Branch split for the non-mutable active-Main provider family. -/
 theorem activeMainNonMutableMemProviderRowMatchSpec_branch_cases
     {length : ℕ} {program : Program length}
@@ -1190,11 +1252,13 @@ theorem activeMainNonMutableMemProviderRowMatchSpec_branch_cases
       ∨ ActiveMainMemAlignProviderRowMatchSpec program witness mainTable
         mainRow mainInteraction mainMsg multiplicity as
       ∨ ActiveMainSelfMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as
+      ∨ ActiveMainRegisterBoundaryProviderRowMatchSpec program witness mainTable
         mainRow mainInteraction mainMsg multiplicity as := by
   rcases h_nonmutable with
     ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
       providerTable, h_providerTable, h_providerInteraction, h_branch⟩
-  rcases h_branch with h_marb | h_mab | h_memAlign | h_main
+  rcases h_branch with h_marb | h_mab | h_memAlign | h_main | h_regBoundary
   · left
     exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
       h_nonzero, providerTable, h_providerTable, h_providerInteraction,
@@ -1207,10 +1271,14 @@ theorem activeMainNonMutableMemProviderRowMatchSpec_branch_cases
     exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
       h_nonzero, providerTable, h_providerTable, h_providerInteraction,
       h_memAlign⟩
-  · right; right; right
+  · right; right; right; left
     exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
       h_nonzero, providerTable, h_providerTable, h_providerInteraction,
       h_main⟩
+  · right; right; right; right
+    exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
+      h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+      h_regBoundary⟩
 
 /-- Ruling out each named non-mutable branch rules out the aggregate
     non-mutable provider family. -/
@@ -1233,16 +1301,20 @@ theorem activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
         mainTable mainRow mainInteraction mainMsg multiplicity as)
     (h_no_main :
       ¬ ActiveMainSelfMemProviderRowMatchSpec program witness
+        mainTable mainRow mainInteraction mainMsg multiplicity as)
+    (h_no_regBoundary :
+      ¬ ActiveMainRegisterBoundaryProviderRowMatchSpec program witness
         mainTable mainRow mainInteraction mainMsg multiplicity as) :
     ¬ ActiveMainNonMutableMemProviderRowMatchSpec program witness mainTable
       mainRow mainInteraction mainMsg multiplicity as := by
   intro h_nonmutable
   rcases activeMainNonMutableMemProviderRowMatchSpec_branch_cases
-      h_nonmutable with h_marb | h_mab | h_memAlign | h_main
+      h_nonmutable with h_marb | h_mab | h_memAlign | h_main | h_regBoundary
   · exact h_no_marb h_marb
   · exact h_no_mab h_mab
   · exact h_no_memAlign h_memAlign
   · exact h_no_main h_main
+  · exact h_no_regBoundary h_regBoundary
 
 /-- Split named active-Main provider coverage into mutable-Mem and
     non-mutable branches. -/
@@ -1264,7 +1336,7 @@ theorem activeMainMemProviderRowMatchSpec_mutable_or_nonmutable
   rcases h_match with
     ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
       providerTable, h_providerTable, h_providerInteraction, h_branch⟩
-  rcases h_branch with h_marb | h_mab | h_memAlign | h_mem | h_main
+  rcases h_branch with h_marb | h_mab | h_memAlign | h_mem | h_main | h_regBoundary
   · right
     exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
       h_nonzero, providerTable, h_providerTable, h_providerInteraction,
@@ -1284,7 +1356,11 @@ theorem activeMainMemProviderRowMatchSpec_mutable_or_nonmutable
   · right
     exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
       h_nonzero, providerTable, h_providerTable, h_providerInteraction,
-      Or.inr (Or.inr (Or.inr h_main))⟩
+      Or.inr (Or.inr (Or.inr (Or.inl h_main)))⟩
+  · right
+    exact ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull,
+      h_nonzero, providerTable, h_providerTable, h_providerInteraction,
+      Or.inr (Or.inr (Or.inr (Or.inr h_regBoundary)))⟩
 
 /-- Direct-load route target: if non-mutable branches are ruled out, the named
     active-Main provider coverage yields the mutable-Mem provider branch. -/

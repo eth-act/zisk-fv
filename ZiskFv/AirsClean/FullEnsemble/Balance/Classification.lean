@@ -28,6 +28,7 @@ theorem component_mem_fullRv64im_cases
     {component : Component FGL}
     (h_mem : component ∈ (fullRv64imEnsemble length program).ensemble.allTables) :
     component = (fullRv64imEnsemble length program).ensemble.verifierTable
+      ∨ component = ZiskFv.AirsClean.RegisterBoundary.component
       ∨ component = ZiskFv.AirsClean.MemAlignReadByte.component
       ∨ component = ZiskFv.AirsClean.MemAlignByte.component
       ∨ component = ZiskFv.AirsClean.MemAlign.component
@@ -42,21 +43,9 @@ theorem component_mem_fullRv64im_cases
   simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
     SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
     at h_mem
-  rcases h_mem with
-    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
-    h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main | h_empty
-  · exact Or.inl h_verifier
-  · exact Or.inr (Or.inl h_marb)
-  · exact Or.inr (Or.inr (Or.inl h_mab))
-  · exact Or.inr (Or.inr (Or.inr (Or.inl h_memAlign)))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_mem))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_arithDiv)))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_arithMul))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binExt)))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binary))))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_binaryAdd)))))))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main)))))))))
-  · cases h_empty
+  -- `h_mem` is the `allTables`-ordered disjunction (verifier :: newest-first tables); `tauto`
+  -- reorders it into the conclusion's ordering, which is robust to the added RegisterBoundary arm.
+  tauto
 
 /-- Every concrete witness for the full RV64IM ensemble contains a table for
     the dual-aware mutable Mem component. This is only table selection: it
@@ -255,6 +244,23 @@ theorem mem_table_interactionsWith_opBus_nil
     simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
       ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
       ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated,
+      OpBusChannel, MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- A table whose component is RegisterBoundary has no operation-bus interactions
+    (it emits only on the memory bus). -/
+theorem registerBoundary_table_interactionsWith_opBus_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component) :
+    table.interactionsWith OpBusChannel.toRaw = [] := by
+  have h_not :
+      OpBusChannel.toRaw ∉
+        ZiskFv.AirsClean.RegisterBoundary.component.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+      ZiskFv.AirsClean.RegisterBoundary.circuit,
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]

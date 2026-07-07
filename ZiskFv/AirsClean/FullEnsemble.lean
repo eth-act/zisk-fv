@@ -9,6 +9,7 @@ import ZiskFv.AirsClean.Mem.Circuit
 import ZiskFv.AirsClean.MemAlign.Circuit
 import ZiskFv.AirsClean.MemAlignByte.Circuit
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
+import ZiskFv.AirsClean.RegisterBoundary
 import Clean.Air.Vm
 
 /-!
@@ -121,6 +122,13 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
           ZiskFv.AirsClean.MemAlignReadByte.circuit,
           ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
+    |>.addTable ZiskFv.AirsClean.RegisterBoundary.component
+        (by simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+          ZiskFv.AirsClean.RegisterBoundary.circuit,
+          ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
+        (by simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+          ZiskFv.AirsClean.RegisterBoundary.circuit,
+          ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.addFinishedChannel MemBusChannel.toRaw
 
@@ -135,7 +143,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
   clear h_mem
   simp only [fullRv64imSoundEnsemble, circuit_norm, Ensemble.allTables] at h
   rcases h with
-    h | h | h | h | h | h | h | h | h | h | h <;>
+    h | h | h | h | h | h | h | h | h | h | h | h <;>
     (rw [h]
      trivial)
 
