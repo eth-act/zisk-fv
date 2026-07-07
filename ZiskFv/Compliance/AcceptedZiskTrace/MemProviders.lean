@@ -184,4 +184,44 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbe
   exact activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded
     h_mutable h_entry h_embedded h_primary_read
 
+/-- Accepted-trace wrapper for selected Main loads whose PIL memory opcode is
+    syntactically `mem_op = 1`.
+
+The primary Mem `wr = 0` fact is derived from Clean message equality instead
+of being supplied by the caller. The remaining residue is the active
+mutable-Mem replay embedding into the chronological row list. -/
+theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbedded_of_main_mem_op_one
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {mainRow : Array FGL}
+    (h_mainRow : mainRow ∈ trace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (trace.mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_mem_op :
+      (eval (trace.mainTable.environment mainRow) mainMsg).mem_op = 1)
+    {entry : Interaction.MemoryBusEntry FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec trace.program trace.witness
+        trace.mainTable mainRow mainInteraction mainMsg (-1) 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (trace.mainTable.environment mainRow) mainMsg) (-1) 2))
+    (h_embedded :
+      MutableActiveMemReplayRowsEmbeddedInTrace trace.witness rows) :
+    entry ∈ rows := by
+  have h_mutable :=
+    (trace.activeMainMutableMemProviderRowMatchSpec_of_active_main_eval_no_nonmutable
+      h_mainRow h_mainInteraction h_mainEval h_active h_no_nonmutable).2
+  exact activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_one
+    h_mutable h_mainEval h_main_mem_op h_entry h_embedded
+
 end ZiskFv.Compliance
