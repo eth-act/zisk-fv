@@ -1758,6 +1758,21 @@ def acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
     h_bridge.fixedColumns
     h_bridge.nonempty
 
+@[simp]
+theorem acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge_rows
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows) :
+    (acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge h_bridge).rows = rows := by
+  unfold acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+  unfold acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts
+  unfold acceptedMemoryReplayEvidence_of_segmentSelector_memTableGeneratedRowsBridge
+  by_cases h_first : h_bridge.segment.is_first_segment = 1
+  · simp [h_first, acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge]
+  · simp [h_first,
+      acceptedMemoryReplayEvidence_of_previousSegmentInitialMemory_memTableGeneratedRowsBridge_segmentRangeFacts]
+
 /-- Construct the residual timeline evidence while deriving its accepted-replay
     subobject from the compact full-witness Mem replay bridge.
 

@@ -150,6 +150,24 @@ theorem readSound_of_bootSegmentReadSoundInputs
       acceptedReplay.initialMemory inputs.order acceptedReplay.prefixReadSound
   rwa [inputs.initialMemory_eq]
 
+/-- Rows in the accepted Mem replay source occur in the execution-order row list
+selected by the seed's replay-safe order certificate. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_memReplayRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ziskTrace.memReplayRows h_nonempty) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  have h_source :
+      entry ∈
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).rows := by
+    simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows] using h_entry
+  exact inputs.order.mem_target_of_mem_source h_source
+
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
     (ziskTrace : AcceptedZiskTrace numInstructions)

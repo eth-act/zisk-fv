@@ -1439,6 +1439,15 @@ theorem MemoryBusRowsReplaySafePermutation.perm
       exact ih.trans
         (List.Perm.append_left pref (List.Perm.swap left right suffix).symm)
 
+/-- Replay-safe order certificates preserve row membership. -/
+theorem MemoryBusRowsReplaySafePermutation.mem_target_of_mem_source
+    {source target : List (MemoryBusEntry FGL)}
+    {entry : MemoryBusEntry FGL}
+    (h_order : MemoryBusRowsReplaySafePermutation source target)
+    (h_mem : entry ∈ source) :
+    entry ∈ target :=
+  (h_order.perm.mem_iff).mp h_mem
+
 /-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
 
 This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into
