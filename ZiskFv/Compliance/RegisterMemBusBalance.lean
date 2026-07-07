@@ -32,6 +32,15 @@ checks enforce (the #169/#19 axis, `main.pil:447`), pinned here in the concrete 
 used: ZisK decodes `x0` operands as immediate/no-op register accesses emitting no `mem_op = 3`
 traffic, so `x1,x1,x1` is the minimal real-register witness.
 
+**Not yet extracted via `interactionsWith`.**  The balanced messages are the real emission
+*definitions*, but the multiplicities are the emissions' `±1` selector values pinned at this row
+(`pushedValue` / `pulledValue`), not evaluated from the components' interaction lists.  Deriving the
+interaction list — messages *and* multiplicities — from
+`(mainSingleRowTable …).interactionsWith MemBusChannel.toRaw` plus a RegisterBoundary single-row
+reduction (the memBus analogue of #234's `mainSingleRowTable_interactionsWith_opBus`, which #234
+explicitly left to #219) is the #219 follow-up; only then does the balance track a change to an
+emission's multiplicity in `Main/Constraints.lean`.
+
 ## Trust note
 
 No axioms.  `pulledValue` / `pushedValue` are Clean's `-1` / `+1` value-level channel interactions.

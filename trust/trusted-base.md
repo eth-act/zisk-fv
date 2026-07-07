@@ -448,6 +448,15 @@ semantic trust gate discovers the wrapper
 kernel-only (`propext`, `Classical.choice`, `Quot.sound`) and adds no project
 axioms.
 
+The messages are the real emission *definitions*, but the interaction
+multiplicities are the emissions' `±1` selector values pinned at this row
+(`pushedValue` / `pulledValue`), **not yet evaluated from the components'
+`interactionsWith` lists** — so this artifact would not track a change to an
+emission's multiplicity in `Main/Constraints.lean`. Deriving the interaction list
+(messages and multiplicities) via a `mainSingleRowTable_interactionsWith_memBus`
+reduction — the memBus analogue of #234's `mainSingleRowTable_interactionsWith_opBus`,
+which #234 explicitly deferred — is the #219 follow-up.
+
 **Scope / residuals (register-partition close).** This delivers the `mem_op=3`
 partition `BalancedInteractions` — the object #219 consumes — not the whole-channel
 `witness.BalancedChannels` or a constraint-satisfying accepted trace, which stay
