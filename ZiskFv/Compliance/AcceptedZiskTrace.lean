@@ -50,15 +50,27 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
-  /-- Guarded Mem AIR source for nonempty traces. This is not a read-soundness predicate and does
-      not carry the accepted replay bridge directly: it selects the concrete mutable Mem table and
-      carries the PIL-generated row/range source facts from which the replay bridge and table-order
-      replay soundness are derived downstream. The deterministic `SEGMENT_L1` fixed-column shape is
-      derived by the bridge rather than carried here. Empty traces do not need or generally have a
-      nonempty Mem replay table, so the field is guarded. -/
-  mem_replay_source : ∀ (_h : 0 < numInstructions),
-    { source : ZiskFv.AirsClean.FullEnsemble.FullWitnessMemAirSource witness //
-      0 < source.table.table.length }
+  /-- Guarded concrete mutable-Mem table for nonempty traces.
+
+      This is table/source selection only: it records which witness table is the mutable Mem AIR,
+      that it is part of the witness, that it has the mutable-Mem component, and that it is nonempty.
+      It does not carry generated Mem facts or read-value agreement. -/
+  mem_replay_table : ∀ (_h : 0 < numInstructions),
+    { table : Air.Flat.Table FGL //
+      table ∈ witness.allTables ∧
+        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
+          0 < table.table.length }
+  /-- Guarded Mem generated row/range source facts for the selected mutable-Mem table.
+
+      This is not a read-soundness predicate and does not carry the accepted replay bridge directly:
+      together with `mem_replay_table`, it supplies the PIL-generated row/range source facts from
+      which the replay bridge and table-order replay soundness are derived downstream. The
+      deterministic `SEGMENT_L1` fixed-column shape is derived by the bridge rather than carried
+      here. Empty traces do not need or generally have a nonempty Mem replay table, so the field is
+      guarded. -/
+  mem_replay_source : ∀ (h : 0 < numInstructions),
+    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedAirSource
+      (mem_replay_table h).1
   /-- Structural source-correlation certificate for the guarded Mem AIR source:
       every mutable-Mem table in the accepted witness is the selected source
       table. This is table identity only, not read-value agreement. It is kept
@@ -67,7 +79,7 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
   mem_replay_source_covers : ∀ (h : 0 < numInstructions),
     ∀ table ∈ witness.allTables,
       table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
-        table = (mem_replay_source h).1.table
+        table = (mem_replay_table h).1
   /-- The Main AIR's cross-row PC-handshake transition constraint (`main.pil:409-410`) holds on every
       consecutive Main-table row pair. This polynomial transition CANNOT be expressed by the single-row
       Clean `Air.Flat` per-row `Constraints` (which is exactly why it was dropped from the per-row Spec);
@@ -113,11 +125,20 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
     `componentWithRomMemAndOpBus …` subterms during `whnf` (issue #144). -/
 def AcceptedZiskTrace.numInstructions {n : Nat} (_ : AcceptedZiskTrace n) : Nat := n
 
-/-- The guarded Mem AIR source selected for a nonempty accepted trace. -/
+/-- The guarded mutable-Mem table selected for a nonempty accepted trace. -/
+def AcceptedZiskTrace.memReplayTable {n : Nat} (trace : AcceptedZiskTrace n)
+    (h_nonempty : 0 < trace.numInstructions) : Air.Flat.Table FGL :=
+  (trace.mem_replay_table h_nonempty).1
+
+/-- The guarded Mem AIR source selected for a nonempty accepted trace, rebuilt
+from the split table-selection and generated-source fields. -/
 def AcceptedZiskTrace.memReplaySource {n : Nat} (trace : AcceptedZiskTrace n)
     (h_nonempty : 0 < trace.numInstructions) :
     ZiskFv.AirsClean.FullEnsemble.FullWitnessMemAirSource trace.witness :=
-  (trace.mem_replay_source h_nonempty).1
+  { table := trace.memReplayTable h_nonempty
+    table_mem := (trace.mem_replay_table h_nonempty).2.1
+    component := (trace.mem_replay_table h_nonempty).2.2.1
+    source := trace.mem_replay_source h_nonempty }
 
 /-- The accepted Mem replay rows selected for a nonempty accepted trace. -/
 def AcceptedZiskTrace.memReplayRows {n : Nat} (trace : AcceptedZiskTrace n)
@@ -131,6 +152,6 @@ def AcceptedZiskTrace.memReplayBridge {n : Nat} (trace : AcceptedZiskTrace n)
     ZiskFv.AirsClean.FullEnsemble.FullWitnessMemReplayBridge
       trace.witness (trace.memReplayRows h_nonempty) :=
   (trace.memReplaySource h_nonempty).replayBridge
-    (trace.mem_replay_source h_nonempty).2
+    (trace.mem_replay_table h_nonempty).2.2.2
 
 end ZiskFv.Compliance

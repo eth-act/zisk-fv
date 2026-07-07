@@ -130,6 +130,7 @@ private def trace : AcceptedZiskTrace 0 where
   witness := wit
   constraints_hold := wit_constraints
   channels_balanced := wit_balanced
+  mem_replay_table := fun h => absurd h (Nat.not_lt_zero _)
   mem_replay_source := fun h => absurd h (Nat.not_lt_zero _)
   mem_replay_source_covers := fun h => absurd h (Nat.not_lt_zero _)
   transitions_hold := wit_transitions
