@@ -36,6 +36,19 @@ constructions) is built relative to one of these.
 
 namespace ZiskFv.Compliance
 
+@[reducible]
+def acceptedMemReplayMem
+    (table : Air.Flat.Table FGL)
+    (gsum im0 im1 : ℕ → FGL) :
+    ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
+  ZiskFv.AirsClean.FullEnsemble.memOfTable table gsum im0 im1
+
+@[reducible]
+def acceptedMemReplayFixedSegment
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) :
+    ZiskFv.Airs.Mem.SegmentColumns FGL :=
+  ZiskFv.AirsClean.FullEnsemble.segmentWithFixedL1 segment
+
 /-- Accepted committed trace for the full RV64IM Clean ensemble.
 
     `numInstructions` is a **structure parameter** (not a field) so that
@@ -60,17 +73,48 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       table ∈ witness.allTables ∧
         table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
           0 < table.table.length }
-  /-- Guarded raw Mem generated source sidecar for the selected mutable-Mem table.
+  /-- Guarded Mem segment source columns for the selected mutable-Mem table. -/
+  mem_replay_segment : ∀ (_h : 0 < numInstructions),
+    ZiskFv.Airs.Mem.SegmentColumns FGL
+  /-- Guarded Mem permutation source columns for the selected mutable-Mem table. -/
+  mem_replay_permutation : ∀ (_h : 0 < numInstructions),
+    ZiskFv.Airs.Mem.PermutationColumns FGL
+  /-- Guarded Mem stage-2 `gsum` source column for the selected mutable-Mem table. -/
+  mem_replay_gsum : ∀ (_h : 0 < numInstructions), ℕ → FGL
+  /-- Guarded Mem stage-2 `im0` source column for the selected mutable-Mem table. -/
+  mem_replay_im0 : ∀ (_h : 0 < numInstructions), ℕ → FGL
+  /-- Guarded Mem stage-2 `im1` source column for the selected mutable-Mem table. -/
+  mem_replay_im1 : ∀ (_h : 0 < numInstructions), ℕ → FGL
+  /-- Guarded split generated Mem constraint facts for the selected mutable-Mem table.
 
       This is not a read-soundness predicate and does not carry the accepted replay bridge directly:
-      together with `mem_replay_table`, it supplies the sidecar columns plus split generated
-      constraint and range facts from which the typed Mem AIR source, replay bridge, and table-order
-      replay soundness are derived downstream. The deterministic `SEGMENT_L1` fixed-column shape is
-      derived by the bridge rather than carried here. Empty traces do not need or generally have a
-      nonempty Mem replay table, so the field is guarded. -/
-  mem_replay_source : ∀ (h : 0 < numInstructions),
-    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedRawSourceSidecar
+      together with the sidecar columns above, it supplies the PIL-generated segment/permutation
+      constraints from which the typed Mem AIR source, replay bridge, and table-order replay
+      soundness are derived downstream. Empty traces do not need or generally have a nonempty Mem
+      replay table, so the field is guarded. -/
+  mem_replay_constraints : ∀ (h : 0 < numInstructions),
+    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedConstraintFacts
       (mem_replay_table h).1
+      (acceptedMemReplayMem
+        (mem_replay_table h).1
+        (mem_replay_gsum h)
+        (mem_replay_im0 h)
+        (mem_replay_im1 h))
+      (acceptedMemReplayFixedSegment (mem_replay_segment h))
+      (mem_replay_permutation h)
+  /-- Guarded row range facts for the selected mutable-Mem table projection. -/
+  mem_replay_row_ranges : ∀ (h : 0 < numInstructions),
+    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedRangeFacts
+      (mem_replay_table h).1
+      (acceptedMemReplayMem
+        (mem_replay_table h).1
+        (mem_replay_gsum h)
+        (mem_replay_im0 h)
+        (mem_replay_im1 h))
+  /-- Guarded segment range facts for the selected mutable-Mem sidecar segment. -/
+  mem_replay_segment_ranges : ∀ (h : 0 < numInstructions),
+    ZiskFv.AirsClean.FullEnsemble.MemSegmentGeneratedRangeFacts
+      (acceptedMemReplayFixedSegment (mem_replay_segment h))
   /-- Structural source-correlation certificate for the guarded Mem AIR source:
       every mutable-Mem table in the accepted witness is the selected source
       table. This is table identity only, not read-value agreement. It is kept
@@ -130,15 +174,30 @@ def AcceptedZiskTrace.memReplayTable {n : Nat} (trace : AcceptedZiskTrace n)
     (h_nonempty : 0 < trace.numInstructions) : Air.Flat.Table FGL :=
   (trace.mem_replay_table h_nonempty).1
 
+/-- The guarded raw Mem source sidecar rebuilt from accepted-trace factor fields. -/
+def AcceptedZiskTrace.memReplayRawSourceSidecar {n : Nat} (trace : AcceptedZiskTrace n)
+    (h_nonempty : 0 < trace.numInstructions) :
+    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedRawSourceSidecar
+      (trace.memReplayTable h_nonempty) where
+  segment := trace.mem_replay_segment h_nonempty
+  permutation := trace.mem_replay_permutation h_nonempty
+  gsum := trace.mem_replay_gsum h_nonempty
+  im0 := trace.mem_replay_im0 h_nonempty
+  im1 := trace.mem_replay_im1 h_nonempty
+  facts :=
+    { constraints := trace.mem_replay_constraints h_nonempty
+      rowRanges := trace.mem_replay_row_ranges h_nonempty
+      segmentRanges := trace.mem_replay_segment_ranges h_nonempty }
+
 /-- The guarded Mem AIR source selected for a nonempty accepted trace, rebuilt
-from the split table-selection and raw sidecar fields. -/
+from the split table-selection, source-column, and generated-fact fields. -/
 def AcceptedZiskTrace.memReplaySource {n : Nat} (trace : AcceptedZiskTrace n)
     (h_nonempty : 0 < trace.numInstructions) :
     ZiskFv.AirsClean.FullEnsemble.FullWitnessMemAirSource trace.witness :=
   { table := trace.memReplayTable h_nonempty
     table_mem := (trace.mem_replay_table h_nonempty).2.1
     component := (trace.mem_replay_table h_nonempty).2.2.1
-    source := (trace.mem_replay_source h_nonempty).toAirSource }
+    source := (trace.memReplayRawSourceSidecar h_nonempty).toAirSource }
 
 /-- The accepted Mem replay rows selected for a nonempty accepted trace. -/
 def AcceptedZiskTrace.memReplayRows {n : Nat} (trace : AcceptedZiskTrace n)
