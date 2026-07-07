@@ -5,6 +5,7 @@ import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.TraceSpec
+import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.AirsClean.FullEnsemble.Balance.Classification
 import ZiskFv.AirsClean.FullEnsemble.Balance.CounterpartClassification
 import ZiskFv.AirsClean.FullEnsemble.Balance.RowExtraction
@@ -39,6 +40,29 @@ theorem memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq
           providerEnv).msg =
         (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
           mainEnv).msg) :
+    (eval providerEnv providerMsg).mem_op = (eval mainEnv mainMsg).mem_op := by
+  have h_vec :
+      Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+        Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval providerEnv providerMsg = eval mainEnv mainMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  exact congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.mem_op h_eval
+
+/-- Project `mem_op` equality out of a pushed-provider memory-bus message
+    equality. This is the `MemAlignByte` / `MemAlignReadByte` analogue of
+    `memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq`. -/
+theorem memBusMessage_mem_op_eq_of_eval_pushed_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    (h_msg :
+      (((MemBusChannel.pushed providerMsg).toRaw).eval providerEnv).msg =
+        (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval mainEnv).msg) :
     (eval providerEnv providerMsg).mem_op = (eval mainEnv mainMsg).mem_op := by
   have h_vec :
       Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
@@ -1566,6 +1590,161 @@ def ActiveMainMemAlignProviderRowMatchSpec
                     (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
                       ZiskFv.AirsClean.MemAlign.component.rowInputVar))
                   multiplicity as)
+
+/-- Structural load-provider row selected from a MemAlignReadByte branch. -/
+def MemAlignReadByteLoadProviderRowMatchSpec
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∃ providerTable ∈ witness.allTables,
+    ∃ providerRow ∈ providerTable.table,
+      providerTable.component.Spec (providerTable.environment providerRow)
+        ∧ providerTable.component = ZiskFv.AirsClean.MemAlignReadByte.component
+        ∧ ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_read_byte_row_matches_load_entry
+          (ZiskFv.AirsClean.MemAlignReadByte.validOfRow
+            (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar))
+          0 entry
+
+/-- Structural load-provider row selected from a MemAlignByte branch. -/
+def MemAlignByteLoadProviderRowMatchSpec
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∃ providerTable ∈ witness.allTables,
+    ∃ providerRow ∈ providerTable.table,
+      providerTable.component.Spec (providerTable.environment providerRow)
+        ∧ providerTable.component = ZiskFv.AirsClean.MemAlignByte.component
+        ∧ ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_byte_row_matches_load_entry
+          (ZiskFv.AirsClean.MemAlignByte.validOfRow
+            (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.MemAlignByte.component.rowInputVar))
+          0 entry
+
+/-- Follow an active Main -> MemAlignReadByte provider branch to the concrete
+    structural load-row predicate consumed by the subdoubleword MemAlign bridge. -/
+theorem memAlignReadByteLoadProviderRowMatchSpec_of_activeMain_branch
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL} {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_as : as = 2)
+    (h_branch :
+      ActiveMainMemAlignReadByteProviderRowMatchSpec program witness mainTable mainRow
+        mainInteraction mainMsg multiplicity as) :
+    MemAlignReadByteLoadProviderRowMatchSpec program witness
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval (mainTable.environment mainRow) mainMsg) multiplicity as) := by
+  subst as
+  rcases h_branch with
+    ⟨_providerInteraction, _h_provider_mem, _h_msg, _h_mult_not_read, _h_mult_not_zero,
+      providerTable, h_providerTable, _h_provider_table_mem,
+      providerRow, h_providerRow, h_spec, h_component, _h_provider_eval, h_entry⟩
+  refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_spec, h_component, ?_⟩
+  have h_entry' :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) multiplicity 2)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessage
+            (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar))
+          multiplicity 2) := by
+    simpa [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr] using h_entry
+  exact
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_read_byte_row_matches_load_entry_of_message_match_valid_with_multiplicity
+        (ZiskFv.AirsClean.MemAlignReadByte.validOfRow
+          (eval (providerTable.environment providerRow)
+            ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar))
+        0
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) multiplicity 2)
+        multiplicity rfl h_entry'
+
+/-- Follow an active Main -> MemAlignByte provider branch to the concrete
+    structural load-row predicate consumed by the subdoubleword MemAlign bridge.
+    The load-side `mem_op = 1` fact pins `is_write = 0`. -/
+theorem memAlignByteLoadProviderRowMatchSpec_of_activeMain_branch
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL} {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op : (eval (mainTable.environment mainRow) mainMsg).mem_op = 1)
+    (h_as : as = 2)
+    (h_branch :
+      ActiveMainMemAlignByteProviderRowMatchSpec program witness mainTable mainRow
+        mainInteraction mainMsg multiplicity as) :
+    MemAlignByteLoadProviderRowMatchSpec program witness
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval (mainTable.environment mainRow) mainMsg) multiplicity as) := by
+  subst as
+  rcases h_branch with
+    ⟨providerInteraction, _h_provider_mem, h_msg, _h_mult_not_read, _h_mult_not_zero,
+      providerTable, h_providerTable, _h_provider_table_mem,
+      providerRow, h_providerRow, h_spec, h_component, h_provider_eval, h_entry⟩
+  refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_spec, h_component, ?_⟩
+  have h_raw :
+      (((MemBusChannel.pushed
+        (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+        (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow)).msg := by
+    rw [← h_provider_eval, ← h_mainEval]
+    exact h_msg
+  have h_provider_mem_op_one :
+      (eval (providerTable.environment providerRow)
+        (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).mem_op = 1 := by
+    exact (memBusMessage_mem_op_eq_of_eval_pushed_provider_msg_eq (h_msg := h_raw)).trans
+      h_main_mem_op
+  have h_provider_mem_op_one' :
+      (ZiskFv.AirsClean.MemAlignByte.memBusMessage
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).mem_op = 1 := by
+    rw [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr] at h_provider_mem_op_one
+    exact h_provider_mem_op_one
+  have h_is_write_eq :
+      1 + (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = 1 := by
+    simpa [ZiskFv.AirsClean.MemAlignByte.memBusMessage] using h_provider_mem_op_one'
+  have h_is_write :
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = 0 := by
+    linear_combination h_is_write_eq
+  have h_entry' :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) multiplicity 2)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessage
+            (eval (providerTable.environment providerRow)
+              ZiskFv.AirsClean.MemAlignByte.component.rowInputVar))
+          multiplicity 2) := by
+    simpa [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr] using h_entry
+  exact
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_byte_row_matches_load_entry_of_message_match_valid_with_multiplicity
+        (ZiskFv.AirsClean.MemAlignByte.validOfRow
+          (eval (providerTable.environment providerRow)
+            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar))
+        0
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) multiplicity 2)
+        multiplicity rfl (by simpa [ZiskFv.AirsClean.MemAlignByte.validOfRow] using h_is_write)
+        h_entry'
 
 /-- Main self-provider branch of
     `ActiveMainNonMutableMemProviderRowMatchSpec`. -/

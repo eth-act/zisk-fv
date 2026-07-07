@@ -9,6 +9,7 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.AirsClean.MemAlign.Bridge
 import ZiskFv.AirsClean.MemAlignByte.Bridge
 import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 
@@ -194,17 +195,19 @@ lemma memalign_byte_load_low_bytes_zero_of_clean_spec
         h_spec.2.2.2.2.2.1)
 
 /-- Adapt a Clean MemAlignByte provider message match back to the legacy
-load-provider predicate used by the existing zero-padding bridge. -/
-theorem memalign_byte_row_matches_load_entry_of_message_match_valid
+load-provider predicate used by the existing zero-padding bridge. The replay
+multiplicity is irrelevant for the row predicate, so accepted-trace branch
+splits may use the Main-side read multiplicity. -/
+theorem memalign_byte_row_matches_load_entry_of_message_match_valid_with_multiplicity
     (mab : Valid_MemAlignByte FGL FGL) (r_mab : ℕ)
     (row : ZiskFv.AirsClean.MemAlignByte.MemAlignByteRow FGL)
-    (e : MemoryBusEntry FGL)
+    (e : MemoryBusEntry FGL) (multiplicity : FGL)
     (h_row : row = ZiskFv.AirsClean.MemAlignByte.rowAt mab r_mab)
     (h_is_write : mab.is_write r_mab = 0)
     (h_match :
       matches_memory_entry e
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (ZiskFv.AirsClean.MemAlignByte.memBusMessage row) 1 2)) :
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessage row) multiplicity 2)) :
     memalign_byte_row_matches_load_entry mab r_mab e := by
   obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
   rw [h_row] at h_ptr h_v0 h_v1 h_ts
@@ -222,6 +225,22 @@ theorem memalign_byte_row_matches_load_entry_of_message_match_valid
       ZiskFv.AirsClean.MemAlignByte.memBusMessage,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
       memory_entry_hi] using h_v1
+
+/-- Adapt a Clean MemAlignByte provider message match back to the legacy
+load-provider predicate used by the existing zero-padding bridge. -/
+theorem memalign_byte_row_matches_load_entry_of_message_match_valid
+    (mab : Valid_MemAlignByte FGL FGL) (r_mab : ℕ)
+    (row : ZiskFv.AirsClean.MemAlignByte.MemAlignByteRow FGL)
+    (e : MemoryBusEntry FGL)
+    (h_row : row = ZiskFv.AirsClean.MemAlignByte.rowAt mab r_mab)
+    (h_is_write : mab.is_write r_mab = 0)
+    (h_match :
+      matches_memory_entry e
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessage row) 1 2)) :
+    memalign_byte_row_matches_load_entry mab r_mab e := by
+  exact memalign_byte_row_matches_load_entry_of_message_match_valid_with_multiplicity
+    mab r_mab row e 1 h_row h_is_write h_match
 
 /-- High-chunk zero for any LOAD-providing `MemAlignReadByte` row.
     Same shape as the MemAlignByte case (slot[5] = literal 0). -/
@@ -261,16 +280,18 @@ lemma memalign_read_byte_load_low_bytes_zero_of_clean_spec
       simpa [ZiskFv.AirsClean.MemAlignReadByte.validOfRow] using h_spec.2)
 
 /-- Adapt a Clean MemAlignReadByte provider message match back to the legacy
-load-provider predicate used by the existing zero-padding bridge. -/
-theorem memalign_read_byte_row_matches_load_entry_of_message_match_valid
+load-provider predicate used by the existing zero-padding bridge. The replay
+multiplicity is irrelevant for the row predicate, so accepted-trace branch
+splits may use the Main-side read multiplicity. -/
+theorem memalign_read_byte_row_matches_load_entry_of_message_match_valid_with_multiplicity
     (marb : Valid_MemAlignReadByte FGL FGL) (r_marb : ℕ)
     (row : ZiskFv.AirsClean.MemAlignReadByte.MemAlignReadByteRow FGL)
-    (e : MemoryBusEntry FGL)
+    (e : MemoryBusEntry FGL) (multiplicity : FGL)
     (h_row : row = ZiskFv.AirsClean.MemAlignReadByte.rowAt marb r_marb)
     (h_match :
       matches_memory_entry e
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
-          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessage row) 1 2)) :
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessage row) multiplicity 2)) :
     memalign_read_byte_row_matches_load_entry marb r_marb e := by
   obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
   rw [h_row] at h_ptr h_v0 h_v1 h_ts
@@ -288,6 +309,57 @@ theorem memalign_read_byte_row_matches_load_entry_of_message_match_valid
       ZiskFv.AirsClean.MemAlignReadByte.memBusMessage,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
       memory_entry_hi] using h_v1
+
+/-- Adapt a Clean MemAlignReadByte provider message match back to the legacy
+load-provider predicate used by the existing zero-padding bridge. -/
+theorem memalign_read_byte_row_matches_load_entry_of_message_match_valid
+    (marb : Valid_MemAlignReadByte FGL FGL) (r_marb : ℕ)
+    (row : ZiskFv.AirsClean.MemAlignReadByte.MemAlignReadByteRow FGL)
+    (e : MemoryBusEntry FGL)
+    (h_row : row = ZiskFv.AirsClean.MemAlignReadByte.rowAt marb r_marb)
+    (h_match :
+      matches_memory_entry e
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessage row) 1 2)) :
+    memalign_read_byte_row_matches_load_entry marb r_marb e := by
+  exact memalign_read_byte_row_matches_load_entry_of_message_match_valid_with_multiplicity
+    marb r_marb row e 1 h_row h_match
+
+/-- Adapt a Clean MemAlign provider message match back to the legacy
+load-provider predicate used by the existing zero-padding bridge. The prove
+branch selector facts are kept explicit: balance finds the provider row, while
+the caller must still supply or derive the syntactic MemAlign branch pins. -/
+theorem memalign_row_matches_load_entry_of_message_match_valid_with_multiplicity
+    (ma : Valid_MemAlign FGL FGL) (r_ma : ℕ)
+    (row : ZiskFv.AirsClean.MemAlign.MemAlignRow FGL)
+    (e : MemoryBusEntry FGL) (multiplicity : FGL)
+    (h_row : row = ZiskFv.AirsClean.MemAlign.rowAt ma r_ma)
+    (h_sel_prove : ma.sel_prove r_ma = 1)
+    (h_sel_up_to_down : ma.sel_up_to_down r_ma = 0)
+    (h_sel_down_to_up : ma.sel_down_to_up r_ma = 0)
+    (h_wr : ma.wr r_ma = 0)
+    (h_match :
+      matches_memory_entry e
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlign.memBusMessage row) multiplicity 2)) :
+    memalign_row_matches_load_entry ma r_ma e := by
+  obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+  rw [h_row] at h_ptr h_v0 h_v1 h_ts
+  refine ⟨h_sel_prove, h_sel_up_to_down, h_sel_down_to_up, h_wr, ?_, ?_, ?_, ?_, h_as⟩
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+      ZiskFv.AirsClean.MemAlign.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ptr.symm
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+      ZiskFv.AirsClean.MemAlign.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ts.symm
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+      ZiskFv.AirsClean.MemAlign.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      memory_entry_lo] using h_v0.symm
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+      ZiskFv.AirsClean.MemAlign.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      memory_entry_hi] using h_v1.symm
 
 /-- High-chunk zero for any LOAD-providing `MemAlign` row whose width
     is sub-doubleword. The `value_1 = 0` fact is supplied by the
