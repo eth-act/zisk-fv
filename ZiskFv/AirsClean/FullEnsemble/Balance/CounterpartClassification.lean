@@ -137,13 +137,16 @@ theorem exists_matching_op_component_of_active_main_interaction
       table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
+    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
     h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       have h_ops_nil :
           table.component.operations.interactionsWith OpBusChannel.toRaw = [] := by
         simpa [h_verifier] using verifierTable_interactionsWith_opBus_nil length program
       simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map, h_ops_nil]
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
+      exact registerBoundary_table_interactionsWith_opBus_nil h_regBoundary
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       exact memAlignReadByte_table_interactionsWith_opBus_nil h_marb
@@ -273,7 +276,8 @@ theorem exists_matching_mem_component_of_active_main_interaction
               ∨ table.component = ZiskFv.AirsClean.MemAlign.component
               ∨ table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
               ∨ table.component =
-                  ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program) := by
+                  ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+              ∨ table.component = ZiskFv.AirsClean.RegisterBoundary.component) := by
   obtain ⟨providerInteraction, h_mem_provider, h_msg, h_nonpull, h_nonzero⟩ :=
     exists_matching_nonzero_nonpull_of_active_main_mem_interaction
       witness h_balanced h_mem h_active
@@ -283,7 +287,7 @@ theorem exists_matching_mem_component_of_active_main_interaction
       table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
+    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
     h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -291,6 +295,12 @@ theorem exists_matching_mem_component_of_active_main_interaction
         simpa [h_verifier] using verifierTable_interactionsWith_memBus_nil length program
       simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map, h_ops_nil]
     simp [h_nil] at h_mem_table
+  · -- RegisterBoundary is a genuine MemBus provider (its boot/reload register emissions).
+    exact ⟨providerInteraction, by
+        rw [EnsembleWitness.mem_interactionsWith]
+        exact ⟨table, h_table, h_mem_table⟩,
+      h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
+      Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_regBoundary))))⟩
   · exact ⟨providerInteraction, by
         rw [EnsembleWitness.mem_interactionsWith]
         exact ⟨table, h_table, h_mem_table⟩,
@@ -330,7 +340,7 @@ theorem exists_matching_mem_component_of_active_main_interaction
         rw [EnsembleWitness.mem_interactionsWith]
         exact ⟨table, h_table, h_mem_table⟩,
       h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
-      Or.inr (Or.inr (Or.inr (Or.inr h_main)))⟩
+      Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main))))⟩
 
 
 end ZiskFv.AirsClean.FullEnsemble

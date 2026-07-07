@@ -9,7 +9,7 @@ The first concrete inhabitant of `ZiskFv.Compliance.AcceptedZiskTrace` fed throu
 `ZiskFv.Compliance.root_soundness` (eth-act/zisk-fv#217, foundation of #74).
 
 This is the DEGENERATE base case: `numInstructions = 0`, every provider table empty.
-It exercises the whole witness-construction pipeline — the 10-table
+It exercises the whole witness-construction pipeline — the 11-table
 `EnsembleWitness` (`same_length`/`same_circuits`/`same_data`), `constraints_hold`,
 `transitions_hold`, `segment_l1_fixed`, and the first forward `BalancedChannels`
 proof — and applies `root_soundness` to the result. The `∀ i : Fin 0` conclusion

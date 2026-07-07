@@ -412,37 +412,62 @@ whole-state floor" property is a property of the `LoadMemoryTimelineCoherenceEvi
 cursor, so the earlier `witnessStore_nondegenerate` regs/cycleCount side-claim was
 dropped as describing a cursor the evidence no longer uses.)
 
-### Register MemBus balance (`MEMORY_REG_OP`) — #225 constructibility slice
+### Register MemBus balance (`MEMORY_REG_OP`) — #225
 
-The Clean Main component now models the row-local register-consistency emissions
-that real ZisK sends on the shared MemBus: for `a`, `b`, and `store` register
-accesses, Main emits the previous register access as a `MEMORY_REG_OP`
-push-prev message in addition to the existing current-access pull. These are
-PIL-backed fidelity emissions, not a new trust premise and not a new AIR or Mem
-component behavior.
+The full RV64IM Clean ensemble now **emits** the complete register-consistency
+MemBus traffic, so the register (`mem_op = 3`) partition balances for a real
+instruction. All of it is derived composed-table emissions — **no** new trust
+premise, `axiom`, or `opaque`:
 
-The boot and reload ends of the register chain remain boundary-shaped terms:
-ZisK's boot `global_init_mem` contributes the step-0 zero register pulls, while
-the per-segment reload contributes the final register pushes. Those are not
-modeled as ordinary per-row Main-table emissions. Instead, the checked
-constructibility artifact
+- **Interior** (per Main row): for `a`, `b`, and `store` register accesses Main
+  emits both the previous-access push-prev (`MEMORY_REG_OP`) and the current
+  pull (`Main/Constraints.lean`; PIL `main.pil:277…328`).
+- **Boundary** (chain-closing): a new single-purpose provider component
+  `ZiskFv.AirsClean.RegisterBoundary.component` emits, per tracked register, the
+  boot pull (`global_init_mem`, `mem.pil:507-508` + per-register call site
+  `main.pil:535-537`; `mem_op=3`, ts 0, value 0, mult `-1`) and the reload push
+  (`reg_pre_load` "Proves the last access.", `main.pil:450`; ts = last access,
+  mult `+1`). It is a real `addTable`-composed provider in
+  `fullRv64imSoundEnsemble` (`AirsClean/FullEnsemble.lean`) with
+  `Assumptions := True` and no algebraic constraints — a deliberately
+  under-constrained boundary provider, which is sound in the soundness direction
+  (an under-constrained provider never makes `root_soundness` vacuous; the
+  anti-laundering hazard, an overstrong validator, runs the other way).
+
+The checked artifact
 `ZiskFv.Compliance.RegisterMemBusBalance.addX1X1X1_registerMemBus_balanced`
-lists the concrete register MemBus messages for the minimal no-prelude real
-register witness `add x1,x1,x1`: x1's boot/read/read/write/reload timeline plus
-the idle boot/reload zero pairs for tracked registers x2..x31. It proves that
-every listed message appears once as a pull and once as a push, so the register
-MemBus contribution balances. This is an explicit-message telescoping artifact;
-it does not yet extract the register messages from real ensemble rows or
-construct a trace-level `BalancedChannels` witness, which is the #219 follow-up.
-The semantic trust gate discovers the wrapper
+proves `BalancedInteractions` of the register (`mem_op=3`) partition for the
+minimal no-prelude real-register witness `add x1,x1,x1`, built from the **real
+component emission definitions** (`aRegPreMessage`/`aMemMessage`/… and
+`bootMessage`/`reloadMessage`) instantiated at a concrete `add x1,x1,x1`
+`MainRowWithRom` — not hand-authored literals. The telescoping content is the
+four consistency equalities (`aRegPre = boot`, `aMem = bRegPre`, `bMem = cRegPre`,
+`cMem = reload`) plus the idle registers' self-balancing boot/reload pairs. The
+semantic trust gate discovers the wrapper
 `trust/consistency/register_mem_bus_add_x1_x1_x1.lean`; its axiom closure is
 kernel-only (`propext`, `Classical.choice`, `Quot.sound`) and adds no project
 axioms.
 
+The messages are the real emission *definitions*, but the interaction
+multiplicities are the emissions' `±1` selector values pinned at this row
+(`pushedValue` / `pulledValue`), **not yet evaluated from the components'
+`interactionsWith` lists** — so this artifact would not track a change to an
+emission's multiplicity in `Main/Constraints.lean`. Deriving the interaction list
+(messages and multiplicities) via a `mainSingleRowTable_interactionsWith_memBus`
+reduction — the memBus analogue of #234's `mainSingleRowTable_interactionsWith_opBus`,
+which #234 explicitly deferred — is the #219 follow-up.
+
+**Scope / residuals (register-partition close).** This delivers the `mem_op=3`
+partition `BalancedInteractions` — the object #219 consumes — not the whole-channel
+`witness.BalancedChannels` or a constraint-satisfying accepted trace, which stay
+**#219**. The balance is conditional on the previous-step timestamp chain
+(`a_reg_prev_mem_step = 0`, `b_reg_prev_mem_step = 1`, `store_reg_prev_mem_step = 2`,
+reload at `3`), pinned in the concrete row here; deriving it from ZisK's
+ordering/range checks (`main.pil:447`) is the **#169/#19** range-fidelity axis.
 This slice does **not** claim register/memory access-ordering soundness. The
-monotone previous-step range checks are range/table obligations, not MemBus
-channel messages, and their full composition remains on the #169/#19
-range-fidelity axis.
+cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
+`main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope
+(#103/#76).
 
 ## Platform Profile
 

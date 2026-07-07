@@ -42,8 +42,9 @@ obligations):
    Main row's own `b` emission (`main_b_match`, `matches_memory_entry_refl`) AND
    against a *separate* Mem-AIR provider row's payload. The Mem-channel balance
    theorem `exists_matching_mem_component_of_active_main_interaction` deliberately
-   leaves a 5-way provider disjunction (MemAlign{,ReadByte,Byte} / Mem dual-bus /
-   the unified Main case) — it does NOT single out one Mem provider, "requires
+   leaves a 6-way provider disjunction (MemAlign{,ReadByte,Byte} / Mem dual-bus /
+   the unified Main case / RegisterBoundary register `mem_op=3` per #225) — it does
+   NOT single out one Mem provider, "requires
    selector legality beyond the current Main row soundness". So the provider row
    that backs the read is a named residual, NOT balance-derived here. **Flagged
    loudly per op.**
@@ -153,7 +154,7 @@ theorem mainRowWithRomLd_core
       loaded-bytes ↔ Sail-memory agreement (cross-row replay timeline).
     * `mem`, `r_mem`, `h_mem_match`, `h_mem_sel`, `h_mem_wr` — the Mem-AIR
       provider row backing the read. Not balance-derivable here (the
-      Mem-channel balance leaves a 5-way provider disjunction). -/
+      Mem-channel balance leaves a 6-way provider disjunction). -/
 theorem construction_ld_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
