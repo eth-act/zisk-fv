@@ -198,6 +198,35 @@ theorem BootSegmentReadSoundInputs.memReplayRows_perm_executionRows
   simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayBridge,
     AcceptedZiskTrace.memReplayRows] using inputs.order.perm
 
+/-- The replay-safe order certificate preserves the row-list length, exposing a
+duplicate-sensitive consequence of the accepted replay/execution-order bag
+equality. -/
+theorem BootSegmentReadSoundInputs.memReplayRows_length_eq_executionRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty) :
+    (ziskTrace.memReplayRows h_nonempty).length =
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf).length := by
+  simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayBridge,
+    AcceptedZiskTrace.memReplayRows] using inputs.order.length_eq
+
+/-- The replay-safe order certificate preserves the multiplicity of each
+concrete memory-bus row, which is the duplicate-sensitive row-correspondence
+fact needed beyond mere membership. -/
+theorem BootSegmentReadSoundInputs.memReplayRows_count_eq_executionRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (entry : MemoryBusEntry FGL) :
+    (ziskTrace.memReplayRows h_nonempty).count entry =
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf).count entry := by
+  simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayBridge,
+    AcceptedZiskTrace.memReplayRows] using inputs.order.count_eq entry
+
 /-- Execution-order rows are accepted Mem replay rows when viewed through the
 explicit replay-safe order certificate. This is the reverse membership direction
 needed by row-correspondence callers that start from `rowsOf`. -/

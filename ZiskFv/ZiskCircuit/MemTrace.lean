@@ -1551,6 +1551,23 @@ theorem MemoryBusRowsReplaySafePermutation.mem_source_of_mem_target
     entry ∈ source :=
   (h_order.perm.mem_iff).mpr h_mem
 
+/-- Replay-safe order certificates preserve list length. This is the
+bag/permutation consequence needed when row-correspondence proofs must account
+for duplicate memory-bus messages. -/
+theorem MemoryBusRowsReplaySafePermutation.length_eq
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    source.length = target.length :=
+  h_order.perm.length_eq
+
+/-- Replay-safe order certificates preserve multiplicity of each concrete row. -/
+theorem MemoryBusRowsReplaySafePermutation.count_eq
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target)
+    (entry : MemoryBusEntry FGL) :
+    source.count entry = target.count entry :=
+  h_order.perm.count_eq entry
+
 /-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
 
 This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into
