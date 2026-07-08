@@ -547,6 +547,38 @@ structure MemAlignWitness
     ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
       main mab marb ma r_main e
 
+/-- The remaining MemAlignByte/MemAlignReadByte validator facts needed to build
+    a full `MemAlignWitness` once a selected provider branch is known. -/
+structure MemAlignCoreLookupFacts
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) where
+  mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
+  marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r
+  mab_lookup : ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r
+  marb_lookup : ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r
+
+/-- Assemble the legacy `MemAlignWitness` bundle from the selected provider row
+    and the remaining validator core/lookup residue. -/
+def memAlignWitness_of_coreLookupFacts_provider
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL}
+    {marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL}
+    {ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL}
+    {r_main : ℕ} {e : Interaction.MemoryBusEntry FGL}
+    (h_coreLookup : MemAlignCoreLookupFacts mab marb)
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        main mab marb ma r_main e) :
+    MemAlignWitness main r_main e :=
+  { mab := mab
+    marb := marb
+    ma := ma
+    mab_core := h_coreLookup.mab_core
+    marb_core := h_coreLookup.marb_core
+    mab_lookup := h_coreLookup.mab_lookup
+    marb_lookup := h_coreLookup.marb_lookup
+    provider := h_provider }
+
 /-! ## Byte-range bounds on a memory-bus entry -/
 
 /-- The 8-tuple `e.xᵢ.val < 256` that recurs in every canonical that

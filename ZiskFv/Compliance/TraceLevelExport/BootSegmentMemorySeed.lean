@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.FullEnsemble.Balance.TimelineEvidence
 import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
+import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 
@@ -747,6 +748,64 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_of_loadBMemProvi
         (h_generalMemAlignRomValues entry h_entry) h_memAlign with
       ⟨ma', h_provider⟩
     exact Or.inr ⟨mab, marb, ma', h_provider⟩
+
+/-- Load `b` provider coverage at the existing `MemAlignWitness` consumer
+surface.
+
+The mutable-Mem branch still proves execution-row membership. The MemAlign
+branch returns the legacy `MemAlignWitness` bundle once the explicit
+general-MemAlign ROM/value residue and the MemAlignByte/MemAlignReadByte
+core/lookup residue are supplied. -/
+theorem BootSegmentReadSoundInputs.mem_or_memAlignWitness_of_loadBMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
+    (r_main : ℕ)
+    (h_width : main.ind_width r_main = 1)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i)
+    (h_generalMemAlignRomValues :
+      ∀ entry,
+        ZiskFv.Airs.MemoryBus.matches_memory_entry
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+        LoadBMemAlignRomValueFacts ziskTrace main r_main entry)
+    (h_coreLookup :
+      ∀ entry
+        (mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+        (marb' : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+        (ma' : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL),
+        ZiskFv.Airs.MemoryBus.matches_memory_entry
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+        ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+          main mab' marb' ma' r_main entry →
+        MemAlignCoreLookupFacts mab' marb') :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+        ∨ Nonempty (ZiskFv.Compliance.MemAlignWitness main r_main entry)) := by
+  obtain ⟨entry, h_entry, h_provider⟩ :=
+    inputs.mem_or_subdoublewordProvider_of_loadBMemProviderEntry
+      i main mab marb ma r_main h_width h_b_src_ind h_active
+      h_selectedMemAlignPins h_generalMemAlignRomValues
+  refine ⟨entry, h_entry, ?_⟩
+  rcases h_provider with h_mem | h_provider
+  · exact Or.inl h_mem
+  · rcases h_provider with ⟨mab', marb', ma', h_provider⟩
+    have h_coreLookup' := h_coreLookup entry mab' marb' ma' h_entry h_provider
+    exact Or.inr
+      ⟨memAlignWitness_of_coreLookupFacts_provider h_coreLookup' h_provider⟩
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
