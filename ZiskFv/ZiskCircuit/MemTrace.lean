@@ -322,6 +322,39 @@ def writeMemoryOfEntry
     ).insert (e.ptr.toNat + 6) (byteAt e 6)
     ).insert (e.ptr.toNat + 7) (byteAt e 7)
 
+/-- Two inserts at distinct keys commute in `Std.ExtHashMap`.
+
+`ZiskFv.SailSpec.Auxiliaries` already exposes the dependent-map version; this
+constant-map version keeps the memory-replay proofs from expanding map
+lookups. -/
+theorem extHashMap_insert_comm [BEq K] [LawfulBEq K] [Hashable K]
+    (m : Std.ExtHashMap K V) {k1 k2 : K} {v1 v2 : V} (h_ne : k1 ≠ k2) :
+    (m.insert k1 v1).insert k2 v2 = (m.insert k2 v2).insert k1 v1 := by
+  grind
+
+/-- The eight byte writes performed by `writeMemoryOfEntry`, exposed as data
+so map-commutation proofs can reason structurally instead of expanding nested
+insert chains. -/
+@[reducible]
+def memoryBusEntryByteWrites (e : MemoryBusEntry FGL) : List (Nat × BitVec 8) :=
+  [ (e.ptr.toNat, byteAt e 0)
+  , (e.ptr.toNat + 1, byteAt e 1)
+  , (e.ptr.toNat + 2, byteAt e 2)
+  , (e.ptr.toNat + 3, byteAt e 3)
+  , (e.ptr.toNat + 4, byteAt e 4)
+  , (e.ptr.toNat + 5, byteAt e 5)
+  , (e.ptr.toNat + 6, byteAt e 6)
+  , (e.ptr.toNat + 7, byteAt e 7)
+  ]
+
+/-- Replay a list of byte-addressed writes into a replay memory map. -/
+@[reducible]
+def writeMemoryBytes
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (writes : List (Nat × BitVec 8)) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  writes.foldl (fun mem write => mem.insert write.1 write.2) mem
+
 /-- The zero-valued memory-bus entry at the same pointer as `e`.
 This is used to build the finite replay memory that supplies the initial
 zero value for reads before the first write to an address. -/
@@ -391,6 +424,112 @@ theorem readEventReplayAgreement_of_writeMemoryOfEntry_same
 def MemoryBusEntryByteDisjoint
     (left right : MemoryBusEntry FGL) : Prop :=
   ∀ i j, i < 8 → j < 8 → left.ptr.toNat + i ≠ right.ptr.toNat + j
+
+/-- A byte write listed by `memoryBusEntryByteWrites` occurs at one of the
+entry's eight consecutive byte addresses. -/
+theorem exists_address_of_mem_memoryBusEntryByteWrites
+    {entry : MemoryBusEntry FGL} {write : Nat × BitVec 8}
+    (h_write : write ∈ memoryBusEntryByteWrites entry) :
+    ∃ i, i < 8 ∧ write.1 = entry.ptr.toNat + i := by
+  simp [memoryBusEntryByteWrites] at h_write
+  rcases h_write with h | h | h | h | h | h | h | h
+  · subst write
+    exact ⟨0, by norm_num, by simp⟩
+  · subst write
+    exact ⟨1, by norm_num, by simp⟩
+  · subst write
+    exact ⟨2, by norm_num, by simp⟩
+  · subst write
+    exact ⟨3, by norm_num, by simp⟩
+  · subst write
+    exact ⟨4, by norm_num, by simp⟩
+  · subst write
+    exact ⟨5, by norm_num, by simp⟩
+  · subst write
+    exact ⟨6, by norm_num, by simp⟩
+  · subst write
+    exact ⟨7, by norm_num, by simp⟩
+
+/-- An external byte write commutes across a fold of byte writes when its
+address is distinct from every address in the folded list. -/
+theorem writeMemoryBytes_insert_comm_of_disjoint_addr
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (writes : List (Nat × BitVec 8))
+    (addr : Nat) (byte : BitVec 8)
+    (h_disjoint : ∀ write, write ∈ writes → write.1 ≠ addr) :
+    (writeMemoryBytes mem writes).insert addr byte =
+      writeMemoryBytes (mem.insert addr byte) writes := by
+  induction writes generalizing mem with
+  | nil =>
+      rfl
+  | cons write rest ih =>
+      have h_head : write.1 ≠ addr := h_disjoint write (by simp)
+      have h_rest : ∀ restWrite, restWrite ∈ rest → restWrite.1 ≠ addr := by
+        intro restWrite h_restWrite
+        exact h_disjoint restWrite (by simp [h_restWrite])
+      simp only [writeMemoryBytes, List.foldl_cons]
+      rw [ih (mem.insert write.1 write.2) h_rest]
+      rw [extHashMap_insert_comm _ h_head]
+
+/-- A single external byte write commutes across an eight-byte entry write
+when the external address is outside the entry's byte range. -/
+theorem writeMemoryOfEntry_insert_comm_of_disjoint_addr
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (entry : MemoryBusEntry FGL)
+    (addr : Nat) (byte : BitVec 8)
+    (h_disjoint : ∀ i, i < 8 → entry.ptr.toNat + i ≠ addr) :
+    (writeMemoryOfEntry mem entry).insert addr byte =
+      writeMemoryOfEntry (mem.insert addr byte) entry := by
+  change (writeMemoryBytes mem (memoryBusEntryByteWrites entry)).insert addr byte =
+    writeMemoryBytes (mem.insert addr byte) (memoryBusEntryByteWrites entry)
+  exact writeMemoryBytes_insert_comm_of_disjoint_addr mem _ addr byte
+    (by
+      intro write h_write
+      obtain ⟨i, hi, h_addr⟩ := exists_address_of_mem_memoryBusEntryByteWrites h_write
+      rw [h_addr]
+      exact h_disjoint i hi)
+
+/-- A fold of byte writes commutes across an eight-byte entry write when all
+folded addresses are outside the entry's byte range. -/
+theorem writeMemoryBytes_writeMemoryOfEntry_comm_of_disjoint_addrs
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (entry : MemoryBusEntry FGL)
+    (writes : List (Nat × BitVec 8))
+    (h_disjoint : ∀ write, write ∈ writes →
+      ∀ i, i < 8 → entry.ptr.toNat + i ≠ write.1) :
+    writeMemoryBytes (writeMemoryOfEntry mem entry) writes =
+      writeMemoryOfEntry (writeMemoryBytes mem writes) entry := by
+  induction writes generalizing mem with
+  | nil =>
+      rfl
+  | cons write rest ih =>
+      have h_head : ∀ i, i < 8 → entry.ptr.toNat + i ≠ write.1 :=
+        h_disjoint write (by simp)
+      have h_rest : ∀ restWrite, restWrite ∈ rest →
+          ∀ i, i < 8 → entry.ptr.toNat + i ≠ restWrite.1 := by
+        intro restWrite h_restWrite i hi
+        exact h_disjoint restWrite (by simp [h_restWrite]) i hi
+      simp only [writeMemoryBytes, List.foldl_cons]
+      rw [writeMemoryOfEntry_insert_comm_of_disjoint_addr]
+      · exact ih (mem.insert write.1 write.2) h_rest
+      · exact h_head
+
+/-- Byte-disjoint eight-byte memory-bus writes commute as replay-memory
+updates. -/
+theorem writeMemoryOfEntry_commute_of_byteDisjoint
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    writeMemoryOfEntry (writeMemoryOfEntry mem left) right =
+      writeMemoryOfEntry (writeMemoryOfEntry mem right) left := by
+  change writeMemoryBytes (writeMemoryOfEntry mem left) (memoryBusEntryByteWrites right) =
+    writeMemoryOfEntry (writeMemoryBytes mem (memoryBusEntryByteWrites right)) left
+  exact writeMemoryBytes_writeMemoryOfEntry_comm_of_disjoint_addrs mem left _
+    (by
+      intro write h_write i hi
+      obtain ⟨j, hj, h_addr⟩ := exists_address_of_mem_memoryBusEntryByteWrites h_write
+      rw [h_addr]
+      exact h_disjoint i j hi hj)
 
 /-- Replaying `row` cannot actively overwrite any byte protected by `entry`.
 
@@ -976,6 +1115,33 @@ theorem replayMemoryAfterBusRow_commute_of_right_not_active_write
   rw [replayMemoryAfterBusRow_eq_self_of_not_active_write
     (replayMemoryAfterBusRow mem left) right h_right_not_write]
   rw [replayMemoryAfterBusRow_eq_self_of_not_active_write mem right h_right_not_write]
+
+/-- The no-active-write-overlap side condition also supplies the replay cursor
+commutation needed by a safe adjacent swap.
+
+If either row is not an active memory write this reduces to replay neutrality.
+If both rows are active memory writes, the overlap condition gives byte
+disjointness, and the eight-byte writes commute. -/
+theorem replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (_h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left) :
+    replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+      replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left := by
+  by_cases h_left_write : left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)
+  · by_cases h_right_write : right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL)
+    · obtain ⟨h_left_as, h_left_mult⟩ := h_left_write
+      obtain ⟨h_right_as, h_right_mult⟩ := h_right_write
+      have h_disjoint : MemoryBusEntryByteDisjoint left right :=
+        h_left_right_safe h_right_as h_right_mult
+      simp only [replayMemoryAfterBusRow, h_left_as, h_left_mult, h_right_as, h_right_mult,
+        if_true, replayStoreEvent_storeEventOfEntry]
+      exact writeMemoryOfEntry_commute_of_byteDisjoint mem left right h_disjoint
+    · exact replayMemoryAfterBusRow_commute_of_right_not_active_write
+        mem left right h_right_write
+  · exact replayMemoryAfterBusRow_commute_of_left_not_active_write
+      mem left right h_left_write
 
 /-- Replay memory after a chronological prefix of raw memory-bus rows. -/
 @[reducible]
@@ -1694,6 +1860,24 @@ theorem memoryBusRowsPrefixReadSound_of_replaySafePermutation
   | swap pref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
       exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
         (ih initialMemory h_source) h_left_right_safe h_right_left_safe h_commute
+
+/-- Constructor helper for a replay-safe swap whose two directional
+no-active-write-overlap facts also supply the replay cursor commutation. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_noActiveWriteOverlap
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    h_left_right_safe h_right_left_safe
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+        mem left right h_left_right_safe h_right_left_safe)
 
 /-- Constructor helper for a replay-safe swap when the left row is not an
 active write. The remaining directional safety condition protects a possible
