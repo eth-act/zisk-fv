@@ -2063,6 +2063,48 @@ theorem MemoryBusRowsReplaySafePermutation.move_row_left_of_noActiveWriteOverlap
   (MemoryBusRowsReplaySafePermutation.move_head_right_of_noActiveWriteOverlap
     row pref suffix h_safe).symm
 
+/-- Move a selected row left across a prefix whose entries are either literally
+the same replay event or are safe to cross.
+
+Equal entries are treated as no-op swaps: the proof keeps the equal head in
+place and recursively moves the selected row through the remaining prefix. -/
+theorem MemoryBusRowsReplaySafePermutation.move_row_left_of_eq_or_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix : List (MemoryBusEntry FGL))
+    (h_cross : ∀ moved, moved ∈ pref →
+      row = moved ∨
+        (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) := by
+  induction pref with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | cons moved rest ih =>
+      have h_rest : ∀ moved', moved' ∈ rest →
+          row = moved' ∨
+            (MemoryBusEntryNoActiveWriteOverlap row moved' ∧
+              MemoryBusEntryNoActiveWriteOverlap moved' row) := by
+        intro moved' h_moved'
+        exact h_cross moved' (List.mem_cons.mpr (Or.inr h_moved'))
+      rcases h_cross moved (by simp) with h_eq | h_safe
+      · subst moved
+        simpa [List.cons_append, List.append_assoc] using
+          MemoryBusRowsReplaySafePermutation.append_left [row] (ih h_rest)
+      · have h_rest_move :
+            MemoryBusRowsReplaySafePermutation
+              (rest ++ row :: suffix) (row :: rest ++ suffix) :=
+          ih h_rest
+        have h_after_rest :
+            MemoryBusRowsReplaySafePermutation
+              (moved :: rest ++ row :: suffix) (moved :: row :: rest ++ suffix) := by
+          simpa [List.cons_append] using
+            MemoryBusRowsReplaySafePermutation.append_left [moved] h_rest_move
+        exact MemoryBusRowsReplaySafePermutation.swap [] moved row (rest ++ suffix)
+          h_after_rest h_safe.2 h_safe.1
+          (fun mem =>
+            replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+              mem moved row h_safe.2 h_safe.1)
+
 /-- Recursive selection step for building a replay-safe order certificate.
 
 If the next target row occurs inside the current source list as
@@ -2082,6 +2124,30 @@ theorem MemoryBusRowsReplaySafePermutation.cons_target_of_split_noActiveWriteOve
       MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) :=
     MemoryBusRowsReplaySafePermutation.move_row_left_of_noActiveWriteOverlap
       row pref suffix h_safe
+  have h_recurse :
+      MemoryBusRowsReplaySafePermutation (row :: pref ++ suffix) (row :: targetTail) := by
+    simpa [List.cons_append, List.append_assoc] using
+      MemoryBusRowsReplaySafePermutation.append_left [row] h_tail
+  exact h_move.trans h_recurse
+
+/-- Duplicate-aware recursive selection step for building a replay-safe order
+certificate.
+
+Equal crossed entries are skipped as no-op swaps; distinct crossed entries must
+still supply the bidirectional no-active-write-overlap side condition. -/
+theorem MemoryBusRowsReplaySafePermutation.cons_target_of_split_eq_or_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix targetTail : List (MemoryBusEntry FGL))
+    (h_tail : MemoryBusRowsReplaySafePermutation (pref ++ suffix) targetTail)
+    (h_cross : ∀ moved, moved ∈ pref →
+      row = moved ∨
+        (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: targetTail) := by
+  have h_move :
+      MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) :=
+    MemoryBusRowsReplaySafePermutation.move_row_left_of_eq_or_noActiveWriteOverlap
+      row pref suffix h_cross
   have h_recurse :
       MemoryBusRowsReplaySafePermutation (row :: pref ++ suffix) (row :: targetTail) := by
     simpa [List.cons_append, List.append_assoc] using

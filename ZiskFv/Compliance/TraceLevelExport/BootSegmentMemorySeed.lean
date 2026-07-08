@@ -247,6 +247,103 @@ def AcceptedMemReplayRowsEqOrAddressSeparated
             (ziskTrace.memReplayBridge h_nonempty).mem.addr leftIdx.val ≠
               (ziskTrace.memReplayBridge h_nonempty).mem.addr rightIdx.val
 
+/-- Selection-shaped origin-level condition for duplicate-aware safe crossings.
+
+Each target head is selected from the current source list. The selected row may
+cross only the prefix rows listed in that selection step; for those crossed
+rows, every possible generated Mem `rowAt` origin pair is either the same
+replay event or address-separated. This is weaker and more order-aware than the
+global pairwise `AcceptedMemReplayRowsEqOrAddressSeparated` condition. -/
+inductive AcceptedMemReplayRowsEqOrAddressSeparatedSelection
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions) :
+    List (MemoryBusEntry FGL) → List (MemoryBusEntry FGL) → Prop
+  | nil : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty [] []
+  | cons
+      (pref : List (MemoryBusEntry FGL))
+      (row : MemoryBusEntry FGL)
+      (suffix targetTail : List (MemoryBusEntry FGL)) :
+      AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+        (pref ++ suffix) targetTail →
+      (∀ moved, moved ∈ pref →
+        ∀ rowIdx movedIdx : Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length,
+          row ∈ activeMemReplayEntriesOfRow
+              (ZiskFv.AirsClean.Mem.rowAt
+                (ziskTrace.memReplayBridge h_nonempty).mem rowIdx.val) →
+            moved ∈ activeMemReplayEntriesOfRow
+              (ZiskFv.AirsClean.Mem.rowAt
+                (ziskTrace.memReplayBridge h_nonempty).mem movedIdx.val) →
+            row = moved ∨
+              (ziskTrace.memReplayBridge h_nonempty).mem.addr rowIdx.val ≠
+                (ziskTrace.memReplayBridge h_nonempty).mem.addr movedIdx.val) →
+      AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+        (pref ++ row :: suffix) (row :: targetTail)
+
+/-- A selection-shaped origin-level equality/address-separation certificate
+promotes to a replay-safe adjacent-swap permutation, provided the current
+source list is drawn from accepted Mem replay rows. -/
+theorem AcceptedMemReplayRowsEqOrAddressSeparatedSelection.to_replaySafePermutation
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    {source target : List (MemoryBusEntry FGL)}
+    (h_selection :
+      AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty source target)
+    (h_source :
+      ∀ entry, entry ∈ source → entry ∈ ziskTrace.memReplayRows h_nonempty) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_selection with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons pref row suffix targetTail h_tail h_cross ih =>
+      have h_source_tail :
+          ∀ entry, entry ∈ pref ++ suffix → entry ∈ ziskTrace.memReplayRows h_nonempty := by
+        intro entry h_entry
+        rcases List.mem_append.mp h_entry with h_pref | h_suffix
+        · exact h_source entry (List.mem_append.mpr (Or.inl h_pref))
+        · exact h_source entry
+            (List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inr h_suffix))))
+      have h_tail_order :
+          MemoryBusRowsReplaySafePermutation (pref ++ suffix) targetTail :=
+        ih h_source_tail
+      refine
+        MemoryBusRowsReplaySafePermutation.cons_target_of_split_eq_or_noActiveWriteOverlap
+          row pref suffix targetTail h_tail_order ?_
+      intro moved h_moved
+      have h_row_mem : row ∈ ziskTrace.memReplayRows h_nonempty :=
+        h_source row (by simp [List.mem_append])
+      have h_moved_mem : moved ∈ ziskTrace.memReplayRows h_nonempty :=
+        h_source moved (List.mem_append.mpr (Or.inl h_moved))
+      exact
+        activeMemReplayEntry_eq_or_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_rows
+          (ziskTrace.memReplayBridge h_nonempty) h_row_mem h_moved_mem
+          (h_cross moved h_moved)
+
+/-- Boot-level selection-shaped origin condition over accepted Mem replay rows. -/
+abbrev BootSegmentReplaySafeOrderEqOrAddressSeparatedSelection
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h_nonempty : 0 < ziskTrace.numInstructions) : Prop :=
+  AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+    (ziskTrace.memReplayRows h_nonempty)
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+
+/-- Selection-shaped origin-level equality/address separation yields the boot
+replay-safe order certificate. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection :
+      BootSegmentReplaySafeOrderEqOrAddressSeparatedSelection ziskTrace rowsOf h_nonempty) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_order :
+      MemoryBusRowsReplaySafePermutation
+        (ziskTrace.memReplayRows h_nonempty)
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+    h_selection.to_replaySafePermutation (fun _ h_entry => h_entry)
+  simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayRows,
+    AcceptedZiskTrace.memReplayBridge] using h_order
+
 /-- Origin-level equality/address separation implies the duplicate-aware
 no-active-write-overlap condition over accepted replay rows. -/
 theorem acceptedMemReplayRows_eq_or_noActiveWriteOverlap_of_eq_or_addr_ne
@@ -298,6 +395,23 @@ structure BootSegmentReadSoundInputs
       (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
         (ziskTrace.memReplayBridge h_nonempty)).initialMemory
   order : BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty
+
+/-- Build read-soundness inputs from selection-shaped origin-level
+equality/address separation. -/
+def bootSegmentReadSoundInputs_of_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_selection :
+      BootSegmentReplaySafeOrderEqOrAddressSeparatedSelection ziskTrace rowsOf h_nonempty) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order := bootSegmentReplaySafeOrderCertificate_of_eq_or_addr_ne_selection h_selection
 
 /-- Build seed read-soundness inputs from selection-shaped order evidence. -/
 def bootSegmentReadSoundInputs_of_selection
@@ -404,6 +518,24 @@ theorem readSound_of_bootSegmentReadSoundInputs
     memoryBusRowsPrefixReadSound_of_replaySafePermutation
       acceptedReplay.initialMemory inputs.order acceptedReplay.prefixReadSound
   rwa [inputs.initialMemory_eq]
+
+/-- Direct read-soundness assembly from selection-shaped origin-level
+equality/address separation. -/
+theorem readSound_of_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_selection :
+      BootSegmentReplaySafeOrderEqOrAddressSeparatedSelection ziskTrace rowsOf h_nonempty) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_eq_or_addr_ne_selection h_initialMemory h_selection)
 
 /-- Direct read-soundness assembly from selection-shaped structural order
 evidence plus the explicit initial-memory bridge. -/
@@ -2658,6 +2790,126 @@ theorem BootSegmentMemorySeed.readSound_of_memoryRowsOfSteps_selection
       seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
   readSound_of_bootSegmentReadSoundInputs
     (seed.readSoundInputs_of_memoryRowsOfSteps_selection h_selection)
+
+/-- Structural selection-shaped origin evidence over decoded per-step rows
+yields the concrete boot replay-safe order certificate once placement
+identifies those rows with `rowsOf`. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_selection : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_order_steps :
+      MemoryBusRowsReplaySafePermutation
+        (ziskTrace.memReplayRows h_nonempty)
+        (executionMemoryRowsOfSteps ziskTrace ziskStep) :=
+    h_selection.to_replaySafePermutation (fun _ h_entry => h_entry)
+  have h_order_rows :
+      MemoryBusRowsReplaySafePermutation
+        (ziskTrace.memReplayRows h_nonempty)
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+    rw [executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
+    exact h_order_steps
+  simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayRows,
+    AcceptedZiskTrace.memReplayBridge] using h_order_rows
+
+/-- Construct read-soundness inputs from structural selection-shaped origin
+evidence over decoded per-step rows. -/
+def bootSegmentReadSoundInputs_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_selection : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order :=
+    bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+      h_placement h_selection
+
+/-- Direct execution-order read-soundness from structural selection-shaped
+origin evidence over decoded per-step rows. -/
+theorem readSound_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_selection : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+      h_initialMemory h_placement h_selection)
+
+/-- Seed-level wrapper for structural selection-shaped origin evidence. -/
+theorem BootSegmentMemorySeed.replaySafeOrderCertificate_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace seed.rowsOf h_nonempty :=
+  bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    seed.placement h_selection
+
+/-- Seed-level read-soundness input assembly from structural selection-shaped
+origin evidence. -/
+def BootSegmentMemorySeed.readSoundInputs_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReadSoundInputs ziskTrace seed.memInit seed.rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    (seed.readSoundInputs h_nonempty).initialMemory_eq seed.placement h_selection
+
+/-- Seed-level execution-order read-soundness from structural
+selection-shaped origin evidence. -/
+theorem BootSegmentMemorySeed.readSound_of_memoryRowsOfSteps_eq_or_addr_ne_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection : AcceptedMemReplayRowsEqOrAddressSeparatedSelection ziskTrace h_nonempty
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    MemoryBusRowsPrefixReadSound
+      seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (seed.readSoundInputs_of_memoryRowsOfSteps_eq_or_addr_ne_selection h_selection)
 
 /-- Structural row correspondence plus pairwise-safe accepted replay rows yield
 the concrete boot replay-safe order certificate once placement identifies
