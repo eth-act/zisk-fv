@@ -574,6 +574,47 @@ theorem acceptedMemReplayRows_prior_same_addr_timestamp_le_active
     (ziskTrace.memReplayBridge h_nonempty)
     priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry h_selected_entry
 
+/-- Chronological accepted Mem replay rows give the timestamp order for any
+ordered two-entry sublist of the accepted replay source. -/
+theorem acceptedMemReplayRows_timestamp_le_of_pair_sublist
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_chronological :
+      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+        (ziskTrace.memReplayRows h_nonempty))
+    {earlier later : MemoryBusEntry FGL}
+    (h_pair :
+      List.Sublist [earlier, later] (ziskTrace.memReplayRows h_nonempty)) :
+    earlier.timestamp.toNat ≤ later.timestamp.toNat := by
+  have h_pairwise :
+      (ziskTrace.memReplayRows h_nonempty).Pairwise
+        (fun earlier later : MemoryBusEntry FGL =>
+          earlier.timestamp.toNat ≤ later.timestamp.toNat) := by
+    simpa [ZiskFv.AirsClean.Mem.MemoryBusRowsChronological] using h_chronological
+  exact rel_of_pair_sublist_pairwise
+    (R := fun earlier later : MemoryBusEntry FGL =>
+      earlier.timestamp.toNat ≤ later.timestamp.toNat)
+    h_pairwise h_pair
+
+/-- Selected-prefix form of chronological accepted Mem replay order: when the
+current recursive selected source is a sublist of the accepted replay rows,
+every crossed prefix row is chronologically no later than the selected row. -/
+theorem acceptedMemReplayRows_timestamp_le_of_selected_prefix
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_chronological :
+      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+        (ziskTrace.memReplayRows h_nonempty))
+    {current pref suffix : List (MemoryBusEntry FGL)}
+    {moved row : MemoryBusEntry FGL}
+    (h_current_sub :
+      List.Sublist current (ziskTrace.memReplayRows h_nonempty))
+    (h_current : current = pref ++ row :: suffix)
+    (h_moved : moved ∈ pref) :
+    moved.timestamp.toNat ≤ row.timestamp.toNat :=
+  acceptedMemReplayRows_timestamp_le_of_pair_sublist h_chronological
+    (pair_sublist_of_mem_pref_of_sublist_split h_current_sub h_current h_moved)
+
 /-- A plain accepted-replay/execution row permutation becomes a boot order
 certificate from origin-level equality/address separation over accepted replay
 rows. -/

@@ -2223,6 +2223,20 @@ theorem pair_sublist_of_mem_pref_of_sublist_split
     exact pair_sublist_append_cons_of_mem h_moved
   exact h_pair_current.trans h_current_sub
 
+/-- A pairwise relation on a source list applies to any ordered two-element
+sublist of that source. -/
+theorem rel_of_pair_sublist_pairwise
+    {α : Type u}
+    {R : α → α → Prop}
+    {source : List α}
+    {left right : α}
+    (h_pairwise : source.Pairwise R)
+    (h_pair : List.Sublist [left, right] source) :
+    R left right := by
+  have h_pairwise_pair : [left, right].Pairwise R :=
+    h_pairwise.sublist h_pair
+  simpa using h_pairwise_pair
+
 /-- Build a replay-safe order certificate from a plain permutation and a
 selection-local duplicate-aware crossing condition.
 
