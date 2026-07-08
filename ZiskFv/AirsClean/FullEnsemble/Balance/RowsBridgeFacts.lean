@@ -128,8 +128,9 @@ def FullWitnessMemTableGeneratedRowsBridge
     replay-soundness field. It exposes every remaining concrete fact needed by
     `acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts`:
     the table selected from the full witness, the active replay row projection,
-    generated Mem row constraints, row/segment range checks, fixed-column shape,
-    and nonempty segment evidence. -/
+    generated Mem row constraints, row/segment range checks, and nonempty
+    segment evidence. The deterministic `SEGMENT_L1` fixed-column shape is
+    derived by `segmentWithFixedL1` rather than carried as bridge residue. -/
 structure FullWitnessMemReplayBridge
     {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
@@ -141,18 +142,19 @@ structure FullWitnessMemReplayBridge
   permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
   rowCount : ℕ
   rows_eq : rows = activeMemReplayRowsOfTable table
-  generatedRows : MemTableGeneratedRowsBridge table mem segment permutation rowCount
+  generatedRows :
+    MemTableGeneratedRowsBridge table mem (segmentWithFixedL1 segment) permutation rowCount
   rowRanges : MemTableGeneratedRangeFacts table mem
-  segmentRanges : MemSegmentGeneratedRangeFacts segment
-  fixedColumns : MemTableGeneratedFixedColumnFacts table segment
+  segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment)
   nonempty : 0 < table.table.length
 
 /-- Construct the full-witness replay bridge from the concrete Mem table
-    projection and the remaining generated/range/fixed-column facts.
+    projection using the deterministic `SEGMENT_L1` fixed-column shape.
 
     This is the intended extractor-facing constructor: table membership,
     component identity, row projection, row count, and accepted-row projection
-    are no longer independent bridge fields. -/
+    are no longer independent bridge fields, and fixed-column facts are derived
+    rather than stored. -/
 def fullWitnessMemReplayBridge_of_memTable
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -166,11 +168,11 @@ def fullWitnessMemReplayBridge_of_memTable
     (h_generatedAt :
       ∀ idx : Fin table.table.length,
         ZiskFv.Airs.Mem.generated_every_row
-          segment permutation (memOfTable table gsum im0 im1) idx.val)
+          (segmentWithFixedL1 segment) permutation
+          (memOfTable table gsum im0 im1) idx.val)
     (h_rowRanges :
       MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
-    (h_segmentRanges : MemSegmentGeneratedRangeFacts segment)
-    (h_fixedColumns : MemTableGeneratedFixedColumnFacts table segment)
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment))
     (h_nonempty : 0 < table.table.length) :
     FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
   { table := table
@@ -184,7 +186,6 @@ def fullWitnessMemReplayBridge_of_memTable
       memTableGeneratedRowsBridge_of_memOfTable h_component h_generatedAt
     rowRanges := h_rowRanges
     segmentRanges := h_segmentRanges
-    fixedColumns := h_fixedColumns
     nonempty := h_nonempty }
 
 /-- Construct the full-witness replay bridge using the deterministic
@@ -217,7 +218,6 @@ def fullWitnessMemReplayBridge_of_memTable_fixedL1
     h_generatedAt
     h_rowRanges
     h_segmentRanges
-    (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 table segment)
     h_nonempty
 
 /-- Construct the full-witness replay bridge from the compact generated AIR
@@ -402,6 +402,19 @@ def rows
   activeMemReplayRowsOfTable source.table
 
 @[reducible]
+def replayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (source : FullWitnessMemAirSource witness)
+    (h_nonempty : 0 < source.table.table.length) :
+    FullWitnessMemReplayBridge witness source.rows :=
+  fullWitnessMemReplayBridge_of_memAirSource
+    source.table_mem
+    source.component
+    source.source
+    h_nonempty
+
+@[reducible]
 def replayBridgeOfTraceSplit
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -410,11 +423,9 @@ def replayBridgeOfTraceSplit
     (source : FullWitnessMemAirSource witness)
     (h_traceSplit : source.rows = priorRows ++ entry :: laterRows) :
     FullWitnessMemReplayBridge witness source.rows :=
-  fullWitnessMemReplayBridge_of_memAirSource_traceSplit
-    source.table_mem
-    source.component
-    source.source
-    h_traceSplit
+  source.replayBridge
+    (table_nonempty_of_activeMemReplayRowsOfTable_nonempty
+      (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit))
 
 end FullWitnessMemAirSource
 
@@ -763,15 +774,15 @@ theorem fullWitnessMemAirSourceOfRawSidecars_eq_rawFacts
         (fullWitnessMemAirSourceRawFacts_of_sidecars h_sidecars) := by
   rfl
 
-/-- The compact full-witness replay bridge includes the older generated-row
-    bridge obligation. -/
+/-- The compact full-witness replay bridge includes the generated-row bridge
+    obligation for the deterministic fixed-L1 segment shape. -/
 theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     {rows : List (Interaction.MemoryBusEntry FGL)}
     (h_bridge : FullWitnessMemReplayBridge witness rows) :
     FullWitnessMemTableGeneratedRowsBridge witness
-      h_bridge.mem h_bridge.segment h_bridge.permutation h_bridge.rowCount :=
+      h_bridge.mem (segmentWithFixedL1 h_bridge.segment) h_bridge.permutation h_bridge.rowCount :=
   ⟨h_bridge.table, h_bridge.table_mem, h_bridge.generatedRows⟩
 
 /-- The full-witness bridge projects the generated row range required by the

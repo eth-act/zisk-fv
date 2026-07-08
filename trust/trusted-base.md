@@ -40,7 +40,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` floor (#76 Fold-B; see below), unified on `root_soundness` into one named `BootSegmentMemorySeed` premise (#185), then restated **concretely** (#115) as `memInit`+`boot` (boot/cross-segment seed) + `step` (per-step execution-successor) + guarded read-soundness inputs (accepted Mem replay source + initial-memory bridge + replay-safe order certificate), with the opaque cursor `stateAt`/`RowTraceCoherence` now *derived* by the execution-order fold (`Spike.rowTraceCoherence_of_uniformReplayMem` mechanizes the reconstruction direction only — the uniform-replay cursor from `step`+`boot` *satisfies* `RowTraceCoherence`; no converse). The raw `readSound : MemoryBusRowsPrefixReadSound ...` seed field is gone; the remaining residue is structural/boot/order data, not a semantic read-value agreement predicate. See below. |
+| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` floor (#76 Fold-B; see below), unified on `root_soundness` into one named `BootSegmentMemorySeed` premise (#185), then restated **concretely** (#115) as `memInit`+`boot` (boot/cross-segment seed) + `step` (per-step execution-successor) + guarded read-soundness inputs (accepted Mem replay source + initial-memory bridge + named `BootSegmentReplaySafeOrderCertificate`), with the opaque cursor `stateAt`/`RowTraceCoherence` now *derived* by the execution-order fold (`Spike.rowTraceCoherence_of_uniformReplayMem` mechanizes the reconstruction direction only — the uniform-replay cursor from `step`+`boot` *satisfies* `RowTraceCoherence`; no converse). The raw `readSound : MemoryBusRowsPrefixReadSound ...` seed field is gone; the remaining residue is structural/boot/order data, not a semantic read-value agreement predicate. See below. |
 | Clean completeness            | 0            | 0                 | Retired from source trust; false/circular fields are visible non-claims.                                  |
 
 
@@ -242,13 +242,32 @@ entry's eight bytes equals the last same-address accepted write in step order
 the bridge is named as `MemTableGeneratedRowsBridge`, which connects Clean
 `table.table` positions to `rowAt mem idx` and the row-indexed
 `generated_every_row` constraints. `FullWitnessMemReplayBridge` packages the
-concrete full-ensemble Mem table, generated-row/range/fixed-column facts,
-active-row equality, and nonempty segment evidence; its constructor derives the
-accepted replay subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is
-no longer a bare global-boundary assumption. The semantic trust gate includes a
+concrete full-ensemble Mem table, generated-row/range facts, active-row equality,
+and nonempty segment evidence; deterministic fixed-column shape is derived
+through `segmentWithFixedL1`. Its constructor derives the accepted replay
+subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is no longer a bare
+global-boundary assumption. The semantic trust gate includes a
 two-address witness with an addr-sorted/time-reversed prefix (write at byte
 address 0 with later timestamp, selected read at byte address 8 with earlier
 timestamp) so the old whole-state boundary shape cannot return silently.
+Current #115 surface note: `AcceptedZiskTrace.mem_replay_table` now separately
+selects the concrete mutable-Mem table, witness membership, component identity,
+and nonempty-table proof. The generated Mem source residue is now split across
+accepted-trace fields: stage-2 sidecar columns (`mem_replay_segment`,
+`mem_replay_permutation`, `mem_replay_gsum`, `mem_replay_im0`,
+`mem_replay_im1`), split generated constraint facts
+(`mem_replay_constraints`), row range facts (`mem_replay_row_ranges`), and
+segment range facts (`mem_replay_segment_ranges`). The
+`memReplayRawSourceSidecar`/`memReplaySource`/`memReplayBridge` accessors
+rebuild the raw sidecar, `FullWitnessMemAirSource`, and `FullWitnessMemReplayBridge`
+downstream. This is narrower than carrying the replay bridge, a full
+`FullWitnessMemAirSource`, the typed `MemTableGeneratedAirSource`, or one raw
+sidecar field directly, and fixed-column shape is no longer accepted-trace
+residue, but it still strengthens nonempty `AcceptedZiskTrace` construction
+until the remaining Mem generated-source/cross-row facts are derived or
+explicitly approved. `mem_replay_source_covers` is the matching structural
+source-correlation certificate: every mutable-Mem table in the witness is the
+selected source table.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
@@ -259,14 +278,23 @@ timestamp) so the old whole-state boundary shape cannot return silently.
 > `coherence : RowTraceCoherence stateAt [] rows` described below.  It now carries
 > the **concrete** `memInit` + `boot` (boot/cross-segment seed) + `step` (per-step
 > execution-successor) + guarded `readSoundInputs` (initial-memory equality and
-> replay-safe order certificate, using the accepted trace's guarded Mem replay
+> named `BootSegmentReplaySafeOrderCertificate`, using the accepted trace's guarded Mem replay
 > source) + a structural `placement` (each memory op's real bus row).
 > `memEvidence_of_bootSeed` *derives* the opaque `stateAt`/`RowTraceCoherence` per op via the execution-order fold
 > (`Spike.exec_order_fold_fin` + `Spike.rowTraceCoherence_of_uniformReplayMem`).
 > This is now a partial **trust reduction** for the old read-soundness half:
 > table-order replay soundness comes from accepted Mem AIR replay evidence, and
-> the seed carries only the explicit boot/initial-memory bridge and replay-safe
-> sorted-to-execution order certificate. It remains a constructibility
+> the seed carries only the explicit boot/initial-memory bridge and named
+> replay-safe sorted-to-execution order certificate. It is not free on the accepted-trace
+> side: every nonempty `AcceptedZiskTrace` constructor must now supply the guarded
+> Mem AIR source from which the replay bridge is derived, plus the structural
+> certificate that every mutable-Mem table in the witness is that selected
+> source table, unless later #115 work derives or splits those source facts into
+> narrower PIL/checkable certificates.
+> The order certificate is structural, not read-value agreement; it still must
+> be derived from row correspondence and Mem ordering facts or explicitly approved
+> as a scoped PIL/checkable residue before #115 can be considered landed.
+> It remains a constructibility
 > restatement for the Sail execution-memory cursor itself:
 > `rowTraceCoherence_of_uniformReplayMem` mechanizes only the reconstruction
 > direction (`step`+`boot` ⟹ the uniform-replay cursor satisfies
@@ -364,7 +392,7 @@ execution.
   **concrete** fields `memInit` + `boot` (boot / cross-segment seed memory),
   `step` (the per-step execution-successor: each Sail step's memory is the replay
   of that step's memory rows), guarded `readSoundInputs` (initial-memory bridge
-  plus replay-safe order certificate against the accepted trace's Mem replay
+  plus named `BootSegmentReplaySafeOrderCertificate` against the accepted trace's Mem replay
   source), and a *structural* `placement` (each memory op's real bus row — a
   load's read `busLd .. .e1`, a narrow store's write `busSt .. .e2` + preserved
   bytes). `memEvidence_of_bootSeed` **derives** every
@@ -390,8 +418,15 @@ still carries `bootSeed` (`baseline-strong-export-binders.txt`). The seed is
 genuinely irreducible at the single-segment level (a segment does not contain its
 own initial state — it is carried in from the previous segment / boot). The old
 raw `readSound` field has been replaced by accepted Mem replay evidence plus
-explicit initial-memory and replay-safe order certificates. **#119** reduced the store byte
-facts to the coherence shape.
+explicit initial-memory and named replay-safe order certificates. This reduces the
+seed-side read-value assumption, but it also adds a nonempty accepted-trace
+constructor burden: `mem_replay_table` must select the concrete mutable Mem AIR
+table and nonempty proof; the source-column fields, `mem_replay_constraints`,
+`mem_replay_row_ranges`, and `mem_replay_segment_ranges` must provide the raw
+generated Mem source factors for that selected table; and `mem_replay_source_covers`
+must certify structural coverage of mutable-Mem tables by that selected table.
+**#119** reduced the store byte facts to the
+coherence shape.
 
 **Memory, not memory+PC.** The coherence chain constrains only `.mem`; the seed's
 `initialState` snapshot pins PC / registers only incidentally, and per-step
@@ -635,6 +670,26 @@ trust surface even though they add no axiom.
 | `main_height` (pre-existing) | — | the Main table has a row for every instruction (`i < length`) |
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
+| `mem_replay_table` (**#115**, guarded by `0 < numInstructions`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
+| `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `0 < numInstructions`) | Raw generated Mem sidecar columns for the selected mutable Mem table; deterministic Mem `SEGMENT_L1` shape is derived via `segmentWithFixedL1` | supplies the source columns used to rebuild the raw sidecar and typed Mem AIR source for `mem_replay_table` |
+| `mem_replay_constraints` (**#115**, guarded by `0 < numInstructions`) | split generated Mem constraints for the selected mutable Mem table | supplies the `segment_every_row` / `permutation_every_row` generated constraint facts used to derive replay rows |
+| `mem_replay_row_ranges` (**#115**, guarded by `0 < numInstructions`) | row range facts for the selected mutable Mem table projection | supplies range facts over the projected Mem rows used by the replay bridge |
+| `mem_replay_segment_ranges` (**#115**, guarded by `0 < numInstructions`) | segment range facts for the selected mutable Mem sidecar segment | supplies range facts over the fixed-`SEGMENT_L1` sidecar segment used by the replay bridge |
+| `mem_replay_source_covers` (**#115**, guarded by `0 < numInstructions`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
+
+**#115 constructor-burden note.** Removing the raw seed
+`MemoryBusRowsPrefixReadSound` field moved real proof work into checked Mem
+replay evidence, but the current branch also strengthens `AcceptedZiskTrace` for
+nonempty traces. A constructor such as #219's single-ADD witness must now build
+the guarded `mem_replay_table`, source-column, generated-constraint, and range
+fields in addition to
+`constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`/fixed
+columns. These fields are not read-value agreement predicates, and they no
+longer carry deterministic Mem fixed columns. The paired
+`mem_replay_source_covers` field is a structural table-coverage certificate that
+removes this residue from seed-layer wrappers. The remaining generated-source
+and cross-row residue must either be approved in this split PIL/checkable form or
+derived before #115 is called complete.
 
 **#100 trust-surface change (honest accounting — a SHIFT, documented as such).**
 The next-PC discharge does **not** derive `h_nextPC_matches` from the existing

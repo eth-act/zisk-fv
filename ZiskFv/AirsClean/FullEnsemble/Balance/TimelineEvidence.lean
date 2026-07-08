@@ -1751,11 +1751,16 @@ def acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
     (h_bridge : FullWitnessMemReplayBridge witness rows) :
     ZiskFv.ZiskCircuit.MemTrace.AcceptedMemoryReplayEvidence :=
   acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts
+    (table := h_bridge.table)
+    (mem := h_bridge.mem)
+    (segment := segmentWithFixedL1 h_bridge.segment)
+    (permutation := h_bridge.permutation)
+    (rowCount := h_bridge.rowCount)
     h_bridge.rows_eq
     h_bridge.generatedRows
     h_bridge.rowRanges
     h_bridge.segmentRanges
-    h_bridge.fixedColumns
+    (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
     h_bridge.nonempty
 
 @[simp]
