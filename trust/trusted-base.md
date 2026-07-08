@@ -269,6 +269,16 @@ explicitly approved. `mem_replay_source_covers` is the matching structural
 source-correlation certificate: every mutable-Mem table in the witness is the
 selected source table.
 
+MemAlign scope note (#242): #115's closeout is direct-Mem only. MemAlign-routed
+accesses remain undischarged, named follow-on burdens rather than derived
+read-soundness. The open residues are `MemAlignLoadProviderRomValueFacts`
+(`MemBusRowBridges.lean`), `MemAlignCoreLookupFacts`
+(`Compliance/SharedBundles.lean`), `ActiveMainMemAlignSelectedProveBranchPins`,
+and the direct-Mem branch exclusions `LoadBDirectMutableMemResidues.no_marb`,
+`no_mab`, and `no_memAlign`. Issue #242 owns replacing these exclusions/residues
+with a through-MemAlign derivation, gated on MemAlignRom extraction (#108) and a
+timeline argument from MemAlign provider rows back to the accepted Mem replay.
+
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
 > **#115 update (concrete seed form).** On `root_soundness` the whole-segment
