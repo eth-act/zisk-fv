@@ -1104,6 +1104,58 @@ noncomputable def executionMemoryRowsOfSteps
   (List.finRange ziskTrace.numInstructions).flatMap
     (fun i => memoryRowsOfStep ziskTrace i (ziskStep i))
 
+private theorem fgl_neg_one_ne_one : ¬ ((-1 : FGL) = (1 : FGL)) := by
+  intro h
+  have hv := congrArg Fin.val h
+  norm_num [GL_eq] at hv
+
+/-- The structural Main load memory row is a memory read, not an active write. -/
+theorem busLd_e1_not_active_write
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    ¬(((busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1).as = (2 : FGL)
+      ∧ ((busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1).multiplicity = (1 : FGL)) := by
+  intro h
+  exact fgl_neg_one_ne_one (by
+    simpa [busLd, ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h.2)
+
+/-- Structural steps whose emitted memory rows are replay-neutral: loads and
+non-memory ops emit no active memory writes; stores are excluded. -/
+def ZiskStepReplayNeutralMemoryRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _ =>
+      True
+  | .sb _ | .sh _ | .sw _ | .sd _ =>
+      False
+  | .sub _ | .and _ | .or _ | .xor _ | .slt _ | .sltu _
+  | .andi _ | .ori _ | .xori _ | .slti _ | .sltiu _
+  | .sll _ | .srl _ | .sra _ | .slli _ | .srli _ | .srai _
+  | .add _ | .addi _ | .subw _ | .addw _ | .addiw _
+  | .sllw _ | .srlw _ | .sraw _ | .slliw _ | .srliw _ | .sraiw _
+  | .mul _ | .mulh _ | .mulhsu _ | .mulw _ | .mulhu _
+  | .div _ | .rem _ | .divw _ | .remw _ | .divu _ | .divuw _
+  | .remu _ | .remuw _
+  | .beq _ | .bne _ | .blt _ | .bge _ | .bltu _ | .bgeu _
+  | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
+      True
+
+/-- Replay-neutral structural steps emit no active memory writes. -/
+theorem memoryRowsOfStep_not_active_write_of_replayNeutralStep
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    {step : ZiskStep ziskTrace i}
+    (h_step : ZiskStepReplayNeutralMemoryRows ziskTrace i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    ¬(entry.as = (2 : FGL) ∧ entry.multiplicity = (1 : FGL)) := by
+  cases step <;> simp [ZiskStepReplayNeutralMemoryRows, memoryRowsOfStep] at h_step h_entry ⊢
+  all_goals
+    subst entry
+    intro _h_as h_mult
+    exact fgl_neg_one_ne_one (by
+      simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_mult)
+
 /-- Per-memory-op placement relative to the concrete seed: the *structural* tie pinning `rowsOf i` to
     this op's real memory-bus rows. Loads use the read row `busLd .. .e1`; all stores use the write
     row `busSt .. .e2`; non-memory ops emit no memory rows. Narrow stores additionally require the
@@ -1375,6 +1427,40 @@ theorem mem_executionMemoryRowsOfSteps_of_memoryRowsOfStep
   rw [executionMemoryRowsOfSteps]
   exact List.mem_flatMap.mpr ⟨i, List.mem_finRange i, h_entry⟩
 
+/-- If every decoded step emits only replay-neutral memory rows, then the full
+structural execution-row list contains no active memory writes. -/
+theorem executionMemoryRowsOfSteps_not_active_write_of_replayNeutralSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i))
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep) :
+    ¬(entry.as = (2 : FGL) ∧ entry.multiplicity = (1 : FGL)) := by
+  obtain ⟨i, h_entry_i⟩ :=
+    exists_memoryRowsOfStep_of_mem_executionMemoryRowsOfSteps h_entry
+  exact memoryRowsOfStep_not_active_write_of_replayNeutralStep (h_steps i) h_entry_i
+
+/-- Placement transports the replay-neutral row fact from structural decoded
+steps to the concrete execution-order `rowsOf` flatMap. -/
+theorem executionRows_not_active_write_of_replayNeutralSteps_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i))
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)) :
+    ¬(entry.as = (2 : FGL) ∧ entry.multiplicity = (1 : FGL)) := by
+  have h_structural :
+      entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep := by
+    rwa [executionRows_eq_memoryRowsOfSteps_of_placement h_placement] at h_entry
+  exact executionMemoryRowsOfSteps_not_active_write_of_replayNeutralSteps
+    h_steps h_structural
+
 /-- Accepted Mem replay rows identify a structural decoded step under the
 seed's replay-safe order certificate and placement. -/
 theorem BootSegmentMemorySeed.exists_memoryRowsOfStep_of_memReplayRows
@@ -1444,6 +1530,48 @@ theorem BootSegmentReadSoundInputs.memReplayRows_of_memoryRowsOfStep_placement
     entry ∈ ziskTrace.memReplayRows h_nonempty :=
   inputs.memReplayRows_of_mem_executionRows
     (mem_executionRows_of_memoryRowsOfStep_placement i step h_placement h_entry)
+
+/-- Build the boot replay-safe order certificate for replay-neutral structural
+chunks from ordinary duplicate-sensitive row correspondence.
+
+This is the seed-level specialization of
+`MemoryBusRowsReplaySafePermutation.of_perm_not_active_write`: if the accepted
+replay rows are a plain permutation of structural decoded rows, and every
+decoded step emits only replay-neutral memory rows, then the order certificate
+contains no semantic read-value premise. Mixed read/write chunks still require
+the Mem ordering facts. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_perm_replayNeutralSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i)) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_perm_rows :
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        (ziskTrace.memReplayBridge h_nonempty)).rows.Perm
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+    have h_perm_target :
+        (ziskTrace.memReplayRows h_nonempty).Perm
+          ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+      rw [executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
+      exact h_perm
+    simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows] using h_perm_target
+  refine MemoryBusRowsReplaySafePermutation.of_perm_not_active_write h_perm_rows ?_ ?_
+  · intro row h_row
+    have h_memReplay : row ∈ ziskTrace.memReplayRows h_nonempty := by
+      simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows] using h_row
+    exact executionMemoryRowsOfSteps_not_active_write_of_replayNeutralSteps h_steps
+      ((h_perm.mem_iff).mp h_memReplay)
+  · intro row h_row
+    exact executionRows_not_active_write_of_replayNeutralSteps_placement
+      h_placement h_steps h_row
 
 /-! ## Per-op discharge via the execution-order fold. -/
 
