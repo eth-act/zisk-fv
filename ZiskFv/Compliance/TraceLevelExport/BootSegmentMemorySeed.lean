@@ -766,6 +766,55 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEn
   · exact Or.inr (Or.inr (Or.inl h_mab))
   · exact Or.inr (Or.inr (Or.inr h_memAlign))
 
+/-- Accepted replay coverage with byte-oriented MemAlign branches converted to
+the legacy subdoubleword provider-witness shape.
+
+The mutable-Mem branch proves accepted replay membership; the seed order
+certificate is not used until the seed wrapper below. -/
+theorem AcceptedZiskTrace.memReplayRows_or_subdoublewordProvider_or_memAlignProvider_of_loadBMemProviderEntry
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
+    (r_main : ℕ)
+    (h_width : main.ind_width r_main = 1)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i) :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ziskTrace.memReplayRows h_nonempty
+        ∨ (∃ marb' : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL,
+            ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+              main mab marb' ma r_main entry)
+        ∨ (∃ mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL,
+            ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+              main mab' marb ma r_main entry)
+        ∨ MemAlignLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry) := by
+  obtain ⟨entry, h_entry, h_provider⟩ :=
+    ziskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderEntry
+      h_nonempty i h_b_src_ind h_active h_selectedMemAlignPins
+  refine ⟨entry, h_entry, ?_⟩
+  rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
+  · exact Or.inl h_mem
+  · exact Or.inr (Or.inl
+      (exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderRowMatchSpec
+        (main := main) (mab := mab) (ma := ma) (r_main := r_main)
+        h_width h_marb))
+  · exact Or.inr (Or.inr (Or.inl
+      (exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMatchSpec
+        (main := main) (marb := marb) (ma := ma) (r_main := r_main)
+        h_width h_mab)))
+  · exact Or.inr (Or.inr (Or.inr h_memAlign))
+
 /-- Load `b` provider coverage with byte-oriented MemAlign branches converted to
 the legacy subdoubleword provider-witness shape.
 
@@ -806,20 +855,68 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_or_memAlignProvi
         ∨ MemAlignLoadProviderRowMatchSpec
             ziskTrace.program ziskTrace.witness entry) := by
   obtain ⟨entry, h_entry, h_provider⟩ :=
-    inputs.mem_or_memAlignProvider_of_loadBMemProviderEntry
-      i h_b_src_ind h_active h_selectedMemAlignPins
+    ziskTrace.memReplayRows_or_subdoublewordProvider_or_memAlignProvider_of_loadBMemProviderEntry
+      h_nonempty i main mab marb ma r_main h_width h_b_src_ind h_active
+      h_selectedMemAlignPins
+  refine ⟨entry, h_entry, ?_⟩
+  rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
+  · exact Or.inl (inputs.mem_executionRows_of_memReplayRows h_mem)
+  · exact Or.inr (Or.inl h_marb)
+  · exact Or.inr (Or.inr (Or.inl h_mab))
+  · exact Or.inr (Or.inr (Or.inr h_memAlign))
+
+/-- Load `b` provider coverage with every MemAlign-family branch converted to
+the legacy subdoubleword provider-witness shape.
+
+The mutable-Mem branch proves accepted replay membership; the seed order
+certificate is not used until the seed wrapper below. -/
+theorem AcceptedZiskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProviderEntry
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
+    (r_main : ℕ)
+    (h_width : main.ind_width r_main = 1)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i)
+    (h_generalMemAlignRomValues :
+      ∀ entry,
+        ZiskFv.Airs.MemoryBus.matches_memory_entry
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+        LoadBMemAlignRomValueFacts ziskTrace main r_main entry) :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ziskTrace.memReplayRows h_nonempty
+        ∨ ∃ mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL,
+          ∃ marb' : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL,
+          ∃ ma' : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL,
+            ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+              main mab' marb' ma' r_main entry) := by
+  obtain ⟨entry, h_entry, h_provider⟩ :=
+    ziskTrace.memReplayRows_or_subdoublewordProvider_or_memAlignProvider_of_loadBMemProviderEntry
+      h_nonempty i main mab marb ma r_main h_width h_b_src_ind h_active
+      h_selectedMemAlignPins
   refine ⟨entry, h_entry, ?_⟩
   rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
   · exact Or.inl h_mem
-  · exact Or.inr (Or.inl
-      (exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderRowMatchSpec
-        (main := main) (mab := mab) (ma := ma) (r_main := r_main)
-        h_width h_marb))
-  · exact Or.inr (Or.inr (Or.inl
-      (exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMatchSpec
-        (main := main) (marb := marb) (ma := ma) (r_main := r_main)
-        h_width h_mab)))
-  · exact Or.inr (Or.inr (Or.inr h_memAlign))
+  · rcases h_marb with ⟨marb', h_provider⟩
+    exact Or.inr ⟨mab, marb', ma, h_provider⟩
+  · rcases h_mab with ⟨mab', h_provider⟩
+    exact Or.inr ⟨mab', marb, ma, h_provider⟩
+  · rcases
+      exists_subdoublewordLoadProviderWitness_of_memAlignLoadProviderRowMatchSpec
+        (main := main) (mab := mab) (marb := marb) (r_main := r_main)
+        (h_generalMemAlignRomValues entry h_entry) h_memAlign with
+      ⟨ma', h_provider⟩
+    exact Or.inr ⟨mab, marb, ma', h_provider⟩
 
 /-- Load `b` provider coverage with every MemAlign-family branch converted to
 the legacy subdoubleword provider-witness shape.
@@ -862,21 +959,66 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_of_loadBMemProvi
             ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
               main mab' marb' ma' r_main entry) := by
   obtain ⟨entry, h_entry, h_provider⟩ :=
-    inputs.mem_or_subdoublewordProvider_or_memAlignProvider_of_loadBMemProviderEntry
-      i main mab marb ma r_main h_width h_b_src_ind h_active h_selectedMemAlignPins
+    ziskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProviderEntry
+      h_nonempty i main mab marb ma r_main h_width h_b_src_ind h_active
+      h_selectedMemAlignPins h_generalMemAlignRomValues
   refine ⟨entry, h_entry, ?_⟩
-  rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
+  rcases h_provider with h_mem | h_provider
+  · exact Or.inl (inputs.mem_executionRows_of_memReplayRows h_mem)
+  · exact Or.inr h_provider
+
+/-- Load `b` provider coverage at the existing `MemAlignWitness` consumer
+surface.
+
+The mutable-Mem branch proves accepted replay membership; the seed order
+certificate is not used until the seed wrapper below. -/
+theorem AcceptedZiskTrace.memReplayRows_or_memAlignWitness_of_loadBMemProviderEntry
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
+    (r_main : ℕ)
+    (h_width : main.ind_width r_main = 1)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i)
+    (h_generalMemAlignRomValues :
+      ∀ entry,
+        ZiskFv.Airs.MemoryBus.matches_memory_entry
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+        LoadBMemAlignRomValueFacts ziskTrace main r_main entry)
+    (h_coreLookup :
+      ∀ entry
+        (mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+        (marb' : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+        (ma' : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL),
+        ZiskFv.Airs.MemoryBus.matches_memory_entry
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+        ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+          main mab' marb' ma' r_main entry →
+        MemAlignCoreLookupFacts mab' marb') :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ziskTrace.memReplayRows h_nonempty
+        ∨ Nonempty (ZiskFv.Compliance.MemAlignWitness main r_main entry)) := by
+  obtain ⟨entry, h_entry, h_provider⟩ :=
+    ziskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProviderEntry
+      h_nonempty i main mab marb ma r_main h_width h_b_src_ind h_active
+      h_selectedMemAlignPins h_generalMemAlignRomValues
+  refine ⟨entry, h_entry, ?_⟩
+  rcases h_provider with h_mem | h_provider
   · exact Or.inl h_mem
-  · rcases h_marb with ⟨marb', h_provider⟩
-    exact Or.inr ⟨mab, marb', ma, h_provider⟩
-  · rcases h_mab with ⟨mab', h_provider⟩
-    exact Or.inr ⟨mab', marb, ma, h_provider⟩
-  · rcases
-      exists_subdoublewordLoadProviderWitness_of_memAlignLoadProviderRowMatchSpec
-        (main := main) (mab := mab) (marb := marb) (r_main := r_main)
-        (h_generalMemAlignRomValues entry h_entry) h_memAlign with
-      ⟨ma', h_provider⟩
-    exact Or.inr ⟨mab, marb, ma', h_provider⟩
+  · rcases h_provider with ⟨mab', marb', ma', h_provider⟩
+    have h_coreLookup' := h_coreLookup entry mab' marb' ma' h_entry h_provider
+    exact Or.inr
+      ⟨memAlignWitness_of_coreLookupFacts_provider h_coreLookup' h_provider⟩
 
 /-- Load `b` provider coverage at the existing `MemAlignWitness` consumer
 surface.
@@ -925,16 +1067,13 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignWitness_of_loadBMemProviderEnt
       ∧ (entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)
         ∨ Nonempty (ZiskFv.Compliance.MemAlignWitness main r_main entry)) := by
   obtain ⟨entry, h_entry, h_provider⟩ :=
-    inputs.mem_or_subdoublewordProvider_of_loadBMemProviderEntry
-      i main mab marb ma r_main h_width h_b_src_ind h_active
-      h_selectedMemAlignPins h_generalMemAlignRomValues
+    ziskTrace.memReplayRows_or_memAlignWitness_of_loadBMemProviderEntry
+      h_nonempty i main mab marb ma r_main h_width h_b_src_ind h_active
+      h_selectedMemAlignPins h_generalMemAlignRomValues h_coreLookup
   refine ⟨entry, h_entry, ?_⟩
   rcases h_provider with h_mem | h_provider
-  · exact Or.inl h_mem
-  · rcases h_provider with ⟨mab', marb', ma', h_provider⟩
-    have h_coreLookup' := h_coreLookup entry mab' marb' ma' h_entry h_provider
-    exact Or.inr
-      ⟨memAlignWitness_of_coreLookupFacts_provider h_coreLookup' h_provider⟩
+  · exact Or.inl (inputs.mem_executionRows_of_memReplayRows h_mem)
+  · exact Or.inr h_provider
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
