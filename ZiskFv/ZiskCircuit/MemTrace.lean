@@ -2223,6 +2223,33 @@ theorem pair_sublist_of_mem_pref_of_sublist_split
     exact pair_sublist_append_cons_of_mem h_moved
   exact h_pair_current.trans h_current_sub
 
+/-- If `later` occurs in the tail after `head`, then `[head, later]` is a
+sublist of `head :: tail`. -/
+theorem pair_sublist_cons_of_mem_tail
+    {α : Type u}
+    {head later : α}
+    {tail : List α}
+    (h_later : later ∈ tail) :
+    List.Sublist [head, later] (head :: tail) :=
+  List.Sublist.cons₂ head
+    (List.singleton_sublist.mpr h_later)
+
+/-- If a selected source prefix is permuted to the target tail, then a crossed
+prefix entry occurs after the selected row in the target list. -/
+theorem pair_sublist_of_mem_pref_of_target_sublist_perm
+    {α : Type u}
+    {target pref suffix targetTail : List α}
+    {moved row : α}
+    (h_target_sub : List.Sublist (row :: targetTail) target)
+    (h_tail_perm : (pref ++ suffix).Perm targetTail)
+    (h_moved : moved ∈ pref) :
+    List.Sublist [row, moved] target := by
+  have h_moved_source_tail : moved ∈ pref ++ suffix :=
+    List.mem_append.mpr (Or.inl h_moved)
+  have h_moved_target_tail : moved ∈ targetTail :=
+    h_tail_perm.mem_iff.mp h_moved_source_tail
+  exact (pair_sublist_cons_of_mem_tail h_moved_target_tail).trans h_target_sub
+
 /-- A pairwise relation on a source list applies to any ordered two-element
 sublist of that source. -/
 theorem rel_of_pair_sublist_pairwise
@@ -2327,6 +2354,67 @@ theorem MemoryBusRowsReplaySafePermutation.of_perm_sublist_select_eq_or_noActive
         h_tail_order
         (h_cross source (List.Sublist.refl source) row targetTail h_perm
           pref suffix h_source h_tail_perm)
+
+/-- Build a replay-safe order certificate from a plain permutation and a
+selection-local duplicate-aware crossing condition, preserving both source and
+target order information for the callback.
+
+The callback sees `current <+ source`, as in
+`of_perm_sublist_select_eq_or_noActiveWriteOverlap`, and also sees
+`row :: targetTail <+ target`. The latter exposes that the selected row is the
+next target-order row for the current recursive step, so target-side
+chronology facts can show crossed prefix rows occur no earlier than it in the
+execution order. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_cross :
+      ∀ current, List.Sublist current source →
+        ∀ row targetTail,
+          List.Sublist (row :: targetTail) target →
+          current.Perm (row :: targetTail) →
+            ∀ pref suffix,
+              current = pref ++ row :: suffix →
+                (pref ++ suffix).Perm targetTail →
+                  ∀ moved, moved ∈ pref →
+                    row = moved ∨
+                      (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+                        MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  have h_aux :
+      ∀ {current targetCurrent : List (MemoryBusEntry FGL)},
+        List.Sublist current source →
+          List.Sublist targetCurrent target →
+            current.Perm targetCurrent →
+              MemoryBusRowsReplaySafePermutation current targetCurrent := by
+    intro current targetCurrent h_current_sub h_target_sub h_current_perm
+    induction targetCurrent generalizing current with
+    | nil =>
+        cases current with
+        | nil => exact MemoryBusRowsReplaySafePermutation.refl []
+        | cons row rows =>
+            have h_len := h_current_perm.length_eq
+            simp at h_len
+    | cons row targetTail ih =>
+        rcases exists_split_cons_of_perm_cons h_current_perm with
+          ⟨pref, suffix, h_current, h_tail_perm⟩
+        have h_tail_sub_current : List.Sublist (pref ++ suffix) current := by
+          rw [h_current]
+          exact (List.Sublist.refl pref).append (List.sublist_cons_self row suffix)
+        have h_tail_sub_source : List.Sublist (pref ++ suffix) source :=
+          h_tail_sub_current.trans h_current_sub
+        have h_target_tail_sub : List.Sublist targetTail target :=
+          (List.sublist_cons_self row targetTail).trans h_target_sub
+        have h_tail_order :
+            MemoryBusRowsReplaySafePermutation (pref ++ suffix) targetTail :=
+          ih h_tail_sub_source h_target_tail_sub h_tail_perm
+        rw [h_current]
+        exact MemoryBusRowsReplaySafePermutation.cons_target_of_split_eq_or_noActiveWriteOverlap
+          row pref suffix targetTail
+          h_tail_order
+          (h_cross current h_current_sub row targetTail h_target_sub h_current_perm
+            pref suffix h_current h_tail_perm)
+  exact h_aux (List.Sublist.refl source) (List.Sublist.refl target) h_perm
 
 /-- A recursive, selection-shaped certificate for replay-safe reordering.
 

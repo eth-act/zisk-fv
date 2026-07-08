@@ -303,6 +303,47 @@ theorem bootSegmentReplaySafeOrderCertificate_of_perm_sublist_select_eq_or_noAct
         exact h_cross current h_current_sub_memReplay row targetTail h_current_perm
           pref suffix h_current h_tail_perm moved h_moved)
 
+/-- A plain accepted-replay/execution row permutation becomes a boot order
+certificate from a selected-prefix safety proof that receives both accepted
+source-order and execution target-order evidence. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf))
+    (h_cross :
+      ∀ current, List.Sublist current (ziskTrace.memReplayRows h_nonempty) →
+        ∀ row targetTail,
+          List.Sublist (row :: targetTail)
+            ((List.range ziskTrace.numInstructions).flatMap rowsOf) →
+          current.Perm (row :: targetTail) →
+            ∀ pref suffix,
+              current = pref ++ row :: suffix →
+                (pref ++ suffix).Perm targetTail →
+                  ∀ moved, moved ∈ pref →
+                    row = moved ∨
+                      (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+                        MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_perm_rows :
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        (ziskTrace.memReplayBridge h_nonempty)).rows.Perm
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+    simpa [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayBridge] using h_perm
+  exact
+    MemoryBusRowsReplaySafePermutation.of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
+      h_perm_rows
+      (by
+        intro current h_current_sub row targetTail h_target_sub h_current_perm
+          pref suffix h_current h_tail_perm moved h_moved
+        have h_current_sub_memReplay :
+            List.Sublist current (ziskTrace.memReplayRows h_nonempty) := by
+          simpa [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayBridge] using
+            h_current_sub
+        exact h_cross current h_current_sub_memReplay row targetTail h_target_sub h_current_perm
+          pref suffix h_current h_tail_perm moved h_moved)
+
 /-- Origin-level condition for duplicate-aware Mem replay safe crossings.
 
 For every pair of accepted replay rows and every possible generated Mem row
@@ -615,6 +656,57 @@ theorem acceptedMemReplayRows_timestamp_le_of_selected_prefix
   acceptedMemReplayRows_timestamp_le_of_pair_sublist h_chronological
     (pair_sublist_of_mem_pref_of_sublist_split h_current_sub h_current h_moved)
 
+/-- Target-order form of selected-prefix chronology: if the selected target
+head is ordered before the target tail, a crossed source-prefix row occurs no
+earlier than that selected row in the target chronology. -/
+theorem memoryBusRows_timestamp_le_of_selected_target_prefix
+    {target pref suffix targetTail : List (MemoryBusEntry FGL)}
+    {moved row : MemoryBusEntry FGL}
+    (h_chronological :
+      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological target)
+    (h_target_sub : List.Sublist (row :: targetTail) target)
+    (h_tail_perm : (pref ++ suffix).Perm targetTail)
+    (h_moved : moved ∈ pref) :
+    row.timestamp.toNat ≤ moved.timestamp.toNat := by
+  have h_pairwise :
+      target.Pairwise
+        (fun earlier later : MemoryBusEntry FGL =>
+          earlier.timestamp.toNat ≤ later.timestamp.toNat) := by
+    simpa [ZiskFv.AirsClean.Mem.MemoryBusRowsChronological] using h_chronological
+  exact rel_of_pair_sublist_pairwise
+    (R := fun earlier later : MemoryBusEntry FGL =>
+      earlier.timestamp.toNat ≤ later.timestamp.toNat)
+    h_pairwise
+    (pair_sublist_of_mem_pref_of_target_sublist_perm h_target_sub h_tail_perm h_moved)
+
+/-- If a selected source crossing is ordered one way by accepted Mem replay
+chronology and the other way by execution-target chronology, the crossed rows
+must have equal timestamps. This packages the chronology evidence needed before
+later origin facts decide whether the crossing is equality, address-separated,
+or impossible. -/
+theorem selected_prefix_timestamp_eq_of_source_and_target_chronology
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    {target current pref suffix targetTail : List (MemoryBusEntry FGL)}
+    {moved row : MemoryBusEntry FGL}
+    (h_source_chronological :
+      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
+        (ziskTrace.memReplayRows h_nonempty))
+    (h_target_chronological :
+      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological target)
+    (h_current_sub :
+      List.Sublist current (ziskTrace.memReplayRows h_nonempty))
+    (h_current : current = pref ++ row :: suffix)
+    (h_target_sub : List.Sublist (row :: targetTail) target)
+    (h_tail_perm : (pref ++ suffix).Perm targetTail)
+    (h_moved : moved ∈ pref) :
+    moved.timestamp.toNat = row.timestamp.toNat :=
+  Nat.le_antisymm
+    (acceptedMemReplayRows_timestamp_le_of_selected_prefix
+      h_source_chronological h_current_sub h_current h_moved)
+    (memoryBusRows_timestamp_le_of_selected_target_prefix
+      h_target_chronological h_target_sub h_tail_perm h_moved)
+
 /-- A plain accepted-replay/execution row permutation becomes a boot order
 certificate from origin-level equality/address separation over accepted replay
 rows. -/
@@ -787,6 +879,39 @@ def bootSegmentReadSoundInputs_of_perm_sublist_select_eq_or_noActiveWriteOverlap
   initialMemory_eq := h_initialMemory
   order :=
     bootSegmentReplaySafeOrderCertificate_of_perm_sublist_select_eq_or_noActiveWriteOverlap
+      h_perm h_cross
+
+/-- Build seed read-soundness inputs from a permutation plus selected-prefix
+duplicate-aware safe-crossing evidence that can use preserved accepted-source
+and execution-target order. -/
+def bootSegmentReadSoundInputs_of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf))
+    (h_cross :
+      ∀ current, List.Sublist current (ziskTrace.memReplayRows h_nonempty) →
+        ∀ row targetTail,
+          List.Sublist (row :: targetTail)
+            ((List.range ziskTrace.numInstructions).flatMap rowsOf) →
+          current.Perm (row :: targetTail) →
+            ∀ pref suffix,
+              current = pref ++ row :: suffix →
+                (pref ++ suffix).Perm targetTail →
+                  ∀ moved, moved ∈ pref →
+                    row = moved ∨
+                      (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+                        MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order :=
+    bootSegmentReplaySafeOrderCertificate_of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
       h_perm h_cross
 
 /-- Build seed read-soundness inputs from origin-level equality/address
@@ -974,6 +1099,39 @@ theorem readSound_of_perm_sublist_select_eq_or_noActiveWriteOverlap
       memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
   readSound_of_bootSegmentReadSoundInputs
     (bootSegmentReadSoundInputs_of_perm_sublist_select_eq_or_noActiveWriteOverlap
+      h_initialMemory h_perm h_cross)
+
+/-- Direct read-soundness assembly from a permutation plus selected-prefix
+duplicate-aware safe-crossing evidence that can use preserved accepted-source
+and execution-target order. -/
+theorem readSound_of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf))
+    (h_cross :
+      ∀ current, List.Sublist current (ziskTrace.memReplayRows h_nonempty) →
+        ∀ row targetTail,
+          List.Sublist (row :: targetTail)
+            ((List.range ziskTrace.numInstructions).flatMap rowsOf) →
+          current.Perm (row :: targetTail) →
+            ∀ pref suffix,
+              current = pref ++ row :: suffix →
+                (pref ++ suffix).Perm targetTail →
+                  ∀ moved, moved ∈ pref →
+                    row = moved ∨
+                      (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+                        MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_perm_source_target_sublist_select_eq_or_noActiveWriteOverlap
       h_initialMemory h_perm h_cross)
 
 /-- Direct read-soundness assembly from origin-level equality/address
