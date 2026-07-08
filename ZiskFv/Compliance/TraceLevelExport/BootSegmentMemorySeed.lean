@@ -329,20 +329,19 @@ abbrev LoadBMemAlignRomValueFacts
   MemAlignLoadProviderRomValueFacts ziskTrace.program ziskTrace.witness
     main r_main entry
 
-/-- Load-specific wrapper for the accepted mutable-Mem provider path.
+/-- The accepted mutable-Mem provider path places the concrete load `b` row in
+the accepted Mem replay row list before any seed-specific order certificate is
+used.
 
-The generic theorem still needs an active Main interaction, its evaluated
-message equality, and the load `mem_op = 1` fact. For the concrete load b-side
-memory row, the interaction membership, evaluated message equality, `mem_op = 1`,
-and entry match are derived from accepted Main table structure and the
-load-decoder/active-pull facts. The remaining residues are still explicit:
-non-mutable provider exclusion. -/
-theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
-    {ziskTrace : AcceptedZiskTrace numInstructions}
-    {memInit : Std.ExtHashMap Nat (BitVec 8)}
-    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
-    {h_nonempty : 0 < ziskTrace.numInstructions}
-    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+The generic accepted-trace theorem still needs an active Main interaction, its
+evaluated message equality, and the load `mem_op = 1` fact. For the concrete
+load b-side memory row, the interaction membership, evaluated message equality,
+`mem_op = 1`, and entry match are derived from accepted Main table structure
+and the load-decoder/active-pull facts. The remaining residue is still the
+syntactic non-mutable provider exclusion. -/
+theorem AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions)
     (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
     (h_active :
@@ -354,7 +353,7 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
-      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+      ziskTrace.memReplayRows h_nonempty := by
   have h_mainRow : loadBMemMainRow ziskTrace i ∈ ziskTrace.mainTable.table :=
     List.mem_iff_get.mpr ⟨⟨i.val, ziskTrace.mainTable_index i⟩, rfl⟩
   have h_mainInteraction :
@@ -440,23 +439,49 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
             (loadBMemMainMessage ziskTrace)) (-1) 2) := by
     rw [h_msg_eval]
     simp
-  exact inputs.mem_executionRows_of_activeMainMutableMemProviderEntry
-    h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
+  exact ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_one
+    h_nonempty h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
     h_no_nonmutable h_entry
 
-/-- Branch-split version of
-`BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry`.
+/-- Seed-order transport wrapper for the accepted mutable-Mem load `b`
+provider path.
 
-This keeps the remaining non-mutable-provider residue decomposed into the
-MemAlign-family cases instead of accepting the aggregate non-mutable exclusion
-directly. The RegisterBoundary and Main self-provider cases are discharged from
-the load's `mem_op = 1` message plus accepted Main selector Booleanity. -/
-theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+Accepted trace data proves the concrete load row occurs in accepted Mem replay
+rows; the seed's replay-safe order certificate transports that row to the
+execution-order `rowsOf` list. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
     {rowsOf : ℕ → List (MemoryBusEntry FGL)}
     {h_nonempty : 0 < ziskTrace.numInstructions}
     (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
+    (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  exact inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.memReplayRows_of_loadBMemProviderEntry h_nonempty i h_b_src_ind h_active
+      h_no_nonmutable)
+
+/-- Branch-split accepted replay version of
+`AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry`.
+
+The caller keeps only the MemAlign-family exclusions. The RegisterBoundary and
+Main self-provider exclusions are derived from the load's `mem_op = 1` message
+plus accepted Main selector Booleanity, and the resulting mutable-Mem branch
+places the concrete load row in accepted Mem replay rows before any seed order
+certificate is used. -/
+theorem AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions)
     (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
     (h_active :
@@ -476,7 +501,7 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
         ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
-      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+      ziskTrace.memReplayRows h_nonempty := by
   have h_row_eval :
       eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
           (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
@@ -514,9 +539,46 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
         (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2 :=
     not_activeMainSelfMemProviderRowMatchSpec_of_main_mem_op_one
       ziskTrace.constraints_hold h_mainEval h_main_mem_op
-  exact inputs.mem_executionRows_of_loadBMemProviderEntry i h_b_src_ind h_active
+  exact ziskTrace.memReplayRows_of_loadBMemProviderEntry h_nonempty i h_b_src_ind h_active
     (activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
       h_no_marb h_no_mab h_no_memAlign h_no_main h_no_regBoundary)
+
+/-- Branch-split version of
+`BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry`.
+
+This keeps the remaining non-mutable-provider residue decomposed into the
+MemAlign-family cases instead of accepting the aggregate non-mutable exclusion
+directly. The RegisterBoundary and Main self-provider cases are discharged from
+the load's `mem_op = 1` message plus accepted Main selector Booleanity. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
+    (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∈
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  exact inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+      h_nonempty i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign)
 
 /-- Coverage version of the load `b` provider split.
 
