@@ -422,6 +422,70 @@ theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_
       (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
       selectedIdx priorIdx h_addr_change h_prior h_selected h_prior_entry
 
+/-- Active replay entries from two generated Mem read rows are safe to cross.
+
+This covers the same-address read/read case used by order-transfer selection:
+when both row origins have `wr = 0`, neither projected active entry is an
+active write, so the no-active-write-overlap condition holds in both
+directions without requiring address separation. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_reads
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (selectedIdx priorIdx : Fin table.table.length)
+    (h_selected_read : mem.wr selectedIdx.val = 0)
+    (h_prior_read : mem.wr priorIdx.val = 0)
+    {selectedEntry priorEntry : Interaction.MemoryBusEntry FGL}
+    (h_selected :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val))
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem priorIdx.val)) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        selectedEntry priorEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        priorEntry selectedEntry := by
+  have h_selected_not_write :
+      ¬(selectedEntry.as = (2 : FGL) ∧ selectedEntry.multiplicity = (1 : FGL)) :=
+    activeMemReplayEntry_not_active_write_of_wr_zero
+      (row := ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_selected_read)
+      h_selected
+  have h_prior_not_write :
+      ¬(priorEntry.as = (2 : FGL) ∧ priorEntry.multiplicity = (1 : FGL)) :=
+    activeMemReplayEntry_not_active_write_of_wr_zero
+      (row := ZiskFv.AirsClean.Mem.rowAt mem priorIdx.val)
+      (by simpa [ZiskFv.AirsClean.Mem.rowAt] using h_prior_read)
+      h_prior_entry
+  exact
+    ⟨ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+        h_prior_not_write,
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+        h_selected_not_write⟩
+
+/-- Full-witness wrapper for read/read generated Mem safe crossings. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_reads
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (selectedIdx priorIdx : Fin h_bridge.table.table.length)
+    (h_selected_read : h_bridge.mem.wr selectedIdx.val = 0)
+    (h_prior_read : h_bridge.mem.wr priorIdx.val = 0)
+    {selectedEntry priorEntry : Interaction.MemoryBusEntry FGL}
+    (h_selected :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem selectedIdx.val))
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem priorIdx.val)) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        selectedEntry priorEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        priorEntry selectedEntry :=
+  activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_reads
+    selectedIdx priorIdx h_selected_read h_prior_read h_selected h_prior_entry
+
 /-- A nonempty generated Mem segment carries a 29-bit previous-segment address.
 
     The segment distance chunks (`mem.pil:267-268`) and generated base-distance

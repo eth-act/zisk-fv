@@ -223,6 +223,37 @@ theorem activeMemReplayEntriesOfRow_eq_nil_of_inactive
     activeMemReplayEntriesOfRow row = [] := by
   simp [activeMemReplayEntriesOfRow, h_sel, h_sel_dual]
 
+/-- A primary Mem replay entry from a read row is not an active write. -/
+theorem memPrimaryReplayEntryOfRow_not_active_write_of_wr_zero
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_wr : row.wr = 0) :
+    ¬((memPrimaryReplayEntryOfRow row).as = (2 : FGL) ∧
+      (memPrimaryReplayEntryOfRow row).multiplicity = (1 : FGL)) := by
+  intro h_write
+  have h_read_mult :
+      (memPrimaryReplayEntryOfRow row).multiplicity = (-1 : FGL) := by
+    simp [h_wr]
+  have h_neg_one_eq_one : (-1 : FGL) = (1 : FGL) :=
+    h_read_mult.symm.trans h_write.2
+  have h_ne : ¬((-1 : FGL) = (1 : FGL)) := by
+    decide
+  exact h_ne h_neg_one_eq_one
+
+/-- A dual Mem replay entry is pinned as a read, so it is not an active write. -/
+theorem memDualReadReplayEntryOfRow_not_active_write
+    (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    ¬((memDualReadReplayEntryOfRow row).as = (2 : FGL) ∧
+      (memDualReadReplayEntryOfRow row).multiplicity = (1 : FGL)) := by
+  intro h_write
+  have h_read_mult :
+      (memDualReadReplayEntryOfRow row).multiplicity = (-1 : FGL) := by
+    simp
+  have h_neg_one_eq_one : (-1 : FGL) = (1 : FGL) :=
+    h_read_mult.symm.trans h_write.2
+  have h_ne : ¬((-1 : FGL) = (1 : FGL)) := by
+    decide
+  exact h_ne h_neg_one_eq_one
+
 /-- A primary-only selected row contributes exactly its primary read entry to
     the active read-replay surface. -/
 theorem activeMemReadReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
@@ -328,6 +359,22 @@ theorem activeMemReplayEntriesOfRow_mem_eq_primary_or_dual
     · simp [h_sel, h_sel_dual] at h_entry
       exact Or.inr h_entry
     · simp [h_sel, h_sel_dual] at h_entry
+
+/-- Every active replay entry projected from a read Mem row is not an active
+write. The primary entry is a read by `wr = 0`, and the dual entry is always a
+read. -/
+theorem activeMemReplayEntry_not_active_write_of_wr_zero
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_wr : row.wr = 0)
+    (h_entry : entry ∈ activeMemReplayEntriesOfRow row) :
+    ¬(entry.as = (2 : FGL) ∧ entry.multiplicity = (1 : FGL)) := by
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_entry with
+    h_entry_primary | h_entry_dual
+  · simpa [h_entry_primary] using
+      memPrimaryReplayEntryOfRow_not_active_write_of_wr_zero h_wr
+  · simpa [h_entry_dual] using
+      memDualReadReplayEntryOfRow_not_active_write row
 
 /-- A selected primary+dual row is chronologically ordered when the primary
     timestamp is no later than the pinned dual-read timestamp. -/
