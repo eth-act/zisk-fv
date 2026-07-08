@@ -856,6 +856,15 @@ noncomputable def memoryRowsOfStep
   | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
       []
 
+/-- The full execution-order memory-bus row list obtained directly from the
+structural per-step decoder view. -/
+noncomputable def executionMemoryRowsOfSteps
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i) :
+    List (MemoryBusEntry FGL) :=
+  (List.finRange ziskTrace.numInstructions).flatMap
+    (fun i => memoryRowsOfStep ziskTrace i (ziskStep i))
+
 /-- Per-memory-op placement relative to the concrete seed: the *structural* tie pinning `rowsOf i` to
     this op's real memory-bus rows. Loads use the read row `busLd .. .e1`; all stores use the write
     row `busSt .. .e2`; non-memory ops emit no memory rows. Narrow stores additionally require the
@@ -954,6 +963,81 @@ theorem rowsOf_eq_memoryRowsOfStep_of_placement
     first
     | exact h_placement
     | exact h_placement.1
+
+/-- Placement identifies the whole execution-order `rowsOf` list with the
+structural per-step decoder row list, not merely row membership. This is the
+duplicate-sensitive form needed by row-correspondence/order-certificate proofs. -/
+theorem executionRows_eq_memoryRowsOfSteps_of_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i)) :
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf) =
+      executionMemoryRowsOfSteps ziskTrace ziskStep := by
+  rw [executionMemoryRowsOfSteps]
+  rw [← List.map_coe_finRange_eq_range]
+  induction List.finRange ziskTrace.numInstructions with
+  | nil => simp
+  | cons i is ih =>
+      simp [rowsOf_eq_memoryRowsOfStep_of_placement i (ziskStep i) (h_placement i), ih]
+
+/-- Length consequence of structural placement for execution-order rows. -/
+theorem executionRows_length_eq_memoryRowsOfSteps_of_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i)) :
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf).length =
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).length := by
+  rw [executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
+
+/-- Multiplicity consequence of structural placement for execution-order rows. -/
+theorem executionRows_count_eq_memoryRowsOfSteps_of_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (entry : MemoryBusEntry FGL) :
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf).count entry =
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).count entry := by
+  rw [executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
+
+/-- Seed-level wrapper for the whole-list structural placement equality. -/
+theorem BootSegmentMemorySeed.executionRows_eq_memoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep) :
+    ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) =
+      executionMemoryRowsOfSteps ziskTrace ziskStep :=
+  executionRows_eq_memoryRowsOfSteps_of_placement seed.placement
+
+/-- Seed-level length consequence of structural placement. -/
+theorem BootSegmentMemorySeed.executionRows_length_eq_memoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep) :
+    ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).length =
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).length :=
+  executionRows_length_eq_memoryRowsOfSteps_of_placement seed.placement
+
+/-- Seed-level multiplicity consequence of structural placement. -/
+theorem BootSegmentMemorySeed.executionRows_count_eq_memoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (entry : MemoryBusEntry FGL) :
+    ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).count entry =
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).count entry :=
+  executionRows_count_eq_memoryRowsOfSteps_of_placement seed.placement entry
 
 /-- A row in one step's `rowsOf` list is in the full execution-order memory
 row list. -/
