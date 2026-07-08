@@ -1860,8 +1860,53 @@ theorem MemoryBusRowsReplaySafePermutation.of_perm_not_active_write
             h_source_not_write row (h_source_middle.mem_iff.mpr h_row))).trans
           (ih_middle_target
             (fun row h_row =>
-              h_source_not_write row (h_source_middle.mem_iff.mpr h_row))
+            h_source_not_write row (h_source_middle.mem_iff.mpr h_row))
             h_target_not_write)
+
+/-- Any ordinary list permutation of a pairwise replay-safe row list is
+replay-safe.
+
+This is the broad structural bridge for future sorted-to-execution order
+proofs: row correspondence can supply the bag equality, while Mem ordering and
+address/timestamp facts can discharge the pairwise no-active-write-overlap
+obligation on the accepted sorted row list. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_pairwise_noActiveWriteOverlap
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_source_safe :
+      ∀ left, left ∈ source →
+        ∀ right, right ∈ source →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_perm with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons row h_tail ih =>
+      simpa using
+        MemoryBusRowsReplaySafePermutation.append_left [row]
+          (ih
+            (fun left h_left right h_right =>
+              h_source_safe left (List.mem_cons.mpr (Or.inr h_left))
+                right (List.mem_cons.mpr (Or.inr h_right))))
+  | swap left right rows =>
+      have h_pair :
+          MemoryBusEntryNoActiveWriteOverlap right left ∧
+            MemoryBusEntryNoActiveWriteOverlap left right :=
+        h_source_safe right (by simp) left (by simp)
+      exact MemoryBusRowsReplaySafePermutation.swap [] right left rows
+        (MemoryBusRowsReplaySafePermutation.refl (right :: left :: rows))
+        h_pair.1 h_pair.2
+        (fun mem =>
+          replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+            mem right left h_pair.1 h_pair.2)
+  | trans h_source_middle h_middle_target ih_source_middle ih_middle_target =>
+      exact
+        (ih_source_middle h_source_safe).trans
+          (ih_middle_target
+            (fun left h_left right h_right =>
+              h_source_safe left (h_source_middle.mem_iff.mpr h_left)
+                right (h_source_middle.mem_iff.mpr h_right)))
 
 /-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
 
