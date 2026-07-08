@@ -425,6 +425,29 @@ def MemoryBusEntryByteDisjoint
     (left right : MemoryBusEntry FGL) : Prop :=
   ∀ i j, i < 8 → j < 8 → left.ptr.toNat + i ≠ right.ptr.toNat + j
 
+theorem MemoryBusEntryByteDisjoint.symm
+    {left right : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    MemoryBusEntryByteDisjoint right left := by
+  intro i j hi hj h_eq
+  exact h_disjoint j i hj hi h_eq.symm
+
+theorem MemoryBusEntryByteDisjoint.congr_left_ptr
+    {left left' right : MemoryBusEntry FGL}
+    (h_ptr : left'.ptr = left.ptr)
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    MemoryBusEntryByteDisjoint left' right := by
+  intro i j hi hj h_eq
+  exact h_disjoint i j hi hj (by simpa [h_ptr] using h_eq)
+
+theorem MemoryBusEntryByteDisjoint.congr_right_ptr
+    {left right right' : MemoryBusEntry FGL}
+    (h_ptr : right'.ptr = right.ptr)
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    MemoryBusEntryByteDisjoint left right' := by
+  intro i j hi hj h_eq
+  exact h_disjoint i j hi hj (by simpa [h_ptr] using h_eq)
+
 /-- A byte write listed by `memoryBusEntryByteWrites` occurs at one of the
 entry's eight consecutive byte addresses. -/
 theorem exists_address_of_mem_memoryBusEntryByteWrites

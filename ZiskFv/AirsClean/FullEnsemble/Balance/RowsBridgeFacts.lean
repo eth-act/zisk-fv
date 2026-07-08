@@ -92,6 +92,114 @@ theorem activeMemReplayEntry_same_ptr_or_byteDisjoint_of_rowAt
         memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
           h_selected_range h_other_range h_addr_ne
 
+/-- Active replay entries from different generated Mem-row addresses are
+byte-disjoint.
+
+This is the row-indexed address-separation fact needed by replay-safe order
+assembly: when a selected execution row crosses Mem-table rows from a different
+address class, the crossing is protected by ordinary byte disjointness. -/
+theorem activeMemReplayEntry_byteDisjoint_of_rowAt_addr_ne
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (leftIdx rightIdx : Fin table.table.length)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val))
+    (h_addr_ne : mem.addr leftIdx.val ≠ mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint leftEntry rightEntry := by
+  let leftRow := ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val
+  let rightRow := ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val
+  have h_left_range : leftRow.addr.val < 2 ^ 29 := by
+    simpa [leftRow, ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns leftIdx
+  have h_right_range : rightRow.addr.val < 2 ^ 29 := by
+    simpa [rightRow, ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns rightIdx
+  have h_addr_ne_rows : leftRow.addr ≠ rightRow.addr := by
+    intro h_addr
+    exact h_addr_ne (by simpa [leftRow, rightRow, ZiskFv.AirsClean.Mem.rowAt] using h_addr)
+  have h_primary_primary :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memPrimaryReplayEntryOfRow leftRow) (memPrimaryReplayEntryOfRow rightRow) :=
+    memoryBusEntryByteDisjoint_primary_primary_of_addr_ne
+      h_left_range h_right_range h_addr_ne_rows
+  have h_primary_dual :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memPrimaryReplayEntryOfRow leftRow) (memDualReadReplayEntryOfRow rightRow) :=
+    memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+      h_left_range h_right_range h_addr_ne_rows
+  have h_dual_primary :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memDualReadReplayEntryOfRow leftRow) (memPrimaryReplayEntryOfRow rightRow) := by
+    have h_right_left_addr_ne : rightRow.addr ≠ leftRow.addr := by
+      intro h_addr
+      exact h_addr_ne_rows h_addr.symm
+    have h_right_left :
+        ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+          (memPrimaryReplayEntryOfRow rightRow) (memDualReadReplayEntryOfRow leftRow) :=
+      memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+        h_right_range h_left_range h_right_left_addr_ne
+    exact ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.symm h_right_left
+  have h_left_dual_ptr :
+      (memDualReadReplayEntryOfRow leftRow).ptr =
+        (memPrimaryReplayEntryOfRow leftRow).ptr := by
+    simp
+  have h_right_dual_ptr :
+      (memDualReadReplayEntryOfRow rightRow).ptr =
+        (memPrimaryReplayEntryOfRow rightRow).ptr := by
+    simp
+  have h_dual_dual :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memDualReadReplayEntryOfRow leftRow) (memDualReadReplayEntryOfRow rightRow) :=
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.congr_right_ptr
+      h_right_dual_ptr
+      (ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.congr_left_ptr
+        h_left_dual_ptr h_primary_primary)
+  have h_left' :
+      leftEntry ∈ activeMemReplayEntriesOfRow leftRow := by
+    simpa [leftRow] using h_left
+  have h_right' :
+      rightEntry ∈ activeMemReplayEntriesOfRow rightRow := by
+    simpa [rightRow] using h_right
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_left' with
+    h_left_primary | h_left_dual
+  · rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_right' with
+      h_right_primary | h_right_dual
+    · simpa [h_left_primary, h_right_primary] using h_primary_primary
+    · simpa [h_left_primary, h_right_dual] using h_primary_dual
+  · rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_right' with
+      h_right_primary | h_right_dual
+    · simpa [h_left_dual, h_right_primary] using h_dual_primary
+    · simpa [h_left_dual, h_right_dual] using h_dual_dual
+
+/-- Different generated Mem-row addresses give the bidirectional
+no-active-write-overlap facts needed by replay-safe adjacent swaps. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (leftIdx rightIdx : Fin table.table.length)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val))
+    (h_addr_ne : mem.addr leftIdx.val ≠ mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry := by
+  have h_disjoint :=
+    activeMemReplayEntry_byteDisjoint_of_rowAt_addr_ne
+      h_ranges leftIdx rightIdx h_left h_right h_addr_ne
+  exact
+    ⟨ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap.of_disjoint h_disjoint,
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap.of_disjoint
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.symm h_disjoint)⟩
+
 /-- The indexed table bridge projects the generated row range required by
     the Mem trace spec. -/
 theorem generatedMemRows_of_memTableGeneratedRowsBridge
@@ -784,6 +892,28 @@ theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
     FullWitnessMemTableGeneratedRowsBridge witness
       h_bridge.mem (segmentWithFixedL1 h_bridge.segment) h_bridge.permutation h_bridge.rowCount :=
   ⟨h_bridge.table, h_bridge.table_mem, h_bridge.generatedRows⟩
+
+/-- Full-witness replay bridge wrapper for the address-separation
+no-active-write-overlap fact. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_addr_ne
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (leftIdx rightIdx : Fin h_bridge.table.table.length)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem rightIdx.val))
+    (h_addr_ne :
+      h_bridge.mem.addr leftIdx.val ≠ h_bridge.mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry :=
+  activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+    h_bridge.rowRanges leftIdx rightIdx h_left h_right h_addr_ne
 
 /-- The full-witness bridge projects the generated row range required by the
     Mem trace spec. -/
