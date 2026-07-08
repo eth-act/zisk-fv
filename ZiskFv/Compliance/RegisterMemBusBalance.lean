@@ -47,7 +47,8 @@ open ZiskFv.Channels.MemoryBus
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.Main (MainRowWithRom aRegPreMessage aMemMessage bRegPreMessage bMemMessage
-  cRegPreMessage cMemMessage)
+  cRegPreMessage cMemMessage aRegPreMessageExpr aMemMessageExpr bRegPreMessageExpr
+  bMemMessageExpr cRegPreMessageExpr cMemMessageExpr)
 open ZiskFv.AirsClean.RegisterBoundary (RegisterBoundaryRow bootMessage reloadMessage)
 open ZiskFv.Compliance.Instantiation
 
@@ -184,11 +185,204 @@ def idleBoundaryInteractions : List (Interaction FGL) :=
 def addX1X1X1RegisterInteractions : List (Interaction FGL) :=
   mainRegisterInteractions ++ boundaryInteractions boundaryRowX1 ++ idleBoundaryInteractions
 
+def addX1X1X1RegisterInteractionsFromTable : List (Interaction FGL) :=
+  mainRegisterInteractionsFromTable ++ boundaryInteractions boundaryRowX1 ++
+    idleBoundaryInteractions
+
 theorem addX1Row_main_interactionsWith_memBus_eq_mainRegisterInteractionsFromTable :
     (mainSingleRowTable 1 addX1Program addX1Row).interactionsWith MemBusChannel.toRaw =
       mainRegisterInteractionsFromTable := by
   rw [mainSingleRowTable_interactionsWith_memBus]
   rfl
+
+private def addX1MainEnv : Environment FGL :=
+  (mainSingleRowTable 1 addX1Program addX1Row).environment (mainRowArray addX1Row)
+
+private def addX1MainRowVar : Var MainRowWithRom FGL :=
+  (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 1 addX1Program).rowInputVar
+
+private theorem addX1MainRowVar_eval : eval addX1MainEnv addX1MainRowVar = addX1Row := by
+  dsimp [addX1MainEnv, addX1MainRowVar]
+  exact mainSingleRowTable_eval_rowInputVar 1 addX1Program addX1Row
+
+private theorem addX1MainRom_eval :
+    eval addX1MainEnv addX1MainRowVar.rom = addX1Row.rom := by
+  rw [mainRowWithRom_eval_rom]
+  exact congrArg MainRowWithRom.rom addX1MainRowVar_eval
+
+private theorem addX1Main_a_src_reg_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.a_src_reg =
+      addX1Row.rom.a_src_reg := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.a_src_reg =
+        (eval addX1MainEnv addX1MainRowVar.rom).a_src_reg :=
+      mainRomRow_eval_a_src_reg addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.a_src_reg := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_a_src_mem_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.a_src_mem =
+      addX1Row.rom.a_src_mem := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.a_src_mem =
+        (eval addX1MainEnv addX1MainRowVar.rom).a_src_mem :=
+      mainRomRow_eval_a_src_mem addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.a_src_mem := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_b_src_reg_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.b_src_reg =
+      addX1Row.rom.b_src_reg := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.b_src_reg =
+        (eval addX1MainEnv addX1MainRowVar.rom).b_src_reg :=
+      mainRomRow_eval_b_src_reg addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.b_src_reg := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_b_src_mem_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.b_src_mem =
+      addX1Row.rom.b_src_mem := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.b_src_mem =
+        (eval addX1MainEnv addX1MainRowVar.rom).b_src_mem :=
+      mainRomRow_eval_b_src_mem addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.b_src_mem := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_b_src_ind_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.b_src_ind =
+      addX1Row.rom.b_src_ind := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.b_src_ind =
+        (eval addX1MainEnv addX1MainRowVar.rom).b_src_ind :=
+      mainRomRow_eval_b_src_ind addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.b_src_ind := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_store_reg_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.store_reg =
+      addX1Row.rom.store_reg := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.store_reg =
+        (eval addX1MainEnv addX1MainRowVar.rom).store_reg :=
+      mainRomRow_eval_store_reg addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.store_reg := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_store_mem_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.store_mem =
+      addX1Row.rom.store_mem := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.store_mem =
+        (eval addX1MainEnv addX1MainRowVar.rom).store_mem :=
+      mainRomRow_eval_store_mem addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.store_mem := by rw [addX1MainRom_eval]
+
+private theorem addX1Main_store_ind_eval :
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.store_ind =
+      addX1Row.rom.store_ind := by
+  calc
+    Expression.eval addX1MainEnv addX1MainRowVar.rom.store_ind =
+        (eval addX1MainEnv addX1MainRowVar.rom).store_ind :=
+      mainRomRow_eval_store_ind addX1MainEnv addX1MainRowVar.rom
+    _ = addX1Row.rom.store_ind := by rw [addX1MainRom_eval]
+
+private theorem addX1MainARegPreMessage_eval :
+    eval addX1MainEnv (aRegPreMessageExpr addX1MainRowVar) =
+      aRegPreMessage addX1Row := by
+  rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr, addX1MainRowVar_eval]
+
+private theorem addX1MainAMemMessage_eval :
+    eval addX1MainEnv (aMemMessageExpr addX1MainRowVar) =
+      aMemMessage addX1Row := by
+  rw [ZiskFv.AirsClean.Main.eval_aMemMessageExpr, addX1MainRowVar_eval]
+
+private theorem addX1MainBRegPreMessage_eval :
+    eval addX1MainEnv (bRegPreMessageExpr addX1MainRowVar) =
+      bRegPreMessage addX1Row := by
+  rw [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr, addX1MainRowVar_eval]
+
+private theorem addX1MainBMemMessage_eval :
+    eval addX1MainEnv (bMemMessageExpr addX1MainRowVar) =
+      bMemMessage addX1Row := by
+  rw [ZiskFv.AirsClean.Main.eval_bMemMessageExpr, addX1MainRowVar_eval]
+
+private theorem addX1MainCRegPreMessage_eval :
+    eval addX1MainEnv (cRegPreMessageExpr addX1MainRowVar) =
+      cRegPreMessage addX1Row := by
+  rw [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr, addX1MainRowVar_eval]
+
+private theorem addX1MainCMemMessage_eval :
+    eval addX1MainEnv (cMemMessageExpr addX1MainRowVar) =
+      cMemMessage addX1Row := by
+  rw [ZiskFv.AirsClean.Main.eval_cMemMessageExpr, addX1MainRowVar_eval]
+
+private theorem addX1MainARegPreInteraction_eval :
+    (((MemBusChannel.emitted addX1MainRowVar.rom.a_src_reg
+        (aRegPreMessageExpr addX1MainRowVar)).toRaw).eval addX1MainEnv) =
+      mainARegPreInteraction addX1Row := by
+  simp [mainARegPreInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  constructor
+  · exact addX1Main_a_src_reg_eval
+  · rw [toElements_eval_toArray, addX1MainARegPreMessage_eval]
+
+private theorem addX1MainAMemInteraction_eval :
+    (((MemBusChannel.emitted (-(addX1MainRowVar.rom.a_src_mem +
+        addX1MainRowVar.rom.a_src_reg))
+        (aMemMessageExpr addX1MainRowVar)).toRaw).eval addX1MainEnv) =
+      mainAMemInteraction addX1Row := by
+  simp [mainAMemInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  constructor
+  · simp [Expression.eval, addX1Main_a_src_mem_eval, addX1Main_a_src_reg_eval]
+  · rw [toElements_eval_toArray, addX1MainAMemMessage_eval]
+
+private theorem addX1MainBRegPreInteraction_eval :
+    (((MemBusChannel.emitted addX1MainRowVar.rom.b_src_reg
+        (bRegPreMessageExpr addX1MainRowVar)).toRaw).eval addX1MainEnv) =
+      mainBRegPreInteraction addX1Row := by
+  simp [mainBRegPreInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  constructor
+  · exact addX1Main_b_src_reg_eval
+  · rw [toElements_eval_toArray, addX1MainBRegPreMessage_eval]
+
+private theorem addX1MainBMemInteraction_eval :
+    (((MemBusChannel.emitted (-(addX1MainRowVar.rom.b_src_mem +
+        addX1MainRowVar.rom.b_src_ind + addX1MainRowVar.rom.b_src_reg))
+        (bMemMessageExpr addX1MainRowVar)).toRaw).eval addX1MainEnv) =
+      mainBMemInteraction addX1Row := by
+  simp [mainBMemInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  constructor
+  · simp [Expression.eval, addX1Main_b_src_mem_eval, addX1Main_b_src_ind_eval,
+      addX1Main_b_src_reg_eval]
+  · rw [toElements_eval_toArray, addX1MainBMemMessage_eval]
+
+private theorem addX1MainCRegPreInteraction_eval :
+    (((MemBusChannel.emitted addX1MainRowVar.rom.store_reg
+        (cRegPreMessageExpr addX1MainRowVar)).toRaw).eval addX1MainEnv) =
+      mainCRegPreInteraction addX1Row := by
+  simp [mainCRegPreInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  constructor
+  · exact addX1Main_store_reg_eval
+  · rw [toElements_eval_toArray, addX1MainCRegPreMessage_eval]
+
+private theorem addX1MainCMemInteraction_eval :
+    (((MemBusChannel.emitted (-(addX1MainRowVar.rom.store_mem +
+        addX1MainRowVar.rom.store_ind + addX1MainRowVar.rom.store_reg))
+        (cMemMessageExpr addX1MainRowVar)).toRaw).eval addX1MainEnv) =
+      mainCMemInteraction addX1Row := by
+  simp [mainCMemInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  constructor
+  · simp [Expression.eval, addX1Main_store_mem_eval, addX1Main_store_ind_eval,
+      addX1Main_store_reg_eval]
+  · rw [toElements_eval_toArray, addX1MainCMemMessage_eval]
+
+theorem mainRegisterInteractionsFromTable_eq_mainRegisterInteractions :
+    mainRegisterInteractionsFromTable = mainRegisterInteractions := by
+  simp [mainRegisterInteractionsFromTable, mainRegisterInteractions, mainMemBusInteractions]
+  exact ⟨addX1MainARegPreInteraction_eval, addX1MainAMemInteraction_eval,
+    addX1MainBRegPreInteraction_eval, addX1MainBMemInteraction_eval,
+    addX1MainCRegPreInteraction_eval, addX1MainCMemInteraction_eval⟩
 
 theorem registerBoundary_interactionsWith_memBus_eq_boundaryInteractions
     (row : RegisterBoundaryRow FGL) :
@@ -226,5 +420,11 @@ theorem addX1X1X1_registerMemBus_balanced :
     exact List.mem_map_of_mem hi
   · -- bounded quantifier over the concrete message list — decidable
     decide
+
+theorem addX1X1X1_registerMemBus_fromTable_balanced :
+    BalancedInteractions addX1X1X1RegisterInteractionsFromTable := by
+  simpa [addX1X1X1RegisterInteractionsFromTable, addX1X1X1RegisterInteractions,
+    mainRegisterInteractionsFromTable_eq_mainRegisterInteractions] using
+      addX1X1X1_registerMemBus_balanced
 
 end ZiskFv.Compliance.RegisterMemBusBalance

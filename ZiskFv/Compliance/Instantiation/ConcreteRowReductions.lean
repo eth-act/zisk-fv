@@ -175,7 +175,7 @@ def mainOpBusInteraction (row : MainRowWithRom FGL) : Interaction FGL where
 private def mainRowInputVar : Var MainRowWithRom FGL :=
   varFromOffset MainRowWithRom 0
 
-private theorem toElements_eval_toArray
+theorem toElements_eval_toArray
     {M : TypeMap} [ProvableType M]
     (env : Environment FGL) (x : M (Expression FGL)) :
     Array.map (fun e => Expression.eval env e) (toElements x).toArray =
@@ -201,7 +201,7 @@ private theorem eval_mainRowInputVar_is_external_op_fromInput
   rw [ZiskFv.AirsClean.FullEnsemble.mainRow_eval_is_external_op]
   rw [eval_mainRowInputVar_core_fromInput]
 
-private theorem mainRowWithRom_eval_rom
+theorem mainRowWithRom_eval_rom
     (env : Environment FGL) (row : Var MainRowWithRom FGL) :
     eval env row.rom = (eval env row).rom := by
   cases row
@@ -209,7 +209,7 @@ private theorem mainRowWithRom_eval_rom
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go]
 
-private theorem mainRomRow_eval_a_src_reg
+theorem mainRomRow_eval_a_src_reg
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.a_src_reg = (eval env row).a_src_reg := by
   cases row with
@@ -222,7 +222,7 @@ private theorem mainRomRow_eval_a_src_reg
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env a_src_reg).symm
 
-private theorem mainRomRow_eval_a_src_mem
+theorem mainRomRow_eval_a_src_mem
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.a_src_mem = (eval env row).a_src_mem := by
   cases row with
@@ -235,7 +235,7 @@ private theorem mainRomRow_eval_a_src_mem
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env a_src_mem).symm
 
-private theorem mainRomRow_eval_b_src_reg
+theorem mainRomRow_eval_b_src_reg
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.b_src_reg = (eval env row).b_src_reg := by
   cases row with
@@ -248,7 +248,7 @@ private theorem mainRomRow_eval_b_src_reg
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env b_src_reg).symm
 
-private theorem mainRomRow_eval_b_src_mem
+theorem mainRomRow_eval_b_src_mem
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.b_src_mem = (eval env row).b_src_mem := by
   cases row with
@@ -261,7 +261,7 @@ private theorem mainRomRow_eval_b_src_mem
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env b_src_mem).symm
 
-private theorem mainRomRow_eval_b_src_ind
+theorem mainRomRow_eval_b_src_ind
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.b_src_ind = (eval env row).b_src_ind := by
   cases row with
@@ -274,7 +274,7 @@ private theorem mainRomRow_eval_b_src_ind
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env b_src_ind).symm
 
-private theorem mainRomRow_eval_store_reg
+theorem mainRomRow_eval_store_reg
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.store_reg = (eval env row).store_reg := by
   cases row with
@@ -287,7 +287,7 @@ private theorem mainRomRow_eval_store_reg
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env store_reg).symm
 
-private theorem mainRomRow_eval_store_mem
+theorem mainRomRow_eval_store_mem
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.store_mem = (eval env row).store_mem := by
   cases row with
@@ -300,7 +300,7 @@ private theorem mainRomRow_eval_store_mem
         ProvableStruct.toComponents, ProvableStruct.eval.go] using
           (CircuitType.eval_expr env store_mem).symm
 
-private theorem mainRomRow_eval_store_ind
+theorem mainRomRow_eval_store_ind
     (env : Environment FGL) (row : Var MainRomRow FGL) :
     Expression.eval env row.store_ind = (eval env row).store_ind := by
   cases row with
