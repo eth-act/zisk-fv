@@ -3,6 +3,7 @@ import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
+import Mathlib.Data.List.Perm.Subperm
 
 /-!
 # The boot / cross-segment memory seed (`BootSegmentMemorySeed`)
@@ -1991,6 +1992,14 @@ noncomputable def executionMemoryRowsOfSteps
   (List.finRange ziskTrace.numInstructions).flatMap
     (fun i => memoryRowsOfStep ziskTrace i (ziskStep i))
 
+/-- Count memory-bus entries with the lawful `BEq` instance induced by
+`DecidableEq`. The generated `MemoryBusEntry` also has a derived `BEq`, but the
+`List.Subperm` count characterization is stated for a lawful equality test. -/
+private abbrev memoryBusEntryDecidableCount
+    (entry : MemoryBusEntry FGL) (rows : List (MemoryBusEntry FGL)) : Nat :=
+  @List.count (MemoryBusEntry FGL)
+    (@instBEqOfDecidableEq (MemoryBusEntry FGL) inferInstance) entry rows
+
 private theorem fgl_neg_one_ne_one : ¬ ((-1 : FGL) = (1 : FGL)) := by
   intro h
   have hv := congrArg Fin.val h
@@ -2335,6 +2344,39 @@ theorem AcceptedZiskTrace.memReplayRows_of_mem_executionMemoryRowsOfSteps_scoped
   exact ziskTrace.memReplayRows_of_scopedDirectMemRowsOfStep
     h_nonempty i (h_steps i) h_entry_i
 
+/-- Count-sensitive whole-list row correspondence for the scoped direct-Mem
+case.
+
+The scoped direct/no-memory predicates prove the support inclusion from
+structural execution rows to accepted Mem replay rows. The extra `h_count_le`
+premise is the remaining duplicate-sensitive obligation: for every accepted row
+that appears in the structural support, accepted replay must contain at least
+as many copies as the structural execution list. This deliberately does not
+derive multiplicity from plain membership. -/
+theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_count_le
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_count_le :
+      ∀ entry,
+        entry ∈ ziskTrace.memReplayRows h_nonempty →
+        entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep →
+        memoryBusEntryDecidableCount entry
+            (executionMemoryRowsOfSteps ziskTrace ziskStep) ≤
+          memoryBusEntryDecidableCount entry (ziskTrace.memReplayRows h_nonempty)) :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Subperm
+      (ziskTrace.memReplayRows h_nonempty) := by
+  letI : BEq (MemoryBusEntry FGL) :=
+    @instBEqOfDecidableEq (MemoryBusEntry FGL) inferInstance
+  rw [List.subperm_ext_iff]
+  intro entry h_entry
+  exact h_count_le entry
+    (ziskTrace.memReplayRows_of_mem_executionMemoryRowsOfSteps_scopedDirect
+      h_nonempty h_steps h_entry)
+    h_entry
+
 /-- Placement transports the scoped direct-Mem membership direction from the
 concrete execution-order `rowsOf` flatMap to accepted Mem replay rows. -/
 theorem AcceptedZiskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
@@ -2356,6 +2398,42 @@ theorem AcceptedZiskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placem
   exact ziskTrace.memReplayRows_of_mem_executionMemoryRowsOfSteps_scopedDirect
     h_nonempty h_steps h_structural
 
+/-- Placement form of the count-sensitive scoped direct-Mem row
+correspondence.
+
+This is the concrete `rowsOf` version of
+`executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_count_le`.
+The support inclusion is derived from placement plus scoped direct/no-memory
+classification; the caller still supplies the explicit per-entry count lower
+bound needed for duplicate-sensitive row correspondence. -/
+theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_count_le
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_count_le :
+      ∀ entry,
+        entry ∈ ziskTrace.memReplayRows h_nonempty →
+        entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) →
+        memoryBusEntryDecidableCount entry
+            ((List.range ziskTrace.numInstructions).flatMap rowsOf) ≤
+          memoryBusEntryDecidableCount entry (ziskTrace.memReplayRows h_nonempty)) :
+    (((List.range ziskTrace.numInstructions).flatMap rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) := by
+  letI : BEq (MemoryBusEntry FGL) :=
+    @instBEqOfDecidableEq (MemoryBusEntry FGL) inferInstance
+  rw [List.subperm_ext_iff]
+  intro entry h_entry
+  exact h_count_le entry
+    (ziskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
+      h_nonempty h_placement h_steps h_entry)
+    h_entry
+
 /-- Seed-level wrapper for the scoped direct-Mem membership direction. -/
 theorem BootSegmentMemorySeed.memReplayRows_of_mem_executionRows_scopedDirect
     {ziskTrace : AcceptedZiskTrace numInstructions}
@@ -2370,6 +2448,29 @@ theorem BootSegmentMemorySeed.memReplayRows_of_mem_executionRows_scopedDirect
     entry ∈ ziskTrace.memReplayRows h_nonempty :=
   ziskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
     h_nonempty seed.placement h_steps h_entry
+
+/-- Seed-level wrapper for the count-sensitive scoped direct-Mem row
+correspondence. This packages the current Stage-2 boundary without using the
+seed's replay-safe order certificate to prove row correspondence. -/
+theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_count_le
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_count_le :
+      ∀ entry,
+        entry ∈ ziskTrace.memReplayRows h_nonempty →
+        entry ∈ ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) →
+        memoryBusEntryDecidableCount entry
+            ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) ≤
+          memoryBusEntryDecidableCount entry (ziskTrace.memReplayRows h_nonempty)) :
+    (((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_count_le
+    h_nonempty seed.placement h_steps h_count_le
 
 /-- If every decoded step emits only replay-neutral memory rows, then the full
 structural execution-row list contains no active memory writes. -/
