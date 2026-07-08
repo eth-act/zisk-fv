@@ -1573,6 +1573,57 @@ theorem bootSegmentReplaySafeOrderCertificate_of_perm_replayNeutralSteps
     exact executionRows_not_active_write_of_replayNeutralSteps_placement
       h_placement h_steps h_row
 
+/-- Construct the read-soundness input bundle for replay-neutral structural
+chunks from ordinary row correspondence plus the explicit initial-memory
+bridge. -/
+def bootSegmentReadSoundInputs_of_perm_replayNeutralSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i)) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order :=
+    bootSegmentReplaySafeOrderCertificate_of_perm_replayNeutralSteps
+      h_placement h_perm h_steps
+
+/-- Direct read-soundness theorem for the scoped replay-neutral case. The
+remaining assumptions are the explicit boot/cross-segment initial-memory bridge
+and duplicate-sensitive row correspondence; read-value agreement is still
+provided only by accepted Mem replay evidence. -/
+theorem readSound_of_perm_replayNeutralSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i)) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_perm_replayNeutralSteps
+      h_initialMemory h_placement h_perm h_steps)
+
 /-! ## Per-op discharge via the execution-order fold. -/
 
 /-- Discharge one load's residual from the seed and its structural row tie, via the fold. -/
