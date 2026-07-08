@@ -2284,6 +2284,115 @@ theorem BootSegmentMemorySeed.executionRows_count_eq_memoryRowsOfSteps
       (executionMemoryRowsOfSteps ziskTrace ziskStep).count entry :=
   executionRows_count_eq_memoryRowsOfSteps_of_placement seed.placement entry
 
+/-- Structural selection-shaped order evidence over decoded per-step rows
+yields the concrete boot replay-safe order selection once placement identifies
+those rows with `rowsOf`. -/
+theorem bootSegmentReplaySafeOrderSelection_of_memoryRowsOfSteps_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_selection : MemoryBusRowsReplaySafeSelection
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReplaySafeOrderSelection ziskTrace rowsOf h_nonempty := by
+  simpa [BootSegmentReplaySafeOrderSelection, AcceptedZiskTrace.memReplayRows,
+    AcceptedZiskTrace.memReplayBridge, executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
+    using h_selection
+
+/-- Construct read-soundness inputs from structural selection-shaped order
+evidence over decoded per-step rows. -/
+def bootSegmentReadSoundInputs_of_memoryRowsOfSteps_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_selection : MemoryBusRowsReplaySafeSelection
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_selection h_initialMemory
+    (bootSegmentReplaySafeOrderSelection_of_memoryRowsOfSteps_selection
+      h_placement h_selection)
+
+/-- Direct execution-order read-soundness from structural selection-shaped
+order evidence over decoded per-step rows. -/
+theorem readSound_of_memoryRowsOfSteps_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_selection : MemoryBusRowsReplaySafeSelection
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_memoryRowsOfSteps_selection
+      h_initialMemory h_placement h_selection)
+
+/-- Seed-level wrapper for structural selection-shaped order evidence. -/
+theorem BootSegmentMemorySeed.replaySafeOrderSelection_of_memoryRowsOfSteps_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection : MemoryBusRowsReplaySafeSelection
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReplaySafeOrderSelection ziskTrace seed.rowsOf h_nonempty :=
+  bootSegmentReplaySafeOrderSelection_of_memoryRowsOfSteps_selection
+    seed.placement h_selection
+
+/-- Seed-level read-soundness input assembly from structural selection-shaped
+order evidence. -/
+def BootSegmentMemorySeed.readSoundInputs_of_memoryRowsOfSteps_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection : MemoryBusRowsReplaySafeSelection
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    BootSegmentReadSoundInputs ziskTrace seed.memInit seed.rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_memoryRowsOfSteps_selection
+    (seed.readSoundInputs h_nonempty).initialMemory_eq seed.placement h_selection
+
+/-- Seed-level execution-order read-soundness from structural
+selection-shaped order evidence. -/
+theorem BootSegmentMemorySeed.readSound_of_memoryRowsOfSteps_selection
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_selection : MemoryBusRowsReplaySafeSelection
+      (ziskTrace.memReplayRows h_nonempty)
+      (executionMemoryRowsOfSteps ziskTrace ziskStep)) :
+    MemoryBusRowsPrefixReadSound
+      seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (seed.readSoundInputs_of_memoryRowsOfSteps_selection h_selection)
+
 /-- Seed-level permutation between accepted Mem replay rows and the structural
 per-step decoder row list, conditional on the seed's replay-safe order
 certificate. This composes the order certificate with structural placement so
