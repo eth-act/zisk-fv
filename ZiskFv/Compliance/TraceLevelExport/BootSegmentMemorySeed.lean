@@ -580,20 +580,18 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
     (ziskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
       h_nonempty i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign)
 
-/-- Coverage version of the load `b` provider split.
+/-- Accepted replay coverage version of the load `b` provider split.
 
 Instead of requiring the caller to exclude every MemAlign-family branch, this
-theorem follows the accepted provider coverage far enough to expose the
-available structural alternatives. The mutable-Mem branch places the concrete
-load row in execution order; the MemAlign-family branches expose structural
-provider-row predicates for an entry matching that concrete load row. The
-general MemAlign branch keeps its selected prove-branch pins explicit. -/
-theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEntry
-    {ziskTrace : AcceptedZiskTrace numInstructions}
-    {memInit : Std.ExtHashMap Nat (BitVec 8)}
-    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
-    {h_nonempty : 0 < ziskTrace.numInstructions}
-    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+theorem follows accepted provider coverage far enough to expose the available
+structural alternatives. The mutable-Mem branch places the concrete load row in
+accepted Mem replay rows before any seed order certificate is used; the
+MemAlign-family branches expose structural provider-row predicates for an entry
+matching that concrete load row. The general MemAlign branch keeps its selected
+prove-branch pins explicit. -/
+theorem AcceptedZiskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderEntry
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions)
     (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
     (h_active :
@@ -604,7 +602,7 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEn
     ∃ entry : MemoryBusEntry FGL,
       ZiskFv.Airs.MemoryBus.matches_memory_entry
         (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
-      ∧ (entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+      ∧ (entry ∈ ziskTrace.memReplayRows h_nonempty
         ∨ MemAlignReadByteLoadProviderRowMatchSpec
             ziskTrace.program ziskTrace.witness entry
         ∨ MemAlignByteLoadProviderRowMatchSpec
@@ -704,12 +702,11 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEn
     h_mutable | h_nonmutable
   · refine ⟨(busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1,
       ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _, Or.inl ?_⟩
-    exact inputs.mem_executionRows_of_memReplayRows
-      (activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_one
-        h_mutable h_mainEval h_main_mem_op h_entry
-        (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
-          (ziskTrace.memReplayBridge h_nonempty)
-          (ziskTrace.memReplayBridge_coversMutableMemTables h_nonempty)))
+    exact activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_one
+      h_mutable h_mainEval h_main_mem_op h_entry
+      (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
+        (ziskTrace.memReplayBridge h_nonempty)
+        (ziskTrace.memReplayBridge_coversMutableMemTables h_nonempty))
   · rcases activeMainNonMutableMemProviderRowMatchSpec_branch_cases
       h_nonmutable with h_marb | h_mab | h_memAlign | h_main | h_regBoundary
     · refine ⟨_, h_entry, Or.inr (Or.inl ?_)⟩
@@ -727,6 +724,47 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEn
     · exact False.elim
         (not_activeMainRegisterBoundaryProviderRowMatchSpec_of_main_mem_op_one
           h_mainEval h_main_mem_op h_regBoundary)
+
+/-- Coverage version of the load `b` provider split.
+
+Instead of requiring the caller to exclude every MemAlign-family branch, this
+theorem follows the accepted provider coverage far enough to expose the
+available structural alternatives. The mutable-Mem branch places the concrete
+load row in execution order; the MemAlign-family branches expose structural
+provider-row predicates for an entry matching that concrete load row. The
+general MemAlign branch keeps its selected prove-branch pins explicit. -/
+theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i) :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+        ∨ MemAlignReadByteLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry
+        ∨ MemAlignByteLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry
+        ∨ MemAlignLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry) := by
+  obtain ⟨entry, h_entry, h_provider⟩ :=
+    ziskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderEntry
+      h_nonempty i h_b_src_ind h_active h_selectedMemAlignPins
+  refine ⟨entry, h_entry, ?_⟩
+  rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
+  · exact Or.inl (inputs.mem_executionRows_of_memReplayRows h_mem)
+  · exact Or.inr (Or.inl h_marb)
+  · exact Or.inr (Or.inr (Or.inl h_mab))
+  · exact Or.inr (Or.inr (Or.inr h_memAlign))
 
 /-- Load `b` provider coverage with byte-oriented MemAlign branches converted to
 the legacy subdoubleword provider-witness shape.
