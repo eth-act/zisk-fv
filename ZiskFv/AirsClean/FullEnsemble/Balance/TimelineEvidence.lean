@@ -353,6 +353,75 @@ theorem prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
   rw [h_addr_eq] at h_other_lt_current
   exact (lt_irrefl _ h_other_lt_current)
 
+/-- Active replay entries from a selected address-change row are safe to cross
+entries from strictly prior generated Mem table rows.
+
+This is the concrete generated-order case used by selected-prefix order
+assembly: an address-change row begins a new address class, so every prior row
+has a different generated Mem address, and the row-range facts turn that
+address separation into bidirectional no-active-write-overlap. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_prior_addr_change_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (selectedIdx priorIdx : Fin table.table.length)
+    (h_addr_change : mem.addr_changes selectedIdx.val = 1)
+    (h_prior : priorIdx.val < selectedIdx.val)
+    {selectedEntry priorEntry : Interaction.MemoryBusEntry FGL}
+    (h_selected :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val))
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem priorIdx.val)) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        selectedEntry priorEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        priorEntry selectedEntry := by
+  have h_addr_ne_prior_current :
+      mem.addr priorIdx.val ≠ mem.addr selectedIdx.val :=
+    prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed selectedIdx h_addr_change priorIdx h_prior
+  exact
+    activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+      h_ranges selectedIdx priorIdx h_selected h_prior_entry
+      (fun h_addr_eq => h_addr_ne_prior_current h_addr_eq.symm)
+
+/-- Full-witness wrapper for the generated address-change/prior-row safe
+crossing fact.
+
+The bridge already uses the deterministic `segmentWithFixedL1` segment shape,
+so the fixed-column facts are derived rather than carried as another premise. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_prior_addr_change
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (selectedIdx priorIdx : Fin h_bridge.table.table.length)
+    (h_addr_change : h_bridge.mem.addr_changes selectedIdx.val = 1)
+    (h_prior : priorIdx.val < selectedIdx.val)
+    {selectedEntry priorEntry : Interaction.MemoryBusEntry FGL}
+    (h_selected :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem selectedIdx.val))
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem priorIdx.val)) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        selectedEntry priorEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap
+        priorEntry selectedEntry := by
+  exact
+    activeMemReplayEntry_noActiveWriteOverlap_of_prior_addr_change_memTableGeneratedRowsBridge
+      h_bridge.generatedRows h_bridge.rowRanges
+      (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+      selectedIdx priorIdx h_addr_change h_prior h_selected h_prior_entry
+
 /-- A nonempty generated Mem segment carries a 29-bit previous-segment address.
 
     The segment distance chunks (`mem.pil:267-268`) and generated base-distance

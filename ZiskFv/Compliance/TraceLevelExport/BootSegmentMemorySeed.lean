@@ -395,6 +395,60 @@ theorem acceptedMemReplayRows_eq_or_noActiveWriteOverlap_of_eq_or_addr_ne
       (ziskTrace.memReplayBridge h_nonempty) h_left h_right
       (h_eq_or_addr_ne left h_left right h_right)
 
+/-- Accepted-trace wrapper for the concrete generated-Mem address-change case:
+if a selected active replay entry comes from a generated Mem row whose
+`addr_changes` bit is set, then it is safe to cross any active replay entry
+from a strictly prior generated Mem row. -/
+theorem acceptedMemReplayRows_noActiveWriteOverlap_of_prior_addr_change
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (selectedIdx priorIdx :
+      Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length)
+    (h_addr_change :
+      (ziskTrace.memReplayBridge h_nonempty).mem.addr_changes selectedIdx.val = 1)
+    (h_prior : priorIdx.val < selectedIdx.val)
+    {selectedEntry priorEntry : MemoryBusEntry FGL}
+    (h_selected :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem selectedIdx.val))
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem priorIdx.val)) :
+    MemoryBusEntryNoActiveWriteOverlap selectedEntry priorEntry ∧
+      MemoryBusEntryNoActiveWriteOverlap priorEntry selectedEntry :=
+  activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_prior_addr_change
+    (ziskTrace.memReplayBridge h_nonempty)
+    selectedIdx priorIdx h_addr_change h_prior h_selected h_prior_entry
+
+/-- Equality-or-safe-crossing form of
+`acceptedMemReplayRows_noActiveWriteOverlap_of_prior_addr_change`, matching the
+selected-prefix order bridge callback shape. -/
+theorem acceptedMemReplayRows_eq_or_noActiveWriteOverlap_of_prior_addr_change
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (selectedIdx priorIdx :
+      Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length)
+    (h_addr_change :
+      (ziskTrace.memReplayBridge h_nonempty).mem.addr_changes selectedIdx.val = 1)
+    (h_prior : priorIdx.val < selectedIdx.val)
+    {selectedEntry priorEntry : MemoryBusEntry FGL}
+    (h_selected :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem selectedIdx.val))
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem priorIdx.val)) :
+    selectedEntry = priorEntry ∨
+      (MemoryBusEntryNoActiveWriteOverlap selectedEntry priorEntry ∧
+        MemoryBusEntryNoActiveWriteOverlap priorEntry selectedEntry) :=
+  Or.inr
+    (acceptedMemReplayRows_noActiveWriteOverlap_of_prior_addr_change
+      selectedIdx priorIdx h_addr_change h_prior h_selected h_prior_entry)
+
 /-- A plain accepted-replay/execution row permutation becomes a boot order
 certificate from origin-level equality/address separation over accepted replay
 rows. -/
