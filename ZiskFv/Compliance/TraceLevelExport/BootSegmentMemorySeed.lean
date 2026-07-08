@@ -1039,6 +1039,51 @@ theorem BootSegmentMemorySeed.executionRows_count_eq_memoryRowsOfSteps
       (executionMemoryRowsOfSteps ziskTrace ziskStep).count entry :=
   executionRows_count_eq_memoryRowsOfSteps_of_placement seed.placement entry
 
+/-- Seed-level permutation between accepted Mem replay rows and the structural
+per-step decoder row list, conditional on the seed's replay-safe order
+certificate. This composes the order certificate with structural placement so
+later correspondence work can target decoder rows directly. -/
+theorem BootSegmentMemorySeed.memReplayRows_perm_memoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions) :
+    (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep) := by
+  have h_perm := (seed.readSoundInputs h_nonempty).memReplayRows_perm_executionRows
+  rw [BootSegmentMemorySeed.executionRows_eq_memoryRowsOfSteps seed] at h_perm
+  exact h_perm
+
+/-- Length consequence for accepted Mem replay rows versus structural per-step
+decoder rows. -/
+theorem BootSegmentMemorySeed.memReplayRows_length_eq_memoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions) :
+    (ziskTrace.memReplayRows h_nonempty).length =
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).length := by
+  have h_len := (seed.readSoundInputs h_nonempty).memReplayRows_length_eq_executionRows
+  rw [BootSegmentMemorySeed.executionRows_eq_memoryRowsOfSteps seed] at h_len
+  exact h_len
+
+/-- Multiplicity consequence for accepted Mem replay rows versus structural
+per-step decoder rows. -/
+theorem BootSegmentMemorySeed.memReplayRows_count_eq_memoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (entry : MemoryBusEntry FGL) :
+    (ziskTrace.memReplayRows h_nonempty).count entry =
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).count entry := by
+  have h_count := (seed.readSoundInputs h_nonempty).memReplayRows_count_eq_executionRows entry
+  rw [BootSegmentMemorySeed.executionRows_eq_memoryRowsOfSteps seed] at h_count
+  exact h_count
+
 /-- A row in one step's `rowsOf` list is in the full execution-order memory
 row list. -/
 theorem mem_executionRows_of_rowsOf_mem
