@@ -123,6 +123,18 @@ private theorem wit_segment_l1 :
   have htab : table.table = [] := main_component_tables_empty table hmem hcomp
   exact ⟨fun h => absurd h (by simp [htab]), fun idx _ => absurd idx.isLt (by simp [htab])⟩
 
+private theorem wit_main_step_index_fixed :
+    ∀ table ∈ wit.allTables,
+      table.component =
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 0 prog →
+        MainStepIndexFixedFacts 0 prog table := by
+  intro table hmem hcomp
+  exact
+    { main_step_eq_index := fun i => i.elim0
+      timestamp_bound := fun i => i.elim0
+      load_timestamp_toNat := fun i => i.elim0
+      store_timestamp_toNat := fun i => i.elim0 }
+
 /-- The degenerate accepted trace: empty program, all-empty witness, trivial
     channel balance, vacuous transition / row-height / segment-fixed obligations. -/
 private def trace : AcceptedZiskTrace 0 where
@@ -143,6 +155,7 @@ private def trace : AcceptedZiskTrace 0 where
   transitions_hold := wit_transitions
   main_height := by intro table _ _ i; exact i.elim0
   segment_l1_fixed := wit_segment_l1
+  main_step_index_fixed := wit_main_step_index_fixed
 
 private def sail : SailTrace 0 := nofun
 

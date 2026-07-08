@@ -49,6 +49,33 @@ def acceptedMemReplayFixedSegment
     ZiskFv.Airs.Mem.SegmentColumns FGL :=
   ZiskFv.AirsClean.FullEnsemble.segmentWithFixedL1 segment
 
+/-- Fixed-column/index certificate for Main's `main_step` ROM companion column.
+
+    PIL defines `STEP = main_segment * N + SEGMENT_STEP` (`main.pil:90`), with
+    `SEGMENT_STEP` the deterministic row counter. Clean models `main_step` as a
+    witness column, so accepted traces carry the row-index pin here in the same
+    fixed-column class as `segment_l1_fixed`: real traces number Main rows by
+    index, and the no-wrap evidence keeps the memory timestamp offsets
+    `2 + 4*i` / `3 + 4*i` in their natural Goldilocks representatives. -/
+structure MainStepIndexFixedFacts
+    (numInstructions : Nat)
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program numInstructions)
+    (table : Air.Flat.Table FGL) : Prop where
+  main_step_eq_index : ∀ i : Fin numInstructions,
+    (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero program table i.val).rom.main_step =
+      (i.val : FGL)
+  timestamp_bound : ∀ i : Fin numInstructions, 4 * i.val + 3 < GL_prime
+  load_timestamp_toNat : ∀ i : Fin numInstructions,
+    (2 +
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero program table i.val).rom.main_step *
+        4).toNat =
+      2 + 4 * i.val
+  store_timestamp_toNat : ∀ i : Fin numInstructions,
+    (3 +
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero program table i.val).rom.main_step *
+        4).toNat =
+      3 + 4 * i.val
+
 /-- Accepted committed trace for the full RV64IM Clean ensemble.
 
     `numInstructions` is a **structure parameter** (not a field) so that
@@ -159,6 +186,19 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
             (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 0 = 1) ∧
         (∀ idx : Fin table.table.length, 0 < idx.val →
             (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 idx.val = 0)
+  /-- The Main execution table's `main_step` companion column is pinned to the
+      row index, with no-wrap evidence for the load/store memory timestamp
+      offsets. This is one fixed-column-class accepted-trace certificate
+      (`main.pil:90`, via the fixed `SEGMENT_STEP` row counter), replacing the
+      two anticipated step-counter residues: distinctness and cross-offset
+      separation are derived from this single fact. Formulated over
+      `witness.allTables`, like `main_height` / `segment_l1_fixed`, and
+      specialized to the derived Main table by
+      `AcceptedZiskTrace.mainTable_main_step_index_fixed`. -/
+  main_step_index_fixed : ∀ table ∈ witness.allTables,
+      table.component =
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
+        MainStepIndexFixedFacts numInstructions program table
 
 /-- Recover the instruction count from a parameterized `AcceptedZiskTrace`.
     `numInstructions` is now a structure parameter rather than a field; this

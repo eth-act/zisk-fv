@@ -41,4 +41,10 @@ theorem AcceptedZiskTrace.mainTable_index (trace : AcceptedZiskTrace n) :
     ∀ i : Fin trace.numInstructions, i.val < trace.mainTable.table.length :=
   trace.main_height trace.mainTable trace.mainTable_mem trace.mainTable_component
 
+/-- The accepted-trace Main `main_step` row-index certificate specialized to
+    the derived Main table. -/
+theorem AcceptedZiskTrace.mainTable_main_step_index_fixed (trace : AcceptedZiskTrace n) :
+    MainStepIndexFixedFacts trace.numInstructions trace.program trace.mainTable :=
+  trace.main_step_index_fixed trace.mainTable trace.mainTable_mem trace.mainTable_component
+
 end ZiskFv.Compliance

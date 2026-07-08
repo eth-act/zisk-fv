@@ -2581,6 +2581,76 @@ def MemoryRowsOfStepIndexwiseMainStepCrossOffsetSeparated
     3 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
       2 + (mainRowWithRom ziskTrace j).rom.main_step * 4
 
+/-- The accepted-trace Main `main_step` index certificate specialized to the
+shared Main+ROM row accessor used by structural memory rows. -/
+theorem mainRowWithRom_main_step_eq_index
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    (mainRowWithRom ziskTrace i).rom.main_step = (i.val : FGL) :=
+  ziskTrace.mainTable_main_step_index_fixed.main_step_eq_index i
+
+/-- Load-side timestamp no-wrap evidence specialized to `mainRowWithRom`. -/
+theorem mainRowWithRom_load_timestamp_toNat
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    (2 + (mainRowWithRom ziskTrace i).rom.main_step * 4).toNat =
+      2 + 4 * i.val :=
+  ziskTrace.mainTable_main_step_index_fixed.load_timestamp_toNat i
+
+/-- Store-side timestamp no-wrap evidence specialized to `mainRowWithRom`. -/
+theorem mainRowWithRom_store_timestamp_toNat
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    (3 + (mainRowWithRom ziskTrace i).rom.main_step * 4).toNat =
+      3 + 4 * i.val :=
+  ziskTrace.mainTable_main_step_index_fixed.store_timestamp_toNat i
+
+/-- The consolidated Main-step index certificate implies the old same-offset
+`main_step` distinctness residue. -/
+theorem memoryRowsOfStep_mainStep_distinct_of_main_step_index_fixed
+    {ziskTrace : AcceptedZiskTrace numInstructions} :
+    MemoryRowsOfStepIndexwiseMainStepDistinct ziskTrace := by
+  intro i j h_ne h_eq
+  have h_ts_eq :
+      (2 + (mainRowWithRom ziskTrace i).rom.main_step * 4).toNat =
+        (2 + (mainRowWithRom ziskTrace j).rom.main_step * 4).toNat := by
+    rw [h_eq]
+  have h_i := mainRowWithRom_load_timestamp_toNat ziskTrace i
+  have h_j := mainRowWithRom_load_timestamp_toNat ziskTrace j
+  rw [h_i, h_j] at h_ts_eq
+  have h_val : i.val = j.val := by omega
+  exact h_ne (Fin.ext h_val)
+
+/-- The consolidated Main-step index certificate implies the old cross-offset
+no-collision residue. -/
+theorem memoryRowsOfStep_mainStep_crossOffsetSeparated_of_main_step_index_fixed
+    {ziskTrace : AcceptedZiskTrace numInstructions} :
+    MemoryRowsOfStepIndexwiseMainStepCrossOffsetSeparated ziskTrace := by
+  intro i j _h_ne
+  constructor
+  · intro h_eq
+    have h_nat :
+        (2 + (mainRowWithRom ziskTrace i).rom.main_step * 4).toNat =
+          (3 + (mainRowWithRom ziskTrace j).rom.main_step * 4).toNat := by
+      rw [h_eq]
+    have h_i := mainRowWithRom_load_timestamp_toNat ziskTrace i
+    have h_j := mainRowWithRom_store_timestamp_toNat ziskTrace j
+    rw [h_i, h_j] at h_nat
+    -- `h_eq` is an `FGL = Fin GL_prime` equation; `omega` would expand its
+    -- composite `Fin` arithmetic modulo the 2^64-scale Goldilocks prime.
+    clear h_eq h_i h_j
+    omega
+  · intro h_eq
+    have h_nat :
+        (3 + (mainRowWithRom ziskTrace i).rom.main_step * 4).toNat =
+          (2 + (mainRowWithRom ziskTrace j).rom.main_step * 4).toNat := by
+      rw [h_eq]
+    have h_i := mainRowWithRom_store_timestamp_toNat ziskTrace i
+    have h_j := mainRowWithRom_load_timestamp_toNat ziskTrace j
+    rw [h_i, h_j] at h_nat
+    clear h_eq h_i h_j
+    omega
+
 /-- Same-offset timestamp collision is impossible for distinct Main steps on
 the load-side offset. -/
 theorem two_add_mul_four_ne_of_ne (x y : FGL) (h_ne : x ≠ y) :
@@ -2624,6 +2694,16 @@ theorem memoryRowsOfStep_mainStep_timestamp_separated_of_distinct_crossOffset
       (mainRowWithRom ziskTrace i).rom.main_step
       (mainRowWithRom ziskTrace j).rom.main_step
       h_step_ne⟩
+
+/-- The single Main-step index certificate discharges the full formula-level
+timestamp separation predicate formerly assembled from two step-counter
+residues. -/
+theorem memoryRowsOfStep_mainStep_timestamp_separated_of_main_step_index_fixed
+    {ziskTrace : AcceptedZiskTrace numInstructions} :
+    MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace :=
+  memoryRowsOfStep_mainStep_timestamp_separated_of_distinct_crossOffset
+    memoryRowsOfStep_mainStep_distinct_of_main_step_index_fixed
+    memoryRowsOfStep_mainStep_crossOffsetSeparated_of_main_step_index_fixed
 
 /-- Concrete structural timestamp inequalities for the rows that
 `memoryRowsOfStep` can emit.
@@ -2675,6 +2755,141 @@ theorem memoryRowsOfStep_eq_load_or_store_of_mem
       ∨ entry = (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2 := by
   cases step <;> simp [memoryRowsOfStep] at h_entry ⊢
   all_goals first | exact Or.inl h_entry | exact Or.inr h_entry
+
+/-- Step-local target-order timestamp shape derived from the consolidated
+Main-step index certificate: every structural memory row emitted by trace index
+`i` has timestamp representative `2 + 4*i` (load) or `3 + 4*i` (store). -/
+theorem memoryRowsOfStep_timestamp_toNat_eq_load_or_store_offset
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    {step : ZiskStep ziskTrace i}
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry.timestamp.toNat = 2 + 4 * i.val ∨
+      entry.timestamp.toNat = 3 + 4 * i.val := by
+  rcases memoryRowsOfStep_eq_load_or_store_of_mem h_entry with h_entry | h_entry
+  · subst entry
+    left
+    simpa [busLd_e1_timestamp] using mainRowWithRom_load_timestamp_toNat ziskTrace i
+  · subst entry
+    right
+    simpa [busSt_e2_timestamp] using mainRowWithRom_store_timestamp_toNat ziskTrace i
+
+/-- Rows emitted by strictly increasing trace indices are chronologically
+monotone in the target execution list. -/
+theorem memoryRowsOfStep_timestamp_toNat_le_of_index_lt
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {i j : Fin ziskTrace.numInstructions}
+    (h_lt : i < j)
+    {entry_i entry_j : MemoryBusEntry FGL}
+    (h_entry_i : entry_i ∈ memoryRowsOfStep ziskTrace i (ziskStep i))
+    (h_entry_j : entry_j ∈ memoryRowsOfStep ziskTrace j (ziskStep j)) :
+    entry_i.timestamp.toNat ≤ entry_j.timestamp.toNat := by
+  have h_i :=
+    memoryRowsOfStep_timestamp_toNat_eq_load_or_store_offset
+      (ziskTrace := ziskTrace) h_entry_i
+  have h_j :=
+    memoryRowsOfStep_timestamp_toNat_eq_load_or_store_offset
+      (ziskTrace := ziskTrace) h_entry_j
+  have h_val_lt : i.val < j.val := h_lt
+  rcases h_i with h_i | h_i <;> rcases h_j with h_j | h_j
+  · rw [h_i, h_j]
+    omega
+  · rw [h_i, h_j]
+    omega
+  · rw [h_i, h_j]
+    omega
+  · rw [h_i, h_j]
+    omega
+
+/-- Each step-local structural memory-row list is chronologically ordered. At
+the moment each decoded step emits at most one load/store row, so the local
+side of the flatMap order proof is structural. -/
+theorem memoryRowsOfStep_pairwise_timestamp_toNat_le
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (i : Fin ziskTrace.numInstructions)
+    (step : ZiskStep ziskTrace i) :
+    (memoryRowsOfStep ziskTrace i step).Pairwise
+      (fun left right => left.timestamp.toNat ≤ right.timestamp.toNat) := by
+  cases step <;> simp [memoryRowsOfStep]
+
+/-- The consolidated Main-step index certificate gives the full execution-order
+target chronology over structural memory rows. -/
+theorem executionMemoryRowsOfSteps_pairwise_timestamp_toNat_le_of_main_step_index_fixed
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i} :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Pairwise
+      (fun left right => left.timestamp.toNat ≤ right.timestamp.toNat) := by
+  rw [executionMemoryRowsOfSteps, List.pairwise_flatMap]
+  constructor
+  · intro i _h_i
+    exact memoryRowsOfStep_pairwise_timestamp_toNat_le i (ziskStep i)
+  · exact List.Pairwise.imp
+      (fun {i j} h_lt => by
+        intro entry_i h_entry_i entry_j h_entry_j
+        exact memoryRowsOfStep_timestamp_toNat_le_of_index_lt
+          (ziskTrace := ziskTrace) (ziskStep := ziskStep) h_lt h_entry_i h_entry_j)
+      (List.pairwise_lt_finRange ziskTrace.numInstructions)
+
+/-- Sublist-aware target chronology needed by the crossed-pair permutation
+builder. The recursive builder works over sublists of the target list, so the
+order fact is stated directly in that shape. -/
+def ExecutionMemoryRowsTargetChronological
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i) : Prop :=
+  ∀ {currentTarget row moved},
+    List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+    MemoryBusRowsPairBefore row moved currentTarget →
+    row.timestamp.toNat ≤ moved.timestamp.toNat
+
+/-- A concrete pair-before witness contains the corresponding two-element
+sublist. -/
+theorem memoryBusRowsPairBefore_pair_sublist
+    {left right : MemoryBusEntry FGL}
+    {rows : List (MemoryBusEntry FGL)}
+    (h_before : MemoryBusRowsPairBefore left right rows) :
+    [left, right].Sublist rows := by
+  rcases h_before with ⟨pref, middle, suffix, h_rows⟩
+  subst rows
+  have h_tail : [right].Sublist (middle ++ right :: suffix) :=
+    (List.Sublist.cons₂ right (List.nil_sublist suffix)).trans
+      (List.sublist_append_right middle (right :: suffix))
+  have h_pair : [left, right].Sublist (left :: middle ++ right :: suffix) :=
+    List.Sublist.cons₂ left h_tail
+  have h_pref :
+      (left :: middle ++ right :: suffix).Sublist
+        (pref ++ left :: middle ++ right :: suffix) := by
+    induction pref with
+    | nil => simp
+    | cons a pref ih =>
+        exact List.Sublist.cons a ih
+  exact h_pair.trans h_pref
+
+/-- Pairwise target chronology implies the sublist-aware crossed-pair target
+chronology shape. -/
+theorem executionMemoryRowsOfSteps_targetChronological_of_pairwise_timestamp_toNat_le
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_pairwise :
+      (executionMemoryRowsOfSteps ziskTrace ziskStep).Pairwise
+        (fun left right => left.timestamp.toNat ≤ right.timestamp.toNat)) :
+    ExecutionMemoryRowsTargetChronological ziskTrace ziskStep := by
+  intro currentTarget row moved h_sublist h_before
+  have h_pair_target :
+      [row, moved].Sublist (executionMemoryRowsOfSteps ziskTrace ziskStep) :=
+    (memoryBusRowsPairBefore_pair_sublist h_before).trans h_sublist
+  exact (List.pairwise_iff_forall_sublist.mp h_pairwise) h_pair_target
+
+/-- The consolidated Main-step index certificate supplies the target execution
+chronology over `executionMemoryRowsOfSteps`, including the sublist shape used by
+the no-unsafe-crossings permutation builder. -/
+theorem executionMemoryRowsOfSteps_targetChronological_of_main_step_index_fixed
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i} :
+    ExecutionMemoryRowsTargetChronological ziskTrace ziskStep :=
+  executionMemoryRowsOfSteps_targetChronological_of_pairwise_timestamp_toNat_le
+    executionMemoryRowsOfSteps_pairwise_timestamp_toNat_le_of_main_step_index_fixed
 
 /-- Unequal timestamps for every pair of step-local structural rows imply the
 two step-local row lists are disjoint. -/
