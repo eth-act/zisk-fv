@@ -1399,6 +1399,153 @@ theorem activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embe
       (by simpa [component, providerEnv] using h_sel_dual)
       (by simpa [providerEnv] using h_match)
 
+/-- Active mutable-Mem provider coverage places a concrete Main-side store
+    entry in the accepted chronological row trace.
+
+The primary Mem `wr = 1` fact is derived from the Clean message equality and a
+Main-side `mem_op = 2` hypothesis. The dual branch is impossible for stores:
+dual Mem emissions are read-shaped (`mem_op = 1`). -/
+theorem activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_two
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_mutable :
+      ActiveMainMutableMemProviderRowMatchSpec program witness mainTable mainRow
+        mainInteraction mainMsg 1 2)
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) 1 2))
+    (h_embedded :
+      MutableActiveMemReplayRowsEmbeddedInTrace witness rows) :
+    entry ∈ rows := by
+  rcases h_mutable with
+    ⟨providerInteraction, _h_providerInteraction_mem, h_msg, _h_provider_non_pull,
+      h_provider_nonzero, providerTable, h_providerTable_mem, _h_providerInteraction_table,
+      providerRow, h_providerRow_mem, h_providerSpec, h_providerComponent,
+      h_branch⟩
+  let component := ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  let providerEnv := providerTable.environment providerRow
+  have h_mem_component_spec : component.Spec providerEnv := by
+    simpa [component, providerEnv, h_providerComponent] using h_providerSpec
+  have h_input_eq :
+      eval providerEnv component.rowInputVar = component.rowInput providerEnv := by
+    simpa only [component, Air.Flat.Component.rowInput,
+      Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset component.Input 0 providerEnv)
+  have h_memSpec :
+      ZiskFv.AirsClean.Mem.Spec (eval providerEnv component.rowInputVar) := by
+    have h_spec :=
+      ZiskFv.AirsClean.Mem.spec_of_componentWithDualMemBus_spec
+        providerEnv h_mem_component_spec
+    rw [← h_input_eq] at h_spec
+    exact h_spec
+  rcases h_branch with h_primary | h_dual
+  · rcases h_primary with ⟨h_eval, h_provider_match⟩
+    have h_mult_expr :
+        providerInteraction.mult =
+          Expression.eval providerEnv component.rowInputVar.sel := by
+      simpa [component, providerEnv, Channel.emitted, emitted,
+        ChannelInteraction.toRaw, AbstractInteraction.eval] using
+          congrArg Interaction.mult h_eval
+    have h_mult :
+        providerInteraction.mult =
+          (eval providerEnv component.rowInputVar).sel :=
+      h_mult_expr.trans (ZiskFv.AirsClean.Mem.eval_memRow_sel providerEnv component.rowInputVar)
+    have h_sel_ne_zero :
+        (eval providerEnv component.rowInputVar).sel ≠ 0 := by
+      intro h_zero
+      exact h_provider_nonzero (by simp [h_mult, h_zero])
+    have h_sel :
+        (eval providerEnv component.rowInputVar).sel = 1 := by
+      rcases ZiskFv.AirsClean.Mem.sel_boolean_of_spec
+          (eval providerEnv component.rowInputVar) h_memSpec with h_zero | h_one
+      · exact False.elim (h_sel_ne_zero h_zero)
+      · exact h_one
+    have h_raw_msg :
+        (((MemBusChannel.emitted component.rowInputVar.sel
+            (ZiskFv.AirsClean.Mem.memBusMessageExpr component.rowInputVar)).toRaw).eval
+            providerEnv).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_eval, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval providerEnv
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr component.rowInputVar)).mem_op =
+            (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq
+        (mainMsg := mainMsg)
+        (providerMsg := ZiskFv.AirsClean.Mem.memBusMessageExpr component.rowInputVar)
+        (mainMult := mainMult)
+        (providerMult := component.rowInputVar.sel)
+        (mainEnv := mainTable.environment mainRow)
+        (providerEnv := providerEnv)
+        h_raw_msg
+    have h_wr_add_one :
+        (eval providerEnv component.rowInputVar).wr + 1 = 2 := by
+      calc
+        (eval providerEnv component.rowInputVar).wr + 1 =
+            (eval providerEnv
+              (ZiskFv.AirsClean.Mem.memBusMessageExpr component.rowInputVar)).mem_op := by
+              simp [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr,
+                ZiskFv.AirsClean.Mem.memBusMessage]
+        _ = (eval (mainTable.environment mainRow) mainMsg).mem_op := h_provider_mem_op
+        _ = 2 := h_main_mem_op
+    have h_wr :
+        (eval providerEnv component.rowInputVar).wr = 1 := by
+      have h_sub := congrArg (fun x => x - 1) h_wr_add_one
+      simpa using h_sub
+    have h_match :
+        ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+          (memPrimaryReplayEntryOfRow
+            (eval providerEnv
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)) := by
+      have h_trans :=
+        ZiskFv.Airs.MemoryBus.matches_memory_entry_trans h_entry h_provider_match
+      simpa [providerEnv, component, memPrimaryReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.eval_memBusMessageExpr, h_wr] using h_trans
+    exact mem_primary_replay_entry_mem_of_active_replay_embedded_trace_row_match
+      (h_embedded providerTable h_providerTable_mem h_providerComponent)
+      h_providerRow_mem (by simpa [component, providerEnv] using h_sel)
+      (by simpa [providerEnv, h_wr] using h_match)
+  · rcases h_dual with ⟨h_eval, _h_provider_match⟩
+    have h_raw_msg :
+        (((MemBusChannel.emitted component.rowInputVar.sel_dual
+            (ZiskFv.AirsClean.Mem.memBusDualMessageExpr component.rowInputVar)).toRaw).eval
+            providerEnv).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_eval, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval providerEnv
+          (ZiskFv.AirsClean.Mem.memBusDualMessageExpr component.rowInputVar)).mem_op =
+            (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq
+        (mainMsg := mainMsg)
+        (providerMsg := ZiskFv.AirsClean.Mem.memBusDualMessageExpr component.rowInputVar)
+        (mainMult := mainMult)
+        (providerMult := component.rowInputVar.sel_dual)
+        (mainEnv := mainTable.environment mainRow)
+        (providerEnv := providerEnv)
+        h_raw_msg
+    have h_bad := h_provider_mem_op
+    simp [providerEnv, component, ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr,
+      ZiskFv.AirsClean.Mem.memBusDualMessage, h_main_mem_op] at h_bad
+
 /-- Non-mutable provider branches of `ActiveMainMemProviderRowMatchSpec`.
 
 For subword loads, some MemAlign branches are legitimate intermediate routes

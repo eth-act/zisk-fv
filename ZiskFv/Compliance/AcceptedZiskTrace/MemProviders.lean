@@ -224,6 +224,47 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbe
   exact activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_one
     h_mutable h_mainEval h_main_mem_op h_entry h_embedded
 
+/-- Accepted-trace wrapper for selected Main stores whose PIL memory opcode is
+    syntactically `mem_op = 2`.
+
+The Clean Main interaction is still an active pull (`mult = -1`), while the
+legacy execution row being matched is a write row (`multiplicity = 1`,
+`as = 2`). The primary Mem `wr = 1` fact and impossible dual branch are
+derived from Clean message equality. -/
+theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbedded_of_main_mem_op_two
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {mainRow : Array FGL}
+    (h_mainRow : mainRow ∈ trace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (trace.mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_mem_op :
+      (eval (trace.mainTable.environment mainRow) mainMsg).mem_op = 2)
+    {entry : Interaction.MemoryBusEntry FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec trace.program trace.witness
+        trace.mainTable mainRow mainInteraction mainMsg 1 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (trace.mainTable.environment mainRow) mainMsg) 1 2))
+    (h_embedded :
+      MutableActiveMemReplayRowsEmbeddedInTrace trace.witness rows) :
+    entry ∈ rows := by
+  have h_mutable :=
+    (trace.activeMainMutableMemProviderRowMatchSpec_of_active_main_eval_no_nonmutable
+      h_mainRow h_mainInteraction h_mainEval h_active h_no_nonmutable).2
+  exact activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_two
+    h_mutable h_mainEval h_main_mem_op h_entry h_embedded
+
 /-- The accepted trace's source-correlation certificate gives the replay-bridge
     coverage predicate used by Mem replay embedding lemmas. -/
 theorem AcceptedZiskTrace.memReplayBridge_coversMutableMemTables
@@ -272,6 +313,40 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_
           (eval (trace.mainTable.environment mainRow) mainMsg) (-1) 2)) :
     entry ∈ trace.memReplayRows h_nonempty := by
   exact trace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbedded_of_main_mem_op_one
+    h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op h_no_nonmutable h_entry
+    (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
+      (trace.memReplayBridge h_nonempty)
+      (trace.memReplayBridge_coversMutableMemTables h_nonempty))
+
+/-- Accepted-trace replay-bridge wrapper for selected Main stores whose PIL
+    memory opcode is syntactically `mem_op = 2`. -/
+theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_two
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (h_nonempty : 0 < trace.numInstructions)
+    {mainRow : Array FGL}
+    (h_mainRow : mainRow ∈ trace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (trace.mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_mem_op :
+      (eval (trace.mainTable.environment mainRow) mainMsg).mem_op = 2)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec trace.program trace.witness
+        trace.mainTable mainRow mainInteraction mainMsg 1 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (trace.mainTable.environment mainRow) mainMsg) 1 2)) :
+    entry ∈ trace.memReplayRows h_nonempty := by
+  exact trace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbedded_of_main_mem_op_two
     h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op h_no_nonmutable h_entry
     (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
       (trace.memReplayBridge h_nonempty)

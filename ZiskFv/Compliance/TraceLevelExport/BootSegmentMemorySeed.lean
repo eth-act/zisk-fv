@@ -281,7 +281,51 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProv
       h_nonempty h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op
       h_no_nonmutable h_entry)
 
+/-- Store analogue of
+`BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProviderEntry`.
+
+The Clean Main interaction is an active pull (`mult = -1`), while the legacy
+execution row is a write row (`multiplicity = 1`, `as = 2`). -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableStoreMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    {mainRow : Array FGL}
+    (h_mainRow : mainRow ∈ ziskTrace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ ziskTrace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (ziskTrace.mainTable.environment mainRow))
+    (h_active : mainInteraction.mult = -1)
+    (h_main_mem_op :
+      (eval (ziskTrace.mainTable.environment mainRow) mainMsg).mem_op = 2)
+    {entry : MemoryBusEntry FGL}
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable mainRow mainInteraction mainMsg 1 2)
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (ziskTrace.mainTable.environment mainRow) mainMsg) 1 2)) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_two
+      h_nonempty h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op
+      h_no_nonmutable h_entry)
+
 @[reducible] noncomputable def loadBMemMainRow
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Array FGL :=
+  ziskTrace.mainTable.table.get ⟨i.val, ziskTrace.mainTable_index i⟩
+
+@[reducible] noncomputable def storeCMemMainRow
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) : Array FGL :=
   ziskTrace.mainTable.table.get ⟨i.val, ziskTrace.mainTable_index i⟩
@@ -290,6 +334,13 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProv
     (ziskTrace : AcceptedZiskTrace numInstructions) :
     ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL) :=
   ZiskFv.AirsClean.Main.bMemMessageExpr
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+      numInstructions ziskTrace.program).rowInputVar
+
+@[reducible] def storeCMemMainMessage
+    (ziskTrace : AcceptedZiskTrace numInstructions) :
+    ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL) :=
+  ZiskFv.AirsClean.Main.cMemMessageExpr
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
       numInstructions ziskTrace.program).rowInputVar
 
@@ -302,12 +353,28 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProv
     + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
         numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg)
 
+@[reducible] def storeCMemMainMultiplicity
+    (ziskTrace : AcceptedZiskTrace numInstructions) : Expression FGL :=
+  -((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        numInstructions ziskTrace.program).rowInputVar.rom.store_mem
+    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        numInstructions ziskTrace.program).rowInputVar.rom.store_ind
+    + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        numInstructions ziskTrace.program).rowInputVar.rom.store_reg)
+
 @[reducible] noncomputable def loadBMemMainInteraction
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) : Interaction FGL :=
   (((MemBusChannel.emitted (loadBMemMainMultiplicity ziskTrace)
     (loadBMemMainMessage ziskTrace)).toRaw).eval
     (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i)))
+
+@[reducible] noncomputable def storeCMemMainInteraction
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Interaction FGL :=
+  (((MemBusChannel.emitted (storeCMemMainMultiplicity ziskTrace)
+    (storeCMemMainMessage ziskTrace)).toRaw).eval
+    (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i)))
 
 /-- Load-`b` specialization of the selected general-MemAlign prove-branch
 pins. This names the remaining syntactic residue needed to follow a general
@@ -440,6 +507,116 @@ theorem AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry
     rw [h_msg_eval]
     simp
   exact ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_one
+    h_nonempty h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
+    h_no_nonmutable h_entry
+
+/-- Store-`c` analogue of `AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry`.
+
+Accepted trace data proves the concrete store write row occurs in accepted Mem
+replay rows before the seed-specific order certificate is used. The remaining
+residue is the syntactic exclusion of non-mutable provider branches for the
+store-shaped Main message. -/
+theorem AcceptedZiskTrace.memReplayRows_of_storeCMemProviderEntry
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    (h_store_ind : (mainRowWithRomSt ziskTrace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt ziskTrace i).rom.store_mem
+        + (mainRowWithRomSt ziskTrace i).rom.store_ind
+        + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+        (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2) :
+    (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2 ∈
+      ziskTrace.memReplayRows h_nonempty := by
+  have h_mainRow : storeCMemMainRow ziskTrace i ∈ ziskTrace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, ziskTrace.mainTable_index i⟩, rfl⟩
+  have h_mainInteraction :
+      storeCMemMainInteraction ziskTrace i ∈
+        ziskTrace.mainTable.interactionsWith MemBusChannel.toRaw := by
+    simpa [storeCMemMainInteraction, storeCMemMainRow, storeCMemMainMessage] using
+      RomDecodeBinding.mainRowWithRomSt_cMemInteraction_mem ziskTrace i
+  have h_mainEval :
+      storeCMemMainInteraction ziskTrace i =
+        ((MemBusChannel.emitted (storeCMemMainMultiplicity ziskTrace)
+          (storeCMemMainMessage ziskTrace)).toRaw).eval
+          (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i)) := rfl
+  have h_row_eval :
+      eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            numInstructions ziskTrace.program).rowInputVar =
+        mainRowWithRomSt ziskTrace i := by
+    simpa [storeCMemMainRow, mainRowWithRomSt] using
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
+        ziskTrace.program ziskTrace.mainTable
+        ⟨i.val, ziskTrace.mainTable_index i⟩).symm
+  have h_active_mult :
+      Expression.eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+          (storeCMemMainMultiplicity ziskTrace) = (-1 : FGL) := by
+    have h_source_sum :=
+      ZiskFv.AirsClean.Main.eval_cSourceSumExpr
+        (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          numInstructions ziskTrace.program).rowInputVar
+    have h_source_sum' :
+        Expression.eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+            ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.store_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.store_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.store_reg) =
+          (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar).rom.store_mem
+            + (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar).rom.store_ind
+            + (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar).rom.store_reg := by
+      simpa using h_source_sum
+    rw [storeCMemMainMultiplicity]
+    change
+      (-1 : FGL) *
+          Expression.eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+            ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.store_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.store_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.store_reg) = -1
+    rw [h_source_sum', h_row_eval]
+    simpa using h_active
+  have h_active_interaction :
+      (storeCMemMainInteraction ziskTrace i).mult = -1 := by
+    rw [h_mainEval]
+    change
+      Expression.eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+        (storeCMemMainMultiplicity ziskTrace) = -1
+    exact h_active_mult
+  have h_msg_eval :
+      eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+          (storeCMemMainMessage ziskTrace) =
+        ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt ziskTrace i) := by
+    rw [storeCMemMainMessage, ZiskFv.AirsClean.Main.eval_cMemMessageExpr, h_row_eval]
+  have h_main_mem_op :
+      (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+        (storeCMemMainMessage ziskTrace)).mem_op = 2 := by
+    rw [h_msg_eval]
+    exact RomDecodeBinding.mainRowWithRomSt_cMemMessage_mem_op_eq_two_of_active
+      ziskTrace i h_store_ind h_active
+  have h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
+            (storeCMemMainMessage ziskTrace)) 1 2) := by
+    rw [h_msg_eval]
+    simp
+  exact ziskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_two
     h_nonempty h_mainRow h_mainInteraction h_mainEval h_active_interaction h_main_mem_op
     h_no_nonmutable h_entry
 
@@ -1114,6 +1291,25 @@ def ZiskStepLoadMemoryRows
   | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
       False
 
+/-- Structural decoded steps that emit a store memory row. -/
+def ZiskStepStoreMemoryRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
+  | .sb _ | .sh _ | .sw _ | .sd _ =>
+      True
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _
+  | .sub _ | .and _ | .or _ | .xor _ | .slt _ | .sltu _
+  | .andi _ | .ori _ | .xori _ | .slti _ | .sltiu _
+  | .sll _ | .srl _ | .sra _ | .slli _ | .srli _ | .srai _
+  | .add _ | .addi _ | .subw _ | .addw _ | .addiw _
+  | .sllw _ | .srlw _ | .sraw _ | .slliw _ | .srliw _ | .sraiw _
+  | .mul _ | .mulh _ | .mulhsu _ | .mulw _ | .mulhu _
+  | .div _ | .rem _ | .divw _ | .remw _ | .divu _ | .divuw _
+  | .remu _ | .remuw _
+  | .beq _ | .bne _ | .blt _ | .bge _ | .bltu _ | .bgeu _
+  | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
+      False
+
 /-- Scoped structural row correspondence for direct mutable-Mem load rows.
 
 For a decoded load step, any row in `memoryRowsOfStep` is the concrete `busLd.e1`
@@ -1188,6 +1384,58 @@ theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_load_no_nonm
     exact ziskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
       h_nonempty i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign
 
+/-- Scoped structural row correspondence for direct mutable-Mem store rows.
+
+For a decoded store step, any row in `memoryRowsOfStep` is the concrete
+`busSt.e2` write row. Accepted provider coverage places that row in accepted
+Mem replay rows before any seed-specific order transport is used. -/
+theorem AcceptedZiskTrace.memReplayRows_of_storeMemoryRowsOfStep_of_no_nonmutableBranches
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_store_ind : (mainRowWithRomSt ziskTrace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt ziskTrace i).rom.store_mem
+        + (mainRowWithRomSt ziskTrace i).rom.store_ind
+        + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+        (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty := by
+  cases step <;> simp [ZiskStepStoreMemoryRows, memoryRowsOfStep] at h_store h_entry
+  all_goals
+    subst entry
+    exact ziskTrace.memReplayRows_of_storeCMemProviderEntry
+      h_nonempty i h_store_ind h_active h_no_nonmutable
+
+/-- Duplicate-sensitive singleton form of the scoped direct-Mem store
+correspondence. -/
+theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_store_no_nonmutableBranches
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_store_ind : (mainRowWithRomSt ziskTrace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt ziskTrace i).rom.store_mem
+        + (mainRowWithRomSt ziskTrace i).rom.store_ind
+        + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+        (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2) :
+    (memoryRowsOfStep ziskTrace i step).Subperm (ziskTrace.memReplayRows h_nonempty) := by
+  cases step <;> simp [ZiskStepStoreMemoryRows, memoryRowsOfStep] at h_store ⊢
+  all_goals
+    exact ziskTrace.memReplayRows_of_storeCMemProviderEntry
+      h_nonempty i h_store_ind h_active h_no_nonmutable
+
 /-- Seed-order transport wrapper for the scoped structural load correspondence.
 
 The accepted trace proves the structural load row occurs in accepted Mem replay
@@ -1259,6 +1507,64 @@ theorem BootSegmentReadSoundInputs.memoryRowsOfStep_subperm_executionRows_of_loa
   all_goals
     have h_mem := inputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
       i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign
+    simpa using List.mem_flatMap.mp h_mem
+
+/-- Seed-order transport wrapper for the scoped structural store correspondence.
+
+The accepted trace proves the structural store row occurs in accepted Mem replay
+rows; the seed's replay-safe order certificate transports it to the full
+execution-order row list. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_storeMemoryRowsOfStep_of_no_nonmutableBranches
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_store_ind : (mainRowWithRomSt ziskTrace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt ziskTrace i).rom.store_mem
+        + (mainRowWithRomSt ziskTrace i).rom.store_ind
+        + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+        (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.memReplayRows_of_storeMemoryRowsOfStep_of_no_nonmutableBranches
+      h_nonempty i h_store h_store_ind h_active h_no_nonmutable h_entry)
+
+/-- Duplicate-sensitive singleton form after seed order transport. -/
+theorem BootSegmentReadSoundInputs.memoryRowsOfStep_subperm_executionRows_of_store_no_nonmutableBranches
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_store_ind : (mainRowWithRomSt ziskTrace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt ziskTrace i).rom.store_mem
+        + (mainRowWithRomSt ziskTrace i).rom.store_ind
+        + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+        (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2) :
+    (memoryRowsOfStep ziskTrace i step).Subperm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  cases step <;> simp [ZiskStepStoreMemoryRows, memoryRowsOfStep] at h_store ⊢
+  all_goals
+    have h_mem := inputs.mem_executionRows_of_memReplayRows
+      (ziskTrace.memReplayRows_of_storeCMemProviderEntry
+        h_nonempty i h_store_ind h_active h_no_nonmutable)
     simpa using List.mem_flatMap.mp h_mem
 
 /-- The full execution-order memory-bus row list obtained directly from the

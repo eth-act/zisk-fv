@@ -386,6 +386,46 @@ theorem mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
     (by simpa [mainRowWithRomLd] using h_b_src_reg_bool)
     h_b_src_ind h_active
 
+/-- An active Main `c`-side store selector gives the PIL memory opcode literal
+`2`.
+
+The active pull multiplicity pins `store_mem + store_ind + store_reg = 1`.
+When store decode gives `store_ind = 1`, Booleanity forces the direct-memory
+and register-write alternatives off, so Main's `cMemMessage.mem_op` is the
+store opcode. -/
+theorem cMemMessage_mem_op_eq_two_of_active_store_ind
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_store_mem_bool : row.rom.store_mem * (1 - row.rom.store_mem) = 0)
+    (h_store_reg_bool : row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h_store_ind : row.rom.store_ind = 1)
+    (h_active :
+      -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.cMemMessage row).mem_op = 2 := by
+  obtain ⟨d_mem, h_mem⟩ := bool_of_booleanity h_store_mem_bool
+  obtain ⟨d_reg, h_reg⟩ := bool_of_booleanity h_store_reg_bool
+  cases d_mem <;> cases d_reg <;>
+    simp [h_mem, h_reg, h_store_ind, ZiskFv.AirsClean.boolF_true,
+      ZiskFv.AirsClean.boolF_false] at h_active ⊢
+
+/-- Store-row specialization of `cMemMessage_mem_op_eq_two_of_active_store_ind`
+using accepted-trace Main flag Booleanity. -/
+theorem mainRowWithRomSt_cMemMessage_mem_op_eq_two_of_active
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_store_ind : (mainRowWithRomSt trace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt trace i).rom.store_mem
+        + (mainRowWithRomSt trace i).rom.store_ind
+        + (mainRowWithRomSt trace i).rom.store_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)).mem_op = 2 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, h_store_mem_bool, _, _, _, _, h_store_reg_bool⟩ :=
+    mainRow_flags_boolean trace ⟨i.val, trace.mainTable_index i⟩
+  exact cMemMessage_mem_op_eq_two_of_active_store_ind (mainRowWithRomSt trace i)
+    (by simpa [mainRowWithRomSt] using h_store_mem_bool)
+    (by simpa [mainRowWithRomSt] using h_store_reg_bool)
+    h_store_ind h_active
+
 /-- The concrete Main `b` memory-bus interaction for a load row is present in
 the accepted Main table's memory-bus interaction list. -/
 theorem mainRowWithRomLd_bMemInteraction_mem
@@ -397,6 +437,31 @@ theorem mainRowWithRomLd_bMemInteraction_mem
         + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_ind
         + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_reg))
       (ZiskFv.AirsClean.Main.bMemMessageExpr
+        (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
+      (trace.mainTable.environment
+        (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
+      ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw := by
+  have h_row_mem :
+      trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩ ∈ trace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, trace.mainTable_index i⟩, rfl⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ?_
+  refine ⟨trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩, h_row_mem, ?_⟩
+  simp [AcceptedZiskTrace.numInstructions, Operations.interactionValuesWith_eq_map,
+    trace.mainTable_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+
+/-- The concrete Main `c` memory-bus interaction for a store row is present in
+the accepted Main table's memory-bus interaction list. -/
+theorem mainRowWithRomSt_cMemInteraction_mem
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_mem
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_ind
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_reg))
+      (ZiskFv.AirsClean.Main.cMemMessageExpr
         (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
       (trace.mainTable.environment
         (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
