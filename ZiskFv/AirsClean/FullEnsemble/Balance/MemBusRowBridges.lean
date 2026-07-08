@@ -1736,6 +1736,68 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMa
   exact
     { provider := Or.inl ⟨0, h_match, h_width⟩ }
 
+/-- ROM/value residue for the selected general MemAlign load-provider row.
+
+The row-local memory-bus match gives the provider row and the payload equality,
+but the legacy subdoubleword witness also needs the MemAlignRom-mediated width,
+high-value-zero, and low-value range facts. Keeping these facts in one named
+predicate makes the remaining general-MemAlign burden explicit without folding
+it into read-soundness or memory replay. -/
+def MemAlignLoadProviderRomValueFacts
+    {length : ℕ} (program : Program length)
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∀ providerTable providerRow,
+    providerTable ∈ witness.allTables →
+    providerRow ∈ providerTable.table →
+    providerTable.component.Spec (providerTable.environment providerRow) →
+    providerTable.component = ZiskFv.AirsClean.MemAlign.component →
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
+      (ZiskFv.AirsClean.MemAlign.validOfRow
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+      0 entry →
+    let ma :=
+      ZiskFv.AirsClean.MemAlign.validOfRow
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+    ma.width 0 = main.ind_width r_main
+      ∧ ma.value_1 0 = 0
+      ∧ (ma.width 0 = 1 → (ma.value_0 0).val < 256)
+      ∧ (ma.width 0 = 2 → (ma.value_0 0).val < 65536)
+
+/-- A structural general-MemAlign load-provider row supplies the corresponding
+    branch of the legacy subdoubleword provider witness once the explicit
+    ROM/value residue is available. -/
+theorem exists_subdoublewordLoadProviderWitness_of_memAlignLoadProviderRowMatchSpec
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL}
+    {marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL}
+    {r_main : ℕ} {entry : Interaction.MemoryBusEntry FGL}
+    (h_rom :
+      MemAlignLoadProviderRomValueFacts program witness main r_main entry)
+    (h_provider : MemAlignLoadProviderRowMatchSpec program witness entry) :
+    ∃ ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL,
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        main mab marb ma r_main entry := by
+  rcases h_provider with
+    ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_spec, h_component, h_match⟩
+  let ma :=
+    ZiskFv.AirsClean.MemAlign.validOfRow
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+  obtain ⟨h_width, h_value_1_zero, h_v0_lt_1, h_v0_lt_2⟩ :=
+    h_rom providerTable providerRow h_providerTable h_providerRow h_spec h_component h_match
+  refine ⟨ma, ?_⟩
+  exact
+    { provider := Or.inr (Or.inr
+        ⟨0, h_match, h_width, h_value_1_zero, h_v0_lt_1, h_v0_lt_2⟩) }
+
 /-- Follow an active Main -> MemAlignReadByte provider branch to the concrete
     structural load-row predicate consumed by the subdoubleword MemAlign bridge. -/
 theorem memAlignReadByteLoadProviderRowMatchSpec_of_activeMain_branch

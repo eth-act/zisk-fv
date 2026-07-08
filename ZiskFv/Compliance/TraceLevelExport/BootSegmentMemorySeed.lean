@@ -288,6 +288,17 @@ abbrev LoadBSelectedMemAlignPins
   ActiveMainMemAlignSelectedProveBranchPins ziskTrace.witness
     (loadBMemMainInteraction ziskTrace i)
 
+/-- Load-`b` specialization of the explicit general-MemAlign ROM/value residue
+needed to turn a structural provider row into the legacy subdoubleword provider
+witness. -/
+abbrev LoadBMemAlignRomValueFacts
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (entry : MemoryBusEntry FGL) : Prop :=
+  MemAlignLoadProviderRomValueFacts ziskTrace.program ziskTrace.witness
+    main r_main entry
+
 /-- Load-specific wrapper for the accepted mutable-Mem provider path.
 
 The generic theorem still needs an active Main interaction, its evaluated
@@ -679,6 +690,63 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_or_memAlignProvi
         (main := main) (marb := marb) (ma := ma) (r_main := r_main)
         h_width h_mab)))
   · exact Or.inr (Or.inr (Or.inr h_memAlign))
+
+/-- Load `b` provider coverage with every MemAlign-family branch converted to
+the legacy subdoubleword provider-witness shape.
+
+The mutable-Mem branch still proves execution-row membership. All MemAlign
+branches now return a `SubdoublewordLoadProviderWitness`; the general branch
+does so only after the caller supplies the explicit ROM/value residue for the
+selected structural provider row. -/
+theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_of_loadBMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
+    (r_main : ℕ)
+    (h_width : main.ind_width r_main = 1)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i)
+    (h_generalMemAlignRomValues :
+      ∀ entry,
+        ZiskFv.Airs.MemoryBus.matches_memory_entry
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+        LoadBMemAlignRomValueFacts ziskTrace main r_main entry) :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+        ∨ ∃ mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL,
+          ∃ marb' : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL,
+          ∃ ma' : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL,
+            ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+              main mab' marb' ma' r_main entry) := by
+  obtain ⟨entry, h_entry, h_provider⟩ :=
+    inputs.mem_or_subdoublewordProvider_or_memAlignProvider_of_loadBMemProviderEntry
+      i main mab marb ma r_main h_width h_b_src_ind h_active h_selectedMemAlignPins
+  refine ⟨entry, h_entry, ?_⟩
+  rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
+  · exact Or.inl h_mem
+  · rcases h_marb with ⟨marb', h_provider⟩
+    exact Or.inr ⟨mab, marb', ma, h_provider⟩
+  · rcases h_mab with ⟨mab', h_provider⟩
+    exact Or.inr ⟨mab', marb, ma, h_provider⟩
+  · rcases
+      exists_subdoublewordLoadProviderWitness_of_memAlignLoadProviderRowMatchSpec
+        (main := main) (mab := mab) (marb := marb) (r_main := r_main)
+        (h_generalMemAlignRomValues entry h_entry) h_memAlign with
+      ⟨ma', h_provider⟩
+    exact Or.inr ⟨mab, marb, ma', h_provider⟩
 
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
