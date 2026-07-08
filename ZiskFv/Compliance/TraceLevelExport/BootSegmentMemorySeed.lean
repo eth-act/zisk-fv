@@ -1095,6 +1095,172 @@ noncomputable def memoryRowsOfStep
   | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
       []
 
+/-- Structural decoded steps that emit a load memory row. -/
+def ZiskStepLoadMemoryRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _ =>
+      True
+  | .sb _ | .sh _ | .sw _ | .sd _
+  | .sub _ | .and _ | .or _ | .xor _ | .slt _ | .sltu _
+  | .andi _ | .ori _ | .xori _ | .slti _ | .sltiu _
+  | .sll _ | .srl _ | .sra _ | .slli _ | .srli _ | .srai _
+  | .add _ | .addi _ | .subw _ | .addw _ | .addiw _
+  | .sllw _ | .srlw _ | .sraw _ | .slliw _ | .srliw _ | .sraiw _
+  | .mul _ | .mulh _ | .mulhsu _ | .mulw _ | .mulhu _
+  | .div _ | .rem _ | .divw _ | .remw _ | .divu _ | .divuw _
+  | .remu _ | .remuw _
+  | .beq _ | .bne _ | .blt _ | .bge _ | .bltu _ | .bgeu _
+  | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
+      False
+
+/-- Scoped structural row correspondence for direct mutable-Mem load rows.
+
+For a decoded load step, any row in `memoryRowsOfStep` is the concrete `busLd.e1`
+row. Accepted provider coverage plus the remaining syntactic MemAlign-family
+exclusion residue place that row in the accepted Mem replay rows before any
+seed-specific order transport is used. -/
+theorem AcceptedZiskTrace.memReplayRows_of_loadMemoryRowsOfStep_of_no_nonmutableBranches
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty := by
+  cases step <;> simp [ZiskStepLoadMemoryRows, memoryRowsOfStep] at h_load h_entry
+  all_goals
+    subst entry
+    exact ziskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+      h_nonempty i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign
+
+/-- Duplicate-sensitive singleton form of the scoped direct-Mem load
+correspondence.
+
+Each structural load step emits exactly one memory row, so membership in the
+accepted replay rows is equivalently a subpermutation of that singleton row
+list. This is the per-step bag-correspondence shape needed by later list
+assembly. -/
+theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_load_no_nonmutableBranches
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
+    (memoryRowsOfStep ziskTrace i step).Subperm (ziskTrace.memReplayRows h_nonempty) := by
+  cases step <;> simp [ZiskStepLoadMemoryRows, memoryRowsOfStep] at h_load ⊢
+  all_goals
+    exact ziskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+      h_nonempty i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign
+
+/-- Seed-order transport wrapper for the scoped structural load correspondence.
+
+The accepted trace proves the structural load row occurs in accepted Mem replay
+rows; the seed's replay-safe order certificate transports it to the full
+execution-order row list. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadMemoryRowsOfStep_of_no_nonmutableBranches
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.memReplayRows_of_loadMemoryRowsOfStep_of_no_nonmutableBranches
+      h_nonempty i h_load h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign h_entry)
+
+/-- Duplicate-sensitive singleton form after seed order transport. -/
+theorem BootSegmentReadSoundInputs.memoryRowsOfStep_subperm_executionRows_of_load_no_nonmutableBranches
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
+    (memoryRowsOfStep ziskTrace i step).Subperm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  cases step <;> simp [ZiskStepLoadMemoryRows, memoryRowsOfStep] at h_load ⊢
+  all_goals
+    have h_mem := inputs.mem_executionRows_of_loadBMemProviderEntry_of_no_nonmutableBranches
+      i h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign
+    simpa using List.mem_flatMap.mp h_mem
+
 /-- The full execution-order memory-bus row list obtained directly from the
 structural per-step decoder view. -/
 noncomputable def executionMemoryRowsOfSteps
