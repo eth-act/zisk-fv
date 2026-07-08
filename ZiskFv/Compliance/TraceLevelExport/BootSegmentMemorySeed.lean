@@ -2162,6 +2162,21 @@ private abbrev memoryBusEntryDecidableCount
   @List.count (MemoryBusEntry FGL)
     (@instBEqOfDecidableEq (MemoryBusEntry FGL) inferInstance) entry rows
 
+/-- Named row-count certificate for the #115 / #219 boundary.
+
+This is deliberately only a cardinality statement: scoped direct-Mem support inclusion plus
+structural `Nodup` supply the permutation proof. The remaining content is that the accepted active
+Mem replay table emits exactly as many rows as the segment's structural direct-Mem execution rows.
+That fact is channel-balance class, and should eventually be derived from whole-channel accepted
+trace construction rather than from memory read-soundness. -/
+structure ScopedDirectMemReplayLengthCertificate
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (rowsOf : ℕ → List (MemoryBusEntry FGL))
+    (h_nonempty : 0 < ziskTrace.numInstructions) : Prop where
+  length_eq :
+    (ziskTrace.memReplayRows h_nonempty).length =
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf).length
+
 private theorem fgl_neg_one_ne_one : ¬ ((-1 : FGL) = (1 : FGL)) := by
   intro h
   have hv := congrArg Fin.val h
@@ -4135,6 +4150,23 @@ theorem BootSegmentMemorySeed.memReplayRows_perm_executionRows_scopedDirect_nodu
   ziskTrace.memReplayRows_perm_executionRows_of_scopedDirect_placement_nodup
     h_nonempty seed.placement h_steps h_nodup h_length
 
+/-- Seed-level permutation wrapper using the named row-count certificate. -/
+theorem BootSegmentMemorySeed.memReplayRows_perm_executionRows_scopedDirect_rowCount
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_nodup : ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Nodup)
+    (h_rowCount :
+      ScopedDirectMemReplayLengthCertificate ziskTrace seed.rowsOf h_nonempty) :
+    (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  seed.memReplayRows_perm_executionRows_scopedDirect_nodup
+    h_nonempty h_steps h_nodup h_rowCount.length_eq
+
 /-- Structural row correspondence plus pairwise-safe accepted replay rows yield
 the concrete boot replay-safe order certificate once placement identifies
 `rowsOf` with `executionMemoryRowsOfSteps`. -/
@@ -4629,6 +4661,27 @@ def bootSegmentReadSoundInputs_of_scopedDirect_sourceTargetChronology_main_step_
     memoryRowsOfStep_mainStep_timestamp_separated_of_main_step_index_fixed
     h_length
 
+/-- Store-inclusive scoped direct-Mem input assembly from the named row-count
+certificate. -/
+def bootSegmentReadSoundInputs_of_scopedDirect_sourceTargetChronology_rowCount
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_rowCount : ScopedDirectMemReplayLengthCertificate ziskTrace rowsOf h_nonempty) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_scopedDirect_sourceTargetChronology_main_step_index_fixed
+    h_initialMemory h_placement h_scoped h_rowCount.length_eq
+
 /-- Store-inclusive scoped direct-Mem read-soundness from structural
 deduplication plus length equality. -/
 theorem readSound_of_scopedDirect_sourceTargetChronology_nodup
@@ -4705,6 +4758,70 @@ theorem readSound_of_scopedDirect_sourceTargetChronology_main_step_index_fixed
   readSound_of_bootSegmentReadSoundInputs
     (bootSegmentReadSoundInputs_of_scopedDirect_sourceTargetChronology_main_step_index_fixed
       h_initialMemory h_placement h_scoped h_length)
+
+/-- Store-inclusive scoped direct-Mem read-soundness from the named row-count
+certificate. -/
+theorem readSound_of_scopedDirect_sourceTargetChronology_rowCount
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_rowCount : ScopedDirectMemReplayLengthCertificate ziskTrace rowsOf h_nonempty) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_scopedDirect_sourceTargetChronology_main_step_index_fixed
+    h_initialMemory h_placement h_scoped h_rowCount.length_eq
+
+/-- Seed-level store-inclusive scoped direct-Mem input assembly from the named
+row-count certificate. -/
+def BootSegmentMemorySeed.readSoundInputs_of_scopedDirect_sourceTargetChronology_rowCount
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      seed.memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_rowCount :
+      ScopedDirectMemReplayLengthCertificate ziskTrace seed.rowsOf h_nonempty) :
+    BootSegmentReadSoundInputs ziskTrace seed.memInit seed.rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_scopedDirect_sourceTargetChronology_rowCount
+    h_initialMemory seed.placement h_scoped h_rowCount
+
+/-- Seed-level store-inclusive scoped direct-Mem read-soundness from the named
+row-count certificate. -/
+theorem BootSegmentMemorySeed.readSound_of_scopedDirect_sourceTargetChronology_rowCount
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      seed.memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_rowCount :
+      ScopedDirectMemReplayLengthCertificate ziskTrace seed.rowsOf h_nonempty) :
+    MemoryBusRowsPrefixReadSound
+      seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (seed.readSoundInputs_of_scopedDirect_sourceTargetChronology_rowCount
+      h_initialMemory h_scoped h_rowCount)
 
 /-- If every decoded step emits only replay-neutral memory rows, then the full
 structural execution-row list contains no active memory writes. -/
