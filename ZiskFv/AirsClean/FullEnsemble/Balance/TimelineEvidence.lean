@@ -172,6 +172,65 @@ theorem activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsB
   exact activeMemReplayEntriesOfRow_chronological_of_spec_of_dual_step_le
     h_spec_row h_step_le_of_dual
 
+/-- In one generated Mem row, the primary replay entry is chronologically no
+later than any active replay entry projected from that row. -/
+theorem primaryReplayEntry_timestamp_le_activeMemReplayEntry_of_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val)) :
+    (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val)).timestamp.toNat ≤
+      entry.timestamp.toNat := by
+  let row := ZiskFv.AirsClean.Mem.rowAt mem idx.val
+  have h_spec : ZiskFv.AirsClean.Mem.Spec row := by
+    simpa [row] using rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
+  rcases ZiskFv.AirsClean.Mem.sel_dual_boolean_of_spec row h_spec with
+    h_sel_dual_zero | h_sel_dual_one
+  · rcases ZiskFv.AirsClean.Mem.sel_boolean_of_spec row h_spec with
+      h_sel_zero | h_sel_one
+    · have h_sel_ne : row.sel ≠ 1 := by
+        simp [h_sel_zero]
+      have h_sel_dual_ne : row.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_nil_of_inactive
+        h_sel_ne h_sel_dual_ne] at h_entry
+      cases h_entry
+    · have h_sel_dual_ne : row.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
+        h_sel_one h_sel_dual_ne] at h_entry
+      simp at h_entry
+      subst entry
+      simp [row]
+  · rw [activeMemReplayEntriesOfRow_eq_primary_dual_of_spec_of_sel_dual
+      h_spec h_sel_dual_one] at h_entry
+    simp at h_entry
+    rcases h_entry with h_entry_primary | h_entry_dual
+    · subst entry
+      simp [row]
+    · subst entry
+      have h_sel_dual_mem : mem.sel_dual idx.val = 1 := by
+        simpa [row, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual_one
+      have h_step_le :
+          (ZiskFv.AirsClean.Mem.rowAt mem idx.val).step.val ≤
+            (ZiskFv.AirsClean.Mem.rowAt mem idx.val).step_dual.val :=
+        ZiskFv.AirsClean.Mem.rowAt_step_le_step_dual_of_dual_step_delta_range
+          mem idx.val (h_ranges.stepColumns idx)
+          (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx)
+          (h_ranges.dualStepDelta idx h_sel_dual_mem)
+      simpa [row, memPrimaryReplayEntryOfRow, memDualReadReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.memBusDualMessage]
+        using h_step_le
+
 /-- On a bridged non-boundary same-address Mem table position, if the previous
     `Valid_Mem` row has no dual emission, the previous primary timestamp is no
     later than the current primary timestamp. This is the adjacent-row
@@ -333,6 +392,63 @@ theorem previous_activeMemReplayEntry_timestamp_le_current_primary_of_fullWitnes
       h_bridge.generatedRows h_bridge.rowRanges idx h_same_addr
       (h_fixed.segmentL1_nonfirst idx h_idx_pos) h_entry
 
+/-- The previous generated Mem row's primary timestamp is chronologically no
+later than the current primary timestamp at a non-boundary same-address row.
+
+This helper is intentionally about the primary entry, not active membership:
+transitive same-address chains may pass through inactive rows, but their
+primary timestamps still participate in the generated monotone step chain. -/
+theorem previous_primaryReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0) :
+    (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))).timestamp.toNat ≤
+      (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val)).timestamp.toNat := by
+  let previousIdx : Fin table.table.length := ⟨idx.val - 1, by omega⟩
+  let previousRow := ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1)
+  let currentRow := ZiskFv.AirsClean.Mem.rowAt mem idx.val
+  have h_previous_spec :
+      ZiskFv.AirsClean.Mem.Spec previousRow := by
+    simpa [previousRow, previousIdx] using
+      rowAt_spec_of_memTableGeneratedRowsBridge h_bridge previousIdx
+  rcases ZiskFv.AirsClean.Mem.sel_dual_boolean_of_spec
+      previousRow h_previous_spec with
+    h_sel_dual_zero | h_sel_dual_one
+  · have h_no_dual_mem : mem.sel_dual (idx.val - 1) = 0 := by
+      simpa [previousRow, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual_zero
+    have h_le :=
+      previous_primary_step_le_step_of_memTableGeneratedRowsBridge
+        h_bridge h_ranges idx h_same_addr h_not_boundary h_no_dual_mem
+    simpa [previousRow, currentRow, memPrimaryReplayEntryOfRow,
+      ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.rowAt] using h_le
+  · have h_dual_mem : mem.sel_dual (idx.val - 1) = 1 := by
+      simpa [previousRow, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual_one
+    have h_previous_primary_le_dual :
+        (mem.step previousIdx.val).val ≤ (mem.step_dual previousIdx.val).val :=
+      ZiskFv.AirsClean.Mem.rowAt_step_le_step_dual_of_dual_step_delta_range
+        mem previousIdx.val (h_ranges.stepColumns previousIdx)
+        (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge previousIdx)
+        (h_ranges.dualStepDelta previousIdx (by simpa [previousIdx] using h_dual_mem))
+    have h_dual_le_current :=
+      previous_dual_step_le_step_of_memTableGeneratedRowsBridge
+        h_bridge h_ranges idx h_same_addr h_not_boundary h_dual_mem
+    have h_previous_primary_le_current :
+        (mem.step (idx.val - 1)).val ≤ (mem.step idx.val).val := by
+      exact le_trans (by simpa [previousIdx] using h_previous_primary_le_dual)
+        h_dual_le_current
+    simpa [previousRow, currentRow, memPrimaryReplayEntryOfRow,
+      ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.rowAt]
+      using h_previous_primary_le_current
+
 /-- On a bridged non-boundary address-change Mem table position, the previous
     row's address is strictly smaller than the current row's address. This is
     the adjacent address-order step behind the prior-prefix disjointness proof. -/
@@ -423,6 +539,228 @@ theorem addr_le_of_index_le_memTableGeneratedRowsBridge
         have h_n_lt' : n < table.table.length := by omega
         exact le_trans (ih h_n_lt') h_adj
   exact h_mono later.val h_le later.isLt
+
+/-- In a generated Mem table with monotone addresses, any index between two
+equal-address endpoints has that same address. -/
+theorem addr_eq_of_index_between_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (left mid right : Fin table.table.length)
+    (h_left_le_mid : left.val ≤ mid.val)
+    (h_mid_le_right : mid.val ≤ right.val)
+    (h_addr_eq : mem.addr left.val = mem.addr right.val) :
+    mem.addr mid.val = mem.addr right.val := by
+  have h_left_le_mid_addr :
+      (mem.addr left.val).val ≤ (mem.addr mid.val).val :=
+    addr_le_of_index_le_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed left mid h_left_le_mid
+  have h_mid_le_right_addr :
+      (mem.addr mid.val).val ≤ (mem.addr right.val).val :=
+    addr_le_of_index_le_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed mid right h_mid_le_right
+  have h_left_val_eq_right :
+      (mem.addr left.val).val = (mem.addr right.val).val := by
+    exact congrArg Fin.val h_addr_eq
+  apply Fin.ext
+  omega
+
+/-- If a generated Mem row lies inside an equal-address interval, its
+`addr_changes` bit is zero. An address-change bit would make the adjacent
+previous address strictly smaller, contradicting monotonicity plus equal
+endpoints. -/
+theorem addr_changes_eq_zero_of_between_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (left current right : Fin table.table.length)
+    (h_left_lt_current : left.val < current.val)
+    (h_current_le_right : current.val ≤ right.val)
+    (h_addr_eq : mem.addr left.val = mem.addr right.val) :
+    mem.addr_changes current.val = 0 := by
+  let previousIdx : Fin table.table.length := ⟨current.val - 1, by omega⟩
+  have h_previous_eq_right :
+      mem.addr previousIdx.val = mem.addr right.val :=
+    addr_eq_of_index_between_same_addr_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed left previousIdx right (by simp [previousIdx]; omega)
+      (by simp [previousIdx]; omega) h_addr_eq
+  have h_current_eq_right :
+      mem.addr current.val = mem.addr right.val :=
+    addr_eq_of_index_between_same_addr_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed left current right (le_of_lt h_left_lt_current)
+      h_current_le_right h_addr_eq
+  have h_previous_eq_current :
+      mem.addr previousIdx.val = mem.addr current.val :=
+    h_previous_eq_right.trans h_current_eq_right.symm
+  have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge current
+  rcases ZiskFv.AirsClean.Mem.addr_changes_boolean_of_spec
+      (ZiskFv.AirsClean.Mem.rowAt mem current.val) h_spec with
+    h_addr_changes_zero | h_addr_changes_one
+  · simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_changes_zero
+  · have h_addr_changes_one_mem : mem.addr_changes current.val = 1 := by
+      simpa [ZiskFv.AirsClean.Mem.rowAt] using h_addr_changes_one
+    have h_lt :
+        (mem.addr (current.val - 1)).val < (mem.addr current.val).val :=
+      previous_addr_lt_addr_of_addr_change_not_boundary_memTableGeneratedRowsBridge
+        h_bridge h_ranges current h_addr_changes_one_mem
+        (h_fixed.segmentL1_nonfirst current (by omega))
+    have h_val_eq :
+        (mem.addr (current.val - 1)).val = (mem.addr current.val).val := by
+      simpa [previousIdx] using congrArg Fin.val h_previous_eq_current
+    omega
+
+/-- Any active replay entry from a strictly earlier generated Mem row at the
+same address is chronologically no later than the selected row's primary entry.
+
+This transitive same-address chronology fact is the order-side complement to
+the safe-crossing facts: same-address mixed read/write rows are not generally
+swappable, but generated Mem ordering proves earlier same-address rows are
+already before the selected primary event. -/
+theorem prior_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (priorIdx selectedIdx : Fin table.table.length)
+    (h_prior_lt : priorIdx.val < selectedIdx.val)
+    (h_addr_eq : mem.addr priorIdx.val = mem.addr selectedIdx.val)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem priorIdx.val)) :
+    entry.timestamp.toNat ≤
+      (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val)).timestamp.toNat := by
+  have h_chain :
+      ∀ n, priorIdx.val + 1 ≤ n → n ≤ selectedIdx.val → n < table.table.length →
+        entry.timestamp.toNat ≤
+          (memPrimaryReplayEntryOfRow
+            (ZiskFv.AirsClean.Mem.rowAt mem n)).timestamp.toNat := by
+    intro n h_start_le h_n_le_selected h_n_lt
+    induction n, h_start_le using Nat.le_induction with
+    | base =>
+        let currentIdx : Fin table.table.length := ⟨priorIdx.val + 1, by omega⟩
+        have h_same_addr :
+            mem.addr_changes currentIdx.val = 0 :=
+          addr_changes_eq_zero_of_between_same_addr_memTableGeneratedRowsBridge
+            h_bridge h_ranges h_fixed priorIdx currentIdx selectedIdx
+            (by simp [currentIdx]) (by simpa [currentIdx] using h_n_le_selected)
+            h_addr_eq
+        have h_adj :=
+          previous_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+            h_bridge h_ranges currentIdx h_same_addr
+            (h_fixed.segmentL1_nonfirst currentIdx (by simp [currentIdx])) (entry := entry)
+            (by simpa [currentIdx, Nat.add_sub_cancel] using h_entry)
+        simpa [currentIdx] using h_adj
+    | succ n h_start_le_n ih =>
+        let currentIdx : Fin table.table.length := ⟨n + 1, h_n_lt⟩
+        have h_prev_lt : n < table.table.length := by omega
+        have h_prev_le_selected : n ≤ selectedIdx.val := by omega
+        have h_entry_le_previous :=
+          ih h_prev_le_selected h_prev_lt
+        have h_same_addr :
+            mem.addr_changes currentIdx.val = 0 :=
+          addr_changes_eq_zero_of_between_same_addr_memTableGeneratedRowsBridge
+            h_bridge h_ranges h_fixed priorIdx currentIdx selectedIdx
+            (by simp [currentIdx]; omega)
+            (by simpa [currentIdx] using h_n_le_selected)
+            h_addr_eq
+        have h_primary_le_current :=
+          previous_primaryReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+            h_bridge h_ranges currentIdx h_same_addr
+            (h_fixed.segmentL1_nonfirst currentIdx (by simp [currentIdx]))
+        exact le_trans h_entry_le_previous
+          (by simpa [currentIdx] using h_primary_le_current)
+  exact h_chain selectedIdx.val (by omega) le_rfl selectedIdx.isLt
+
+/-- Full-witness wrapper for transitive same-address generated Mem chronology. -/
+theorem prior_activeMemReplayEntry_timestamp_le_current_primary_of_fullWitnessMemReplayBridge_same_addr
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (priorIdx selectedIdx : Fin h_bridge.table.table.length)
+    (h_prior_lt : priorIdx.val < selectedIdx.val)
+    (h_addr_eq : h_bridge.mem.addr priorIdx.val = h_bridge.mem.addr selectedIdx.val)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem priorIdx.val)) :
+    entry.timestamp.toNat ≤
+      (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem selectedIdx.val)).timestamp.toNat := by
+  exact
+    prior_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+      h_bridge.generatedRows h_bridge.rowRanges
+      (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+      priorIdx selectedIdx h_prior_lt h_addr_eq h_entry
+
+/-- Active replay entries from a strictly earlier generated Mem row at the same
+address are chronologically no later than any active replay entry from the
+selected generated row. -/
+theorem prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
+    (priorIdx selectedIdx : Fin table.table.length)
+    (h_prior_lt : priorIdx.val < selectedIdx.val)
+    (h_addr_eq : mem.addr priorIdx.val = mem.addr selectedIdx.val)
+    {priorEntry selectedEntry : Interaction.MemoryBusEntry FGL}
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem priorIdx.val))
+    (h_selected_entry :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem selectedIdx.val)) :
+    priorEntry.timestamp.toNat ≤ selectedEntry.timestamp.toNat := by
+  exact le_trans
+    (prior_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+      h_bridge h_ranges h_fixed priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry)
+    (primaryReplayEntry_timestamp_le_activeMemReplayEntry_of_memTableGeneratedRowsBridge
+      h_bridge h_ranges selectedIdx h_selected_entry)
+
+/-- Full-witness wrapper for transitive same-address chronology between active
+replay entries. -/
+theorem prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_fullWitnessMemReplayBridge_same_addr
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (priorIdx selectedIdx : Fin h_bridge.table.table.length)
+    (h_prior_lt : priorIdx.val < selectedIdx.val)
+    (h_addr_eq : h_bridge.mem.addr priorIdx.val = h_bridge.mem.addr selectedIdx.val)
+    {priorEntry selectedEntry : Interaction.MemoryBusEntry FGL}
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem priorIdx.val))
+    (h_selected_entry :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem selectedIdx.val)) :
+    priorEntry.timestamp.toNat ≤ selectedEntry.timestamp.toNat := by
+  exact
+    prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_same_addr_memTableGeneratedRowsBridge
+      h_bridge.generatedRows h_bridge.rowRanges
+      (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+      priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry h_selected_entry
 
 /-- At a selected address-change row, every prior table row has a different
     Mem address.

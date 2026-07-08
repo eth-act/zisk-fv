@@ -505,6 +505,32 @@ theorem acceptedMemReplayRows_eq_or_noActiveWriteOverlap_of_read_rows
     (acceptedMemReplayRows_noActiveWriteOverlap_of_read_rows
       selectedIdx priorIdx h_selected_read h_prior_read h_selected h_prior_entry)
 
+/-- Accepted-trace wrapper for generated same-address chronology: an active
+replay entry from a strictly prior generated Mem row at the same address is
+chronologically no later than any active replay entry from the selected row. -/
+theorem acceptedMemReplayRows_prior_same_addr_timestamp_le_active
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (priorIdx selectedIdx :
+      Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length)
+    (h_prior_lt : priorIdx.val < selectedIdx.val)
+    (h_addr_eq :
+      (ziskTrace.memReplayBridge h_nonempty).mem.addr priorIdx.val =
+        (ziskTrace.memReplayBridge h_nonempty).mem.addr selectedIdx.val)
+    {priorEntry selectedEntry : MemoryBusEntry FGL}
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem priorIdx.val))
+    (h_selected_entry :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem selectedIdx.val)) :
+    priorEntry.timestamp.toNat ≤ selectedEntry.timestamp.toNat :=
+  prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_fullWitnessMemReplayBridge_same_addr
+    (ziskTrace.memReplayBridge h_nonempty)
+    priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry h_selected_entry
+
 /-- A plain accepted-replay/execution row permutation becomes a boot order
 certificate from origin-level equality/address separation over accepted replay
 rows. -/
