@@ -1568,6 +1568,70 @@ theorem MemoryBusRowsReplaySafePermutation.count_eq
     source.count entry = target.count entry :=
   h_order.perm.count_eq entry
 
+/-- Replay-safe order certificates compose. This lets later order proofs build
+the global sorted-to-execution certificate from smaller safe-swap chunks. -/
+theorem MemoryBusRowsReplaySafePermutation.trans
+    {source middle target : List (MemoryBusEntry FGL)}
+    (h_source_middle : MemoryBusRowsReplaySafePermutation source middle)
+    (h_middle_target : MemoryBusRowsReplaySafePermutation middle target) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_middle_target with
+  | refl =>
+      exact h_source_middle
+  | swap pref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      exact MemoryBusRowsReplaySafePermutation.swap
+        pref left right suffix ih h_left_right_safe h_right_left_safe h_commute
+
+/-- Transport a replay-safe order certificate under a common left context. -/
+theorem MemoryBusRowsReplaySafePermutation.append_left
+    (pref : List (MemoryBusEntry FGL))
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation (pref ++ source) (pref ++ target) := by
+  induction h_order with
+  | refl =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | swap localPref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      have ih' :
+          MemoryBusRowsReplaySafePermutation
+            (pref ++ source) ((pref ++ localPref) ++ left :: right :: suffix) := by
+        simpa [List.append_assoc] using ih
+      simpa [List.append_assoc] using
+        MemoryBusRowsReplaySafePermutation.swap
+          (pref ++ localPref) left right suffix ih'
+          h_left_right_safe h_right_left_safe h_commute
+
+/-- Transport a replay-safe order certificate under a common right context. -/
+theorem MemoryBusRowsReplaySafePermutation.append_right
+    (suffix : List (MemoryBusEntry FGL))
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation (source ++ suffix) (target ++ suffix) := by
+  induction h_order with
+  | refl =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | swap pref left right localSuffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      have ih' :
+          MemoryBusRowsReplaySafePermutation
+            (source ++ suffix) (pref ++ left :: right :: (localSuffix ++ suffix)) := by
+        simpa [List.append_assoc] using ih
+      simpa [List.append_assoc] using
+        MemoryBusRowsReplaySafePermutation.swap
+          pref left right (localSuffix ++ suffix) ih'
+          h_left_right_safe h_right_left_safe h_commute
+
+/-- Transport a replay-safe order certificate under common list contexts on
+both sides. -/
+theorem MemoryBusRowsReplaySafePermutation.append_context
+    (pref suffix : List (MemoryBusEntry FGL))
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation
+      (pref ++ source ++ suffix) (pref ++ target ++ suffix) := by
+  simpa [List.append_assoc] using
+    (MemoryBusRowsReplaySafePermutation.append_left pref
+      (MemoryBusRowsReplaySafePermutation.append_right suffix h_order))
+
 /-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
 
 This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into
