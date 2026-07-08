@@ -1632,6 +1632,51 @@ theorem MemoryBusRowsReplaySafePermutation.append_context
     (MemoryBusRowsReplaySafePermutation.append_left pref
       (MemoryBusRowsReplaySafePermutation.append_right suffix h_order))
 
+/-- Any ordinary list permutation of replay-neutral rows is replay-safe.
+
+This is the reusable bridge for read/read-only chunks of the eventual
+sorted-to-execution order proof: once row correspondence gives a plain bag
+permutation and both sides are known to contain no active writes, the order
+certificate is produced without a read-value premise. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_not_active_write
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_source_not_write :
+      ∀ row, row ∈ source → ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL)))
+    (h_target_not_write :
+      ∀ row, row ∈ target → ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL))) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_perm with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons row h_tail ih =>
+      simpa using
+        MemoryBusRowsReplaySafePermutation.append_left [row]
+          (ih
+            (fun entry h_entry =>
+              h_source_not_write entry (List.mem_cons.mpr (Or.inr h_entry)))
+            (fun entry h_entry =>
+              h_target_not_write entry (List.mem_cons.mpr (Or.inr h_entry))))
+  | swap left right rows =>
+      exact MemoryBusRowsReplaySafePermutation.swap [] right left rows
+        (MemoryBusRowsReplaySafePermutation.refl (right :: left :: rows))
+        (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+          (h_source_not_write left (by simp)))
+        (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+          (h_source_not_write right (by simp)))
+        (fun mem =>
+          replayMemoryAfterBusRow_commute_of_left_not_active_write
+            mem right left (h_source_not_write right (by simp)))
+  | trans h_source_middle h_middle_target ih_source_middle ih_middle_target =>
+      exact
+        (ih_source_middle h_source_not_write
+          (fun row h_row =>
+            h_source_not_write row (h_source_middle.mem_iff.mpr h_row))).trans
+          (ih_middle_target
+            (fun row h_row =>
+              h_source_not_write row (h_source_middle.mem_iff.mpr h_row))
+            h_target_not_write)
+
 /-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
 
 This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into
