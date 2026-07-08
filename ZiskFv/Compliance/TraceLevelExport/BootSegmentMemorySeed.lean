@@ -55,6 +55,74 @@ open ZiskFv.ZiskCircuit.MemTimeline.Spike
 
 variable {numInstructions : Nat}
 
+/-! ## Accepted Mem replay chronology wrappers -/
+
+/-- Accepted-trace wrapper for generated same-address chronology: an active
+replay entry from a strictly prior generated Mem row at the same address is
+chronologically no later than any active replay entry from the selected row. -/
+theorem acceptedMemReplayRows_prior_same_addr_timestamp_le_active
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (priorIdx selectedIdx :
+      Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length)
+    (h_prior_lt : priorIdx.val < selectedIdx.val)
+    (h_addr_eq :
+      (ziskTrace.memReplayBridge h_nonempty).mem.addr priorIdx.val =
+        (ziskTrace.memReplayBridge h_nonempty).mem.addr selectedIdx.val)
+    {priorEntry selectedEntry : MemoryBusEntry FGL}
+    (h_prior_entry :
+      priorEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem priorIdx.val))
+    (h_selected_entry :
+      selectedEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem selectedIdx.val)) :
+    priorEntry.timestamp.toNat ≤ selectedEntry.timestamp.toNat :=
+  prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_fullWitnessMemReplayBridge_same_addr
+    (ziskTrace.memReplayBridge h_nonempty)
+    priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry h_selected_entry
+
+/-- Accepted-trace wrapper for active replay-row membership: any accepted Mem
+replay row comes from some generated Mem row's active replay projection. -/
+theorem acceptedMemReplayRows_exists_active_rowAt
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ziskTrace.memReplayRows h_nonempty) :
+    ∃ idx : Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length,
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem idx.val) :=
+  exists_activeMemReplayEntry_rowAt_of_fullWitnessMemReplayBridge
+    (ziskTrace.memReplayBridge h_nonempty) h_entry
+
+/-- Accepted-trace wrapper for the different-address crossing case: active
+replay entries from different generated Mem addresses are bidirectionally safe
+for replay-safe adjacent swaps. -/
+theorem acceptedMemReplayRows_noActiveWriteOverlap_of_addr_ne
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (leftIdx rightIdx :
+      Fin (ziskTrace.memReplayBridge h_nonempty).table.table.length)
+    {leftEntry rightEntry : MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt
+          (ziskTrace.memReplayBridge h_nonempty).mem rightIdx.val))
+    (h_addr_ne :
+      (ziskTrace.memReplayBridge h_nonempty).mem.addr leftIdx.val ≠
+        (ziskTrace.memReplayBridge h_nonempty).mem.addr rightIdx.val) :
+    MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry :=
+  activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_addr_ne
+    (ziskTrace.memReplayBridge h_nonempty)
+    leftIdx rightIdx h_left h_right h_addr_ne
+
 /-! ## The concrete reductions: a clean mem-replay equation implies the op residual. -/
 
 /-- Discharge a load's `LoadMemoryTimelineCoherenceEvidence` from
@@ -129,6 +197,40 @@ abbrev BootSegmentReplaySafeOrderCertificate
       (ziskTrace.memReplayBridge h_nonempty)).rows
     ((List.range ziskTrace.numInstructions).flatMap rowsOf)
 
+/-- A plain accepted-replay/execution row permutation becomes a boot order
+certificate when every accepted replay row can cross every other accepted
+replay row safely.
+
+This bridge is intentionally strong. Same-address mixed write/read rows usually
+need a sharper no-crossing argument rather than an all-pairs safety proof. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_perm_rows :
+      (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+        (ziskTrace.memReplayBridge h_nonempty)).rows.Perm
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+    simpa [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayBridge] using h_perm
+  refine
+    MemoryBusRowsReplaySafePermutation.of_perm_pairwise_noActiveWriteOverlap
+      h_perm_rows ?_
+  intro left h_left right h_right
+  exact h_safe left
+    (by
+      simpa [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayBridge] using h_left)
+    right
+    (by
+      simpa [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayBridge] using h_right)
+
 /-- Nonsemantic inputs needed to derive execution-order seed read-soundness
 from accepted Mem replay evidence.
 
@@ -145,6 +247,29 @@ structure BootSegmentReadSoundInputs
       (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
         (ziskTrace.memReplayBridge h_nonempty)).initialMemory
   order : BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty
+
+/-- Build seed read-soundness inputs from pairwise-safe permutation evidence. -/
+def bootSegmentReadSoundInputs_of_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order :=
+    bootSegmentReplaySafeOrderCertificate_of_perm_pairwise_noActiveWriteOverlap
+      h_perm h_safe
 
 /-- Assemble the exact seed-level execution-order read-soundness predicate from
 accepted Mem replay evidence plus the explicit initial-memory and order-transfer
@@ -167,6 +292,30 @@ theorem readSound_of_bootSegmentReadSoundInputs
     memoryBusRowsPrefixReadSound_of_replaySafePermutation
       acceptedReplay.initialMemory inputs.order acceptedReplay.prefixReadSound
   rwa [inputs.initialMemory_eq]
+
+/-- Direct read-soundness assembly from pairwise-safe permutation evidence plus
+the explicit initial-memory bridge. -/
+theorem readSound_of_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_perm_pairwise_noActiveWriteOverlap
+      h_initialMemory h_perm h_safe)
 
 /-- Rows in the accepted Mem replay source occur in the execution-order row list
 selected by the seed's replay-safe order certificate. -/
@@ -3568,6 +3717,311 @@ theorem BootSegmentMemorySeed.memReplayRows_perm_executionRows_scopedDirect_nodu
       ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
   ziskTrace.memReplayRows_perm_executionRows_of_scopedDirect_placement_nodup
     h_nonempty seed.placement h_steps h_nodup h_length
+
+/-- Structural row correspondence plus pairwise-safe accepted replay rows yield
+the concrete boot replay-safe order certificate once placement identifies
+`rowsOf` with `executionMemoryRowsOfSteps`. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_perm_rows :
+      (ziskTrace.memReplayRows h_nonempty).Perm
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+    rw [executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
+    exact h_perm
+  exact
+    bootSegmentReplaySafeOrderCertificate_of_perm_pairwise_noActiveWriteOverlap
+      h_perm_rows h_safe
+
+/-- Construct read-soundness inputs from structural row correspondence plus
+pairwise-safe accepted replay rows. -/
+def bootSegmentReadSoundInputs_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order :=
+    bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+      h_placement h_perm h_safe
+
+/-- Direct execution-order read-soundness from structural row correspondence
+plus pairwise-safe accepted replay rows. -/
+theorem readSound_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+      h_initialMemory h_placement h_perm h_safe)
+
+/-- Seed-level wrapper for structural row correspondence plus pairwise-safe
+accepted replay rows. -/
+theorem BootSegmentMemorySeed.replaySafeOrderCertificate_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace seed.rowsOf h_nonempty :=
+  bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    seed.placement h_perm h_safe
+
+/-- Seed-level input assembly from structural row correspondence plus
+pairwise-safe accepted replay rows. -/
+def BootSegmentMemorySeed.readSoundInputs_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    BootSegmentReadSoundInputs ziskTrace seed.memInit seed.rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    (seed.readSoundInputs h_nonempty).initialMemory_eq seed.placement h_perm h_safe
+
+/-- Seed-level execution-order read-soundness from structural row
+correspondence plus pairwise-safe accepted replay rows. -/
+theorem BootSegmentMemorySeed.readSound_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_safe :
+      ∀ left, left ∈ ziskTrace.memReplayRows h_nonempty →
+        ∀ right, right ∈ ziskTrace.memReplayRows h_nonempty →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsPrefixReadSound
+      seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (seed.readSoundInputs_of_memoryRowsOfSteps_perm_pairwise_noActiveWriteOverlap
+      h_perm h_safe)
+
+/-- Structural row correspondence plus crossed-pair safety yields the concrete
+boot replay-safe order certificate once placement identifies `rowsOf` with
+`executionMemoryRowsOfSteps`.
+
+The safety premise is sublist-aware because the constructive permutation proof
+recursively removes selected target heads. It is still a crossed-pair premise:
+only rows witnessed by `MemoryBusRowsPairBefore` in opposite source/target
+orders must be safe. -/
+theorem bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource (ziskTrace.memReplayRows h_nonempty) →
+        List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace rowsOf h_nonempty := by
+  have h_order_steps :
+      MemoryBusRowsReplaySafePermutation
+        (ziskTrace.memReplayRows h_nonempty)
+        (executionMemoryRowsOfSteps ziskTrace ziskStep) :=
+    MemoryBusRowsReplaySafePermutation.of_perm_noUnsafeCrossings h_perm h_cross
+  simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayRows,
+    AcceptedZiskTrace.memReplayBridge,
+    executionRows_eq_memoryRowsOfSteps_of_placement h_placement] using h_order_steps
+
+/-- Construct read-soundness inputs from structural row correspondence plus
+crossed-pair safe crossings. -/
+def bootSegmentReadSoundInputs_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource (ziskTrace.memReplayRows h_nonempty) →
+        List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty where
+  initialMemory_eq := h_initialMemory
+  order :=
+    bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+      h_placement h_perm h_cross
+
+/-- Direct execution-order read-soundness from structural row correspondence
+plus crossed-pair safe crossings. -/
+theorem readSound_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource (ziskTrace.memReplayRows h_nonempty) →
+        List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+      h_initialMemory h_placement h_perm h_cross)
+
+/-- Seed-level wrapper for structural row correspondence plus crossed-pair
+safe crossings. -/
+theorem BootSegmentMemorySeed.replaySafeOrderCertificate_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource (ziskTrace.memReplayRows h_nonempty) →
+        List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    BootSegmentReplaySafeOrderCertificate ziskTrace seed.rowsOf h_nonempty :=
+  bootSegmentReplaySafeOrderCertificate_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    seed.placement h_perm h_cross
+
+/-- Seed-level input assembly from structural row correspondence plus
+crossed-pair safe crossings. -/
+def BootSegmentMemorySeed.readSoundInputs_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource (ziskTrace.memReplayRows h_nonempty) →
+        List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    BootSegmentReadSoundInputs ziskTrace seed.memInit seed.rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    (seed.readSoundInputs h_nonempty).initialMemory_eq seed.placement h_perm h_cross
+
+/-- Seed-level execution-order read-soundness from structural row
+correspondence plus crossed-pair safe crossings. -/
+theorem BootSegmentMemorySeed.readSound_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_perm : (ziskTrace.memReplayRows h_nonempty).Perm
+      (executionMemoryRowsOfSteps ziskTrace ziskStep))
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource (ziskTrace.memReplayRows h_nonempty) →
+        List.Sublist currentTarget (executionMemoryRowsOfSteps ziskTrace ziskStep) →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsPrefixReadSound
+      seed.memInit ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (seed.readSoundInputs_of_memoryRowsOfSteps_perm_noUnsafeCrossings
+      h_perm h_cross)
 
 /-- If every decoded step emits only replay-neutral memory rows, then the full
 structural execution-row list contains no active memory writes. -/
