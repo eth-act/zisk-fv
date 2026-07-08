@@ -2377,6 +2377,27 @@ theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_sc
       h_nonempty h_steps h_entry)
     h_entry
 
+/-- Whole-list scoped direct-Mem row correspondence from structural
+deduplication.
+
+If a later timestamp/range argument proves that the structural execution rows
+are duplicate-free, the existing scoped direct support inclusion is already
+strong enough to produce a full `Subperm`. This gives the multiplicity work a
+more structural target than an arbitrary count inequality. -/
+theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_nodup
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_nodup : (executionMemoryRowsOfSteps ziskTrace ziskStep).Nodup) :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Subperm
+      (ziskTrace.memReplayRows h_nonempty) :=
+  h_nodup.subperm
+    (fun _ h_entry =>
+      ziskTrace.memReplayRows_of_mem_executionMemoryRowsOfSteps_scopedDirect
+        h_nonempty h_steps h_entry)
+
 /-- Placement transports the scoped direct-Mem membership direction from the
 concrete execution-order `rowsOf` flatMap to accepted Mem replay rows. -/
 theorem AcceptedZiskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
@@ -2434,6 +2455,26 @@ theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_pl
       h_nonempty h_placement h_steps h_entry)
     h_entry
 
+/-- Placement form of the `Nodup`-based scoped direct-Mem row
+correspondence. -/
+theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_nodup
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_nodup : ((List.range ziskTrace.numInstructions).flatMap rowsOf).Nodup) :
+    (((List.range ziskTrace.numInstructions).flatMap rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  h_nodup.subperm
+    (fun _ h_entry =>
+      ziskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
+        h_nonempty h_placement h_steps h_entry)
+
 /-- Seed-level wrapper for the scoped direct-Mem membership direction. -/
 theorem BootSegmentMemorySeed.memReplayRows_of_mem_executionRows_scopedDirect
     {ziskTrace : AcceptedZiskTrace numInstructions}
@@ -2471,6 +2512,22 @@ theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_c
       (ziskTrace.memReplayRows h_nonempty)) :=
   ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_count_le
     h_nonempty seed.placement h_steps h_count_le
+
+/-- Seed-level wrapper for the `Nodup`-based scoped direct-Mem row
+correspondence. -/
+theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_nodup
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_nodup : ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Nodup) :
+    (((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_nodup
+    h_nonempty seed.placement h_steps h_nodup
 
 /-- If every decoded step emits only replay-neutral memory rows, then the full
 structural execution-row list contains no active memory writes. -/
