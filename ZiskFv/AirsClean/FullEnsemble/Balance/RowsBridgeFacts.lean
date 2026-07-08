@@ -960,6 +960,40 @@ theorem activeMemReplayEntry_noActiveWriteOverlap_of_memTableGeneratedRowsBridge
     h_ranges leftIdx rightIdx h_left_row h_right_row
     (h_addr_ne leftIdx rightIdx h_left_row h_right_row)
 
+/-- Generated-table replay rows are either literally the same event or safe to
+    cross, once the caller supplies that every possible pair of provider-row
+    origins is either the same event or address-separated. -/
+theorem activeMemReplayEntry_eq_or_noActiveWriteOverlap_of_memTableGeneratedRowsBridge_rows
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left : leftEntry ∈ activeMemReplayRowsOfTable table)
+    (h_right : rightEntry ∈ activeMemReplayRowsOfTable table)
+    (h_eq_or_addr_ne :
+      ∀ leftIdx rightIdx : Fin table.table.length,
+        leftEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val) →
+          rightEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val) →
+          leftEntry = rightEntry ∨ mem.addr leftIdx.val ≠ mem.addr rightIdx.val) :
+    leftEntry = rightEntry ∨
+      (ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+        ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry) := by
+  rcases exists_rowAt_of_mem_activeMemReplayRowsOfTable h_bridge h_left with
+    ⟨leftIdx, h_left_row⟩
+  rcases exists_rowAt_of_mem_activeMemReplayRowsOfTable h_bridge h_right with
+    ⟨rightIdx, h_right_row⟩
+  rcases h_eq_or_addr_ne leftIdx rightIdx h_left_row h_right_row with h_eq | h_addr_ne
+  · exact Or.inl h_eq
+  · exact Or.inr
+      (activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+        h_ranges leftIdx rightIdx h_left_row h_right_row h_addr_ne)
+
 /-- Full-witness replay bridge wrapper for the address-separation
 no-active-write-overlap fact. -/
 theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_addr_ne
@@ -1005,6 +1039,33 @@ theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_
     (by simpa [h_bridge.rows_eq] using h_left)
     (by simpa [h_bridge.rows_eq] using h_right)
     h_addr_ne
+
+/-- Full-witness replay-row wrapper for equality-or-address-separated safe
+crossings. -/
+theorem activeMemReplayEntry_eq_or_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_rows
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left : leftEntry ∈ rows)
+    (h_right : rightEntry ∈ rows)
+    (h_eq_or_addr_ne :
+      ∀ leftIdx rightIdx : Fin h_bridge.table.table.length,
+        leftEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem leftIdx.val) →
+          rightEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem rightIdx.val) →
+          leftEntry = rightEntry ∨
+            h_bridge.mem.addr leftIdx.val ≠ h_bridge.mem.addr rightIdx.val) :
+    leftEntry = rightEntry ∨
+      (ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+        ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry) :=
+  activeMemReplayEntry_eq_or_noActiveWriteOverlap_of_memTableGeneratedRowsBridge_rows
+    h_bridge.generatedRows h_bridge.rowRanges
+    (by simpa [h_bridge.rows_eq] using h_left)
+    (by simpa [h_bridge.rows_eq] using h_right)
+    h_eq_or_addr_ne
 
 /-- The full-witness bridge projects the generated row range required by the
     Mem trace spec. -/
