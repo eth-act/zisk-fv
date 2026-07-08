@@ -1928,6 +1928,51 @@ theorem MemoryBusRowsReplaySafePermutation.of_perm_pairwise_noActiveWriteOverlap
         (ih_source_middle h_source_safe).trans
           (ih_middle_target
             (fun left h_left right h_right =>
+            h_source_safe left (h_source_middle.mem_iff.mpr h_left)
+                right (h_source_middle.mem_iff.mpr h_right)))
+
+/-- Any ordinary list permutation of a row list whose entries are either equal
+or pairwise replay-safe is replay-safe.
+
+This variant avoids forcing active writes to be disjoint from themselves when a
+permutation proof swaps two definitionally identical events. Distinct mixed
+read/write rows still need the same bidirectional no-active-write-overlap fact
+as the stricter pairwise bridge. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_eq_or_noActiveWriteOverlap
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_source_safe :
+      ∀ left, left ∈ source →
+        ∀ right, right ∈ source →
+          left = right ∨
+            (MemoryBusEntryNoActiveWriteOverlap left right ∧
+              MemoryBusEntryNoActiveWriteOverlap right left)) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_perm with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons row h_tail ih =>
+      simpa using
+        MemoryBusRowsReplaySafePermutation.append_left [row]
+          (ih
+            (fun left h_left right h_right =>
+              h_source_safe left (List.mem_cons.mpr (Or.inr h_left))
+                right (List.mem_cons.mpr (Or.inr h_right))))
+  | swap left right rows =>
+      rcases h_source_safe right (by simp) left (by simp) with h_eq | h_pair
+      · subst right
+        exact MemoryBusRowsReplaySafePermutation.refl (left :: left :: rows)
+      · exact MemoryBusRowsReplaySafePermutation.swap [] right left rows
+          (MemoryBusRowsReplaySafePermutation.refl (right :: left :: rows))
+          h_pair.1 h_pair.2
+          (fun mem =>
+            replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+              mem right left h_pair.1 h_pair.2)
+  | trans h_source_middle h_middle_target ih_source_middle ih_middle_target =>
+      exact
+        (ih_source_middle h_source_safe).trans
+          (ih_middle_target
+            (fun left h_left right h_right =>
               h_source_safe left (h_source_middle.mem_iff.mpr h_left)
                 right (h_source_middle.mem_iff.mpr h_right)))
 
