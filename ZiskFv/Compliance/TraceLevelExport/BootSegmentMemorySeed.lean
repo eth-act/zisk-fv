@@ -2347,13 +2347,38 @@ def MemoryRowsOfStepIndexwiseTimestampDisjoint
       entry_j ∈ memoryRowsOfStep ziskTrace j (ziskStep j) →
       entry_i.timestamp ≠ entry_j.timestamp
 
+/-- Shared Main+ROM row used by the structural load and store memory rows at
+trace index `i`. The load/store construction modules expose separate names,
+but both are this same underlying Main table row. -/
+@[reducible]
+noncomputable def mainRowWithRom
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
+  ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+    ziskTrace.program ziskTrace.mainTable i.val
+
+/-- The load-side Main row accessor is definitionally the shared Main row. -/
+theorem mainRowWithRomLd_eq_mainRowWithRom
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    mainRowWithRomLd ziskTrace i = mainRowWithRom ziskTrace i := by
+  rfl
+
+/-- The store-side Main row accessor is definitionally the shared Main row. -/
+theorem mainRowWithRomSt_eq_mainRowWithRom
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    mainRowWithRomSt ziskTrace i = mainRowWithRom ziskTrace i := by
+  rfl
+
 /-- The concrete load row emitted by `memoryRowsOfStep` uses Main's b-side
 memory timestamp formula. -/
 theorem busLd_e1_timestamp
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) :
     (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1.timestamp =
-      2 + (mainRowWithRomLd ziskTrace i).rom.main_step * 4 := by
+      2 + (mainRowWithRom ziskTrace i).rom.main_step * 4 := by
   rfl
 
 /-- The concrete store row emitted by `memoryRowsOfStep` uses Main's c-side
@@ -2362,11 +2387,12 @@ theorem busSt_e2_timestamp
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) :
     (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2.timestamp =
-      3 + (mainRowWithRomSt ziskTrace i).rom.main_step * 4 := by
+      3 + (mainRowWithRom ziskTrace i).rom.main_step * 4 := by
   rfl
 
 /-- Formula-level timestamp inequalities for the rows that `memoryRowsOfStep`
-can emit, written directly in terms of the Main `main_step` columns.
+can emit, written directly in terms of the shared Main `main_step` column for
+each trace index.
 
 This is the shape expected from a later PIL/range proof for `STEP =
 main_segment * N + SEGMENT_STEP`; it does not assert that `main_step` is the
@@ -2374,14 +2400,81 @@ trace index. -/
 def MemoryRowsOfStepIndexwiseMainStepTimestampSeparated
     (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
   ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
-    2 + (mainRowWithRomLd ziskTrace i).rom.main_step * 4 ≠
-      2 + (mainRowWithRomLd ziskTrace j).rom.main_step * 4 ∧
-    2 + (mainRowWithRomLd ziskTrace i).rom.main_step * 4 ≠
-      3 + (mainRowWithRomSt ziskTrace j).rom.main_step * 4 ∧
-    3 + (mainRowWithRomSt ziskTrace i).rom.main_step * 4 ≠
-      2 + (mainRowWithRomLd ziskTrace j).rom.main_step * 4 ∧
-    3 + (mainRowWithRomSt ziskTrace i).rom.main_step * 4 ≠
-      3 + (mainRowWithRomSt ziskTrace j).rom.main_step * 4
+    2 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
+      2 + (mainRowWithRom ziskTrace j).rom.main_step * 4 ∧
+    2 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
+      3 + (mainRowWithRom ziskTrace j).rom.main_step * 4 ∧
+    3 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
+      2 + (mainRowWithRom ziskTrace j).rom.main_step * 4 ∧
+    3 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
+      3 + (mainRowWithRom ziskTrace j).rom.main_step * 4
+
+/-- Main `main_step` values are distinct at unequal trace indices. This is
+the same-offset half of timestamp separation: load/load and store/store
+collisions follow by cancellation of the nonzero `* 4` scale factor. -/
+def MemoryRowsOfStepIndexwiseMainStepDistinct
+    (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
+  ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+    (mainRowWithRom ziskTrace i).rom.main_step ≠
+      (mainRowWithRom ziskTrace j).rom.main_step
+
+/-- Cross-offset no-collision residue for Main memory timestamps at unequal
+trace indices.
+
+Together with distinct `main_step` values, this proves the full four-case
+timestamp separation predicate. The remaining proof should come from the same
+range/no-wrap facts that justify `STEP = main_segment * N + SEGMENT_STEP`. -/
+def MemoryRowsOfStepIndexwiseMainStepCrossOffsetSeparated
+    (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
+  ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+    2 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
+      3 + (mainRowWithRom ziskTrace j).rom.main_step * 4 ∧
+    3 + (mainRowWithRom ziskTrace i).rom.main_step * 4 ≠
+      2 + (mainRowWithRom ziskTrace j).rom.main_step * 4
+
+/-- Same-offset timestamp collision is impossible for distinct Main steps on
+the load-side offset. -/
+theorem two_add_mul_four_ne_of_ne (x y : FGL) (h_ne : x ≠ y) :
+    2 + x * 4 ≠ 2 + y * 4 := by
+  intro h_eq
+  have h_mul : x * 4 = y * 4 := by
+    exact add_left_cancel h_eq
+  have h_four : (4 : FGL) ≠ 0 := by
+    decide
+  exact h_ne (mul_right_cancel₀ h_four h_mul)
+
+/-- Same-offset timestamp collision is impossible for distinct Main steps on
+the store-side offset. -/
+theorem three_add_mul_four_ne_of_ne (x y : FGL) (h_ne : x ≠ y) :
+    3 + x * 4 ≠ 3 + y * 4 := by
+  intro h_eq
+  have h_mul : x * 4 = y * 4 := by
+    exact add_left_cancel h_eq
+  have h_four : (4 : FGL) ≠ 0 := by
+    decide
+  exact h_ne (mul_right_cancel₀ h_four h_mul)
+
+/-- Distinct Main steps plus the cross-offset no-collision facts imply the
+full formula-level timestamp separation predicate. -/
+theorem memoryRowsOfStep_mainStep_timestamp_separated_of_distinct_crossOffset
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (h_distinct : MemoryRowsOfStepIndexwiseMainStepDistinct ziskTrace)
+    (h_cross : MemoryRowsOfStepIndexwiseMainStepCrossOffsetSeparated ziskTrace) :
+    MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace := by
+  intro i j h_ne
+  have h_step_ne := h_distinct i j h_ne
+  obtain ⟨h_load_store, h_store_load⟩ := h_cross i j h_ne
+  exact ⟨
+    two_add_mul_four_ne_of_ne
+      (mainRowWithRom ziskTrace i).rom.main_step
+      (mainRowWithRom ziskTrace j).rom.main_step
+      h_step_ne,
+    h_load_store,
+    h_store_load,
+    three_add_mul_four_ne_of_ne
+      (mainRowWithRom ziskTrace i).rom.main_step
+      (mainRowWithRom ziskTrace j).rom.main_step
+      h_step_ne⟩
 
 /-- Concrete structural timestamp inequalities for the rows that
 `memoryRowsOfStep` can emit.
@@ -2409,6 +2502,17 @@ theorem memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_sep
     MemoryRowsOfStepIndexwiseStructuralTimestampDisjoint ziskTrace := by
   intro i j h_ne
   simpa [busLd_e1_timestamp, busSt_e2_timestamp] using h_timestamp i j h_ne
+
+/-- Distinct Main steps plus cross-offset no-collision facts imply the
+structural load/store timestamp-disjoint predicate. -/
+theorem memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_distinct_crossOffset
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (h_distinct : MemoryRowsOfStepIndexwiseMainStepDistinct ziskTrace)
+    (h_cross : MemoryRowsOfStepIndexwiseMainStepCrossOffsetSeparated ziskTrace) :
+    MemoryRowsOfStepIndexwiseStructuralTimestampDisjoint ziskTrace :=
+  memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
+    (memoryRowsOfStep_mainStep_timestamp_separated_of_distinct_crossOffset
+      h_distinct h_cross)
 
 /-- Any structural row emitted by a decoded step is either the step's concrete
 load memory row or its concrete store memory row. No-memory steps have no rows. -/
