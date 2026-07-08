@@ -2347,6 +2347,42 @@ def MemoryRowsOfStepIndexwiseTimestampDisjoint
       entry_j ∈ memoryRowsOfStep ziskTrace j (ziskStep j) →
       entry_i.timestamp ≠ entry_j.timestamp
 
+/-- The concrete load row emitted by `memoryRowsOfStep` uses Main's b-side
+memory timestamp formula. -/
+theorem busLd_e1_timestamp
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1.timestamp =
+      2 + (mainRowWithRomLd ziskTrace i).rom.main_step * 4 := by
+  rfl
+
+/-- The concrete store row emitted by `memoryRowsOfStep` uses Main's c-side
+memory timestamp formula. -/
+theorem busSt_e2_timestamp
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2.timestamp =
+      3 + (mainRowWithRomSt ziskTrace i).rom.main_step * 4 := by
+  rfl
+
+/-- Formula-level timestamp inequalities for the rows that `memoryRowsOfStep`
+can emit, written directly in terms of the Main `main_step` columns.
+
+This is the shape expected from a later PIL/range proof for `STEP =
+main_segment * N + SEGMENT_STEP`; it does not assert that `main_step` is the
+trace index. -/
+def MemoryRowsOfStepIndexwiseMainStepTimestampSeparated
+    (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
+  ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+    2 + (mainRowWithRomLd ziskTrace i).rom.main_step * 4 ≠
+      2 + (mainRowWithRomLd ziskTrace j).rom.main_step * 4 ∧
+    2 + (mainRowWithRomLd ziskTrace i).rom.main_step * 4 ≠
+      3 + (mainRowWithRomSt ziskTrace j).rom.main_step * 4 ∧
+    3 + (mainRowWithRomSt ziskTrace i).rom.main_step * 4 ≠
+      2 + (mainRowWithRomLd ziskTrace j).rom.main_step * 4 ∧
+    3 + (mainRowWithRomSt ziskTrace i).rom.main_step * 4 ≠
+      3 + (mainRowWithRomSt ziskTrace j).rom.main_step * 4
+
 /-- Concrete structural timestamp inequalities for the rows that
 `memoryRowsOfStep` can emit.
 
@@ -2364,6 +2400,15 @@ def MemoryRowsOfStepIndexwiseStructuralTimestampDisjoint
       (busLd ziskTrace j (Pilot.execRowOf ziskTrace j)).e1.timestamp ∧
     (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2.timestamp ≠
       (busSt ziskTrace j (Pilot.execRowOf ziskTrace j)).e2.timestamp
+
+/-- The formula-level Main-step timestamp separation implies the same four-case
+predicate over the concrete structural rows. -/
+theorem memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    MemoryRowsOfStepIndexwiseStructuralTimestampDisjoint ziskTrace := by
+  intro i j h_ne
+  simpa [busLd_e1_timestamp, busSt_e2_timestamp] using h_timestamp i j h_ne
 
 /-- Any structural row emitted by a decoded step is either the step's concrete
 load memory row or its concrete store memory row. No-memory steps have no rows. -/
@@ -2525,6 +2570,17 @@ theorem executionMemoryRowsOfSteps_nodup_of_structural_timestamp_disjoint
     (memoryRowsOfStep_indexwise_timestamp_disjoint_of_structural_timestamp_disjoint
       h_timestamp)
 
+/-- Structural duplicate-freedom for execution memory rows from formula-level
+Main-step timestamp separation. -/
+theorem executionMemoryRowsOfSteps_nodup_of_mainStep_timestamp_separated
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Nodup :=
+  executionMemoryRowsOfSteps_nodup_of_structural_timestamp_disjoint
+    (memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
+      h_timestamp)
+
 /-- Placement form of structural duplicate-freedom for execution memory rows. -/
 theorem executionRows_nodup_of_pairwise_disjoint_placement
     {ziskTrace : AcceptedZiskTrace numInstructions}
@@ -2610,6 +2666,22 @@ theorem executionRows_nodup_of_structural_timestamp_disjoint_placement
     (memoryRowsOfStep_indexwise_timestamp_disjoint_of_structural_timestamp_disjoint
       h_timestamp)
 
+/-- Placement form of structural duplicate-freedom from formula-level
+Main-step timestamp separation. -/
+theorem executionRows_nodup_of_mainStep_timestamp_separated_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf).Nodup :=
+  executionRows_nodup_of_structural_timestamp_disjoint_placement
+    h_placement
+    (memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
+      h_timestamp)
+
 /-- Seed-level wrapper for structural duplicate-freedom of execution memory
 rows. -/
 theorem BootSegmentMemorySeed.executionRows_nodup_of_pairwise_disjoint
@@ -2680,6 +2752,18 @@ theorem BootSegmentMemorySeed.executionRows_nodup_of_structural_timestamp_disjoi
     (h_timestamp : MemoryRowsOfStepIndexwiseStructuralTimestampDisjoint ziskTrace) :
     ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Nodup :=
   executionRows_nodup_of_structural_timestamp_disjoint_placement
+    seed.placement h_timestamp
+
+/-- Seed-level wrapper for structural duplicate-freedom from formula-level
+Main-step timestamp separation. -/
+theorem BootSegmentMemorySeed.executionRows_nodup_of_mainStep_timestamp_separated
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Nodup :=
+  executionRows_nodup_of_mainStep_timestamp_separated_placement
     seed.placement h_timestamp
 
 /-- Whole-structural-list membership direction for the scoped direct-Mem
@@ -2844,6 +2928,22 @@ theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_sc
   ziskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_indexwise_timestamp_disjoint
     h_nonempty h_steps
     (memoryRowsOfStep_indexwise_timestamp_disjoint_of_structural_timestamp_disjoint
+      h_timestamp)
+
+/-- Whole-list scoped direct-Mem row correspondence from formula-level
+Main-step timestamp separation. -/
+theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_mainStep_timestamp_separated
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Subperm
+      (ziskTrace.memReplayRows h_nonempty) :=
+  ziskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_structural_timestamp_disjoint
+    h_nonempty h_steps
+    (memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
       h_timestamp)
 
 /-- Permutation form of the count-sensitive scoped direct-Mem row
@@ -3086,6 +3186,26 @@ theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_pl
     (memoryRowsOfStep_indexwise_timestamp_disjoint_of_structural_timestamp_disjoint
       h_timestamp)
 
+/-- Placement form of scoped direct-Mem row correspondence from formula-level
+Main-step timestamp separation. -/
+theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_mainStep_timestamp_separated
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    (((List.range ziskTrace.numInstructions).flatMap rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_structural_timestamp_disjoint
+    h_nonempty h_placement h_steps
+    (memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
+      h_timestamp)
+
 /-- Placement form of the count-sensitive scoped direct-Mem row-correspondence
 permutation. -/
 theorem AcceptedZiskTrace.memReplayRows_perm_executionRows_of_scopedDirect_placement_count_le
@@ -3283,6 +3403,22 @@ theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_s
     (((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Subperm
       (ziskTrace.memReplayRows h_nonempty)) :=
   ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_structural_timestamp_disjoint
+    h_nonempty seed.placement h_steps h_timestamp
+
+/-- Seed-level wrapper for scoped direct-Mem row correspondence from formula-level
+Main-step timestamp separation. -/
+theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_mainStep_timestamp_separated
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace) :
+    (((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_mainStep_timestamp_separated
     h_nonempty seed.placement h_steps h_timestamp
 
 /-- Seed-level permutation wrapper for count-sensitive scoped direct-Mem row
@@ -3738,6 +3874,36 @@ def bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_structural_timestam
       h_timestamp)
     h_length
 
+/-- Assembly wrapper for replay-neutral scoped direct-Mem rows, using
+formula-level Main-step timestamp separation as the structural
+duplicate-freedom premise. -/
+def bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_mainStep_timestamp_separated
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_replayNeutral : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i))
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace)
+    (h_length :
+      (ziskTrace.memReplayRows h_nonempty).length =
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf).length) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_structural_timestamp_disjoint
+    h_initialMemory h_placement h_scoped h_replayNeutral
+    (memoryRowsOfStep_structural_timestamp_disjoint_of_mainStep_timestamp_separated
+      h_timestamp)
+    h_length
+
 /-- Direct read-soundness theorem for the scoped replay-neutral case. The
 remaining assumptions are the explicit boot/cross-segment initial-memory bridge
 and duplicate-sensitive row correspondence; read-value agreement is still
@@ -3976,6 +4142,34 @@ theorem readSound_of_scopedDirect_replayNeutral_structural_timestamp_disjoint
       memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
   readSound_of_bootSegmentReadSoundInputs
     (bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_structural_timestamp_disjoint
+      h_initialMemory h_placement h_scoped h_replayNeutral h_timestamp h_length)
+
+/-- Direct read-soundness theorem for replay-neutral scoped direct-Mem rows
+using formula-level Main-step timestamp separation. -/
+theorem readSound_of_scopedDirect_replayNeutral_mainStep_timestamp_separated
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_replayNeutral : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i))
+    (h_timestamp : MemoryRowsOfStepIndexwiseMainStepTimestampSeparated ziskTrace)
+    (h_length :
+      (ziskTrace.memReplayRows h_nonempty).length =
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf).length) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_mainStep_timestamp_separated
       h_initialMemory h_placement h_scoped h_replayNeutral h_timestamp h_length)
 
 /-! ## Per-op discharge via the execution-order fold. -/
