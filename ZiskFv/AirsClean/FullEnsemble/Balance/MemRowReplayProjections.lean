@@ -612,6 +612,30 @@ def activeMemReplayRowsOfTable
       (eval (table.environment providerRow)
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)
 
+/-- Active replay-row membership is exactly membership in one concrete Mem
+    provider row's active replay projection. -/
+theorem mem_activeMemReplayRowsOfTable_iff
+    {table : Table FGL}
+    {entry : Interaction.MemoryBusEntry FGL} :
+    entry ∈ activeMemReplayRowsOfTable table ↔
+      ∃ providerRow, providerRow ∈ table.table ∧
+        entry ∈ activeMemReplayEntriesOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+  unfold activeMemReplayRowsOfTable
+  exact List.mem_flatMap
+
+/-- Extract the concrete provider row that emitted an active replay row. -/
+theorem exists_providerRow_of_mem_activeMemReplayRowsOfTable
+    {table : Table FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ activeMemReplayRowsOfTable table) :
+    ∃ providerRow, providerRow ∈ table.table ∧
+      entry ∈ activeMemReplayEntriesOfRow
+        (eval (table.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) :=
+  mem_activeMemReplayRowsOfTable_iff.mp h_entry
+
 /-- If the active replay projection is nonempty, then the underlying concrete
     Mem table is nonempty. -/
 theorem table_nonempty_of_activeMemReplayRowsOfTable_nonempty

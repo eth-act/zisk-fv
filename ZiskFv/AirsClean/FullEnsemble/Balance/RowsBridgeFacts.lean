@@ -893,6 +893,73 @@ theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
       h_bridge.mem (segmentWithFixedL1 h_bridge.segment) h_bridge.permutation h_bridge.rowCount :=
   ⟨h_bridge.table, h_bridge.table_mem, h_bridge.generatedRows⟩
 
+/-- Active replay-row membership in a generated Mem table can be traced back to
+    the corresponding indexed `rowAt` row. -/
+theorem exists_rowAt_of_mem_activeMemReplayRowsOfTable
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ activeMemReplayRowsOfTable table) :
+    ∃ idx : Fin table.table.length,
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val) := by
+  rcases exists_providerRow_of_mem_activeMemReplayRowsOfTable h_entry with
+    ⟨providerRow, h_provider_mem, h_entry_row⟩
+  rcases List.mem_iff_get.mp h_provider_mem with ⟨idx, h_get⟩
+  refine ⟨idx, ?_⟩
+  rw [← h_get] at h_entry_row
+  rw [h_bridge.rowAt_eq idx] at h_entry_row
+  exact h_entry_row
+
+/-- Full-witness replay rows can be traced back to indexed Mem `rowAt` rows. -/
+theorem exists_rowAt_of_mem_fullWitnessMemReplayBridge_rows
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ rows) :
+    ∃ idx : Fin h_bridge.table.table.length,
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem idx.val) :=
+  exists_rowAt_of_mem_activeMemReplayRowsOfTable h_bridge.generatedRows
+    (by simpa [h_bridge.rows_eq] using h_entry)
+
+/-- Generated-table replay rows at provably different Mem addresses are safe to
+    cross, once the caller supplies the address separation for every possible
+    provider-row origin of the two entries. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_memTableGeneratedRowsBridge_rows_addr_ne
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left : leftEntry ∈ activeMemReplayRowsOfTable table)
+    (h_right : rightEntry ∈ activeMemReplayRowsOfTable table)
+    (h_addr_ne :
+      ∀ leftIdx rightIdx : Fin table.table.length,
+        leftEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val) →
+          rightEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val) →
+          mem.addr leftIdx.val ≠ mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry := by
+  rcases exists_rowAt_of_mem_activeMemReplayRowsOfTable h_bridge h_left with
+    ⟨leftIdx, h_left_row⟩
+  rcases exists_rowAt_of_mem_activeMemReplayRowsOfTable h_bridge h_right with
+    ⟨rightIdx, h_right_row⟩
+  exact activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+    h_ranges leftIdx rightIdx h_left_row h_right_row
+    (h_addr_ne leftIdx rightIdx h_left_row h_right_row)
+
 /-- Full-witness replay bridge wrapper for the address-separation
 no-active-write-overlap fact. -/
 theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_addr_ne
@@ -914,6 +981,30 @@ theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_
       ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry :=
   activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
     h_bridge.rowRanges leftIdx rightIdx h_left h_right h_addr_ne
+
+/-- Full-witness replay-row wrapper for address-separated safe crossings. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_rows_addr_ne
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left : leftEntry ∈ rows)
+    (h_right : rightEntry ∈ rows)
+    (h_addr_ne :
+      ∀ leftIdx rightIdx : Fin h_bridge.table.table.length,
+        leftEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem leftIdx.val) →
+          rightEntry ∈ activeMemReplayEntriesOfRow
+            (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem rightIdx.val) →
+          h_bridge.mem.addr leftIdx.val ≠ h_bridge.mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry :=
+  activeMemReplayEntry_noActiveWriteOverlap_of_memTableGeneratedRowsBridge_rows_addr_ne
+    h_bridge.generatedRows h_bridge.rowRanges
+    (by simpa [h_bridge.rows_eq] using h_left)
+    (by simpa [h_bridge.rows_eq] using h_right)
+    h_addr_ne
 
 /-- The full-witness bridge projects the generated row range required by the
     Mem trace spec. -/
