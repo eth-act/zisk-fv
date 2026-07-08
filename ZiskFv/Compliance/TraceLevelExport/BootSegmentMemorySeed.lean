@@ -193,14 +193,13 @@ theorem storeEvidence_of_loadMemReplay
 
 /-! ## The seed and its per-op derivation -/
 
-/-- Explicit structural certificate for the remaining sorted-to-execution order
-residue in the current #115 surface.
+/-- Explicit structural certificate for sorted-to-execution replay order.
 
 This states that the execution-order memory rows are obtainable from the
 accepted Mem replay rows by replay-safe adjacent swaps. It is not a read-value
-agreement predicate: final #115 work must either derive this certificate from
-row correspondence plus Mem ordering facts, or land it only after explicit
-scope approval as a PIL/checkable order certificate. -/
+agreement predicate. The #115 direct-Mem path derives this certificate from
+scoped source/target chronology plus the named row-count certificate; the generic
+seed API keeps the order certificate as the reusable assembly boundary. -/
 abbrev BootSegmentReplaySafeOrderCertificate
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (rowsOf : ℕ → List (MemoryBusEntry FGL))
