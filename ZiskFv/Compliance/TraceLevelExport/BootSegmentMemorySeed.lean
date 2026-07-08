@@ -759,6 +759,47 @@ theorem rowsOf_eq_memoryRowsOfStep_of_placement
     | exact h_placement
     | exact h_placement.1
 
+/-- A row in one step's `rowsOf` list is in the full execution-order memory
+row list. -/
+theorem mem_executionRows_of_rowsOf_mem
+    {n : Nat} {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    (i : Fin n) {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ rowsOf i.val) :
+    entry ∈ ((List.range n).flatMap rowsOf) :=
+  List.mem_flatMap.mpr ⟨i.val, List.mem_range.mpr i.isLt, h_entry⟩
+
+/-- Placement pins every structural row of this step into the full
+execution-order memory row list. -/
+theorem mem_executionRows_of_memoryRowsOfStep_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    (i : Fin ziskTrace.numInstructions)
+    (step : ZiskStep ziskTrace i)
+    (h_placement : MemoryOpPlacement ziskTrace rowsOf memInit i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  apply mem_executionRows_of_rowsOf_mem (i := i)
+  rwa [rowsOf_eq_memoryRowsOfStep_of_placement i step h_placement]
+
+/-- Through the replay-safe order certificate, placement reflects each
+structural execution row back to the accepted Mem replay row list. -/
+theorem BootSegmentReadSoundInputs.memReplayRows_of_memoryRowsOfStep_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (step : ZiskStep ziskTrace i)
+    (h_placement : MemoryOpPlacement ziskTrace rowsOf memInit i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty :=
+  inputs.memReplayRows_of_mem_executionRows
+    (mem_executionRows_of_memoryRowsOfStep_placement i step h_placement h_entry)
+
 /-! ## Per-op discharge via the execution-order fold. -/
 
 /-- Discharge one load's residual from the seed and its structural row tie, via the fold. -/
