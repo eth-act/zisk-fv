@@ -222,6 +222,117 @@ theorem previous_dual_step_le_step_of_memTableGeneratedRowsBridge
       (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx)
       (h_ranges.incrementChunks idx) h_dual
 
+/-- Every active entry of the previous generated Mem row is chronologically no
+later than the current primary entry at a non-boundary same-address row.
+
+This is the adjacent-row order fact for the same-address mixed read/write case:
+such rows generally cannot be swapped safely, so sorted-vs-execution order
+assembly needs evidence that they should not be crossed. -/
+theorem previous_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (idx : Fin table.table.length)
+    (h_same_addr : mem.addr_changes idx.val = 0)
+    (h_not_boundary : segment.segment_l1 idx.val = 0)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1))) :
+    entry.timestamp.toNat ≤
+      (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val)).timestamp.toNat := by
+  let previousIdx : Fin table.table.length := ⟨idx.val - 1, by omega⟩
+  let previousRow := ZiskFv.AirsClean.Mem.rowAt mem (idx.val - 1)
+  let currentRow := ZiskFv.AirsClean.Mem.rowAt mem idx.val
+  have h_previous_spec :
+      ZiskFv.AirsClean.Mem.Spec previousRow := by
+    simpa [previousRow, previousIdx] using
+      rowAt_spec_of_memTableGeneratedRowsBridge h_bridge previousIdx
+  rcases ZiskFv.AirsClean.Mem.sel_dual_boolean_of_spec
+      previousRow h_previous_spec with
+    h_sel_dual_zero | h_sel_dual_one
+  · rcases ZiskFv.AirsClean.Mem.sel_boolean_of_spec previousRow h_previous_spec with
+      h_sel_zero | h_sel_one
+    · have h_sel_ne : previousRow.sel ≠ 1 := by
+        simp [h_sel_zero]
+      have h_sel_dual_ne : previousRow.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_nil_of_inactive
+        h_sel_ne h_sel_dual_ne] at h_entry
+      cases h_entry
+    · have h_sel_dual_ne : previousRow.sel_dual ≠ 1 := by
+        simp [h_sel_dual_zero]
+      rw [activeMemReplayEntriesOfRow_eq_primary_of_sel_of_not_sel_dual
+        h_sel_one h_sel_dual_ne] at h_entry
+      simp at h_entry
+      subst entry
+      have h_no_dual_mem : mem.sel_dual (idx.val - 1) = 0 := by
+        simpa [previousRow, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual_zero
+      have h_le :=
+        previous_primary_step_le_step_of_memTableGeneratedRowsBridge
+          h_bridge h_ranges idx h_same_addr h_not_boundary h_no_dual_mem
+      simpa [previousRow, currentRow, memPrimaryReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.rowAt] using h_le
+  · rw [activeMemReplayEntriesOfRow_eq_primary_dual_of_spec_of_sel_dual
+      h_previous_spec h_sel_dual_one] at h_entry
+    simp at h_entry
+    have h_dual_mem : mem.sel_dual (idx.val - 1) = 1 := by
+      simpa [previousRow, ZiskFv.AirsClean.Mem.rowAt] using h_sel_dual_one
+    have h_dual_le_current :=
+      previous_dual_step_le_step_of_memTableGeneratedRowsBridge
+        h_bridge h_ranges idx h_same_addr h_not_boundary h_dual_mem
+    rcases h_entry with h_entry_primary | h_entry_dual
+    · subst entry
+      have h_previous_primary_le_dual :
+          (mem.step previousIdx.val).val ≤ (mem.step_dual previousIdx.val).val :=
+        ZiskFv.AirsClean.Mem.rowAt_step_le_step_dual_of_dual_step_delta_range
+          mem previousIdx.val (h_ranges.stepColumns previousIdx)
+          (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge previousIdx)
+          (h_ranges.dualStepDelta previousIdx (by simpa [previousIdx] using h_dual_mem))
+      have h_previous_primary_le_current :
+          (mem.step (idx.val - 1)).val ≤ (mem.step idx.val).val := by
+        exact le_trans (by simpa [previousIdx] using h_previous_primary_le_dual)
+          h_dual_le_current
+      simpa [previousRow, currentRow, memPrimaryReplayEntryOfRow,
+        ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.rowAt]
+        using h_previous_primary_le_current
+    · subst entry
+      simpa [previousRow, currentRow, memPrimaryReplayEntryOfRow,
+        memDualReadReplayEntryOfRow, ZiskFv.AirsClean.Mem.memBusMessage,
+        ZiskFv.AirsClean.Mem.memBusDualMessage, ZiskFv.AirsClean.Mem.rowAt]
+        using h_dual_le_current
+
+/-- Full-witness wrapper for adjacent same-address predecessor chronology.
+
+The full witness uses the deterministic `segmentWithFixedL1` segment shape, so
+the non-boundary premise is derived from `idx.val > 0`. -/
+theorem previous_activeMemReplayEntry_timestamp_le_current_primary_of_fullWitnessMemReplayBridge_same_addr
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (idx : Fin h_bridge.table.table.length)
+    (h_idx_pos : 0 < idx.val)
+    (h_same_addr : h_bridge.mem.addr_changes idx.val = 0)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry :
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem (idx.val - 1))) :
+    entry.timestamp.toNat ≤
+      (memPrimaryReplayEntryOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem idx.val)).timestamp.toNat := by
+  have h_fixed :=
+    memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment
+  exact
+    previous_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
+      h_bridge.generatedRows h_bridge.rowRanges idx h_same_addr
+      (h_fixed.segmentL1_nonfirst idx h_idx_pos) h_entry
+
 /-- On a bridged non-boundary address-change Mem table position, the previous
     row's address is strictly smaller than the current row's address. This is
     the adjacent address-order step behind the prior-prefix disjointness proof. -/
