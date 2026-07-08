@@ -2370,6 +2370,33 @@ theorem executionMemoryRowsOfSteps_nodup_of_pairwise_disjoint_memoryRows
   executionMemoryRowsOfSteps_nodup_of_pairwise_disjoint
     (fun i => memoryRowsOfStep_nodup i (ziskStep i)) h_pairwise
 
+/-- Build the pairwise structural row-disjointness shape from an indexwise
+obligation over unequal decoded steps. -/
+theorem pairwise_disjoint_memoryRowsOfStep_of_indexwise_disjoint
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    (List.finRange ziskTrace.numInstructions).Pairwise
+      (fun i j =>
+        List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+          (memoryRowsOfStep ziskTrace j (ziskStep j))) :=
+  (List.nodup_finRange ziskTrace.numInstructions).pairwise_of_forall_ne
+    (fun i _ j _ h_ne => h_disjoint i j h_ne)
+
+/-- Structural duplicate-freedom for execution memory rows from indexwise
+disjointness between unequal decoded steps. -/
+theorem executionMemoryRowsOfSteps_nodup_of_indexwise_disjoint_memoryRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Nodup :=
+  executionMemoryRowsOfSteps_nodup_of_pairwise_disjoint_memoryRows
+    (pairwise_disjoint_memoryRowsOfStep_of_indexwise_disjoint h_disjoint)
+
 /-- Placement form of structural duplicate-freedom for execution memory rows. -/
 theorem executionRows_nodup_of_pairwise_disjoint_placement
     {ziskTrace : AcceptedZiskTrace numInstructions}
@@ -2407,6 +2434,23 @@ theorem executionRows_nodup_of_pairwise_disjoint_memoryRows_placement
   rw [executionRows_eq_memoryRowsOfSteps_of_placement h_placement]
   exact executionMemoryRowsOfSteps_nodup_of_pairwise_disjoint_memoryRows h_pairwise
 
+/-- Placement form of structural duplicate-freedom from indexwise disjointness
+between unequal decoded steps. -/
+theorem executionRows_nodup_of_indexwise_disjoint_memoryRows_placement
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    ((List.range ziskTrace.numInstructions).flatMap rowsOf).Nodup :=
+  executionRows_nodup_of_pairwise_disjoint_memoryRows_placement
+    h_placement
+    (pairwise_disjoint_memoryRowsOfStep_of_indexwise_disjoint h_disjoint)
+
 /-- Seed-level wrapper for structural duplicate-freedom of execution memory
 rows. -/
 theorem BootSegmentMemorySeed.executionRows_nodup_of_pairwise_disjoint
@@ -2440,6 +2484,20 @@ theorem BootSegmentMemorySeed.executionRows_nodup_of_pairwise_disjoint_memoryRow
     ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Nodup :=
   executionRows_nodup_of_pairwise_disjoint_memoryRows_placement
     seed.placement h_pairwise
+
+/-- Seed-level wrapper for structural duplicate-freedom from indexwise
+disjointness between unequal decoded steps. -/
+theorem BootSegmentMemorySeed.executionRows_nodup_of_indexwise_disjoint_memoryRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Nodup :=
+  executionRows_nodup_of_indexwise_disjoint_memoryRows_placement
+    seed.placement h_disjoint
 
 /-- Whole-structural-list membership direction for the scoped direct-Mem
 correspondence.
@@ -2556,6 +2614,23 @@ theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_sc
   ziskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_nodup
     h_nonempty h_steps
     (executionMemoryRowsOfSteps_nodup_of_pairwise_disjoint_memoryRows h_pairwise)
+
+/-- Whole-list scoped direct-Mem row correspondence from indexwise
+disjointness between unequal decoded steps. -/
+theorem AcceptedZiskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_indexwise_disjoint
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    (executionMemoryRowsOfSteps ziskTrace ziskStep).Subperm
+      (ziskTrace.memReplayRows h_nonempty) :=
+  ziskTrace.executionMemoryRowsOfSteps_subperm_memReplayRows_of_scopedDirect_pairwise_disjoint_memoryRows
+    h_nonempty h_steps
+    (pairwise_disjoint_memoryRowsOfStep_of_indexwise_disjoint h_disjoint)
 
 /-- Permutation form of the count-sensitive scoped direct-Mem row
 correspondence.
@@ -2737,6 +2812,27 @@ theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_pl
     (executionRows_nodup_of_pairwise_disjoint_memoryRows_placement
       h_placement h_pairwise)
 
+/-- Placement form of scoped direct-Mem row correspondence from indexwise
+disjointness between unequal decoded steps. -/
+theorem AcceptedZiskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_indexwise_disjoint
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    (((List.range ziskTrace.numInstructions).flatMap rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_pairwise_disjoint_memoryRows
+    h_nonempty h_placement h_steps
+    (pairwise_disjoint_memoryRowsOfStep_of_indexwise_disjoint h_disjoint)
+
 /-- Placement form of the count-sensitive scoped direct-Mem row-correspondence
 permutation. -/
 theorem AcceptedZiskTrace.memReplayRows_perm_executionRows_of_scopedDirect_placement_count_le
@@ -2885,6 +2981,24 @@ theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_p
       (ziskTrace.memReplayRows h_nonempty)) :=
   ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_pairwise_disjoint_memoryRows
     h_nonempty seed.placement h_steps h_pairwise
+
+/-- Seed-level wrapper for scoped direct-Mem row correspondence from indexwise
+disjointness between unequal decoded steps. -/
+theorem BootSegmentMemorySeed.executionRows_subperm_memReplayRows_scopedDirect_indexwise_disjoint
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j))) :
+    (((List.range ziskTrace.numInstructions).flatMap seed.rowsOf).Subperm
+      (ziskTrace.memReplayRows h_nonempty)) :=
+  ziskTrace.executionRows_subperm_memReplayRows_of_scopedDirect_placement_indexwise_disjoint
+    h_nonempty seed.placement h_steps h_disjoint
 
 /-- Seed-level permutation wrapper for count-sensitive scoped direct-Mem row
 correspondence. -/
@@ -3251,6 +3365,36 @@ def bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_pairwise_disjoint_m
       h_placement h_pairwise)
     h_length
 
+/-- Construct the read-soundness input bundle for replay-neutral scoped
+direct-Mem rows from indexwise disjointness between unequal decoded steps. -/
+def bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_indexwise_disjoint
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_replayNeutral : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i))
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j)))
+    (h_length :
+      (ziskTrace.memReplayRows h_nonempty).length =
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf).length) :
+    BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty :=
+  bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_pairwise_disjoint_memoryRows
+    h_initialMemory h_placement h_scoped h_replayNeutral
+    (pairwise_disjoint_memoryRowsOfStep_of_indexwise_disjoint h_disjoint)
+    h_length
+
 /-- Direct read-soundness theorem for the scoped replay-neutral case. The
 remaining assumptions are the explicit boot/cross-segment initial-memory bridge
 and duplicate-sensitive row correspondence; read-value agreement is still
@@ -3404,6 +3548,36 @@ theorem readSound_of_scopedDirect_replayNeutral_pairwise_disjoint_memoryRows
   readSound_of_bootSegmentReadSoundInputs
     (bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_pairwise_disjoint_memoryRows
       h_initialMemory h_placement h_scoped h_replayNeutral h_pairwise h_length)
+
+/-- Direct read-soundness theorem for replay-neutral scoped direct-Mem rows
+using indexwise disjointness between unequal decoded steps. -/
+theorem readSound_of_scopedDirect_replayNeutral_indexwise_disjoint
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (h_initialMemory :
+      memInit =
+        (ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)).initialMemory)
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_scoped : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    (h_replayNeutral : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepReplayNeutralMemoryRows ziskTrace i (ziskStep i))
+    (h_disjoint : ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
+      List.Disjoint (memoryRowsOfStep ziskTrace i (ziskStep i))
+        (memoryRowsOfStep ziskTrace j (ziskStep j)))
+    (h_length :
+      (ziskTrace.memReplayRows h_nonempty).length =
+        ((List.range ziskTrace.numInstructions).flatMap rowsOf).length) :
+    MemoryBusRowsPrefixReadSound
+      memInit ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  readSound_of_bootSegmentReadSoundInputs
+    (bootSegmentReadSoundInputs_of_scopedDirect_replayNeutral_indexwise_disjoint
+      h_initialMemory h_placement h_scoped h_replayNeutral h_disjoint h_length)
 
 /-! ## Per-op discharge via the execution-order fold. -/
 
