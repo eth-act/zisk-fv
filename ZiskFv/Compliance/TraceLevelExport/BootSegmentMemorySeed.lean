@@ -133,9 +133,9 @@ abbrev BootSegmentReplaySafeOrderCertificate
 /-- Selection-shaped structural certificate for the remaining
 sorted-to-execution order residue.
 
-This is stronger than a plain bag equality and more constructive than an
-opaque order certificate: each execution-order head is selected from the
-accepted replay rows, crossing only an explicitly safe prefix. -/
+This is stronger than a plain bag equality: each execution-order head is
+selected from the accepted replay rows, crossing only an explicitly safe
+prefix. -/
 abbrev BootSegmentReplaySafeOrderSelection
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (rowsOf : ℕ → List (MemoryBusEntry FGL))
@@ -615,47 +615,6 @@ theorem acceptedMemReplayRows_prior_same_addr_timestamp_le_active
     (ziskTrace.memReplayBridge h_nonempty)
     priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry h_selected_entry
 
-/-- Chronological accepted Mem replay rows give the timestamp order for any
-ordered two-entry sublist of the accepted replay source. -/
-theorem acceptedMemReplayRows_timestamp_le_of_pair_sublist
-    {ziskTrace : AcceptedZiskTrace numInstructions}
-    {h_nonempty : 0 < ziskTrace.numInstructions}
-    (h_chronological :
-      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
-        (ziskTrace.memReplayRows h_nonempty))
-    {earlier later : MemoryBusEntry FGL}
-    (h_pair :
-      List.Sublist [earlier, later] (ziskTrace.memReplayRows h_nonempty)) :
-    earlier.timestamp.toNat ≤ later.timestamp.toNat := by
-  have h_pairwise :
-      (ziskTrace.memReplayRows h_nonempty).Pairwise
-        (fun earlier later : MemoryBusEntry FGL =>
-          earlier.timestamp.toNat ≤ later.timestamp.toNat) := by
-    simpa [ZiskFv.AirsClean.Mem.MemoryBusRowsChronological] using h_chronological
-  exact rel_of_pair_sublist_pairwise
-    (R := fun earlier later : MemoryBusEntry FGL =>
-      earlier.timestamp.toNat ≤ later.timestamp.toNat)
-    h_pairwise h_pair
-
-/-- Selected-prefix form of chronological accepted Mem replay order: when the
-current recursive selected source is a sublist of the accepted replay rows,
-every crossed prefix row is chronologically no later than the selected row. -/
-theorem acceptedMemReplayRows_timestamp_le_of_selected_prefix
-    {ziskTrace : AcceptedZiskTrace numInstructions}
-    {h_nonempty : 0 < ziskTrace.numInstructions}
-    (h_chronological :
-      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
-        (ziskTrace.memReplayRows h_nonempty))
-    {current pref suffix : List (MemoryBusEntry FGL)}
-    {moved row : MemoryBusEntry FGL}
-    (h_current_sub :
-      List.Sublist current (ziskTrace.memReplayRows h_nonempty))
-    (h_current : current = pref ++ row :: suffix)
-    (h_moved : moved ∈ pref) :
-    moved.timestamp.toNat ≤ row.timestamp.toNat :=
-  acceptedMemReplayRows_timestamp_le_of_pair_sublist h_chronological
-    (pair_sublist_of_mem_pref_of_sublist_split h_current_sub h_current h_moved)
-
 /-- Target-order form of selected-prefix chronology: if the selected target
 head is ordered before the target tail, a crossed source-prefix row occurs no
 earlier than that selected row in the target chronology. -/
@@ -678,34 +637,6 @@ theorem memoryBusRows_timestamp_le_of_selected_target_prefix
       earlier.timestamp.toNat ≤ later.timestamp.toNat)
     h_pairwise
     (pair_sublist_of_mem_pref_of_target_sublist_perm h_target_sub h_tail_perm h_moved)
-
-/-- If a selected source crossing is ordered one way by accepted Mem replay
-chronology and the other way by execution-target chronology, the crossed rows
-must have equal timestamps. This packages the chronology evidence needed before
-later origin facts decide whether the crossing is equality, address-separated,
-or impossible. -/
-theorem selected_prefix_timestamp_eq_of_source_and_target_chronology
-    {ziskTrace : AcceptedZiskTrace numInstructions}
-    {h_nonempty : 0 < ziskTrace.numInstructions}
-    {target current pref suffix targetTail : List (MemoryBusEntry FGL)}
-    {moved row : MemoryBusEntry FGL}
-    (h_source_chronological :
-      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
-        (ziskTrace.memReplayRows h_nonempty))
-    (h_target_chronological :
-      ZiskFv.AirsClean.Mem.MemoryBusRowsChronological target)
-    (h_current_sub :
-      List.Sublist current (ziskTrace.memReplayRows h_nonempty))
-    (h_current : current = pref ++ row :: suffix)
-    (h_target_sub : List.Sublist (row :: targetTail) target)
-    (h_tail_perm : (pref ++ suffix).Perm targetTail)
-    (h_moved : moved ∈ pref) :
-    moved.timestamp.toNat = row.timestamp.toNat :=
-  Nat.le_antisymm
-    (acceptedMemReplayRows_timestamp_le_of_selected_prefix
-      h_source_chronological h_current_sub h_current h_moved)
-    (memoryBusRows_timestamp_le_of_selected_target_prefix
-      h_target_chronological h_target_sub h_tail_perm h_moved)
 
 /-- A plain accepted-replay/execution row permutation becomes a boot order
 certificate from origin-level equality/address separation over accepted replay
