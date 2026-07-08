@@ -2187,6 +2187,42 @@ theorem exists_split_cons_of_perm_cons
     exact h_perm_split.trans (by simpa [h_split] using h_perm)
   exact List.Perm.cons_inv h_perm_target
 
+/-- If `moved` occurs in a prefix before `row`, then `[moved, row]` is a
+sublist of the split list. -/
+theorem pair_sublist_append_cons_of_mem
+    {α : Type u}
+    {moved row : α}
+    {pref suffix : List α}
+    (h_moved : moved ∈ pref) :
+    List.Sublist [moved, row] (pref ++ row :: suffix) := by
+  induction pref with
+  | nil =>
+      cases h_moved
+  | cons head tail ih =>
+      simp at h_moved
+      rcases h_moved with h_head | h_tail
+      · subst head
+        exact List.Sublist.cons₂ moved
+          (List.singleton_sublist.mpr (by simp))
+      · exact List.sublist_cons_of_sublist head (ih h_tail)
+
+/-- If the current selected source is a sublist of the original source, and a
+selected row occurs after `moved` in the current prefix split, then the ordered
+pair `[moved, row]` is a sublist of the original source. -/
+theorem pair_sublist_of_mem_pref_of_sublist_split
+    {α : Type u}
+    {source current pref suffix : List α}
+    {moved row : α}
+    (h_current_sub : List.Sublist current source)
+    (h_current : current = pref ++ row :: suffix)
+    (h_moved : moved ∈ pref) :
+    List.Sublist [moved, row] source := by
+  have h_pair_current :
+      List.Sublist [moved, row] current := by
+    rw [h_current]
+    exact pair_sublist_append_cons_of_mem h_moved
+  exact h_pair_current.trans h_current_sub
+
 /-- Build a replay-safe order certificate from a plain permutation and a
 selection-local duplicate-aware crossing condition.
 
