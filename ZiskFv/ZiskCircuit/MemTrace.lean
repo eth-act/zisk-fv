@@ -2154,6 +2154,77 @@ theorem MemoryBusRowsReplaySafePermutation.cons_target_of_split_eq_or_noActiveWr
       MemoryBusRowsReplaySafePermutation.append_left [row] h_tail
   exact h_move.trans h_recurse
 
+/-- Split a source list around the head of a permuted target list.
+
+This is the ordinary-list counterpart of the selection-shaped order
+constructors below: if `source` is a permutation of `row :: targetTail`, then
+`row` occurs at some `pref ++ row :: suffix` position in `source`, and removing
+that occurrence leaves a permutation of `targetTail`. -/
+theorem exists_split_cons_of_perm_cons
+    {source targetTail : List (MemoryBusEntry FGL)}
+    {row : MemoryBusEntry FGL}
+    (h_perm : source.Perm (row :: targetTail)) :
+    ∃ pref suffix : List (MemoryBusEntry FGL),
+      source = pref ++ row :: suffix ∧ (pref ++ suffix).Perm targetTail := by
+  have h_mem : row ∈ source := h_perm.mem_iff.mpr (by simp)
+  rcases List.mem_iff_get.mp h_mem with ⟨idx, h_get⟩
+  let pref := source.take idx.val
+  let suffix := source.drop (idx.val + 1)
+  have h_split : source = pref ++ row :: suffix := by
+    have h_drop :
+        row :: source.drop (idx.val + 1) = source.drop idx.val := by
+      rw [← h_get]
+      exact List.getElem_cons_drop idx.isLt
+    calc
+      source = source.take idx.val ++ source.drop idx.val := by
+        simp [List.take_append_drop]
+      _ = pref ++ row :: suffix := by
+        simp [pref, suffix, h_drop]
+  refine ⟨pref, suffix, h_split, ?_⟩
+  have h_perm_split : (row :: pref ++ suffix).Perm (pref ++ row :: suffix) :=
+    List.perm_cons_append_cons row (List.Perm.refl (pref ++ suffix))
+  have h_perm_target : (row :: pref ++ suffix).Perm (row :: targetTail) := by
+    exact h_perm_split.trans (by simpa [h_split] using h_perm)
+  exact List.Perm.cons_inv h_perm_target
+
+/-- Build a replay-safe order certificate from a plain permutation and a
+selection-local duplicate-aware crossing condition.
+
+At each recursive step, the next target head is found inside the current
+source list using the ordinary permutation. The caller only proves safety for
+the prefix that this selected row crosses. Equal crossed events are treated as
+no-op swaps; distinct crossed events must provide the real bidirectional
+no-active-write-overlap fact. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_select_eq_or_noActiveWriteOverlap
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_cross :
+      ∀ current row targetTail,
+        current.Perm (row :: targetTail) →
+          ∀ pref suffix,
+            current = pref ++ row :: suffix →
+              (pref ++ suffix).Perm targetTail →
+                ∀ moved, moved ∈ pref →
+                  row = moved ∨
+                    (MemoryBusEntryNoActiveWriteOverlap row moved ∧
+                      MemoryBusEntryNoActiveWriteOverlap moved row)) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction target generalizing source with
+  | nil =>
+      cases source with
+      | nil => exact MemoryBusRowsReplaySafePermutation.refl []
+      | cons row rows =>
+          have h_len := h_perm.length_eq
+          simp at h_len
+  | cons row targetTail ih =>
+      rcases exists_split_cons_of_perm_cons h_perm with
+        ⟨pref, suffix, h_source, h_tail_perm⟩
+      rw [h_source]
+      exact MemoryBusRowsReplaySafePermutation.cons_target_of_split_eq_or_noActiveWriteOverlap
+        row pref suffix targetTail
+        (ih h_tail_perm)
+        (h_cross source row targetTail h_perm pref suffix h_source h_tail_perm)
+
 /-- A recursive, selection-shaped certificate for replay-safe reordering.
 
 Each target head is selected from the current source list at
