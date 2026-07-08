@@ -1540,6 +1540,17 @@ theorem MemoryBusRowsReplaySafePermutation.mem_target_of_mem_source
     entry ∈ target :=
   (h_order.perm.mem_iff).mp h_mem
 
+/-- Replay-safe order certificates reflect row membership back to the source
+list. This is the bag/permutation direction needed by row-correspondence
+callers that start from execution-order rows. -/
+theorem MemoryBusRowsReplaySafePermutation.mem_source_of_mem_target
+    {source target : List (MemoryBusEntry FGL)}
+    {entry : MemoryBusEntry FGL}
+    (h_order : MemoryBusRowsReplaySafePermutation source target)
+    (h_mem : entry ∈ target) :
+    entry ∈ source :=
+  (h_order.perm.mem_iff).mpr h_mem
+
 /-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
 
 This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into

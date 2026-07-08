@@ -184,6 +184,33 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_memReplayRows
     simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows] using h_entry
   exact inputs.order.mem_target_of_mem_source h_source
 
+/-- The replay-safe order certificate exposes the bag/permutation equality
+between accepted Mem replay rows and execution-order rows. -/
+theorem BootSegmentReadSoundInputs.memReplayRows_perm_executionRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty) :
+    (ziskTrace.memReplayRows h_nonempty).Perm
+      ((List.range ziskTrace.numInstructions).flatMap rowsOf) := by
+  simpa [BootSegmentReplaySafeOrderCertificate, AcceptedZiskTrace.memReplayBridge,
+    AcceptedZiskTrace.memReplayRows] using inputs.order.perm
+
+/-- Execution-order rows are accepted Mem replay rows when viewed through the
+explicit replay-safe order certificate. This is the reverse membership direction
+needed by row-correspondence callers that start from `rowsOf`. -/
+theorem BootSegmentReadSoundInputs.memReplayRows_of_mem_executionRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty :=
+  (inputs.memReplayRows_perm_executionRows.mem_iff).mpr h_entry
+
 /-- Accepted mutable-Mem provider coverage plus the seed order certificate
 places the selected active Main memory entry in execution order.
 
