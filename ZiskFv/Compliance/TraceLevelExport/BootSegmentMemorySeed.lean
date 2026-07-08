@@ -1310,6 +1310,34 @@ def ZiskStepStoreMemoryRows
   | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
       False
 
+/-- Structural decoded steps that emit no memory-bus rows. -/
+def ZiskStepNoMemoryRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
+  | .sub _ | .and _ | .or _ | .xor _ | .slt _ | .sltu _
+  | .andi _ | .ori _ | .xori _ | .slti _ | .sltiu _
+  | .sll _ | .srl _ | .sra _ | .slli _ | .srli _ | .srai _
+  | .add _ | .addi _ | .subw _ | .addw _ | .addiw _
+  | .sllw _ | .srlw _ | .sraw _ | .slliw _ | .srliw _ | .sraiw _
+  | .mul _ | .mulh _ | .mulhsu _ | .mulw _ | .mulhu _
+  | .div _ | .rem _ | .divw _ | .remw _ | .divu _ | .divuw _
+  | .remu _ | .remuw _
+  | .beq _ | .bne _ | .blt _ | .bge _ | .bltu _ | .bgeu _
+  | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
+      True
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _
+  | .sb _ | .sh _ | .sw _ | .sd _ =>
+      False
+
+/-- A decoded no-memory step emits an empty structural memory-row list. -/
+theorem memoryRowsOfStep_eq_nil_of_noMemoryRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    {step : ZiskStep ziskTrace i}
+    (h_step : ZiskStepNoMemoryRows ziskTrace i step) :
+    memoryRowsOfStep ziskTrace i step = [] := by
+  cases step <;> simp [ZiskStepNoMemoryRows, memoryRowsOfStep] at h_step ⊢
+
 /-- Named syntactic residue for the direct mutable-Mem load path.
 
 The active source-sum fact says the concrete Main `b` memory-bus pull is active.
@@ -1409,6 +1437,17 @@ inductive ZiskStepScopedDirectMemRows
   | noMemory {step : ZiskStep ziskTrace i}
       (h_empty : memoryRowsOfStep ziskTrace i step = []) :
       ZiskStepScopedDirectMemRows ziskTrace i step
+
+/-- Build the scoped no-memory branch from the named structural no-memory
+classifier. -/
+theorem ZiskStepScopedDirectMemRows.noMemory_of_noMemoryRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_step : ZiskStepNoMemoryRows ziskTrace i step) :
+    ZiskStepScopedDirectMemRows ziskTrace i step :=
+  ZiskStepScopedDirectMemRows.noMemory
+    (memoryRowsOfStep_eq_nil_of_noMemoryRows h_step)
 
 /-- Build the scoped direct mutable-Mem load classification from the existing
 per-op decode record, so callers do not need to pass the load selector pin
