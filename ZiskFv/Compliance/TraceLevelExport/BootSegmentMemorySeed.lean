@@ -1310,6 +1310,48 @@ def ZiskStepStoreMemoryRows
   | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
       False
 
+/-- Named syntactic residue for the direct mutable-Mem load path.
+
+The active source-sum fact says the concrete Main `b` memory-bus pull is active.
+The three exclusions rule out the remaining MemAlign-family provider branches,
+leaving the mutable-Mem provider branch. -/
+structure LoadBDirectMutableMemResidues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) where
+  active :
+    -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+      + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+      + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL)
+  no_marb :
+    ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+      ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+      (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2
+  no_mab :
+    ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+      ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+      (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2
+  no_memAlign :
+    ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+      ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+      (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2
+
+/-- Named syntactic residue for the direct mutable-Mem store path.
+
+The active source-sum fact says the concrete Main `c` memory-bus pull is active.
+The exclusion rules out non-mutable provider branches, leaving the mutable-Mem
+provider branch. -/
+structure StoreCDirectMutableMemResidues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) where
+  active :
+    -((mainRowWithRomSt ziskTrace i).rom.store_mem
+      + (mainRowWithRomSt ziskTrace i).rom.store_ind
+      + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL)
+  no_nonmutable :
+    ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+      ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+      (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2
+
 /-- Structural decoded steps whose emitted memory rows are already routed
 through the direct mutable-Mem provider path.
 
@@ -1399,6 +1441,18 @@ theorem ZiskStepDirectMutableMemRows.load_of_rowDecode
     exact ZiskStepDirectMutableMemRows.load h_load h_decode.h_b_src_ind h_active
       h_no_marb h_no_mab h_no_memAlign
 
+/-- Residue-bundle form of `ZiskStepDirectMutableMemRows.load_of_rowDecode`. -/
+theorem ZiskStepDirectMutableMemRows.load_of_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : LoadBDirectMutableMemResidues ziskTrace i) :
+    ZiskStepDirectMutableMemRows ziskTrace i step :=
+  ZiskStepDirectMutableMemRows.load_of_rowDecode ziskTrace i h_load h_decode
+    h_residue.active h_residue.no_marb h_residue.no_mab h_residue.no_memAlign
+
 /-- Build the scoped direct mutable-Mem store classification from the existing
 per-op decode record, so callers do not need to pass the store selector pin
 separately. The active c-side pull and non-mutable-provider exclusion remain
@@ -1422,6 +1476,44 @@ theorem ZiskStepDirectMutableMemRows.store_of_rowDecode
   all_goals
     exact ZiskStepDirectMutableMemRows.store h_store h_decode.h_store_ind h_active
       h_no_nonmutable
+
+/-- Residue-bundle form of `ZiskStepDirectMutableMemRows.store_of_rowDecode`. -/
+theorem ZiskStepDirectMutableMemRows.store_of_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : StoreCDirectMutableMemResidues ziskTrace i) :
+    ZiskStepDirectMutableMemRows ziskTrace i step :=
+  ZiskStepDirectMutableMemRows.store_of_rowDecode ziskTrace i h_store h_decode
+    h_residue.active h_residue.no_nonmutable
+
+/-- Scoped wrapper for decoded direct mutable-Mem loads with named residues. -/
+theorem ZiskStepScopedDirectMemRows.load_of_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : LoadBDirectMutableMemResidues ziskTrace i) :
+    ZiskStepScopedDirectMemRows ziskTrace i step :=
+  ZiskStepScopedDirectMemRows.direct
+    (ZiskStepDirectMutableMemRows.load_of_rowDecode_residues
+      ziskTrace i h_load h_decode h_residue)
+
+/-- Scoped wrapper for decoded direct mutable-Mem stores with named residues. -/
+theorem ZiskStepScopedDirectMemRows.store_of_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : StoreCDirectMutableMemResidues ziskTrace i) :
+    ZiskStepScopedDirectMemRows ziskTrace i step :=
+  ZiskStepScopedDirectMemRows.direct
+    (ZiskStepDirectMutableMemRows.store_of_rowDecode_residues
+      ziskTrace i h_store h_decode h_residue)
 
 /-- Scoped structural row correspondence for direct mutable-Mem load rows.
 
@@ -1717,6 +1809,70 @@ theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_directMutabl
   | store h_store h_store_ind h_active h_no_nonmutable =>
       exact ziskTrace.memoryRowsOfStep_subperm_memReplayRows_of_store_no_nonmutableBranches
         h_nonempty i h_store h_store_ind h_active h_no_nonmutable
+
+/-- Residue-bundle row correspondence for decoded direct mutable-Mem loads. -/
+theorem AcceptedZiskTrace.memReplayRows_of_loadMemoryRowsOfStep_of_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : LoadBDirectMutableMemResidues ziskTrace i)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty :=
+  ziskTrace.memReplayRows_of_directMutableMemRowsOfStep h_nonempty i
+    (ZiskStepDirectMutableMemRows.load_of_rowDecode_residues
+      ziskTrace i h_load h_decode h_residue)
+    h_entry
+
+/-- Residue-bundle row correspondence for decoded direct mutable-Mem stores. -/
+theorem AcceptedZiskTrace.memReplayRows_of_storeMemoryRowsOfStep_of_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : StoreCDirectMutableMemResidues ziskTrace i)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty :=
+  ziskTrace.memReplayRows_of_directMutableMemRowsOfStep h_nonempty i
+    (ZiskStepDirectMutableMemRows.store_of_rowDecode_residues
+      ziskTrace i h_store h_decode h_residue)
+    h_entry
+
+/-- Duplicate-sensitive residue-bundle form for decoded direct mutable-Mem
+loads. -/
+theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_load_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : LoadBDirectMutableMemResidues ziskTrace i) :
+    (memoryRowsOfStep ziskTrace i step).Subperm (ziskTrace.memReplayRows h_nonempty) :=
+  ziskTrace.memoryRowsOfStep_subperm_memReplayRows_of_directMutableMemRows h_nonempty i
+    (ZiskStepDirectMutableMemRows.load_of_rowDecode_residues
+      ziskTrace i h_load h_decode h_residue)
+
+/-- Duplicate-sensitive residue-bundle form for decoded direct mutable-Mem
+stores. -/
+theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_store_rowDecode_residues
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_residue : StoreCDirectMutableMemResidues ziskTrace i) :
+    (memoryRowsOfStep ziskTrace i step).Subperm (ziskTrace.memReplayRows h_nonempty) :=
+  ziskTrace.memoryRowsOfStep_subperm_memReplayRows_of_directMutableMemRows h_nonempty i
+    (ZiskStepDirectMutableMemRows.store_of_rowDecode_residues
+      ziskTrace i h_store h_decode h_residue)
 
 /-- Step-local scoped direct-Mem row correspondence, including no-memory
 instructions. -/
