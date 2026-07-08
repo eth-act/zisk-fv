@@ -1,6 +1,7 @@
 import Clean.Air.Balance
 import ZiskFv.Channels.MemoryBus
 import ZiskFv.Compliance.EnsembleWitnessBuilder
+import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
 import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.RegisterBoundary
 
@@ -14,14 +15,14 @@ boot (`global_init_mem`) and reload (`reg_pre_load`) — are emitted by the Regi
 component (`ZiskFv/AirsClean/RegisterBoundary.lean`).  All of these are now real composed-table
 emissions in `fullRv64imEnsemble` (see `AirsClean/FullEnsemble.lean`).
 
-This file proves that the register (`mem_op = 3`) partition of those emissions **telescopes to
-zero** for the minimal no-prelude real-register witness `add x1,x1,x1`.  Unlike the earlier
-shape-demo, the balanced messages here are the **real component emission definitions**
+This file proves that the normalized register (`mem_op = 3`) partition of those emissions
+**telescopes to zero** for the minimal no-prelude real-register witness `add x1,x1,x1`.  Unlike the
+earlier shape-demo, the balanced messages here are the **real component emission definitions**
 (`aRegPreMessage`/`aMemMessage`/… from `Main/Bridge.lean`, `bootMessage`/`reloadMessage` from
 RegisterBoundary) instantiated at a concrete `add x1,x1,x1` `MainRowWithRom`, not hand-authored
 literals.  Their multiplicities are the emissions' own selectors: for `add x1,x1,x1` the push-prev
 selectors `a_src_reg`/`b_src_reg`/`store_reg` are `1` and the pull selectors
-`-(…_mem + … + …_reg)` are `-1`, matching `pushedValue` / `pulledValue`.
+`-(…_mem + … + …_reg)` are `-1`.
 
 **Scope.** This is the register-partition balance (`BalancedInteractions` over the `mem_op = 3`
 messages), the object #219 consumes.  It does **not** build the whole-channel
@@ -32,14 +33,9 @@ checks enforce (the #169/#19 axis, `main.pil:447`), pinned here in the concrete 
 used: ZisK decodes `x0` operands as immediate/no-op register accesses emitting no `mem_op = 3`
 traffic, so `x1,x1,x1` is the minimal real-register witness.
 
-**Not yet extracted via `interactionsWith`.**  The balanced messages are the real emission
-*definitions*, but the multiplicities are the emissions' `±1` selector values pinned at this row
-(`pushedValue` / `pulledValue`), not evaluated from the components' interaction lists.  Deriving the
-interaction list — messages *and* multiplicities — from
-`(mainSingleRowTable …).interactionsWith MemBusChannel.toRaw` plus a RegisterBoundary single-row
-reduction (the memBus analogue of #234's `mainSingleRowTable_interactionsWith_opBus`, which #234
-explicitly left to #219) is the #219 follow-up; only then does the balance track a change to an
-emission's multiplicity in `Main/Constraints.lean`.
+This file also exposes the actual table interaction reductions for the concrete Main row and
+RegisterBoundary rows.  The remaining #219 bridge is the projection from Main's evaluated
+`interactionsWith` list to the normalized six-interaction list below.
 
 ## Trust note
 
@@ -48,9 +44,12 @@ No axioms.  `pulledValue` / `pushedValue` are Clean's `-1` / `+1` value-level ch
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus
+open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
+open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.Main (MainRowWithRom aRegPreMessage aMemMessage bRegPreMessage bMemMessage
   cRegPreMessage cMemMessage)
 open ZiskFv.AirsClean.RegisterBoundary (RegisterBoundaryRow bootMessage reloadMessage)
+open ZiskFv.Compliance.Instantiation
 
 namespace ZiskFv.Compliance.RegisterMemBusBalance
 
@@ -137,6 +136,15 @@ def addX1Row : MainRowWithRom FGL :=
         store_reg_prev_mem_step := 2, store_reg_prev_value_0 := 0,
         store_reg_prev_value_1 := 0 } }
 
+/-- The ROM row matching `addX1Row`'s decoded selector pins. -/
+def addX1ProgramRow : ZiskRomMessage FGL :=
+  { line := 0, a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 1, b_imm1 := 0,
+    ind_width := 8, op := 0, store_offset := 1, jmp_offset1 := 0, jmp_offset2 := 0,
+    flags := 57409 }
+
+/-- A one-instruction concrete program for the `add x1,x1,x1` witness. -/
+def addX1Program : Program 1 := fun _ => addX1ProgramRow
+
 /-- Boundary row for register x1: reload closes the chain at the last access (ts 3), value 0. -/
 def boundaryRowX1 : RegisterBoundaryRow FGL :=
   { reg := 1, reloadTimestamp := 3, reloadValue_0 := 0, reloadValue_1 := 0 }
@@ -147,23 +155,25 @@ def boundaryRowIdle (r : FGL) : RegisterBoundaryRow FGL :=
 
 /-! ## The real-emission register interaction list for `add x1,x1,x1` -/
 
-/-- Main's six register `mem_op=3` emissions for `add x1,x1,x1`, as value-level interactions with
-    the emissions' own multiplicities: push-prev (selector `1`) as `pushedValue`, pull-current
-    (selector `-1`) as `pulledValue`.  The messages are the real `Main/Bridge.lean` emission
-    definitions instantiated at `addX1Row`. -/
-def mainRegisterInteractions : List (Interaction FGL) :=
-  [ MemBusChannel.pushedValue (aRegPreMessage addX1Row)
-  , MemBusChannel.pulledValue (aMemMessage addX1Row)
-  , MemBusChannel.pushedValue (bRegPreMessage addX1Row)
-  , MemBusChannel.pulledValue (bMemMessage addX1Row)
-  , MemBusChannel.pushedValue (cRegPreMessage addX1Row)
-  , MemBusChannel.pulledValue (cMemMessage addX1Row) ]
+/-- Main's six register `mem_op=3` emissions for `add x1,x1,x1`, extracted from the actual
+    one-row Main table interaction reduction. -/
+def mainRegisterInteractionsFromTable : List (Interaction FGL) :=
+  mainMemBusInteractions 1 addX1Program addX1Row
 
-/-- One register's boundary contribution: boot pull + reload push (real RegisterBoundary emission
-    definitions), as value-level interactions. -/
+/-- Main's six register `mem_op=3` emissions for `add x1,x1,x1`, extracted from the actual
+    emission definitions and normalized to value-level interactions. -/
+def mainRegisterInteractions : List (Interaction FGL) :=
+  [ mainARegPreInteraction addX1Row
+  , mainAMemInteraction addX1Row
+  , mainBRegPreInteraction addX1Row
+  , mainBMemInteraction addX1Row
+  , mainCRegPreInteraction addX1Row
+  , mainCMemInteraction addX1Row ]
+
+/-- One register's boundary contribution extracted from the actual RegisterBoundary one-row table
+    interaction reduction. -/
 def boundaryInteractions (row : RegisterBoundaryRow FGL) : List (Interaction FGL) :=
-  [ MemBusChannel.pulledValue (bootMessage row)
-  , MemBusChannel.pushedValue (reloadMessage row) ]
+  registerBoundaryMemBusInteractions row
 
 /-- Idle tracked registers x2..x31, each contributing a self-balancing boot/reload zero pair. -/
 def idleBoundaryInteractions : List (Interaction FGL) :=
@@ -173,6 +183,19 @@ def idleBoundaryInteractions : List (Interaction FGL) :=
     x1's boot/reload, and the idle registers' boot/reload pairs. -/
 def addX1X1X1RegisterInteractions : List (Interaction FGL) :=
   mainRegisterInteractions ++ boundaryInteractions boundaryRowX1 ++ idleBoundaryInteractions
+
+theorem addX1Row_main_interactionsWith_memBus_eq_mainRegisterInteractionsFromTable :
+    (mainSingleRowTable 1 addX1Program addX1Row).interactionsWith MemBusChannel.toRaw =
+      mainRegisterInteractionsFromTable := by
+  rw [mainSingleRowTable_interactionsWith_memBus]
+  rfl
+
+theorem registerBoundary_interactionsWith_memBus_eq_boundaryInteractions
+    (row : RegisterBoundaryRow FGL) :
+    (registerBoundarySingleRowTable row).interactionsWith MemBusChannel.toRaw =
+      boundaryInteractions row := by
+  rw [registerBoundarySingleRowTable_interactionsWith_memBus]
+  rfl
 
 /-! ## The register consistency equalities (the telescoping content)
 
