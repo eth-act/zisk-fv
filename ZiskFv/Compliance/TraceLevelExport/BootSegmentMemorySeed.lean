@@ -1368,6 +1368,61 @@ inductive ZiskStepScopedDirectMemRows
       (h_empty : memoryRowsOfStep ziskTrace i step = []) :
       ZiskStepScopedDirectMemRows ziskTrace i step
 
+/-- Build the scoped direct mutable-Mem load classification from the existing
+per-op decode record, so callers do not need to pass the load selector pin
+separately. -/
+theorem ZiskStepDirectMutableMemRows.load_of_rowDecode
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_no_marb :
+      ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_mab :
+      ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+    (h_no_memAlign :
+      ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+        (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
+    ZiskStepDirectMutableMemRows ziskTrace i step := by
+  cases step <;> simp [ZiskStepLoadMemoryRows] at h_load
+  all_goals
+    exact ZiskStepDirectMutableMemRows.load h_load h_decode.h_b_src_ind h_active
+      h_no_marb h_no_mab h_no_memAlign
+
+/-- Build the scoped direct mutable-Mem store classification from the existing
+per-op decode record, so callers do not need to pass the store selector pin
+separately. The active c-side pull and non-mutable-provider exclusion remain
+explicit residues. -/
+theorem ZiskStepDirectMutableMemRows.store_of_rowDecode
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+    (h_decode : RowDecode ziskTrace i step)
+    (h_active :
+      -((mainRowWithRomSt ziskTrace i).rom.store_mem
+        + (mainRowWithRomSt ziskTrace i).rom.store_ind
+        + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+    (h_no_nonmutable :
+      ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+        ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+        (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2) :
+    ZiskStepDirectMutableMemRows ziskTrace i step := by
+  cases step <;> simp [ZiskStepStoreMemoryRows] at h_store
+  all_goals
+    exact ZiskStepDirectMutableMemRows.store h_store h_decode.h_store_ind h_active
+      h_no_nonmutable
+
 /-- Scoped structural row correspondence for direct mutable-Mem load rows.
 
 For a decoded load step, any row in `memoryRowsOfStep` is the concrete `busLd.e1`
