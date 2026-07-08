@@ -1310,6 +1310,64 @@ def ZiskStepStoreMemoryRows
   | .lui _ | .auipc _ | .jal _ | .jalr _ | .fence _ =>
       False
 
+/-- Structural decoded steps whose emitted memory rows are already routed
+through the direct mutable-Mem provider path.
+
+The constructors carry the remaining syntactic route residues for the direct
+load/store paths. They deliberately do not include MemAlign-family provider
+alternatives: those stay named separately until the broader row-correspondence
+scope is resolved. -/
+inductive ZiskStepDirectMutableMemRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    ZiskStep ziskTrace i → Prop
+  | load {step : ZiskStep ziskTrace i}
+      (h_load : ZiskStepLoadMemoryRows ziskTrace i step)
+      (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+      (h_active :
+        -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+          + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+          + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+      (h_no_marb :
+        ¬ ActiveMainMemAlignReadByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+          ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+          (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+      (h_no_mab :
+        ¬ ActiveMainMemAlignByteProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+          ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+          (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2)
+      (h_no_memAlign :
+        ¬ ActiveMainMemAlignProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+          ziskTrace.mainTable (loadBMemMainRow ziskTrace i)
+          (loadBMemMainInteraction ziskTrace i) (loadBMemMainMessage ziskTrace) (-1) 2) :
+      ZiskStepDirectMutableMemRows ziskTrace i step
+  | store {step : ZiskStep ziskTrace i}
+      (h_store : ZiskStepStoreMemoryRows ziskTrace i step)
+      (h_store_ind : (mainRowWithRomSt ziskTrace i).rom.store_ind = 1)
+      (h_active :
+        -((mainRowWithRomSt ziskTrace i).rom.store_mem
+          + (mainRowWithRomSt ziskTrace i).rom.store_ind
+          + (mainRowWithRomSt ziskTrace i).rom.store_reg) = (-1 : FGL))
+      (h_no_nonmutable :
+        ¬ ActiveMainNonMutableMemProviderRowMatchSpec ziskTrace.program ziskTrace.witness
+          ziskTrace.mainTable (storeCMemMainRow ziskTrace i)
+          (storeCMemMainInteraction ziskTrace i) (storeCMemMainMessage ziskTrace) 1 2) :
+      ZiskStepDirectMutableMemRows ziskTrace i step
+
+/-- Structural decoded steps in the current scoped direct-Mem correspondence:
+either a direct mutable-Mem load/store row with its explicit route residues, or
+an instruction that emits no memory rows. -/
+inductive ZiskStepScopedDirectMemRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) :
+    ZiskStep ziskTrace i → Prop
+  | direct {step : ZiskStep ziskTrace i}
+      (h_direct : ZiskStepDirectMutableMemRows ziskTrace i step) :
+      ZiskStepScopedDirectMemRows ziskTrace i step
+  | noMemory {step : ZiskStep ziskTrace i}
+      (h_empty : memoryRowsOfStep ziskTrace i step = []) :
+      ZiskStepScopedDirectMemRows ziskTrace i step
+
 /-- Scoped structural row correspondence for direct mutable-Mem load rows.
 
 For a decoded load step, any row in `memoryRowsOfStep` is the concrete `busLd.e1`
@@ -1566,6 +1624,113 @@ theorem BootSegmentReadSoundInputs.memoryRowsOfStep_subperm_executionRows_of_sto
       (ziskTrace.memReplayRows_of_storeCMemProviderEntry
         h_nonempty i h_store_ind h_active h_no_nonmutable)
     simpa using List.mem_flatMap.mp h_mem
+
+/-- Scoped structural row correspondence for any direct mutable-Mem step. This
+packages the direct load and direct store cases without using the seed order
+certificate. -/
+theorem AcceptedZiskTrace.memReplayRows_of_directMutableMemRowsOfStep
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_direct : ZiskStepDirectMutableMemRows ziskTrace i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty := by
+  cases h_direct with
+  | load h_load h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign =>
+      exact ziskTrace.memReplayRows_of_loadMemoryRowsOfStep_of_no_nonmutableBranches
+        h_nonempty i h_load h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign h_entry
+  | store h_store h_store_ind h_active h_no_nonmutable =>
+      exact ziskTrace.memReplayRows_of_storeMemoryRowsOfStep_of_no_nonmutableBranches
+        h_nonempty i h_store h_store_ind h_active h_no_nonmutable h_entry
+
+/-- Duplicate-sensitive singleton form for any direct mutable-Mem step. This is
+still step-local; whole-list duplicate accounting needs the later order/count
+assembly. -/
+theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_directMutableMemRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_direct : ZiskStepDirectMutableMemRows ziskTrace i step) :
+    (memoryRowsOfStep ziskTrace i step).Subperm (ziskTrace.memReplayRows h_nonempty) := by
+  cases h_direct with
+  | load h_load h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign =>
+      exact ziskTrace.memoryRowsOfStep_subperm_memReplayRows_of_load_no_nonmutableBranches
+        h_nonempty i h_load h_b_src_ind h_active h_no_marb h_no_mab h_no_memAlign
+  | store h_store h_store_ind h_active h_no_nonmutable =>
+      exact ziskTrace.memoryRowsOfStep_subperm_memReplayRows_of_store_no_nonmutableBranches
+        h_nonempty i h_store h_store_ind h_active h_no_nonmutable
+
+/-- Step-local scoped direct-Mem row correspondence, including no-memory
+instructions. -/
+theorem AcceptedZiskTrace.memReplayRows_of_scopedDirectMemRowsOfStep
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_step : ZiskStepScopedDirectMemRows ziskTrace i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty := by
+  cases h_step with
+  | direct h_direct =>
+      exact ziskTrace.memReplayRows_of_directMutableMemRowsOfStep
+        h_nonempty i h_direct h_entry
+  | noMemory h_empty =>
+      simp [h_empty] at h_entry
+
+/-- Step-local subpermutation form for the scoped direct-Mem correspondence,
+including no-memory instructions. -/
+theorem AcceptedZiskTrace.memoryRowsOfStep_subperm_memReplayRows_of_scopedDirectMemRows
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_step : ZiskStepScopedDirectMemRows ziskTrace i step) :
+    (memoryRowsOfStep ziskTrace i step).Subperm (ziskTrace.memReplayRows h_nonempty) := by
+  cases h_step with
+  | direct h_direct =>
+      exact ziskTrace.memoryRowsOfStep_subperm_memReplayRows_of_directMutableMemRows
+        h_nonempty i h_direct
+  | noMemory h_empty =>
+      simp [h_empty]
+
+/-- Seed-order transport wrapper for the scoped direct mutable-Mem
+correspondence. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_directMutableMemRowsOfStep
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_direct : ZiskStepDirectMutableMemRows ziskTrace i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.memReplayRows_of_directMutableMemRowsOfStep
+      h_nonempty i h_direct h_entry)
+
+/-- Seed-order transport wrapper for scoped direct/no-memory decoded steps. -/
+theorem BootSegmentReadSoundInputs.mem_executionRows_of_scopedDirectMemRowsOfStep
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    {step : ZiskStep ziskTrace i}
+    (h_step : ZiskStepScopedDirectMemRows ziskTrace i step)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i step) :
+    entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf) :=
+  inputs.mem_executionRows_of_memReplayRows
+    (ziskTrace.memReplayRows_of_scopedDirectMemRowsOfStep
+      h_nonempty i h_step h_entry)
 
 /-- The full execution-order memory-bus row list obtained directly from the
 structural per-step decoder view. -/
@@ -1898,6 +2063,63 @@ theorem mem_executionMemoryRowsOfSteps_of_memoryRowsOfStep
     entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep := by
   rw [executionMemoryRowsOfSteps]
   exact List.mem_flatMap.mpr ⟨i, List.mem_finRange i, h_entry⟩
+
+/-- Whole-structural-list membership direction for the scoped direct-Mem
+correspondence.
+
+Every row emitted by a decoded step classified as direct mutable-Mem or
+no-memory occurs in accepted Mem replay rows. This is intentionally a
+membership direction, not a full-list `Subperm`: duplicate-sensitive assembly
+still needs the order/count work. -/
+theorem AcceptedZiskTrace.memReplayRows_of_mem_executionMemoryRowsOfSteps_scopedDirect
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty := by
+  obtain ⟨i, h_entry_i⟩ :=
+    exists_memoryRowsOfStep_of_mem_executionMemoryRowsOfSteps h_entry
+  exact ziskTrace.memReplayRows_of_scopedDirectMemRowsOfStep
+    h_nonempty i (h_steps i) h_entry_i
+
+/-- Placement transports the scoped direct-Mem membership direction from the
+concrete execution-order `rowsOf` flatMap to accepted Mem replay rows. -/
+theorem AcceptedZiskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (h_placement : ∀ i : Fin ziskTrace.numInstructions,
+      MemoryOpPlacement ziskTrace rowsOf memInit i (ziskStep i))
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty := by
+  have h_structural :
+      entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep := by
+    rwa [executionRows_eq_memoryRowsOfSteps_of_placement h_placement] at h_entry
+  exact ziskTrace.memReplayRows_of_mem_executionMemoryRowsOfSteps_scopedDirect
+    h_nonempty h_steps h_structural
+
+/-- Seed-level wrapper for the scoped direct-Mem membership direction. -/
+theorem BootSegmentMemorySeed.memReplayRows_of_mem_executionRows_scopedDirect
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (h_nonempty : 0 < ziskTrace.numInstructions)
+    (h_steps : ∀ i : Fin ziskTrace.numInstructions,
+      ZiskStepScopedDirectMemRows ziskTrace i (ziskStep i))
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ((List.range ziskTrace.numInstructions).flatMap seed.rowsOf)) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty :=
+  ziskTrace.memReplayRows_of_mem_executionRows_scopedDirect_placement
+    h_nonempty seed.placement h_steps h_entry
 
 /-- If every decoded step emits only replay-neutral memory rows, then the full
 structural execution-row list contains no active memory writes. -/
