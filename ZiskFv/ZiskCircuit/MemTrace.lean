@@ -1748,6 +1748,26 @@ theorem MemoryBusRowsReplaySafePermutation.trans
       exact MemoryBusRowsReplaySafePermutation.swap
         pref left right suffix ih h_left_right_safe h_right_left_safe h_commute
 
+/-- Replay-safe order certificates are symmetric: each certified adjacent swap
+can be replayed in reverse with the directional overlap facts exchanged and the
+replay-commutation equality reversed. -/
+theorem MemoryBusRowsReplaySafePermutation.symm
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation target source := by
+  induction h_order with
+  | refl =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | swap pref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      have h_swap_back :
+          MemoryBusRowsReplaySafePermutation
+            (pref ++ right :: left :: suffix) (pref ++ left :: right :: suffix) :=
+        MemoryBusRowsReplaySafePermutation.swap pref right left suffix
+          (MemoryBusRowsReplaySafePermutation.refl (pref ++ right :: left :: suffix))
+          h_right_left_safe h_left_right_safe
+          (fun mem => (h_commute mem).symm)
+      exact h_swap_back.trans ih
+
 /-- Transport a replay-safe order certificate under a common left context. -/
 theorem MemoryBusRowsReplaySafePermutation.append_left
     (pref : List (MemoryBusEntry FGL))
@@ -1878,6 +1898,82 @@ theorem MemoryBusRowsReplaySafePermutation.swap_of_noActiveWriteOverlap
     (fun mem =>
       replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
         mem left right h_left_right_safe h_right_left_safe)
+
+/-- Move the head row to the right across an explicitly safe prefix.
+
+This is the insertion-sort-shaped order step needed by sorted-vs-execution
+proofs: only the rows that the head actually crosses must satisfy the
+bidirectional no-active-write-overlap condition. Same-address rows can remain
+in their original relative order and need not be marked swappable. -/
+theorem MemoryBusRowsReplaySafePermutation.move_head_right_of_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix : List (MemoryBusEntry FGL))
+    (h_safe : ∀ moved, moved ∈ pref →
+      MemoryBusEntryNoActiveWriteOverlap row moved ∧
+        MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation (row :: pref ++ suffix) (pref ++ row :: suffix) := by
+  induction pref with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | cons moved rest ih =>
+      have h_head :
+          MemoryBusEntryNoActiveWriteOverlap row moved ∧
+            MemoryBusEntryNoActiveWriteOverlap moved row :=
+        h_safe moved (by simp)
+      have h_rest : ∀ restMoved, restMoved ∈ rest →
+          MemoryBusEntryNoActiveWriteOverlap row restMoved ∧
+            MemoryBusEntryNoActiveWriteOverlap restMoved row := by
+        intro restMoved h_restMoved
+        exact h_safe restMoved (by simp [h_restMoved])
+      have h_swap :
+          MemoryBusRowsReplaySafePermutation
+            (row :: moved :: rest ++ suffix) (moved :: row :: rest ++ suffix) :=
+        MemoryBusRowsReplaySafePermutation.swap_of_noActiveWriteOverlap
+          [] row moved (rest ++ suffix)
+          (MemoryBusRowsReplaySafePermutation.refl (row :: moved :: rest ++ suffix))
+          h_head.1 h_head.2
+      have h_tail :
+          MemoryBusRowsReplaySafePermutation
+            (moved :: row :: rest ++ suffix) (moved :: rest ++ row :: suffix) := by
+        simpa [List.cons_append, List.append_assoc] using
+          MemoryBusRowsReplaySafePermutation.append_left [moved] (ih h_rest)
+      simpa [List.cons_append, List.append_assoc] using h_swap.trans h_tail
+
+/-- Move a row left across an explicitly safe prefix. -/
+theorem MemoryBusRowsReplaySafePermutation.move_row_left_of_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix : List (MemoryBusEntry FGL))
+    (h_safe : ∀ moved, moved ∈ pref →
+      MemoryBusEntryNoActiveWriteOverlap row moved ∧
+        MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) :=
+  (MemoryBusRowsReplaySafePermutation.move_head_right_of_noActiveWriteOverlap
+    row pref suffix h_safe).symm
+
+/-- Recursive selection step for building a replay-safe order certificate.
+
+If the next target row occurs inside the current source list as
+`pref ++ row :: suffix`, move it left across the explicitly safe prefix, then
+continue reordering the remaining `pref ++ suffix` rows. This is the shape
+expected from a sorted-table to execution-order proof: same-address rows that
+must retain relative order never appear in `pref`. -/
+theorem MemoryBusRowsReplaySafePermutation.cons_target_of_split_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix targetTail : List (MemoryBusEntry FGL))
+    (h_tail : MemoryBusRowsReplaySafePermutation (pref ++ suffix) targetTail)
+    (h_safe : ∀ moved, moved ∈ pref →
+      MemoryBusEntryNoActiveWriteOverlap row moved ∧
+        MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: targetTail) := by
+  have h_move :
+      MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) :=
+    MemoryBusRowsReplaySafePermutation.move_row_left_of_noActiveWriteOverlap
+      row pref suffix h_safe
+  have h_recurse :
+      MemoryBusRowsReplaySafePermutation (row :: pref ++ suffix) (row :: targetTail) := by
+    simpa [List.cons_append, List.append_assoc] using
+      MemoryBusRowsReplaySafePermutation.append_left [row] h_tail
+  exact h_move.trans h_recurse
 
 /-- Constructor helper for a replay-safe swap when the left row is not an
 active write. The remaining directional safety condition protects a possible
