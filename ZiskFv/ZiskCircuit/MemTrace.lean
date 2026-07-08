@@ -1932,6 +1932,7 @@ theorem MemoryBusRowsReplaySafePermutation.of_perm_pairwise_noActiveWriteOverlap
 
 /-- `left` occurs before `right` in a concrete list.  The witness is
 split-shaped so callers can connect it directly to table/order prefixes. -/
+@[reducible]
 def MemoryBusRowsPairBefore
     (left right : MemoryBusEntry FGL) (rows : List (MemoryBusEntry FGL)) : Prop :=
   ∃ pref middle suffix,

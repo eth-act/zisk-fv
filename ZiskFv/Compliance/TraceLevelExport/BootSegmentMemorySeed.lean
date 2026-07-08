@@ -1436,6 +1436,7 @@ noncomputable def memoryRowsOfStep
       []
 
 /-- Structural decoded steps that emit a load memory row. -/
+@[reducible]
 def ZiskStepLoadMemoryRows
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
@@ -1455,6 +1456,7 @@ def ZiskStepLoadMemoryRows
       False
 
 /-- Structural decoded steps that emit a store memory row. -/
+@[reducible]
 def ZiskStepStoreMemoryRows
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
@@ -1474,6 +1476,7 @@ def ZiskStepStoreMemoryRows
       False
 
 /-- Structural decoded steps that emit no memory-bus rows. -/
+@[reducible]
 def ZiskStepNoMemoryRows
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
@@ -2194,6 +2197,7 @@ theorem busLd_e1_not_active_write
 
 /-- Structural steps whose emitted memory rows are replay-neutral: loads and
 non-memory ops emit no active memory writes; stores are excluded. -/
+@[reducible]
 def ZiskStepReplayNeutralMemoryRows
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Prop
@@ -2542,6 +2546,7 @@ row duplicate-freedom.
 This says only that two different decoded instruction indices do not emit
 structural memory rows with the same timestamp. It is intentionally narrower
 than list disjointness, and it carries no read-value agreement. -/
+@[reducible]
 def MemoryRowsOfStepIndexwiseTimestampDisjoint
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i) : Prop :=
@@ -2601,6 +2606,7 @@ each trace index.
 This is the shape expected from a later PIL/range proof for `STEP =
 main_segment * N + SEGMENT_STEP`; it does not assert that `main_step` is the
 trace index. -/
+@[reducible]
 def MemoryRowsOfStepIndexwiseMainStepTimestampSeparated
     (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
   ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
@@ -2616,6 +2622,7 @@ def MemoryRowsOfStepIndexwiseMainStepTimestampSeparated
 /-- Main `main_step` values are distinct at unequal trace indices. This is
 the same-offset half of timestamp separation: load/load and store/store
 collisions follow by cancellation of the nonzero `* 4` scale factor. -/
+@[reducible]
 def MemoryRowsOfStepIndexwiseMainStepDistinct
     (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
   ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
@@ -2628,6 +2635,7 @@ trace indices.
 Together with distinct `main_step` values, this proves the full four-case
 timestamp separation predicate. The remaining proof should come from the same
 range/no-wrap facts that justify `STEP = main_segment * N + SEGMENT_STEP`. -/
+@[reducible]
 def MemoryRowsOfStepIndexwiseMainStepCrossOffsetSeparated
     (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
   ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
@@ -2766,6 +2774,7 @@ theorem memoryRowsOfStep_mainStep_timestamp_separated_of_main_step_index_fixed
 The four cases cover load/load, load/store, store/load, and store/store rows
 for two unequal decoded instruction indices. Later range work can target this
 syntactic shape directly. -/
+@[reducible]
 def MemoryRowsOfStepIndexwiseStructuralTimestampDisjoint
     (ziskTrace : AcceptedZiskTrace numInstructions) : Prop :=
   ∀ i j : Fin ziskTrace.numInstructions, i ≠ j →
@@ -2890,6 +2899,7 @@ theorem executionMemoryRowsOfSteps_pairwise_timestamp_toNat_le_of_main_step_inde
 /-- Sublist-aware target chronology needed by the crossed-pair permutation
 builder. The recursive builder works over sublists of the target list, so the
 order fact is stated directly in that shape. -/
+@[reducible]
 def ExecutionMemoryRowsTargetChronological
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i) : Prop :=
