@@ -279,6 +279,15 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableMemProv
     (loadBMemMainMessage ziskTrace)).toRaw).eval
     (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i)))
 
+/-- Load-`b` specialization of the selected general-MemAlign prove-branch
+pins. This names the remaining syntactic residue needed to follow a general
+MemAlign provider row; byte-provider branches are handled separately. -/
+abbrev LoadBSelectedMemAlignPins
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Prop :=
+  ActiveMainMemAlignSelectedProveBranchPins ziskTrace.witness
+    (loadBMemMainInteraction ziskTrace i)
+
 /-- Load-specific wrapper for the accepted mutable-Mem provider path.
 
 The generic theorem still needs an active Main interaction, its evaluated
@@ -488,31 +497,7 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEn
       -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
         + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
         + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
-    (h_selectedMemAlignPins :
-      ∀ providerInteraction providerTable providerRow,
-        providerInteraction ∈ ziskTrace.witness.interactionsWith MemBusChannel.toRaw →
-        providerInteraction.msg = (loadBMemMainInteraction ziskTrace i).msg →
-        providerInteraction.mult ≠ -1 →
-        providerInteraction.mult ≠ 0 →
-        providerTable ∈ ziskTrace.witness.allTables →
-        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw →
-        providerRow ∈ providerTable.table →
-        providerTable.component.Spec (providerTable.environment providerRow) →
-        providerTable.component = ZiskFv.AirsClean.MemAlign.component →
-        providerInteraction =
-          ((MemBusChannel.emitted
-            (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
-              - ZiskFv.AirsClean.MemAlign.selAssumeExpr
-                ZiskFv.AirsClean.MemAlign.component.rowInputVar)
-            (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
-              ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
-            (providerTable.environment providerRow) →
-        (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
-        ∧ (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
-        ∧ (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0) :
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i) :
     ∃ entry : MemoryBusEntry FGL,
       ZiskFv.Airs.MemoryBus.matches_memory_entry
         (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
@@ -666,31 +651,7 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_or_memAlignProvi
       -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
         + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
         + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
-    (h_selectedMemAlignPins :
-      ∀ providerInteraction providerTable providerRow,
-        providerInteraction ∈ ziskTrace.witness.interactionsWith MemBusChannel.toRaw →
-        providerInteraction.msg = (loadBMemMainInteraction ziskTrace i).msg →
-        providerInteraction.mult ≠ -1 →
-        providerInteraction.mult ≠ 0 →
-        providerTable ∈ ziskTrace.witness.allTables →
-        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw →
-        providerRow ∈ providerTable.table →
-        providerTable.component.Spec (providerTable.environment providerRow) →
-        providerTable.component = ZiskFv.AirsClean.MemAlign.component →
-        providerInteraction =
-          ((MemBusChannel.emitted
-            (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
-              - ZiskFv.AirsClean.MemAlign.selAssumeExpr
-                ZiskFv.AirsClean.MemAlign.component.rowInputVar)
-            (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
-              ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
-            (providerTable.environment providerRow) →
-        (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
-        ∧ (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
-        ∧ (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0) :
+    (h_selectedMemAlignPins : LoadBSelectedMemAlignPins ziskTrace i) :
     ∃ entry : MemoryBusEntry FGL,
       ZiskFv.Airs.MemoryBus.matches_memory_entry
         (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry

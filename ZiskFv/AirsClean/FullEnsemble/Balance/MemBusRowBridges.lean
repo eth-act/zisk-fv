@@ -1640,6 +1640,43 @@ def MemAlignLoadProviderRowMatchSpec
               ZiskFv.AirsClean.MemAlign.component.rowInputVar))
           0 entry
 
+/-- Syntactic residue selecting the prove-side branch of a general MemAlign
+provider row matched to an active Main memory interaction.
+
+Balance and row-local MemAlign `Spec` identify a matching general MemAlign row,
+but they do not by themselves select the prove branch rather than the aligned
+read-assumption branches. This predicate records exactly those selector pins;
+the ROM/value package needed to build a full subdoubleword provider witness is
+kept separate. -/
+def ActiveMainMemAlignSelectedProveBranchPins
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (mainInteraction : Interaction FGL) : Prop :=
+  ∀ providerInteraction providerTable providerRow,
+    providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw →
+    providerInteraction.msg = mainInteraction.msg →
+    providerInteraction.mult ≠ -1 →
+    providerInteraction.mult ≠ 0 →
+    providerTable ∈ witness.allTables →
+    providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw →
+    providerRow ∈ providerTable.table →
+    providerTable.component.Spec (providerTable.environment providerRow) →
+    providerTable.component = ZiskFv.AirsClean.MemAlign.component →
+    providerInteraction =
+      ((MemBusChannel.emitted
+        (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+          - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+        (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+        (providerTable.environment providerRow) →
+    (eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
+    ∧ (eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
+    ∧ (eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0
+
 /-- A structural MemAlignReadByte load-provider row supplies the corresponding
     branch of the legacy subdoubleword provider witness, once the Main row's
     load width is pinned to one byte.
@@ -1847,31 +1884,7 @@ theorem memAlignLoadProviderRowMatchSpec_of_activeMain_branch
     (h_branch :
       ActiveMainMemAlignProviderRowMatchSpec program witness mainTable mainRow
         mainInteraction mainMsg multiplicity as)
-    (h_selectedPins :
-      ∀ providerInteraction providerTable providerRow,
-        providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw →
-        providerInteraction.msg = mainInteraction.msg →
-        providerInteraction.mult ≠ -1 →
-        providerInteraction.mult ≠ 0 →
-        providerTable ∈ witness.allTables →
-        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw →
-        providerRow ∈ providerTable.table →
-        providerTable.component.Spec (providerTable.environment providerRow) →
-        providerTable.component = ZiskFv.AirsClean.MemAlign.component →
-        providerInteraction =
-          ((MemBusChannel.emitted
-            (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
-              - ZiskFv.AirsClean.MemAlign.selAssumeExpr
-                ZiskFv.AirsClean.MemAlign.component.rowInputVar)
-            (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
-              ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
-            (providerTable.environment providerRow) →
-        (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
-        ∧ (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
-        ∧ (eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0) :
+    (h_selectedPins : ActiveMainMemAlignSelectedProveBranchPins witness mainInteraction) :
     MemAlignLoadProviderRowMatchSpec program witness
       (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
         (eval (mainTable.environment mainRow) mainMsg) multiplicity as) := by
