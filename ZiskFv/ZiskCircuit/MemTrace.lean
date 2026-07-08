@@ -1975,6 +1975,37 @@ theorem MemoryBusRowsReplaySafePermutation.cons_target_of_split_noActiveWriteOve
       MemoryBusRowsReplaySafePermutation.append_left [row] h_tail
   exact h_move.trans h_recurse
 
+/-- A recursive, selection-shaped certificate for replay-safe reordering.
+
+Each target head is selected from the current source list at
+`pref ++ row :: suffix`; the selected row may cross only the prefix rows that
+are explicitly certified by the bidirectional no-active-write-overlap
+condition. This is the structural evidence expected from a sorted Mem-table
+order proof. -/
+inductive MemoryBusRowsReplaySafeSelection :
+    List (MemoryBusEntry FGL) → List (MemoryBusEntry FGL) → Prop where
+  | nil : MemoryBusRowsReplaySafeSelection [] []
+  | cons
+      (row : MemoryBusEntry FGL)
+      (pref suffix targetTail : List (MemoryBusEntry FGL)) :
+      MemoryBusRowsReplaySafeSelection (pref ++ suffix) targetTail →
+      (∀ moved, moved ∈ pref →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) →
+      MemoryBusRowsReplaySafeSelection (pref ++ row :: suffix) (row :: targetTail)
+
+/-- Selection-shaped replay-safe order evidence is a replay-safe permutation. -/
+theorem MemoryBusRowsReplaySafeSelection.to_replaySafePermutation
+    {source target : List (MemoryBusEntry FGL)}
+    (h_selection : MemoryBusRowsReplaySafeSelection source target) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_selection with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons row pref suffix targetTail _h_tail h_safe ih =>
+      exact MemoryBusRowsReplaySafePermutation.cons_target_of_split_noActiveWriteOverlap
+        row pref suffix targetTail ih h_safe
+
 /-- Constructor helper for a replay-safe swap when the left row is not an
 active write. The remaining directional safety condition protects a possible
 left-row read from an active write on the right. -/
