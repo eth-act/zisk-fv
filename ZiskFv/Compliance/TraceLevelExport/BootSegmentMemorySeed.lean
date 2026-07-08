@@ -441,6 +441,178 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_loadBMemProviderEntry_of
     (activeMainNonMutableMemProviderRowMatchSpec_of_no_branch
       h_no_marb h_no_mab h_no_memAlign h_no_main h_no_regBoundary)
 
+/-- Coverage version of the load `b` provider split.
+
+Instead of requiring the caller to exclude every MemAlign-family branch, this
+theorem follows the accepted provider coverage far enough to expose the
+available structural alternatives. The mutable-Mem branch places the concrete
+load row in execution order; the MemAlign-family branches expose structural
+provider-row predicates for an entry matching that concrete load row. The
+general MemAlign branch keeps its selected prove-branch pins explicit. -/
+theorem BootSegmentReadSoundInputs.mem_or_memAlignProvider_of_loadBMemProviderEntry
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {memInit : Std.ExtHashMap Nat (BitVec 8)}
+    {rowsOf : ℕ → List (MemoryBusEntry FGL)}
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (inputs : BootSegmentReadSoundInputs ziskTrace memInit rowsOf h_nonempty)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL))
+    (h_selectedMemAlignPins :
+      ∀ providerInteraction providerTable providerRow,
+        providerInteraction ∈ ziskTrace.witness.interactionsWith MemBusChannel.toRaw →
+        providerInteraction.msg = (loadBMemMainInteraction ziskTrace i).msg →
+        providerInteraction.mult ≠ -1 →
+        providerInteraction.mult ≠ 0 →
+        providerTable ∈ ziskTrace.witness.allTables →
+        providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw →
+        providerRow ∈ providerTable.table →
+        providerTable.component.Spec (providerTable.environment providerRow) →
+        providerTable.component = ZiskFv.AirsClean.MemAlign.component →
+        providerInteraction =
+          ((MemBusChannel.emitted
+            (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+              - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+                ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+            (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+            (providerTable.environment providerRow) →
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
+        ∧ (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
+        ∧ (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0) :
+    ∃ entry : MemoryBusEntry FGL,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
+      ∧ (entry ∈ ((List.range ziskTrace.numInstructions).flatMap rowsOf)
+        ∨ MemAlignReadByteLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry
+        ∨ MemAlignByteLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry
+        ∨ MemAlignLoadProviderRowMatchSpec
+            ziskTrace.program ziskTrace.witness entry) := by
+  have h_mainRow : loadBMemMainRow ziskTrace i ∈ ziskTrace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, ziskTrace.mainTable_index i⟩, rfl⟩
+  have h_mainInteraction :
+      loadBMemMainInteraction ziskTrace i ∈
+        ziskTrace.mainTable.interactionsWith MemBusChannel.toRaw := by
+    simpa [loadBMemMainInteraction, loadBMemMainRow, loadBMemMainMessage] using
+      RomDecodeBinding.mainRowWithRomLd_bMemInteraction_mem ziskTrace i
+  have h_mainEval :
+      loadBMemMainInteraction ziskTrace i =
+        ((MemBusChannel.emitted (loadBMemMainMultiplicity ziskTrace)
+          (loadBMemMainMessage ziskTrace)).toRaw).eval
+          (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i)) := rfl
+  have h_row_eval :
+      eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            numInstructions ziskTrace.program).rowInputVar =
+        mainRowWithRomLd ziskTrace i := by
+    simpa [loadBMemMainRow, mainRowWithRomLd] using
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
+        ziskTrace.program ziskTrace.mainTable
+        ⟨i.val, ziskTrace.mainTable_index i⟩).symm
+  have h_active_mult :
+      Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (loadBMemMainMultiplicity ziskTrace) = (-1 : FGL) := by
+    have h_source_sum :=
+      ZiskFv.AirsClean.Main.eval_bSourceSumExpr
+        (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          numInstructions ziskTrace.program).rowInputVar
+    have h_source_sum' :
+        Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+            ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg) =
+          (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar).rom.b_src_mem
+            + (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar).rom.b_src_ind
+            + (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar).rom.b_src_reg := by
+      simpa using h_source_sum
+    rw [loadBMemMainMultiplicity]
+    change
+      (-1 : FGL) *
+          Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+            ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg) = -1
+    rw [h_source_sum', h_row_eval]
+    simpa using h_active
+  have h_active_interaction :
+      (loadBMemMainInteraction ziskTrace i).mult = -1 := by
+    rw [h_mainEval]
+    change
+      Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+        (loadBMemMainMultiplicity ziskTrace) = -1
+    exact h_active_mult
+  have h_msg_eval :
+      eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+          (loadBMemMainMessage ziskTrace) =
+        ZiskFv.AirsClean.Main.bMemMessage (mainRowWithRomLd ziskTrace i) := by
+    rw [loadBMemMainMessage, ZiskFv.AirsClean.Main.eval_bMemMessageExpr, h_row_eval]
+  have h_main_mem_op :
+      (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+        (loadBMemMainMessage ziskTrace)).mem_op = 1 := by
+    rw [h_msg_eval]
+    exact RomDecodeBinding.mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
+      ziskTrace i h_b_src_ind h_active
+  have h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
+            (loadBMemMainMessage ziskTrace)) (-1) 2) := by
+    rw [h_msg_eval]
+    simp
+  have h_match :=
+    ziskTrace.activeMainMemProviderRowMatchSpec_of_active_main_eval
+      h_mainRow h_mainInteraction h_mainEval h_active_interaction
+      (multiplicity := (-1 : FGL)) (as := (2 : FGL))
+  rcases activeMainMemProviderRowMatchSpec_mutable_or_nonmutable h_match.2 with
+    h_mutable | h_nonmutable
+  · refine ⟨(busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1,
+      ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _, Or.inl ?_⟩
+    exact inputs.mem_executionRows_of_memReplayRows
+      (activeMainMutableMemProviderRowMatchSpec_entry_mem_of_active_replay_embedded_of_main_mem_op_one
+        h_mutable h_mainEval h_main_mem_op h_entry
+        (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
+          (ziskTrace.memReplayBridge h_nonempty)
+          (ziskTrace.memReplayBridge_coversMutableMemTables h_nonempty)))
+  · rcases activeMainNonMutableMemProviderRowMatchSpec_branch_cases
+      h_nonmutable with h_marb | h_mab | h_memAlign | h_main | h_regBoundary
+    · refine ⟨_, h_entry, Or.inr (Or.inl ?_)⟩
+      exact memAlignReadByteLoadProviderRowMatchSpec_of_activeMain_branch
+        (h_as := rfl) h_marb
+    · refine ⟨_, h_entry, Or.inr (Or.inr (Or.inl ?_))⟩
+      exact memAlignByteLoadProviderRowMatchSpec_of_activeMain_branch
+        h_mainEval h_main_mem_op (h_as := rfl) h_mab
+    · refine ⟨_, h_entry, Or.inr (Or.inr (Or.inr ?_))⟩
+      exact memAlignLoadProviderRowMatchSpec_of_activeMain_branch
+        h_mainEval h_main_mem_op (h_as := rfl) h_memAlign h_selectedMemAlignPins
+    · exact False.elim
+        (not_activeMainSelfMemProviderRowMatchSpec_of_main_mem_op_one
+          ziskTrace.constraints_hold h_mainEval h_main_mem_op h_main)
+    · exact False.elim
+        (not_activeMainRegisterBoundaryProviderRowMatchSpec_of_main_mem_op_one
+          h_mainEval h_main_mem_op h_regBoundary)
+
 /-- The concrete execution-order memory-bus rows emitted by one decoded step. -/
 noncomputable def memoryRowsOfStep
     (ziskTrace : AcceptedZiskTrace numInstructions)
