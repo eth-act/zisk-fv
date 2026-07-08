@@ -1112,6 +1112,59 @@ theorem BootSegmentMemorySeed.memReplayRows_of_mem_memoryRowsOfSteps
     entry ∈ ziskTrace.memReplayRows h_nonempty :=
   (seed.memReplayRows_perm_memoryRowsOfSteps h_nonempty).mem_iff.mpr h_entry
 
+/-- Membership in the structural per-step decoder row list is exactly
+membership in one decoded step's structural memory rows. -/
+theorem exists_memoryRowsOfStep_of_mem_executionMemoryRowsOfSteps
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep) :
+    ∃ i : Fin ziskTrace.numInstructions, entry ∈ memoryRowsOfStep ziskTrace i (ziskStep i) := by
+  rw [executionMemoryRowsOfSteps] at h_entry
+  obtain ⟨i, _h_i, h_entry⟩ := List.mem_flatMap.mp h_entry
+  exact ⟨i, h_entry⟩
+
+/-- A structural row emitted by one decoded step is in the full structural
+per-step decoder row list. -/
+theorem mem_executionMemoryRowsOfSteps_of_memoryRowsOfStep
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (i : Fin ziskTrace.numInstructions)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i (ziskStep i)) :
+    entry ∈ executionMemoryRowsOfSteps ziskTrace ziskStep := by
+  rw [executionMemoryRowsOfSteps]
+  exact List.mem_flatMap.mpr ⟨i, List.mem_finRange i, h_entry⟩
+
+/-- Accepted Mem replay rows identify a structural decoded step under the
+seed's replay-safe order certificate and placement. -/
+theorem BootSegmentMemorySeed.exists_memoryRowsOfStep_of_memReplayRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ziskTrace.memReplayRows h_nonempty) :
+    ∃ i : Fin ziskTrace.numInstructions, entry ∈ memoryRowsOfStep ziskTrace i (ziskStep i) :=
+  exists_memoryRowsOfStep_of_mem_executionMemoryRowsOfSteps
+    (seed.mem_memoryRowsOfSteps_of_memReplayRows h_entry)
+
+/-- A row emitted by one structural decoded step occurs in accepted Mem replay
+rows under the seed's replay-safe order certificate and placement. -/
+theorem BootSegmentMemorySeed.memReplayRows_of_memoryRowsOfStep
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    {h_nonempty : 0 < ziskTrace.numInstructions}
+    (i : Fin ziskTrace.numInstructions)
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ memoryRowsOfStep ziskTrace i (ziskStep i)) :
+    entry ∈ ziskTrace.memReplayRows h_nonempty :=
+  seed.memReplayRows_of_mem_memoryRowsOfSteps
+    (mem_executionMemoryRowsOfSteps_of_memoryRowsOfStep i h_entry)
+
 /-- A row in one step's `rowsOf` list is in the full execution-order memory
 row list. -/
 theorem mem_executionRows_of_rowsOf_mem
