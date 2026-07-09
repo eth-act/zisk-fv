@@ -87,6 +87,32 @@ private theorem main_component_tables_empty (table : Table FGL)
     obtain ⟨i, rfl⟩ := ht
     simp [EnsembleWitness.tableAt_table]
 
+/-- Any mutable-Mem component table in the degenerate witness is empty. The verifier table is
+    ruled out by its empty MemBus interaction list, while every provider table is empty by
+    construction. -/
+private theorem mutable_mem_component_tables_empty (table : Table FGL)
+    (hmem : table ∈ wit.allTables)
+    (hcomp : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    table.table = [] := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at hmem
+  rcases hmem with hv | ht
+  · exfalso
+    rw [hv, EnsembleWitness.verifierTable_component] at hcomp
+    have hv_nil :=
+      ZiskFv.AirsClean.FullEnsemble.verifierTable_interactionsWith_memBus_nil 0 prog
+    rw [hcomp,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at hv_nil
+    exact absurd hv_nil (by simp)
+  · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
+    obtain ⟨i, rfl⟩ := ht
+    simp [EnsembleWitness.tableAt_table]
+
+private theorem wit_not_mutableMemPresent : ¬ MutableMemPresent wit := by
+  intro h_present
+  obtain ⟨table, hmem, hcomp, hlen⟩ := h_present
+  have htab := mutable_mem_component_tables_empty table hmem hcomp
+  exact absurd hlen (by simp [htab])
+
 private theorem wit_constraints : wit.Constraints := by
   refine wit.constraints_of_tables wit_verifier ?_
   intro t ht
@@ -123,6 +149,18 @@ private theorem wit_segment_l1 :
   have htab : table.table = [] := main_component_tables_empty table hmem hcomp
   exact ⟨fun h => absurd h (by simp [htab]), fun idx _ => absurd idx.isLt (by simp [htab])⟩
 
+private theorem wit_main_step_index_fixed :
+    ∀ table ∈ wit.allTables,
+      table.component =
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 0 prog →
+        MainStepIndexFixedFacts 0 prog table := by
+  intro table hmem hcomp
+  exact
+    { main_step_eq_index := fun i => i.elim0
+      timestamp_bound := fun i => i.elim0
+      load_timestamp_toNat := fun i => i.elim0
+      store_timestamp_toNat := fun i => i.elim0 }
+
 /-- The degenerate accepted trace: empty program, all-empty witness, trivial
     channel balance, vacuous transition / row-height / segment-fixed obligations. -/
 private def trace : AcceptedZiskTrace 0 where
@@ -130,9 +168,20 @@ private def trace : AcceptedZiskTrace 0 where
   witness := wit
   constraints_hold := wit_constraints
   channels_balanced := wit_balanced
+  mem_replay_table := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_segment := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_permutation := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_gsum := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_im0 := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_im1 := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_constraints := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_row_ranges := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_segment_ranges := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_source_covers := fun h => absurd h wit_not_mutableMemPresent
   transitions_hold := wit_transitions
   main_height := by intro table _ _ i; exact i.elim0
   segment_l1_fixed := wit_segment_l1
+  main_step_index_fixed := wit_main_step_index_fixed
 
 private def sail : SailTrace 0 := nofun
 
@@ -140,17 +189,17 @@ private def step : ∀ i : Fin 0, ZiskStep trace i := nofun
 
 /-- The degenerate boot / cross-segment memory seed: empty boot memory, no rows,
     and every per-instruction obligation vacuous over `Fin 0`.  With the concrete
-    seed form (#115) the seed carries real fields (`memInit`/`rowsOf`/`readSound`),
-    so it is given explicitly rather than the old `nomatch`. -/
+    seed form (#115) the seed carries real fields (`memInit`/`rowsOf` plus guarded
+    read-soundness inputs), so it is given explicitly rather than the old `nomatch`. -/
 private def seed : BootSegmentMemorySeed trace sail step where
   memInit := {}
   rowsOf := fun _ => []
   boot := fun h => absurd h (Nat.not_lt_zero _)
   step := fun _ h => absurd h (Nat.not_lt_zero _)
-  readSound := by
-    intro priorRows row laterRows h_split _ _
-    simp only [AcceptedZiskTrace.numInstructions, List.range_zero, List.flatMap_nil] at h_split
-    exact absurd h_split (by simp)
+  readSoundInputs := fun h => absurd h wit_not_mutableMemPresent
+  memPresent_of_executionRows_nonempty := by
+    intro h_ne
+    exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_ne
   placement := fun i => i.elim0
 
 /-- `root_soundness` applied to a concrete (degenerate) accepted trace. The `Fin 0`

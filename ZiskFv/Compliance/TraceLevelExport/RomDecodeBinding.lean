@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
+import ZiskFv.AirsClean.Main.Circuit
 
 /-!
 # ROM-driven decode binding (issue #159, BLOCK 1 pilot)
@@ -47,101 +48,15 @@ No axioms. The binding is derived purely from `trace.constraints_hold` (the
 in-circuit ROM lookup) plus the membership-based `Table.Constraints` projection.
 -/
 
-/-! ## Component-level ROM-flag booleanity for the unified Main component
-
-The repo already proves `is_external_op` booleanity at the unified-component
-level (`is_external_op_boolean_of_componentWithRomMemAndOpBus_constraints`) and
-the 14 remaining flag booleans at the `componentWithRomAndMemBus` level
-(`romBoolSpec_of_componentWithRomAndMemBus_constraints`). The two helpers below
-fill the one missing variant — the 14 flag booleans at the
-`componentWithRomMemAndOpBus` level — by delegating to the existing
-`mainWithRomAndMemBus` row-level lemma exactly as
-`romSpec_of_mainWithRomMemAndOpBus_constraints` does for the ROM lookup. -/
-
-namespace ZiskFv.AirsClean.Main
-
-open Goldilocks
-open Air.Flat
-open ZiskFv.AirsClean.ZiskInstructionRom (Program)
-
-/-- Row-level 14-flag booleanity for the OpBus-extended Main circuit, by
-    delegating to the `mainWithRomAndMemBus` variant (the added op-bus emission
-    contributes no constraint). -/
-theorem romBoolSpec_of_mainWithRomMemAndOpBus_constraints
-    (length : ℕ) (program : Program length)
-    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
-    (h_holds :
-      Operations.ConstraintsHold env
-        ((mainWithRomMemAndOpBus length program row).operations offset)) :
-    env (row.core.m32 * (1 - row.core.m32)) = 0
-  ∧ env (row.core.set_pc * (1 - row.core.set_pc)) = 0
-  ∧ env (row.core.store_pc * (1 - row.core.store_pc)) = 0
-  ∧ env (row.rom.a_src_imm * (1 - row.rom.a_src_imm)) = 0
-  ∧ env (row.rom.a_src_mem * (1 - row.rom.a_src_mem)) = 0
-  ∧ env (row.rom.is_precompiled * (1 - row.rom.is_precompiled)) = 0
-  ∧ env (row.rom.b_src_imm * (1 - row.rom.b_src_imm)) = 0
-  ∧ env (row.rom.b_src_mem * (1 - row.rom.b_src_mem)) = 0
-  ∧ env (row.rom.store_mem * (1 - row.rom.store_mem)) = 0
-  ∧ env (row.rom.store_ind * (1 - row.rom.store_ind)) = 0
-  ∧ env (row.rom.b_src_ind * (1 - row.rom.b_src_ind)) = 0
-  ∧ env (row.rom.a_src_reg * (1 - row.rom.a_src_reg)) = 0
-  ∧ env (row.rom.b_src_reg * (1 - row.rom.b_src_reg)) = 0
-  ∧ env (row.rom.store_reg * (1 - row.rom.store_reg)) = 0 :=
-  romBoolSpec_of_mainWithRomAndMemBus_constraints length program row offset env
-    (by simpa only [mainWithRomMemAndOpBus] using h_holds)
-
-/-- Component-level 14-flag booleanity for the unified Main component. -/
-theorem romBoolSpec_of_componentWithRomMemAndOpBus_constraints
-    (length : ℕ) (program : Program length)
-    (env : Environment FGL)
-    (h_holds :
-      (componentWithRomMemAndOpBus length program).operations.ConstraintsHold env) :
-    env ((componentWithRomMemAndOpBus length program).rowInputVar.core.m32
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.m32)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.core.set_pc
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.set_pc)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.core.store_pc
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.store_pc)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_imm
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_imm)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.is_precompiled
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.is_precompiled)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_imm
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_imm)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)) = 0
-  ∧ env ((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg
-        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)) = 0 := by
-  have h_row :
-      (componentWithRomMemAndOpBus length program).rowOperations.ConstraintsHold env :=
-    (Component.constraintsHold_iff
-      (component := componentWithRomMemAndOpBus length program) env).mp h_holds
-  exact romBoolSpec_of_mainWithRomMemAndOpBus_constraints
-    length program
-    (componentWithRomMemAndOpBus length program).rowInputVar
-    (componentWithRomMemAndOpBus length program).rowOffset env (by
-      simpa only [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
-        Component.rowOperations] using h_row)
-
-end ZiskFv.AirsClean.Main
+/-! ## Trace-level Main row projections -/
 
 namespace ZiskFv.Compliance.RomDecodeBinding
 
+open Air.Flat
 open ZiskFv.Compliance
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable mainTableRowAtOrZero)
 open ZiskFv.AirsClean.Main (componentWithRomMemAndOpBus romMessage romMessageExpr)
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 
 /-- **Per-row Main constraints projection.**
@@ -374,51 +289,10 @@ lemma packFlags_inj {b c : RomFlagBits} (h : packFlags b = packFlags c) : b = c 
 The component-level booleanity facts are stated as `Expression.eval env (…) = 0`
 on the `rowInputVar`; the flag-unpacking lemma needs them as plain `FGL`
 equations on the concrete projected row `mainTableRowAtOrZero …`. The bridge is
-`Expression.eval`'s commutation with the `ProvableStruct` field projections. It
-is proved for an ABSTRACT `var` (so the simp never expands the heavy
-`componentWithRomMemAndOpBus` term — the #144 whnf trap) and then instantiated. -/
+`ZiskFv.AirsClean.Main.eval_flagBool_bridge`, proved for an ABSTRACT `var` so
+the simplifier never expands the heavy `componentWithRomMemAndOpBus` term. -/
 
 open ZiskFv.AirsClean.Main (MainRowWithRom)
-
-/-- Per-field commutation of `Expression.eval` with the `core`/`rom` flag
-    projections, in `x * (1 - x)` booleanity shape, for an abstract row var. -/
-lemma eval_flagBool_bridge (env : Environment FGL)
-    (var : Var MainRowWithRom FGL) :
-    (Expression.eval env (var.core.is_external_op * (1 - var.core.is_external_op))
-        = (eval env var).core.is_external_op * (1 - (eval env var).core.is_external_op))
-  ∧ (Expression.eval env (var.core.m32 * (1 - var.core.m32))
-        = (eval env var).core.m32 * (1 - (eval env var).core.m32))
-  ∧ (Expression.eval env (var.core.set_pc * (1 - var.core.set_pc))
-        = (eval env var).core.set_pc * (1 - (eval env var).core.set_pc))
-  ∧ (Expression.eval env (var.core.store_pc * (1 - var.core.store_pc))
-        = (eval env var).core.store_pc * (1 - (eval env var).core.store_pc))
-  ∧ (Expression.eval env (var.rom.a_src_imm * (1 - var.rom.a_src_imm))
-        = (eval env var).rom.a_src_imm * (1 - (eval env var).rom.a_src_imm))
-  ∧ (Expression.eval env (var.rom.a_src_mem * (1 - var.rom.a_src_mem))
-        = (eval env var).rom.a_src_mem * (1 - (eval env var).rom.a_src_mem))
-  ∧ (Expression.eval env (var.rom.is_precompiled * (1 - var.rom.is_precompiled))
-        = (eval env var).rom.is_precompiled * (1 - (eval env var).rom.is_precompiled))
-  ∧ (Expression.eval env (var.rom.b_src_imm * (1 - var.rom.b_src_imm))
-        = (eval env var).rom.b_src_imm * (1 - (eval env var).rom.b_src_imm))
-  ∧ (Expression.eval env (var.rom.b_src_mem * (1 - var.rom.b_src_mem))
-        = (eval env var).rom.b_src_mem * (1 - (eval env var).rom.b_src_mem))
-  ∧ (Expression.eval env (var.rom.store_mem * (1 - var.rom.store_mem))
-        = (eval env var).rom.store_mem * (1 - (eval env var).rom.store_mem))
-  ∧ (Expression.eval env (var.rom.store_ind * (1 - var.rom.store_ind))
-        = (eval env var).rom.store_ind * (1 - (eval env var).rom.store_ind))
-  ∧ (Expression.eval env (var.rom.b_src_ind * (1 - var.rom.b_src_ind))
-        = (eval env var).rom.b_src_ind * (1 - (eval env var).rom.b_src_ind))
-  ∧ (Expression.eval env (var.rom.a_src_reg * (1 - var.rom.a_src_reg))
-        = (eval env var).rom.a_src_reg * (1 - (eval env var).rom.a_src_reg))
-  ∧ (Expression.eval env (var.rom.b_src_reg * (1 - var.rom.b_src_reg))
-        = (eval env var).rom.b_src_reg * (1 - (eval env var).rom.b_src_reg))
-  ∧ (Expression.eval env (var.rom.store_reg * (1 - var.rom.store_reg))
-        = (eval env var).rom.store_reg * (1 - (eval env var).rom.store_reg)) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-      ProvableStruct.fromComponents, ProvableStruct.components,
-      ProvableStruct.toComponents, ProvableStruct.eval.go,
-      ProvableType.eval_field, circuit_norm, sub_eq_add_neg]
 
 /-- The 15 ROM flag columns of the unified Main row at any in-range trace index
     are boolean, as plain `FGL` equations on the concrete projected row. Combines
@@ -455,7 +329,8 @@ theorem mainRow_flags_boolean
   obtain ⟨b_ieo, b_m32, b_set_pc, b_store_pc, b_a_src_imm, b_a_src_mem,
     b_is_precompiled, b_b_src_imm, b_b_src_mem, b_store_mem, b_store_ind,
     b_b_src_ind, b_a_src_reg, b_b_src_reg, b_store_reg⟩ :=
-    eval_flagBool_bridge (trace.mainTable.environment (trace.mainTable.table.get idx))
+    ZiskFv.AirsClean.Main.eval_flagBool_bridge
+      (trace.mainTable.environment (trace.mainTable.table.get idx))
       (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar
   show r.core.is_external_op * _ = 0 ∧ _
   rw [show r = _ from ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
@@ -472,6 +347,134 @@ private lemma bool_of_booleanity {col : FGL} (h : col * (1 - col) = 0) :
   rcases mul_eq_zero.mp h with h0 | h1
   · exact ⟨false, by simpa [ZiskFv.AirsClean.boolF] using h0⟩
   · exact ⟨true, by simp only [ZiskFv.AirsClean.boolF_true]; exact (sub_eq_zero.mp h1).symm⟩
+
+/-- An active Main `b`-side load selector gives the PIL memory opcode literal `1`.
+
+The active pull multiplicity pins `b_src_mem + b_src_ind + b_src_reg = 1`. When
+load decode gives `b_src_ind = 1`, Booleanity forces the register/direct-memory
+alternatives off, so Main's `bMemMessage.mem_op` is the load opcode. -/
+theorem bMemMessage_mem_op_eq_one_of_active_b_src_ind
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_b_src_mem_bool : row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0)
+    (h_b_src_reg_bool : row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0)
+    (h_b_src_ind : row.rom.b_src_ind = 1)
+    (h_active :
+      -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.bMemMessage row).mem_op = 1 := by
+  obtain ⟨d_mem, h_mem⟩ := bool_of_booleanity h_b_src_mem_bool
+  obtain ⟨d_reg, h_reg⟩ := bool_of_booleanity h_b_src_reg_bool
+  cases d_mem <;> cases d_reg <;>
+    simp [h_mem, h_reg, h_b_src_ind, ZiskFv.AirsClean.boolF_true,
+      ZiskFv.AirsClean.boolF_false] at h_active ⊢
+
+/-- Load-row specialization of `bMemMessage_mem_op_eq_one_of_active_b_src_ind`
+using accepted-trace Main flag Booleanity. -/
+theorem mainRowWithRomLd_bMemMessage_mem_op_eq_one_of_active
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd trace i).rom.b_src_mem
+        + (mainRowWithRomLd trace i).rom.b_src_ind
+        + (mainRowWithRomLd trace i).rom.b_src_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.bMemMessage (mainRowWithRomLd trace i)).mem_op = 1 := by
+  obtain ⟨_, _, _, _, _, _, _, _, h_b_src_mem_bool, _, _, _, _, h_b_src_reg_bool, _⟩ :=
+    mainRow_flags_boolean trace ⟨i.val, trace.mainTable_index i⟩
+  exact bMemMessage_mem_op_eq_one_of_active_b_src_ind (mainRowWithRomLd trace i)
+    (by simpa [mainRowWithRomLd] using h_b_src_mem_bool)
+    (by simpa [mainRowWithRomLd] using h_b_src_reg_bool)
+    h_b_src_ind h_active
+
+/-- An active Main `c`-side store selector gives the PIL memory opcode literal
+`2`.
+
+The active pull multiplicity pins `store_mem + store_ind + store_reg = 1`.
+When store decode gives `store_ind = 1`, Booleanity forces the direct-memory
+and register-write alternatives off, so Main's `cMemMessage.mem_op` is the
+store opcode. -/
+theorem cMemMessage_mem_op_eq_two_of_active_store_ind
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_store_mem_bool : row.rom.store_mem * (1 - row.rom.store_mem) = 0)
+    (h_store_reg_bool : row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h_store_ind : row.rom.store_ind = 1)
+    (h_active :
+      -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.cMemMessage row).mem_op = 2 := by
+  obtain ⟨d_mem, h_mem⟩ := bool_of_booleanity h_store_mem_bool
+  obtain ⟨d_reg, h_reg⟩ := bool_of_booleanity h_store_reg_bool
+  cases d_mem <;> cases d_reg <;>
+    simp [h_mem, h_reg, h_store_ind, ZiskFv.AirsClean.boolF_true,
+      ZiskFv.AirsClean.boolF_false] at h_active ⊢
+
+/-- Store-row specialization of `cMemMessage_mem_op_eq_two_of_active_store_ind`
+using accepted-trace Main flag Booleanity. -/
+theorem mainRowWithRomSt_cMemMessage_mem_op_eq_two_of_active
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_store_ind : (mainRowWithRomSt trace i).rom.store_ind = 1)
+    (h_active :
+      -((mainRowWithRomSt trace i).rom.store_mem
+        + (mainRowWithRomSt trace i).rom.store_ind
+        + (mainRowWithRomSt trace i).rom.store_reg) = (-1 : FGL)) :
+    (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)).mem_op = 2 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, h_store_mem_bool, _, _, _, _, h_store_reg_bool⟩ :=
+    mainRow_flags_boolean trace ⟨i.val, trace.mainTable_index i⟩
+  exact cMemMessage_mem_op_eq_two_of_active_store_ind (mainRowWithRomSt trace i)
+    (by simpa [mainRowWithRomSt] using h_store_mem_bool)
+    (by simpa [mainRowWithRomSt] using h_store_reg_bool)
+    h_store_ind h_active
+
+/-- The concrete Main `b` memory-bus interaction for a load row is present in
+the accepted Main table's memory-bus interaction list. -/
+theorem mainRowWithRomLd_bMemInteraction_mem
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_mem
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_ind
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_reg))
+      (ZiskFv.AirsClean.Main.bMemMessageExpr
+        (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
+      (trace.mainTable.environment
+        (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
+      ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw := by
+  have h_row_mem :
+      trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩ ∈ trace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, trace.mainTable_index i⟩, rfl⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ?_
+  refine ⟨trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩, h_row_mem, ?_⟩
+  simp [AcceptedZiskTrace.numInstructions, Operations.interactionValuesWith_eq_map,
+    trace.mainTable_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+
+/-- The concrete Main `c` memory-bus interaction for a store row is present in
+the accepted Main table's memory-bus interaction list. -/
+theorem mainRowWithRomSt_cMemInteraction_mem
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_mem
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_ind
+        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_reg))
+      (ZiskFv.AirsClean.Main.cMemMessageExpr
+        (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
+      (trace.mainTable.environment
+        (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
+      ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw := by
+  have h_row_mem :
+      trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩ ∈ trace.mainTable.table :=
+    List.mem_iff_get.mpr ⟨⟨i.val, trace.mainTable_index i⟩, rfl⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ?_
+  refine ⟨trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩, h_row_mem, ?_⟩
+  simp [AcceptedZiskTrace.numInstructions, Operations.interactionValuesWith_eq_map,
+    trace.mainTable_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
 
 /-- **Unpacking the four ADD decode flags from the packed `flags` slot.**
 
@@ -587,6 +590,123 @@ theorem romSelectorColumns_of_romFlags_eq_packFlags
   have hbits := packFlags_inj (hpack.symm.trans h)
   subst hbits
   exact ⟨e_store_ind, e_b_src_ind, e_store_reg⟩
+
+/-- Unpack all memory selector columns from the packed `flags` slot.
+
+This is the same `packFlags` injectivity argument as
+`romSelectorColumns_of_romFlags_eq_packFlags`, but it exposes the sibling
+selectors needed to derive active b/c memory-bus pulls from one-hot ROM bits. -/
+theorem romMemorySelectorColumns_of_romFlags_eq_packFlags
+    (row : MainRowWithRom FGL) (bits : RomFlagBits)
+    (hbool :
+      row.core.is_external_op * (1 - row.core.is_external_op) = 0
+    ∧ row.core.m32 * (1 - row.core.m32) = 0
+    ∧ row.core.set_pc * (1 - row.core.set_pc) = 0
+    ∧ row.core.store_pc * (1 - row.core.store_pc) = 0
+    ∧ row.rom.a_src_imm * (1 - row.rom.a_src_imm) = 0
+    ∧ row.rom.a_src_mem * (1 - row.rom.a_src_mem) = 0
+    ∧ row.rom.is_precompiled * (1 - row.rom.is_precompiled) = 0
+    ∧ row.rom.b_src_imm * (1 - row.rom.b_src_imm) = 0
+    ∧ row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0
+    ∧ row.rom.store_mem * (1 - row.rom.store_mem) = 0
+    ∧ row.rom.store_ind * (1 - row.rom.store_ind) = 0
+    ∧ row.rom.b_src_ind * (1 - row.rom.b_src_ind) = 0
+    ∧ row.rom.a_src_reg * (1 - row.rom.a_src_reg) = 0
+    ∧ row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0
+    ∧ row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h : romFlags row = packFlags bits) :
+    row.rom.b_src_mem = ZiskFv.AirsClean.boolF bits.b_src_mem
+  ∧ row.rom.store_mem = ZiskFv.AirsClean.boolF bits.store_mem
+  ∧ row.rom.store_ind = ZiskFv.AirsClean.boolF bits.store_ind
+  ∧ row.rom.b_src_ind = ZiskFv.AirsClean.boolF bits.b_src_ind
+  ∧ row.rom.b_src_reg = ZiskFv.AirsClean.boolF bits.b_src_reg
+  ∧ row.rom.store_reg = ZiskFv.AirsClean.boolF bits.store_reg := by
+  obtain ⟨hb_ieo, hb_m32, hb_set_pc, hb_store_pc, hb_a_src_imm, hb_a_src_mem,
+    hb_is_precompiled, hb_b_src_imm, hb_b_src_mem, hb_store_mem, hb_store_ind,
+    hb_b_src_ind, hb_a_src_reg, hb_b_src_reg, hb_store_reg⟩ := hbool
+  obtain ⟨d_ieo, e_ieo⟩ := bool_of_booleanity hb_ieo
+  obtain ⟨d_m32, e_m32⟩ := bool_of_booleanity hb_m32
+  obtain ⟨d_set_pc, e_set_pc⟩ := bool_of_booleanity hb_set_pc
+  obtain ⟨d_store_pc, e_store_pc⟩ := bool_of_booleanity hb_store_pc
+  obtain ⟨d_a_src_imm, e_a_src_imm⟩ := bool_of_booleanity hb_a_src_imm
+  obtain ⟨d_a_src_mem, e_a_src_mem⟩ := bool_of_booleanity hb_a_src_mem
+  obtain ⟨d_is_precompiled, e_is_precompiled⟩ := bool_of_booleanity hb_is_precompiled
+  obtain ⟨d_b_src_imm, e_b_src_imm⟩ := bool_of_booleanity hb_b_src_imm
+  obtain ⟨d_b_src_mem, e_b_src_mem⟩ := bool_of_booleanity hb_b_src_mem
+  obtain ⟨d_store_mem, e_store_mem⟩ := bool_of_booleanity hb_store_mem
+  obtain ⟨d_store_ind, e_store_ind⟩ := bool_of_booleanity hb_store_ind
+  obtain ⟨d_b_src_ind, e_b_src_ind⟩ := bool_of_booleanity hb_b_src_ind
+  obtain ⟨d_a_src_reg, e_a_src_reg⟩ := bool_of_booleanity hb_a_src_reg
+  obtain ⟨d_b_src_reg, e_b_src_reg⟩ := bool_of_booleanity hb_b_src_reg
+  obtain ⟨d_store_reg, e_store_reg⟩ := bool_of_booleanity hb_store_reg
+  have hpack : romFlags row =
+      packFlags ⟨d_a_src_imm, d_a_src_mem, d_is_precompiled, d_b_src_imm,
+        d_b_src_mem, d_ieo, d_store_pc, d_store_mem, d_store_ind, d_set_pc,
+        d_m32, d_b_src_ind, d_a_src_reg, d_b_src_reg, d_store_reg⟩ := by
+    simp only [romFlags, packFlags, e_ieo, e_m32, e_set_pc, e_store_pc,
+      e_a_src_imm, e_a_src_mem, e_is_precompiled, e_b_src_imm, e_b_src_mem,
+      e_store_mem, e_store_ind, e_b_src_ind, e_a_src_reg, e_b_src_reg, e_store_reg]
+  have hbits := packFlags_inj (hpack.symm.trans h)
+  subst hbits
+  exact ⟨e_b_src_mem, e_store_mem, e_store_ind, e_b_src_ind, e_b_src_reg, e_store_reg⟩
+
+/-- One-hot load-side memory selector bits make the Main b-side memory pull active. -/
+theorem bMemSelector_active_of_romFlags_eq_packFlags
+    (row : MainRowWithRom FGL) (bits : RomFlagBits)
+    (hbool :
+      row.core.is_external_op * (1 - row.core.is_external_op) = 0
+    ∧ row.core.m32 * (1 - row.core.m32) = 0
+    ∧ row.core.set_pc * (1 - row.core.set_pc) = 0
+    ∧ row.core.store_pc * (1 - row.core.store_pc) = 0
+    ∧ row.rom.a_src_imm * (1 - row.rom.a_src_imm) = 0
+    ∧ row.rom.a_src_mem * (1 - row.rom.a_src_mem) = 0
+    ∧ row.rom.is_precompiled * (1 - row.rom.is_precompiled) = 0
+    ∧ row.rom.b_src_imm * (1 - row.rom.b_src_imm) = 0
+    ∧ row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0
+    ∧ row.rom.store_mem * (1 - row.rom.store_mem) = 0
+    ∧ row.rom.store_ind * (1 - row.rom.store_ind) = 0
+    ∧ row.rom.b_src_ind * (1 - row.rom.b_src_ind) = 0
+    ∧ row.rom.a_src_reg * (1 - row.rom.a_src_reg) = 0
+    ∧ row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0
+    ∧ row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h : romFlags row = packFlags bits)
+    (h_bits_b_src_mem : bits.b_src_mem = false)
+    (h_bits_b_src_ind : bits.b_src_ind = true)
+    (h_bits_b_src_reg : bits.b_src_reg = false) :
+    -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg) = (-1 : FGL) := by
+  obtain ⟨h_b_src_mem, _, _, h_b_src_ind, h_b_src_reg, _⟩ :=
+    romMemorySelectorColumns_of_romFlags_eq_packFlags row bits hbool h
+  simp [h_b_src_mem, h_b_src_ind, h_b_src_reg, h_bits_b_src_mem, h_bits_b_src_ind,
+    h_bits_b_src_reg, ZiskFv.AirsClean.boolF_true, ZiskFv.AirsClean.boolF_false]
+
+/-- One-hot store-side memory selector bits make the Main c-side memory pull active. -/
+theorem cMemSelector_active_of_romFlags_eq_packFlags
+    (row : MainRowWithRom FGL) (bits : RomFlagBits)
+    (hbool :
+      row.core.is_external_op * (1 - row.core.is_external_op) = 0
+    ∧ row.core.m32 * (1 - row.core.m32) = 0
+    ∧ row.core.set_pc * (1 - row.core.set_pc) = 0
+    ∧ row.core.store_pc * (1 - row.core.store_pc) = 0
+    ∧ row.rom.a_src_imm * (1 - row.rom.a_src_imm) = 0
+    ∧ row.rom.a_src_mem * (1 - row.rom.a_src_mem) = 0
+    ∧ row.rom.is_precompiled * (1 - row.rom.is_precompiled) = 0
+    ∧ row.rom.b_src_imm * (1 - row.rom.b_src_imm) = 0
+    ∧ row.rom.b_src_mem * (1 - row.rom.b_src_mem) = 0
+    ∧ row.rom.store_mem * (1 - row.rom.store_mem) = 0
+    ∧ row.rom.store_ind * (1 - row.rom.store_ind) = 0
+    ∧ row.rom.b_src_ind * (1 - row.rom.b_src_ind) = 0
+    ∧ row.rom.a_src_reg * (1 - row.rom.a_src_reg) = 0
+    ∧ row.rom.b_src_reg * (1 - row.rom.b_src_reg) = 0
+    ∧ row.rom.store_reg * (1 - row.rom.store_reg) = 0)
+    (h : romFlags row = packFlags bits)
+    (h_bits_store_mem : bits.store_mem = false)
+    (h_bits_store_ind : bits.store_ind = true)
+    (h_bits_store_reg : bits.store_reg = false) :
+    -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg) = (-1 : FGL) := by
+  obtain ⟨_, h_store_mem, h_store_ind, _, _, h_store_reg⟩ :=
+    romMemorySelectorColumns_of_romFlags_eq_packFlags row bits hbool h
+  simp [h_store_mem, h_store_ind, h_store_reg, h_bits_store_mem, h_bits_store_ind,
+    h_bits_store_reg, ZiskFv.AirsClean.boolF_true, ZiskFv.AirsClean.boolF_false]
 
 /-- **Unpacking the immediate source selector from the packed `flags` slot.**
 

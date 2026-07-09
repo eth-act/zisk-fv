@@ -214,6 +214,48 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
     memory-bus provider emissions. -/
 def componentWithDualMemBus : Air.Flat.Component FGL := { circuit := circuitWithDualMemBus }
 
+theorem eval_memRow_sel
+    (env : Environment FGL) (row : Var MemRow FGL) :
+    Expression.eval env row.sel = (eval env row).sel := by
+  cases row with
+  | mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr previous_step
+      increment_0 increment_1 read_same_addr =>
+    rw [ProvableStruct.eval_eq_eval]
+    change Expression.eval env sel =
+      (ProvableStruct.eval env
+        (MemRow.mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr
+          previous_step increment_0 increment_1 read_same_addr)).sel
+    unfold ProvableStruct.eval
+    simp [instProvableStructMemRow, ProvableStruct.eval.go, CircuitType.eval_expr]
+
+theorem eval_memRow_sel_dual
+    (env : Environment FGL) (row : Var MemRow FGL) :
+    Expression.eval env row.sel_dual = (eval env row).sel_dual := by
+  cases row with
+  | mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr previous_step
+      increment_0 increment_1 read_same_addr =>
+    rw [ProvableStruct.eval_eq_eval]
+    change Expression.eval env sel_dual =
+      (ProvableStruct.eval env
+        (MemRow.mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr
+          previous_step increment_0 increment_1 read_same_addr)).sel_dual
+    unfold ProvableStruct.eval
+    simp [instProvableStructMemRow, ProvableStruct.eval.go, CircuitType.eval_expr]
+
+theorem eval_memRow_wr
+    (env : Environment FGL) (row : Var MemRow FGL) :
+    Expression.eval env row.wr = (eval env row).wr := by
+  cases row with
+  | mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr previous_step
+      increment_0 increment_1 read_same_addr =>
+    rw [ProvableStruct.eval_eq_eval]
+    change Expression.eval env wr =
+      (ProvableStruct.eval env
+        (MemRow.mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr
+          previous_step increment_0 increment_1 read_same_addr)).wr
+    unfold ProvableStruct.eval
+    simp [instProvableStructMemRow, ProvableStruct.eval.go, CircuitType.eval_expr]
+
 theorem componentWithMemBus_interactionsWith_memBus :
     componentWithMemBus.operations.interactionsWith MemBusChannel.toRaw =
       [((MemBusChannel.emitted componentWithMemBus.rowInputVar.sel

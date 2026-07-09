@@ -322,6 +322,39 @@ def writeMemoryOfEntry
     ).insert (e.ptr.toNat + 6) (byteAt e 6)
     ).insert (e.ptr.toNat + 7) (byteAt e 7)
 
+/-- Two inserts at distinct keys commute in `Std.ExtHashMap`.
+
+`ZiskFv.SailSpec.Auxiliaries` already exposes the dependent-map version; this
+constant-map version keeps the memory-replay proofs from expanding map
+lookups. -/
+theorem extHashMap_insert_comm [BEq K] [LawfulBEq K] [Hashable K]
+    (m : Std.ExtHashMap K V) {k1 k2 : K} {v1 v2 : V} (h_ne : k1 ≠ k2) :
+    (m.insert k1 v1).insert k2 v2 = (m.insert k2 v2).insert k1 v1 := by
+  grind
+
+/-- The eight byte writes performed by `writeMemoryOfEntry`, exposed as data
+so map-commutation proofs can reason structurally instead of expanding nested
+insert chains. -/
+@[reducible]
+def memoryBusEntryByteWrites (e : MemoryBusEntry FGL) : List (Nat × BitVec 8) :=
+  [ (e.ptr.toNat, byteAt e 0)
+  , (e.ptr.toNat + 1, byteAt e 1)
+  , (e.ptr.toNat + 2, byteAt e 2)
+  , (e.ptr.toNat + 3, byteAt e 3)
+  , (e.ptr.toNat + 4, byteAt e 4)
+  , (e.ptr.toNat + 5, byteAt e 5)
+  , (e.ptr.toNat + 6, byteAt e 6)
+  , (e.ptr.toNat + 7, byteAt e 7)
+  ]
+
+/-- Replay a list of byte-addressed writes into a replay memory map. -/
+@[reducible]
+def writeMemoryBytes
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (writes : List (Nat × BitVec 8)) :
+    Std.ExtHashMap Nat (BitVec 8) :=
+  writes.foldl (fun mem write => mem.insert write.1 write.2) mem
+
 /-- The zero-valued memory-bus entry at the same pointer as `e`.
 This is used to build the finite replay memory that supplies the initial
 zero value for reads before the first write to an address. -/
@@ -392,6 +425,160 @@ def MemoryBusEntryByteDisjoint
     (left right : MemoryBusEntry FGL) : Prop :=
   ∀ i j, i < 8 → j < 8 → left.ptr.toNat + i ≠ right.ptr.toNat + j
 
+theorem MemoryBusEntryByteDisjoint.symm
+    {left right : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    MemoryBusEntryByteDisjoint right left := by
+  intro i j hi hj h_eq
+  exact h_disjoint j i hj hi h_eq.symm
+
+theorem MemoryBusEntryByteDisjoint.congr_left_ptr
+    {left left' right : MemoryBusEntry FGL}
+    (h_ptr : left'.ptr = left.ptr)
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    MemoryBusEntryByteDisjoint left' right := by
+  intro i j hi hj h_eq
+  exact h_disjoint i j hi hj (by simpa [h_ptr] using h_eq)
+
+theorem MemoryBusEntryByteDisjoint.congr_right_ptr
+    {left right right' : MemoryBusEntry FGL}
+    (h_ptr : right'.ptr = right.ptr)
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    MemoryBusEntryByteDisjoint left right' := by
+  intro i j hi hj h_eq
+  exact h_disjoint i j hi hj (by simpa [h_ptr] using h_eq)
+
+/-- A byte write listed by `memoryBusEntryByteWrites` occurs at one of the
+entry's eight consecutive byte addresses. -/
+theorem exists_address_of_mem_memoryBusEntryByteWrites
+    {entry : MemoryBusEntry FGL} {write : Nat × BitVec 8}
+    (h_write : write ∈ memoryBusEntryByteWrites entry) :
+    ∃ i, i < 8 ∧ write.1 = entry.ptr.toNat + i := by
+  simp [memoryBusEntryByteWrites] at h_write
+  rcases h_write with h | h | h | h | h | h | h | h
+  · subst write
+    exact ⟨0, by norm_num, by simp⟩
+  · subst write
+    exact ⟨1, by norm_num, by simp⟩
+  · subst write
+    exact ⟨2, by norm_num, by simp⟩
+  · subst write
+    exact ⟨3, by norm_num, by simp⟩
+  · subst write
+    exact ⟨4, by norm_num, by simp⟩
+  · subst write
+    exact ⟨5, by norm_num, by simp⟩
+  · subst write
+    exact ⟨6, by norm_num, by simp⟩
+  · subst write
+    exact ⟨7, by norm_num, by simp⟩
+
+/-- An external byte write commutes across a fold of byte writes when its
+address is distinct from every address in the folded list. -/
+theorem writeMemoryBytes_insert_comm_of_disjoint_addr
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (writes : List (Nat × BitVec 8))
+    (addr : Nat) (byte : BitVec 8)
+    (h_disjoint : ∀ write, write ∈ writes → write.1 ≠ addr) :
+    (writeMemoryBytes mem writes).insert addr byte =
+      writeMemoryBytes (mem.insert addr byte) writes := by
+  induction writes generalizing mem with
+  | nil =>
+      rfl
+  | cons write rest ih =>
+      have h_head : write.1 ≠ addr := h_disjoint write (by simp)
+      have h_rest : ∀ restWrite, restWrite ∈ rest → restWrite.1 ≠ addr := by
+        intro restWrite h_restWrite
+        exact h_disjoint restWrite (by simp [h_restWrite])
+      simp only [writeMemoryBytes, List.foldl_cons]
+      rw [ih (mem.insert write.1 write.2) h_rest]
+      rw [extHashMap_insert_comm _ h_head]
+
+/-- A single external byte write commutes across an eight-byte entry write
+when the external address is outside the entry's byte range. -/
+theorem writeMemoryOfEntry_insert_comm_of_disjoint_addr
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (entry : MemoryBusEntry FGL)
+    (addr : Nat) (byte : BitVec 8)
+    (h_disjoint : ∀ i, i < 8 → entry.ptr.toNat + i ≠ addr) :
+    (writeMemoryOfEntry mem entry).insert addr byte =
+      writeMemoryOfEntry (mem.insert addr byte) entry := by
+  change (writeMemoryBytes mem (memoryBusEntryByteWrites entry)).insert addr byte =
+    writeMemoryBytes (mem.insert addr byte) (memoryBusEntryByteWrites entry)
+  exact writeMemoryBytes_insert_comm_of_disjoint_addr mem _ addr byte
+    (by
+      intro write h_write
+      obtain ⟨i, hi, h_addr⟩ := exists_address_of_mem_memoryBusEntryByteWrites h_write
+      rw [h_addr]
+      exact h_disjoint i hi)
+
+/-- A fold of byte writes commutes across an eight-byte entry write when all
+folded addresses are outside the entry's byte range. -/
+theorem writeMemoryBytes_writeMemoryOfEntry_comm_of_disjoint_addrs
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (entry : MemoryBusEntry FGL)
+    (writes : List (Nat × BitVec 8))
+    (h_disjoint : ∀ write, write ∈ writes →
+      ∀ i, i < 8 → entry.ptr.toNat + i ≠ write.1) :
+    writeMemoryBytes (writeMemoryOfEntry mem entry) writes =
+      writeMemoryOfEntry (writeMemoryBytes mem writes) entry := by
+  induction writes generalizing mem with
+  | nil =>
+      rfl
+  | cons write rest ih =>
+      have h_head : ∀ i, i < 8 → entry.ptr.toNat + i ≠ write.1 :=
+        h_disjoint write (by simp)
+      have h_rest : ∀ restWrite, restWrite ∈ rest →
+          ∀ i, i < 8 → entry.ptr.toNat + i ≠ restWrite.1 := by
+        intro restWrite h_restWrite i hi
+        exact h_disjoint restWrite (by simp [h_restWrite]) i hi
+      simp only [writeMemoryBytes, List.foldl_cons]
+      rw [writeMemoryOfEntry_insert_comm_of_disjoint_addr]
+      · exact ih (mem.insert write.1 write.2) h_rest
+      · exact h_head
+
+/-- Byte-disjoint eight-byte memory-bus writes commute as replay-memory
+updates. -/
+theorem writeMemoryOfEntry_commute_of_byteDisjoint
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_disjoint : MemoryBusEntryByteDisjoint left right) :
+    writeMemoryOfEntry (writeMemoryOfEntry mem left) right =
+      writeMemoryOfEntry (writeMemoryOfEntry mem right) left := by
+  change writeMemoryBytes (writeMemoryOfEntry mem left) (memoryBusEntryByteWrites right) =
+    writeMemoryOfEntry (writeMemoryBytes mem (memoryBusEntryByteWrites right)) left
+  exact writeMemoryBytes_writeMemoryOfEntry_comm_of_disjoint_addrs mem left _
+    (by
+      intro write h_write i hi
+      obtain ⟨j, hj, h_addr⟩ := exists_address_of_mem_memoryBusEntryByteWrites h_write
+      rw [h_addr]
+      exact h_disjoint i j hi hj)
+
+/-- Replaying `row` cannot actively overwrite any byte protected by `entry`.
+
+This is weaker than unconditional byte-disjointness: read/read and inactive-row
+pairs satisfy it trivially, while active writes must be byte-disjoint from the
+row whose read agreement may need to be preserved. -/
+def MemoryBusEntryNoActiveWriteOverlap
+    (entry row : MemoryBusEntry FGL) : Prop :=
+  row.as = (2 : FGL) →
+    row.multiplicity = (1 : FGL) →
+      MemoryBusEntryByteDisjoint entry row
+
+theorem MemoryBusEntryNoActiveWriteOverlap.of_disjoint
+    {entry row : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint entry row) :
+    MemoryBusEntryNoActiveWriteOverlap entry row := by
+  intro _h_as _h_mult
+  exact h_disjoint
+
+theorem MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+    {entry row : MemoryBusEntry FGL}
+    (h_not_write : ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL))) :
+    MemoryBusEntryNoActiveWriteOverlap entry row := by
+  intro h_as h_mult
+  exact False.elim (h_not_write ⟨h_as, h_mult⟩)
+
 /-- Replaying a write to a disjoint byte range preserves an existing read
 agreement. -/
 theorem readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
@@ -450,6 +637,84 @@ theorem readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
       h_lookup 6 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.1)
   · simpa [eventOfEntry] using
       h_lookup 7 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.2)
+
+/-- The converse of
+`readEventReplayAgreement_of_writeMemoryOfEntry_disjoint`: if a disjoint
+eight-byte write leaves the selected read bytes sound afterward, they were
+already sound before the write. -/
+theorem readEventReplayAgreement_before_of_writeMemoryOfEntry_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {writeEntry readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (writeMemoryOfEntry mem writeEntry)
+        (eventOfEntry readEntry))
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry writeEntry) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  unfold ReadEventReplayAgreement at h_read ⊢
+  have h_write_ne_read :
+      ∀ i j, i < 8 → j < 8 →
+        writeEntry.ptr.toNat + j ≠ readEntry.ptr.toNat + i := by
+    intro i j hi hj h_eq
+    exact h_disjoint i j hi hj h_eq.symm
+  have h_lookup :
+      ∀ i, i < 8 →
+        (writeMemoryOfEntry mem writeEntry)[readEntry.ptr.toNat + i]? =
+            .some ((eventOfEntry readEntry).byteAt i) →
+          mem[readEntry.ptr.toNat + i]? =
+            .some ((eventOfEntry readEntry).byteAt i) := by
+    intro i hi h_lane
+    have h0 : writeEntry.ptr.toNat ≠ readEntry.ptr.toNat + i := by
+      simpa using h_write_ne_read i 0 hi (by norm_num)
+    have h1 : writeEntry.ptr.toNat + 1 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 1 hi (by norm_num)
+    have h2 : writeEntry.ptr.toNat + 2 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 2 hi (by norm_num)
+    have h3 : writeEntry.ptr.toNat + 3 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 3 hi (by norm_num)
+    have h4 : writeEntry.ptr.toNat + 4 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 4 hi (by norm_num)
+    have h5 : writeEntry.ptr.toNat + 5 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 5 hi (by norm_num)
+    have h6 : writeEntry.ptr.toNat + 6 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 6 hi (by norm_num)
+    have h7 : writeEntry.ptr.toNat + 7 ≠ readEntry.ptr.toNat + i :=
+      h_write_ne_read i 7 hi (by norm_num)
+    simpa only [writeMemoryOfEntry, Std.ExtHashMap.getElem?_insert,
+      beq_iff_eq, h0, h1, h2, h3, h4, h5, h6, h7] using h_lane
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simpa [eventOfEntry] using
+      h_lookup 0 (by norm_num) (by simpa [eventOfEntry] using h_read.1)
+  · simpa [eventOfEntry] using
+      h_lookup 1 (by norm_num) (by simpa [eventOfEntry] using h_read.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 2 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 3 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 4 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 5 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 6 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.1)
+  · simpa [eventOfEntry] using
+      h_lookup 7 (by norm_num) (by simpa [eventOfEntry] using h_read.2.2.2.2.2.2.2)
+
+/-- A byte-disjoint eight-byte write does not change whether a selected read
+agreement holds. -/
+theorem readEventReplayAgreement_writeMemoryOfEntry_disjoint_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {writeEntry readEntry : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry writeEntry) :
+    ReadEventReplayAgreement (writeMemoryOfEntry mem writeEntry)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_writeMemoryOfEntry_disjoint
+      h_read h_disjoint
+  · intro h_read
+    exact readEventReplayAgreement_of_writeMemoryOfEntry_disjoint
+      h_read h_disjoint
 
 /-- After preloading zero bytes at a row pointer, a zero-valued read at that
 pointer is replay-sound. This is the first-read/address-change counterpart to
@@ -821,6 +1086,21 @@ def replayMemoryAfterBusRow
   else
     mem
 
+/-- A raw memory-bus row that is not an active memory write leaves replay
+memory unchanged. -/
+theorem replayMemoryAfterBusRow_eq_self_of_not_active_write
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (row : MemoryBusEntry FGL)
+    (h_not_write :
+      ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL))) :
+    replayMemoryAfterBusRow mem row = mem := by
+  by_cases h_as : row.as = (2 : FGL)
+  · have h_mult : ¬row.multiplicity = (1 : FGL) := by
+      intro h_mult
+      exact h_not_write ⟨h_as, h_mult⟩
+    simp [replayMemoryAfterBusRow, h_as, h_mult]
+  · simp [replayMemoryAfterBusRow, h_as]
+
 /-- A selected read memory-bus row does not mutate replay memory. -/
 theorem replayMemoryAfterBusRow_eq_self_of_read
     (mem : Std.ExtHashMap Nat (BitVec 8))
@@ -835,6 +1115,57 @@ theorem replayMemoryAfterBusRow_eq_self_of_read
     exact h_one_ne_neg_one (h_write.symm.trans h_read)
   simp [replayMemoryAfterBusRow, h_as, h_not_write]
 
+/-- A replay-neutral left row commutes with any right row. -/
+theorem replayMemoryAfterBusRow_commute_of_left_not_active_write
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL))) :
+    replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+      replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left := by
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write mem left h_left_not_write]
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write
+    (replayMemoryAfterBusRow mem right) left h_left_not_write]
+
+/-- A replay-neutral right row commutes with any left row. -/
+theorem replayMemoryAfterBusRow_commute_of_right_not_active_write
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL))) :
+    replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+      replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left := by
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write
+    (replayMemoryAfterBusRow mem left) right h_right_not_write]
+  rw [replayMemoryAfterBusRow_eq_self_of_not_active_write mem right h_right_not_write]
+
+/-- The no-active-write-overlap side condition also supplies the replay cursor
+commutation needed by a safe adjacent swap.
+
+If either row is not an active memory write this reduces to replay neutrality.
+If both rows are active memory writes, the overlap condition gives byte
+disjointness, and the eight-byte writes commute. -/
+theorem replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+    (mem : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (_h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left) :
+    replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+      replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left := by
+  by_cases h_left_write : left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)
+  · by_cases h_right_write : right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL)
+    · obtain ⟨h_left_as, h_left_mult⟩ := h_left_write
+      obtain ⟨h_right_as, h_right_mult⟩ := h_right_write
+      have h_disjoint : MemoryBusEntryByteDisjoint left right :=
+        h_left_right_safe h_right_as h_right_mult
+      simp only [replayMemoryAfterBusRow, h_left_as, h_left_mult, h_right_as, h_right_mult,
+        if_true, replayStoreEvent_storeEventOfEntry]
+      exact writeMemoryOfEntry_commute_of_byteDisjoint mem left right h_disjoint
+    · exact replayMemoryAfterBusRow_commute_of_right_not_active_write
+        mem left right h_right_write
+  · exact replayMemoryAfterBusRow_commute_of_left_not_active_write
+      mem left right h_left_write
+
 /-- Replay memory after a chronological prefix of raw memory-bus rows. -/
 @[reducible]
 def replayMemoryAfterBusRows
@@ -843,9 +1174,26 @@ def replayMemoryAfterBusRows
     Std.ExtHashMap Nat (BitVec 8) :=
   rows.foldl replayMemoryAfterBusRow mem
 
-/-- Replaying one raw memory-bus row preserves a read agreement when any write
-effect of that row targets a disjoint eight-byte range. Non-write rows preserve
-the agreement definitionally. -/
+/-- Replaying one raw memory-bus row preserves a read agreement when any active
+write effect of that row targets a disjoint eight-byte range. Non-write rows
+preserve the agreement definitionally. -/
+theorem readEventReplayAgreement_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement mem (eventOfEntry readEntry))
+    (h_safe : MemoryBusEntryNoActiveWriteOverlap readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+      (eventOfEntry readEntry) := by
+  by_cases h_as : row.as = (2 : FGL)
+  · by_cases h_write : row.multiplicity = (1 : FGL)
+    · simpa [replayMemoryAfterBusRow, h_as, h_write,
+        replayStoreEvent_storeEventOfEntry] using
+        readEventReplayAgreement_of_writeMemoryOfEntry_disjoint h_read (h_safe h_as h_write)
+    · simpa [replayMemoryAfterBusRow, h_as, h_write] using h_read
+  · simpa [replayMemoryAfterBusRow, h_as] using h_read
+
+/-- Replaying one byte-disjoint raw memory-bus row preserves a read agreement. -/
 theorem readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
     {mem : Std.ExtHashMap Nat (BitVec 8)}
     {row readEntry : MemoryBusEntry FGL}
@@ -853,14 +1201,79 @@ theorem readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
       ReadEventReplayAgreement mem (eventOfEntry readEntry))
     (h_disjoint : MemoryBusEntryByteDisjoint readEntry row) :
     ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
-      (eventOfEntry readEntry) := by
+      (eventOfEntry readEntry) :=
+  readEventReplayAgreement_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+    h_read (MemoryBusEntryNoActiveWriteOverlap.of_disjoint h_disjoint)
+
+/-- Converse preservation for one raw row: if replaying a safe row leaves the
+selected read agreement true, then it was true before replaying the row.
+Non-write rows are definitional. -/
+theorem readEventReplayAgreement_before_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+        (eventOfEntry readEntry))
+    (h_safe : MemoryBusEntryNoActiveWriteOverlap readEntry row) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
   by_cases h_as : row.as = (2 : FGL)
   · by_cases h_write : row.multiplicity = (1 : FGL)
-    · simpa [replayMemoryAfterBusRow, h_as, h_write,
-        replayStoreEvent_storeEventOfEntry] using
-        readEventReplayAgreement_of_writeMemoryOfEntry_disjoint h_read h_disjoint
+    · exact
+        readEventReplayAgreement_before_of_writeMemoryOfEntry_disjoint
+          (by
+            simpa [replayMemoryAfterBusRow, h_as, h_write,
+              replayStoreEvent_storeEventOfEntry] using h_read)
+          (h_safe h_as h_write)
     · simpa [replayMemoryAfterBusRow, h_as, h_write] using h_read
   · simpa [replayMemoryAfterBusRow, h_as] using h_read
+
+/-- Converse preservation for one raw row: if replaying a byte-disjoint row
+leaves the selected read agreement true, then it was true before replaying the
+row. Non-write rows are definitional. -/
+theorem readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+        (eventOfEntry readEntry))
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) :=
+  readEventReplayAgreement_before_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+    h_read (MemoryBusEntryNoActiveWriteOverlap.of_disjoint h_disjoint)
+
+/-- Replaying a safe raw row does not change whether a selected read agreement
+holds. -/
+theorem readEventReplayAgreement_replayMemoryAfterBusRow_noActiveWriteOverlap_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_safe : MemoryBusEntryNoActiveWriteOverlap readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+      h_read h_safe
+  · intro h_read
+    exact readEventReplayAgreement_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+      h_read h_safe
+
+/-- Replaying a byte-disjoint raw row does not change whether a selected read
+agreement holds. -/
+theorem readEventReplayAgreement_replayMemoryAfterBusRow_disjoint_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {row readEntry : MemoryBusEntry FGL}
+    (h_disjoint : MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+      h_read h_disjoint
+  · intro h_read
+    exact readEventReplayAgreement_of_replayMemoryAfterBusRow_disjoint
+      h_read h_disjoint
 
 /-- Replaying a prefix of raw memory-bus rows preserves a read agreement when
 all rows in the prefix are byte-disjoint from the read entry. -/
@@ -889,6 +1302,54 @@ theorem readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
         intro restRow h_rest
         exact h_disjoint restRow (by simp [h_rest])
       simpa [replayMemoryAfterBusRows] using ih h_head h_tail
+
+/-- Converse preservation for a raw-row prefix: if replaying only byte-disjoint
+rows leaves the selected read agreement true, then the agreement was true before
+the prefix. -/
+theorem readEventReplayAgreement_before_of_replayMemoryAfterBusRows_disjoint
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_read :
+      ReadEventReplayAgreement (replayMemoryAfterBusRows mem rows)
+        (eventOfEntry readEntry))
+    (h_disjoint :
+      ∀ row, row ∈ rows → MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  induction rows generalizing mem with
+  | nil =>
+      simpa [replayMemoryAfterBusRows] using h_read
+  | cons row rest ih =>
+      have h_tail :
+          ∀ restRow, restRow ∈ rest →
+            MemoryBusEntryByteDisjoint readEntry restRow := by
+        intro restRow h_rest
+        exact h_disjoint restRow (by simp [h_rest])
+      have h_after_head :
+          ReadEventReplayAgreement (replayMemoryAfterBusRow mem row)
+            (eventOfEntry readEntry) := by
+        exact ih (by simpa [replayMemoryAfterBusRows] using h_read) h_tail
+      exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_disjoint
+        h_after_head (h_disjoint row (by simp))
+
+/-- Replaying only byte-disjoint raw rows does not change whether a selected
+read agreement holds. -/
+theorem readEventReplayAgreement_replayMemoryAfterBusRows_disjoint_iff
+    {mem : Std.ExtHashMap Nat (BitVec 8)}
+    {rows : List (MemoryBusEntry FGL)}
+    {readEntry : MemoryBusEntry FGL}
+    (h_disjoint :
+      ∀ row, row ∈ rows → MemoryBusEntryByteDisjoint readEntry row) :
+    ReadEventReplayAgreement (replayMemoryAfterBusRows mem rows)
+        (eventOfEntry readEntry)
+      ↔ ReadEventReplayAgreement mem (eventOfEntry readEntry) := by
+  constructor
+  · intro h_read
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRows_disjoint
+      h_read h_disjoint
+  · intro h_read
+    exact readEventReplayAgreement_of_replayMemoryAfterBusRows_disjoint
+      h_read h_disjoint
 
 /-- Replaying raw memory-bus rows is the same memory update as replaying their
     projected read/write event list. This lets AIR-facing proofs reason over
@@ -987,6 +1448,42 @@ def MemoryBusRowsPrefixReadSound
             (replayMemoryAfterBusRows initialMemory priorRows)
             (eventOfEntry row)
 
+/-- Transfer prefix read soundness between two row lists once every selected
+read in the target list has a selected read in the source list with the same
+payload and the same replay memory before the read.
+
+This is deliberately not the Stage-0 order theorem by itself: the hard work is
+to prove the `h_match` replay-prefix equality from sorted/execution-order
+correspondence. Keeping that obligation explicit prevents replacing
+read-soundness with another semantic premise. -/
+theorem memoryBusRowsPrefixReadSound_transfer_of_read_replay_match
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (sourceRows targetRows : List (MemoryBusEntry FGL))
+    (h_source : MemoryBusRowsPrefixReadSound initialMemory sourceRows)
+    (h_match :
+      ∀ targetPrior targetRead targetLater,
+        targetRows = targetPrior ++ targetRead :: targetLater →
+          targetRead.as = (2 : FGL) →
+            targetRead.multiplicity = (-1 : FGL) →
+              ∃ sourcePrior sourceRead sourceLater,
+                sourceRows = sourcePrior ++ sourceRead :: sourceLater
+                  ∧ sourceRead.as = (2 : FGL)
+                  ∧ sourceRead.multiplicity = (-1 : FGL)
+                  ∧ targetRead.ptr = sourceRead.ptr
+                  ∧ targetRead.value_0 = sourceRead.value_0
+                  ∧ targetRead.value_1 = sourceRead.value_1
+                  ∧ replayMemoryAfterBusRows initialMemory targetPrior =
+                    replayMemoryAfterBusRows initialMemory sourcePrior) :
+    MemoryBusRowsPrefixReadSound initialMemory targetRows := by
+  intro targetPrior targetRead targetLater h_target_split h_as h_mult
+  obtain ⟨sourcePrior, sourceRead, sourceLater, h_source_split,
+    h_source_as, h_source_mult, h_ptr, h_value_0, h_value_1, h_replay⟩ :=
+    h_match targetPrior targetRead targetLater h_target_split h_as h_mult
+  rw [h_replay]
+  exact readEventReplayAgreement_of_entry_same
+    (h_source sourcePrior sourceRead sourceLater h_source_split h_source_as h_source_mult)
+    h_ptr h_value_0 h_value_1
+
 /-- Prefix-indexed read soundness implies the recursive row-level replay
     predicate consumed by the memory-bus trace bridge. -/
 theorem memoryBusRowsReadWriteSound_of_prefixReadSound
@@ -1041,6 +1538,676 @@ theorem memoryBusRowsPrefixReadSound_of_readWriteSound
             ih (replayMemoryAfterBusRow initialMemory row) rest
               h_tail h_rest
           simpa [replayMemoryAfterBusRows] using h_selected
+
+/-- Swap two adjacent rows at the head of a recursive replay-sound list.
+
+The no-active-write-overlap assumptions make read agreements insensitive to
+moving one row across the other. The explicit replay-commutation assumption is
+the non-read part needed for the suffix memory cursor. -/
+theorem memoryBusRowsReadWriteSound_swap_adjacent_head
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsReadWriteSound initialMemory (left :: right :: suffix))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left)
+    (h_commute :
+      ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) :
+    MemoryBusRowsReadWriteSound initialMemory (right :: left :: suffix) := by
+  simp only [MemoryBusRowsReadWriteSound] at h_rows ⊢
+  constructor
+  · intro h_as h_mult
+    exact readEventReplayAgreement_before_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+      (h_rows.2.1 h_as h_mult) h_right_left_safe
+  · constructor
+    · intro h_as h_mult
+      exact readEventReplayAgreement_of_replayMemoryAfterBusRow_noActiveWriteOverlap
+        (h_rows.1 h_as h_mult) h_left_right_safe
+    · simpa [h_commute initialMemory] using h_rows.2.2
+
+/-- Swap two adjacent rows after an arbitrary prefix of a recursive
+replay-sound list. -/
+theorem memoryBusRowsReadWriteSound_swap_adjacent
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsReadWriteSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left)
+    (h_commute :
+      ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) :
+    MemoryBusRowsReadWriteSound initialMemory (pref ++ right :: left :: suffix) := by
+  induction pref generalizing initialMemory with
+  | nil =>
+      simpa using
+        memoryBusRowsReadWriteSound_swap_adjacent_head
+          initialMemory left right suffix h_rows h_left_right_safe h_right_left_safe h_commute
+  | cons row pref ih =>
+      simp only [List.cons_append, MemoryBusRowsReadWriteSound] at h_rows ⊢
+      constructor
+      · exact h_rows.1
+      · exact ih (replayMemoryAfterBusRow initialMemory row) h_rows.2
+
+/-- Prefix read-soundness is stable under swapping adjacent rows when neither
+row can actively overwrite bytes whose read agreement must be preserved, and
+their replay effects commute. This is the local order-transfer step for turning
+a sorted Mem-table replay proof into an execution-order replay proof. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left)
+    (h_commute :
+      ∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_of_readWriteSound initialMemory
+    (pref ++ right :: left :: suffix)
+    (memoryBusRowsReadWriteSound_swap_adjacent initialMemory pref left right suffix
+      (memoryBusRowsReadWriteSound_of_prefixReadSound initialMemory
+        (pref ++ left :: right :: suffix) h_rows)
+      h_left_right_safe h_right_left_safe h_commute)
+
+/-- Adjacent-swap corollary when the left row is replay-neutral. The remaining
+directional safety hypothesis protects read agreement if the right row is a
+write moved before a selected read. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent_of_left_not_active_write
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+    h_rows h_left_right_safe
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_left_not_write)
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_left_not_active_write
+        mem left right h_left_not_write)
+
+/-- Adjacent-swap corollary when the right row is replay-neutral. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent_of_right_not_active_write
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL)))
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+    h_rows
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_right_not_write)
+    h_right_left_safe
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_right_not_active_write
+        mem left right h_right_not_write)
+
+/-- Adjacent-swap corollary for two replay-neutral rows. This is the common
+read/read case and deliberately needs no byte-disjointness assumption. -/
+theorem memoryBusRowsPrefixReadSound_swap_adjacent_of_neither_active_write
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_rows :
+      MemoryBusRowsPrefixReadSound initialMemory (pref ++ left :: right :: suffix))
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)))
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL))) :
+    MemoryBusRowsPrefixReadSound initialMemory (pref ++ right :: left :: suffix) := by
+  exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+    h_rows
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_right_not_write)
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_left_not_write)
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_left_not_active_write
+        mem left right h_left_not_write)
+
+/-- A proof-relevant, replay-safe adjacent-swap relation between two memory-bus
+row lists.
+
+This is the Stage-0 order-transfer target: later row-correspondence facts should
+show that execution-order rows are obtained from table-order Mem replay rows by
+swapping only rows whose active writes do not overlap protected bytes and whose
+replay effects commute.  The relation is deliberately structural; it does not
+state read-value agreement. -/
+inductive MemoryBusRowsReplaySafePermutation :
+    List (MemoryBusEntry FGL) → List (MemoryBusEntry FGL) → Prop where
+  | refl (rows : List (MemoryBusEntry FGL)) :
+      MemoryBusRowsReplaySafePermutation rows rows
+  | swap
+      {source : List (MemoryBusEntry FGL)}
+      (pref : List (MemoryBusEntry FGL))
+      (left right : MemoryBusEntry FGL)
+      (suffix : List (MemoryBusEntry FGL)) :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix) →
+      MemoryBusEntryNoActiveWriteOverlap left right →
+      MemoryBusEntryNoActiveWriteOverlap right left →
+      (∀ mem : Std.ExtHashMap Nat (BitVec 8),
+        replayMemoryAfterBusRow (replayMemoryAfterBusRow mem left) right =
+          replayMemoryAfterBusRow (replayMemoryAfterBusRow mem right) left) →
+      MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix)
+
+/-- Replay-safe adjacent swaps are ordinary list permutations. -/
+theorem MemoryBusRowsReplaySafePermutation.perm
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    source.Perm target := by
+  induction h_order with
+  | refl =>
+      exact List.Perm.refl _
+  | swap pref left right suffix h_prev _h_left_right_safe _h_right_left_safe _h_commute ih =>
+      exact ih.trans
+        (List.Perm.append_left pref (List.Perm.swap left right suffix).symm)
+
+/-- Replay-safe order certificates preserve row membership. -/
+theorem MemoryBusRowsReplaySafePermutation.mem_target_of_mem_source
+    {source target : List (MemoryBusEntry FGL)}
+    {entry : MemoryBusEntry FGL}
+    (h_order : MemoryBusRowsReplaySafePermutation source target)
+    (h_mem : entry ∈ source) :
+    entry ∈ target :=
+  (h_order.perm.mem_iff).mp h_mem
+
+/-- Replay-safe order certificates reflect row membership back to the source
+list. This is the bag/permutation direction needed by row-correspondence
+callers that start from execution-order rows. -/
+theorem MemoryBusRowsReplaySafePermutation.mem_source_of_mem_target
+    {source target : List (MemoryBusEntry FGL)}
+    {entry : MemoryBusEntry FGL}
+    (h_order : MemoryBusRowsReplaySafePermutation source target)
+    (h_mem : entry ∈ target) :
+    entry ∈ source :=
+  (h_order.perm.mem_iff).mpr h_mem
+
+/-- Replay-safe order certificates preserve list length. This is the
+bag/permutation consequence needed when row-correspondence proofs must account
+for duplicate memory-bus messages. -/
+theorem MemoryBusRowsReplaySafePermutation.length_eq
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    source.length = target.length :=
+  h_order.perm.length_eq
+
+/-- Replay-safe order certificates preserve multiplicity of each concrete row. -/
+theorem MemoryBusRowsReplaySafePermutation.count_eq
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target)
+    (entry : MemoryBusEntry FGL) :
+    source.count entry = target.count entry :=
+  h_order.perm.count_eq entry
+
+/-- Replay-safe order certificates compose. This lets later order proofs build
+the global sorted-to-execution certificate from smaller safe-swap chunks. -/
+theorem MemoryBusRowsReplaySafePermutation.trans
+    {source middle target : List (MemoryBusEntry FGL)}
+    (h_source_middle : MemoryBusRowsReplaySafePermutation source middle)
+    (h_middle_target : MemoryBusRowsReplaySafePermutation middle target) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_middle_target with
+  | refl =>
+      exact h_source_middle
+  | swap pref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      exact MemoryBusRowsReplaySafePermutation.swap
+        pref left right suffix ih h_left_right_safe h_right_left_safe h_commute
+
+/-- Replay-safe order certificates are symmetric: each certified adjacent swap
+can be replayed in reverse with the directional overlap facts exchanged and the
+replay-commutation equality reversed. -/
+theorem MemoryBusRowsReplaySafePermutation.symm
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation target source := by
+  induction h_order with
+  | refl =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | swap pref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      have h_swap_back :
+          MemoryBusRowsReplaySafePermutation
+            (pref ++ right :: left :: suffix) (pref ++ left :: right :: suffix) :=
+        MemoryBusRowsReplaySafePermutation.swap pref right left suffix
+          (MemoryBusRowsReplaySafePermutation.refl (pref ++ right :: left :: suffix))
+          h_right_left_safe h_left_right_safe
+          (fun mem => (h_commute mem).symm)
+      exact h_swap_back.trans ih
+
+/-- Transport a replay-safe order certificate under a common left context. -/
+theorem MemoryBusRowsReplaySafePermutation.append_left
+    (pref : List (MemoryBusEntry FGL))
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation (pref ++ source) (pref ++ target) := by
+  induction h_order with
+  | refl =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | swap localPref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      have ih' :
+          MemoryBusRowsReplaySafePermutation
+            (pref ++ source) ((pref ++ localPref) ++ left :: right :: suffix) := by
+        simpa [List.append_assoc] using ih
+      simpa [List.append_assoc] using
+        MemoryBusRowsReplaySafePermutation.swap
+          (pref ++ localPref) left right suffix ih'
+          h_left_right_safe h_right_left_safe h_commute
+
+/-- Transport a replay-safe order certificate under a common right context. -/
+theorem MemoryBusRowsReplaySafePermutation.append_right
+    (suffix : List (MemoryBusEntry FGL))
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation (source ++ suffix) (target ++ suffix) := by
+  induction h_order with
+  | refl =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | swap pref left right localSuffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      have ih' :
+          MemoryBusRowsReplaySafePermutation
+            (source ++ suffix) (pref ++ left :: right :: (localSuffix ++ suffix)) := by
+        simpa [List.append_assoc] using ih
+      simpa [List.append_assoc] using
+        MemoryBusRowsReplaySafePermutation.swap
+          pref left right (localSuffix ++ suffix) ih'
+          h_left_right_safe h_right_left_safe h_commute
+
+/-- Transport a replay-safe order certificate under common list contexts on
+both sides. -/
+theorem MemoryBusRowsReplaySafePermutation.append_context
+    (pref suffix : List (MemoryBusEntry FGL))
+    {source target : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation source target) :
+    MemoryBusRowsReplaySafePermutation
+      (pref ++ source ++ suffix) (pref ++ target ++ suffix) := by
+  simpa [List.append_assoc] using
+    (MemoryBusRowsReplaySafePermutation.append_left pref
+      (MemoryBusRowsReplaySafePermutation.append_right suffix h_order))
+
+/-- Any ordinary list permutation of replay-neutral rows is replay-safe.
+
+This is the reusable bridge for read/read-only chunks of the eventual
+sorted-to-execution order proof: once row correspondence gives a plain bag
+permutation and both sides are known to contain no active writes, the order
+certificate is produced without a read-value premise. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_not_active_write
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_source_not_write :
+      ∀ row, row ∈ source → ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL)))
+    (h_target_not_write :
+      ∀ row, row ∈ target → ¬(row.as = (2 : FGL) ∧ row.multiplicity = (1 : FGL))) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_perm with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons row h_tail ih =>
+      simpa using
+        MemoryBusRowsReplaySafePermutation.append_left [row]
+          (ih
+            (fun entry h_entry =>
+              h_source_not_write entry (List.mem_cons.mpr (Or.inr h_entry)))
+            (fun entry h_entry =>
+              h_target_not_write entry (List.mem_cons.mpr (Or.inr h_entry))))
+  | swap left right rows =>
+      exact MemoryBusRowsReplaySafePermutation.swap [] right left rows
+        (MemoryBusRowsReplaySafePermutation.refl (right :: left :: rows))
+        (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+          (h_source_not_write left (by simp)))
+        (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write
+          (h_source_not_write right (by simp)))
+        (fun mem =>
+          replayMemoryAfterBusRow_commute_of_left_not_active_write
+            mem right left (h_source_not_write right (by simp)))
+  | trans h_source_middle h_middle_target ih_source_middle ih_middle_target =>
+      exact
+        (ih_source_middle h_source_not_write
+          (fun row h_row =>
+            h_source_not_write row (h_source_middle.mem_iff.mpr h_row))).trans
+          (ih_middle_target
+            (fun row h_row =>
+              h_source_not_write row (h_source_middle.mem_iff.mpr h_row))
+            h_target_not_write)
+
+/-- Any ordinary list permutation of a pairwise replay-safe row list is
+replay-safe.
+
+This bridge is intentionally strong: callers must prove every pair in the
+source can cross safely. Mixed same-address write/read rows generally need a
+more precise no-crossing argument instead of this theorem. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_pairwise_noActiveWriteOverlap
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_source_safe :
+      ∀ left, left ∈ source →
+        ∀ right, right ∈ source →
+          MemoryBusEntryNoActiveWriteOverlap left right ∧
+            MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction h_perm with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl []
+  | cons row h_tail ih =>
+      simpa using
+        MemoryBusRowsReplaySafePermutation.append_left [row]
+          (ih
+            (fun left h_left right h_right =>
+              h_source_safe left (List.mem_cons.mpr (Or.inr h_left))
+                right (List.mem_cons.mpr (Or.inr h_right))))
+  | swap left right rows =>
+      have h_pair :
+          MemoryBusEntryNoActiveWriteOverlap right left ∧
+            MemoryBusEntryNoActiveWriteOverlap left right :=
+        h_source_safe right (by simp) left (by simp)
+      exact MemoryBusRowsReplaySafePermutation.swap [] right left rows
+        (MemoryBusRowsReplaySafePermutation.refl (right :: left :: rows))
+        h_pair.1 h_pair.2
+        (fun mem =>
+          replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+            mem right left h_pair.1 h_pair.2)
+  | trans h_source_middle h_middle_target ih_source_middle ih_middle_target =>
+      exact
+        (ih_source_middle h_source_safe).trans
+          (ih_middle_target
+            (fun left h_left right h_right =>
+              h_source_safe left (h_source_middle.mem_iff.mpr h_left)
+                right (h_source_middle.mem_iff.mpr h_right)))
+
+/-- `left` occurs before `right` in a concrete list.  The witness is
+split-shaped so callers can connect it directly to table/order prefixes. -/
+@[reducible]
+def MemoryBusRowsPairBefore
+    (left right : MemoryBusEntry FGL) (rows : List (MemoryBusEntry FGL)) : Prop :=
+  ∃ pref middle suffix,
+    rows = pref ++ left :: middle ++ right :: suffix
+
+/-- Membership gives a split around one concrete row occurrence. -/
+theorem exists_append_cons_of_mem {α : Type _} {row : α} :
+    ∀ {rows : List α}, row ∈ rows → ∃ pref suffix, rows = pref ++ row :: suffix
+  | [], h => by cases h
+  | head :: tail, h => by
+      rcases List.mem_cons.mp h with h_eq | h_tail
+      · subst h_eq
+        exact ⟨[], tail, rfl⟩
+      · rcases exists_append_cons_of_mem h_tail with ⟨pref, suffix, h_split⟩
+        exact ⟨head :: pref, suffix, by simp [h_split]⟩
+
+/-- A row in a prefix occurs before the following selected row. -/
+theorem memoryBusRowsPairBefore_append_cons_of_mem
+    {moved row : MemoryBusEntry FGL}
+    {pref suffix : List (MemoryBusEntry FGL)}
+    (h_moved : moved ∈ pref) :
+    MemoryBusRowsPairBefore moved row (pref ++ row :: suffix) := by
+  rcases exists_append_cons_of_mem h_moved with ⟨beforeMoved, afterMoved, h_pref⟩
+  refine ⟨beforeMoved, afterMoved, suffix, ?_⟩
+  simp [h_pref, List.append_assoc]
+
+/-- The head of a list occurs before every row in the tail. -/
+theorem memoryBusRowsPairBefore_cons_of_mem
+    {row moved : MemoryBusEntry FGL}
+    {tail : List (MemoryBusEntry FGL)}
+    (h_moved : moved ∈ tail) :
+    MemoryBusRowsPairBefore row moved (row :: tail) := by
+  rcases exists_append_cons_of_mem h_moved with ⟨middle, suffix, h_tail⟩
+  refine ⟨[], middle, suffix, ?_⟩
+  simp [h_tail]
+
+/-- Move the head row to the right across an explicitly safe prefix. -/
+theorem MemoryBusRowsReplaySafePermutation.move_head_right_of_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix : List (MemoryBusEntry FGL))
+    (h_safe : ∀ moved, moved ∈ pref →
+      MemoryBusEntryNoActiveWriteOverlap row moved ∧
+        MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation (row :: pref ++ suffix) (pref ++ row :: suffix) := by
+  induction pref with
+  | nil =>
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  | cons moved rest ih =>
+      have h_head :
+          MemoryBusEntryNoActiveWriteOverlap row moved ∧
+            MemoryBusEntryNoActiveWriteOverlap moved row :=
+        h_safe moved (by simp)
+      have h_rest : ∀ restMoved, restMoved ∈ rest →
+          MemoryBusEntryNoActiveWriteOverlap row restMoved ∧
+            MemoryBusEntryNoActiveWriteOverlap restMoved row := by
+        intro restMoved h_restMoved
+        exact h_safe restMoved (by simp [h_restMoved])
+      have h_swap :
+          MemoryBusRowsReplaySafePermutation
+            (row :: moved :: rest ++ suffix) (moved :: row :: rest ++ suffix) :=
+        MemoryBusRowsReplaySafePermutation.swap [] row moved (rest ++ suffix)
+          (MemoryBusRowsReplaySafePermutation.refl (row :: moved :: rest ++ suffix))
+          h_head.1 h_head.2
+          (fun mem =>
+            replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+              mem row moved h_head.1 h_head.2)
+      have h_tail :
+          MemoryBusRowsReplaySafePermutation
+            (moved :: row :: rest ++ suffix) (moved :: rest ++ row :: suffix) := by
+        simpa [List.cons_append, List.append_assoc] using
+          MemoryBusRowsReplaySafePermutation.append_left [moved] (ih h_rest)
+      simpa [List.cons_append, List.append_assoc] using h_swap.trans h_tail
+
+/-- Move a row left across an explicitly safe prefix. -/
+theorem MemoryBusRowsReplaySafePermutation.move_row_left_of_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix : List (MemoryBusEntry FGL))
+    (h_safe : ∀ moved, moved ∈ pref →
+      MemoryBusEntryNoActiveWriteOverlap row moved ∧
+        MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) :=
+  (MemoryBusRowsReplaySafePermutation.move_head_right_of_noActiveWriteOverlap
+    row pref suffix h_safe).symm
+
+/-- Recursive head-selection step for a crossed-pair order proof. -/
+theorem MemoryBusRowsReplaySafePermutation.cons_target_of_split_noActiveWriteOverlap
+    (row : MemoryBusEntry FGL)
+    (pref suffix targetTail : List (MemoryBusEntry FGL))
+    (h_tail : MemoryBusRowsReplaySafePermutation (pref ++ suffix) targetTail)
+    (h_safe : ∀ moved, moved ∈ pref →
+      MemoryBusEntryNoActiveWriteOverlap row moved ∧
+        MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: targetTail) := by
+  have h_move :
+      MemoryBusRowsReplaySafePermutation (pref ++ row :: suffix) (row :: pref ++ suffix) :=
+    MemoryBusRowsReplaySafePermutation.move_row_left_of_noActiveWriteOverlap
+      row pref suffix h_safe
+  have h_recurse :
+      MemoryBusRowsReplaySafePermutation (row :: pref ++ suffix) (row :: targetTail) := by
+    simpa [List.cons_append, List.append_assoc] using
+      MemoryBusRowsReplaySafePermutation.append_left [row] h_tail
+  exact h_move.trans h_recurse
+
+/-- If every crossed pair in every remaining subproblem is bidirectionally
+safe, an ordinary permutation can be realized by replay-safe adjacent swaps.
+
+This is the constructive "no unsafe inversions" bridge: unlike
+`of_perm_pairwise_noActiveWriteOverlap`, it only asks about rows whose relative
+order actually flips while recursively selecting target heads. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_sublist_noUnsafeCrossings
+    {baseSource baseTarget source target : List (MemoryBusEntry FGL)}
+    (h_source_base : List.Sublist source baseSource)
+    (h_target_base : List.Sublist target baseTarget)
+    (h_perm : source.Perm target)
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource baseSource →
+        List.Sublist currentTarget baseTarget →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation source target := by
+  induction target generalizing source with
+  | nil =>
+      cases source with
+      | nil =>
+          exact MemoryBusRowsReplaySafePermutation.refl []
+      | cons head tail =>
+          have h_len := h_perm.length_eq
+          simp at h_len
+  | cons row targetTail ih =>
+      have h_row_mem_source : row ∈ source := by
+        exact h_perm.mem_iff.mpr (by simp)
+      rcases exists_append_cons_of_mem h_row_mem_source with ⟨pref, suffix, h_source⟩
+      subst source
+      have h_perm_tail : (pref ++ suffix).Perm targetTail := by
+        exact (List.perm_middle.symm.trans h_perm).cons_inv
+      have h_source_tail_base : List.Sublist (pref ++ suffix) baseSource := by
+        have h_tail_source : List.Sublist (pref ++ suffix) (pref ++ row :: suffix) := by
+          exact List.Sublist.middle (List.Sublist.refl (pref ++ suffix)) row
+        exact h_tail_source.trans h_source_base
+      have h_target_tail_base : List.Sublist targetTail baseTarget := by
+        have h_tail_target : List.Sublist targetTail (row :: targetTail) :=
+          (List.Sublist.refl targetTail).cons row
+        exact h_tail_target.trans h_target_base
+      have h_tail_order :
+          MemoryBusRowsReplaySafePermutation (pref ++ suffix) targetTail :=
+        ih h_source_tail_base h_target_tail_base h_perm_tail
+      exact
+        MemoryBusRowsReplaySafePermutation.cons_target_of_split_noActiveWriteOverlap
+          row pref suffix targetTail h_tail_order
+          (fun moved h_moved => by
+            have h_moved_source_tail : moved ∈ pref ++ suffix := by
+              simp [h_moved]
+            have h_moved_target_tail : moved ∈ targetTail :=
+              h_perm_tail.mem_iff.mp h_moved_source_tail
+            exact h_cross h_source_base h_target_base
+              (memoryBusRowsPairBefore_append_cons_of_mem h_moved)
+              (memoryBusRowsPairBefore_cons_of_mem h_moved_target_tail))
+
+/-- Top-level crossed-pair replay-safe permutation builder. -/
+theorem MemoryBusRowsReplaySafePermutation.of_perm_noUnsafeCrossings
+    {source target : List (MemoryBusEntry FGL)}
+    (h_perm : source.Perm target)
+    (h_cross :
+      ∀ {currentSource currentTarget row moved},
+        List.Sublist currentSource source →
+        List.Sublist currentTarget target →
+        MemoryBusRowsPairBefore moved row currentSource →
+        MemoryBusRowsPairBefore row moved currentTarget →
+        MemoryBusEntryNoActiveWriteOverlap row moved ∧
+          MemoryBusEntryNoActiveWriteOverlap moved row) :
+    MemoryBusRowsReplaySafePermutation source target :=
+  MemoryBusRowsReplaySafePermutation.of_perm_sublist_noUnsafeCrossings
+    (List.Sublist.refl source) (List.Sublist.refl target) h_perm
+    h_cross
+
+/-- Prefix read-soundness transfers along a replay-safe adjacent-swap proof.
+
+This packages repeated use of `memoryBusRowsPrefixReadSound_swap_adjacent` into
+the reusable order-transfer form needed to move from Mem table order to
+execution order. -/
+theorem memoryBusRowsPrefixReadSound_of_replaySafePermutation
+    (initialMemory : Std.ExtHashMap Nat (BitVec 8))
+    {sourceRows targetRows : List (MemoryBusEntry FGL)}
+    (h_order : MemoryBusRowsReplaySafePermutation sourceRows targetRows)
+    (h_source : MemoryBusRowsPrefixReadSound initialMemory sourceRows) :
+    MemoryBusRowsPrefixReadSound initialMemory targetRows := by
+  induction h_order generalizing initialMemory with
+  | refl =>
+      exact h_source
+  | swap pref left right suffix h_prev h_left_right_safe h_right_left_safe h_commute ih =>
+      exact memoryBusRowsPrefixReadSound_swap_adjacent initialMemory pref left right suffix
+        (ih initialMemory h_source) h_left_right_safe h_right_left_safe h_commute
+
+/-- Constructor helper for a replay-safe swap whose two directional
+no-active-write-overlap facts also supply the replay cursor commutation. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_noActiveWriteOverlap
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right)
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    h_left_right_safe h_right_left_safe
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_noActiveWriteOverlap
+        mem left right h_left_right_safe h_right_left_safe)
+
+/-- Constructor helper for a replay-safe swap when the left row is not an
+active write. The remaining directional safety condition protects a possible
+left-row read from an active write on the right. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_left_not_active_write
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)))
+    (h_left_right_safe : MemoryBusEntryNoActiveWriteOverlap left right) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    h_left_right_safe (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_left_not_write)
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_left_not_active_write
+        mem left right h_left_not_write)
+
+/-- Constructor helper for a replay-safe swap when the right row is not an
+active write. The remaining directional safety condition protects a possible
+right-row read from an active write on the left. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_right_not_active_write
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL)))
+    (h_right_left_safe : MemoryBusEntryNoActiveWriteOverlap right left) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_right_not_write)
+    h_right_left_safe
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_right_not_active_write
+        mem left right h_right_not_write)
+
+/-- Constructor helper for a replay-safe swap when both rows are replay-neutral.
+This covers same-address read/read swaps without byte-disjointness. -/
+theorem MemoryBusRowsReplaySafePermutation.swap_of_neither_active_write
+    {source : List (MemoryBusEntry FGL)}
+    (pref : List (MemoryBusEntry FGL))
+    (left right : MemoryBusEntry FGL)
+    (suffix : List (MemoryBusEntry FGL))
+    (h_prev :
+      MemoryBusRowsReplaySafePermutation source (pref ++ left :: right :: suffix))
+    (h_left_not_write :
+      ¬(left.as = (2 : FGL) ∧ left.multiplicity = (1 : FGL)))
+    (h_right_not_write :
+      ¬(right.as = (2 : FGL) ∧ right.multiplicity = (1 : FGL))) :
+    MemoryBusRowsReplaySafePermutation source (pref ++ right :: left :: suffix) :=
+  MemoryBusRowsReplaySafePermutation.swap pref left right suffix h_prev
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_right_not_write)
+    (MemoryBusEntryNoActiveWriteOverlap.of_not_active_write h_left_not_write)
+    (fun mem =>
+      replayMemoryAfterBusRow_commute_of_left_not_active_write
+        mem left right h_left_not_write)
 
 @[simp]
 theorem replayMemoryAfterBusRows_append

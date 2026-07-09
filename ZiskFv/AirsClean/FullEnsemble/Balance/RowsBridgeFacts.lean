@@ -92,6 +92,114 @@ theorem activeMemReplayEntry_same_ptr_or_byteDisjoint_of_rowAt
         memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
           h_selected_range h_other_range h_addr_ne
 
+/-- Active replay entries from different generated Mem-row addresses are
+byte-disjoint.
+
+This is the row-indexed address-separation fact needed by replay-safe order
+assembly: when a selected execution row crosses Mem-table rows from a different
+address class, the crossing is protected by ordinary byte disjointness. -/
+theorem activeMemReplayEntry_byteDisjoint_of_rowAt_addr_ne
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (leftIdx rightIdx : Fin table.table.length)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val))
+    (h_addr_ne : mem.addr leftIdx.val ≠ mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint leftEntry rightEntry := by
+  let leftRow := ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val
+  let rightRow := ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val
+  have h_left_range : leftRow.addr.val < 2 ^ 29 := by
+    simpa [leftRow, ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns leftIdx
+  have h_right_range : rightRow.addr.val < 2 ^ 29 := by
+    simpa [rightRow, ZiskFv.AirsClean.Mem.rowAt] using h_ranges.addrColumns rightIdx
+  have h_addr_ne_rows : leftRow.addr ≠ rightRow.addr := by
+    intro h_addr
+    exact h_addr_ne (by simpa [leftRow, rightRow, ZiskFv.AirsClean.Mem.rowAt] using h_addr)
+  have h_primary_primary :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memPrimaryReplayEntryOfRow leftRow) (memPrimaryReplayEntryOfRow rightRow) :=
+    memoryBusEntryByteDisjoint_primary_primary_of_addr_ne
+      h_left_range h_right_range h_addr_ne_rows
+  have h_primary_dual :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memPrimaryReplayEntryOfRow leftRow) (memDualReadReplayEntryOfRow rightRow) :=
+    memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+      h_left_range h_right_range h_addr_ne_rows
+  have h_dual_primary :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memDualReadReplayEntryOfRow leftRow) (memPrimaryReplayEntryOfRow rightRow) := by
+    have h_right_left_addr_ne : rightRow.addr ≠ leftRow.addr := by
+      intro h_addr
+      exact h_addr_ne_rows h_addr.symm
+    have h_right_left :
+        ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+          (memPrimaryReplayEntryOfRow rightRow) (memDualReadReplayEntryOfRow leftRow) :=
+      memoryBusEntryByteDisjoint_primary_dual_of_addr_ne
+        h_right_range h_left_range h_right_left_addr_ne
+    exact ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.symm h_right_left
+  have h_left_dual_ptr :
+      (memDualReadReplayEntryOfRow leftRow).ptr =
+        (memPrimaryReplayEntryOfRow leftRow).ptr := by
+    simp
+  have h_right_dual_ptr :
+      (memDualReadReplayEntryOfRow rightRow).ptr =
+        (memPrimaryReplayEntryOfRow rightRow).ptr := by
+    simp
+  have h_dual_dual :
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint
+        (memDualReadReplayEntryOfRow leftRow) (memDualReadReplayEntryOfRow rightRow) :=
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.congr_right_ptr
+      h_right_dual_ptr
+      (ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.congr_left_ptr
+        h_left_dual_ptr h_primary_primary)
+  have h_left' :
+      leftEntry ∈ activeMemReplayEntriesOfRow leftRow := by
+    simpa [leftRow] using h_left
+  have h_right' :
+      rightEntry ∈ activeMemReplayEntriesOfRow rightRow := by
+    simpa [rightRow] using h_right
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_left' with
+    h_left_primary | h_left_dual
+  · rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_right' with
+      h_right_primary | h_right_dual
+    · simpa [h_left_primary, h_right_primary] using h_primary_primary
+    · simpa [h_left_primary, h_right_dual] using h_primary_dual
+  · rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_right' with
+      h_right_primary | h_right_dual
+    · simpa [h_left_dual, h_right_primary] using h_dual_primary
+    · simpa [h_left_dual, h_right_dual] using h_dual_dual
+
+/-- Different generated Mem-row addresses give the bidirectional
+no-active-write-overlap facts needed by replay-safe adjacent swaps. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    (h_ranges : MemTableGeneratedRangeFacts table mem)
+    (leftIdx rightIdx : Fin table.table.length)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem rightIdx.val))
+    (h_addr_ne : mem.addr leftIdx.val ≠ mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry := by
+  have h_disjoint :=
+    activeMemReplayEntry_byteDisjoint_of_rowAt_addr_ne
+      h_ranges leftIdx rightIdx h_left h_right h_addr_ne
+  exact
+    ⟨ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap.of_disjoint h_disjoint,
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap.of_disjoint
+        (ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryByteDisjoint.symm h_disjoint)⟩
+
 /-- The indexed table bridge projects the generated row range required by
     the Mem trace spec. -/
 theorem generatedMemRows_of_memTableGeneratedRowsBridge
@@ -128,8 +236,9 @@ def FullWitnessMemTableGeneratedRowsBridge
     replay-soundness field. It exposes every remaining concrete fact needed by
     `acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts`:
     the table selected from the full witness, the active replay row projection,
-    generated Mem row constraints, row/segment range checks, fixed-column shape,
-    and nonempty segment evidence. -/
+    generated Mem row constraints, row/segment range checks, and nonempty
+    segment evidence. The deterministic `SEGMENT_L1` fixed-column shape is
+    derived by `segmentWithFixedL1` rather than carried as bridge residue. -/
 structure FullWitnessMemReplayBridge
     {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
@@ -141,18 +250,19 @@ structure FullWitnessMemReplayBridge
   permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
   rowCount : ℕ
   rows_eq : rows = activeMemReplayRowsOfTable table
-  generatedRows : MemTableGeneratedRowsBridge table mem segment permutation rowCount
+  generatedRows :
+    MemTableGeneratedRowsBridge table mem (segmentWithFixedL1 segment) permutation rowCount
   rowRanges : MemTableGeneratedRangeFacts table mem
-  segmentRanges : MemSegmentGeneratedRangeFacts segment
-  fixedColumns : MemTableGeneratedFixedColumnFacts table segment
+  segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment)
   nonempty : 0 < table.table.length
 
 /-- Construct the full-witness replay bridge from the concrete Mem table
-    projection and the remaining generated/range/fixed-column facts.
+    projection using the deterministic `SEGMENT_L1` fixed-column shape.
 
     This is the intended extractor-facing constructor: table membership,
     component identity, row projection, row count, and accepted-row projection
-    are no longer independent bridge fields. -/
+    are no longer independent bridge fields, and fixed-column facts are derived
+    rather than stored. -/
 def fullWitnessMemReplayBridge_of_memTable
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -166,11 +276,11 @@ def fullWitnessMemReplayBridge_of_memTable
     (h_generatedAt :
       ∀ idx : Fin table.table.length,
         ZiskFv.Airs.Mem.generated_every_row
-          segment permutation (memOfTable table gsum im0 im1) idx.val)
+          (segmentWithFixedL1 segment) permutation
+          (memOfTable table gsum im0 im1) idx.val)
     (h_rowRanges :
       MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
-    (h_segmentRanges : MemSegmentGeneratedRangeFacts segment)
-    (h_fixedColumns : MemTableGeneratedFixedColumnFacts table segment)
+    (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment))
     (h_nonempty : 0 < table.table.length) :
     FullWitnessMemReplayBridge witness (activeMemReplayRowsOfTable table) :=
   { table := table
@@ -184,7 +294,6 @@ def fullWitnessMemReplayBridge_of_memTable
       memTableGeneratedRowsBridge_of_memOfTable h_component h_generatedAt
     rowRanges := h_rowRanges
     segmentRanges := h_segmentRanges
-    fixedColumns := h_fixedColumns
     nonempty := h_nonempty }
 
 /-- Construct the full-witness replay bridge using the deterministic
@@ -217,7 +326,6 @@ def fullWitnessMemReplayBridge_of_memTable_fixedL1
     h_generatedAt
     h_rowRanges
     h_segmentRanges
-    (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 table segment)
     h_nonempty
 
 /-- Construct the full-witness replay bridge from the compact generated AIR
@@ -402,6 +510,19 @@ def rows
   activeMemReplayRowsOfTable source.table
 
 @[reducible]
+def replayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (source : FullWitnessMemAirSource witness)
+    (h_nonempty : 0 < source.table.table.length) :
+    FullWitnessMemReplayBridge witness source.rows :=
+  fullWitnessMemReplayBridge_of_memAirSource
+    source.table_mem
+    source.component
+    source.source
+    h_nonempty
+
+@[reducible]
 def replayBridgeOfTraceSplit
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -410,11 +531,9 @@ def replayBridgeOfTraceSplit
     (source : FullWitnessMemAirSource witness)
     (h_traceSplit : source.rows = priorRows ++ entry :: laterRows) :
     FullWitnessMemReplayBridge witness source.rows :=
-  fullWitnessMemReplayBridge_of_memAirSource_traceSplit
-    source.table_mem
-    source.component
-    source.source
-    h_traceSplit
+  source.replayBridge
+    (table_nonempty_of_activeMemReplayRowsOfTable_nonempty
+      (activeMemReplayRowsOfTable_nonempty_of_split h_traceSplit))
 
 end FullWitnessMemAirSource
 
@@ -763,16 +882,38 @@ theorem fullWitnessMemAirSourceOfRawSidecars_eq_rawFacts
         (fullWitnessMemAirSourceRawFacts_of_sidecars h_sidecars) := by
   rfl
 
-/-- The compact full-witness replay bridge includes the older generated-row
-    bridge obligation. -/
+/-- The compact full-witness replay bridge includes the generated-row bridge
+    obligation for the deterministic fixed-L1 segment shape. -/
 theorem fullWitnessMemTableGeneratedRowsBridge_of_fullWitnessMemReplayBridge
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     {rows : List (Interaction.MemoryBusEntry FGL)}
     (h_bridge : FullWitnessMemReplayBridge witness rows) :
     FullWitnessMemTableGeneratedRowsBridge witness
-      h_bridge.mem h_bridge.segment h_bridge.permutation h_bridge.rowCount :=
+      h_bridge.mem (segmentWithFixedL1 h_bridge.segment) h_bridge.permutation h_bridge.rowCount :=
   ⟨h_bridge.table, h_bridge.table_mem, h_bridge.generatedRows⟩
+
+/-- Full-witness replay bridge wrapper for the address-separation
+no-active-write-overlap fact. -/
+theorem activeMemReplayEntry_noActiveWriteOverlap_of_fullWitnessMemReplayBridge_addr_ne
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    (leftIdx rightIdx : Fin h_bridge.table.table.length)
+    {leftEntry rightEntry : Interaction.MemoryBusEntry FGL}
+    (h_left :
+      leftEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem leftIdx.val))
+    (h_right :
+      rightEntry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem rightIdx.val))
+    (h_addr_ne :
+      h_bridge.mem.addr leftIdx.val ≠ h_bridge.mem.addr rightIdx.val) :
+    ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap leftEntry rightEntry ∧
+      ZiskFv.ZiskCircuit.MemTrace.MemoryBusEntryNoActiveWriteOverlap rightEntry leftEntry :=
+  activeMemReplayEntry_noActiveWriteOverlap_of_rowAt_addr_ne
+    h_bridge.rowRanges leftIdx rightIdx h_left h_right h_addr_ne
 
 /-- The full-witness bridge projects the generated row range required by the
     Mem trace spec. -/
@@ -849,6 +990,52 @@ theorem tableRow_spec_of_memTableGeneratedRowsBridge
   have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx
   rw [h_bridge.rowAt_eq idx]
   exact h_spec
+
+/-- Membership in the active table replay projection identifies a generated
+Mem row index whose active row projection contains the same replay entry. -/
+theorem exists_activeMemReplayEntry_rowAt_of_mem_activeMemReplayRowsOfTable
+    {table : Table FGL}
+    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
+    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
+    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
+    {rowCount : ℕ}
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ activeMemReplayRowsOfTable table) :
+    ∃ idx : Fin table.table.length,
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt mem idx.val) := by
+  unfold activeMemReplayRowsOfTable at h_entry
+  rcases List.mem_flatMap.mp h_entry with ⟨providerRow, h_provider_mem, h_entry_provider⟩
+  rcases List.mem_iff_get.mp h_provider_mem with ⟨idx, h_get⟩
+  refine ⟨idx, ?_⟩
+  have h_entry_get :
+      entry ∈
+        activeMemReplayEntriesOfRow
+          (eval (table.environment (table.table.get idx))
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+    rw [h_get]
+    exact h_entry_provider
+  rw [← h_bridge.rowAt_eq idx]
+  exact h_entry_get
+
+/-- Full-witness replay bridge wrapper for active replay-row membership:
+membership in the accepted row list identifies a generated Mem row index. -/
+theorem exists_activeMemReplayEntry_rowAt_of_fullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (h_bridge : FullWitnessMemReplayBridge witness rows)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ rows) :
+    ∃ idx : Fin h_bridge.table.table.length,
+      entry ∈ activeMemReplayEntriesOfRow
+        (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem idx.val) := by
+  have h_entry_active : entry ∈ activeMemReplayRowsOfTable h_bridge.table := by
+    simpa [h_bridge.rows_eq] using h_entry
+  exact
+    exists_activeMemReplayEntry_rowAt_of_mem_activeMemReplayRowsOfTable
+      h_bridge.generatedRows h_entry_active
 
 /-- The indexed table bridge supplies generated row specs for every concrete
     table row, in the membership form consumed by table-level `flatMap`

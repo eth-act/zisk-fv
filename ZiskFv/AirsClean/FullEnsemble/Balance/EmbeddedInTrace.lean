@@ -101,6 +101,50 @@ def MutableMemReplayRowsEmbeddedInTrace
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
       MemReplayRowsEmbeddedInTrace table rows
 
+/-- Witness-level embedding obligation for active mutable-Mem replay rows,
+    including selected primary writes and selected dual reads. This is the
+    active-row variant used when channel balance has already selected a
+    concrete mutable-Mem provider branch. -/
+def MutableActiveMemReplayRowsEmbeddedInTrace
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (rows : List (Interaction.MemoryBusEntry FGL)) : Prop :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      ActiveMemReplayRowsEmbeddedInTrace table rows
+
+/-- Structural source-correlation certificate for the selected full-witness
+    Mem replay bridge: every mutable-Mem table in the full witness is the
+    bridge's selected table. This is table identity, not memory read
+    agreement. -/
+def FullWitnessMemReplayBridgeCoversMutableMemTables
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (bridge : FullWitnessMemReplayBridge witness rows) : Prop :=
+  ∀ table : Table FGL,
+    table ∈ witness.allTables →
+    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      table = bridge.table
+
+/-- A selected full-witness replay bridge gives witness-level active replay
+    embedding once the bridge table is known to cover every mutable-Mem table
+    in the full witness. -/
+theorem mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    (bridge : FullWitnessMemReplayBridge witness rows)
+    (h_covers : FullWitnessMemReplayBridgeCoversMutableMemTables bridge) :
+    MutableActiveMemReplayRowsEmbeddedInTrace witness rows := by
+  intro table h_table h_component entry h_entry
+  have h_eq : table = bridge.table :=
+    h_covers table h_table h_component
+  subst table
+  rw [bridge.rows_eq]
+  exact h_entry
+
 /-- A primary read projection is the polarity-preserving primary replay row
     when the concrete Mem row is a read. -/
 theorem memPrimaryReadReplayEntryOfRow_eq_primaryReplayEntryOfRow_of_wr_zero
@@ -178,6 +222,42 @@ theorem active_mem_primary_replay_entry_mem_of_table_row
   exact List.mem_flatMap.mpr
     ⟨providerRow, h_row, by
       simp [activeMemReplayEntriesOfRow, h_sel]⟩
+
+/-- A matched primary Mem provider row is covered by the accepted chronological
+    row trace from active replay-row embedding, provided the concrete primary
+    emission is selected. This preserves the primary row's read/write polarity,
+    unlike the read-specialized adapter below. -/
+theorem mem_primary_replay_entry_mem_of_active_replay_embedded_trace_row_match
+    {table : Table FGL}
+    {rows : List (Interaction.MemoryBusEntry FGL)}
+    {providerRow : Array FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_embedded : ActiveMemReplayRowsEmbeddedInTrace table rows)
+    (h_row : providerRow ∈ table.table)
+    (h_sel :
+      (eval (table.environment providerRow)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).sel = 1)
+    (h_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (memPrimaryReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar))) :
+    entry ∈ rows := by
+  have h_eq :
+      entry =
+        memPrimaryReplayEntryOfRow
+          (eval (table.environment providerRow)
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+    obtain ⟨h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+    cases entry
+    simp [memPrimaryReplayEntryOfRow,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
+      at h_mult h_as h_ptr h_v0 h_v1 h_ts ⊢
+    rw [h_mult, h_as, h_ptr, h_v0, h_v1, h_ts]
+    simp
+  rw [h_eq]
+  exact h_embedded _
+    (active_mem_primary_replay_entry_mem_of_table_row h_row h_sel)
 
 /-- A concrete Mem table row contributes its dual read projection to the
     table's full replay-row surface. -/

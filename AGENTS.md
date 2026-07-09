@@ -158,6 +158,9 @@ trust-boundary change. Prefer fixing verification failures over working around t
   `ring` may treat equal numeric literals with different syntax as different atoms.
 - Over `Fin p`, `(1 - 0) * x` does not always simplify the way it looks. Check nearby established
   lemmas before forcing a normalization path.
+- Do not call `omega` while composite `FGL`/`Fin GL_prime` arithmetic hypotheses remain in context.
+  First rewrite the needed facts to `Nat` equalities or inequalities and clear the `FGL` hypotheses;
+  bare `Fin` equalities are generally safe.
 - For operation-bus composition, prefer the maintained predicates under
   `ZiskFv/Airs/OperationBus.lean` instead of reviving retired interaction modules.
 

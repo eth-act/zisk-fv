@@ -329,6 +329,22 @@ theorem activeMemReplayEntriesOfRow_mem_eq_primary_or_dual
       exact Or.inr h_entry
     · simp [h_sel, h_sel_dual] at h_entry
 
+/-- Any active replay entry from a generated Mem row uses that row's byte
+pointer `addr * 8`, in the natural representative guaranteed by the 29-bit
+address range. -/
+theorem activeMemReplayEntry_ptr_toNat_eq_addr_mul_eight
+    {row : ZiskFv.AirsClean.Mem.MemRow FGL}
+    (h_addr_range : row.addr.val < 2 ^ 29)
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_entry : entry ∈ activeMemReplayEntriesOfRow row) :
+    entry.ptr.toNat = row.addr.val * 8 := by
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_entry with
+    h_entry_primary | h_entry_dual
+  · subst entry
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_addr_range]
+  · subst entry
+    simp [ZiskFv.Airs.Mem.field_addr_times_eight_val_eq_of_lt h_addr_range]
+
 /-- A selected primary+dual row is chronologically ordered when the primary
     timestamp is no later than the pinned dual-read timestamp. -/
 theorem activeMemReplayEntriesOfRow_chronological_of_sel_of_sel_dual_of_step_le

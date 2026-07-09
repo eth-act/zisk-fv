@@ -72,6 +72,29 @@ theorem exists_memBus_row_eval_of_pair_interactionsWith
   · exact Or.inl ⟨row, h_row, h_left⟩
   · exact Or.inr ⟨row, h_row, h_right⟩
 
+/-- Row extraction for RegisterBoundary memory-bus interactions in the full ensemble. -/
+theorem exists_registerBoundary_mem_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    (∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.emitted (-1)
+          (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+          (table.environment row))
+    ∨ (∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.emitted 1
+          (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+          (table.environment row)) := by
+  apply exists_memBus_row_eval_of_pair_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus
+  · exact h_mem
+
 /-- Row extraction for the unified Main operation-bus interaction in the full
     ensemble. The extracted row is a `MainRowWithRom`; its `.core` is the same
     row that emits Main's memory-bus interactions. -/

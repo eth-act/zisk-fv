@@ -762,6 +762,58 @@ theorem rowAt_memOfTable
   cases row
   rfl
 
+/-- The component `Spec` for a concrete dual-Mem table row projects to the
+    named-column `Spec` for the corresponding `memOfTable` row.
+
+This is the row-local slice available from accepted table specs. It does not
+derive generated cross-row Mem constraints, range lookups, or permutation
+accumulator facts. -/
+theorem memSpec_rowAt_memOfTable_of_component_spec
+    (table : Table FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (idx : Fin table.table.length)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_component_spec :
+      table.component.Spec (table.environment (table.table.get idx))) :
+    ZiskFv.AirsClean.Mem.Spec
+      (ZiskFv.AirsClean.Mem.rowAt (memOfTable table gsum im0 im1) idx.val) := by
+  let component := ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  let env := table.environment (table.table.get idx)
+  have h_mem_component_spec : component.Spec env := by
+    simpa [component, env, h_component] using h_component_spec
+  have h_input_eq :
+      eval env component.rowInputVar = component.rowInput env := by
+    simpa only [component, Air.Flat.Component.rowInput,
+      Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset component.Input 0 env)
+  have h_row_spec :
+      ZiskFv.AirsClean.Mem.Spec (eval env component.rowInputVar) := by
+    have h_spec :=
+      ZiskFv.AirsClean.Mem.spec_of_componentWithDualMemBus_spec
+        env h_mem_component_spec
+    rw [← h_input_eq] at h_spec
+    exact h_spec
+  rw [rowAt_memOfTable table gsum im0 im1 idx]
+  exact h_row_spec
+
+/-- A concrete dual-Mem table `Spec` supplies the row-local Mem specs for its
+    named-column `memOfTable` projection. -/
+theorem tableRow_specs_of_memOfTable_spec
+    (table : Table FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_spec : table.Spec) :
+    ∀ idx : Fin table.table.length,
+      ZiskFv.AirsClean.Mem.Spec
+        (ZiskFv.AirsClean.Mem.rowAt (memOfTable table gsum im0 im1) idx.val) := by
+  intro idx
+  have h_mem : table.table.get idx ∈ table.table :=
+    List.mem_iff_get.mpr ⟨idx, rfl⟩
+  exact memSpec_rowAt_memOfTable_of_component_spec
+    table gsum im0 im1 idx h_component (h_spec (table.table.get idx) h_mem)
+
 /-- Continuation-segment initial memory: start from the finite zero preload for
     the table's active rows, then seed the previous segment's carried-out bytes. -/
 @[reducible]
