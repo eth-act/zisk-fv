@@ -168,4 +168,115 @@ theorem singleAddWitness_constraints : singleAddWitness.Constraints :=
   singleAddWitness.constraints_of_tables singleAddEnsemble_verifier
     singleAddWitness_table_constraints
 
+theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints := by
+  intro table h_table
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · subst table
+    rw [Table.TransitionConstraints]
+    intro i h_i
+    simp [EnsembleWitness.verifierTable] at h_i
+  · simp [singleAddWitness, singleAddTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rw [Table.TransitionConstraints] <;>
+      intro i h_i <;>
+      simp [registerBoundaryRowsTable, registerBoundaryRowsTableOf, emptyComponentTable,
+        binaryAddSingleRowTable, mainSingleRowTable, ZiskFv.AirsClean.RegisterBoundary.component,
+        ZiskFv.AirsClean.BinaryAdd.component] at h_i ⊢
+
+private theorem not_main_component_of_name_ne
+    {component : Component FGL}
+    (h_name :
+      component.circuit.name ≠ (componentWithRomMemAndOpBus 1 addX1Program).circuit.name)
+    (h_component : component = componentWithRomMemAndOpBus 1 addX1Program) :
+    False :=
+  h_name (congrArg (fun component : Component FGL => component.circuit.name) h_component)
+
+private theorem not_main_component_of_width_ne
+    {component : Component FGL}
+    (h_width :
+      component.width ≠ (componentWithRomMemAndOpBus 1 addX1Program).width)
+    (h_component : component = componentWithRomMemAndOpBus 1 addX1Program) :
+    False :=
+  h_width (congrArg Component.width h_component)
+
+private theorem singleAddWitness_main_component_cases
+    {table : Table FGL}
+    (h_table : table ∈ singleAddWitness.allTables)
+    (h_component :
+      table.component = componentWithRomMemAndOpBus 1 addX1Program) :
+    table = mainSingleRowTable 1 addX1Program addX1Row := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · subst table
+    exfalso
+    exact not_main_component_of_width_ne (by decide) h_component
+  · simp [singleAddWitness, singleAddTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · rfl
+
+theorem singleAddWitness_main_height :
+    ∀ table ∈ singleAddWitness.allTables,
+      table.component = componentWithRomMemAndOpBus 1 addX1Program →
+        ∀ i : Fin 1, i.val < table.table.length := by
+  intro table h_table h_component i
+  have h_main := singleAddWitness_main_component_cases h_table h_component
+  subst table
+  simp [mainSingleRowTable]
+
+theorem addX1Main_segment_l1_first :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable addX1Program
+        (mainSingleRowTable 1 addX1Program addX1Row)).segment_l1 0 = 1 := by
+  simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  simp [mainSingleRowTable, mainRowArray]
+  change (eval ((mainSingleRowTable 1 addX1Program addX1Row).environment
+      (mainRowArray addX1Row))
+        (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).core.segment_l1 = 1
+  rw [mainSingleRowTable_eval_rowInputVar]
+  rfl
+
+set_option linter.unnecessarySimpa false in
+theorem singleAddWitness_segment_l1_fixed :
+    ∀ table ∈ singleAddWitness.allTables,
+      table.component = componentWithRomMemAndOpBus 1 addX1Program →
+        (0 < table.table.length →
+            (ZiskFv.AirsClean.FullEnsemble.mainOfTable addX1Program table).segment_l1 0 = 1) ∧
+        (∀ idx : Fin table.table.length, 0 < idx.val →
+            (ZiskFv.AirsClean.FullEnsemble.mainOfTable addX1Program table).segment_l1
+              idx.val = 0) := by
+  intro table h_table h_component
+  have h_main := singleAddWitness_main_component_cases h_table h_component
+  subst table
+  constructor
+  · intro _
+    exact addX1Main_segment_l1_first
+  · intro idx h_idx
+    exfalso
+    have h_len : (mainSingleRowTable 1 addX1Program addX1Row).table.length = 1 := by
+      simp [mainSingleRowTable]
+    have h_lt : idx.val < 1 := by
+      simpa [h_len] using idx.isLt
+    omega
+
 end ZiskFv.Compliance.SingleAddWitness
