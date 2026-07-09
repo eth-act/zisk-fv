@@ -4,6 +4,7 @@ import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
 import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.RegisterBoundary
+import ZiskFv.RowShape.Contract
 
 /-!
 # Register MemBus balance for the `add x1,x1,x1` witness (from real component emissions)
@@ -124,7 +125,7 @@ theorem pairedInteractions_balanced
 def addX1Row : MainRowWithRom FGL :=
   { core :=
       { a_0 := 0, a_1 := 0, b_0 := 0, b_1 := 0, c_0 := 0, c_1 := 0,
-        flag := 0, pc := 0, is_external_op := 1, op := 0, m32 := 0,
+        flag := 0, pc := 0, is_external_op := 1, op := ZiskFv.Trusted.OP_ADD, m32 := 0,
         ind_width := 8, set_pc := 0, jmp_offset1 := 0, jmp_offset2 := 0,
         store_pc := 0, im_high_degree_2 := 0, segment_l1 := 1 }
     rom :=
@@ -140,8 +141,8 @@ def addX1Row : MainRowWithRom FGL :=
 /-- The ROM row matching `addX1Row`'s decoded selector pins. -/
 def addX1ProgramRow : ZiskRomMessage FGL :=
   { line := 0, a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 1, b_imm1 := 0,
-    ind_width := 8, op := 0, store_offset := 1, jmp_offset1 := 0, jmp_offset2 := 0,
-    flags := 57409 }
+    ind_width := 8, op := ZiskFv.Trusted.OP_ADD, store_offset := 1, jmp_offset1 := 0,
+    jmp_offset2 := 0, flags := 57409 }
 
 /-- A one-instruction concrete program for the `add x1,x1,x1` witness. -/
 def addX1Program : Program 1 := fun _ => addX1ProgramRow

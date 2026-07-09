@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.FullEnsemble.Balance.Classification
 import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.Compliance.RegisterMemBusBalance
 
@@ -16,6 +17,7 @@ open ZiskFv.AirsClean (boolF)
 open ZiskFv.AirsClean.FullEnsemble (fullRv64imEnsemble fullRv64imSoundEnsemble)
 open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.Compliance.RegisterMemBusBalance
 
@@ -35,6 +37,10 @@ theorem emptyComponentTable_constraints (component : Component FGL) :
   rw [Table.Constraints]
   intro row h_row
   cases h_row
+
+theorem emptyComponentTable_interactionsWith (component : Component FGL) (channel) :
+    (emptyComponentTable component).interactionsWith channel = [] := by
+  simp [Table.interactionsWith, emptyComponentTable]
 
 def addX1BinaryAddRow : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL :=
   ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 0
@@ -278,5 +284,46 @@ theorem singleAddWitness_segment_l1_fixed :
     have h_lt : idx.val < 1 := by
       simpa [h_len] using idx.isLt
     omega
+
+theorem addX1OpBusMessage_eq :
+    ZiskFv.AirsClean.Main.opBusMessage addX1Row.core =
+      ZiskFv.AirsClean.BinaryAdd.opBusMessage addX1BinaryAddRow := by
+  constructor
+
+theorem addX1OpBusInteraction_msg_eq :
+    (mainOpBusInteraction addX1Row).msg =
+      (binaryAddOpBusInteraction addX1BinaryAddRow).msg := by
+  simpa [mainOpBusInteraction, binaryAddOpBusInteraction] using
+    congrArg (fun msg => (toElements msg).toArray) addX1OpBusMessage_eq
+
+theorem singleAddWitness_opBus_interactions :
+    singleAddWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) =
+      [binaryAddOpBusInteraction addX1BinaryAddRow, mainOpBusInteraction addX1Row] := by
+  have h_registerBoundary :
+      registerBoundaryRowsTable.interactionsWith OpBusChannel.toRaw = [] := by
+    exact ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_opBus_nil
+      (table := registerBoundaryRowsTable) rfl
+  rw [show singleAddWitness.tables = singleAddTables from rfl]
+  simp [singleAddTables, h_registerBoundary, emptyComponentTable_interactionsWith,
+    binaryAddSingleRowTable_interactionsWith_opBus, mainSingleRowTable_interactionsWith_opBus]
+
+theorem singleAddWitness_opBus_balanced :
+    BalancedInteractions
+      (singleAddWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw)) := by
+  rw [singleAddWitness_opBus_interactions]
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([(binaryAddOpBusInteraction addX1BinaryAddRow).msg] : List (Array FGL)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    simp at h_interaction ⊢
+    rcases h_interaction with rfl | rfl
+    · rfl
+    · exact addX1OpBusInteraction_msg_eq
+  · intro msg h_msg
+    simp only [List.mem_singleton] at h_msg
+    subst msg
+    decide
 
 end ZiskFv.Compliance.SingleAddWitness
