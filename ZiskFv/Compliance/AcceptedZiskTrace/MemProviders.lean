@@ -269,11 +269,11 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbe
     coverage predicate used by Mem replay embedding lemmas. -/
 theorem AcceptedZiskTrace.memReplayBridge_coversMutableMemTables
     {n : Nat} (trace : AcceptedZiskTrace n)
-    (h_nonempty : 0 < trace.numInstructions) :
+    (h_present : MutableMemPresent trace.witness) :
     FullWitnessMemReplayBridgeCoversMutableMemTables
-      (trace.memReplayBridge h_nonempty) := by
+      (trace.memReplayBridge h_present) := by
   intro table h_table h_component
-  have h_eq := trace.mem_replay_source_covers h_nonempty table h_table h_component
+  have h_eq := trace.mem_replay_source_covers h_present table h_table h_component
   simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows,
     AcceptedZiskTrace.memReplaySource, FullWitnessMemAirSource.replayBridge,
     fullWitnessMemReplayBridge_of_memAirSource,
@@ -288,7 +288,7 @@ The source-correlation residue is now the accepted trace's guarded structural
 coverage certificate, not a seed-side hypothesis. -/
 theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_one
     {n : Nat} (trace : AcceptedZiskTrace n)
-    (h_nonempty : 0 < trace.numInstructions)
+    (h_present : MutableMemPresent trace.witness)
     {mainRow : Array FGL}
     (h_mainRow : mainRow ∈ trace.mainTable.table)
     {mainInteraction : Interaction FGL}
@@ -311,18 +311,18 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_
       ZiskFv.Airs.MemoryBus.matches_memory_entry entry
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (eval (trace.mainTable.environment mainRow) mainMsg) (-1) 2)) :
-    entry ∈ trace.memReplayRows h_nonempty := by
+    entry ∈ trace.memReplayRows h_present := by
   exact trace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbedded_of_main_mem_op_one
     h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op h_no_nonmutable h_entry
     (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
-      (trace.memReplayBridge h_nonempty)
-      (trace.memReplayBridge_coversMutableMemTables h_nonempty))
+      (trace.memReplayBridge h_present)
+      (trace.memReplayBridge_coversMutableMemTables h_present))
 
 /-- Accepted-trace replay-bridge wrapper for selected Main stores whose PIL
     memory opcode is syntactically `mem_op = 2`. -/
 theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_main_mem_op_two
     {n : Nat} (trace : AcceptedZiskTrace n)
-    (h_nonempty : 0 < trace.numInstructions)
+    (h_present : MutableMemPresent trace.witness)
     {mainRow : Array FGL}
     (h_mainRow : mainRow ∈ trace.mainTable.table)
     {mainInteraction : Interaction FGL}
@@ -345,11 +345,11 @@ theorem AcceptedZiskTrace.activeMainMutableMemProviderEntryMemOfReplayBridge_of_
       ZiskFv.Airs.MemoryBus.matches_memory_entry entry
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (eval (trace.mainTable.environment mainRow) mainMsg) 1 2)) :
-    entry ∈ trace.memReplayRows h_nonempty := by
+    entry ∈ trace.memReplayRows h_present := by
   exact trace.activeMainMutableMemProviderEntryMemOfActiveReplayEmbedded_of_main_mem_op_two
     h_mainRow h_mainInteraction h_mainEval h_active h_main_mem_op h_no_nonmutable h_entry
     (mutableActiveMemReplayRowsEmbeddedInTrace_of_fullWitnessMemReplayBridge
-      (trace.memReplayBridge h_nonempty)
-      (trace.memReplayBridge_coversMutableMemTables h_nonempty))
+      (trace.memReplayBridge h_present)
+      (trace.memReplayBridge_coversMutableMemTables h_present))
 
 end ZiskFv.Compliance

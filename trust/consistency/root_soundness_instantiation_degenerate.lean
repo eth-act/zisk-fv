@@ -87,6 +87,32 @@ private theorem main_component_tables_empty (table : Table FGL)
     obtain ⟨i, rfl⟩ := ht
     simp [EnsembleWitness.tableAt_table]
 
+/-- Any mutable-Mem component table in the degenerate witness is empty. The verifier table is
+    ruled out by its empty MemBus interaction list, while every provider table is empty by
+    construction. -/
+private theorem mutable_mem_component_tables_empty (table : Table FGL)
+    (hmem : table ∈ wit.allTables)
+    (hcomp : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    table.table = [] := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at hmem
+  rcases hmem with hv | ht
+  · exfalso
+    rw [hv, EnsembleWitness.verifierTable_component] at hcomp
+    have hv_nil :=
+      ZiskFv.AirsClean.FullEnsemble.verifierTable_interactionsWith_memBus_nil 0 prog
+    rw [hcomp,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at hv_nil
+    exact absurd hv_nil (by simp)
+  · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
+    obtain ⟨i, rfl⟩ := ht
+    simp [EnsembleWitness.tableAt_table]
+
+private theorem wit_not_mutableMemPresent : ¬ MutableMemPresent wit := by
+  intro h_present
+  obtain ⟨table, hmem, hcomp, hlen⟩ := h_present
+  have htab := mutable_mem_component_tables_empty table hmem hcomp
+  exact absurd hlen (by simp [htab])
+
 private theorem wit_constraints : wit.Constraints := by
   refine wit.constraints_of_tables wit_verifier ?_
   intro t ht
@@ -142,16 +168,16 @@ private def trace : AcceptedZiskTrace 0 where
   witness := wit
   constraints_hold := wit_constraints
   channels_balanced := wit_balanced
-  mem_replay_table := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_segment := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_permutation := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_gsum := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_im0 := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_im1 := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_constraints := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_row_ranges := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_segment_ranges := fun h => absurd h (Nat.not_lt_zero _)
-  mem_replay_source_covers := fun h => absurd h (Nat.not_lt_zero _)
+  mem_replay_table := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_segment := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_permutation := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_gsum := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_im0 := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_im1 := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_constraints := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_row_ranges := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_segment_ranges := fun h => absurd h wit_not_mutableMemPresent
+  mem_replay_source_covers := fun h => absurd h wit_not_mutableMemPresent
   transitions_hold := wit_transitions
   main_height := by intro table _ _ i; exact i.elim0
   segment_l1_fixed := wit_segment_l1
@@ -170,7 +196,10 @@ private def seed : BootSegmentMemorySeed trace sail step where
   rowsOf := fun _ => []
   boot := fun h => absurd h (Nat.not_lt_zero _)
   step := fun _ h => absurd h (Nat.not_lt_zero _)
-  readSoundInputs := fun h => absurd h (Nat.not_lt_zero _)
+  readSoundInputs := fun h => absurd h wit_not_mutableMemPresent
+  memPresent_of_executionRows_nonempty := by
+    intro h_ne
+    exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_ne
   placement := fun i => i.elim0
 
 /-- `root_soundness` applied to a concrete (degenerate) accepted trace. The `Fin 0`
