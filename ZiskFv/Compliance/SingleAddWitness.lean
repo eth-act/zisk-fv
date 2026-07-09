@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance.Classification
+import ZiskFv.Compliance.AcceptedZiskTrace
 import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.Compliance.RegisterMemBusBalance
 
@@ -385,5 +386,14 @@ theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels :=
   rcases h_channel with rfl | rfl
   · exact singleAddWitness_memBus_balanced
   · exact singleAddWitness_opBus_balanced
+
+def singleAddAcceptedTrace : AcceptedZiskTrace 1 where
+  program := addX1Program
+  witness := singleAddWitness
+  constraints_hold := singleAddWitness_constraints
+  channels_balanced := singleAddWitness_balancedChannels
+  transitions_hold := singleAddWitness_transitions
+  main_height := singleAddWitness_main_height
+  segment_l1_fixed := singleAddWitness_segment_l1_fixed
 
 end ZiskFv.Compliance.SingleAddWitness
