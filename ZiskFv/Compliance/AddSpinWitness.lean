@@ -820,4 +820,10 @@ def addSpinAcceptedTrace : AcceptedZiskTrace 2 where
   main_height := addSpinWitness_main_height
   segment_l1_fixed := addSpinWitness_segment_l1_fixed
 
+theorem addSpinAcceptedTrace_mainTable_eq :
+    addSpinAcceptedTrace.mainTable = mainRowsTable 2 addSpinProgram addSpinMainRows := by
+  exact addSpinWitness_main_component_cases
+    (by simpa [addSpinAcceptedTrace] using addSpinAcceptedTrace.mainTable_mem)
+    (by simpa [addSpinAcceptedTrace] using addSpinAcceptedTrace.mainTable_component)
+
 end ZiskFv.Compliance.AddSpinWitness
