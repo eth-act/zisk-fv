@@ -82,7 +82,10 @@ def addSpinBootSeed :
     have hj : j = 0 := by omega
     subst j
     simp [addSpinSailTrace, addSpinState, replayMemoryAfterBusRows]
-  readSound := addSpinRowsOf_empty_readSound
+  readSoundInputs := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  memPresent_of_executionRows_nonempty := by
+    intro h_nonempty
+    exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_nonempty
   placement := by
     intro i
     fin_cases i <;> trivial

@@ -435,6 +435,14 @@ private theorem not_addSpin_main_component_of_width_ne
     False :=
   h_width (congrArg Component.width h_component)
 
+private theorem not_addSpin_mutable_mem_component_of_name_ne
+    {component : Component FGL}
+    (h_name :
+      component.circuit.name ≠ ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.name)
+    (h_component : component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    False :=
+  h_name (congrArg (fun component : Component FGL => component.circuit.name) h_component)
+
 private theorem addSpinWitness_main_component_cases
     {table : Table FGL}
     (h_table : table ∈ addSpinWitness.allTables)
@@ -469,6 +477,46 @@ private theorem addSpinWitness_main_component_cases
     · exfalso
       exact not_addSpin_main_component_of_name_ne (by decide) h_component
     · rfl
+
+private theorem addSpinWitness_mutable_mem_component_tables_empty (table : Table FGL)
+    (h_table : table ∈ addSpinWitness.allTables)
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    table.table = [] := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · exfalso
+    rw [h_verifier, EnsembleWitness.verifierTable_component] at h_component
+    have h_verifier_nil :=
+      ZiskFv.AirsClean.FullEnsemble.verifierTable_interactionsWith_memBus_nil 2 addSpinProgram
+    change Operations.interactionsWith MemBusChannel.toRaw
+      addSpinEnsemble.verifierTable.operations = [] at h_verifier_nil
+    rw [h_component,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
+    exact absurd h_verifier_nil (by simp)
+  · simp [addSpinWitness, addSpinTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_addSpin_mutable_mem_component_of_name_ne (by decide) h_component
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · exfalso
+      exact not_addSpin_mutable_mem_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_addSpin_mutable_mem_component_of_name_ne (by decide) h_component
+
+theorem addSpinWitness_not_mutableMemPresent :
+    ¬ MutableMemPresent addSpinWitness := by
+  intro h_present
+  obtain ⟨table, h_table, h_component, h_length⟩ := h_present
+  have h_empty :=
+    addSpinWitness_mutable_mem_component_tables_empty table h_table h_component
+  exact absurd h_length (by simp [h_empty])
 
 theorem addSpinWitness_main_height :
     ∀ table ∈ addSpinWitness.allTables,
@@ -516,6 +564,57 @@ theorem addSpinMain_segment_l1_later
           (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar).core.segment_l1 = 0
     rw [mainRowsTable_eval_rowInputVar]
     rfl
+
+theorem addSpinMain_main_step_eq_index :
+    ∀ i : Fin 2,
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addSpinProgram
+          (mainRowsTable 2 addSpinProgram addSpinMainRows) i.val).rom.main_step =
+        (i.val : FGL) := by
+  intro i
+  fin_cases i
+  · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+    change (Eval.eval ((mainRowsTable 2 addSpinProgram addSpinMainRows).environment
+        (mainRowArray addSpinAddRow))
+          (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar).rom.main_step = 0
+    rw [mainRowsTable_eval_rowInputVar]
+    rfl
+  · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+    change (Eval.eval ((mainRowsTable 2 addSpinProgram addSpinMainRows).environment
+        (mainRowArray (addSpinJalRow 1)))
+          (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar).rom.main_step = 1
+    rw [mainRowsTable_eval_rowInputVar]
+    rfl
+
+theorem addSpinMain_main_step_index_fixed :
+    MainStepIndexFixedFacts 2 addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows) where
+  main_step_eq_index := addSpinMain_main_step_eq_index
+  timestamp_bound := by
+    intro i
+    fin_cases i <;> decide
+  load_timestamp_toNat := by
+    intro i
+    fin_cases i
+    · rw [addSpinMain_main_step_eq_index ⟨0, by decide⟩]
+      decide
+    · rw [addSpinMain_main_step_eq_index ⟨1, by decide⟩]
+      decide
+  store_timestamp_toNat := by
+    intro i
+    fin_cases i
+    · rw [addSpinMain_main_step_eq_index ⟨0, by decide⟩]
+      decide
+    · rw [addSpinMain_main_step_eq_index ⟨1, by decide⟩]
+      decide
+
+theorem addSpinWitness_main_step_index_fixed :
+    ∀ table ∈ addSpinWitness.allTables,
+      table.component = componentWithRomMemAndOpBus 2 addSpinProgram →
+        MainStepIndexFixedFacts 2 addSpinProgram table := by
+  intro table h_table h_component
+  have h_main := addSpinWitness_main_component_cases h_table h_component
+  subst table
+  exact addSpinMain_main_step_index_fixed
 
 set_option linter.unnecessarySimpa false in
 theorem addSpinWitness_segment_l1_fixed :
@@ -816,9 +915,20 @@ def addSpinAcceptedTrace : AcceptedZiskTrace 2 where
   witness := addSpinWitness
   constraints_hold := addSpinWitness_constraints
   channels_balanced := addSpinWitness_balancedChannels
+  mem_replay_table := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_segment := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_permutation := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_gsum := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_im0 := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_im1 := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_constraints := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_row_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_segment_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
+  mem_replay_source_covers := fun h => absurd h addSpinWitness_not_mutableMemPresent
   transitions_hold := addSpinWitness_transitions
   main_height := addSpinWitness_main_height
   segment_l1_fixed := addSpinWitness_segment_l1_fixed
+  main_step_index_fixed := addSpinWitness_main_step_index_fixed
 
 theorem addSpinAcceptedTrace_mainTable_eq :
     addSpinAcceptedTrace.mainTable = mainRowsTable 2 addSpinProgram addSpinMainRows := by
