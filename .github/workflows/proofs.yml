@@ -367,16 +367,33 @@ jobs:
           name: zisk-fv
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Cache Aeneas lean-check .lake
+      - name: Cache Aeneas lean-check dependencies
         uses: actions/cache@v4
         with:
-          path: build/aeneas-production-extraction/lean-check/.lake
-          key: aeneas-lean-check-${{ runner.os }}-${{ hashFiles('flake.lock', 'lean-toolchain', 'scripts/aeneas-production-extract.sh', 'zisk/core/src/aeneas_extract.rs', 'ZiskFv/Compliance/RowProvenance.lean', 'trust/aeneas/ProductionM2.lean') }}
-          # Use only exact cache hits. The temporary Lake workspace stores
-          # package build products such as ProofWidgets' widgetJsAll target;
-          # prefix restores can mix those artifacts across harness/toolchain
-          # changes and make `lake exe cache get` appear successful while the
-          # following build still fails as stale.
+          path: |
+            build/aeneas-production-extraction/lean-check/.lake/packages
+            build/aeneas-production-extraction/lean-check/aeneas-lean/.lake
+          key: aeneas-lean-check-deps-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'flake.lock', 'nix/aeneas-lean.nix') }}
+          # Safe to reuse across generated-check changes: these paths contain
+          # dependency/package artifacts (Mathlib/ProofWidgets/Aeneas runtime),
+          # not root generated `RvDecode*` build products. The key tracks the
+          # Lean toolchain, resolved Lake package identities, and pinned Aeneas
+          # runtime patch surface.
+
+      - name: Cache Aeneas generated lean-check artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/aeneas-production-extraction/lean-check/.lake/build
+            build/aeneas-production-extraction/lean-check/.lake/lakefile.olean
+            build/aeneas-production-extraction/lean-check/.lake/lakefile.ilean
+            build/aeneas-production-extraction/lean-check/.lake/lakefile.trace
+            build/aeneas-production-extraction/lean-check/.lake/lakefile.hash
+          key: aeneas-lean-check-generated-${{ runner.os }}-${{ hashFiles('flake.lock', 'lean-toolchain', 'scripts/aeneas-production-extract.sh', 'zisk/core/src/aeneas_extract.rs', 'ZiskFv/Compliance/RowProvenance.lean', 'trust/aeneas/ProductionM2.lean') }}
+          # Use only exact cache hits for root generated artifacts. Prefix
+          # restores for the full lean-check `.lake` can mix stale generated
+          # oleans across harness/toolchain/source changes, which is the
+          # failure mode fixed by #161.
 
       - name: Run full Aeneas production extraction completeness check
         env:
