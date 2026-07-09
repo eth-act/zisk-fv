@@ -1,6 +1,8 @@
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.Soundness
 
+set_option maxRecDepth 10000
+
 /-!
 # Concrete `root_soundness` instantiation for the ADD + spin-loop trace (#220)
 
@@ -11,7 +13,10 @@ This file applies the public `root_soundness` theorem to the concrete
 open Goldilocks
 open ZiskFv.Compliance
 open ZiskFv.Compliance.AddSpinWitness
+open ZiskFv.Compliance.Instantiation
+open ZiskFv.Compliance.RegisterMemBusBalance
 open ZiskFv.Compliance.RomDecodeBinding
+open ZiskFv.Compliance.SingleAddWitness
 open ZiskFv.ZiskCircuit.MemTrace
 open ZiskFv.Trusted
 
@@ -81,5 +86,283 @@ def addSpinBootSeed :
   placement := by
     intro i
     fin_cases i <;> trivial
+
+private theorem addSpinMainRowAt_zero :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows) 0 = addSpinAddRow := by
+  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, mainRowsTable, addSpinMainRows]
+  change eval ((mainRowsTable 2 addSpinProgram addSpinMainRows).environment
+      (mainRowArray addSpinAddRow))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
+    addSpinAddRow
+  rw [mainRowsTable_eval_rowInputVar]
+
+private theorem addSpinMainRowAt_one :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows) 1 = addSpinJalRow 1 := by
+  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, mainRowsTable, addSpinMainRows]
+  change eval ((mainRowsTable 2 addSpinProgram addSpinMainRows).environment
+      (mainRowArray (addSpinJalRow 1)))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
+    addSpinJalRow 1
+  rw [mainRowsTable_eval_rowInputVar]
+
+private theorem addSpinMainPc_add :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+        addSpinAcceptedTrace.mainTable).pc addSpinAddIndex.val = 0 := by
+  rw [addSpinAcceptedTrace_mainTable_eq]
+  change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 0 = 0
+  simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row]
+
+private theorem addSpinMainPc_jal :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+        addSpinAcceptedTrace.mainTable).pc addSpinJalIndex.val = 4 := by
+  rw [addSpinAcceptedTrace_mainTable_eq]
+  change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 1 = 4
+  simp [addSpinMainRowAt_one, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
+    addSpinJalFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf]
+
+private theorem addSpinReadX1_add :
+    read_xreg (regidx_to_fin x1) (addSpinSailTrace addSpinAddIndex) =
+      EStateM.Result.ok (0#64) (addSpinSailTrace addSpinAddIndex) := by
+  simp [addSpinSailTrace, addSpinAddIndex, addSpinState, addSpinRegs, x1,
+    regidx_to_fin, read_xreg, reg_of_fin]
+
+def addSpinAddInput : PureSpec.AddInput where
+  r1_val := 0#64
+  r2_val := 0#64
+  rd := regidx_to_fin x1
+  PC := 0#64
+
+def addSpinJalInput : PureSpec.JalInput where
+  imm := 0#21
+  rd := regidx_to_fin x0
+  PC := 4#64
+
+def addSpinAddProgramDecode :
+    ProgramDecode_add addSpinAcceptedTrace addSpinAddIndex addSpinAddClaim where
+  h_idx := by
+    rw [addSpinAcceptedTrace_mainTable_eq]
+    norm_num [addSpinAddIndex, mainRowsTable, addSpinMainRows]
+  bits := addSpinAddBits
+  h_bits_ieo := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_m32 := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_set_pc := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_prog := by
+    intro j hline
+    fin_cases j
+    · simp only [addSpinAcceptedTrace, addSpinProgram]
+      constructor
+      · rfl
+      constructor
+      · rfl
+      constructor
+      · rfl
+      constructor
+      · simp [addSpinAddProgramRow, addX1ProgramRow, addSpinAddClaim, x1,
+          Transpiler.ind, regidx_to_fin]
+      · norm_num [addSpinAddProgramRow, addX1ProgramRow, ZiskFv.AirsClean.Main.packFlags,
+          addSpinAddBits, addX1RomFlagBits, ZiskFv.AirsClean.boolF]
+    · rw [addSpinMainPc_add] at hline
+      norm_num [addSpinAcceptedTrace, addSpinProgram, addSpinJalProgramRow] at hline
+      exfalso
+      have hval := congrArg (fun x : FGL => x.val) hline
+      norm_num at hval
+
+def addSpinJalProgramDecode :
+    ProgramDecode_jal addSpinAcceptedTrace addSpinJalIndex addSpinJalClaim where
+  h_idx := by
+    rw [addSpinAcceptedTrace_mainTable_eq]
+    change 1 + 1 < (mainRowsTable 2 addSpinProgram addSpinMainRows).table.length
+    norm_num [mainRowsTable, addSpinMainRows]
+  bits := addSpinJalBits
+  h_bits_ieo := by rfl
+  h_bits_m32 := by rfl
+  h_bits_set_pc := by rfl
+  h_bits_store_pc := by rfl
+  h_bits_store_ind := by rfl
+  h_prog := by
+    intro j hline
+    fin_cases j
+    · rw [addSpinMainPc_jal] at hline
+      norm_num [addSpinAcceptedTrace, addSpinProgram, addSpinAddProgramRow, addX1ProgramRow]
+        at hline
+      exfalso
+      have hval := congrArg (fun x : FGL => x.val) hline
+      norm_num at hval
+    · simp only [addSpinAcceptedTrace, addSpinProgram]
+      constructor
+      · rfl
+      constructor
+      · rfl
+      constructor
+      · rfl
+      constructor
+      · simp [addSpinJalProgramRow, addSpinJalClaim, x0, Transpiler.ind, regidx_to_fin]
+      · norm_num [addSpinJalProgramRow, ZiskFv.AirsClean.Main.packFlags,
+          addSpinJalBits, ZiskFv.AirsClean.boolF]
+
+private theorem addSpinAddLaneLo
+    (field : ZiskFv.Airs.Main.Valid_Main FGL FGL → Nat → FGL)
+    (h_field :
+      (field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+          (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0) = 0) :
+    field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+        addSpinAcceptedTrace.mainTable) addSpinAddIndex.val =
+      lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+        (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1)) := by
+  rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+    (addSpinSailTrace addSpinAddIndex) (regidx_to_fin x1) (0#64) addSpinReadX1_add]
+  rw [addSpinAcceptedTrace_mainTable_eq]
+  change field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0 = _
+  rw [h_field]
+  simp [lane_lo]
+
+private theorem addSpinAddLaneHi
+    (field : ZiskFv.Airs.Main.Valid_Main FGL FGL → Nat → FGL)
+    (h_field :
+      (field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+          (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0) = 0) :
+    field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+        addSpinAcceptedTrace.mainTable) addSpinAddIndex.val =
+      lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+        (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1)) := by
+  rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+    (addSpinSailTrace addSpinAddIndex) (regidx_to_fin x1) (0#64) addSpinReadX1_add]
+  rw [addSpinAcceptedTrace_mainTable_eq]
+  change field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+      (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0 = _
+  rw [h_field]
+  simp [lane_hi]
+
+def addSpinAddInputs :
+    Inputs_add addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex addSpinAddClaim where
+  add_input := addSpinAddInput
+  h_input_r1 := by
+    simpa [addSpinAddInput, addSpinAddClaim] using addSpinReadX1_add
+  h_input_r2 := by
+    simpa [addSpinAddInput, addSpinAddClaim] using addSpinReadX1_add
+  h_input_pc := by
+    simp [addSpinAddInput, addSpinSailTrace, addSpinAddIndex, addSpinState, addSpinRegs, x1,
+      regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+  h_input_rd := by
+    rfl
+  h_a_lo_t := by
+    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+          addSpinAcceptedTrace.mainTable).a_0 addSpinAddIndex.val =
+        lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
+    exact addSpinAddLaneLo (fun m i => m.a_0 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  h_a_hi_t := by
+    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+          addSpinAcceptedTrace.mainTable).a_1 addSpinAddIndex.val =
+        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
+    exact addSpinAddLaneHi (fun m i => m.a_1 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  h_b_lo_t := by
+    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+          addSpinAcceptedTrace.mainTable).b_0 addSpinAddIndex.val =
+        lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
+    exact addSpinAddLaneLo (fun m i => m.b_0 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  h_b_hi_t := by
+    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+          addSpinAcceptedTrace.mainTable).b_1 addSpinAddIndex.val =
+        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
+    exact addSpinAddLaneHi (fun m i => m.b_1 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  h_pc_bridge := by
+    rw [addSpinAcceptedTrace_mainTable_eq]
+    change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+          (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 0).val = _
+    simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row, addSpinAddInput]
+
+def addSpinJalInputs :
+    Inputs_jal addSpinAcceptedTrace addSpinSailTrace addSpinJalIndex addSpinJalClaim where
+  jal_input := addSpinJalInput
+  misa_val := addSpinMisa
+  h_pc_bridge := by
+    rw [addSpinAcceptedTrace_mainTable_eq]
+    change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
+          (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 1).val = _
+    simp [addSpinMainRowAt_one, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
+      addSpinJalFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf, addSpinJalInput]
+  h_input_rd := by
+    rfl
+  h_input_pc := by
+    simp [addSpinJalInput, addSpinSailTrace, addSpinJalIndex, addSpinState, addSpinRegs, x1,
+      regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+  h_input_misa := by
+    simp [addSpinSailTrace, addSpinJalIndex, addSpinState, addSpinRegs, x1,
+      regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+  h_misa_c := by
+    simp [addSpinMisa]
+  h_success := by
+    simp [addSpinJalInput, PureSpec.execute_JAL_pure]
+  h_input_imm := by
+    rfl
+
+def addSpinProgramDecodes :
+    ∀ i : Fin 2, ProgramDecode addSpinAcceptedTrace i (addSpinZiskStep i)
+  | ⟨0, _⟩ => addSpinAddProgramDecode
+  | ⟨1, _⟩ => addSpinJalProgramDecode
+
+def addSpinInputsAgree :
+    ∀ i : Fin 2, InputsAgree addSpinAcceptedTrace addSpinSailTrace i (addSpinZiskStep i)
+  | ⟨0, _⟩ => addSpinAddInputs
+  | ⟨1, _⟩ => addSpinJalInputs
+
+def addSpinAddOutsideDefectRegion :
+    RowOutsideDefectRegion addSpinAcceptedTrace addSpinAddIndex
+      (addSpinZiskStep addSpinAddIndex) := by
+  unfold RowOutsideDefectRegion addSpinZiskStep MainSequentialPcDomain mainPcVal
+  rw [addSpinMainPc_add]
+  change 0 < GL_prime - 4
+  norm_num
+
+def addSpinJalOutsideDefectRegion :
+    RowOutsideDefectRegion addSpinAcceptedTrace addSpinJalIndex
+      (addSpinZiskStep addSpinJalIndex) where
+  h_no_fgl_wrap := by
+    unfold mainPcVal
+    rw [addSpinMainPc_jal]
+    change 4 + (BitVec.signExtend 64 (0#21)).toNat < GL_prime
+    simp
+  h_pc_bound := by
+    unfold MainSequentialPcDomain mainPcVal
+    rw [addSpinMainPc_jal]
+    change 4 < GL_prime - 4
+    norm_num
+  h_pc_offset_lt_2_32 := by
+    intro pc hpc
+    unfold mainPcVal at hpc
+    rw [addSpinMainPc_jal] at hpc
+    rw [BitVec.toNat_add]
+    rw [← hpc]
+    norm_num
+
+def addSpinOutsideDefectRegion :
+    ∀ i : Fin 2, RowOutsideDefectRegion addSpinAcceptedTrace i (addSpinZiskStep i)
+  | ⟨0, _⟩ => addSpinAddOutsideDefectRegion
+  | ⟨1, _⟩ => addSpinJalOutsideDefectRegion
+
+theorem addSpinRootSoundness :
+    ∀ i : Fin 2, StepSound addSpinAcceptedTrace addSpinSailTrace i (addSpinZiskStep i) :=
+  root_soundness 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
+    addSpinProgramDecodes addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion
+
+theorem addSpinAddStepSound :
+    StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
+      (addSpinZiskStep addSpinAddIndex) :=
+  addSpinRootSoundness addSpinAddIndex
 
 end ZiskFv.Compliance.AddSpinRootSoundness
