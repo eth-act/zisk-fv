@@ -14,23 +14,32 @@ the active Lean trust surface; this file intentionally declares no axioms.
 
 /-!
 Minimal `Transpiler` helper namespace for bus-effect pointer decoding.
-`wrap_to_regidx` takes a 32-bit-tagged Goldilocks pointer (as emitted on
-the memory bus for register reads/writes) and returns the RISC-V integer
-register index `0..31`. The name remains under `Transpiler` as a
-compatibility namespace for existing proofs; the live module is the
-axiom-free row-shape contract.
+`wrap_to_regidx` takes the raw register pointer emitted on the memory bus for
+register reads/writes and returns the RISC-V integer register index `0..31`.
+The name remains under `Transpiler` as a compatibility namespace for existing
+proofs; the live module is the axiom-free row-shape contract.
+
+The raw convention is pinned by the production artifacts: the Rust lowerer calls
+`store_reg(i.rd, false, false)` for register ALU ops
+(`zisk/core/src/riscv2zisk_context.rs:688-693`), and `store_reg` writes normal
+registers `1..31` into `store_offset` unchanged
+(`zisk/core/src/zisk_inst_builder.rs:289-303`). The PIL uses that column
+directly as the register memory-bus pointer: `reg_pre_store(... addr:
+store_offset ...)` (`zisk/state-machines/main/pil/main.pil:316-319`), while
+register boot initializes raw addresses `ireg + REGS_IN_MAIN_FROM`
+(`main.pil:535-537`, with `REGS_IN_MAIN_FROM = 1` in
+`zisk/core/src/zisk_registers.rs:122`).
 -/
 namespace Transpiler
 
-  /- Byte-tag indicator: 4 × regidx, packed into a Goldilocks element. -/
+  /- Raw register pointer, packed into a Goldilocks element. -/
   def ind (rd : Fin 32) : FGL :=
-    ⟨4 * rd.val, by omega⟩
+    ⟨rd.val, by omega⟩
 
-  /- Reverse the `ind` tag: `val / 4 mod 32`. The domain is Goldilocks
-      (`FGL`); division is integer division on the representative. -/
+  /- Reverse the raw register pointer tag. The domain is Goldilocks (`FGL`). -/
   def wrap_to_regidx (val : FGL) : Fin 32 :=
-    ⟨val.val / 4 % 32, by
-      have : val.val / 4 % 32 < 32 := Nat.mod_lt _ (by decide)
+    ⟨val.val % 32, by
+      have : val.val % 32 < 32 := Nat.mod_lt _ (by decide)
       exact this⟩
 
   def regidxOfBitVec5 (rd : BitVec 5) : Fin 32 :=
