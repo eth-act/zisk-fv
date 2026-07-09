@@ -33,6 +33,14 @@ open Lean
 
 namespace TrustGate.ConstantClosure
 
+/-- True iff `n` is a project-namespaced constant, including Lean's private-name encoding.
+
+User-authored private declarations inside project modules are elaborated under names like
+`_private.ZiskFv.Compliance.Foo.0.helper`. They still belong to the project for reachability and
+dead-code reporting. -/
+def isProjectName (n : Name) : Bool :=
+  n.getRoot == `ZiskFv || n.toString.startsWith "_private.ZiskFv."
+
 /-- Collect every Name appearing as `Expr.const` in `e`.
 
 PERF: a Lean `Expr` is a DAG with heavy structural SHARING (after
@@ -108,7 +116,7 @@ where
     | n :: rest =>
       -- Do not expand external constants: their closure adds no `ZiskFv.*`
       -- names and is the source of the multi-minute blowup.
-      if n.getRoot != `ZiskFv then go acc rest
+      if !isProjectName n then go acc rest
       else
       match env.find? n with
       | none => go acc rest
@@ -117,10 +125,6 @@ where
         let newOnes := refs.toList.filter (!acc.contains ·)
         let acc' := newOnes.foldl (·.insert ·) acc
         go acc' (newOnes ++ rest)
-
-/-- True iff `n` is project-namespaced (`ZiskFv.*`). -/
-def isProjectName (n : Name) : Bool :=
-  n.getRoot == `ZiskFv
 
 /-- Enumerate every `ZiskFv.*` const in the environment, excluding
 internal compiler-generated names that begin with `_` after the
@@ -133,7 +137,9 @@ def isCompilerInternal (n : Name) : Bool :=
   -- `_unsafe_rec`, `.rec`, `.recOn`, etc. anywhere in the chain.
   let s := n.toString
   s.splitOn "." |>.any fun part =>
-    part.startsWith "_" ||
+    (part.startsWith "_" && part != "_private") ||
+    part.startsWith "match_" || part.startsWith "eq_" ||
+    part.startsWith "proof_" || part == "splitter" ||
     part == "rec" || part == "recOn" || part == "casesOn" ||
     part == "noConfusion" || part == "noConfusionType" ||
     part == "mk" ||  -- structure constructors are auto-built; their parent type covers them
