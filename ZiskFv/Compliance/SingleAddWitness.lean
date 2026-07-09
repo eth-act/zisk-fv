@@ -17,6 +17,7 @@ open ZiskFv.AirsClean (boolF)
 open ZiskFv.AirsClean.FullEnsemble (fullRv64imEnsemble fullRv64imSoundEnsemble)
 open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.Compliance.RegisterMemBusBalance
@@ -325,5 +326,64 @@ theorem singleAddWitness_opBus_balanced :
     simp only [List.mem_singleton] at h_msg
     subst msg
     decide
+
+def singleAddMemBusInteractions : List (Interaction FGL) :=
+  singleAddBoundaryRows.flatMap registerBoundaryMemBusInteractions ++
+    mainRegisterInteractionsFromTable
+
+theorem singleAddBoundaryRows_interactions :
+    singleAddBoundaryRows.flatMap registerBoundaryMemBusInteractions =
+      boundaryInteractions boundaryRowX1 ++ idleBoundaryInteractions := by
+  simp [singleAddBoundaryRows, boundaryInteractions, idleBoundaryInteractions]
+  generalize List.range 30 = indices
+  induction indices with
+  | nil => rfl
+  | cons _ _ ih => simp [ih]
+
+theorem singleAddWitness_memBus_interactions :
+    singleAddWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw) =
+      singleAddMemBusInteractions := by
+  have h_registerBoundary :
+      registerBoundaryRowsTable.interactionsWith MemBusChannel.toRaw =
+        singleAddBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
+    simpa [registerBoundaryRowsTable] using
+      registerBoundaryRowsTableOf_interactionsWith_memBus singleAddBoundaryRows
+  have h_binaryAdd :
+      (binaryAddSingleRowTable addX1BinaryAddRow).interactionsWith MemBusChannel.toRaw = [] := by
+    exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
+      (table := binaryAddSingleRowTable addX1BinaryAddRow) rfl
+  rw [show singleAddWitness.tables = singleAddTables from rfl]
+  simp [singleAddTables, h_registerBoundary, h_binaryAdd, emptyComponentTable_interactionsWith,
+    addX1Row_main_interactionsWith_memBus_eq_mainRegisterInteractionsFromTable,
+    singleAddMemBusInteractions]
+
+theorem singleAddMemBusInteractions_balanced :
+    BalancedInteractions singleAddMemBusInteractions := by
+  have h_old := addX1X1X1_registerMemBus_fromTable_balanced
+  refine ⟨?_, ?_⟩
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro msg
+    have h_msg := h_old.2 msg
+    rw [addX1X1X1RegisterInteractionsFromTable] at h_msg
+    simpa [singleAddMemBusInteractions, singleAddBoundaryRows_interactions,
+      balanceOf_append, add_assoc, add_comm, add_left_comm] using h_msg
+
+theorem singleAddWitness_memBus_balanced :
+    BalancedInteractions
+      (singleAddWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw)) := by
+  rw [singleAddWitness_memBus_interactions]
+  exact singleAddMemBusInteractions_balanced
+
+theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels := by
+  refine singleAddWitness.balancedChannels_of_tables singleAddEnsemble_verifier ?_
+  intro channel h_channel
+  simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
+    SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
+    SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
+  rcases h_channel with rfl | rfl
+  · exact singleAddWitness_memBus_balanced
+  · exact singleAddWitness_opBus_balanced
 
 end ZiskFv.Compliance.SingleAddWitness

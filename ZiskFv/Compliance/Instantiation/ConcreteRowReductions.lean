@@ -999,17 +999,17 @@ def registerBoundaryReloadInteraction (row : RegisterBoundaryRow FGL) : Interact
 def registerBoundaryMemBusInteractions (row : RegisterBoundaryRow FGL) : List (Interaction FGL) :=
   [registerBoundaryBootInteraction row, registerBoundaryReloadInteraction row]
 
-theorem registerBoundaryComponentBootInteraction_eval
+theorem registerBoundaryBootInteraction_eval_fromInput
     (row : RegisterBoundaryRow FGL) :
     (((MemBusChannel.emitted (-1)
         (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
           ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
-      ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row))) =
+      (Environment.fromInput row emptyData)) =
       registerBoundaryBootInteraction row := by
-  let env := (registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row)
+  let env := Environment.fromInput row emptyData
   let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
   have h_input : eval env rowVar = row := by
-    change eval (Environment.fromInput row emptyData) (varFromOffset RegisterBoundaryRow 0) = row
+    dsimp [env, rowVar]
     exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
   have h_msg_eval :
       eval env (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr rowVar) = bootMessage row := by
@@ -1025,17 +1025,17 @@ theorem registerBoundaryComponentBootInteraction_eval
     rw [h_msg_eval]
   · rfl
 
-theorem registerBoundaryComponentReloadInteraction_eval
+theorem registerBoundaryReloadInteraction_eval_fromInput
     (row : RegisterBoundaryRow FGL) :
     (((MemBusChannel.emitted 1
         (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
           ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
-      ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row))) =
+      (Environment.fromInput row emptyData)) =
       registerBoundaryReloadInteraction row := by
-  let env := (registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row)
+  let env := Environment.fromInput row emptyData
   let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
   have h_input : eval env rowVar = row := by
-    change eval (Environment.fromInput row emptyData) (varFromOffset RegisterBoundaryRow 0) = row
+    dsimp [env, rowVar]
     exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
   have h_msg_eval :
       eval env (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr rowVar) =
@@ -1052,6 +1052,26 @@ theorem registerBoundaryComponentReloadInteraction_eval
     rw [h_msg_eval]
   · rfl
 
+theorem registerBoundaryComponentBootInteraction_eval
+    (row : RegisterBoundaryRow FGL) :
+    (((MemBusChannel.emitted (-1)
+        (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+      ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row))) =
+      registerBoundaryBootInteraction row := by
+  simpa [registerBoundarySingleRowTable, registerBoundaryRowArray, Table.environment,
+    Environment.fromInput] using registerBoundaryBootInteraction_eval_fromInput row
+
+theorem registerBoundaryComponentReloadInteraction_eval
+    (row : RegisterBoundaryRow FGL) :
+    (((MemBusChannel.emitted 1
+        (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+      ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row))) =
+      registerBoundaryReloadInteraction row := by
+  simpa [registerBoundarySingleRowTable, registerBoundaryRowArray, Table.environment,
+    Environment.fromInput] using registerBoundaryReloadInteraction_eval_fromInput row
+
 theorem registerBoundarySingleRowTable_interactionsWith_memBus
     (row : RegisterBoundaryRow FGL) :
     (registerBoundarySingleRowTable row).interactionsWith MemBusChannel.toRaw =
@@ -1061,6 +1081,23 @@ theorem registerBoundarySingleRowTable_interactionsWith_memBus
     ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus]
   exact ⟨registerBoundaryComponentBootInteraction_eval row,
     registerBoundaryComponentReloadInteraction_eval row⟩
+
+theorem registerBoundaryRowsTableOf_interactionsWith_memBus
+    (rows : List (RegisterBoundaryRow FGL)) :
+    (registerBoundaryRowsTableOf rows).interactionsWith MemBusChannel.toRaw =
+      rows.flatMap registerBoundaryMemBusInteractions := by
+  induction rows with
+  | nil =>
+      simp [Table.interactionsWith, registerBoundaryRowsTableOf]
+  | cons row rows ih =>
+      simp only [List.flatMap_cons]
+      rw [← ih]
+      simp [Table.interactionsWith, registerBoundaryRowsTableOf, registerBoundaryRowArray,
+        registerBoundaryMemBusInteractions, Table.environment,
+        Operations.interactionValuesWith_eq_map,
+        ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus,
+        registerBoundaryBootInteraction_eval_fromInput,
+        registerBoundaryReloadInteraction_eval_fromInput]
 
 theorem registerBoundarySingleRowTable_constraints
     (row : RegisterBoundaryRow FGL) :
