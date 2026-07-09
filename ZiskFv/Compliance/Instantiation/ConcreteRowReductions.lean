@@ -1,7 +1,9 @@
 import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
 import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
+import ZiskFv.AirsClean.RegisterBoundary
 
 /-!
 # Concrete row interaction reductions
@@ -18,6 +20,7 @@ open ZiskFv.AirsClean.Main
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.AirsClean.RegisterBoundary (RegisterBoundaryRow bootMessage reloadMessage)
 
 def emptyData : ProverData FGL := fun _ _ => #[]
 
@@ -173,7 +176,7 @@ def mainOpBusInteraction (row : MainRowWithRom FGL) : Interaction FGL where
 private def mainRowInputVar : Var MainRowWithRom FGL :=
   varFromOffset MainRowWithRom 0
 
-private theorem toElements_eval_toArray
+theorem toElements_eval_toArray
     {M : TypeMap} [ProvableType M]
     (env : Environment FGL) (x : M (Expression FGL)) :
     Array.map (fun e => Expression.eval env e) (toElements x).toArray =
@@ -198,6 +201,180 @@ private theorem eval_mainRowInputVar_is_external_op_fromInput
       row.core.is_external_op := by
   rw [ZiskFv.AirsClean.FullEnsemble.mainRow_eval_is_external_op]
   rw [eval_mainRowInputVar_core_fromInput]
+
+theorem mainRowWithRom_eval_rom
+    (env : Environment FGL) (row : Var MainRowWithRom FGL) :
+    eval env row.rom = (eval env row).rom := by
+  cases row
+  simp [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go]
+
+theorem mainRomRow_eval_a_src_reg
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.a_src_reg = (eval env row).a_src_reg := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env a_src_reg).symm
+
+theorem mainRomRow_eval_a_src_mem
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.a_src_mem = (eval env row).a_src_mem := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env a_src_mem).symm
+
+theorem mainRomRow_eval_b_src_reg
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.b_src_reg = (eval env row).b_src_reg := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env b_src_reg).symm
+
+theorem mainRomRow_eval_b_src_mem
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.b_src_mem = (eval env row).b_src_mem := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env b_src_mem).symm
+
+theorem mainRomRow_eval_b_src_ind
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.b_src_ind = (eval env row).b_src_ind := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env b_src_ind).symm
+
+theorem mainRomRow_eval_store_reg
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.store_reg = (eval env row).store_reg := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env store_reg).symm
+
+theorem mainRomRow_eval_store_mem
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.store_mem = (eval env row).store_mem := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env store_mem).symm
+
+theorem mainRomRow_eval_store_ind
+    (env : Environment FGL) (row : Var MainRomRow FGL) :
+    Expression.eval env row.store_ind = (eval env row).store_ind := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+          (CircuitType.eval_expr env store_ind).symm
+
+private theorem eval_mainRowInputVar_rom_fromInput
+    (row : MainRowWithRom FGL) :
+    eval (Environment.fromInput row emptyData) mainRowInputVar.rom = row.rom := by
+  rw [mainRowWithRom_eval_rom]
+  rw [eval_mainRowInputVar_fromInput]
+
+private theorem eval_mainRowInputVar_a_src_reg_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.a_src_reg =
+      row.rom.a_src_reg := by
+  rw [mainRomRow_eval_a_src_reg]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_a_src_mem_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.a_src_mem =
+      row.rom.a_src_mem := by
+  rw [mainRomRow_eval_a_src_mem]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_b_src_reg_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.b_src_reg =
+      row.rom.b_src_reg := by
+  rw [mainRomRow_eval_b_src_reg]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_b_src_mem_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.b_src_mem =
+      row.rom.b_src_mem := by
+  rw [mainRomRow_eval_b_src_mem]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_b_src_ind_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.b_src_ind =
+      row.rom.b_src_ind := by
+  rw [mainRomRow_eval_b_src_ind]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_store_reg_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.store_reg =
+      row.rom.store_reg := by
+  rw [mainRomRow_eval_store_reg]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_store_mem_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.store_mem =
+      row.rom.store_mem := by
+  rw [mainRomRow_eval_store_mem]
+  rw [eval_mainRowInputVar_rom_fromInput]
+
+private theorem eval_mainRowInputVar_store_ind_fromInput
+    (row : MainRowWithRom FGL) :
+    Expression.eval (Environment.fromInput row emptyData) mainRowInputVar.rom.store_ind =
+      row.rom.store_ind := by
+  rw [mainRomRow_eval_store_ind]
+  rw [eval_mainRowInputVar_rom_fromInput]
 
 def mainOpBusAbstractInteraction : AbstractInteraction FGL :=
   (OpBusChannel.emitted
@@ -277,6 +454,73 @@ theorem mainSingleRowTable_interactionsWith_opBus
     componentWithRomMemAndOpBus_interactionsWith_opBus]
   exact mainComponentOpBusInteraction_eval length program row
 
+def mainARegPreInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := row.rom.a_src_reg
+  msg := (toElements (aRegPreMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def mainAMemInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := -(row.rom.a_src_mem + row.rom.a_src_reg)
+  msg := (toElements (aMemMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def mainBRegPreInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := row.rom.b_src_reg
+  msg := (toElements (bRegPreMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def mainBMemInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg)
+  msg := (toElements (bMemMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def mainCRegPreInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := row.rom.store_reg
+  msg := (toElements (cRegPreMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def mainCMemInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg)
+  msg := (toElements (cMemMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def mainMemBusInteractions
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) :
+    List (Interaction FGL) :=
+  let env := (mainSingleRowTable length program row).environment (mainRowArray row)
+  let rowVar := (componentWithRomMemAndOpBus length program).rowInputVar
+  [ ((MemBusChannel.emitted rowVar.rom.a_src_reg (aRegPreMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted (-(rowVar.rom.a_src_mem + rowVar.rom.a_src_reg))
+      (aMemMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted rowVar.rom.b_src_reg (bRegPreMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted
+      (-(rowVar.rom.b_src_mem + rowVar.rom.b_src_ind + rowVar.rom.b_src_reg))
+      (bMemMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted rowVar.rom.store_reg (cRegPreMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted
+      (-(rowVar.rom.store_mem + rowVar.rom.store_ind + rowVar.rom.store_reg))
+      (cMemMessageExpr rowVar)).toRaw).eval env ]
+
+theorem mainSingleRowTable_interactionsWith_memBus
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) :
+    (mainSingleRowTable length program row).interactionsWith MemBusChannel.toRaw =
+      mainMemBusInteractions length program row := by
+  simp [Table.interactionsWith, mainSingleRowTable, mainRowArray, mainMemBusInteractions,
+    Operations.interactionValuesWith_eq_map,
+    componentWithRomMemAndOpBus_interactionsWith_memBus]
+
 theorem mainSingleRowTable_constraints_of_proverAssumptions
     (length : ℕ) (program : Program length) (row : MainRowWithRom FGL)
     (h_assumptions :
@@ -324,6 +568,99 @@ example :
       [((-1 : FGL), #[7, 11, 0, 13, 0, 17, 19, 1, 0, 0, 0])] := by
   rw [mainSingleRowTable_interactionsWith_opBus]
   decide
+
+def binaryAddRowArray (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) : Array FGL :=
+  (toElements row).toArray
+
+def binaryAddSingleRowTable (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
+    Table FGL where
+  component := ZiskFv.AirsClean.BinaryAdd.component
+  width := size ZiskFv.AirsClean.BinaryAdd.BinaryAddRow
+  table := [binaryAddRowArray row]
+  data := emptyData
+  uniform_width := by
+    intro arr h_arr
+    simp [binaryAddRowArray] at h_arr
+    subst arr
+    simp
+
+theorem binaryAddSingleRowTable_rowInput
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
+    ZiskFv.AirsClean.BinaryAdd.component.rowInput
+        ((binaryAddSingleRowTable row).environment (binaryAddRowArray row)) =
+      row := by
+  change ZiskFv.AirsClean.BinaryAdd.component.rowInput
+      (Environment.fromInput row emptyData) = row
+  simp [Air.Flat.Component.rowInput, ProvableType.valueFromOffset_zero_fromInput_eq]
+
+def binaryAddOpBusInteraction (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
+    Interaction FGL where
+  channel := OpBusChannel.toRaw
+  mult := 1
+  msg := (toElements (ZiskFv.AirsClean.BinaryAdd.opBusMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+theorem binaryAddComponentOpBusInteraction_eval
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
+    (((OpBusChannel.pushed
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+          ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)).toRaw).eval
+      ((binaryAddSingleRowTable row).environment (binaryAddRowArray row))) =
+      binaryAddOpBusInteraction row := by
+  let env := (binaryAddSingleRowTable row).environment (binaryAddRowArray row)
+  let rowVar := ZiskFv.AirsClean.BinaryAdd.component.rowInputVar
+  have h_input : eval env rowVar = row := by
+    change eval (Environment.fromInput row emptyData)
+        (varFromOffset ZiskFv.AirsClean.BinaryAdd.BinaryAddRow 0) = row
+    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+  have h_msg_eval :
+      eval env (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr rowVar) =
+        ZiskFv.AirsClean.BinaryAdd.opBusMessage row := by
+    rw [ZiskFv.AirsClean.BinaryAdd.eval_opBusMessageExpr]
+    rw [h_input]
+  simp [binaryAddOpBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · rfl
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (eval env (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr rowVar))).toArray =
+      (toElements (ZiskFv.AirsClean.BinaryAdd.opBusMessage row)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+theorem binaryAddSingleRowTable_interactionsWith_opBus
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
+    (binaryAddSingleRowTable row).interactionsWith OpBusChannel.toRaw =
+      [binaryAddOpBusInteraction row] := by
+  simp [Table.interactionsWith, binaryAddSingleRowTable, binaryAddRowArray,
+    Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.BinaryAdd.component_interactionsWith_opBus]
+  exact binaryAddComponentOpBusInteraction_eval row
+
+theorem binaryAddSingleRowTable_constraints_of_proverAssumptions
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
+    (h_assumptions :
+      ZiskFv.AirsClean.BinaryAdd.component.circuit.ProverAssumptions
+        row emptyData (ProverHint.empty FGL)) :
+    (binaryAddSingleRowTable row).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.BinaryAdd.component.circuit.localLength
+        ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0 := by
+    change ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated.localLength
+        ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0
+    rfl
+  have h_component :
+      ZiskFv.AirsClean.BinaryAdd.component.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.BinaryAdd.component row h_localLength h_assumptions
+  rw [Table.Constraints]
+  intro arr h_arr
+  simp [binaryAddSingleRowTable, binaryAddRowArray] at h_arr
+  subst arr
+  simpa [binaryAddSingleRowTable, binaryAddRowArray, Environment.fromInput] using h_component
 
 def binaryRowArray (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Array FGL :=
   (toElements row).toArray
@@ -610,5 +947,198 @@ example :
       , ((1 : FGL), #[1, 32, 8, 8, 9, 10]) ] := by
   rw [memSingleRowTable_interactionsWith_memBus]
   decide
+
+def registerBoundaryRowArray (row : RegisterBoundaryRow FGL) : Array FGL :=
+  (toElements row).toArray
+
+def registerBoundaryRowsTableOf (rows : List (RegisterBoundaryRow FGL)) : Table FGL where
+  component := ZiskFv.AirsClean.RegisterBoundary.component
+  width := size RegisterBoundaryRow
+  table := rows.map registerBoundaryRowArray
+  data := emptyData
+  uniform_width := by
+    intro arr h_arr
+    simp [registerBoundaryRowArray] at h_arr
+    rcases h_arr with ⟨row, _h_row, rfl⟩
+    simp
+
+def registerBoundarySingleRowTable (row : RegisterBoundaryRow FGL) : Table FGL where
+  component := ZiskFv.AirsClean.RegisterBoundary.component
+  width := size RegisterBoundaryRow
+  table := [registerBoundaryRowArray row]
+  data := emptyData
+  uniform_width := by
+    intro arr h_arr
+    simp [registerBoundaryRowArray] at h_arr
+    subst arr
+    simp
+
+theorem registerBoundarySingleRowTable_rowInput
+    (row : RegisterBoundaryRow FGL) :
+    ZiskFv.AirsClean.RegisterBoundary.component.rowInput
+        ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row)) =
+      row := by
+  change ZiskFv.AirsClean.RegisterBoundary.component.rowInput
+      (Environment.fromInput row emptyData) = row
+  simp [Air.Flat.Component.rowInput, ProvableType.valueFromOffset_zero_fromInput_eq]
+
+def registerBoundaryBootInteraction (row : RegisterBoundaryRow FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := -1
+  msg := (toElements (bootMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def registerBoundaryReloadInteraction (row : RegisterBoundaryRow FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := 1
+  msg := (toElements (reloadMessage row)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+def registerBoundaryMemBusInteractions (row : RegisterBoundaryRow FGL) : List (Interaction FGL) :=
+  [registerBoundaryBootInteraction row, registerBoundaryReloadInteraction row]
+
+theorem registerBoundaryBootInteraction_eval_fromInput
+    (row : RegisterBoundaryRow FGL) :
+    (((MemBusChannel.emitted (-1)
+        (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+      (Environment.fromInput row emptyData)) =
+      registerBoundaryBootInteraction row := by
+  let env := Environment.fromInput row emptyData
+  let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
+  have h_input : eval env rowVar = row := by
+    dsimp [env, rowVar]
+    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+  have h_msg_eval :
+      eval env (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr rowVar) = bootMessage row := by
+    rw [ZiskFv.AirsClean.RegisterBoundary.eval_bootMessageExpr, h_input]
+  simp [registerBoundaryBootInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · rfl
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (eval env (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr rowVar))).toArray =
+      (toElements (bootMessage row)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+theorem registerBoundaryReloadInteraction_eval_fromInput
+    (row : RegisterBoundaryRow FGL) :
+    (((MemBusChannel.emitted 1
+        (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+      (Environment.fromInput row emptyData)) =
+      registerBoundaryReloadInteraction row := by
+  let env := Environment.fromInput row emptyData
+  let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
+  have h_input : eval env rowVar = row := by
+    dsimp [env, rowVar]
+    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+  have h_msg_eval :
+      eval env (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr rowVar) =
+        reloadMessage row := by
+    rw [ZiskFv.AirsClean.RegisterBoundary.eval_reloadMessageExpr, h_input]
+  simp [registerBoundaryReloadInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · rfl
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (eval env (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr rowVar))).toArray =
+      (toElements (reloadMessage row)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+theorem registerBoundaryComponentBootInteraction_eval
+    (row : RegisterBoundaryRow FGL) :
+    (((MemBusChannel.emitted (-1)
+        (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+      ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row))) =
+      registerBoundaryBootInteraction row := by
+  simpa [registerBoundarySingleRowTable, registerBoundaryRowArray, Table.environment,
+    Environment.fromInput] using registerBoundaryBootInteraction_eval_fromInput row
+
+theorem registerBoundaryComponentReloadInteraction_eval
+    (row : RegisterBoundaryRow FGL) :
+    (((MemBusChannel.emitted 1
+        (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+      ((registerBoundarySingleRowTable row).environment (registerBoundaryRowArray row))) =
+      registerBoundaryReloadInteraction row := by
+  simpa [registerBoundarySingleRowTable, registerBoundaryRowArray, Table.environment,
+    Environment.fromInput] using registerBoundaryReloadInteraction_eval_fromInput row
+
+theorem registerBoundarySingleRowTable_interactionsWith_memBus
+    (row : RegisterBoundaryRow FGL) :
+    (registerBoundarySingleRowTable row).interactionsWith MemBusChannel.toRaw =
+      registerBoundaryMemBusInteractions row := by
+  simp [Table.interactionsWith, registerBoundarySingleRowTable, registerBoundaryRowArray,
+    registerBoundaryMemBusInteractions, Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus]
+  exact ⟨registerBoundaryComponentBootInteraction_eval row,
+    registerBoundaryComponentReloadInteraction_eval row⟩
+
+theorem registerBoundaryRowsTableOf_interactionsWith_memBus
+    (rows : List (RegisterBoundaryRow FGL)) :
+    (registerBoundaryRowsTableOf rows).interactionsWith MemBusChannel.toRaw =
+      rows.flatMap registerBoundaryMemBusInteractions := by
+  induction rows with
+  | nil =>
+      simp [Table.interactionsWith, registerBoundaryRowsTableOf]
+  | cons row rows ih =>
+      simp only [List.flatMap_cons]
+      rw [← ih]
+      simp [Table.interactionsWith, registerBoundaryRowsTableOf, registerBoundaryRowArray,
+        registerBoundaryMemBusInteractions, Table.environment,
+        Operations.interactionValuesWith_eq_map,
+        ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus,
+        registerBoundaryBootInteraction_eval_fromInput,
+        registerBoundaryReloadInteraction_eval_fromInput]
+
+theorem registerBoundarySingleRowTable_constraints
+    (row : RegisterBoundaryRow FGL) :
+    (registerBoundarySingleRowTable row).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.RegisterBoundary.component.circuit.localLength
+        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0 := by
+    change ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated.localLength
+        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0
+    rfl
+  have h_component :
+      ZiskFv.AirsClean.RegisterBoundary.component.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.RegisterBoundary.component row h_localLength trivial
+  rw [Table.Constraints]
+  intro arr h_arr
+  simp [registerBoundarySingleRowTable, registerBoundaryRowArray] at h_arr
+  subst arr
+  simpa [registerBoundarySingleRowTable, registerBoundaryRowArray, Environment.fromInput]
+    using h_component
+
+theorem registerBoundaryRowsTableOf_constraints
+    (rows : List (RegisterBoundaryRow FGL)) :
+    (registerBoundaryRowsTableOf rows).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.RegisterBoundary.component.circuit.localLength
+        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0 := by
+    change ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated.localLength
+        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0
+    rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  simp [registerBoundaryRowsTableOf, registerBoundaryRowArray] at h_arr
+  rcases h_arr with ⟨row, _h_row, rfl⟩
+  have h_component :
+      ZiskFv.AirsClean.RegisterBoundary.component.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.RegisterBoundary.component row h_localLength trivial
+  simpa [registerBoundaryRowsTableOf, registerBoundaryRowArray, Environment.fromInput]
+    using h_component
 
 end ZiskFv.Compliance.Instantiation
