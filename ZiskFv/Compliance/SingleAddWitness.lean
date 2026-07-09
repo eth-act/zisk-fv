@@ -208,6 +208,14 @@ private theorem not_main_component_of_width_ne
     False :=
   h_width (congrArg Component.width h_component)
 
+private theorem not_mutable_mem_component_of_name_ne
+    {component : Component FGL}
+    (h_name :
+      component.circuit.name ≠ ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.name)
+    (h_component : component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    False :=
+  h_name (congrArg (fun component : Component FGL => component.circuit.name) h_component)
+
 private theorem singleAddWitness_main_component_cases
     {table : Table FGL}
     (h_table : table ∈ singleAddWitness.allTables)
@@ -243,6 +251,46 @@ private theorem singleAddWitness_main_component_cases
       exact not_main_component_of_name_ne (by decide) h_component
     · rfl
 
+private theorem singleAddWitness_mutable_mem_component_tables_empty (table : Table FGL)
+    (h_table : table ∈ singleAddWitness.allTables)
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    table.table = [] := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · exfalso
+    rw [h_verifier, EnsembleWitness.verifierTable_component] at h_component
+    have h_verifier_nil :=
+      ZiskFv.AirsClean.FullEnsemble.verifierTable_interactionsWith_memBus_nil 1 addX1Program
+    change Operations.interactionsWith MemBusChannel.toRaw
+      singleAddEnsemble.verifierTable.operations = [] at h_verifier_nil
+    rw [h_component,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
+    exact absurd h_verifier_nil (by simp)
+  · simp [singleAddWitness, singleAddTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_mutable_mem_component_of_name_ne (by decide) h_component
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · simp [emptyComponentTable]
+    · exfalso
+      exact not_mutable_mem_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_mutable_mem_component_of_name_ne (by decide) h_component
+
+private theorem singleAddWitness_not_mutableMemPresent :
+    ¬ MutableMemPresent singleAddWitness := by
+  intro h_present
+  obtain ⟨table, h_table, h_component, h_length⟩ := h_present
+  have h_empty :=
+    singleAddWitness_mutable_mem_component_tables_empty table h_table h_component
+  exact absurd h_length (by simp [h_empty])
+
 theorem singleAddWitness_main_height :
     ∀ table ∈ singleAddWitness.allTables,
       table.component = componentWithRomMemAndOpBus 1 addX1Program →
@@ -263,6 +311,48 @@ theorem addX1Main_segment_l1_first :
         (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).core.segment_l1 = 1
   rw [mainSingleRowTable_eval_rowInputVar]
   rfl
+
+theorem addX1Main_main_step_eq_index :
+    ∀ i : Fin 1,
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addX1Program
+          (mainSingleRowTable 1 addX1Program addX1Row) i.val).rom.main_step = (i.val : FGL) := by
+  intro i
+  fin_cases i
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  simp [mainSingleRowTable, mainRowArray]
+  change (eval ((mainSingleRowTable 1 addX1Program addX1Row).environment
+      (mainRowArray addX1Row))
+        (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).rom.main_step = 0
+  rw [mainSingleRowTable_eval_rowInputVar]
+  rfl
+
+theorem addX1Main_main_step_index_fixed :
+    MainStepIndexFixedFacts 1 addX1Program
+      (mainSingleRowTable 1 addX1Program addX1Row) where
+  main_step_eq_index := addX1Main_main_step_eq_index
+  timestamp_bound := by
+    intro i
+    fin_cases i
+    decide
+  load_timestamp_toNat := by
+    intro i
+    fin_cases i
+    rw [addX1Main_main_step_eq_index ⟨0, by decide⟩]
+    decide
+  store_timestamp_toNat := by
+    intro i
+    fin_cases i
+    rw [addX1Main_main_step_eq_index ⟨0, by decide⟩]
+    decide
+
+theorem singleAddWitness_main_step_index_fixed :
+    ∀ table ∈ singleAddWitness.allTables,
+      table.component = componentWithRomMemAndOpBus 1 addX1Program →
+        MainStepIndexFixedFacts 1 addX1Program table := by
+  intro table h_table h_component
+  have h_main := singleAddWitness_main_component_cases h_table h_component
+  subst table
+  exact addX1Main_main_step_index_fixed
 
 set_option linter.unnecessarySimpa false in
 theorem singleAddWitness_segment_l1_fixed :
@@ -392,8 +482,19 @@ def singleAddAcceptedTrace : AcceptedZiskTrace 1 where
   witness := singleAddWitness
   constraints_hold := singleAddWitness_constraints
   channels_balanced := singleAddWitness_balancedChannels
+  mem_replay_table := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_segment := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_permutation := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_gsum := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_im0 := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_im1 := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_constraints := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_row_ranges := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_segment_ranges := fun h => absurd h singleAddWitness_not_mutableMemPresent
+  mem_replay_source_covers := fun h => absurd h singleAddWitness_not_mutableMemPresent
   transitions_hold := singleAddWitness_transitions
   main_height := singleAddWitness_main_height
   segment_l1_fixed := singleAddWitness_segment_l1_fixed
+  main_step_index_fixed := singleAddWitness_main_step_index_fixed
 
 end ZiskFv.Compliance.SingleAddWitness
