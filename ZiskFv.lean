@@ -168,6 +168,7 @@ import ZiskFv.Compliance.RegisterMemBusBalance
 import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
 import ZiskFv.Compliance.SingleAddWitness
 import ZiskFv.Compliance.AddSpinWitness
+import ZiskFv.Compliance.AddSpinRootSoundness
 -- In-build per-opcode static decode/row-mode pin discharge from the real
 -- Aeneas-extracted ZisK lowerer (eth-act/zisk-fv#111). Standalone; not yet
 -- wired into root_soundness. Per-theorem collectAxioms keeps the aeneas runtime
