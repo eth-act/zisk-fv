@@ -40,7 +40,8 @@ RegisterBoundary rows.  The remaining #219 bridge is the projection from Main's 
 
 ## Trust note
 
-No axioms.  `pulledValue` / `pushedValue` are Clean's `-1` / `+1` value-level channel interactions.
+No axioms. The local `emittedPulledValue` and Clean's `pushedValue` reproduce actual emitted
+`-1` / `+1` value-level channel interactions, including their guarantee metadata.
 -/
 
 open Goldilocks
@@ -57,9 +58,18 @@ namespace ZiskFv.Compliance.RegisterMemBusBalance
 
 /-! ## Paired-interaction balance infrastructure (message-agnostic) -/
 
+/-- A concrete negative MemBus emission. Unlike `Channel.pulledValue`, actual component emissions
+    do not assume the channel guarantees, so this constructor keeps `assumeGuarantees := false`. -/
+def emittedPulledValue (msg : MemBusMessage FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := -1
+  msg := (toElements msg).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
 /-- One pull/push pair for the same MemBus message balances. -/
 def pairedInteraction (msg : MemBusMessage FGL) : List (Interaction FGL) :=
-  [MemBusChannel.pulledValue msg, MemBusChannel.pushedValue msg]
+  [emittedPulledValue msg, MemBusChannel.pushedValue msg]
 
 /-- A list of messages, each emitted once as a pull and once as a push. -/
 def pairedInteractions (msgs : List (MemBusMessage FGL)) : List (Interaction FGL) :=
@@ -81,7 +91,7 @@ theorem pairedInteraction_balanced (msg : MemBusMessage FGL) :
   · intro presentMsg h_present
     simp only [List.mem_singleton] at h_present
     subst presentMsg
-    simp [pairedInteraction, balanceOf, Channel.pulledValue, Channel.pushedValue]
+    simp [pairedInteraction, emittedPulledValue, balanceOf, Channel.pushedValue]
 
 theorem balancedInteractions_append_of_balanced
     {left right : List (Interaction FGL)}
@@ -92,6 +102,17 @@ theorem balancedInteractions_append_of_balanced
   refine ⟨h_len, ?_⟩
   intro msg
   rw [balanceOf_append, h_left.2 msg, h_right.2 msg, add_zero]
+
+/-- A finite interaction list whose selectors are all zero is balanced. -/
+theorem zeroInteractions_balanced
+    (interactions : List (Interaction FGL))
+    (h_zero : ∀ interaction ∈ interactions, interaction.mult = 0)
+    (h_len : interactions.length < ringChar FGL ∨ ringChar FGL = 0) :
+    BalancedInteractions interactions := by
+  refine ⟨h_len, ?_⟩
+  intro msg
+  rw [balanceOf_eq_of_const_mult' h_zero]
+  simp
 
 theorem pairedInteractions_balanced
     (msgs : List (MemBusMessage FGL))
@@ -115,6 +136,70 @@ theorem pairedInteractions_balanced
         · exact Or.inr h_zero
       exact balancedInteractions_append_of_balanced
         (pairedInteraction_balanced msg) (ih h_rest_len) (by simpa [pairedInteractions] using h_len)
+
+/-! ## Register-access telescoping -/
+
+/-- The real-emission order for successive accesses to one register. The boundary component emits
+    the initial pull and final push first; every Main access then pushes its previous state and
+    pulls its current state. -/
+def registerAccessChain (previous : MemBusMessage FGL) :
+    List (MemBusMessage FGL) → List (Interaction FGL)
+  | [] => []
+  | current :: rest =>
+      [MemBusChannel.pushedValue previous, emittedPulledValue current] ++
+        registerAccessChain current rest
+
+/-- The last state in a nonempty register history represented by its first state and tail. -/
+def registerLastMessage (first : MemBusMessage FGL) :
+    List (MemBusMessage FGL) → MemBusMessage FGL
+  | [] => first
+  | current :: rest => registerLastMessage current rest
+
+/-- Boundary emissions followed by the Main access chain for one register. -/
+def registerTelescopingInteractions
+    (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL)) :
+  List (Interaction FGL) :=
+  [emittedPulledValue first,
+    MemBusChannel.pushedValue (registerLastMessage first rest)] ++
+      registerAccessChain first rest
+
+/-- A register history contains one pull and one push of every state, independently of the
+    boundary-first real-emission order. -/
+theorem registerTelescopingInteractions_perm
+    (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL)) :
+    List.Perm (registerTelescopingInteractions first rest)
+      (pairedInteractions (first :: rest)) := by
+  induction rest generalizing first with
+  | nil =>
+      rfl
+  | cons current rest ih =>
+      have h_rotate :
+          List.Perm (registerTelescopingInteractions first (current :: rest))
+            (pairedInteraction first ++ registerTelescopingInteractions current rest) := by
+        simp only [registerTelescopingInteractions, registerLastMessage, registerAccessChain,
+          pairedInteraction]
+        exact List.Perm.cons _ <|
+          (List.Perm.swap _ _ _).trans (List.Perm.cons _ (List.Perm.swap _ _ _))
+      have h_tail :
+          List.Perm (pairedInteraction first ++ registerTelescopingInteractions current rest)
+            (pairedInteraction first ++ pairedInteractions (current :: rest)) :=
+        List.Perm.append (List.Perm.refl _) (ih current)
+      exact h_rotate.trans h_tail
+
+/-- The N-access register telescope balances once its finite interaction count fits in the field. -/
+theorem registerTelescopingInteractions_balanced
+    (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL))
+    (h_len :
+      (registerTelescopingInteractions first rest).length < ringChar FGL ∨
+        ringChar FGL = 0) :
+    BalancedInteractions (registerTelescopingInteractions first rest) := by
+  have h_perm := registerTelescopingInteractions_perm first rest
+  have h_paired_len :
+      (pairedInteractions (first :: rest)).length < ringChar FGL ∨ ringChar FGL = 0 := by
+    rw [← h_perm.length_eq]
+    exact h_len
+  exact balancedInteractions_of_perm
+    (pairedInteractions_balanced (first :: rest) h_paired_len) h_perm.symm
 
 /-! ## The concrete `add x1,x1,x1` row and boundary rows -/
 

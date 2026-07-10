@@ -95,8 +95,11 @@ theorem addX1MainTable_constraints :
     addX1Main_proverAssumptions
 
 theorem addX1BinaryAddTable_constraints :
-    (binaryAddSingleRowTable addX1BinaryAddRow).Constraints := by
-  apply binaryAddSingleRowTable_constraints_of_proverAssumptions
+    (binaryAddRowsTable [addX1BinaryAddRow]).Constraints := by
+  apply binaryAddRowsTable_constraints_of_proverAssumptions
+  intro row h_row
+  simp only [List.mem_singleton] at h_row
+  subst row
   exact ⟨0, 0, by decide, by decide, rfl⟩
 
 def singleAddBoundaryRows : List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
@@ -119,7 +122,7 @@ def singleAddTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
   , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   , emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent
-  , binaryAddSingleRowTable addX1BinaryAddRow
+  , binaryAddRowsTable [addX1BinaryAddRow]
   , mainSingleRowTable 1 addX1Program addX1Row ]
 
 def singleAddEnsemble : Ensemble FGL unit :=
@@ -145,12 +148,12 @@ def singleAddWitness : EnsembleWitness singleAddEnsemble where
       simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, singleAddTables,
         SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addTable,
         SoundEnsemble.empty_tables, Ensemble.addTable, registerBoundaryRowsTable,
-        registerBoundaryRowsTableOf, emptyComponentTable, binaryAddSingleRowTable,
+        registerBoundaryRowsTableOf, emptyComponentTable, binaryAddRowsTable,
         mainSingleRowTable]
   same_data := by
     intro table h_table
     simp [singleAddTables, registerBoundaryRowsTable, registerBoundaryRowsTableOf,
-      emptyComponentTable, binaryAddSingleRowTable, mainSingleRowTable] at h_table
+      emptyComponentTable, binaryAddRowsTable, mainSingleRowTable] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rfl
 
@@ -189,7 +192,7 @@ theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints :=
       rw [Table.TransitionConstraints] <;>
       intro i h_i <;>
       simp [registerBoundaryRowsTable, registerBoundaryRowsTableOf, emptyComponentTable,
-        binaryAddSingleRowTable, mainSingleRowTable, ZiskFv.AirsClean.RegisterBoundary.component,
+        binaryAddRowsTable, mainSingleRowTable, ZiskFv.AirsClean.RegisterBoundary.component,
         ZiskFv.AirsClean.BinaryAdd.component] at h_i ⊢
 
 private theorem not_main_component_of_name_ne
@@ -397,7 +400,7 @@ theorem singleAddWitness_opBus_interactions :
       (table := registerBoundaryRowsTable) rfl
   rw [show singleAddWitness.tables = singleAddTables from rfl]
   simp [singleAddTables, h_registerBoundary, emptyComponentTable_interactionsWith,
-    binaryAddSingleRowTable_interactionsWith_opBus, mainSingleRowTable_interactionsWith_opBus]
+    binaryAddRowsTable_interactionsWith_opBus, mainSingleRowTable_interactionsWith_opBus]
 
 theorem singleAddWitness_opBus_balanced :
     BalancedInteractions
@@ -440,9 +443,9 @@ theorem singleAddWitness_memBus_interactions :
     simpa [registerBoundaryRowsTable] using
       registerBoundaryRowsTableOf_interactionsWith_memBus singleAddBoundaryRows
   have h_binaryAdd :
-      (binaryAddSingleRowTable addX1BinaryAddRow).interactionsWith MemBusChannel.toRaw = [] := by
+      (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemBusChannel.toRaw = [] := by
     exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
-      (table := binaryAddSingleRowTable addX1BinaryAddRow) rfl
+      (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
   rw [show singleAddWitness.tables = singleAddTables from rfl]
   simp [singleAddTables, h_registerBoundary, h_binaryAdd, emptyComponentTable_interactionsWith,
     addX1Row_main_interactionsWith_memBus_eq_mainRegisterInteractionsFromTable,

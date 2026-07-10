@@ -572,22 +572,22 @@ example :
 def binaryAddRowArray (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) : Array FGL :=
   (toElements row).toArray
 
-def binaryAddSingleRowTable (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
-    Table FGL where
+def binaryAddRowsTable
+    (rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)) : Table FGL where
   component := ZiskFv.AirsClean.BinaryAdd.component
   width := size ZiskFv.AirsClean.BinaryAdd.BinaryAddRow
-  table := [binaryAddRowArray row]
+  table := rows.map binaryAddRowArray
   data := emptyData
   uniform_width := by
     intro arr h_arr
-    simp [binaryAddRowArray] at h_arr
-    subst arr
-    simp
+    rcases List.mem_map.mp h_arr with ⟨row, _, rfl⟩
+    simp [binaryAddRowArray]
 
-theorem binaryAddSingleRowTable_rowInput
+theorem binaryAddRowsTable_rowInput
+    (rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL))
     (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
     ZiskFv.AirsClean.BinaryAdd.component.rowInput
-        ((binaryAddSingleRowTable row).environment (binaryAddRowArray row)) =
+        ((binaryAddRowsTable rows).environment (binaryAddRowArray row)) =
       row := by
   change ZiskFv.AirsClean.BinaryAdd.component.rowInput
       (Environment.fromInput row emptyData) = row
@@ -602,13 +602,14 @@ def binaryAddOpBusInteraction (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL
   assumeGuarantees := false
 
 theorem binaryAddComponentOpBusInteraction_eval
+    (rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL))
     (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
     (((OpBusChannel.pushed
         (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
           ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)).toRaw).eval
-      ((binaryAddSingleRowTable row).environment (binaryAddRowArray row))) =
+      ((binaryAddRowsTable rows).environment (binaryAddRowArray row))) =
       binaryAddOpBusInteraction row := by
-  let env := (binaryAddSingleRowTable row).environment (binaryAddRowArray row)
+  let env := (binaryAddRowsTable rows).environment (binaryAddRowArray row)
   let rowVar := ZiskFv.AirsClean.BinaryAdd.component.rowInputVar
   have h_input : eval env rowVar = row := by
     change eval (Environment.fromInput row emptyData)
@@ -630,37 +631,61 @@ theorem binaryAddComponentOpBusInteraction_eval
     rw [h_msg_eval]
   · rfl
 
-theorem binaryAddSingleRowTable_interactionsWith_opBus
+theorem binaryAddRowsTable_opBus_row
+    (rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL))
     (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
-    (binaryAddSingleRowTable row).interactionsWith OpBusChannel.toRaw =
+    ZiskFv.AirsClean.BinaryAdd.component.operations.interactionValuesWith
+        OpBusChannel.toRaw
+        ((binaryAddRowsTable rows).environment (binaryAddRowArray row)) =
       [binaryAddOpBusInteraction row] := by
-  simp [Table.interactionsWith, binaryAddSingleRowTable, binaryAddRowArray,
+  simp [binaryAddRowsTable,
     Operations.interactionValuesWith_eq_map,
     ZiskFv.AirsClean.BinaryAdd.component_interactionsWith_opBus]
-  exact binaryAddComponentOpBusInteraction_eval row
+  exact binaryAddComponentOpBusInteraction_eval rows row
 
-theorem binaryAddSingleRowTable_constraints_of_proverAssumptions
-    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
+private theorem binaryAddRowsTable_interactionsWith_opBus_go
+    (allRows rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)) :
+    (rows.map binaryAddRowArray).flatMap (fun arr =>
+        ZiskFv.AirsClean.BinaryAdd.component.operations.interactionValuesWith
+          OpBusChannel.toRaw ((binaryAddRowsTable allRows).environment arr)) =
+      rows.flatMap fun row => [binaryAddOpBusInteraction row] := by
+  induction rows with
+  | nil => rfl
+  | cons row rest ih =>
+      simp [binaryAddRowsTable_opBus_row, ih]
+
+theorem binaryAddRowsTable_interactionsWith_opBus
+    (rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)) :
+    (binaryAddRowsTable rows).interactionsWith OpBusChannel.toRaw =
+      rows.flatMap fun row => [binaryAddOpBusInteraction row] := by
+  change (rows.map binaryAddRowArray).flatMap (fun arr =>
+        ZiskFv.AirsClean.BinaryAdd.component.operations.interactionValuesWith
+          OpBusChannel.toRaw ((binaryAddRowsTable rows).environment arr)) =
+      rows.flatMap fun row => [binaryAddOpBusInteraction row]
+  exact binaryAddRowsTable_interactionsWith_opBus_go rows rows
+
+theorem binaryAddRowsTable_constraints_of_proverAssumptions
+    (rows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL))
     (h_assumptions :
-      ZiskFv.AirsClean.BinaryAdd.component.circuit.ProverAssumptions
-        row emptyData (ProverHint.empty FGL)) :
-    (binaryAddSingleRowTable row).Constraints := by
+      ∀ row ∈ rows,
+        ZiskFv.AirsClean.BinaryAdd.component.circuit.ProverAssumptions
+          row emptyData (ProverHint.empty FGL)) :
+    (binaryAddRowsTable rows).Constraints := by
   have h_localLength :
       ZiskFv.AirsClean.BinaryAdd.component.circuit.localLength
         ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0 := by
     change ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated.localLength
         ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0
     rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, h_row, rfl⟩
   have h_component :
       ZiskFv.AirsClean.BinaryAdd.component.operations.ConstraintsHold
         (Environment.fromInput row emptyData) :=
     component_constraintsHold_of_proverAssumptions
-      ZiskFv.AirsClean.BinaryAdd.component row h_localLength h_assumptions
-  rw [Table.Constraints]
-  intro arr h_arr
-  simp [binaryAddSingleRowTable, binaryAddRowArray] at h_arr
-  subst arr
-  simpa [binaryAddSingleRowTable, binaryAddRowArray, Environment.fromInput] using h_component
+      ZiskFv.AirsClean.BinaryAdd.component row h_localLength (h_assumptions row h_row)
+  simpa [binaryAddRowsTable, binaryAddRowArray, Environment.fromInput] using h_component
 
 def binaryRowArray (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Array FGL :=
   (toElements row).toArray
