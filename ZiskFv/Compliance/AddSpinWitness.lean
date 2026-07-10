@@ -307,7 +307,7 @@ def addSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
   , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   , emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent
-  , binaryAddSingleRowTable addX1BinaryAddRow
+  , binaryAddRowsTable [addX1BinaryAddRow]
   , mainRowsTable 2 addSpinProgram addSpinMainRows ]
 
 def addSpinNonMainTables : List (Table FGL) :=
@@ -320,7 +320,7 @@ def addSpinNonMainTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
   , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   , emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent
-  , binaryAddSingleRowTable addX1BinaryAddRow ]
+  , binaryAddRowsTable [addX1BinaryAddRow] ]
 
 def addSpinEnsemble : Ensemble FGL unit :=
   (fullRv64imEnsemble 2 addSpinProgram).ensemble
@@ -345,12 +345,12 @@ def addSpinWitness : EnsembleWitness addSpinEnsemble where
       simp [addSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, addSpinTables,
         SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addTable,
         SoundEnsemble.empty_tables, Ensemble.addTable, registerBoundaryRowsTable,
-        registerBoundaryRowsTableOf, emptyComponentTable, binaryAddSingleRowTable,
+        registerBoundaryRowsTableOf, emptyComponentTable, binaryAddRowsTable,
         mainRowsTable]
   same_data := by
     intro table h_table
     simp [addSpinTables, registerBoundaryRowsTable, registerBoundaryRowsTableOf,
-      emptyComponentTable, binaryAddSingleRowTable, mainRowsTable] at h_table
+      emptyComponentTable, binaryAddRowsTable, mainRowsTable] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rfl
 
@@ -416,7 +416,7 @@ theorem addSpinWitness_transitions : addSpinWitness.TransitionConstraints := by
       simp [emptyComponentTable] at h_i
     · rw [Table.TransitionConstraints]
       intro i h_i
-      simp [binaryAddSingleRowTable, ZiskFv.AirsClean.BinaryAdd.component] at h_i ⊢
+      simp [binaryAddRowsTable, ZiskFv.AirsClean.BinaryAdd.component] at h_i ⊢
     · exact addSpinMainTable_transitions
 
 private theorem not_addSpin_main_component_of_name_ne
@@ -654,7 +654,7 @@ theorem addSpinOpBus_interactions :
       (table := registerBoundaryRowsTable) rfl
   rw [show addSpinWitness.tables = addSpinTables from rfl]
   simp [addSpinTables, h_registerBoundary, emptyComponentTable_interactionsWith,
-    binaryAddSingleRowTable_interactionsWith_opBus, mainRowsTable_interactionsWith_opBus,
+    binaryAddRowsTable_interactionsWith_opBus, mainRowsTable_interactionsWith_opBus,
     addSpinMainRows]
 
 theorem addSpinJalOpBusInteraction_zero (step : FGL) :
@@ -848,9 +848,9 @@ theorem addSpinMemBus_interactions :
       simpa [registerBoundaryRowsTable] using
         registerBoundaryRowsTableOf_interactionsWith_memBus singleAddBoundaryRows
     have h_binaryAdd :
-        (binaryAddSingleRowTable addX1BinaryAddRow).interactionsWith MemBusChannel.toRaw = [] := by
+        (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemBusChannel.toRaw = [] := by
       exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
-        (table := binaryAddSingleRowTable addX1BinaryAddRow) rfl
+        (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
     simp [addSpinNonMainTables, h_registerBoundary, h_binaryAdd,
       emptyComponentTable_interactionsWith]
   have h_main :
