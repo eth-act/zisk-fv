@@ -1,0 +1,5 @@
+import ZiskFv.Compliance.AddAddiSpinRootSoundness
+
+#print axioms ZiskFv.Compliance.AddAddiSpinRootSoundness.addAddiSpinRootSoundness
+#print axioms ZiskFv.Compliance.AddAddiSpinWitness.addAddiSpinAcceptedTrace
+#print axioms ZiskFv.Compliance.AddAddiSpinWitness.addAddiSpinWitness_balancedChannels

@@ -40,7 +40,8 @@ RegisterBoundary rows.  The remaining #219 bridge is the projection from Main's 
 
 ## Trust note
 
-No axioms.  `pulledValue` / `pushedValue` are Clean's `-1` / `+1` value-level channel interactions.
+No axioms. The local `emittedPulledValue` and Clean's `pushedValue` reproduce actual emitted
+`-1` / `+1` value-level channel interactions, including their guarantee metadata.
 -/
 
 open Goldilocks
@@ -57,9 +58,18 @@ namespace ZiskFv.Compliance.RegisterMemBusBalance
 
 /-! ## Paired-interaction balance infrastructure (message-agnostic) -/
 
+/-- A concrete negative MemBus emission. Unlike `Channel.pulledValue`, actual component emissions
+    do not assume the channel guarantees, so this constructor keeps `assumeGuarantees := false`. -/
+def emittedPulledValue (msg : MemBusMessage FGL) : Interaction FGL where
+  channel := MemBusChannel.toRaw
+  mult := -1
+  msg := (toElements msg).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
 /-- One pull/push pair for the same MemBus message balances. -/
 def pairedInteraction (msg : MemBusMessage FGL) : List (Interaction FGL) :=
-  [MemBusChannel.pulledValue msg, MemBusChannel.pushedValue msg]
+  [emittedPulledValue msg, MemBusChannel.pushedValue msg]
 
 /-- A list of messages, each emitted once as a pull and once as a push. -/
 def pairedInteractions (msgs : List (MemBusMessage FGL)) : List (Interaction FGL) :=
@@ -81,7 +91,7 @@ theorem pairedInteraction_balanced (msg : MemBusMessage FGL) :
   · intro presentMsg h_present
     simp only [List.mem_singleton] at h_present
     subst presentMsg
-    simp [pairedInteraction, balanceOf, Channel.pulledValue, Channel.pushedValue]
+    simp [pairedInteraction, emittedPulledValue, balanceOf, Channel.pushedValue]
 
 theorem balancedInteractions_append_of_balanced
     {left right : List (Interaction FGL)}
@@ -92,6 +102,17 @@ theorem balancedInteractions_append_of_balanced
   refine ⟨h_len, ?_⟩
   intro msg
   rw [balanceOf_append, h_left.2 msg, h_right.2 msg, add_zero]
+
+/-- A finite interaction list whose selectors are all zero is balanced. -/
+theorem zeroInteractions_balanced
+    (interactions : List (Interaction FGL))
+    (h_zero : ∀ interaction ∈ interactions, interaction.mult = 0)
+    (h_len : interactions.length < ringChar FGL ∨ ringChar FGL = 0) :
+    BalancedInteractions interactions := by
+  refine ⟨h_len, ?_⟩
+  intro msg
+  rw [balanceOf_eq_of_const_mult' h_zero]
+  simp
 
 theorem pairedInteractions_balanced
     (msgs : List (MemBusMessage FGL))
@@ -125,7 +146,7 @@ def registerAccessChain (previous : MemBusMessage FGL) :
     List (MemBusMessage FGL) → List (Interaction FGL)
   | [] => []
   | current :: rest =>
-      [MemBusChannel.pushedValue previous, MemBusChannel.pulledValue current] ++
+      [MemBusChannel.pushedValue previous, emittedPulledValue current] ++
         registerAccessChain current rest
 
 /-- The last state in a nonempty register history represented by its first state and tail. -/
@@ -137,8 +158,8 @@ def registerLastMessage (first : MemBusMessage FGL) :
 /-- Boundary emissions followed by the Main access chain for one register. -/
 def registerTelescopingInteractions
     (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL)) :
-    List (Interaction FGL) :=
-  [MemBusChannel.pulledValue first,
+  List (Interaction FGL) :=
+  [emittedPulledValue first,
     MemBusChannel.pushedValue (registerLastMessage first rest)] ++
       registerAccessChain first rest
 

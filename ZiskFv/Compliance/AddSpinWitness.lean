@@ -149,13 +149,74 @@ theorem mainRowsTable_interactionsWith_opBus
       rows.flatMap fun row => [mainOpBusInteraction row]
   exact mainRowsTable_interactionsWith_opBus_go length program rows rows
 
+def mainMemBusInteractionsFor
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) :
+    List (Interaction FGL) :=
+  mainMemBusInteractions length program row
+
+def mainValueMemBusInteractions (row : MainRowWithRom FGL) : List (Interaction FGL) :=
+  [ mainARegPreInteraction row
+  , mainAMemInteraction row
+  , mainBRegPreInteraction row
+  , mainBMemInteraction row
+  , mainCRegPreInteraction row
+  , mainCMemInteraction row ]
+
+theorem mainValueMemBusInteractions_balanced_of_zero
+    (row : MainRowWithRom FGL)
+    (h_aReg : (mainARegPreInteraction row).mult = 0)
+    (h_aMem : (mainAMemInteraction row).mult = 0)
+    (h_bReg : (mainBRegPreInteraction row).mult = 0)
+    (h_bMem : (mainBMemInteraction row).mult = 0)
+    (h_cReg : (mainCRegPreInteraction row).mult = 0)
+    (h_cMem : (mainCMemInteraction row).mult = 0) :
+    BalancedInteractions (mainValueMemBusInteractions row) := by
+  apply zeroInteractions_balanced
+  · intro interaction h_interaction
+    simp [mainValueMemBusInteractions] at h_interaction
+    rcases h_interaction with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact h_aReg
+    · exact h_aMem
+    · exact h_bReg
+    · exact h_bMem
+    · exact h_cReg
+    · exact h_cMem
+  · left
+    change 6 < ringChar FGL
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+
+def mainMemBusInteractionsForRows
+    (length : ℕ) (program : Program length) :
+    List (MainRowWithRom FGL) → List (Interaction FGL)
+  | [] => []
+  | row :: rest =>
+      mainMemBusInteractionsFor length program row ++
+        mainMemBusInteractionsForRows length program rest
+
+theorem mainMemBusInteractionsForRows_four
+    (length : ℕ) (program : Program length)
+    (row₀ row₁ row₂ row₃ : MainRowWithRom FGL) :
+    mainMemBusInteractionsForRows length program [row₀, row₁, row₂, row₃] =
+      mainMemBusInteractionsFor length program row₀ ++
+        mainMemBusInteractionsFor length program row₁ ++
+        mainMemBusInteractionsFor length program row₂ ++
+        mainMemBusInteractionsFor length program row₃ := by
+  rfl
+
+def mainValueMemBusInteractionsForRows :
+    List (MainRowWithRom FGL) → List (Interaction FGL)
+  | [] => []
+  | row :: rest =>
+      mainValueMemBusInteractions row ++ mainValueMemBusInteractionsForRows rest
+
 theorem mainRowsTable_memBus_row
     (length : ℕ) (program : Program length) (rows : List (MainRowWithRom FGL))
     (row : MainRowWithRom FGL) :
     (componentWithRomMemAndOpBus length program).operations.interactionValuesWith
         MemBusChannel.toRaw
         ((mainRowsTable length program rows).environment (mainRowArray row)) =
-      mainMemBusInteractions length program row := by
+      mainMemBusInteractionsFor length program row := by
   simpa [Table.interactionsWith, mainSingleRowTable, mainRowsTable] using
     mainSingleRowTable_interactionsWith_memBus length program row
 
@@ -165,20 +226,20 @@ private theorem mainRowsTable_interactionsWith_memBus_go
     (rows.map mainRowArray).flatMap (fun arr =>
         (componentWithRomMemAndOpBus length program).operations.interactionValuesWith
           MemBusChannel.toRaw ((mainRowsTable length program allRows).environment arr)) =
-      rows.flatMap (mainMemBusInteractions length program) := by
+      mainMemBusInteractionsForRows length program rows := by
   induction rows with
   | nil => rfl
   | cons row rest ih =>
-      simp [mainRowsTable_memBus_row, ih]
+      simp [mainRowsTable_memBus_row, mainMemBusInteractionsForRows, ih]
 
 theorem mainRowsTable_interactionsWith_memBus
     (length : ℕ) (program : Program length) (rows : List (MainRowWithRom FGL)) :
     (mainRowsTable length program rows).interactionsWith MemBusChannel.toRaw =
-      rows.flatMap (mainMemBusInteractions length program) := by
+      mainMemBusInteractionsForRows length program rows := by
   change (rows.map mainRowArray).flatMap (fun arr =>
         (componentWithRomMemAndOpBus length program).operations.interactionValuesWith
           MemBusChannel.toRaw ((mainRowsTable length program rows).environment arr)) =
-      rows.flatMap (mainMemBusInteractions length program)
+      mainMemBusInteractionsForRows length program rows
   exact mainRowsTable_interactionsWith_memBus_go length program rows rows
 
 theorem addSpinAddMain_proverAssumptions :
@@ -634,16 +695,6 @@ theorem addSpinWitness_segment_l1_fixed :
   · intro idx h_idx
     exact addSpinMain_segment_l1_later idx h_idx
 
-private theorem zeroInteractions_balanced
-    (interactions : List (Interaction FGL))
-    (h_zero : ∀ interaction ∈ interactions, interaction.mult = 0)
-    (h_len : interactions.length < ringChar FGL ∨ ringChar FGL = 0) :
-    BalancedInteractions interactions := by
-  refine ⟨h_len, ?_⟩
-  intro msg
-  rw [balanceOf_eq_of_const_mult' h_zero]
-  simp
-
 theorem addSpinOpBus_interactions :
     addSpinWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) =
       [binaryAddOpBusInteraction addX1BinaryAddRow, mainOpBusInteraction addSpinAddRow,
@@ -690,7 +741,7 @@ theorem addSpinWitness_opBus_balanced :
       rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
       decide)
 
-private theorem mainMemBusInteractions_eq_valueLevel
+theorem mainMemBusInteractions_eq_valueLevel
     (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) :
     mainMemBusInteractions length program row =
       [mainARegPreInteraction row, mainAMemInteraction row, mainBRegPreInteraction row,
@@ -827,6 +878,67 @@ private theorem mainMemBusInteractions_eq_valueLevel
         mainBMemInteraction row, mainCRegPreInteraction row, mainCMemInteraction row]
   simp [h_aReg, h_aMem, h_bReg, h_bMem, h_cReg, h_cMem]
 
+theorem mainMemBusInteractionsFor_eq_valueLevel
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) :
+    mainMemBusInteractionsFor length program row = mainValueMemBusInteractions row := by
+  unfold mainMemBusInteractionsFor mainValueMemBusInteractions
+  exact mainMemBusInteractions_eq_valueLevel length program row
+
+theorem mainMemBusInteractionsFor_balanced_of_zero
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL)
+    (h_aReg : (mainARegPreInteraction row).mult = 0)
+    (h_aMem : (mainAMemInteraction row).mult = 0)
+    (h_bReg : (mainBRegPreInteraction row).mult = 0)
+    (h_bMem : (mainBMemInteraction row).mult = 0)
+    (h_cReg : (mainCRegPreInteraction row).mult = 0)
+    (h_cMem : (mainCMemInteraction row).mult = 0) :
+    BalancedInteractions (mainMemBusInteractionsFor length program row) := by
+  rw [mainMemBusInteractionsFor_eq_valueLevel]
+  exact mainValueMemBusInteractions_balanced_of_zero row
+    h_aReg h_aMem h_bReg h_bMem h_cReg h_cMem
+
+structure MainMemBusInactive (row : MainRowWithRom FGL) : Prop where
+  aSrcReg : row.rom.a_src_reg = 0
+  aSrcMem : row.rom.a_src_mem = 0
+  bSrcReg : row.rom.b_src_reg = 0
+  bSrcMem : row.rom.b_src_mem = 0
+  bSrcInd : row.rom.b_src_ind = 0
+  storeReg : row.rom.store_reg = 0
+  storeMem : row.rom.store_mem = 0
+  storeInd : row.rom.store_ind = 0
+
+theorem mainMemBusInteractionsFor_balanced_of_inactive
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL)
+    (h : MainMemBusInactive row) :
+    BalancedInteractions (mainMemBusInteractionsFor length program row) := by
+  apply mainMemBusInteractionsFor_balanced_of_zero
+  · simpa [mainARegPreInteraction] using h.aSrcReg
+  · simp [mainAMemInteraction, h.aSrcReg, h.aSrcMem]
+  · simpa [mainBRegPreInteraction] using h.bSrcReg
+  · simp [mainBMemInteraction, h.bSrcReg, h.bSrcMem, h.bSrcInd]
+  · simpa [mainCRegPreInteraction] using h.storeReg
+  · simp [mainCMemInteraction, h.storeReg, h.storeMem, h.storeInd]
+
+theorem mainMemBusInteractionsForRows_eq_valueLevel
+    (length : ℕ) (program : Program length) (rows : List (MainRowWithRom FGL)) :
+    mainMemBusInteractionsForRows length program rows =
+      mainValueMemBusInteractionsForRows rows := by
+  induction rows with
+  | nil => rfl
+  | cons row rest ih =>
+      exact (congrArg
+        (fun interactions => interactions ++
+          mainMemBusInteractionsForRows length program rest)
+        (mainMemBusInteractionsFor_eq_valueLevel length program row)).trans
+        (congrArg (fun interactions => mainValueMemBusInteractions row ++ interactions) ih)
+
+theorem mainRowsTable_interactionsWith_memBus_eq_valueLevel
+    (length : ℕ) (program : Program length) (rows : List (MainRowWithRom FGL)) :
+    (mainRowsTable length program rows).interactionsWith MemBusChannel.toRaw =
+      mainValueMemBusInteractionsForRows rows :=
+  (mainRowsTable_interactionsWith_memBus length program rows).trans
+    (mainMemBusInteractionsForRows_eq_valueLevel length program rows)
+
 theorem addSpinAddMainMemBusInteractions_eq :
     mainMemBusInteractions 2 addSpinProgram addSpinAddRow =
       mainRegisterInteractionsFromTable := by
@@ -858,7 +970,8 @@ theorem addSpinMemBus_interactions :
         mainMemBusInteractions 2 addSpinProgram addSpinAddRow ++
         mainMemBusInteractions 2 addSpinProgram (addSpinJalRow 1) ++
         mainMemBusInteractions 2 addSpinProgram (addSpinJalRow 2) := by
-    simp [mainRowsTable_interactionsWith_memBus, addSpinMainRows]
+    simp [mainRowsTable_interactionsWith_memBus, mainMemBusInteractionsForRows,
+      mainMemBusInteractionsFor, addSpinMainRows]
   rw [show addSpinWitness.tables = addSpinTables from rfl]
   rw [show addSpinTables =
       addSpinNonMainTables ++ [mainRowsTable 2 addSpinProgram addSpinMainRows] from rfl]
