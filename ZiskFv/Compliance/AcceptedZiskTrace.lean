@@ -6,7 +6,8 @@ import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
 # Accepted trace
 
 An `AcceptedZiskTrace` is one fully-populated, verifier-accepted run of the RV64IM
-circuit for a fixed `program` of `length` instructions.
+circuit for a fixed committed `program` and an executed trace. Execution can revisit
+committed instructions, so its step count need not equal the ROM length.
 
 The circuit is an **Air.Flat ensemble**: a collection of AIRs (the Main table
 plus the binary / arithmetic / memory / lookup tables) wired together by shared
@@ -56,11 +57,11 @@ def acceptedMemReplayFixedSegment
     discharge it by proving their mutable-Mem table is empty, while memory-carrying traces provide
     the same bridge package #115 already required. -/
 def MutableMemPresent
-    {numInstructions : Nat}
-    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program numInstructions}
+    {programLength : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program programLength}
     (witness :
       Air.Flat.EnsembleWitness
-        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble) :
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble programLength program).ensemble) :
     Prop :=
   ∃ table ∈ witness.allTables,
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
@@ -76,7 +77,8 @@ def MutableMemPresent
     `2 + 4*i` / `3 + 4*i` in their natural Goldilocks representatives. -/
 structure MainStepIndexFixedFacts
     (numInstructions : Nat)
-    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program numInstructions)
+    (programLength : Nat)
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program programLength)
     (table : Air.Flat.Table FGL) : Prop where
   main_step_eq_index : ∀ i : Fin numInstructions,
     (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero program table i.val).rom.main_step =
@@ -95,16 +97,19 @@ structure MainStepIndexFixedFacts
 
 /-- Accepted committed trace for the full RV64IM Clean ensemble.
 
-    `numInstructions` is a **structure parameter** (not a field) so that
-    `root_soundness` can share one instruction count across the ZisK and Sail
-    sides (issue #144). The `AcceptedZiskTrace.numInstructions` accessor below
-    recovers it, so the many `trace.numInstructions` uses keep working
-    unchanged. -/
+    `numInstructions` is a **structure parameter** (not a field): it counts
+    executed steps and therefore remains shared with the Sail trace and
+    `root_soundness`. `programLength` is a dependent field because the committed
+    ROM can be longer than the executed trace, while loops can execute more steps
+    than the committed ROM has entries.
+    The `AcceptedZiskTrace.numInstructions` accessor below preserves existing
+    execution-indexed uses. -/
 structure AcceptedZiskTrace (numInstructions : Nat) where
-  program : ZiskFv.AirsClean.ZiskInstructionRom.Program numInstructions
+  programLength : Nat
+  program : ZiskFv.AirsClean.ZiskInstructionRom.Program programLength
   witness :
     Air.Flat.EnsembleWitness
-      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble numInstructions program).ensemble
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble programLength program).ensemble
   constraints_hold : witness.Constraints
   channels_balanced : witness.BalancedChannels
   /-- Guarded concrete mutable-Mem table for traces whose witness has mutable-Mem rows.
@@ -182,7 +187,7 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       row count — specialized to the derived `mainTable` by `mainTable_index`. -/
   main_height : ∀ table ∈ witness.allTables,
       table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus programLength program →
         ∀ i : Fin numInstructions, i.val < table.table.length
   /-- The Main execution table's `SEGMENT_L1` fixed column is `[1,0,0,...]`
       (`main.pil:19`): the first row is a segment boundary, every later row is
@@ -198,7 +203,7 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       `AcceptedZiskTrace.mainTable_fixed` specializes it to that table. -/
   segment_l1_fixed : ∀ table ∈ witness.allTables,
       table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus programLength program →
         (0 < table.table.length →
             (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 0 = 1) ∧
         (∀ idx : Fin table.table.length, 0 < idx.val →
@@ -214,8 +219,8 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       `AcceptedZiskTrace.mainTable_main_step_index_fixed`. -/
   main_step_index_fixed : ∀ table ∈ witness.allTables,
       table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions program →
-        MainStepIndexFixedFacts numInstructions program table
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus programLength program →
+        MainStepIndexFixedFacts numInstructions programLength program table
 
 /-- Recover the instruction count from a parameterized `AcceptedZiskTrace`.
     `numInstructions` is now a structure parameter rather than a field; this

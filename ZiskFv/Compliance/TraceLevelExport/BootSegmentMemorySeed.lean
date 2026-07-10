@@ -497,32 +497,32 @@ theorem BootSegmentReadSoundInputs.mem_executionRows_of_activeMainMutableStoreMe
     ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL) :=
   ZiskFv.AirsClean.Main.bMemMessageExpr
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-      numInstructions ziskTrace.program).rowInputVar
+      ziskTrace.programLength ziskTrace.program).rowInputVar
 
 @[reducible] def storeCMemMainMessage
     (ziskTrace : AcceptedZiskTrace numInstructions) :
     ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL) :=
   ZiskFv.AirsClean.Main.cMemMessageExpr
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-      numInstructions ziskTrace.program).rowInputVar
+      ziskTrace.programLength ziskTrace.program).rowInputVar
 
 @[reducible] def loadBMemMainMultiplicity
     (ziskTrace : AcceptedZiskTrace numInstructions) : Expression FGL :=
   -((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+        ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_mem
     + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+        ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_ind
     + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg)
+        ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_reg)
 
 @[reducible] def storeCMemMainMultiplicity
     (ziskTrace : AcceptedZiskTrace numInstructions) : Expression FGL :=
   -((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        numInstructions ziskTrace.program).rowInputVar.rom.store_mem
+        ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_mem
     + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        numInstructions ziskTrace.program).rowInputVar.rom.store_ind
+        ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_ind
     + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        numInstructions ziskTrace.program).rowInputVar.rom.store_reg)
+        ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_reg)
 
 @[reducible] noncomputable def loadBMemMainInteraction
     (ziskTrace : AcceptedZiskTrace numInstructions)
@@ -598,7 +598,7 @@ theorem AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry
   have h_row_eval :
       eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
           (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-            numInstructions ziskTrace.program).rowInputVar =
+            ziskTrace.programLength ziskTrace.program).rowInputVar =
         mainRowWithRomLd ziskTrace i := by
     simpa [loadBMemMainRow, mainRowWithRomLd] using
       (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
@@ -611,35 +611,35 @@ theorem AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry
       ZiskFv.AirsClean.Main.eval_bSourceSumExpr
         (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          numInstructions ziskTrace.program).rowInputVar
+          ziskTrace.programLength ziskTrace.program).rowInputVar
     have h_source_sum' :
         Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
             ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_mem
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_ind
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg) =
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_reg) =
           (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.b_src_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.b_src_mem
             + (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.b_src_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.b_src_ind
             + (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.b_src_reg := by
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.b_src_reg := by
       simpa using h_source_sum
     rw [loadBMemMainMultiplicity]
     change
       (-1 : FGL) *
           Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
             ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_mem
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_ind
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg) = -1
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_reg) = -1
     rw [h_source_sum', h_row_eval]
     simpa using h_active
   have h_active_interaction :
@@ -708,7 +708,7 @@ theorem AcceptedZiskTrace.memReplayRows_of_storeCMemProviderEntry
   have h_row_eval :
       eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
           (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-            numInstructions ziskTrace.program).rowInputVar =
+            ziskTrace.programLength ziskTrace.program).rowInputVar =
         mainRowWithRomSt ziskTrace i := by
     simpa [storeCMemMainRow, mainRowWithRomSt] using
       (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
@@ -721,35 +721,35 @@ theorem AcceptedZiskTrace.memReplayRows_of_storeCMemProviderEntry
       ZiskFv.AirsClean.Main.eval_cSourceSumExpr
         (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          numInstructions ziskTrace.program).rowInputVar
+          ziskTrace.programLength ziskTrace.program).rowInputVar
     have h_source_sum' :
         Expression.eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
             ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.store_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_mem
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.store_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_ind
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.store_reg) =
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_reg) =
           (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.store_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.store_mem
             + (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.store_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.store_ind
             + (eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.store_reg := by
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.store_reg := by
       simpa using h_source_sum
     rw [storeCMemMainMultiplicity]
     change
       (-1 : FGL) *
           Expression.eval (ziskTrace.mainTable.environment (storeCMemMainRow ziskTrace i))
             ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.store_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_mem
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.store_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_ind
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.store_reg) = -1
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.store_reg) = -1
     rw [h_source_sum', h_row_eval]
     simpa using h_active
   have h_active_interaction :
@@ -844,7 +844,7 @@ theorem AcceptedZiskTrace.memReplayRows_of_loadBMemProviderEntry_of_no_nonmutabl
   have h_row_eval :
       eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
           (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-            numInstructions ziskTrace.program).rowInputVar =
+            ziskTrace.programLength ziskTrace.program).rowInputVar =
         mainRowWithRomLd ziskTrace i := by
     simpa [loadBMemMainRow, mainRowWithRomLd] using
       (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
@@ -963,7 +963,7 @@ theorem AcceptedZiskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderE
   have h_row_eval :
       eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
           (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-            numInstructions ziskTrace.program).rowInputVar =
+            ziskTrace.programLength ziskTrace.program).rowInputVar =
         mainRowWithRomLd ziskTrace i := by
     simpa [loadBMemMainRow, mainRowWithRomLd] using
       (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
@@ -976,35 +976,35 @@ theorem AcceptedZiskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderE
       ZiskFv.AirsClean.Main.eval_bSourceSumExpr
         (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          numInstructions ziskTrace.program).rowInputVar
+          ziskTrace.programLength ziskTrace.program).rowInputVar
     have h_source_sum' :
         Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
             ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_mem
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_ind
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg) =
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_reg) =
           (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.b_src_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.b_src_mem
             + (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.b_src_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.b_src_ind
             + (eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar).rom.b_src_reg := by
+                ziskTrace.programLength ziskTrace.program).rowInputVar).rom.b_src_reg := by
       simpa using h_source_sum
     rw [loadBMemMainMultiplicity]
     change
       (-1 : FGL) *
           Expression.eval (ziskTrace.mainTable.environment (loadBMemMainRow ziskTrace i))
             ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_mem
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_mem
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_ind
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_ind
               + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                numInstructions ziskTrace.program).rowInputVar.rom.b_src_reg) = -1
+                ziskTrace.programLength ziskTrace.program).rowInputVar.rom.b_src_reg) = -1
     rw [h_source_sum', h_row_eval]
     simpa using h_active
   have h_active_interaction :

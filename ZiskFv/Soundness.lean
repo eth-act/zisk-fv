@@ -18,12 +18,11 @@ namespace ZiskFv.Compliance
     An AcceptedZiskTrace is a set of constraints, and a witness that satisfies those constraints and the
     channel balancing constraint enfoced in the proving system through a lookup argument.
 
-    A SailTrace is a choice of which table in the witness is the Main execution table, together
-    with the sequence of Sail machine states the program steps through and the facts that pin that
-    table into the witness : that it really occurs in it, that it really is the Main component, and
-    that it has one row per instruction.
+    A SailTrace is the sequence of Sail machine states for the executed steps. The Main execution
+    table is derived from the witness and has a row for every executed step; its physical row count
+    and the committed ROM length may both be larger than that executed-step count.
 
-    For each instruction i the per-step hypotheses split three ways:
+    For each executed step i the per-step hypotheses split three ways:
     `ziskStep` is what the ZisK machine did (its decoded op + operand/dest
     indices + committed bus row); `programDecodes` is the circuit-checkable fact
     that the row is a well-formed instance of that op, stated about the

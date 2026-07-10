@@ -2,5 +2,10 @@ import ZiskFv.Compliance.AddSpinRootSoundness
 import ZiskFv.Compliance.SingleAddWitness
 
 #print axioms ZiskFv.Compliance.AddSpinRootSoundness.addSpinRootSoundness
+#print axioms ZiskFv.Compliance.AddSpinWitness.addPaddedAcceptedTrace
+#print axioms ZiskFv.Compliance.AddSpinRootSoundness.addPaddedRootSoundness
+#print axioms ZiskFv.Compliance.AddSpinRootSoundness.addPaddedAddStepSound
+#print axioms ZiskFv.Compliance.AddSpinRootSoundness.addPaddedSuccessorRow_hasCommittedLookup
+#print axioms ZiskFv.Compliance.AddSpinRootSoundness.addPaddedSuccessorRow_isCommittedJal
 #print axioms ZiskFv.Compliance.SingleAddWitness.singleAddAcceptedTrace
 #print axioms ZiskFv.Compliance.SingleAddWitness.singleAddWitness_balancedChannels

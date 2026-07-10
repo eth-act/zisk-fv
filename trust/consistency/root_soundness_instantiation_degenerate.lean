@@ -153,7 +153,7 @@ private theorem wit_main_step_index_fixed :
     ∀ table ∈ wit.allTables,
       table.component =
           ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 0 prog →
-        MainStepIndexFixedFacts 0 prog table := by
+        MainStepIndexFixedFacts 0 0 prog table := by
   intro table hmem hcomp
   exact
     { main_step_eq_index := fun i => i.elim0
@@ -164,6 +164,7 @@ private theorem wit_main_step_index_fixed :
 /-- The degenerate accepted trace: empty program, all-empty witness, trivial
     channel balance, vacuous transition / row-height / segment-fixed obligations. -/
 private def trace : AcceptedZiskTrace 0 where
+  programLength := 0
   program := prog
   witness := wit
   constraints_hold := wit_constraints
