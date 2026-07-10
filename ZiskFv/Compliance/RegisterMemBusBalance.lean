@@ -116,6 +116,70 @@ theorem pairedInteractions_balanced
       exact balancedInteractions_append_of_balanced
         (pairedInteraction_balanced msg) (ih h_rest_len) (by simpa [pairedInteractions] using h_len)
 
+/-! ## Register-access telescoping -/
+
+/-- The real-emission order for successive accesses to one register. The boundary component emits
+    the initial pull and final push first; every Main access then pushes its previous state and
+    pulls its current state. -/
+def registerAccessChain (previous : MemBusMessage FGL) :
+    List (MemBusMessage FGL) → List (Interaction FGL)
+  | [] => []
+  | current :: rest =>
+      [MemBusChannel.pushedValue previous, MemBusChannel.pulledValue current] ++
+        registerAccessChain current rest
+
+/-- The last state in a nonempty register history represented by its first state and tail. -/
+def registerLastMessage (first : MemBusMessage FGL) :
+    List (MemBusMessage FGL) → MemBusMessage FGL
+  | [] => first
+  | current :: rest => registerLastMessage current rest
+
+/-- Boundary emissions followed by the Main access chain for one register. -/
+def registerTelescopingInteractions
+    (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL)) :
+    List (Interaction FGL) :=
+  [MemBusChannel.pulledValue first,
+    MemBusChannel.pushedValue (registerLastMessage first rest)] ++
+      registerAccessChain first rest
+
+/-- A register history contains one pull and one push of every state, independently of the
+    boundary-first real-emission order. -/
+theorem registerTelescopingInteractions_perm
+    (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL)) :
+    List.Perm (registerTelescopingInteractions first rest)
+      (pairedInteractions (first :: rest)) := by
+  induction rest generalizing first with
+  | nil =>
+      rfl
+  | cons current rest ih =>
+      have h_rotate :
+          List.Perm (registerTelescopingInteractions first (current :: rest))
+            (pairedInteraction first ++ registerTelescopingInteractions current rest) := by
+        simp only [registerTelescopingInteractions, registerLastMessage, registerAccessChain,
+          pairedInteraction]
+        exact List.Perm.cons _ <|
+          (List.Perm.swap _ _ _).trans (List.Perm.cons _ (List.Perm.swap _ _ _))
+      have h_tail :
+          List.Perm (pairedInteraction first ++ registerTelescopingInteractions current rest)
+            (pairedInteraction first ++ pairedInteractions (current :: rest)) :=
+        List.Perm.append (List.Perm.refl _) (ih current)
+      exact h_rotate.trans h_tail
+
+/-- The N-access register telescope balances once its finite interaction count fits in the field. -/
+theorem registerTelescopingInteractions_balanced
+    (first : MemBusMessage FGL) (rest : List (MemBusMessage FGL))
+    (h_len :
+      (registerTelescopingInteractions first rest).length < ringChar FGL ∨
+        ringChar FGL = 0) :
+    BalancedInteractions (registerTelescopingInteractions first rest) := by
+  have h_perm := registerTelescopingInteractions_perm first rest
+  have h_paired_len :
+      (pairedInteractions (first :: rest)).length < ringChar FGL ∨ ringChar FGL = 0 := by
+    rw [← h_perm.length_eq]
+    exact h_len
+  exact balancedInteractions_of_perm
+    (pairedInteractions_balanced (first :: rest) h_paired_len) h_perm.symm
+
 /-! ## The concrete `add x1,x1,x1` row and boundary rows -/
 
 /-- The concrete register-register `add x1,x1,x1` Main row.  Register operands x1: the six MemBus
