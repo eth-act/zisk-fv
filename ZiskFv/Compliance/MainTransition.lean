@@ -63,11 +63,11 @@ theorem AcceptedZiskTrace.mainTransition_to_next_pc
       ((mainOfTable trace.program trace.mainTable).pc (i + 1)) := by
   have h_trans := trace.transitions_hold trace.mainTable trace.mainTable_mem i h_idx
   have hcomp : trace.mainTable.component
-      = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus n trace.program :=
+      = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength trace.program :=
     trace.mainTable_component
   rw [hcomp] at h_trans
   have hproj :
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus n trace.program).transition
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength trace.program).transition
         = ZiskFv.AirsClean.Main.pcHandshakeBetween := rfl
   rw [hproj,
       rowInput_eq_mainTableRowAtOrZero trace.program trace.mainTable i (by omega),

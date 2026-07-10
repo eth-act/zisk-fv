@@ -687,7 +687,7 @@ trust surface even though they add no axiom.
 
 | Field (`Compliance/AcceptedZiskTrace.lean`) | PIL source | What it certifies |
 |---|---|---|
-| `main_height` (pre-existing) | — | the Main table has a row for every instruction (`i < length`) |
+| `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
 | `main_step_index_fixed` (**#115**) | `main.pil:90` (`STEP = main_segment*N + SEGMENT_STEP`) | the Main `main_step` companion column is pinned to the Main row index, with no-wrap evidence for the `2+4*i` / `3+4*i` memory timestamp offsets; this single fixed-column-class certificate replaces the two anticipated step-counter residues (`MainStepDistinct`, `CrossOffsetSeparated`) and also supports target execution chronology |
@@ -737,12 +737,14 @@ class rather than `constraints_hold`'s.
 
 **Within-segment boundary (explicit).** `mainTransition_to_next_pc`
 (`Compliance/MainTransition.lean`) requires `i + 1 < mainTable.table.length` — a
-*successor* Main row must exist — surfaced as the per-opcode `h_idx`. `main_height`
-only gives `i < length`, so for the final instruction this needs
-`numInstructions < length` (a real ZisK segment is padded to its fixed power-of-two
-row count, so a successor row exists). When the segment is exactly full
-(`numInstructions = length`) the final instruction has no within-segment successor;
-its next-PC is the cross-segment continuation (`main.pil:501-529`), which is
+*physical Main-row successor* must exist — surfaced as the per-opcode `h_idx`.
+`main_height` only gives a row for each executed step, so the final executed step
+needs an additional physical Main row. This condition is separate from committed
+ROM length: Main's in-circuit lookup ranges over the full `programLength`, while
+the Sail trace and `root_soundness` range over executed steps. The #245 regression
+has one executed ADD step, a two-entry committed ADD/JAL ROM, and a faithful JAL
+lookup at the physical successor row. When no within-segment successor exists,
+the final next-PC is the cross-segment continuation (`main.pil:501-529`), which is
 **out of #100 scope = #103**. This is an applicability boundary, not an
 unsoundness: where `h_idx` holds the discharge is exact; where it does not, the
 final-row next-PC is a named #103 residual.

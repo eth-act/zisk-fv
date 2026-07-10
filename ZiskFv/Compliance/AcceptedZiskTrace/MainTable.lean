@@ -31,11 +31,11 @@ theorem AcceptedZiskTrace.mainTable_mem (trace : AcceptedZiskTrace n) :
 theorem AcceptedZiskTrace.mainTable_component (trace : AcceptedZiskTrace n) :
     trace.mainTable.component =
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        trace.numInstructions trace.program :=
+        trace.programLength trace.program :=
   (ZiskFv.AirsClean.FullEnsemble.exists_main_table_of_fullRv64im_witness
     trace.witness).choose_spec.2
 
-/-- The derived Main table has a row for every instruction — `main_height`
+/-- The derived Main table has a row for every executed step — `main_height`
     specialized to `mainTable` via its membership and component facts. -/
 theorem AcceptedZiskTrace.mainTable_index (trace : AcceptedZiskTrace n) :
     ∀ i : Fin trace.numInstructions, i.val < trace.mainTable.table.length :=
@@ -44,7 +44,7 @@ theorem AcceptedZiskTrace.mainTable_index (trace : AcceptedZiskTrace n) :
 /-- The accepted-trace Main `main_step` row-index certificate specialized to
     the derived Main table. -/
 theorem AcceptedZiskTrace.mainTable_main_step_index_fixed (trace : AcceptedZiskTrace n) :
-    MainStepIndexFixedFacts trace.numInstructions trace.program trace.mainTable :=
+    MainStepIndexFixedFacts trace.numInstructions trace.programLength trace.program trace.mainTable :=
   trace.main_step_index_fixed trace.mainTable trace.mainTable_mem trace.mainTable_component
 
 end ZiskFv.Compliance

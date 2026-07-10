@@ -330,7 +330,7 @@ theorem addX1Main_main_step_eq_index :
   rfl
 
 theorem addX1Main_main_step_index_fixed :
-    MainStepIndexFixedFacts 1 addX1Program
+    MainStepIndexFixedFacts 1 1 addX1Program
       (mainSingleRowTable 1 addX1Program addX1Row) where
   main_step_eq_index := addX1Main_main_step_eq_index
   timestamp_bound := by
@@ -351,7 +351,7 @@ theorem addX1Main_main_step_index_fixed :
 theorem singleAddWitness_main_step_index_fixed :
     ∀ table ∈ singleAddWitness.allTables,
       table.component = componentWithRomMemAndOpBus 1 addX1Program →
-        MainStepIndexFixedFacts 1 addX1Program table := by
+        MainStepIndexFixedFacts 1 1 addX1Program table := by
   intro table h_table h_component
   have h_main := singleAddWitness_main_component_cases h_table h_component
   subst table
@@ -481,6 +481,7 @@ theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels :=
   · exact singleAddWitness_opBus_balanced
 
 def singleAddAcceptedTrace : AcceptedZiskTrace 1 where
+  programLength := 1
   program := addX1Program
   witness := singleAddWitness
   constraints_hold := singleAddWitness_constraints

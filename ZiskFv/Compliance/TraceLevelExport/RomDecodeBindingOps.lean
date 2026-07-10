@@ -41,7 +41,7 @@ set_option maxHeartbeats 1000000
 theorem mainRomColumns_at_eq_program
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
     (idx : Fin trace.mainTable.table.length) :
-    ∃ j : Fin trace.numInstructions,
+    ∃ j : Fin trace.programLength,
       (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc idx.val
     ∧ (trace.program j).op = (mainOfTable trace.program trace.mainTable).op idx.val
     ∧ (trace.program j).ind_width
@@ -65,7 +65,7 @@ theorem mainRomColumns_at_eq_program
 theorem mainStoreOffset_at_eq_program
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
     (idx : Fin trace.mainTable.table.length) :
-    ∃ j : Fin trace.numInstructions,
+    ∃ j : Fin trace.programLength,
       (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc idx.val
     ∧ (trace.program j).store_offset
         = (mainTableRowAtOrZero trace.program trace.mainTable idx.val).rom.store_offset := by
@@ -78,7 +78,7 @@ theorem mainStoreOffset_at_eq_program
 theorem mainBOffsetImm0_at_eq_program
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
     (idx : Fin trace.mainTable.table.length) :
-    ∃ j : Fin trace.numInstructions,
+    ∃ j : Fin trace.programLength,
       (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc idx.val
     ∧ (trace.program j).b_offset_imm0
         = (mainTableRowAtOrZero trace.program trace.mainTable idx.val).rom.b_offset_imm0 := by
@@ -160,7 +160,7 @@ theorem mainBImmediateSourceFacts_of_program
     (bits : RomFlagBits)
     (imm : BitVec 12)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           BitVec.signExtend 64 imm
@@ -249,7 +249,7 @@ theorem mainWritebackDestinationFacts_of_program
     (bits : RomFlagBits)
     (rd : regidx)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).store_offset = Transpiler.ind (regidx_to_fin rd)
@@ -283,7 +283,7 @@ theorem mainLuiDestinationFacts_of_program
     (bits : RomFlagBits)
     (rd : regidx)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).store_offset = Transpiler.ind (regidx_to_fin rd)
@@ -324,7 +324,7 @@ def Decode_sub_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SUB
@@ -389,7 +389,7 @@ def Decode_and_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_AND
@@ -445,7 +445,7 @@ def Decode_or_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_OR
@@ -501,7 +501,7 @@ def Decode_xor_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_XOR
@@ -557,7 +557,7 @@ def Decode_slt_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
@@ -613,7 +613,7 @@ def Decode_sltu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
@@ -670,7 +670,7 @@ def Decode_andi_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_AND
@@ -738,7 +738,7 @@ def Decode_ori_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_OR
@@ -806,7 +806,7 @@ def Decode_xori_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_XOR
@@ -874,7 +874,7 @@ def Decode_slti_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
@@ -942,7 +942,7 @@ def Decode_sltiu_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
@@ -1010,7 +1010,7 @@ def Decode_addi_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_ADD
@@ -1089,7 +1089,7 @@ def Decode_sll_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SLL
@@ -1145,7 +1145,7 @@ def Decode_srl_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRL
@@ -1201,7 +1201,7 @@ def Decode_sra_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRA
@@ -1260,7 +1260,7 @@ def Decode_slli_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SLL
@@ -1320,7 +1320,7 @@ def Decode_srli_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRL
@@ -1380,7 +1380,7 @@ def Decode_srai_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRA
@@ -1440,7 +1440,7 @@ def Decode_subw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SUB_W
@@ -1496,7 +1496,7 @@ def Decode_addw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_ADD_W
@@ -1553,7 +1553,7 @@ def Decode_addiw_of_program
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_b_src_imm : bits.b_src_imm = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_ADD_W
@@ -1620,7 +1620,7 @@ def Decode_sllw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SLL_W
@@ -1676,7 +1676,7 @@ def Decode_srlw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRL_W
@@ -1732,7 +1732,7 @@ def Decode_sraw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRA_W
@@ -1788,7 +1788,7 @@ def Decode_slliw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SLL_W
@@ -1844,7 +1844,7 @@ def Decode_srliw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRL_W
@@ -1900,7 +1900,7 @@ def Decode_sraiw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SRA_W
@@ -1959,7 +1959,7 @@ def Decode_mulw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MUL_W
@@ -2021,7 +2021,7 @@ def Decode_mul_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MUL
@@ -2085,7 +2085,7 @@ def Decode_mulh_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MULH
@@ -2149,7 +2149,7 @@ def Decode_mulhsu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MULSUH
@@ -2213,7 +2213,7 @@ def Decode_div_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_DIV
@@ -2278,7 +2278,7 @@ def Decode_rem_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_REM
@@ -2343,7 +2343,7 @@ def Decode_divw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_DIV_W
@@ -2408,7 +2408,7 @@ def Decode_remw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_REM_W
@@ -2469,7 +2469,7 @@ def Decode_mulhu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_MULUH
@@ -2528,7 +2528,7 @@ def Decode_divu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_DIVU
@@ -2587,7 +2587,7 @@ def Decode_divuw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_DIVU_W
@@ -2646,7 +2646,7 @@ def Decode_remu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_REMU
@@ -2705,7 +2705,7 @@ def Decode_remuw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_REMU_W
@@ -2762,7 +2762,7 @@ theorem mainLoadDestinationFacts_of_program
     (rd : BitVec 5)
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 rd)
@@ -2798,7 +2798,7 @@ theorem mainLoadBsrcInd_of_program
     (h_lt : i.val < trace.mainTable.table.length)
     (bits : RomFlagBits)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).flags = packFlags bits) :
@@ -2829,7 +2829,7 @@ def Decode_ld_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -2917,7 +2917,7 @@ def Decode_lbu_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -2990,7 +2990,7 @@ def Decode_lhu_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3063,7 +3063,7 @@ def Decode_lwu_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3152,7 +3152,7 @@ def Decode_lb_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SIGNEXTEND_B
@@ -3247,7 +3247,7 @@ def Decode_lh_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SIGNEXTEND_H
@@ -3342,7 +3342,7 @@ def Decode_lw_of_program
     (h_bits_store_ind : bits.store_ind = false)
     (h_bits_store_reg : bits.store_reg = true)
     (h_bits_b_src_ind : bits.b_src_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_SIGNEXTEND_W
@@ -3422,7 +3422,7 @@ def Decode_sb_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3487,7 +3487,7 @@ def Decode_sh_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3552,7 +3552,7 @@ def Decode_sw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3617,7 +3617,7 @@ def Decode_sd_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3689,7 +3689,7 @@ def Decode_lui_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_COPYB
@@ -3746,7 +3746,7 @@ def Decode_auipc_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = true)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
@@ -3810,7 +3810,7 @@ def Decode_beq_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_EQ
@@ -3863,7 +3863,7 @@ def Decode_bne_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_EQ
@@ -3916,7 +3916,7 @@ def Decode_blt_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
@@ -3969,7 +3969,7 @@ def Decode_bge_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
@@ -4022,7 +4022,7 @@ def Decode_bltu_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
@@ -4075,7 +4075,7 @@ def Decode_bgeu_of_program
     (h_bits_m32 : bits.m32 = false)
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
@@ -4132,7 +4132,7 @@ def Decode_jal_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = true)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
@@ -4214,7 +4214,7 @@ def Decode_jalr_of_program
     (h_bits_set_pc : bits.set_pc = true)
     (h_bits_store_pc : bits.store_pc = true)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_AND
@@ -4279,7 +4279,7 @@ def Decode_fence_of_program
     (bits : RomFlagBits)
     (h_bits_ieo : bits.is_external_op = false)
     (h_bits_set_pc : bits.set_pc = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG

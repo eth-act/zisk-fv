@@ -605,7 +605,7 @@ private theorem addAddiSpinMain_main_step_eq_index :
           (addAddiSpinJalRow 2))
 
 private theorem addAddiSpinMain_main_step_index_fixed :
-    MainStepIndexFixedFacts 3 addAddiSpinProgram addAddiSpinMainTable where
+    MainStepIndexFixedFacts 3 3 addAddiSpinProgram addAddiSpinMainTable where
   main_step_eq_index := addAddiSpinMain_main_step_eq_index
   timestamp_bound := by
     intro i
@@ -632,7 +632,7 @@ private theorem addAddiSpinMain_main_step_index_fixed :
 theorem addAddiSpinWitness_main_step_index_fixed :
     ∀ table ∈ addAddiSpinWitness.allTables,
       table.component = componentWithRomMemAndOpBus 3 addAddiSpinProgram →
-        MainStepIndexFixedFacts 3 addAddiSpinProgram table := by
+        MainStepIndexFixedFacts 3 3 addAddiSpinProgram table := by
   intro table h_table h_component
   have h_main := addAddiSpinWitness_main_component_cases h_table h_component
   subst table
@@ -1041,6 +1041,7 @@ theorem addAddiSpinWitness_balancedChannels : addAddiSpinWitness.BalancedChannel
   · exact addAddiSpinWitness_opBus_balanced
 
 def addAddiSpinAcceptedTrace : AcceptedZiskTrace 3 where
+  programLength := 3
   program := addAddiSpinProgram
   witness := addAddiSpinWitness
   constraints_hold := addAddiSpinWitness_constraints

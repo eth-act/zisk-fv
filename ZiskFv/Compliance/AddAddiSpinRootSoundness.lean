@@ -98,7 +98,10 @@ def addAddiSpinBootSeed :
     exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_nonempty
   placement := by
     intro i
-    fin_cases i <;> trivial
+    fin_cases i <;> simp [MemoryOpPlacement, addAddiSpinZiskStep]
+
+private theorem addAddiSpinAcceptedTrace_program :
+    addAddiSpinAcceptedTrace.program = addAddiSpinProgram := rfl
 
 private theorem addAddiSpinMainRowAt_zero :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addAddiSpinProgram
@@ -197,6 +200,7 @@ def addAddiSpinAddProgramDecode :
   h_bits_store_ind := by simp [addAddiSpinAddBits, addX1RomFlagBits]
   h_prog := by
     intro j hline
+    change Fin 3 at j
     fin_cases j
     · simp only [addAddiSpinAcceptedTrace, addAddiSpinProgram]
       constructor
@@ -212,10 +216,12 @@ def addAddiSpinAddProgramDecode :
           ZiskFv.AirsClean.Main.packFlags, addAddiSpinAddBits, addX1RomFlagBits,
           ZiskFv.AirsClean.boolF]
     · rw [addAddiSpinMainPc_add] at hline
+      rw [addAddiSpinAcceptedTrace_program] at hline
       norm_num [addAddiSpinAcceptedTrace, addAddiSpinProgram,
         addAddiSpinAddiProgramRow] at hline
       exact absurd (congrArg (fun value : FGL => value.val) hline) (by norm_num)
     · rw [addAddiSpinMainPc_add] at hline
+      rw [addAddiSpinAcceptedTrace_program] at hline
       norm_num [addAddiSpinAcceptedTrace, addAddiSpinProgram,
         addAddiSpinJalProgramRow] at hline
       exact absurd (congrArg (fun value : FGL => value.val) hline) (by norm_num)
@@ -235,8 +241,10 @@ def addAddiSpinAddiProgramDecode :
   h_bits_b_src_imm := by rfl
   h_prog := by
     intro j hline
+    change Fin 3 at j
     fin_cases j
     · rw [addAddiSpinMainPc_addi] at hline
+      rw [addAddiSpinAcceptedTrace_program] at hline
       norm_num [addAddiSpinAcceptedTrace, addAddiSpinProgram,
         addAddiSpinAddProgramRow, addX1ProgramRow] at hline
       exact absurd (congrArg (fun value : FGL => value.val) hline) (by norm_num)
@@ -255,6 +263,7 @@ def addAddiSpinAddiProgramDecode :
       · norm_num [addAddiSpinAddiProgramRow, ZiskFv.AirsClean.Main.packFlags,
           addAddiSpinAddiBits, ZiskFv.AirsClean.boolF]
     · rw [addAddiSpinMainPc_addi] at hline
+      rw [addAddiSpinAcceptedTrace_program] at hline
       norm_num [addAddiSpinAcceptedTrace, addAddiSpinProgram,
         addAddiSpinJalProgramRow] at hline
       exact absurd (congrArg (fun value : FGL => value.val) hline) (by norm_num)
@@ -273,12 +282,15 @@ def addAddiSpinJalProgramDecode :
   h_bits_store_ind := by rfl
   h_prog := by
     intro j hline
+    change Fin 3 at j
     fin_cases j
     · rw [addAddiSpinMainPc_jal] at hline
+      rw [addAddiSpinAcceptedTrace_program] at hline
       norm_num [addAddiSpinAcceptedTrace, addAddiSpinProgram,
         addAddiSpinAddProgramRow, addX1ProgramRow] at hline
       exact absurd (congrArg (fun value : FGL => value.val) hline) (by norm_num)
     · rw [addAddiSpinMainPc_jal] at hline
+      rw [addAddiSpinAcceptedTrace_program] at hline
       norm_num [addAddiSpinAcceptedTrace, addAddiSpinProgram,
         addAddiSpinAddiProgramRow] at hline
       exact absurd (congrArg (fun value : FGL => value.val) hline) (by norm_num)

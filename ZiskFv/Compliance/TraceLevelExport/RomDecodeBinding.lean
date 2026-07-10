@@ -70,7 +70,7 @@ feeds `romSpec_of_componentWithRomMemAndOpBus_constraints`. -/
 theorem mainOperationsConstraintsHold_at
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
     (idx : Fin trace.mainTable.table.length) :
-    (componentWithRomMemAndOpBus numInstructions trace.program).operations.ConstraintsHold
+    (componentWithRomMemAndOpBus trace.programLength trace.program).operations.ConstraintsHold
       (trace.mainTable.environment (trace.mainTable.table.get idx)) := by
   have h_tableConstraints : trace.mainTable.Constraints :=
     trace.constraints_hold trace.mainTable trace.mainTable_mem
@@ -90,7 +90,7 @@ theorem mainAddressSpec_at
   have h_holds := mainOperationsConstraintsHold_at trace idx
   have h_spec :=
     ZiskFv.AirsClean.Main.addressSpec_of_componentWithRomMemAndOpBus_constraints
-      numInstructions trace.program
+      trace.programLength trace.program
       (trace.mainTable.environment (trace.mainTable.table.get idx)) h_holds
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get trace.program trace.mainTable idx]
   exact h_spec
@@ -105,7 +105,7 @@ theorem mainSourceSpec_at
   have h_holds := mainOperationsConstraintsHold_at trace idx
   have h_spec :=
     ZiskFv.AirsClean.Main.sourceSpec_of_componentWithRomMemAndOpBus_constraints
-      numInstructions trace.program
+      trace.programLength trace.program
       (trace.mainTable.environment (trace.mainTable.table.get idx)) h_holds
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get trace.program trace.mainTable idx]
   exact h_spec
@@ -172,13 +172,13 @@ in-circuit ROM lookup. It is opcode-agnostic and reused by every per-op
 theorem mainRomMessage_at_eq_program
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
     (idx : Fin trace.mainTable.table.length) :
-    ∃ j : Fin trace.numInstructions,
+    ∃ j : Fin trace.programLength,
       romMessage (mainTableRowAtOrZero trace.program trace.mainTable idx.val)
         = trace.program j := by
   have h_holds := mainOperationsConstraintsHold_at trace idx
   have h_spec :=
     ZiskFv.AirsClean.Main.romSpec_of_componentWithRomMemAndOpBus_constraints
-      numInstructions trace.program
+      trace.programLength trace.program
       (trace.mainTable.environment (trace.mainTable.table.get idx)) h_holds
   simp only [ZiskFv.AirsClean.ZiskInstructionRom.romStaticTable] at h_spec
   obtain ⟨j, hj⟩ := h_spec
@@ -196,7 +196,7 @@ equal the entry's `flags` (the flag pins are unpacked separately). -/
 theorem mainDecodeColumns_at_eq_program
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
     (idx : Fin trace.mainTable.table.length) :
-    ∃ j : Fin trace.numInstructions,
+    ∃ j : Fin trace.programLength,
       (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc idx.val
     ∧ (trace.program j).op = (mainOfTable trace.program trace.mainTable).op idx.val
     ∧ (trace.program j).jmp_offset1
@@ -320,18 +320,18 @@ theorem mainRow_flags_boolean
   intro r
   have h_holds := mainOperationsConstraintsHold_at trace idx
   have h_ieo := ZiskFv.AirsClean.Main.is_external_op_boolean_of_componentWithRomMemAndOpBus_constraints
-    numInstructions trace.program _ h_holds
+    trace.programLength trace.program _ h_holds
   obtain ⟨h_m32, h_set_pc, h_store_pc, h_a_src_imm, h_a_src_mem, h_is_precompiled,
     h_b_src_imm, h_b_src_mem, h_store_mem, h_store_ind, h_b_src_ind, h_a_src_reg,
     h_b_src_reg, h_store_reg⟩ :=
     ZiskFv.AirsClean.Main.romBoolSpec_of_componentWithRomMemAndOpBus_constraints
-      numInstructions trace.program _ h_holds
+      trace.programLength trace.program _ h_holds
   obtain ⟨b_ieo, b_m32, b_set_pc, b_store_pc, b_a_src_imm, b_a_src_mem,
     b_is_precompiled, b_b_src_imm, b_b_src_mem, b_store_mem, b_store_ind,
     b_b_src_ind, b_a_src_reg, b_b_src_reg, b_store_reg⟩ :=
     ZiskFv.AirsClean.Main.eval_flagBool_bridge
       (trace.mainTable.environment (trace.mainTable.table.get idx))
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar
   show r.core.is_external_op * _ = 0 ∧ _
   rw [show r = _ from ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
     trace.program trace.mainTable idx]
@@ -433,11 +433,11 @@ theorem mainRowWithRomLd_bMemInteraction_mem
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) :
     (((MemBusChannel.emitted
-      (-((componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_mem
-        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_ind
-        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.b_src_reg))
+      (-((componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.b_src_mem
+        + (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.b_src_ind
+        + (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.b_src_reg))
       (ZiskFv.AirsClean.Main.bMemMessageExpr
-        (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
+        (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).toRaw).eval
       (trace.mainTable.environment
         (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
       ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw := by
@@ -458,11 +458,11 @@ theorem mainRowWithRomSt_cMemInteraction_mem
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) :
     (((MemBusChannel.emitted
-      (-((componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_mem
-        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_ind
-        + (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar.rom.store_reg))
+      (-((componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_mem
+        + (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_ind
+        + (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_reg))
       (ZiskFv.AirsClean.Main.cMemMessageExpr
-        (componentWithRomMemAndOpBus numInstructions trace.program).rowInputVar)).toRaw).eval
+        (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).toRaw).eval
       (trace.mainTable.environment
         (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
       ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw := by
@@ -803,7 +803,7 @@ def Decode_add_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_prog : ∀ j : Fin numInstructions,
+    (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_ADD
