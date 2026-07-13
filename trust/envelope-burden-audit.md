@@ -218,7 +218,7 @@ The blocker is a **cross-row ceiling** in the live model:
 - The live `Air.Flat.Component` model evaluates each row independently. The
   component is defined as "one circuit whose constraints are checked
   independently on each row. There are no direct adjacent-row constraints"
-  (`build/clean-lean/Clean/Air/FlatComponent.lean:7-10`), and
+  (`Clean/Air/FlatComponent.lean:7-10` in the pinned Git package), and
   `Table.environment row = Environment.fromArray row table.data`
   (`FlatComponent.lean:149-150`) is built from a **single row**;
   `EnsembleWitness.Constraints` ranges over `∀ row, … ConstraintsHold

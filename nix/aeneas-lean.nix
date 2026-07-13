@@ -1,10 +1,9 @@
 { aeneas, runCommand }:
 
 # Materialize the Aeneas Lean runtime (`backends/lean` from the pinned
-# `aeneas` flake input) into a derivation output that `nix run .#populate`
-# copies to `build/aeneas-lean/`. Lake reads it via a path-based
-# `[[require]]` in lakefile.toml — same pattern as `build/clean-lean/`
-# (nix/clean.nix) and `build/sail-lean/`.
+# `aeneas` flake input) into a derivation output for the Git-distribution
+# Lean-input snapshot. The root Lake graph consumes that snapshot, rather than
+# a worktree-local path.
 #
 # Unlike Clean (whose pinned commit already targets Lean/Mathlib v4.28.0),
 # the pinned Aeneas commit (a2fcf1923d, the last v4.28.0-rc1 commit; see
@@ -16,16 +15,13 @@
 #   - lakefile.lean mathlib req: @ "v4.28.0-rc1" -> @ "${mathlibRev}"
 #
 # IMPORTANT: `mathlibRev` MUST equal the Mathlib rev pinned by zisk-fv's
-# ROOT `lake-manifest.json`. When consumed as a `path` dependency, the
-# ROOT manifest governs all transitive (Mathlib/aesop/...) resolution, so
-# the aeneas `require mathlib` must agree with it for the shared Mathlib
-# oleans to be reused (no duplicate Mathlib build). Bump this in lockstep
-# whenever the root Mathlib pin moves.
+# root Lake graph. The outer snapshot package owns resolution, but its
+# Aeneas source remains independently auditable against that same revision.
+# Bump this in lockstep whenever the root Mathlib pin moves.
 #
-# The pristine `backends/lean/lake-manifest.json` (Mathlib 5352afcc) is
-# copied through unchanged: it is NOT load-bearing here (the root manifest
-# wins for path deps), mirroring how nix/clean.nix copies Clean's manifest
-# verbatim.
+# The pristine `backends/lean/lake-manifest.json` pins an rc1-era Mathlib
+# revision. Remove it: a standalone snapshot package must resolve from its
+# own root manifest rather than accidentally retain the stale nested lock.
 #
 # We DO NOT pre-build oleans inside Nix: Lake's Mathlib fetch needs network,
 # which the Nix sandbox blocks. The main project's `lake build` compiles
@@ -44,7 +40,7 @@ runCommand "aeneas-lean-source" {
   version = "git-${builtins.substring 0 7 aeneas.rev}";
 
   meta = {
-    description = "Patched Aeneas Lean runtime (backends/lean) for path-based Lake require";
+    description = "Patched Aeneas Lean runtime (backends/lean) for the Git-distribution snapshot";
     homepage = "https://github.com/AeneasVerif/aeneas";
   };
 } ''
@@ -63,4 +59,6 @@ runCommand "aeneas-lean-source" {
     exit 1
   fi
   sed -i 's#@ "v4.28.0-rc1"#@ "${mathlibRev}"#' $out/lakefile.lean
+
+  rm -f $out/lake-manifest.json
 ''

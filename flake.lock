@@ -29,6 +29,23 @@
         "type": "github"
       }
     },
+    "aristotle-inputs-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783978406,
+        "narHash": "sha256-GzItjNSia2hvli5LtuBHFkExh/g/XtXXxWDhifnh8us=",
+        "owner": "eth-act",
+        "repo": "zisk-fv-lean-inputs",
+        "rev": "087a0de2c9869c121788667f0f90cb8957a13d14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "eth-act",
+        "repo": "zisk-fv-lean-inputs",
+        "rev": "087a0de2c9869c121788667f0f90cb8957a13d14",
+        "type": "github"
+      }
+    },
     "charon": {
       "inputs": {
         "crane": "crane",
@@ -48,23 +65,6 @@
       "original": {
         "owner": "aeneasverif",
         "repo": "charon",
-        "type": "github"
-      }
-    },
-    "clean-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1784035501,
-        "narHash": "sha256-1Be3MrWhDvH0gytR5UY5FhgRzifbL5UHEf9K5dxIz+E=",
-        "owner": "codygunton",
-        "repo": "clean",
-        "rev": "c87617d8e29386e1e9e4f98cfbfb6940c2eb63df",
-        "type": "github"
-      },
-      "original": {
-        "owner": "codygunton",
-        "ref": "c87617d8",
-        "repo": "clean",
         "type": "github"
       }
     },
@@ -253,7 +253,7 @@
     "root": {
       "inputs": {
         "aeneas": "aeneas",
-        "clean-src": "clean-src",
+        "aristotle-inputs-src": "aristotle-inputs-src",
         "flake-utils": "flake-utils_3",
         "nixpkgs": "nixpkgs_3",
         "pil2-compiler-src": "pil2-compiler-src",

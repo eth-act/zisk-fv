@@ -1,22 +1,15 @@
-{ writeShellApplication, sail-lean-tree, zisk-pilout, extracted-lean, clean-source, aeneas-lean-source }:
+{ writeShellApplication, zisk-pilout, extracted-lean }:
 
-# Replaces docker/build-{sail-lean,zisk-lean}.sh. Copies the
-# Nix-built derivation outputs into the repo paths `lake build`
-# expects:
+# Replaces the generated-PIL portion of docker/build-zisk-lean.sh. Copies the
+# Nix-built derivation outputs into the repo paths used by the extraction
+# checks. Lake fetches Sail, Clean, and Aeneas through pinned Git requirements;
+# they are no longer materialized as worktree-local packages.
 #
-#   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
 #   build/extraction/Extraction/*.lean     ← extracted-lean, including the
 #                                             Circuit shim and
 #                                             MemGeneratedArtifact/bridge files
 #   build/extraction/MemAirFacts.md        ← extracted-lean
-#   build/clean-lean/                      ← clean-source.
-#   build/aeneas-lean/                      ← aeneas-lean-source (the
-#                                             patched Aeneas Lean runtime;
-#                                             eth-act/zisk-fv#158).
-#
-# After this, `lake build` and `nix run .#test` work the same as they
-# did under the old Docker pipeline.
 
 writeShellApplication {
   name = "populate";
@@ -27,11 +20,7 @@ writeShellApplication {
     set -euo pipefail
     cd "$(git rev-parse --show-toplevel)"
 
-    echo "▶ build/sail-lean/ ← ${sail-lean-tree}"
-    rm -rf build/sail-lean
     mkdir -p build
-    cp -rL --no-preserve=mode "${sail-lean-tree}" build/sail-lean
-    chmod -R u+w build/sail-lean
 
     echo "▶ build/zisk.pilout ← ${zisk-pilout}"
     rm -f build/zisk.pilout
@@ -72,16 +61,6 @@ EOF
     echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
     cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
     chmod u+w build/extraction/MemAirFacts.md
-
-    echo "▶ build/clean-lean/ ← ${clean-source}"
-    rm -rf build/clean-lean
-    cp -rL --no-preserve=mode "${clean-source}" build/clean-lean
-    chmod -R u+w build/clean-lean
-
-    echo "▶ build/aeneas-lean/ ← ${aeneas-lean-source}"
-    rm -rf build/aeneas-lean
-    cp -rL --no-preserve=mode "${aeneas-lean-source}" build/aeneas-lean
-    chmod -R u+w build/aeneas-lean
 
     echo "✅ build/ populated"
   '';

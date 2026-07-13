@@ -99,7 +99,8 @@ The chosen direction is **close-and-replan-with-salvage**:
 
 1. **Cross-row capability for the Clean ensemble (foundational).** The live
    `Air.Flat.Component` model evaluates each row independently
-   (`build/clean-lean/Clean/Air/FlatComponent.lean:7-10,149-150,171-172`), so no
+   (`Clean/Air/FlatComponent.lean:7-10,149-150,171-172` in the pinned Git
+   package), so no
    constraint can reference `row-1`. The Main PC-handshake (`constraint_18`,
    extracted only into the dead legacy model at
    `build/extraction/Extraction/Main.lean:97`) is therefore unrepresentable in

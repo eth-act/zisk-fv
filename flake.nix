@@ -33,34 +33,24 @@
       url = "github:0xPolygonHermez/pil2-proofman/v0.17.0";
       flake = false;
     };
-    clean-src = {
-      # Public fork codygunton/clean: a squashed snapshot of upstream
-      # Verified-zkEVM/clean @ 95c8cc2e (= upstream main HEAD; Lean/Mathlib
-      # v4.28.0, matches zisk-fv) plus three zisk-fv integration patches:
-      # namespace hygiene (Fin.foldl_eq_foldl_finRange →
-      # Clean.Fin.foldl_eq_foldl_finRange, so Clean.Air.* can be imported
-      # alongside Mathlib/Batteries), the C7
-      # `exists_nonzero_push_of_pull` balance strengthening, and (zisk-fv #100)
-      # the D1 all-row predecessor/current transition plus D2 canonical
-      # component-owned indexed fixed-column materialization (branch
-      # air-flat-indexed-fixed-columns; see docs/clean-fork-divergences.md).
-      # To be upstreamed; re-point at Verified-zkEVM/clean once all merge.
-      # Pinned by rev so the lock is immutable; fetched over HTTPS so CI needs
-      # no SSH key.
-      url = "github:codygunton/clean/c87617d8";
+    # Aeneas supplies the RV64IM production-lowering extraction harness and,
+    # after the Lean v4.28 compatibility patch below, the main Lean build's
+    # Git-distribution snapshot. The flake lock pins the exact Charon/Aeneas
+    # revision used for both.
+    aeneas.url = "github:AeneasVerif/aeneas";
+
+    # Distribution snapshot of Nix-generated LeanRV and patched Aeneas source.
+    # Lake and Aristotle consume it by the same immutable Git commit; CI checks
+    # it is byte-for-byte the output of packages.aristotle-inputs below.
+    aristotle-inputs-src = {
+      url = "github:eth-act/zisk-fv-lean-inputs/087a0de2c9869c121788667f0f90cb8957a13d14";
       flake = false;
     };
-
-    # Aeneas is used only by the RV64IM production-lowering extraction harness. It is
-    # intentionally kept out of the main Lean build until the Lean-toolchain
-    # mismatch is resolved, but the flake lock pins the exact Charon/Aeneas
-    # revision used for de-risking.
-    aeneas.url = "github:AeneasVerif/aeneas";
   };
 
   outputs = { self, nixpkgs, flake-utils, sail-src, sail-riscv-src,
-              zisk-src, pil2-compiler-src, pil2-proofman-src, clean-src,
-              aeneas }:
+              zisk-src, pil2-compiler-src, pil2-proofman-src, aeneas,
+              aristotle-inputs-src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -71,13 +61,20 @@
           inherit sail-riscv-src;
         };
 
-        packages.clean-source = pkgs.callPackage ./nix/clean.nix {
-          inherit clean-src;
-        };
-
         packages.aeneas-lean-source = pkgs.callPackage ./nix/aeneas-lean.nix {
           inherit aeneas;
         };
+
+        packages.aristotle-inputs = pkgs.callPackage ./nix/aristotle-inputs.nix {
+          sail-lean-tree = self.packages.${system}.sail-lean-tree;
+          aeneas-lean-source = self.packages.${system}.aeneas-lean-source;
+        };
+
+        packages.aristotle-inputs-source = pkgs.runCommand "zisk-fv-lean-inputs-source" { } ''
+          mkdir -p "$out"
+          cp -rL --no-preserve=mode ${aristotle-inputs-src}/. "$out"
+          chmod -R u+w "$out"
+        '';
 
         packages.pil2-compiler = pkgs.callPackage ./nix/pil2-compiler.nix {
           inherit pil2-compiler-src;
@@ -97,14 +94,11 @@
         apps.populate = {
           type = "app";
           program = "${pkgs.callPackage ./nix/populate.nix {
-            sail-lean-tree = self.packages.${system}.sail-lean-tree;
             zisk-pilout = self.packages.${system}.zisk-pilout;
             extracted-lean = self.packages.${system}.extracted-lean;
-            clean-source = self.packages.${system}.clean-source;
-            aeneas-lean-source = self.packages.${system}.aeneas-lean-source;
           }}/bin/populate";
           meta = {
-            description = "Build and copy the Sail-Lean spec, ZisK pilout, extracted Lean, Clean source, and Aeneas runtime into build/.";
+            description = "Build and copy the ZisK pilout and generated Lean extraction into build/.";
           };
         };
 
@@ -173,6 +167,46 @@
           }}/bin/aeneas-production-extract-check-tracked";
           meta = {
             description = "Regenerate the pinned Aeneas ProductionM2 extraction and fail if it differs from the tracked copy.";
+          };
+        };
+
+        apps.sync-aristotle-inputs = {
+          type = "app";
+          program = "${pkgs.writeShellApplication {
+            name = "sync-aristotle-inputs";
+            runtimeInputs = with pkgs; [
+              coreutils
+              diffutils
+              git
+              nix
+              rsync
+            ];
+            text = ''
+              exec ${./scripts/sync-aristotle-inputs.sh} "$@"
+            '';
+          }}/bin/sync-aristotle-inputs";
+          meta = {
+            description = "Compare or update the Git-distribution snapshot of generated Lean inputs.";
+          };
+        };
+
+        apps.check-aristotle-inputs = {
+          type = "app";
+          program = "${pkgs.writeShellApplication {
+            name = "check-aristotle-inputs";
+            runtimeInputs = with pkgs; [
+              diffutils
+              git
+              jq
+              nix
+              python3
+            ];
+            text = ''
+              exec ${./scripts/check-aristotle-inputs.sh}
+            '';
+          }}/bin/check-aristotle-inputs";
+          meta = {
+            description = "Verify the locked Lean-input snapshot and Aristotle-compatible Lake manifest.";
           };
         };
 

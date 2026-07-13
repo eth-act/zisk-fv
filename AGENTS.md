@@ -33,16 +33,20 @@ docs.
 
 The stable pipeline is:
 
-1. `flake.lock` pins upstream Sail, sail-riscv, ZisK, PIL tooling, and nixpkgs.
-2. `nix run .#populate` creates the generated inputs under `build/`.
-3. `tools/pil-extract` turns the pinned PIL output into generated Lean constraints under
+1. `flake.lock` pins upstream Sail, sail-riscv, ZisK, PIL tooling, nixpkgs, and the immutable
+   Git snapshot consumed by Lake.
+2. `nix build .#aristotle-inputs` produces the Sail/Aeneas Lean-input snapshot; the locked Git
+   source is checked against that output by `nix run .#check-aristotle-inputs`.
+3. `nix run .#populate` creates the generated PIL inputs under `build/`.
+4. `tools/pil-extract` turns the pinned PIL output into generated Lean constraints under
    `build/extraction/Extraction/`.
-4. Human-maintained Lean code under `ZiskFv/` gives those generated artifacts proof-facing names,
+5. Human-maintained Lean code under `ZiskFv/` gives those generated artifacts proof-facing names,
    semantics, and theorems.
-5. `trust/` records and checks the proof's trust boundary.
+6. `trust/` records and checks the proof's trust boundary.
 
-Treat `build/` as generated. Do not hand-edit generated Lean, pilout, Sail output, or Aeneas
-extraction output. Change the generator or source input, then rerun the producing command.
+Treat `build/` and the Lean-input snapshot as generated. Do not hand-edit generated Lean, pilout,
+Sail output, or Aeneas extraction output. Change the generator or source input, then rerun the
+producing command.
 
 Prefer stable contracts over file-by-file lore. Before citing counts, opcode sets, check totals, or
 generated ledger contents, confirm them from the current tree.
@@ -117,7 +121,7 @@ Rules:
 
 ## Build And Test
 
-Bootstrap generated inputs after a fresh clone or relevant input change:
+Bootstrap generated PIL inputs before the full test or after a relevant input change:
 
 ```bash
 nix run .#populate

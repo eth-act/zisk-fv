@@ -12,13 +12,13 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.28.0"
 
-# Sail-Lean RV64D spec is built locally from primary source via
-# the Nix flake (`nix run .#populate`). Lake reads from the local
-# build/sail-lean/ tree — the spec is NOT pulled pre-built. Run
-# `nix run .#populate` once before `lake build`. See nix/README.md.
+# The Nix-generated Sail RV64D tree and patched Aeneas runtime are distributed
+# as one immutable Git package. The Nix flake regenerates and checks that
+# snapshot; Lake and Aristotle consume this exact commit directly.
 [[require]]
-name = "LeanRV"
-path = "build/sail-lean"
+name = "ZiskFvLeanInputs"
+git = "https://github.com/eth-act/zisk-fv-lean-inputs"
+rev = "087a0de2c9869c121788667f0f90cb8957a13d14"
 
 # Auto-generated PIL2 extraction (per-AIR Lean files emitted by
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
@@ -28,22 +28,13 @@ path = "build/sail-lean"
 # Re-introducing them as library dependencies requires re-extracting against
 # a Clean-Components-aware emitter.
 
-# Clean DSL (Verified-zkEVM/clean) source tree. Populated by
-# `nix run .#populate` from the pinned `clean-src` flake input.
-# Mathlib v4.28.0 is shared (Clean and zisk-fv pin the same rev).
+# Clean's public zisk-fv fork is already an ordinary immutable Git package;
+# Mathlib v4.28.0 is shared with the root graph. Its intentional divergence
+# from Verified-zkEVM/clean is recorded in docs/clean-fork-divergences.md.
 [[require]]
 name = "Clean"
-path = "build/clean-lean"
-
-# Patched, prebuilt v4.28.0 Aeneas runtime (eth-act/zisk-fv#111). Populated by
-# `nix run .#populate` (toolchain-sync step, depends on eth-act/zisk-fv#158);
-# the `build/aeneas-lean` symlink is gitignored. Reuses the worktree's mathlib
-# (same rev 8f9d9cff). Used by the `ProductionM2` lean_lib (the real Aeneas-
-# extracted ZisK lowerer) and the in-build static-pin discharge under
-# ZiskFv/Compliance/AeneasBridgeTrust/.
-[[require]]
-name = "aeneas"
-path = "build/aeneas-lean"
+git = "https://github.com/codygunton/clean"
+rev = "497e4a4192ae90485647778542636539ef03316d"
 
 [[require]]
 name = "repl"

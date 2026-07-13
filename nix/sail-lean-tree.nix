@@ -54,6 +54,9 @@ sail-riscv.overrideAttrs (old: {
     mkdir -p $out
     cp -r model/Lean_RV64D/. $out/
     ${patch}/bin/patch -p1 -d $out < ${./sail-lean-v4.28-compat.patch}
+    # Sail emits a nightly toolchain file even though the compatibility patch
+    # above makes this generated tree target the root project's Lean v4.28.
+    echo "leanprover/lean4:v4.28.0" > $out/lean-toolchain
     runHook postInstall
   '';
 

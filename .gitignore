@@ -30,8 +30,8 @@ docs/superpowers/
 
 .playwright-mcp
 
-# Build artifacts produced by `nix run .#populate` — sail-lean tree,
-# pilout, and the auto-generated PIL2 extraction under
+# Build artifacts produced by `nix run .#populate` — pilout and the
+# auto-generated PIL2 extraction under
 # build/extraction/Extraction/. Reproducible from the flake — never
 # commit. The hand-written extraction-layer files (ArithTable.lean,
 # MemoryBuses.lean, OperationBuses.lean) live tracked under
@@ -51,4 +51,3 @@ docs/superpowers/
 /out/
 
 .rgignore
-

@@ -1,0 +1,22 @@
+name = "ZiskFvLeanInputs"
+defaultTargets = ["LeanRV64D", "Aeneas", "AeneasMeta"]
+moreLeanArgs = ["--tstack=400000"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.28.0"
+
+[[lean_lib]]
+name = "LeanRV64D"
+srcDir = "leanrv"
+leanOptions.weak.linter.style.nameCheck = false
+
+[[lean_lib]]
+name = "Aeneas"
+srcDir = "aeneas"
+
+[[lean_lib]]
+name = "AeneasMeta"
+srcDir = "aeneas"
+precompileModules = false

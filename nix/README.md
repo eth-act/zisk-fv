@@ -11,16 +11,31 @@ Reproducible-build flake replacing the previous `docker/` pipeline.
 | `pil2-compiler.nix` | pil2-compiler with vendored npm deps                     |
 | `zisk-pilout.nix`   | ZisK pilout build (cargo + Node)                         |
 | `extracted-lean.nix`| Per-AIR extracted Lean files and Mem sidecar artifacts   |
-| `clean.nix`         | Clean DSL source tree (Verified-zkEVM/clean), pinned     |
+| `aristotle-inputs.nix` | Git-distribution package for generated Sail + patched Aeneas inputs |
 | `populate.nix`      | `apps.populate`; copies derivation outputs into repo paths |
 
-The flake at the repo root composes these. Run `nix run .#populate`
-after cloning to produce `build/sail-lean/`, `build/zisk.pilout`,
-`build/extraction/Extraction/*.lean`, `build/extraction/MemAirFacts.md`,
-and `build/clean-lean/`. Then `lake build`
-works as usual. The Clean dep is pulled as a *source* tree (no
-pre-built oleans inside Nix — Lake compiles it as part of the main
-build using the shared Mathlib v4.28.0 pin).
+The flake at the repo root composes these. `lake build` can run directly after
+cloning: Clean is a pinned Git package, and the Nix-generated Sail/Aeneas
+inputs are supplied by the pinned `eth-act/zisk-fv-lean-inputs` Git snapshot.
+Run `nix run .#populate` when the generated PIL inputs are needed; it produces
+`build/zisk.pilout`, `build/extraction/Extraction/*.lean`, and
+`build/extraction/MemAirFacts.md`. `nix run .#check-aristotle-inputs` verifies
+that the locked snapshot exactly matches `nix build .#aristotle-inputs` and
+that the root Lake manifest has no local dependency.
+
+## Updating the Lean-input snapshot
+
+The snapshot is generated source, not a second hand-maintained Lake setup.
+After changing its Nix inputs, run the following from this repository against a
+clean checkout of `eth-act/zisk-fv-lean-inputs`:
+
+```bash
+nix run .#sync-aristotle-inputs -- write ../zisk-fv-lean-inputs
+```
+
+Commit and publish that checkout, then update the full commit in both
+`lakefile.toml` and the `aristotle-inputs-src` flake input, refresh
+`flake.lock` and `lake-manifest.json`, and run `nix run .#check-aristotle-inputs`.
 
 For Project Closeout S2, `flake.lock` pins the immutable
 `codygunton/clean@c87617d8e29386e1e9e4f98cfbfb6940c2eb63df` fork input. It
@@ -44,7 +59,8 @@ For an FV project whose deliverable is a trust boundary statement,
 the build inputs need to be content-addressed. Nix's `flake.lock`
 pins every transitive dep (sail/sail-riscv/zisk/pil2-* sources +
 nixpkgs revision) by narHash. The flake produces bit-identical
-`sail-lean-tree` and `zisk-pilout` outputs across machines.
+`sail-lean-tree`, `aristotle-inputs`, and `zisk-pilout` outputs across
+machines.
 
 Sanity check: this flake's outputs reproduce the prior
 `expected-sail-lean-tree-sha256` (`aabc5b9f…`) and
@@ -82,7 +98,7 @@ To populate the cache from a local build (e.g. when seeding after a
 nix-env -iA cachix -f https://cachix.org/api/v1/install
 cachix authtoken                       # paste account-scope token
 nix run .#populate                     # builds locally
-for drv in sail-lean-tree zisk-pilout extracted-lean; do
+for drv in sail-lean-tree aristotle-inputs zisk-pilout extracted-lean; do
   nix build .#$drv && cachix push zisk-fv ./result
 done
 ```

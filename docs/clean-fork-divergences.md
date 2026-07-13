@@ -1,13 +1,12 @@
 # Clean fork divergences (`codygunton/clean` vs upstream `Verified-zkEVM/clean`)
 
-The `clean-src` flake input (`flake.nix`) points at **`github:codygunton/clean`**, a fork of
+The root Lake graph (`lakefile.toml` / `lake-manifest.json`) pins **`github:codygunton/clean`**, a fork of
 `Verified-zkEVM/clean`. This file records every patch the fork carries *beyond* upstream, why it exists,
 and whether it is an **upstream-PR candidate** — so we remember to contribute them back rather than carry
-them indefinitely. (The flake comment already notes the fork is meant to re-point at upstream once changes
-merge.)
+them indefinitely. The root Lake comment notes the fork is meant to re-point at upstream once changes merge.
 
-> Maintenance: when you add/remove a fork patch, update this file AND the `clean-src` comment in
-> `flake.nix` (and re-pin `flake.lock`). When an entry lands upstream, delete it here and drop the patch.
+> Maintenance: when you add/remove a fork patch, update this file AND the Clean comment/pin in
+> `lakefile.toml` / `lake-manifest.json`. When an entry lands upstream, delete it here and drop the patch.
 
 ---
 

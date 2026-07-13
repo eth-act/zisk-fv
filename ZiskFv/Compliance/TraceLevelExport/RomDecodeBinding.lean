@@ -17,7 +17,7 @@ in-circuit ROM lookup soundness.
 ## The reused Clean lookup idiom
 
 A Clean `StaticTable` lookup's soundness IS `table.Spec` of the looked-up
-entry (`build/clean-lean/Clean/Circuit/Lookup.lean:140-147`,
+entry (`Clean/Circuit/Lookup.lean:140-147` in the pinned Git package,
 `StaticTable.toTable` with `Soundness _ := table.Spec` and
 `imply_soundness := contains_iff.mp`). For ZisK's ROM,
 `romStaticTable.Spec msg := ∃ i, msg = program i` (membership;
