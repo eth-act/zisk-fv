@@ -22,10 +22,13 @@ about a raw word) and the **relations** between them (closed `Prop`s we assume).
 * `sail_executable_within_supported_decode_shape` — PROVEN, and the *only* piece
   actually established in this build: Sail-executable words land in
   `SupportedDecodeShape`.
-* `skeletal_root_completeness` — given `z` and the five obligation predicates,
+* `ZiskCompletenessObligations` — the five obligation predicates bundled into one
+  record (the completeness analogue of soundness' trust record), so the reader
+  sees the entire completeness assumption set as a single binder.
+* `root_completeness` — given `z` and the `ZiskCompletenessObligations` record,
   proves `EventualCompleteness state z`. The ZisK content is carried entirely by
-  the obligations; the lone proven step is the Sail→shape bridge. (Named
-  *skeletal* because it is a frame with the real ZisK obligations left as holes.)
+  the obligations; the lone proven step is the Sail→shape bridge. It stays
+  honestly conditional on the bundled obligations until the Aeneas bridge lands.
 
 ## Tracking issues (the plan to make this unconditional)
 
@@ -109,7 +112,7 @@ def OutstandingZiskPredicates.Covers (z : OutstandingZiskPredicates) (raw : BitV
 
 /-- **THE GOAL.** Every Sail-executable RV64IM word (in an RV64IM-enabled state),
 outside ZisK's known decode gaps, is fully covered by ZisK. This is the eventual
-*unconditional* completeness theorem; `skeletal_root_completeness` delivers it
+*unconditional* completeness theorem; `root_completeness` delivers it
 once the obligation predicates below are discharged. A concrete `z` plus
 discharged obligations — the end-to-end instantiation tracked in
 eth-act/zisk-fv#74 — makes this hold outright. -/
@@ -118,7 +121,7 @@ def EventualCompleteness (state : SailState) (z : OutstandingZiskPredicates) : P
 
 /-! ### Obligation predicates
 
-The relations between the ingredients that `skeletal_root_completeness` assumes —
+The relations between the ingredients that `root_completeness` assumes —
 each a closed `Prop` about a `z`, NOT a per-word ingredient. Discharging all five
 (against ZisK's real surface) closes the gap to `EventualCompleteness`. -/
 
@@ -150,39 +153,56 @@ Discharge: eth-act/zisk-fv#108. -/
 def OutstandingZiskPredicates.soundnessContract (z : OutstandingZiskPredicates) : Prop :=
   ∀ raw, SupportedDecodeShape raw → z.loweringSucceeds raw → z.rowSoundnessContract raw
 
-/-- Completeness skeleton: the five obligation predicates ⟹ `EventualCompleteness`.
+/-- The five completeness obligations bundled into one record — the completeness
+analogue of the soundness trust surface. `root_completeness` takes this single
+binder, so the reader can read off the *entire* completeness assumption set from
+one `structure`, exactly dual to how soundness exposes its trust as binders.
+
+Each field is one of the closed `Prop` relations the Aeneas workspace must
+discharge (eth-act/zisk-fv#111 for `decoderAcceptsInShape`/`loweringTotal`,
+eth-act/zisk-fv#108 for `rowTotal`/`opcodeTotal`/`soundnessContract`). -/
+structure ZiskCompletenessObligations (z : OutstandingZiskPredicates) : Prop where
+  /-- Every in-shape word that is not a known gap is accepted by ZisK's decoder. -/
+  decoderAcceptsInShape : z.decoderAcceptsInShape
+  /-- Every accepted word lowers. -/
+  loweringTotal : z.loweringTotal
+  /-- Every lowered word materializes a row. -/
+  rowTotal : z.rowTotal
+  /-- Every accepted word's opcode is proven. -/
+  opcodeTotal : z.opcodeTotal
+  /-- Every in-shape, lowered word satisfies the soundness contract. -/
+  soundnessContract : z.soundnessContract
+
+/-- **Root completeness** (conditional): the completeness obligations ⟹
+`EventualCompleteness`. The dual of `root_soundness`.
 
 Blueprint reading: GIVEN an RV64IM-enabled Sail `state`, ZisK's (abstract) surface
-`z`, and the five obligations about it, THEN every Sail-executable RV64IM word
-outside the known gaps is covered by ZisK.
+`z`, and the `ZiskCompletenessObligations` record about it, THEN every
+Sail-executable RV64IM word outside the known gaps is covered by ZisK.
 
 The lone step proven outright is the Sail→shape bridge
 (`sail_executable_within_supported_decode_shape`); all ZisK content is carried by
-the obligation hypotheses. Discharge them (eth-act/zisk-fv#111 + #108, on a
-concrete `z` from #74) and this is `EventualCompleteness state z` unconditionally.
+the obligation record. Discharge it (eth-act/zisk-fv#111 + #108, on a concrete
+`z` from #74) and this is `EventualCompleteness state z` unconditionally.
 
 * `state` / `sailIsa` — the Sail machine state and evidence it is RV64IM-configured.
 * `z` — the ZisK predicates (the ingredients).
-* `decoderAcceptsInShape` … `soundnessContract` — the five obligation hypotheses. -/
-theorem skeletal_root_completeness
+* `obligations` — the five obligations, bundled (see `ZiskCompletenessObligations`). -/
+theorem root_completeness
     (state : SailState) (sailIsa : IsaExtensionsEnabled state)
     (z : OutstandingZiskPredicates)
-    (decoderAcceptsInShape : z.decoderAcceptsInShape)
-    (loweringTotal : z.loweringTotal)
-    (rowTotal : z.rowTotal)
-    (opcodeTotal : z.opcodeTotal)
-    (soundnessContract : z.soundnessContract) :
+    (obligations : ZiskCompletenessObligations z) :
     EventualCompleteness state z := by
   intro raw h_sail h_not_gap
   have h_shape :=
     sail_executable_within_supported_decode_shape state raw sailIsa h_sail
-  have h_decode := decoderAcceptsInShape raw h_shape h_not_gap
-  have h_lower := loweringTotal raw h_decode
+  have h_decode := obligations.decoderAcceptsInShape raw h_shape h_not_gap
+  have h_lower := obligations.loweringTotal raw h_decode
   exact
     ⟨⟨h_decode,
         h_lower,
-        rowTotal raw h_lower,
-        opcodeTotal raw h_decode⟩,
-      soundnessContract raw h_shape h_lower⟩
+        obligations.rowTotal raw h_lower,
+        obligations.opcodeTotal raw h_decode⟩,
+      obligations.soundnessContract raw h_shape h_lower⟩
 
 end ZiskFv.Completeness

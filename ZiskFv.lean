@@ -189,3 +189,6 @@ import ZiskFv.Completeness.Aspirational
 import ZiskFv.Completeness.Rv64im.SailDecode
 import ZiskFv.Completeness.Rv64im.SailDecode.ZiskClassifyMatch
 import ZiskFv.Completeness
+-- The single audit surface: re-states the two roots + the proven Sail bridge and
+-- freezes their statement snapshots and axiom closures as golden tests.
+import ZiskFv.Audit

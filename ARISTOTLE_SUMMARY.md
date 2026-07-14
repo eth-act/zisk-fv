@@ -1,3 +1,20 @@
+# Summary of changes for run db5a1315-b78b-4801-b149-a85979b0c83e
+Implemented **Phase 0** and **Phase 1.3** from `docs/refactor/FINAL-PLAN.md` (the "suggested first PR"). All changes build (full `ZiskFv` target compiles cleanly, 9009 jobs) and are committed and pushed to `main`.
+
+## Phase 1.3 — completeness API symmetry (`ZiskFv/Completeness.lean`)
+- Added a `ZiskCompletenessObligations z` record bundling the five previously-loose obligation binders (`decoderAcceptsInShape`, `loweringTotal`, `rowTotal`, `opcodeTotal`, `soundnessContract`), the completeness analogue of a single trust record.
+- Renamed `skeletal_root_completeness → root_completeness`, now taking that one record instead of five separate hypotheses (proof preserved, still honestly conditional). Its axiom closure is the standard allowed set only.
+- Propagated the rename through every remaining reference (docstrings in `ZiskFv/Completeness/Aspirational/*`, `README.md`, `trust/README.md`, `trust/defects.md`, `docs/ai/*`). No trust-gate baseline referenced the old name.
+
+## Phase 0 — docs & audit surface (no proof risk)
+- **0.2 — new `ZiskFv/Audit.lean`** (imported from `ZiskFv.lean`): the single audit surface. It re-states nothing new but gathers, in reading order, `root_soundness`, `root_completeness`, and the proven `sail_executable_within_supported_decode_shape`, and freezes each as golden tests: a pretty-printed `#check` statement snapshot and a `#print axioms` closure, both under `#guard_msgs (whitespace := lax)`. Any stray `sorry` or newly introduced trusted premise below either root now breaks the build. It also points at `trust/trusted-base.md` and `trust/defects.md`.
+- **0.1 — fixed doc/code drift C1–C5:**
+  - C1/C2 `ZiskFv/EquivCore/README.md`: corrected the wrong title (was "`ZiskFv/Equivalence/`") and rewrote it to describe `EquivCore/` (the `execute = bus_effect` core theorems) with the correct bottom-up dependency direction `EquivCore → Wrappers → Equivalence`.
+  - C2/C4/C5 `ZiskFv/Compliance/README.md`: fixed the inverted wrapper/canonical dependency sentence, replaced hard-coded opcode counts with "read the tree", and corrected the "sum type … to dispatch" framing (the `OpEnvelope.exec_eq` conclusion is a `True`-padded conjunction, not a case-returning dispatch). Also noted `zisk_riscv_compliant_program_bus` is internal and `root_soundness` is the endpoint.
+- **0.3 — `trust/trusted-base.md`**: the Claim section now names `ZiskFv.Compliance.root_soundness` (and the `ZiskFv/Audit.lean` surface) as the advertised endpoint, and labels `zisk_riscv_compliant_program_bus` as the internal per-arm channel-balance lemma.
+
+No theorem's trust surface was changed; `root_soundness` is byte-for-byte unchanged (verified via the frozen axiom/statement golden tests). `ARISTOTLE_SUMMARY.md` was left untouched.
+
 # Summary of changes for run b5c2364e-1f9d-43a4-8a4f-46079c9f14b5
 I folded the full architecture review into a single, self-contained final plan/overview and wired it in as the top-level entry point.
 

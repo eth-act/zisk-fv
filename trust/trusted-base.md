@@ -11,11 +11,21 @@ The intended soundness claim is:
 > extraction are trusted, every state transition accepted by the modeled ZisK
 > RV64IM circuits is a valid RISC-V state transition.
 
-The global Lean theorem is:
+The advertised soundness theorem — the audit endpoint — is:
 
 ```text
-ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+ZiskFv.Compliance.root_soundness       -- ZiskFv/Soundness.lean
 ```
+
+It is re-stated, alongside completeness, in the single audit surface
+`ZiskFv/Audit.lean`, which also freezes each root theorem's statement and axiom
+closure as golden tests.
+
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus` is **internal**: it is the
+per-arm `OpEnvelope` channel-balance lemma that `root_soundness` is built on, not
+the advertised endpoint. The generated ledger below currently tracks that
+internal lemma's closure; the audit-file golden tests track `root_soundness`
+directly.
 
 Current generated counts:
 
@@ -24,10 +34,10 @@ Current generated counts:
 | Source Lean trust declarations                                         | 0     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
 | Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 0     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
 
-The source trust ledger currently contains no project axioms. The global theorem
-also has no transitive project-axiom closure. The former Aeneas row-lowering and
-memory-state load bridge axioms are now visible conditional inputs:
-`env.aeneasBridgeTrust` and `env.memoryTimelineEvidence` on the global theorem.
+The source trust ledger currently contains no project axioms. The internal
+per-arm lemma also has no transitive project-axiom closure. The former Aeneas
+row-lowering and memory-state load bridge axioms are now visible conditional
+inputs: `env.aeneasBridgeTrust` and `env.memoryTimelineEvidence` on that lemma.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
