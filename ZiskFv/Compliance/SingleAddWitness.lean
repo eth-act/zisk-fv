@@ -64,19 +64,10 @@ def addX1RomFlagBits : RomFlagBits where
   b_src_reg := true
   store_reg := true
 
-def addX1MainFreeCols : MainRomFreeCols where
-  a_0 := 0
-  a_1 := 0
-  b_0 := 0
-  b_1 := 0
-  im_high_degree_2 := 0
-  segment_l1 := 1
-  main_step := 0
-  a_reg_prev_mem_step := 0
-  b_reg_prev_mem_step := 1
-  store_reg_prev_mem_step := 2
-  store_reg_prev_value_0 := 0
-  store_reg_prev_value_1 := 0
+/-- The free columns recovered from the materialized ADD access history. -/
+@[reducible]
+def addX1MainFreeCols : MainRomFreeCols :=
+  mainRomFreeColsOfRow addX1Row
 
 theorem addX1Main_proverAssumptions :
     (componentWithRomMemAndOpBus 1 addX1Program).circuit.ProverAssumptions
@@ -85,8 +76,8 @@ theorem addX1Main_proverAssumptions :
     addX1MainFreeCols, ?_, ?_, ?_, ?_, ?_⟩
   · decide
   · simp [MainRomExecKind.Coherent, addX1RomFlagBits]
-  · simp [MainRomSourceGuard, addX1Program, addX1RomFlagBits, addX1MainFreeCols, boolF]
-  · simp [MainRomAddressGuard, addX1RomFlagBits, addX1MainFreeCols, boolF]
+  · simp [MainRomSourceGuard, addX1Program, addX1RomFlagBits, boolF]
+  · simp [MainRomAddressGuard, addX1RomFlagBits, boolF]
   · rfl
 
 theorem addX1MainTable_constraints :

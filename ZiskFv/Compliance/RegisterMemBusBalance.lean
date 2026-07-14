@@ -28,11 +28,10 @@ selectors `a_src_reg`/`b_src_reg`/`store_reg` are `1` and the pull selectors
 **Scope.** This is the register-partition balance (`BalancedInteractions` over the `mem_op = 3`
 messages), the object #219 consumes.  It does **not** build the whole-channel
 `witness.BalancedChannels` or the constraint-satisfying accepted trace — those stay #219.  The
-balance is conditional on the previous-step timestamp chain (`a_reg_prev_mem_step = 0`,
-`b_reg_prev_mem_step = 1`, `store_reg_prev_mem_step = 2`, reload at `3`), which ZisK's ordering/range
-checks enforce (the #169/#19 axis, `main.pil:447`), pinned here in the concrete row.  `x0` is not
-used: ZisK decodes `x0` operands as immediate/no-op register accesses emitting no `mem_op = 3`
-traffic, so `x1,x1,x1` is the minimal real-register witness.
+concrete witness materializes the predecessor chain from the boot/access history; the resulting
+timestamps are `0/1/2` with reload at `3`.  `x0` is not used: ZisK decodes `x0` operands as
+immediate/no-op register accesses emitting no `mem_op = 3` traffic, so `x1,x1,x1` is the minimal
+real-register witness.
 
 This file also exposes the actual table interaction reductions for the concrete Main row and
 RegisterBoundary rows.  The remaining #219 bridge is the projection from Main's evaluated
@@ -50,7 +49,7 @@ open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.Main (MainRowWithRom aRegPreMessage aMemMessage bRegPreMessage bMemMessage
   cRegPreMessage cMemMessage aRegPreMessageExpr aMemMessageExpr bRegPreMessageExpr
-  bMemMessageExpr cRegPreMessageExpr cMemMessageExpr)
+  bMemMessageExpr cRegPreMessageExpr cMemMessageExpr MainRomFreeCols)
 open ZiskFv.AirsClean.RegisterBoundary (RegisterBoundaryRow bootMessage reloadMessage)
 open ZiskFv.Compliance.Instantiation
 
@@ -201,13 +200,112 @@ theorem registerTelescopingInteractions_balanced
   exact balancedInteractions_of_perm
     (pairedInteractions_balanced (first :: rest) h_paired_len) h_perm.symm
 
+/-! ## Register-access row materialization -/
+
+/-- The Main register-access slots in the same predecessor/current order used by
+    `registerAccessChain`. -/
+inductive MainRegisterAccess
+  | a
+  | b
+  | store
+
+/-- The current message emitted by one Main register-access slot. -/
+@[reducible]
+def mainRegisterCurrentMessage (access : MainRegisterAccess)
+    (row : MainRowWithRom FGL) : MemBusMessage FGL :=
+  match access with
+  | .a => aMemMessage row
+  | .b => bMemMessage row
+  | .store => cMemMessage row
+
+/-- Fill one Main register-access predecessor from the preceding access message. -/
+@[reducible]
+def withMainRegisterPrevious (access : MainRegisterAccess)
+    (previous : MemBusMessage FGL) (row : MainRowWithRom FGL) : MainRowWithRom FGL :=
+  match access with
+  | .a =>
+      { row with rom := { row.rom with a_reg_prev_mem_step := previous.timestamp } }
+  | .b =>
+      { row with rom := { row.rom with b_reg_prev_mem_step := previous.timestamp } }
+  | .store =>
+      { row with rom :=
+          { row.rom with
+            store_reg_prev_mem_step := previous.timestamp
+            store_reg_prev_value_0 := previous.value_0
+            store_reg_prev_value_1 := previous.value_1 } }
+
+/-- Materialize a row's active register predecessors by the same history walk as
+    `registerAccessChain`. This is only a data construction: it introduces no trace assertion. -/
+@[reducible]
+def materializeMainRegisterAccesses
+    (previous : MemBusMessage FGL) (row : MainRowWithRom FGL) :
+    List MainRegisterAccess → MemBusMessage FGL × MainRowWithRom FGL
+  | [] => (previous, row)
+  | access :: rest =>
+      let row := withMainRegisterPrevious access previous row
+      materializeMainRegisterAccesses (mainRegisterCurrentMessage access row) row rest
+
+/-- Build a concrete Main row and its final register state from an access history. -/
+@[reducible]
+def materializeMainRegisterRow (previous : MemBusMessage FGL) (row : MainRowWithRom FGL)
+    (accesses : List MainRegisterAccess) : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterAccesses previous row accesses
+
+/-- Set the register-predecessor free columns from an already materialized history state. -/
+@[reducible]
+def mainRomFreeColsWithRegisterPrevious (free : MainRomFreeCols)
+    (previous : MemBusMessage FGL) : MainRomFreeCols :=
+  { free with
+    a_reg_prev_mem_step := previous.timestamp
+    b_reg_prev_mem_step := previous.timestamp
+    store_reg_prev_mem_step := previous.timestamp
+    store_reg_prev_value_0 := previous.value_0
+    store_reg_prev_value_1 := previous.value_1 }
+
+/-- Recover the free Main columns from a materialized ROM-backed row. -/
+@[reducible]
+def mainRomFreeColsOfRow (row : MainRowWithRom FGL) : MainRomFreeCols :=
+  { a_0 := row.core.a_0
+    a_1 := row.core.a_1
+    b_0 := row.core.b_0
+    b_1 := row.core.b_1
+    im_high_degree_2 := row.core.im_high_degree_2
+    segment_l1 := row.core.segment_l1
+    main_step := row.rom.main_step
+    a_reg_prev_mem_step := row.rom.a_reg_prev_mem_step
+    b_reg_prev_mem_step := row.rom.b_reg_prev_mem_step
+    store_reg_prev_mem_step := row.rom.store_reg_prev_mem_step
+    store_reg_prev_value_0 := row.rom.store_reg_prev_value_0
+    store_reg_prev_value_1 := row.rom.store_reg_prev_value_1 }
+
+/-- Reload data derived from the last access in a concrete register history. -/
+@[reducible]
+def registerBoundaryRowFromLast (reg : FGL) (last : MemBusMessage FGL) :
+    RegisterBoundaryRow FGL :=
+  { reg := reg
+    reloadTimestamp := last.timestamp
+    reloadValue_0 := last.value_0
+    reloadValue_1 := last.value_1 }
+
 /-! ## The concrete `add x1,x1,x1` row and boundary rows -/
 
-/-- The concrete register-register `add x1,x1,x1` Main row.  Register operands x1: the six MemBus
-    pointers (`a_offset_imm0`/`b_offset_imm0`/`store_offset` and `addr0`/`addr1`/`addr2`) are `1`;
+/-! Register operands x1 use the six MemBus pointers
+    (`a_offset_imm0`/`b_offset_imm0`/`store_offset` and `addr0`/`addr1`/`addr2`) at `1`;
     the three register selectors are `1` and the memory selectors `0`; the previous-step chain is
-    `0/1/2`; all values `0`; `store_pc = 0` collapses the c-value to `c_0 = 0`. -/
-def addX1Row : MainRowWithRom FGL :=
+    materialized from the boot/access history; all values `0`; `store_pc = 0` collapses the c-value
+    to `c_0 = 0`. -/
+/-- Boundary row for an idle tracked register `r`: boot and reload both at ts 0, value 0. -/
+def boundaryRowIdle (r : FGL) : RegisterBoundaryRow FGL :=
+  { reg := r, reloadTimestamp := 0, reloadValue_0 := 0, reloadValue_1 := 0 }
+
+/-- Initial x1 state for the concrete ADD access history. -/
+@[reducible]
+def addX1RegisterInitial : MemBusMessage FGL :=
+  bootMessage (boundaryRowIdle 1)
+
+/-- The ADD row before its active register predecessors are materialized. -/
+@[reducible]
+def addX1RowTemplate : MainRowWithRom FGL :=
   { core :=
       { a_0 := 0, a_1 := 0, b_0 := 0, b_1 := 0, c_0 := 0, c_1 := 0,
         flag := 0, pc := 0, is_external_op := 1, op := ZiskFv.Trusted.OP_ADD, m32 := 0,
@@ -219,9 +317,20 @@ def addX1Row : MainRowWithRom FGL :=
         b_src_imm := 0, b_src_mem := 0, store_mem := 0, store_ind := 0,
         b_src_ind := 0, a_src_reg := 1, b_src_reg := 1, store_reg := 1,
         addr0 := 1, addr1 := 1, addr2 := 1, main_step := 0,
-        a_reg_prev_mem_step := 0, b_reg_prev_mem_step := 1,
-        store_reg_prev_mem_step := 2, store_reg_prev_value_0 := 0,
-        store_reg_prev_value_1 := 0 } }
+        a_reg_prev_mem_step := addX1RegisterInitial.timestamp,
+        b_reg_prev_mem_step := addX1RegisterInitial.timestamp,
+        store_reg_prev_mem_step := addX1RegisterInitial.timestamp,
+        store_reg_prev_value_0 := addX1RegisterInitial.value_0,
+        store_reg_prev_value_1 := addX1RegisterInitial.value_1 } }
+
+/-- The final x1 state and ADD row produced by the concrete access history. -/
+@[reducible]
+def addX1RowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterRow addX1RegisterInitial addX1RowTemplate
+    [MainRegisterAccess.a, MainRegisterAccess.b, MainRegisterAccess.store]
+
+/-- The concrete register-register `add x1,x1,x1` Main row. -/
+def addX1Row : MainRowWithRom FGL := addX1RowWithLast.2
 
 /-- The ROM row matching `addX1Row`'s decoded selector pins. -/
 def addX1ProgramRow : ZiskRomMessage FGL :=
@@ -232,13 +341,9 @@ def addX1ProgramRow : ZiskRomMessage FGL :=
 /-- A one-instruction concrete program for the `add x1,x1,x1` witness. -/
 def addX1Program : Program 1 := fun _ => addX1ProgramRow
 
-/-- Boundary row for register x1: reload closes the chain at the last access (ts 3), value 0. -/
+/-- Boundary row for register x1, whose reload closes the materialized access history. -/
 def boundaryRowX1 : RegisterBoundaryRow FGL :=
-  { reg := 1, reloadTimestamp := 3, reloadValue_0 := 0, reloadValue_1 := 0 }
-
-/-- Boundary row for an idle tracked register `r`: boot and reload both at ts 0, value 0. -/
-def boundaryRowIdle (r : FGL) : RegisterBoundaryRow FGL :=
-  { reg := r, reloadTimestamp := 0, reloadValue_0 := 0, reloadValue_1 := 0 }
+  registerBoundaryRowFromLast 1 addX1RowWithLast.1
 
 /-! ## The real-emission register interaction list for `add x1,x1,x1` -/
 
@@ -261,6 +366,12 @@ def mainRegisterInteractions : List (Interaction FGL) :=
     interaction reduction. -/
 def boundaryInteractions (row : RegisterBoundaryRow FGL) : List (Interaction FGL) :=
   registerBoundaryMemBusInteractions row
+
+/-- The concrete RegisterBoundary emissions in value-level interaction form. -/
+theorem boundaryInteractions_eq_messages (row : RegisterBoundaryRow FGL) :
+    boundaryInteractions row =
+      [emittedPulledValue (bootMessage row), MemBusChannel.pushedValue (reloadMessage row)] := by
+  rfl
 
 /-- Idle tracked registers x2..x31, each contributing a self-balancing boot/reload zero pair. -/
 def idleBoundaryInteractions : List (Interaction FGL) :=

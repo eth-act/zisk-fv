@@ -55,23 +55,41 @@ def addAddiSpinAddiProgramRow : ZiskRomMessage FGL :=
     ind_width := 8, op := ZiskFv.Trusted.OP_ADD, store_offset := 1, jmp_offset1 := 4,
     jmp_offset2 := 4, flags := packFlags addAddiSpinAddiBits }
 
-def addAddiSpinAddiFreeCols : MainRomFreeCols where
-  a_0 := 0
-  a_1 := 0
-  b_0 := 0
-  b_1 := 0
-  im_high_degree_2 := 0
-  segment_l1 := 0
-  main_step := 1
-  a_reg_prev_mem_step := 3
-  b_reg_prev_mem_step := 0
-  store_reg_prev_mem_step := 5
-  store_reg_prev_value_0 := 0
-  store_reg_prev_value_1 := 0
+/-! The inactive predecessor fields begin at boot; the active ADDI predecessors below are then
+materialized from the preceding ADD/access history. -/
+@[reducible]
+def addAddiSpinAddiFreeColsTemplate : MainRomFreeCols :=
+  mainRomFreeColsWithRegisterPrevious
+    { addX1MainFreeCols with
+      a_0 := 0
+      a_1 := 0
+      b_0 := 0
+      b_1 := 0
+      im_high_degree_2 := 0
+      segment_l1 := 0
+      main_step := 1 }
+    addX1RegisterInitial
 
-def addAddiSpinAddiRow : MainRowWithRom FGL :=
+@[reducible]
+def addAddiSpinAddiRowTemplate : MainRowWithRom FGL :=
   mainRomRowOf addAddiSpinAddiProgramRow addAddiSpinAddiBits
-    (MainRomExecKind.external false 0 0) addAddiSpinAddiFreeCols
+    (MainRomExecKind.external false 0 0) addAddiSpinAddiFreeColsTemplate
+
+/-- The ADDI row and final x1 state after the ADD/ADDI access history. -/
+@[reducible]
+def addAddiSpinAddiRowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterRow addX1RowWithLast.1 addAddiSpinAddiRowTemplate
+    [MainRegisterAccess.a, MainRegisterAccess.store]
+
+def addAddiSpinAddiRow : MainRowWithRom FGL := addAddiSpinAddiRowWithLast.2
+
+@[reducible]
+def addAddiSpinAddiFreeCols : MainRomFreeCols :=
+  mainRomFreeColsOfRow addAddiSpinAddiRow
+
+private theorem addAddiSpinAddiRow_b_0 : addAddiSpinAddiRow.core.b_0 = 0 := rfl
+
+private theorem addAddiSpinAddiRow_b_1 : addAddiSpinAddiRow.core.b_1 = 0 := rfl
 
 def addAddiSpinJalBits : RomFlagBits := addSpinJalBits
 
@@ -100,7 +118,12 @@ def addAddiSpinBinaryAddRows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL
 
 def addAddiSpinBoundaryRowX1 :
     ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
-  { boundaryRowX1 with reloadTimestamp := 7 }
+  registerBoundaryRowFromLast 1 addAddiSpinAddiRowWithLast.1
+
+private theorem addAddiSpinReloadMessage_eq :
+    ZiskFv.AirsClean.RegisterBoundary.reloadMessage addAddiSpinBoundaryRowX1 =
+      cMemMessage addAddiSpinAddiRow := by
+  rfl
 
 def addAddiSpinBoundaryRows :
     List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
@@ -124,8 +147,8 @@ theorem addAddiSpinAddMain_proverAssumptions :
   · decide
   · simp [MainRomExecKind.Coherent, addAddiSpinAddBits, addX1RomFlagBits]
   · simp [MainRomSourceGuard, addAddiSpinProgram, addAddiSpinAddProgramRow,
-      addAddiSpinAddBits, addX1RomFlagBits, addX1MainFreeCols]
-  · simp [MainRomAddressGuard, addAddiSpinAddBits, addX1RomFlagBits, addX1MainFreeCols]
+      addAddiSpinAddBits, addX1RomFlagBits]
+  · simp [MainRomAddressGuard, addAddiSpinAddBits, addX1RomFlagBits]
   · rfl
 
 theorem addAddiSpinAddiMain_proverAssumptions :
@@ -136,8 +159,8 @@ theorem addAddiSpinAddiMain_proverAssumptions :
   · decide
   · simp [MainRomExecKind.Coherent, addAddiSpinAddiBits]
   · simp [MainRomSourceGuard, addAddiSpinProgram, addAddiSpinAddiProgramRow,
-      addAddiSpinAddiBits, addAddiSpinAddiFreeCols]
-  · simp [MainRomAddressGuard, addAddiSpinAddiBits, addAddiSpinAddiFreeCols]
+      addAddiSpinAddiBits, addAddiSpinAddiRow_b_0, addAddiSpinAddiRow_b_1]
+  · simp [MainRomAddressGuard, addAddiSpinAddiBits]
   · rfl
 
 theorem addAddiSpinJalMain_proverAssumptions (step : FGL) :
@@ -149,9 +172,9 @@ theorem addAddiSpinJalMain_proverAssumptions (step : FGL) :
   · norm_num [MainRomExecKind.Coherent, addAddiSpinProgram, addAddiSpinJalProgramRow,
       addAddiSpinJalBits, addSpinJalBits, ZiskFv.Trusted.OP_FLAG]
   · simp [MainRomSourceGuard, addAddiSpinProgram, addAddiSpinJalProgramRow,
-      addAddiSpinJalBits, addSpinJalBits, addAddiSpinJalFreeCols, addSpinJalFreeCols]
+      addAddiSpinJalBits, addSpinJalBits, addAddiSpinJalFreeCols]
   · simp [MainRomAddressGuard, addAddiSpinJalBits, addSpinJalBits,
-      addAddiSpinJalFreeCols, addSpinJalFreeCols]
+      addAddiSpinJalFreeCols]
   · rfl
 
 private theorem addAddiSpinMainRow_constraints
@@ -312,19 +335,19 @@ theorem addAddiSpinWitness_constraints : addAddiSpinWitness.Constraints :=
 private theorem addAddiSpinMain_pcHandshake_add_addi :
     pcHandshakeBetween addAddiSpinAddRow addAddiSpinAddiRow := by
   simp [pcHandshakeBetween, addAddiSpinAddRow, addAddiSpinAddiRow,
-    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addAddiSpinAddiFreeCols, addX1Row,
+    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addX1Row,
     mainRomRowOf]
 
 private theorem addAddiSpinMain_pcHandshake_addi_jal :
     pcHandshakeBetween addAddiSpinAddiRow (addAddiSpinJalRow 2) := by
   simp [pcHandshakeBetween, addAddiSpinAddiRow, addAddiSpinAddiProgramRow,
-    addAddiSpinAddiBits, addAddiSpinAddiFreeCols, addAddiSpinJalRow,
-    addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, addSpinJalFreeCols, mainRomRowOf]
+    addAddiSpinAddiBits, addAddiSpinJalRow,
+    addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
 
 private theorem addAddiSpinMain_pcHandshake_jal_jal :
     pcHandshakeBetween (addAddiSpinJalRow 2) (addAddiSpinJalRow 3) := by
   simp [pcHandshakeBetween, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
-    addSpinJalBits, addSpinJalFreeCols, mainRomRowOf]
+    addSpinJalBits, mainRomRowOf]
   ring
 
 private theorem addAddiSpinMainTable_transition (prev curr : MainRowWithRom FGL) :
@@ -747,11 +770,7 @@ private theorem addAddiSpinBoundaryInteractions_eq :
       [ emittedPulledValue
           (ZiskFv.AirsClean.RegisterBoundary.bootMessage addAddiSpinBoundaryRowX1)
       , MemBusChannel.pushedValue (cMemMessage addAddiSpinAddiRow) ] := by
-  simp [boundaryInteractions, registerBoundaryMemBusInteractions,
-    registerBoundaryBootInteraction, registerBoundaryReloadInteraction,
-    addAddiSpinBoundaryRowX1, boundaryRowX1, addAddiSpinAddiRow,
-    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addAddiSpinAddiFreeCols, mainRomRowOf,
-    emittedPulledValue, Channel.pushedValue, cMemMessage]
+  rw [boundaryInteractions_eq_messages, addAddiSpinReloadMessage_eq]
 
 private theorem addAddiSpinAddInteractions_eq :
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow =
@@ -766,7 +785,7 @@ private theorem addAddiSpinAddInteractions_eq :
     mainARegPreInteraction,
     mainAMemInteraction, mainBRegPreInteraction, mainBMemInteraction,
     mainCRegPreInteraction, mainCMemInteraction, addAddiSpinAddRow, addX1Row,
-    addAddiSpinBoundaryRowX1, boundaryRowX1, emittedPulledValue, Channel.pushedValue,
+    addAddiSpinBoundaryRowX1, emittedPulledValue, Channel.pushedValue,
     aRegPreMessage, aMemMessage, bRegPreMessage, bMemMessage, cRegPreMessage, cMemMessage]
 
 private theorem addAddiSpinAddiInteractions_eq :
@@ -781,7 +800,7 @@ private theorem addAddiSpinAddiInteractions_eq :
     mainARegPreInteraction,
     mainAMemInteraction, mainCRegPreInteraction, mainCMemInteraction,
     addAddiSpinAddRow, addX1Row, addAddiSpinAddiRow, addAddiSpinAddiProgramRow,
-    addAddiSpinAddiBits, addAddiSpinAddiFreeCols, mainRomRowOf,
+    addAddiSpinAddiBits, mainRomRowOf,
     emittedPulledValue, Channel.pushedValue, aRegPreMessage, aMemMessage,
     cRegPreMessage, cMemMessage]
 
@@ -867,7 +886,7 @@ private theorem addAddiSpinJalMemBusInactive (step : FGL) :
     MainMemBusInactive (addAddiSpinJalRow step) := by
   constructor <;>
     simp [addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-      addSpinJalFreeCols, mainRomRowOf]
+      mainRomRowOf]
 
 private theorem addAddiSpinJalMemBusInteractions_balanced (step : FGL) :
     BalancedInteractions
