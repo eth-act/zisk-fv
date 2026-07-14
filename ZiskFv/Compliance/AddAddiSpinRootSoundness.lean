@@ -106,36 +106,23 @@ private theorem addAddiSpinAcceptedTrace_program :
 private theorem addAddiSpinMainRowAt_zero :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addAddiSpinProgram
       addAddiSpinMainTable 0 = addAddiSpinAddRow := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, addAddiSpinMainTable,
-    mainRowsTable, addAddiSpinMainRows]
-  change eval (addAddiSpinMainTable.environment (mainRowArray addAddiSpinAddRow))
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 3
-        addAddiSpinProgram).rowInputVar = addAddiSpinAddRow
-  simpa [addAddiSpinMainTable] using
-    mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows addAddiSpinAddRow
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  rw [dif_pos (by simp)]
+  exact addAddiSpinMainTable_eval_rowInputVar_zero (by simp)
 
 private theorem addAddiSpinMainRowAt_one :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addAddiSpinProgram
       addAddiSpinMainTable 1 = addAddiSpinAddiRow := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, addAddiSpinMainTable,
-    mainRowsTable, addAddiSpinMainRows]
-  change eval (addAddiSpinMainTable.environment (mainRowArray addAddiSpinAddiRow))
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 3
-        addAddiSpinProgram).rowInputVar = addAddiSpinAddiRow
-  simpa [addAddiSpinMainTable] using
-    mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows addAddiSpinAddiRow
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  rw [dif_pos (by simp)]
+  exact addAddiSpinMainTable_eval_rowInputVar_one (by simp)
 
 private theorem addAddiSpinMainRowAt_two :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addAddiSpinProgram
       addAddiSpinMainTable 2 = addAddiSpinJalRow 2 := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, addAddiSpinMainTable,
-    mainRowsTable, addAddiSpinMainRows]
-  change eval (addAddiSpinMainTable.environment (mainRowArray (addAddiSpinJalRow 2)))
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 3
-        addAddiSpinProgram).rowInputVar = addAddiSpinJalRow 2
-  simpa [addAddiSpinMainTable] using
-    mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-      (addAddiSpinJalRow 2)
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  rw [dif_pos (by simp)]
+  exact addAddiSpinMainTable_eval_rowInputVar_two (by simp)
 
 private theorem addAddiSpinMainPc_add :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinAcceptedTrace.program
@@ -191,7 +178,7 @@ def addAddiSpinAddProgramDecode :
   h_idx := by
     rw [addAddiSpinAcceptedTrace_mainTable_eq]
     change 0 + 1 < addAddiSpinMainTable.table.length
-    norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows]
+    simp
   bits := addAddiSpinAddBits
   h_bits_ieo := by simp [addAddiSpinAddBits, addX1RomFlagBits]
   h_bits_m32 := by simp [addAddiSpinAddBits, addX1RomFlagBits]
@@ -231,7 +218,7 @@ def addAddiSpinAddiProgramDecode :
   h_idx := by
     rw [addAddiSpinAcceptedTrace_mainTable_eq]
     change 1 + 1 < addAddiSpinMainTable.table.length
-    norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows]
+    simp
   bits := addAddiSpinAddiBits
   h_bits_ieo := by rfl
   h_bits_m32 := by rfl
@@ -273,7 +260,7 @@ def addAddiSpinJalProgramDecode :
   h_idx := by
     rw [addAddiSpinAcceptedTrace_mainTable_eq]
     change 2 + 1 < addAddiSpinMainTable.table.length
-    norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows]
+    simp
   bits := addAddiSpinJalBits
   h_bits_ieo := by rfl
   h_bits_m32 := by rfl

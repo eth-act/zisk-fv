@@ -4,6 +4,7 @@ import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
+import ZiskFv.AirsClean.Mem.SidecarColumns
 import ZiskFv.AirsClean.Mem.TraceSpec
 import ZiskFv.AirsClean.FullEnsemble.Balance.Classification
 import ZiskFv.AirsClean.FullEnsemble.Balance.CounterpartClassification
@@ -23,125 +24,25 @@ open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 
 /-! ### Prover-data-backed Mem sidecar columns -/
 
-/- `ProverData` keys for the generated Mem sidecar columns.
+/-- Compatibility re-exports for balance-layer callers. The implementations
+live with the Mem component so canonical fixed-column source constructors can
+be used without importing the full-ensemble layer. -/
+abbrev memSidecarGsumOfProverData (data : ProverData FGL) : Nat -> FGL :=
+  ZiskFv.AirsClean.Mem.memSidecarGsumOfProverData data
 
-   These names are the Lean-side contract for generated/full-ensemble code:
-   each key stores a one-column array (`n = 1`) whose row `0` is used for
-   scalars and whose row index is used for table columns. The source map in
-   `MemAirFacts.md` ties these keys to pilout witness columns, fixed columns,
-   AIR_VALUE entries, and challenges. -/
-namespace MemRawSidecarDataKey
+abbrev memSidecarIm0OfProverData (data : ProverData FGL) : Nat -> FGL :=
+  ZiskFv.AirsClean.Mem.memSidecarIm0OfProverData data
 
-abbrev gsum : String := "Mem.sidecar.gsum"
-abbrev im0 : String := "Mem.sidecar.im0"
-abbrev im1 : String := "Mem.sidecar.im1"
+abbrev memSidecarIm1OfProverData (data : ProverData FGL) : Nat -> FGL :=
+  ZiskFv.AirsClean.Mem.memSidecarIm1OfProverData data
 
-namespace Segment
+abbrev memSegmentColumnsOfProverData (data : ProverData FGL) :
+    ZiskFv.Airs.Mem.SegmentColumns FGL :=
+  ZiskFv.AirsClean.Mem.memSegmentColumnsOfProverData data
 
-abbrev segmentId : String := "Mem.sidecar.segment.segment_id"
-abbrev isFirstSegment : String := "Mem.sidecar.segment.is_first_segment"
-abbrev isLastSegment : String := "Mem.sidecar.segment.is_last_segment"
-abbrev previousSegmentValue0 : String := "Mem.sidecar.segment.previous_segment_value_0"
-abbrev previousSegmentValue1 : String := "Mem.sidecar.segment.previous_segment_value_1"
-abbrev previousSegmentStep : String := "Mem.sidecar.segment.previous_segment_step"
-abbrev previousSegmentAddr : String := "Mem.sidecar.segment.previous_segment_addr"
-abbrev segmentLastValue0 : String := "Mem.sidecar.segment.segment_last_value_0"
-abbrev segmentLastValue1 : String := "Mem.sidecar.segment.segment_last_value_1"
-abbrev segmentLastStep : String := "Mem.sidecar.segment.segment_last_step"
-abbrev segmentLastAddr : String := "Mem.sidecar.segment.segment_last_addr"
-abbrev distanceBase0 : String := "Mem.sidecar.segment.distance_base_0"
-abbrev distanceBase1 : String := "Mem.sidecar.segment.distance_base_1"
-abbrev distanceEnd0 : String := "Mem.sidecar.segment.distance_end_0"
-abbrev distanceEnd1 : String := "Mem.sidecar.segment.distance_end_1"
-abbrev segmentL1 : String := "Mem.sidecar.segment.segment_l1"
-
-end Segment
-
-namespace Permutation
-
-abbrev stdAlpha : String := "Mem.sidecar.permutation.std_alpha"
-abbrev stdGamma : String := "Mem.sidecar.permutation.std_gamma"
-abbrev l1 : String := "Mem.sidecar.permutation.l1"
-abbrev imDirect0 : String := "Mem.sidecar.permutation.im_direct_0"
-abbrev imDirect1 : String := "Mem.sidecar.permutation.im_direct_1"
-abbrev imDirect2 : String := "Mem.sidecar.permutation.im_direct_2"
-abbrev imDirect3 : String := "Mem.sidecar.permutation.im_direct_3"
-abbrev imDirect4 : String := "Mem.sidecar.permutation.im_direct_4"
-abbrev imDirect5 : String := "Mem.sidecar.permutation.im_direct_5"
-
-end Permutation
-
-end MemRawSidecarDataKey
-
-/-- Read one field element from a one-column `ProverData` array.
-
-    Missing keys or out-of-range rows default to zero, matching Clean's
-    `Environment.fromArray` convention for absent witness cells. Correctness
-    is not hidden here: generated code must still prove
-    `MemTableGeneratedRawSourceFacts` for the columns read by this function. -/
-@[reducible]
-def proverDataColumn (data : ProverData FGL) (key : String) (row : ℕ) : FGL :=
-  match (data key 1)[row]? with
-  | some values => values[0]
-  | none => 0
-
-/-- Read a scalar sidecar value from row `0` of a one-column `ProverData`
-    array. -/
-@[reducible]
-def proverDataScalar (data : ProverData FGL) (key : String) : FGL :=
-  proverDataColumn data key 0
-
-@[reducible]
-def memSidecarGsumOfProverData (data : ProverData FGL) : ℕ → FGL :=
-  proverDataColumn data MemRawSidecarDataKey.gsum
-
-@[reducible]
-def memSidecarIm0OfProverData (data : ProverData FGL) : ℕ → FGL :=
-  proverDataColumn data MemRawSidecarDataKey.im0
-
-@[reducible]
-def memSidecarIm1OfProverData (data : ProverData FGL) : ℕ → FGL :=
-  proverDataColumn data MemRawSidecarDataKey.im1
-
-/-- Segment sidecar columns read from the shared Clean `ProverData` map. -/
-@[reducible]
-def memSegmentColumnsOfProverData
-    (data : ProverData FGL) :
-    ZiskFv.Airs.Mem.SegmentColumns FGL where
-  segment_id := proverDataScalar data MemRawSidecarDataKey.Segment.segmentId
-  is_first_segment := proverDataScalar data MemRawSidecarDataKey.Segment.isFirstSegment
-  is_last_segment := proverDataScalar data MemRawSidecarDataKey.Segment.isLastSegment
-  previous_segment_value_0 :=
-    proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentValue0
-  previous_segment_value_1 :=
-    proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentValue1
-  previous_segment_step := proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentStep
-  previous_segment_addr := proverDataScalar data MemRawSidecarDataKey.Segment.previousSegmentAddr
-  segment_last_value_0 := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastValue0
-  segment_last_value_1 := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastValue1
-  segment_last_step := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastStep
-  segment_last_addr := proverDataScalar data MemRawSidecarDataKey.Segment.segmentLastAddr
-  distance_base_0 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase0
-  distance_base_1 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase1
-  distance_end_0 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd0
-  distance_end_1 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1
-  segment_l1 := proverDataColumn data MemRawSidecarDataKey.Segment.segmentL1
-
-/-- Permutation/direct-update sidecar columns read from the shared Clean
-    `ProverData` map. -/
-@[reducible]
-def memPermutationColumnsOfProverData
-    (data : ProverData FGL) :
-    ZiskFv.Airs.Mem.PermutationColumns FGL where
-  std_alpha := proverDataScalar data MemRawSidecarDataKey.Permutation.stdAlpha
-  std_gamma := proverDataScalar data MemRawSidecarDataKey.Permutation.stdGamma
-  l1 := proverDataColumn data MemRawSidecarDataKey.Permutation.l1
-  im_direct_0 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect0
-  im_direct_1 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect1
-  im_direct_2 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect2
-  im_direct_3 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect3
-  im_direct_4 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect4
-  im_direct_5 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect5
+abbrev memPermutationColumnsOfProverData (data : ProverData FGL) :
+    ZiskFv.Airs.Mem.PermutationColumns FGL :=
+  ZiskFv.AirsClean.Mem.memPermutationColumnsOfProverData data
 
 /-- Table-level sidecar for generated raw Mem AIR source data.
 

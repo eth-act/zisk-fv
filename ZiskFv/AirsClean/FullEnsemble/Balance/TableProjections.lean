@@ -4,6 +4,7 @@ import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
+import ZiskFv.AirsClean.Mem.GeneratedTransition
 import ZiskFv.AirsClean.Mem.TraceSpec
 import ZiskFv.AirsClean.FullEnsemble.Balance.Classification
 import ZiskFv.AirsClean.FullEnsemble.Balance.CounterpartClassification
@@ -722,6 +723,30 @@ def memOfTable
   im_0 := im0
   im_1 := im1
 
+/-- Canonical named-column Mem view for a live table. The primary columns come
+from the table's materialized rows, while the selected stage-2 columns come
+from that same table's shared `ProverData`. -/
+@[reducible]
+def memOfTableData (table : Table FGL) : ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
+  memOfTable table
+    (ZiskFv.AirsClean.Mem.memSidecarGsumOfProverData table.data)
+    (ZiskFv.AirsClean.Mem.memSidecarIm0OfProverData table.data)
+    (ZiskFv.AirsClean.Mem.memSidecarIm1OfProverData table.data)
+
+/-- Canonical generated-segment columns for a live Mem table. `SEGMENT_L1`
+comes only from the component-owned fixed schema, not from prover data. -/
+@[reducible]
+def memSegmentOfTableData (table : Table FGL) : ZiskFv.Airs.Mem.SegmentColumns FGL :=
+  ZiskFv.AirsClean.Mem.memSegmentColumnsOfProverDataAndFixed table.data
+    (fun row => table.fixedAt ZiskFv.AirsClean.Mem.MemFixedColumn.segmentL1 row)
+
+/-- Canonical generated-permutation columns for a live Mem table. `__L1__`
+comes only from the component-owned fixed schema, not from prover data. -/
+@[reducible]
+def memPermutationOfTableData (table : Table FGL) : ZiskFv.Airs.Mem.PermutationColumns FGL :=
+  ZiskFv.AirsClean.Mem.memPermutationColumnsOfProverDataAndFixed table.data
+    (fun row => table.fixedAt ZiskFv.AirsClean.Mem.MemFixedColumn.l1 row)
+
 /-- In-range concrete table projection agrees with `List.get`. -/
 theorem memTableRowAtOrZero_get
     (table : Table FGL)
@@ -761,6 +786,103 @@ theorem rowAt_memOfTable
       read_same_addr := row.read_same_addr } = row
   cases row
   rfl
+
+/-- The canonical table-data projection has the same in-range named-row view
+as the live dual-Mem component input. -/
+theorem rowAt_memOfTableData
+    (table : Table FGL)
+    (idx : Fin table.table.length) :
+    ZiskFv.AirsClean.Mem.rowAt (memOfTableData table) idx.val =
+      eval (table.environment (table.table.get idx))
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar :=
+  rowAt_memOfTable table
+    (ZiskFv.AirsClean.Mem.memSidecarGsumOfProverData table.data)
+    (ZiskFv.AirsClean.Mem.memSidecarIm0OfProverData table.data)
+    (ZiskFv.AirsClean.Mem.memSidecarIm1OfProverData table.data)
+    idx
+
+/-- Decoding the current effective table environment agrees with the total
+named-row table projection at an in-range row. -/
+theorem memRowFromEnvironmentAt_eq_memTableRowAtOrZero
+    (table : Table FGL)
+    (idx : Fin table.length) :
+    ZiskFv.AirsClean.Mem.memRowFromEnvironment (table.environmentAt idx) =
+      memTableRowAtOrZero table idx.val := by
+  have h_idx : idx.val < table.table.length := by
+    simpa only [Table.table_length] using idx.isLt
+  unfold ZiskFv.AirsClean.Mem.memRowFromEnvironment Table.environmentAt
+  unfold memTableRowAtOrZero
+  rw [dif_pos h_idx]
+  rfl
+
+/-- Decoding a transition's saturated predecessor environment agrees with the
+total named-row table projection at the preceding index. -/
+theorem memRowFromPreviousEnvironment_eq_memTableRowAtOrZero
+    (table : Table FGL)
+    (idx : Fin table.length) :
+    ZiskFv.AirsClean.Mem.memRowFromEnvironment (table.previousEnvironment idx) =
+      memTableRowAtOrZero table (idx.val - 1) := by
+  let previous : Fin table.length := ⟨idx.val - 1, by omega⟩
+  simpa [Table.previousEnvironment, previous] using
+    memRowFromEnvironmentAt_eq_memTableRowAtOrZero table previous
+
+/-- The live Mem transition is exactly the non-local generated surface over
+the canonical table-data projections. The predecessor is the table's
+saturated predecessor row, and both fixed selectors are read from the same
+component-owned schema that materializes the table. -/
+theorem generatedTransition_iff_canonicalTableData
+    (table : Table FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (idx : Fin table.length) :
+    ZiskFv.AirsClean.Mem.generatedTransition ZiskFv.AirsClean.Mem.memFixedColumns idx.val
+        (table.previousEnvironment idx) (table.environmentAt idx) ↔
+      (ZiskFv.Airs.Mem.segmentResidualEveryRow
+          (memSegmentOfTableData table) (memOfTableData table) idx.val
+        ∧ ZiskFv.Airs.Mem.permutation_every_row
+          (memSegmentOfTableData table) (memPermutationOfTableData table)
+          (memOfTableData table) idx.val) := by
+  rcases table with ⟨component, rawRows, data, raw_uniform_width, fixed_domain⟩
+  change component = ZiskFv.AirsClean.Mem.componentWithDualMemBus at h_component
+  subst component
+  let table : Table FGL :=
+    { component := ZiskFv.AirsClean.Mem.componentWithDualMemBus
+      rawRows := rawRows
+      data := data
+      raw_uniform_width := raw_uniform_width
+      fixed_domain := fixed_domain }
+  change ZiskFv.AirsClean.Mem.generatedTransition
+      ZiskFv.AirsClean.Mem.memFixedColumns idx.val
+      (table.previousEnvironment idx) (table.environmentAt idx) ↔
+    (ZiskFv.Airs.Mem.segmentResidualEveryRow
+        (memSegmentOfTableData table) (memOfTableData table) idx.val
+      ∧ ZiskFv.Airs.Mem.permutation_every_row
+        (memSegmentOfTableData table) (memPermutationOfTableData table)
+        (memOfTableData table) idx.val)
+  have h_fixed_at : ∀ slot row : Nat,
+      table.fixedAt slot row =
+        ZiskFv.AirsClean.Mem.memFixedColumns.fixedAt slot row := by
+    intro slot row
+    rfl
+  have h_current :
+      ZiskFv.AirsClean.Mem.memRowFromEnvironment (table.environmentAt idx) =
+        ZiskFv.AirsClean.Mem.rowAt (memOfTableData table) idx.val := by
+    rw [memRowFromEnvironmentAt_eq_memTableRowAtOrZero]
+  have h_previous :
+      ZiskFv.AirsClean.Mem.memRowFromEnvironment (table.previousEnvironment idx) =
+        ZiskFv.AirsClean.Mem.rowAt (memOfTableData table) (idx.val - 1) := by
+    rw [memRowFromPreviousEnvironment_eq_memTableRowAtOrZero]
+  have h_data : (table.environmentAt idx).data = table.data := rfl
+  by_cases h_zero : idx.val = 0
+  · simp only [ZiskFv.AirsClean.Mem.generatedTransition,
+      ZiskFv.AirsClean.Mem.memWindow]
+    rw [h_current, h_previous, h_data]
+    simp [memOfTableData, memOfTable, h_fixed_at, h_zero]
+  · have h_previous_ne : idx.val - 1 ≠ idx.val := by omega
+    simp only [ZiskFv.AirsClean.Mem.generatedTransition,
+      ZiskFv.AirsClean.Mem.memWindow]
+    rw [h_current, h_previous, h_data]
+    simp [memOfTableData, memOfTable, h_fixed_at, h_previous_ne]
 
 /-- The component `Spec` for a concrete dual-Mem table row projects to the
     named-column `Spec` for the corresponding `memOfTable` row.
@@ -958,6 +1080,23 @@ theorem memTableGeneratedRangeFacts_of_component_constraints
     rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
     exact h.2.2.2.2.2.2 h_sel_dual
 
+/-- Derive the concrete Mem row-range facts from the canonical live-table
+    projection. The selected `ProverData` columns and materialized witness rows
+    are the same data consumed by the live dual-Mem constraints, so this needs
+    no legacy sidecar correlation or caller-supplied certificate. -/
+theorem memTableGeneratedRangeFacts_of_component_constraints_canonical
+    (table : Table FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_constraints : table.Constraints) :
+    MemTableGeneratedRangeFacts table (memOfTableData table) := by
+  simpa only [memOfTableData] using
+    memTableGeneratedRangeFacts_of_component_constraints table
+      (ZiskFv.AirsClean.Mem.memSidecarGsumOfProverData table.data)
+      (ZiskFv.AirsClean.Mem.memSidecarIm0OfProverData table.data)
+      (ZiskFv.AirsClean.Mem.memSidecarIm1OfProverData table.data)
+      h_component h_constraints
+
 /-- Segment-level range facts for one generated Mem table segment.
 
     These facts name the segment-global range-check surface used by
@@ -1099,6 +1238,58 @@ structure MemTableGeneratedConstraintFacts
   permutationAt :
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.permutation_every_row segment permutation mem idx.val
+
+/-- Derive the full generated Mem constraint surface from one live table.
+
+The component's ordinary constraints supply the nine row-local equations; its
+right-indexed transition supplies the remaining segment residual and all
+permutation equations. Both paths read the same materialized rows, selected
+`ProverData`, and component-owned fixed schema. -/
+theorem memTableGeneratedConstraintFacts_of_component_constraints_transitions
+    (table : Table FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_constraints : table.Constraints)
+    (h_transitions : table.TransitionConstraints) :
+    MemTableGeneratedConstraintFacts
+      table (memOfTableData table) (memSegmentOfTableData table)
+      (memPermutationOfTableData table) := by
+  have transitionFacts : ∀ idx : Fin table.length,
+      ZiskFv.Airs.Mem.segmentResidualEveryRow
+          (memSegmentOfTableData table) (memOfTableData table) idx.val
+        ∧ ZiskFv.Airs.Mem.permutation_every_row
+          (memSegmentOfTableData table) (memPermutationOfTableData table)
+          (memOfTableData table) idx.val := by
+    intro idx
+    apply (generatedTransition_iff_canonicalTableData table h_component idx).mp
+    simpa only [h_component, ZiskFv.AirsClean.Mem.componentWithDualMemBus] using
+      h_transitions idx
+  refine ⟨?_, ?_⟩
+  · intro idx
+    have h_mem : table.table.get idx ∈ table.table :=
+      List.mem_iff_get.mpr ⟨idx, rfl⟩
+    have h_holds : table.component.operations.ConstraintsHold
+        (table.environment (table.table.get idx)) :=
+      h_constraints (table.table.get idx) h_mem
+    rw [h_component] at h_holds
+    have h_spec :=
+      ZiskFv.AirsClean.Mem.spec_of_componentWithDualMemBus_constraints
+        (table.environment (table.table.get idx)) h_holds
+    have h_row_spec : ZiskFv.AirsClean.Mem.Spec
+        (ZiskFv.AirsClean.Mem.rowAt (memOfTableData table) idx.val) := by
+      rw [rowAt_memOfTableData table idx]
+      exact h_spec
+    have h_core : ZiskFv.Airs.Mem.core_every_row (memOfTableData table) idx.val := by
+      simpa [ZiskFv.Airs.Mem.core_every_row, ZiskFv.AirsClean.Mem.Spec,
+        ZiskFv.AirsClean.Mem.rowAt] using h_row_spec
+    let transitionIdx : Fin table.length := ⟨idx.val, by
+      simpa only [Table.table_length] using idx.isLt⟩
+    exact ZiskFv.Airs.Mem.segment_every_row_of_core_and_residual
+      h_core (transitionFacts transitionIdx).1
+  · intro idx
+    let transitionIdx : Fin table.length := ⟨idx.val, by
+      simpa only [Table.table_length] using idx.isLt⟩
+    exact (transitionFacts transitionIdx).2
 
 /-- Type-level package for raw generated Mem facts.
 
@@ -1270,6 +1461,55 @@ theorem memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1
     intro idx h_pos
     have h_ne : idx.val ≠ 0 := Nat.ne_of_gt h_pos
     simp [h_ne]
+
+/-- Derive the Mem `SEGMENT_L1` shape from the component-owned fixed schema.
+
+    `Table.index_lt_fixed_capacity` consumes the table carrier's intrinsic
+    `fixed_domain` invariant, so a concrete materialized row cannot observe a
+    periodic wraparound. The fact is therefore derived data, not a
+    caller-supplied replay certificate. -/
+theorem memTableGeneratedFixedColumnFacts_of_component_fixedColumns
+    (table : Table FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    MemTableGeneratedFixedColumnFacts table (memSegmentOfTableData table) := by
+  cases table with
+  | mk component rawRows data raw_uniform_width fixed_domain =>
+    change component = ZiskFv.AirsClean.Mem.componentWithDualMemBus at h_component
+    subst component
+    let table : Table FGL :=
+      { component := ZiskFv.AirsClean.Mem.componentWithDualMemBus
+        rawRows := rawRows
+        data := data
+        raw_uniform_width := raw_uniform_width
+        fixed_domain := fixed_domain }
+    change MemTableGeneratedFixedColumnFacts table (memSegmentOfTableData table)
+    have h_columns :
+        table.component.fixedColumns = some ZiskFv.AirsClean.Mem.memFixedColumns := by
+      rfl
+    have h_fixed_at : ∀ slot row : Nat,
+        table.fixedAt slot row = ZiskFv.AirsClean.Mem.memFixedColumns.fixedAt slot row := by
+      intro slot row
+      exact Table.fixedAt_of_fixedColumns table ZiskFv.AirsClean.Mem.memFixedColumns
+        h_columns slot row
+    refine ⟨?_, ?_⟩
+    · intro _h_nonempty
+      change table.fixedAt ZiskFv.AirsClean.Mem.MemFixedColumn.segmentL1 0 = 1
+      rw [h_fixed_at]
+      rfl
+    · intro idx h_pos
+      change table.fixedAt ZiskFv.AirsClean.Mem.MemFixedColumn.segmentL1 idx.val = 0
+      rw [h_fixed_at]
+      have h_idx : idx.val < ZiskFv.AirsClean.Mem.memFixedColumns.capacity :=
+        Table.index_lt_fixed_capacity table ZiskFv.AirsClean.Mem.memFixedColumns h_columns
+          ⟨idx.val, by simpa only [Table.table_length] using idx.isLt⟩
+      change (if idx.val % ZiskFv.AirsClean.Mem.memFixedCapacity = 0 then 1 else 0) = 0
+      have h_idx_capacity : idx.val < ZiskFv.AirsClean.Mem.memFixedCapacity := by
+        simpa [ZiskFv.AirsClean.Mem.memFixedColumns] using h_idx
+      have h_mod_ne : idx.val % ZiskFv.AirsClean.Mem.memFixedCapacity ≠ 0 := by
+        rw [Nat.mod_eq_of_lt h_idx_capacity]
+        exact Nat.ne_of_gt h_pos
+      simp [h_mod_ne]
 
 /-- Typed Lean target for the Mem AIR facts source reported by
     `pil-extract mem-air-facts`.

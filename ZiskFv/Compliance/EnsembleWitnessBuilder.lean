@@ -57,38 +57,45 @@ variable {PublicIO : TypeMap} [ProvableType PublicIO]
 def tableAt (ens : Ensemble F PublicIO) (data : ProverData F)
     (rows : Fin ens.tables.length → List (Array F))
     (huniform : ∀ i : Fin ens.tables.length,
-        ∀ row ∈ rows i, row.size = (ens.tables[i.val]'i.isLt).width)
+        ∀ row ∈ rows i, row.size = (ens.tables[i.val]'i.isLt).rawWidth)
+    (hfixed : ∀ i : Fin ens.tables.length, ∀ columns,
+        (ens.tables[i.val]'i.isLt).fixedColumns = some columns →
+          (rows i).length ≤ columns.capacity)
     (i : Fin ens.tables.length) : Table F where
   component := ens.tables[i.val]'i.isLt
-  width := (ens.tables[i.val]'i.isLt).width
-  table := rows i
+  rawRows := rows i
   data := data
-  uniform_width := huniform i
+  raw_uniform_width := huniform i
+  fixed_domain := hfixed i
 
 @[simp] lemma tableAt_component (ens : Ensemble F PublicIO) (data : ProverData F)
-    (rows : Fin ens.tables.length → List (Array F)) (huniform) (i) :
-    (tableAt ens data rows huniform i).component = ens.tables[i.val]'i.isLt := rfl
+    (rows : Fin ens.tables.length → List (Array F)) (huniform) (hfixed) (i) :
+    (tableAt ens data rows huniform hfixed i).component = ens.tables[i.val]'i.isLt := rfl
 
-@[simp] lemma tableAt_table (ens : Ensemble F PublicIO) (data : ProverData F)
-    (rows : Fin ens.tables.length → List (Array F)) (huniform) (i) :
-    (tableAt ens data rows huniform i).table = rows i := rfl
+@[simp] lemma tableAt_rawRows (ens : Ensemble F PublicIO) (data : ProverData F)
+    (rows : Fin ens.tables.length → List (Array F)) (huniform) (hfixed) (i) :
+    (tableAt ens data rows huniform hfixed i).rawRows = rows i := rfl
 
 @[simp] lemma tableAt_data (ens : Ensemble F PublicIO) (data : ProverData F)
-    (rows : Fin ens.tables.length → List (Array F)) (huniform) (i) :
-    (tableAt ens data rows huniform i).data = data := rfl
+    (rows : Fin ens.tables.length → List (Array F)) (huniform) (hfixed) (i) :
+    (tableAt ens data rows huniform hfixed i).data = data := rfl
 
 /-- Build an `EnsembleWitness ens` from a position-indexed row assignment. The
     `tables` list is `List.ofFn` over `Fin ens.tables.length`, so every built
     table's component is definitionally `ens.tables[i]` — making the three `same_*`
-    obligations one-liners. Callers supply `rows` (per-table row lists) and a
-    per-table `uniform_width` proof; #218/#219 supply non-empty `rows`, the
-    degenerate #217 witness supplies `fun _ => []`. -/
+    obligations one-liners. Callers supply `rows` (per-table raw row lists), a
+    per-table raw-width proof, and the structural capacity invariant required by a
+    component-owned fixed schema; #218/#219 supply non-empty `rows`, the degenerate
+    #217 witness supplies `fun _ => []`. -/
 def ofRows (ens : Ensemble F PublicIO) (data : ProverData F) (publicInput : PublicIO F)
     (rows : Fin ens.tables.length → List (Array F))
     (huniform : ∀ i : Fin ens.tables.length,
-        ∀ row ∈ rows i, row.size = (ens.tables[i.val]'i.isLt).width) :
+        ∀ row ∈ rows i, row.size = (ens.tables[i.val]'i.isLt).rawWidth)
+    (hfixed : ∀ i : Fin ens.tables.length, ∀ columns,
+        (ens.tables[i.val]'i.isLt).fixedColumns = some columns →
+          (rows i).length ≤ columns.capacity) :
     EnsembleWitness ens where
-  tables := List.ofFn (tableAt ens data rows huniform)
+  tables := List.ofFn (tableAt ens data rows huniform hfixed)
   data := data
   publicInput := publicInput
   same_length := by rw [List.length_ofFn]
@@ -97,17 +104,17 @@ def ofRows (ens : Ensemble F PublicIO) (data : ProverData F) (publicInput : Publ
     intro t h; rw [List.mem_ofFn] at h; obtain ⟨i, rfl⟩ := h; rfl
 
 @[simp] lemma ofRows_tables (ens : Ensemble F PublicIO) (data : ProverData F)
-    (publicInput : PublicIO F) (rows : Fin ens.tables.length → List (Array F)) (huniform) :
-    (ofRows ens data publicInput rows huniform).tables =
-      List.ofFn (tableAt ens data rows huniform) := rfl
+    (publicInput : PublicIO F) (rows : Fin ens.tables.length → List (Array F)) (huniform) (hfixed) :
+    (ofRows ens data publicInput rows huniform hfixed).tables =
+      List.ofFn (tableAt ens data rows huniform hfixed) := rfl
 
 @[simp] lemma ofRows_data (ens : Ensemble F PublicIO) (data : ProverData F)
-    (publicInput : PublicIO F) (rows : Fin ens.tables.length → List (Array F)) (huniform) :
-    (ofRows ens data publicInput rows huniform).data = data := rfl
+    (publicInput : PublicIO F) (rows : Fin ens.tables.length → List (Array F)) (huniform) (hfixed) :
+    (ofRows ens data publicInput rows huniform hfixed).data = data := rfl
 
 @[simp] lemma ofRows_publicInput (ens : Ensemble F PublicIO) (data : ProverData F)
-    (publicInput : PublicIO F) (rows : Fin ens.tables.length → List (Array F)) (huniform) :
-    (ofRows ens data publicInput rows huniform).publicInput = publicInput := rfl
+    (publicInput : PublicIO F) (rows : Fin ens.tables.length → List (Array F)) (huniform) (hfixed) :
+    (ofRows ens data publicInput rows huniform hfixed).publicInput = publicInput := rfl
 
 /-- With an empty verifier, `witness.Constraints` reduces to the per-`tables`
     obligation (the verifier table's own constraints are discharged by

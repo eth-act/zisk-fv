@@ -11,17 +11,17 @@ merge.)
 
 ---
 
-## D1 — `Air.Flat` adjacent-row (transition) constraints  · zisk-fv #100  · **UPSTREAM CANDIDATE (strong)**
+## D1 — `Air.Flat` indexed adjacent-row (transition) constraints  · zisk-fv #100 / #226  · **UPSTREAM CANDIDATE (strong)**
 
-- **Branch / commit:** `air-flat-transition-constraints` @ `497e4a41` (off the pinned base).
-- **What:** an *additive* transition-constraint facility on the modern `Air.Flat` layer —
-  - `Air.Flat.Component.transition : Input F → Input F → Prop := fun _ _ => True` (a new field, defaults to
-    trivial so every existing component/proof is unaffected);
-  - `Air.Flat.Table.TransitionConstraints` — the transition holds on each consecutive row pair
-    (`∀ i, i+1 < len → component.transition (rowInput row_i) (rowInput row_{i+1})`);
-  - `Air.Flat.EnsembleWitness.TransitionConstraints` — folds that over `allTables`.
-  Plus the mechanical `⟨…⟩ → { circuit := … }` constructor sweep that adding a struct field forces
-  (3 sites in Clean: `FlatEnsemble.lean` verifierTable ×2 + `empty_allTables`; 4 in `FibonacciWithChannels.lean`).
+- **Branch / commit:** `air-flat-indexed-fixed-columns` @ `c87617d8` (which includes the prior
+  `air-flat-transition-constraints` commit `497e4a41`).
+- **What:** an *additive* transition-constraint facility on the modern `Air.Flat` layer:
+  - `Air.Flat.Component.transition : Nat → Environment F → Environment F → Prop := fun _ _ _ => True`;
+  - `Air.Flat.Table.TransitionConstraints` applies it at every row index to the canonical predecessor/current
+    effective environments, with row zero saturated to itself;
+  - `Air.Flat.EnsembleWitness.TransitionConstraints` folds that over `allTables`.
+  The indexed form is necessary for generated AIR expressions that read periodic fixed data at a successor
+  position. Existing components remain unaffected because the default predicate is trivial.
 - **Why:** `Air.Flat` is single-row *by design* (`FlatComponent.lean:8-10`: "There are no direct adjacent-row
   constraints; communication … is expressed by channel interactions"). But ZisK's Main AIR enforces a
   genuine cross-row **polynomial** PC-handshake constraint (`main.pil:409-410`), which is **not** a channel —
@@ -44,3 +44,23 @@ merge.)
   theorem consumes it); on the zisk-fv side it is carried as a verifier-checked accepted-trace certificate
   (`AcceptedZiskTrace.transitions_hold`), in the same epistemic class as `main_height`. The upstream version
   should instead thread the transition through the soundness lift.
+
+---
+
+## D2 — `Air.Flat` component-owned indexed fixed columns  · zisk-fv #243 / S1b  · **UPSTREAM CANDIDATE (strong)**
+
+- **Branch / commit:** `air-flat-indexed-fixed-columns` @ `c87617d8`.
+- **What:** `IndexedFixedColumns` declares a physical capacity, a raw-or-fixed layout for each effective
+  output cell, and periodic fixed values. `Component` owns an optional schema; `Table` stores only raw rows
+  and definitionally materializes canonical effective `table` rows. The same rows feed constraints, channel
+  interactions and balance, indexed transitions, and projections. `Table.fixed_domain` bounds a table to the
+  schema capacity, and `Table.index_lt_fixed_capacity` derives the no-wrap fact for an actual row.
+- **Why:** preprocessed PIL columns, including Main's `SEGMENT_L1`/`STEP` and Mem's appended
+  `SEGMENT_L1`/`__L1__`, are verifier-side data rather than caller-provided witness cells. A projection-only
+  override would prove chronology against data different from the balanced interaction trace. Making the
+  layout component-owned keeps all consumers on one canonical source and keeps the domain/no-wrap bound a
+  structural facility invariant rather than an accepted-trace certificate or caller-supplied promise.
+- **Upstream candidacy — strong.** It is a small, generic representation of standard AIR fixed columns and
+  makes the modern `Air.Flat` layer usable for preprocessed-column AIRs without introducing a parallel table
+  model. The eventual upstream convergence should establish a soundness lift for both D1 and D2; this fork
+  deliberately does not claim that larger result.

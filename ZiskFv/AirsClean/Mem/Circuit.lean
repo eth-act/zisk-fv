@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.Mem.Constraints
+import ZiskFv.AirsClean.Mem.GeneratedTransition
 import ZiskFv.AirsClean.Mem.Soundness
 import ZiskFv.AirsClean.CompletenessHelpers
 import Clean.Air.FlatComponent
@@ -246,7 +247,20 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
 
 /-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
     memory-bus provider emissions. -/
-def componentWithDualMemBus : Air.Flat.Component FGL := { circuit := circuitWithDualMemBus }
+def componentWithDualMemBus : Air.Flat.Component FGL :=
+  { circuit := circuitWithDualMemBus
+    rawWidth := 13
+    fixedColumns := some memFixedColumns
+    transition := generatedTransition memFixedColumns }
+
+/-- The live dual-Mem component decodes a materialized raw Mem row directly;
+    the appended fixed cells do not create an input-side premise. -/
+theorem componentWithDualMemBus_rowInput_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    componentWithDualMemBus.rowInput
+      (Environment.fromArray (memFixedColumns.materialize index (memRawRow row)) data) = row := by
+  simpa only [Component.rowInput, eval_varFromOffset_valueFromOffset] using
+    eval_memRawRow_materialize index data row
 
 /-- Project the live dual-Mem static lookups to the row-level range facts they
     mirror in `mem.pil:384-385,397`. -/
@@ -260,6 +274,49 @@ theorem dualMemRowRangeFacts_of_componentWithDualMemBus_constraints
     componentWithDualMemBus.rowInputVar componentWithDualMemBus.rowOffset env (by
       simpa only [componentWithDualMemBus, circuitWithDualMemBus,
         Component.rowOperations] using h_row)
+
+/-- Project the nine row-local Mem equations from the live dual-Mem component.
+    The generated cross-row equations are supplied separately by this same
+    component's indexed transition. -/
+theorem spec_of_componentWithDualMemBus_constraints
+    (env : Environment FGL)
+    (h_holds : componentWithDualMemBus.operations.ConstraintsHold env) :
+    Spec (eval env componentWithDualMemBus.rowInputVar) := by
+  have h_row : componentWithDualMemBus.rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff (component := componentWithDualMemBus) env).mp h_holds
+  have h_mem : Operations.ConstraintsHold env
+      ((memWithDualMemBus componentWithDualMemBus.rowInputVar).operations
+      componentWithDualMemBus.rowOffset) := by
+    simpa only [componentWithDualMemBus, circuitWithDualMemBus,
+      memWithDualMemBusElaborated, Component.rowOperations] using h_row
+  generalize h_input : componentWithDualMemBus.rowInputVar = row at h_mem ⊢
+  simp only [memWithDualMemBus, main, rowRangeLookups,
+    gatedDualStepDeltaRangeLookup, MemBusChannel, circuit_norm] at h_mem
+  cases row with
+  | mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr previous_step
+      increment_0 increment_1 read_same_addr =>
+    simp only [Spec, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+      ProvableStruct.fromComponents, ProvableStruct.components,
+      ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field] at *
+    exact
+      ⟨ by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 (sel_dual * (1 - sel_dual)) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 ((1 - sel) * sel_dual) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 (sel * (1 - sel)) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 (addr_changes * (1 - addr_changes)) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 (wr * (1 - wr)) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 (wr * (1 - sel)) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 (read_same_addr - (1 - addr_changes) * (1 - wr)) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 ((addr_changes * (1 - wr)) * value_0) (by simp)
+      , by simpa [Expression.eval, sub_eq_add_neg] using
+          h_mem.1 ((addr_changes * (1 - wr)) * value_1) (by simp) ⟩
 
 theorem eval_memRow_sel
     (env : Environment FGL) (row : Var MemRow FGL) :

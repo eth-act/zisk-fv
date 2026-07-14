@@ -290,6 +290,67 @@ def segment_every_row
       (v.value_1 row - segment_previous_value_1 cols v row) = 0
   ∧ (v.addr_changes row * (1 - v.wr row)) * v.value_1 row = 0
 
+/-- The generated segment constraints not already enforced by the nine local
+    Mem component equations. -/
+@[simp]
+def segmentResidualEveryRow
+    (cols : SegmentColumns F) (v : Valid_Mem F F) (row : ℕ) : Prop :=
+  cols.is_first_segment * (1 - cols.is_first_segment) = 0
+  ∧ cols.is_last_segment * (1 - cols.is_last_segment) = 0
+  ∧ cols.is_first_segment * cols.segment_id = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.value_0 row - cols.segment_last_value_0) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.value_1 row - cols.segment_last_value_1) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.addr row - cols.segment_last_addr) = 0
+  ∧ cols.segment_l1 (row + 1) *
+      (v.sel_dual row * (v.step_dual row - v.step row) + v.step row
+        - cols.segment_last_step) = 0
+  ∧ (cols.previous_segment_addr - 335544320)
+      - (cols.distance_base_0 + 65536 * cols.distance_base_1) = 0
+  ∧ (402653183 - cols.segment_last_addr)
+      - (cols.distance_end_0 + 65536 * cols.distance_end_1) = 0
+  ∧ v.previous_step row
+      - (cols.segment_l1 row *
+          (cols.previous_segment_step - previous_row_step v row)
+        + previous_row_step v row) = 0
+  ∧ (v.increment_0 row + 4194304 * v.increment_1 row + 1)
+      - (v.addr_changes row * (delta_addr cols v row - delta_step v row)
+        + delta_step v row) = 0
+  ∧ (cols.is_first_segment * cols.segment_l1 row) *
+      (1 - v.addr_changes row) = 0
+  ∧ (1 - v.addr_changes row) *
+      (v.addr row - segment_previous_addr cols v row) = 0
+  ∧ v.read_same_addr row *
+      (v.value_0 row - segment_previous_value_0 cols v row) = 0
+  ∧ v.read_same_addr row *
+      (v.value_1 row - segment_previous_value_1 cols v row) = 0
+
+/-- Project the non-local generated segment constraints from the full
+    `0..=23` generated surface. -/
+theorem segmentResidualEveryRow_of_segment_every_row
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h : segment_every_row cols v row) :
+    segmentResidualEveryRow cols v row := by
+  rcases h with
+    ⟨h0, h1, h2, _, _, _, _, _, _, h9, h10, h11, h12, h13, h14, h15, h16,
+      h17, _, h19, h20, _, h22, _⟩
+  exact ⟨h0, h1, h2, h9, h10, h11, h12, h13, h14, h15, h16, h17, h19, h20, h22⟩
+
+/-- Reconstruct the complete generated segment surface from the local Mem
+    component equations and the non-local residual. -/
+theorem segment_every_row_of_core_and_residual
+    {cols : SegmentColumns F} {v : Valid_Mem F F} {row : ℕ}
+    (h_core : core_every_row v row)
+    (h_residual : segmentResidualEveryRow cols v row) :
+    segment_every_row cols v row := by
+  rcases h_core with ⟨h3, h4, h5, h6, h7, h8, h18, h21, h23⟩
+  rcases h_residual with
+    ⟨h0, h1, h2, h9, h10, h11, h12, h13, h14, h15, h16, h17, h19, h20, h22⟩
+  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15,
+    h16, h17, h18, h19, h20, h21, h22, h23⟩
+
 /-- The active local Mem bridge is a projection of the generated 0-23
 segment/continuity surface. -/
 theorem core_every_row_of_segment_every_row
