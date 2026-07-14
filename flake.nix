@@ -41,12 +41,13 @@
       # Clean.Fin.foldl_eq_foldl_finRange, so Clean.Air.* can be imported
       # alongside Mathlib/Batteries), the C7
       # `exists_nonzero_push_of_pull` balance strengthening, and (zisk-fv #100)
-      # the additive `Air.Flat.Component.transition` adjacent-row constraint
-      # facility (branch air-flat-transition-constraints; see
-      # docs/clean-fork-divergences.md D1 — strong upstream-PR candidate). To be
-      # upstreamed; re-point at Verified-zkEVM/clean once all merge. Pinned by
-      # rev so the lock is immutable; fetched over HTTPS so CI needs no SSH key.
-      url = "github:codygunton/clean/497e4a4192ae90485647778542636539ef03316d";
+      # the D1 all-row predecessor/current transition plus D2 canonical
+      # component-owned indexed fixed-column materialization (branch
+      # air-flat-indexed-fixed-columns; see docs/clean-fork-divergences.md).
+      # To be upstreamed; re-point at Verified-zkEVM/clean once all merge.
+      # Pinned by rev so the lock is immutable; fetched over HTTPS so CI needs
+      # no SSH key.
+      url = "github:codygunton/clean/c87617d8";
       flake = false;
     };
 

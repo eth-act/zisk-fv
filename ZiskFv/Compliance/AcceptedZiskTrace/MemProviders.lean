@@ -274,12 +274,7 @@ theorem AcceptedZiskTrace.memReplayBridge_coversMutableMemTables
       (trace.memReplayBridge h_present) := by
   intro table h_table h_component
   have h_eq := trace.mem_replay_source_covers h_present table h_table h_component
-  simpa [AcceptedZiskTrace.memReplayBridge, AcceptedZiskTrace.memReplayRows,
-    AcceptedZiskTrace.memReplaySource, FullWitnessMemAirSource.replayBridge,
-    fullWitnessMemReplayBridge_of_memAirSource,
-    fullWitnessMemReplayBridge_of_memTable_fixedL1_airFacts,
-    fullWitnessMemReplayBridge_of_memTable_fixedL1,
-    fullWitnessMemReplayBridge_of_memTable] using h_eq
+  simpa only [AcceptedZiskTrace.memReplayBridge_table] using h_eq
 
 /-- Accepted-trace wrapper using the trace-selected Mem replay bridge as the
     chronological row list.

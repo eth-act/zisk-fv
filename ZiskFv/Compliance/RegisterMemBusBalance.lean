@@ -393,14 +393,14 @@ theorem addX1Row_main_interactionsWith_memBus_eq_mainRegisterInteractionsFromTab
   rfl
 
 private def addX1MainEnv : Environment FGL :=
-  (mainSingleRowTable 1 addX1Program addX1Row).environment (mainRowArray addX1Row)
+  mainSingleRowTableEnvironment 1 addX1Program addX1Row
 
 private def addX1MainRowVar : Var MainRowWithRom FGL :=
   (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 1 addX1Program).rowInputVar
 
 private theorem addX1MainRowVar_eval : eval addX1MainEnv addX1MainRowVar = addX1Row := by
   dsimp [addX1MainEnv, addX1MainRowVar]
-  exact mainSingleRowTable_eval_rowInputVar 1 addX1Program addX1Row
+  exact mainSingleRowTable_eval_rowInputVar 1 addX1Program addX1Row (by rfl) (by rfl)
 
 private theorem addX1MainRom_eval :
     eval addX1MainEnv addX1MainRowVar.rom = addX1Row.rom := by
@@ -576,7 +576,15 @@ private theorem addX1MainCMemInteraction_eval :
 
 theorem mainRegisterInteractionsFromTable_eq_mainRegisterInteractions :
     mainRegisterInteractionsFromTable = mainRegisterInteractions := by
-  simp [mainRegisterInteractionsFromTable, mainRegisterInteractions, mainMemBusInteractions]
+  change mainMemBusInteractions 1 addX1Program addX1Row =
+    [ mainARegPreInteraction addX1Row
+    , mainAMemInteraction addX1Row
+    , mainBRegPreInteraction addX1Row
+    , mainBMemInteraction addX1Row
+    , mainCRegPreInteraction addX1Row
+    , mainCMemInteraction addX1Row ]
+  unfold mainMemBusInteractions
+  simp only [List.cons.injEq, and_true]
   exact ⟨addX1MainARegPreInteraction_eval, addX1MainAMemInteraction_eval,
     addX1MainBRegPreInteraction_eval, addX1MainBMemInteraction_eval,
     addX1MainCRegPreInteraction_eval, addX1MainCMemInteraction_eval⟩

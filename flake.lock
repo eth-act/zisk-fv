@@ -54,17 +54,17 @@
     "clean-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1782534319,
-        "narHash": "sha256-ew/hlzT3OCAEKhgCNMnsIaIVGE+uJlckp2wVj4/S9n4=",
+        "lastModified": 1784035501,
+        "narHash": "sha256-1Be3MrWhDvH0gytR5UY5FhgRzifbL5UHEf9K5dxIz+E=",
         "owner": "codygunton",
         "repo": "clean",
-        "rev": "497e4a4192ae90485647778542636539ef03316d",
+        "rev": "c87617d8e29386e1e9e4f98cfbfb6940c2eb63df",
         "type": "github"
       },
       "original": {
         "owner": "codygunton",
+        "ref": "c87617d8",
         "repo": "clean",
-        "rev": "497e4a4192ae90485647778542636539ef03316d",
         "type": "github"
       }
     },

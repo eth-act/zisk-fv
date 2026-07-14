@@ -27,22 +27,39 @@ namespace ZiskFv.Compliance.SingleAddWitness
 
 def emptyComponentTable (component : Component FGL) : Table FGL where
   component := component
-  width := component.width
-  table := []
+  rawRows := []
   data := emptyData
-  uniform_width := by
+  raw_uniform_width := by
     intro row h_row
     cases h_row
+  fixed_domain := by
+    intro columns h_columns
+    simp
 
 theorem emptyComponentTable_constraints (component : Component FGL) :
     (emptyComponentTable component).Constraints := by
-  rw [Table.Constraints]
-  intro row h_row
-  cases h_row
+  simp only [Table.Constraints, Table.table]
+  unfold emptyComponentTable
+  split <;> simp
 
 theorem emptyComponentTable_interactionsWith (component : Component FGL) (channel) :
     (emptyComponentTable component).interactionsWith channel = [] := by
-  simp [Table.interactionsWith, emptyComponentTable]
+  simp only [Table.interactionsWith, Table.table]
+  unfold emptyComponentTable
+  split <;> simp
+
+theorem emptyComponentTable_table (component : Component FGL) :
+    (emptyComponentTable component).table = [] := by
+  simp only [Table.table]
+  unfold emptyComponentTable
+  split <;> rfl
+
+theorem emptyComponentTable_transitions (component : Component FGL) :
+    (emptyComponentTable component).TransitionConstraints := by
+  rw [Table.TransitionConstraints]
+  intro index
+  change Fin 0 at index
+  exact Fin.elim0 index
 
 def addX1BinaryAddRow : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL :=
   ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 0
@@ -83,7 +100,7 @@ theorem addX1Main_proverAssumptions :
 theorem addX1MainTable_constraints :
     (mainSingleRowTable 1 addX1Program addX1Row).Constraints :=
   mainSingleRowTable_constraints_of_proverAssumptions 1 addX1Program addX1Row
-    addX1Main_proverAssumptions
+    (by rfl) (by rfl) addX1Main_proverAssumptions
 
 theorem addX1BinaryAddTable_constraints :
     (binaryAddRowsTable [addX1BinaryAddRow]).Constraints := by
@@ -170,21 +187,62 @@ theorem singleAddWitness_constraints : singleAddWitness.Constraints :=
   singleAddWitness.constraints_of_tables singleAddEnsemble_verifier
     singleAddWitness_table_constraints
 
+private theorem mainSingleRowTable_transitions
+    (length : Nat) (program : Program length) (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 0)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 0) :
+    (mainSingleRowTable length program row).TransitionConstraints := by
+  rw [Table.TransitionConstraints]
+  intro index
+  have h_index_lt := index.isLt
+  change index.val < 1 at h_index_lt
+  have h_index : index.val = 0 := by omega
+  have h_zero : 0 < (mainSingleRowTable length program row).length := by
+    change 0 < 1
+    decide
+  have h_index_eq : index = ⟨0, h_zero⟩ := Fin.ext h_index
+  subst index
+  change pcHandshakeTransition 0
+    (Environment.fromArray (mainFixedColumns.materialize 0 (mainRawRow row)) emptyData)
+    (Environment.fromArray (mainFixedColumns.materialize 0 (mainRawRow row)) emptyData)
+  unfold pcHandshakeTransition
+  rw [eval_mainRawRow_materialize 0 emptyData row h_segment_l1 h_main_step]
+  have h_segment_l1_one : row.core.segment_l1 = 1 := by
+    rw [h_segment_l1]
+    rfl
+  simp [pcHandshakeBetween, h_segment_l1_one]
+
+private theorem addX1MainTable_transitions :
+    (mainSingleRowTable 1 addX1Program addX1Row).TransitionConstraints :=
+  mainSingleRowTable_transitions 1 addX1Program addX1Row (by rfl) (by rfl)
+
 theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints := by
   intro table h_table
   rw [EnsembleWitness.allTables, List.mem_cons] at h_table
   rcases h_table with h_verifier | h_table
   · subst table
     rw [Table.TransitionConstraints]
-    intro i h_i
-    simp [EnsembleWitness.verifierTable] at h_i
+    intro index
+    simp [EnsembleWitness.verifierTable]
   · simp [singleAddWitness, singleAddTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      rw [Table.TransitionConstraints] <;>
-      intro i h_i <;>
-      simp [registerBoundaryRowsTable, registerBoundaryRowsTableOf, emptyComponentTable,
-        binaryAddRowsTable, mainSingleRowTable, ZiskFv.AirsClean.RegisterBoundary.component,
-        ZiskFv.AirsClean.BinaryAdd.component] at h_i ⊢
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [registerBoundaryRowsTable, registerBoundaryRowsTableOf,
+        ZiskFv.AirsClean.RegisterBoundary.component]
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignReadByte.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignByte.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_transitions
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.Binary.staticLookupComponent
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [binaryAddRowsTable, ZiskFv.AirsClean.BinaryAdd.component]
+    · exact addX1MainTable_transitions
 
 private theorem not_main_component_of_name_ne
     {component : Component FGL}
@@ -264,14 +322,14 @@ private theorem singleAddWitness_mutable_mem_component_tables_empty (table : Tab
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_mutable_mem_component_of_name_ne (by decide) h_component
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignReadByte.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignByte.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_table ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+    · exact emptyComponentTable_table ZiskFv.AirsClean.Binary.staticLookupComponent
     · exfalso
       exact not_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
@@ -300,10 +358,13 @@ theorem addX1Main_segment_l1_first :
   simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
   unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
   simp [mainSingleRowTable, mainRowArray]
-  change (eval ((mainSingleRowTable 1 addX1Program addX1Row).environment
-      (mainRowArray addX1Row))
-        (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).core.segment_l1 = 1
-  rw [mainSingleRowTable_eval_rowInputVar]
+  change (eval (Environment.fromArray
+      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
+      (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).core.segment_l1 = 1
+  change (eval (Environment.fromArray
+      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
+      (varFromOffset (F := FGL) MainRowWithRom 0)).core.segment_l1 = 1
+  rw [eval_mainRawRow_materialize 0 emptyData addX1Row (by rfl) (by rfl)]
   rfl
 
 theorem addX1Main_main_step_eq_index :
@@ -314,10 +375,13 @@ theorem addX1Main_main_step_eq_index :
   fin_cases i
   unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
   simp [mainSingleRowTable, mainRowArray]
-  change (eval ((mainSingleRowTable 1 addX1Program addX1Row).environment
-      (mainRowArray addX1Row))
-        (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).rom.main_step = 0
-  rw [mainSingleRowTable_eval_rowInputVar]
+  change (eval (Environment.fromArray
+      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
+      (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).rom.main_step = 0
+  change (eval (Environment.fromArray
+      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
+      (varFromOffset (F := FGL) MainRowWithRom 0)).rom.main_step = 0
+  rw [eval_mainRawRow_materialize 0 emptyData addX1Row (by rfl) (by rfl)]
   rfl
 
 theorem addX1Main_main_step_index_fixed :
@@ -389,9 +453,13 @@ theorem singleAddWitness_opBus_interactions :
       registerBoundaryRowsTable.interactionsWith OpBusChannel.toRaw = [] := by
     exact ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_opBus_nil
       (table := registerBoundaryRowsTable) rfl
+  have h_main :
+      (mainSingleRowTable 1 addX1Program addX1Row).interactionsWith OpBusChannel.toRaw =
+        [mainOpBusInteraction addX1Row] :=
+    mainSingleRowTable_interactionsWith_opBus 1 addX1Program addX1Row (by rfl) (by rfl)
   rw [show singleAddWitness.tables = singleAddTables from rfl]
   simp [singleAddTables, h_registerBoundary, emptyComponentTable_interactionsWith,
-    binaryAddRowsTable_interactionsWith_opBus, mainSingleRowTable_interactionsWith_opBus]
+    binaryAddRowsTable_interactionsWith_opBus, h_main]
 
 theorem singleAddWitness_opBus_balanced :
     BalancedInteractions
@@ -483,7 +551,6 @@ def singleAddAcceptedTrace : AcceptedZiskTrace 1 where
   mem_replay_gsum := fun h => absurd h singleAddWitness_not_mutableMemPresent
   mem_replay_im0 := fun h => absurd h singleAddWitness_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h singleAddWitness_not_mutableMemPresent
-  mem_replay_constraints := fun h => absurd h singleAddWitness_not_mutableMemPresent
   mem_replay_segment_ranges := fun h => absurd h singleAddWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h singleAddWitness_not_mutableMemPresent
   transitions_hold := singleAddWitness_transitions

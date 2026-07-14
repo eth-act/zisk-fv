@@ -385,12 +385,10 @@ theorem previous_activeMemReplayEntry_timestamp_le_current_primary_of_fullWitnes
     entry.timestamp.toNat ≤
       (memPrimaryReplayEntryOfRow
         (ZiskFv.AirsClean.Mem.rowAt h_bridge.mem idx.val)).timestamp.toNat := by
-  have h_fixed :=
-    memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment
   exact
     previous_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
       h_bridge.generatedRows h_bridge.rowRanges idx h_same_addr
-      (h_fixed.segmentL1_nonfirst idx h_idx_pos) h_entry
+      (h_bridge.fixedColumns.segmentL1_nonfirst idx h_idx_pos) h_entry
 
 /-- The previous generated Mem row's primary timestamp is chronologically no
 later than the current primary timestamp at a non-boundary same-address row.
@@ -706,7 +704,7 @@ theorem prior_activeMemReplayEntry_timestamp_le_current_primary_of_fullWitnessMe
   exact
     prior_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_memTableGeneratedRowsBridge
       h_bridge.generatedRows h_bridge.rowRanges
-      (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+      h_bridge.fixedColumns
       priorIdx selectedIdx h_prior_lt h_addr_eq h_entry
 
 /-- Active replay entries from a strictly earlier generated Mem row at the same
@@ -759,7 +757,7 @@ theorem prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_fullWitn
   exact
     prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_same_addr_memTableGeneratedRowsBridge
       h_bridge.generatedRows h_bridge.rowRanges
-      (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+      h_bridge.fixedColumns
       priorIdx selectedIdx h_prior_lt h_addr_eq h_prior_entry h_selected_entry
 
 /-- The active replay projection of a generated Mem table is chronologically
@@ -847,7 +845,7 @@ theorem activeMemReplayRows_pairwise_timestamp_toNat_le_of_same_ptr_of_fullWitne
   rw [h_bridge.rows_eq]
   exact activeMemReplayRowsOfTable_pairwise_timestamp_toNat_le_of_same_ptr
     h_bridge.generatedRows h_bridge.rowRanges
-    (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+    h_bridge.fixedColumns
 
 /-- At a selected address-change row, every prior table row has a different
     Mem address.
@@ -2289,14 +2287,14 @@ def acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
   acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts
     (table := h_bridge.table)
     (mem := h_bridge.mem)
-    (segment := segmentWithFixedL1 h_bridge.segment)
+    (segment := h_bridge.segment)
     (permutation := h_bridge.permutation)
     (rowCount := h_bridge.rowCount)
     h_bridge.rows_eq
     h_bridge.generatedRows
     h_bridge.rowRanges
     h_bridge.segmentRanges
-    (memTableGeneratedFixedColumnFacts_of_segmentWithFixedL1 h_bridge.table h_bridge.segment)
+    h_bridge.fixedColumns
     h_bridge.nonempty
 
 @[simp]

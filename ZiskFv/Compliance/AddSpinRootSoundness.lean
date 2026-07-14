@@ -95,30 +95,26 @@ private theorem addSpinAcceptedTrace_program :
 
 private theorem addSpinMainRowAt_zero :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows) 0 = addSpinAddRow := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, mainRowsTable, addSpinMainRows]
-  change eval ((mainRowsTable 2 addSpinProgram addSpinMainRows).environment
-      (mainRowArray addSpinAddRow))
-        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
-    addSpinAddRow
-  rw [mainRowsTable_eval_rowInputVar]
+      addSpinMainTable 0 = addSpinAddRow := by
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  rw [dif_pos (by norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows])]
+  exact addSpinMainTable_eval_rowInputVar_zero
+    (by norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows])
 
 private theorem addSpinMainRowAt_one :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows) 1 = addSpinJalRow 1 := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, mainRowsTable, addSpinMainRows]
-  change eval ((mainRowsTable 2 addSpinProgram addSpinMainRows).environment
-      (mainRowArray (addSpinJalRow 1)))
-        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
-    addSpinJalRow 1
-  rw [mainRowsTable_eval_rowInputVar]
+      addSpinMainTable 1 = addSpinJalRow 1 := by
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  rw [dif_pos (by norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows])]
+  exact addSpinMainTable_eval_rowInputVar_one
+    (by norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows])
 
 private theorem addSpinMainPc_add :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
         addSpinAcceptedTrace.mainTable).pc addSpinAddIndex.val = 0 := by
   rw [addSpinAcceptedTrace_mainTable_eq]
   change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 0 = 0
+      addSpinMainTable).pc 0 = 0
   simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row]
 
 private theorem addSpinMainPc_jal :
@@ -126,7 +122,7 @@ private theorem addSpinMainPc_jal :
         addSpinAcceptedTrace.mainTable).pc addSpinJalIndex.val = 4 := by
   rw [addSpinAcceptedTrace_mainTable_eq]
   change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 1 = 4
+      addSpinMainTable).pc 1 = 4
   simp [addSpinMainRowAt_one, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
     addSpinJalFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf]
 
@@ -185,8 +181,8 @@ def addSpinJalProgramDecode :
     ProgramDecode_jal addSpinAcceptedTrace addSpinJalIndex addSpinJalClaim where
   h_idx := by
     rw [addSpinAcceptedTrace_mainTable_eq]
-    change 1 + 1 < (mainRowsTable 2 addSpinProgram addSpinMainRows).table.length
-    norm_num [mainRowsTable, addSpinMainRows]
+    change 1 + 1 < addSpinMainTable.table.length
+    norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows]
   bits := addSpinJalBits
   h_bits_ieo := by rfl
   h_bits_m32 := by rfl
@@ -220,7 +216,7 @@ private theorem addSpinAddLaneLo
     (field : ZiskFv.Airs.Main.Valid_Main FGL FGL → Nat → FGL)
     (h_field :
       (field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0) = 0) :
+          addSpinMainTable) 0) = 0) :
     field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
         addSpinAcceptedTrace.mainTable) addSpinAddIndex.val =
       lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
@@ -229,7 +225,7 @@ private theorem addSpinAddLaneLo
     (addSpinSailTrace addSpinAddIndex) (regidx_to_fin x1) (0#64) addSpinReadX1_add]
   rw [addSpinAcceptedTrace_mainTable_eq]
   change field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0 = _
+      addSpinMainTable) 0 = _
   rw [h_field]
   simp [lane_lo]
 
@@ -237,7 +233,7 @@ private theorem addSpinAddLaneHi
     (field : ZiskFv.Airs.Main.Valid_Main FGL FGL → Nat → FGL)
     (h_field :
       (field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0) = 0) :
+          addSpinMainTable) 0) = 0) :
     field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
         addSpinAcceptedTrace.mainTable) addSpinAddIndex.val =
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
@@ -246,7 +242,7 @@ private theorem addSpinAddLaneHi
     (addSpinSailTrace addSpinAddIndex) (regidx_to_fin x1) (0#64) addSpinReadX1_add]
   rw [addSpinAcceptedTrace_mainTable_eq]
   change field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0 = _
+      addSpinMainTable) 0 = _
   rw [h_field]
   simp [lane_hi]
 
@@ -293,7 +289,7 @@ def addSpinAddInputs :
   h_pc_bridge := by
     rw [addSpinAcceptedTrace_mainTable_eq]
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 0).val = _
+          addSpinMainTable).pc 0).val = _
     simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row, addSpinAddInput]
 
 def addSpinJalInputs :
@@ -303,7 +299,7 @@ def addSpinJalInputs :
   h_pc_bridge := by
     rw [addSpinAcceptedTrace_mainTable_eq]
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 1).val = _
+          addSpinMainTable).pc 1).val = _
     simp [addSpinMainRowAt_one, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
       addSpinJalFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf, addSpinJalInput]
   h_input_rd := by
@@ -424,7 +420,7 @@ private theorem addPaddedMainPc_add :
         addPaddedAcceptedTrace.mainTable).pc addPaddedAddIndex.val = 0 := by
   rw [addPaddedAcceptedTrace_mainTable_eq]
   change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 0 = 0
+      addSpinMainTable).pc 0 = 0
   simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row]
 
 private theorem addPaddedReadX1 :
@@ -437,8 +433,8 @@ def addPaddedAddProgramDecode :
     ProgramDecode_add addPaddedAcceptedTrace addPaddedAddIndex addPaddedAddClaim where
   h_idx := by
     rw [addPaddedAcceptedTrace_mainTable_eq]
-    change 0 + 1 < (mainRowsTable 2 addSpinProgram addSpinMainRows).table.length
-    norm_num [mainRowsTable, addSpinMainRows]
+    change 0 + 1 < addSpinMainTable.table.length
+    norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows]
   bits := addSpinAddBits
   h_bits_ieo := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_m32 := by simp [addSpinAddBits, addX1RomFlagBits]
@@ -477,7 +473,7 @@ theorem addPaddedSuccessorRow_hasCommittedLookup :
   exact mainRomMessage_at_eq_program addPaddedAcceptedTrace
     ⟨1, by
       rw [addPaddedAcceptedTrace_mainTable_eq]
-      norm_num [mainRowsTable, addSpinMainRows]⟩
+      norm_num [addSpinMainTable, mainRowsTable, addSpinMainRows]⟩
 
 theorem addPaddedSuccessorRow_isCommittedJal :
     ZiskFv.AirsClean.Main.romMessage
@@ -492,7 +488,7 @@ private theorem addPaddedAddLaneLo
     (field : ZiskFv.Airs.Main.Valid_Main FGL FGL → Nat → FGL)
     (h_field :
       (field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0) = 0) :
+          addSpinMainTable) 0) = 0) :
     field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
         addPaddedAcceptedTrace.mainTable) addPaddedAddIndex.val =
       lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
@@ -501,7 +497,7 @@ private theorem addPaddedAddLaneLo
     (addPaddedSailTrace addPaddedAddIndex) (regidx_to_fin x1) (0#64) addPaddedReadX1]
   rw [addPaddedAcceptedTrace_mainTable_eq]
   change field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0 = _
+      addSpinMainTable) 0 = _
   rw [h_field]
   simp [lane_lo]
 
@@ -509,7 +505,7 @@ private theorem addPaddedAddLaneHi
     (field : ZiskFv.Airs.Main.Valid_Main FGL FGL → Nat → FGL)
     (h_field :
       (field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0) = 0) :
+          addSpinMainTable) 0) = 0) :
     field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
         addPaddedAcceptedTrace.mainTable) addPaddedAddIndex.val =
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
@@ -518,7 +514,7 @@ private theorem addPaddedAddLaneHi
     (addPaddedSailTrace addPaddedAddIndex) (regidx_to_fin x1) (0#64) addPaddedReadX1]
   rw [addPaddedAcceptedTrace_mainTable_eq]
   change field (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-      (mainRowsTable 2 addSpinProgram addSpinMainRows)) 0 = _
+      addSpinMainTable) 0 = _
   rw [h_field]
   simp [lane_hi]
 
@@ -565,7 +561,7 @@ def addPaddedAddInputs :
   h_pc_bridge := by
     rw [addPaddedAcceptedTrace_mainTable_eq]
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
-          (mainRowsTable 2 addSpinProgram addSpinMainRows)).pc 0).val = _
+          addSpinMainTable).pc 0).val = _
     simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row, addSpinAddInput]
 
 def addPaddedProgramDecodes :

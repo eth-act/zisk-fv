@@ -72,14 +72,19 @@ private def providerRow : Array FGL := (toElements binaryAddZeroRow).toArray
 
 private def providerTable : Air.Flat.Table FGL where
   component := staticLookupComponent
-  width := staticLookupComponent.width
-  table := [providerRow]
+  rawRows := [providerRow]
   data := emptyData
-  uniform_width := by
+  raw_uniform_width := by
     intro row h_row
     simp [providerRow] at h_row ⊢
     subst row
     rfl
+  fixed_domain := by
+    intro columns h_columns
+    simp [staticLookupComponent] at h_columns
+
+private theorem providerTable_effectiveRows : providerTable.table = [providerRow] := by
+  simp [providerTable, Air.Flat.Table.table, staticLookupComponent]
 
 private theorem rowInput_provider :
     staticLookupComponent.rowInput (providerTable.environment providerRow) =
@@ -91,7 +96,8 @@ private theorem rowInput_provider :
 
 private theorem providerTableSpec : providerTable.Spec := by
   intro row h_row
-  simp [providerTable] at h_row
+  rw [providerTable_effectiveRows] at h_row
+  simp only [List.mem_singleton] at h_row
   subst row
   change staticLookupComponent.Spec (Environment.fromArray providerRow emptyData)
   rw [staticLookupComponent_spec]
@@ -102,7 +108,8 @@ private theorem providerTableSpec : providerTable.Spec := by
   exact ⟨binaryAddZeroSpec, binaryAddZeroStaticFacts⟩
 
 private theorem providerRowMem : providerRow ∈ providerTable.table := by
-  simp [providerTable]
+  rw [providerTable_effectiveRows]
+  simp
 
 private def witnessMainRow : ZiskFv.AirsClean.Main.MainRow FGL :=
   { a_0 := 0, a_1 := 0, b_0 := 0, b_1 := 0, c_0 := 0, c_1 := 0, flag := 0,

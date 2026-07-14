@@ -243,8 +243,9 @@ the bridge is named as `MemTableGeneratedRowsBridge`, which connects Clean
 `table.table` positions to `rowAt mem idx` and the row-indexed
 `generated_every_row` constraints. `FullWitnessMemReplayBridge` packages the
 concrete full-ensemble Mem table, generated-row/range facts, active-row equality,
-and nonempty segment evidence; deterministic fixed-column shape is derived
-through `segmentWithFixedL1`. Its constructor derives the accepted replay
+and nonempty segment evidence; its actual segment carries a derived
+component-owned fixed-column fact (legacy compatibility constructors still use
+`segmentWithFixedL1`). Its constructor derives the accepted replay
 subobject, so `AcceptedMemoryReplayEvidence.prefixReadSound` is no longer a bare
 global-boundary assumption. The semantic trust gate includes a
 two-address witness with an addr-sorted/time-reversed prefix (write at byte
@@ -258,22 +259,19 @@ nonempty-table proof. Memory-less traces prove the guard impossible; they do not
 fabricate an empty replay bridge. The generated Mem source residue is now split across
 accepted-trace fields: stage-2 sidecar columns (`mem_replay_segment`,
 `mem_replay_permutation`, `mem_replay_gsum`, `mem_replay_im0`,
-`mem_replay_im1`), split generated constraint facts
-(`mem_replay_constraints`), and HELD segment range facts
-(`mem_replay_segment_ranges`). Row range facts are derived from live Mem
-`Table.fromStatic` lookups rather than carried as an accepted-trace field. The
-`memReplayRawSourceSidecar`/`memReplaySource`/`memReplayBridge` accessors
-rebuild the raw sidecar, `FullWitnessMemAirSource`, and `FullWitnessMemReplayBridge`
-downstream. This is narrower than carrying the replay bridge, a full
-`FullWitnessMemAirSource`, the typed `MemTableGeneratedAirSource`, or one raw
-sidecar field directly, and fixed-column shape is no longer accepted-trace
-residue, but it still strengthens memory-present `AcceptedZiskTrace` construction
-until the remaining Mem generated-source/cross-row facts are derived or
-explicitly approved. `mem_replay_segment_ranges` is HELD for Project Closeout S3
-lookup-wiring extraction, which must derive and delete it; it is not a permanent
-caller-supplied promise hypothesis. `mem_replay_source_covers` is the matching structural
-source-correlation certificate: every mutable-Mem table in the witness is the
-selected source table.
+`mem_replay_im1`), and HELD segment range facts (`mem_replay_segment_ranges`).
+The legacy sidecar fields are not consumed by S2's live derivation; S3 audits
+their lifecycle. `mem_replay_constraints` is deleted: its segment/permutation
+package is derived from the selected table's live constraints plus its
+right-indexed transition, using canonical table `ProverData` and
+component-owned fixed data. Row range facts are likewise derived from live Mem
+`Table.fromStatic` lookups. `memReplayRows`/`memReplayBridge` construct the
+canonical replay bridge directly, rather than rebuilding a raw sidecar or
+`FullWitnessMemAirSource`. The HELD range field is now over that same canonical
+segment source; S3 must derive and delete it, so it is not a permanent
+caller-supplied promise hypothesis. `mem_replay_source_covers` remains the
+matching structural source-correlation certificate: every mutable-Mem table in
+the witness is the selected source table.
 
 MemAlign scope note (#242): #115's closeout is direct-Mem only. MemAlign-routed
 accesses remain undischarged, named follow-on burdens rather than derived
@@ -442,11 +440,11 @@ explicit initial-memory, scoped direct-Mem placement/classification, source/targ
 chronology, and named row-count/order certificates. This reduces the seed-side
 read-value assumption, but it also adds a nonempty accepted-trace constructor
 burden: `mem_replay_table` must select the concrete mutable Mem AIR table and
-nonempty proof; the source-column fields, `mem_replay_constraints`,
-and HELD `mem_replay_segment_ranges` must provide the remaining raw generated
-Mem source factors for that selected table. Row range facts are derived from the
-live Mem component rather than supplied by the accepted trace; and `mem_replay_source_covers`
-must certify structural coverage of mutable-Mem tables by that selected table.
+nonempty proof; the HELD `mem_replay_segment_ranges` field must provide the
+remaining canonical segment range factor for that selected table. Generated
+constraints and row ranges are derived from the live Mem component rather than
+supplied by the accepted trace; `mem_replay_source_covers` must certify
+structural coverage of mutable-Mem tables by that selected table.
 The direct-Mem row-count equality is visible as `ScopedDirectMemReplayLengthCertificate`
 and belongs to the #219 whole-channel balance route for future derivation.
 **#119** reduced the store byte facts to the
@@ -696,9 +694,8 @@ trust surface even though they add no axiom.
 | `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
 | `main_step_index_fixed` (**#115**) | `main.pil:90` (`STEP = main_segment*N + SEGMENT_STEP`) | the Main `main_step` companion column is pinned to the Main row index, with no-wrap evidence for the `2+4*i` / `3+4*i` memory timestamp offsets; this single fixed-column-class certificate replaces the two anticipated step-counter residues (`MainStepDistinct`, `CrossOffsetSeparated`) and also supports target execution chronology |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
-| `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `MutableMemPresent witness`) | Raw generated Mem sidecar columns for the selected mutable Mem table; deterministic Mem `SEGMENT_L1` shape is derived via `segmentWithFixedL1` | supplies the source columns used to rebuild the raw sidecar and typed Mem AIR source for `mem_replay_table` |
-| `mem_replay_constraints` (**#115**, guarded by `MutableMemPresent witness`) | split generated Mem constraints for the selected mutable Mem table | supplies the `segment_every_row` / `permutation_every_row` generated constraint facts used to derive replay rows |
-| `mem_replay_segment_ranges` (**#115**, guarded by `MutableMemPresent witness`) | segment range facts for the selected mutable Mem sidecar segment | **HELD** caller-supplied promise hypothesis for Project Closeout S3 lookup-wiring extraction; S3 must derive and delete it from extracted lookup wiring. Until then it supplies range facts over the fixed-`SEGMENT_L1` sidecar segment used by the replay bridge. |
+| `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `MutableMemPresent witness`) | Legacy generated Mem sidecar columns | **HELD** for S3's lifecycle audit. S2 does not correlate or consume them; its live source is selected table `ProverData` plus component-owned fixed columns. |
+| `mem_replay_segment_ranges` (**#115**, guarded by `MutableMemPresent witness`) | segment range facts for the selected canonical live Mem segment | **HELD** caller-supplied promise hypothesis for Project Closeout S3 lookup-wiring extraction; S3 must derive and delete it from extracted lookup wiring. Until then it supplies canonical segment range facts used by the replay bridge. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
 
 **#115 constructor-burden note.** Removing the raw seed
@@ -707,10 +704,12 @@ replay evidence, but the current branch also strengthens `AcceptedZiskTrace` for
 memory-present traces. Constructors whose mutable-Mem table is empty, such as
 the degenerate base case and #219/#220's ADD witnesses, prove
 `MutableMemPresent` impossible instead of supplying replay fields. A constructor
-with mutable-Mem rows must build the guarded `mem_replay_table`, source-column,
-generated-constraint, and HELD segment-range fields in addition to
+with mutable-Mem rows must build the guarded `mem_replay_table`, the HELD legacy
+sidecar fields, the HELD canonical `mem_replay_segment_ranges` field, and
+`mem_replay_source_covers`, in addition to
 `constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`/fixed
-columns. Row range facts are derived from live Mem constraints. These fields are not read-value agreement predicates, and they no
+columns. Generated constraints and row ranges are derived from the live Mem
+component. These fields are not read-value agreement predicates, and they no
 longer carry deterministic Mem fixed columns. The paired
 `mem_replay_source_covers` field is a structural table-coverage certificate that
 removes this residue from seed-layer wrappers. For the #115 direct-Mem closeout,
@@ -758,3 +757,13 @@ The trust ledger does not enumerate the Lean kernel, mathlib,
 LeanZKCircuit, the Sail-to-Lean compiler output, or flake-pinned upstream
 inputs. Their audit surface is the Lake/Nix configuration and `flake.lock`,
 not `generated/baseline-axioms.txt`.
+
+Project Closeout S2 pins the immutable
+`codygunton/clean@c87617d8e29386e1e9e4f98cfbfb6940c2eb63df` source input.
+It provides D1's all-row predecessor/current transition contract and D2's
+canonical component-owned indexed fixed-column materialization. D1 remains
+inert to Clean's existing soundness theorem, so project-side accepted traces
+explicitly carry `transitions_hold`; D2 is consumed by canonical table
+materialization, constraints, interactions, transitions, and projections. The
+structural fixed-domain/no-wrap bound belongs to `Air.Flat.Table`, not to an
+accepted-trace field or caller-supplied promise hypothesis.

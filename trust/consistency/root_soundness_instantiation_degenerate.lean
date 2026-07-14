@@ -41,6 +41,7 @@ private def emptyData : ProverData FGL := fun _ _ => #[]
 private def wit : EnsembleWitness (fullRv64imEnsemble 0 prog).ensemble :=
   EnsembleWitness.ofRows (fullRv64imEnsemble 0 prog).ensemble emptyData ()
     (fun _ => []) (by intro i row hrow; simp at hrow)
+    (by intro i columns h_columns; simp)
 
 /-- The full ensemble's verifier is empty (it is `SoundEnsemble.empty`'s verifier,
     preserved by `addTable`/`addFinishedChannel`; `fullRv64imEnsemble` is
@@ -51,8 +52,8 @@ private theorem wit_verifier :
 
 /-- Every table of the degenerate witness has at most one row: the provider
     tables are empty (0 rows) and the verifier table carries the single public
-    input row. This is what makes `transitions_hold` vacuous (no consecutive row
-    pair exists). -/
+    input row. Provider transitions are vacuous; the verifier's row-zero-saturated
+    default transition is trivial. -/
 private theorem wit_tables_len_le_one (table : Table FGL)
     (hmem : table ∈ wit.allTables) : table.table.length ≤ 1 := by
   rw [EnsembleWitness.allTables, List.mem_cons] at hmem
@@ -60,7 +61,8 @@ private theorem wit_tables_len_le_one (table : Table FGL)
   · rw [hv]; simp [EnsembleWitness.verifierTable]
   · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
     obtain ⟨i, rfl⟩ := ht
-    simp [EnsembleWitness.tableAt_table]
+    simp [EnsembleWitness.tableAt, Table.table]
+    split <;> simp
 
 /-- The only table of the degenerate witness carrying the Main component has no
     rows. The provider tables are empty by construction; the single non-empty
@@ -85,7 +87,8 @@ private theorem main_component_tables_empty (table : Table FGL)
     exact absurd hv_nil (by simp)
   · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
     obtain ⟨i, rfl⟩ := ht
-    simp [EnsembleWitness.tableAt_table]
+    simp [EnsembleWitness.tableAt, Table.table]
+    split <;> rfl
 
 /-- Any mutable-Mem component table in the degenerate witness is empty. The verifier table is
     ruled out by its empty MemBus interaction list, while every provider table is empty by
@@ -105,7 +108,8 @@ private theorem mutable_mem_component_tables_empty (table : Table FGL)
     exact absurd hv_nil (by simp)
   · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
     obtain ⟨i, rfl⟩ := ht
-    simp [EnsembleWitness.tableAt_table]
+    simp [EnsembleWitness.tableAt, Table.table]
+    split <;> rfl
 
 private theorem wit_not_mutableMemPresent : ¬ MutableMemPresent wit := by
   intro h_present
@@ -118,7 +122,8 @@ private theorem wit_constraints : wit.Constraints := by
   intro t ht
   simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
   obtain ⟨i, rfl⟩ := ht
-  simp [Air.Flat.Table.Constraints, EnsembleWitness.tableAt_table]
+  simp [Air.Flat.Table.Constraints, EnsembleWitness.tableAt, Table.table]
+  split <;> simp
 
 private theorem wit_balanced : wit.BalancedChannels := by
   refine wit.balancedChannels_of_tables wit_verifier ?_
@@ -128,14 +133,24 @@ private theorem wit_balanced : wit.BalancedChannels := by
     intro t ht
     simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
     obtain ⟨i, rfl⟩ := ht
-    simp [Air.Flat.Table.interactionsWith, EnsembleWitness.tableAt_table]
+    simp [Air.Flat.Table.interactionsWith, EnsembleWitness.tableAt, Table.table]
+    split <;> simp
   rw [hnil]
   exact balancedInteractions_of_present (Or.symm (Nat.eq_zero_or_pos _)) []
     (by simp) (by simp)
 
 private theorem wit_transitions : wit.TransitionConstraints := by
-  intro table hmem i h
-  exact absurd h (by have := wit_tables_len_le_one table hmem; omega)
+  intro table hmem
+  rw [Table.TransitionConstraints]
+  intro index
+  rw [EnsembleWitness.allTables, List.mem_cons] at hmem
+  rcases hmem with h_verifier | h_table
+  · subst table
+    simp [EnsembleWitness.verifierTable]
+  · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at h_table
+    obtain ⟨i, rfl⟩ := h_table
+    change Fin 0 at index
+    exact Fin.elim0 index
 
 private theorem wit_segment_l1 :
     ∀ table ∈ wit.allTables,
@@ -175,7 +190,6 @@ private def trace : AcceptedZiskTrace 0 where
   mem_replay_gsum := fun h => absurd h wit_not_mutableMemPresent
   mem_replay_im0 := fun h => absurd h wit_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h wit_not_mutableMemPresent
-  mem_replay_constraints := fun h => absurd h wit_not_mutableMemPresent
   mem_replay_segment_ranges := fun h => absurd h wit_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h wit_not_mutableMemPresent
   transitions_hold := wit_transitions

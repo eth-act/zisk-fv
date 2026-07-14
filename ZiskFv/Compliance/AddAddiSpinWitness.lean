@@ -113,6 +113,10 @@ def addAddiSpinProgram : Program 3
 def addAddiSpinMainRows : List (MainRowWithRom FGL) :=
   [addAddiSpinAddRow, addAddiSpinAddiRow, addAddiSpinJalRow 2, addAddiSpinJalRow 3]
 
+theorem addAddiSpinMainRows_fixed_domain :
+    addAddiSpinMainRows.length <= mainFixedCapacity := by
+  norm_num [addAddiSpinMainRows, mainFixedCapacity]
+
 def addAddiSpinBinaryAddRows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :=
   [addX1BinaryAddRow, addX1BinaryAddRow]
 
@@ -137,7 +141,24 @@ def addAddiSpinBinaryAddTable : Table FGL :=
   binaryAddRowsTable addAddiSpinBinaryAddRows
 
 def addAddiSpinMainTable : Table FGL :=
-  mainRowsTable 3 addAddiSpinProgram addAddiSpinMainRows
+  mainRowsTable 3 addAddiSpinProgram addAddiSpinMainRows addAddiSpinMainRows_fixed_domain
+
+private theorem addAddiSpinMainTable_effectiveRows :
+    addAddiSpinMainTable.table =
+      [ mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow)
+      , mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow)
+      , mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2))
+      , mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3)) ] := by
+  simp [addAddiSpinMainTable, mainRowsTable, Table.table, componentWithRomMemAndOpBus,
+    addAddiSpinMainRows]
+
+@[simp] private theorem addAddiSpinMainTable_length : addAddiSpinMainTable.length = 4 := by
+  rfl
+
+@[simp] private theorem addAddiSpinMainTable_table_length :
+    addAddiSpinMainTable.table.length = 4 := by
+  rw [Table.table_length]
+  exact addAddiSpinMainTable_length
 
 theorem addAddiSpinAddMain_proverAssumptions :
     (componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.ProverAssumptions
@@ -177,51 +198,149 @@ theorem addAddiSpinJalMain_proverAssumptions (step : FGL) :
       addAddiSpinJalFreeCols]
   · rfl
 
-private theorem addAddiSpinMainRow_constraints
-    {row : MainRowWithRom FGL}
-    (h_row : row = addAddiSpinAddRow ∨ row = addAddiSpinAddiRow ∨
-      row = addAddiSpinJalRow 2 ∨ row = addAddiSpinJalRow 3) :
+private def addAddiSpinProverEnvFromEnvironment (env : Environment FGL) :
+    ProverEnvironment FGL where
+  get := env.get
+  data := env.data
+  hint := ProverHint.empty FGL
+
+private theorem addAddiSpinFlatForAllWitness_of_localLength_zero
+    {env : ProverEnvironment FGL} {offset : Nat} {ops : List (FlatOperation FGL)}
+    (h_len : FlatOperation.localLength ops = 0) :
+    FlatOperation.forAll offset
+      { witness := fun offset _ compute => env.ExtendsVector (compute env) offset }
+      ops := by
+  induction ops generalizing offset with
+  | nil => trivial
+  | cons op ops ih =>
+      cases op with
+      | witness m compute =>
+          simp [FlatOperation.localLength] at h_len
+          have h_m : m = 0 := by omega
+          have h_ops : FlatOperation.localLength ops = 0 := by omega
+          subst m
+          constructor
+          · intro i
+            exact Fin.elim0 i
+          · simpa [Nat.zero_add] using ih (offset := offset) h_ops
+      | assert e =>
+          simp [FlatOperation.localLength] at h_len
+          simpa [FlatOperation.forAll] using ih (offset := offset) h_len
+      | lookup l =>
+          simp [FlatOperation.localLength] at h_len
+          simpa [FlatOperation.forAll] using ih (offset := offset) h_len
+      | interact i =>
+          simp [FlatOperation.localLength] at h_len
+          simpa [FlatOperation.forAll] using ih (offset := offset) h_len
+
+private theorem addAddiSpinUsesLocalWitnesses_of_localLength_zero
+    {env : ProverEnvironment FGL} {offset : Nat} {ops : Operations FGL}
+    (h_len : ops.localLength = 0) :
+    env.UsesLocalWitnesses offset ops := by
+  rw [ProverEnvironment.UsesLocalWitnesses, Operations.forAllFlat]
+  induction ops using Operations.induct generalizing offset with
+  | empty => trivial
+  | witness m compute ops ih =>
+      simp [Operations.localLength] at h_len
+      have h_m : m = 0 := by omega
+      have h_ops : ops.localLength = 0 := by omega
+      subst m
+      constructor
+      · intro i
+        exact Fin.elim0 i
+      · simpa [Nat.zero_add] using ih (offset := offset) h_ops
+  | assert e ops ih =>
+      simp [Operations.localLength] at h_len
+      simpa [Operations.forAll] using ih (offset := offset) h_len
+  | lookup l ops ih =>
+      simp [Operations.localLength] at h_len
+      simpa [Operations.forAll] using ih (offset := offset) h_len
+  | interact i ops ih =>
+      simp [Operations.localLength] at h_len
+      simpa [Operations.forAll] using ih (offset := offset) h_len
+  | subcircuit s ops ih =>
+      simp [Operations.localLength] at h_len
+      have h_s : s.localLength = 0 := by omega
+      have h_ops : ops.localLength = 0 := by omega
+      constructor
+      · apply addAddiSpinFlatForAllWitness_of_localLength_zero
+        rw [← s.localLength_eq]
+        exact h_s
+      · exact ih (offset := s.localLength + offset) h_ops
+
+private theorem addAddiSpinMain_constraintsHold_materialize
+    (index : Nat) (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index)
+    (h_assumptions :
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.ProverAssumptions
+        row emptyData (ProverHint.empty FGL)) :
     (componentWithRomMemAndOpBus 3 addAddiSpinProgram).operations.ConstraintsHold
-      (Environment.fromInput row emptyData) := by
-  rcases h_row with rfl | rfl | rfl | rfl
-  · exact
-      (show (mainSingleRowTable 3 addAddiSpinProgram addAddiSpinAddRow).Constraints from
-        mainSingleRowTable_constraints_of_proverAssumptions 3 addAddiSpinProgram
-          addAddiSpinAddRow addAddiSpinAddMain_proverAssumptions)
-        (mainRowArray addAddiSpinAddRow) (by simp [mainSingleRowTable])
-  · exact
-      (show (mainSingleRowTable 3 addAddiSpinProgram addAddiSpinAddiRow).Constraints from
-        mainSingleRowTable_constraints_of_proverAssumptions 3 addAddiSpinProgram
-          addAddiSpinAddiRow addAddiSpinAddiMain_proverAssumptions)
-        (mainRowArray addAddiSpinAddiRow) (by simp [mainSingleRowTable])
-  · exact
-      (show (mainSingleRowTable 3 addAddiSpinProgram (addAddiSpinJalRow 2)).Constraints from
-        mainSingleRowTable_constraints_of_proverAssumptions 3 addAddiSpinProgram
-          (addAddiSpinJalRow 2) (addAddiSpinJalMain_proverAssumptions 2))
-        (mainRowArray (addAddiSpinJalRow 2)) (by simp [mainSingleRowTable])
-  · exact
-      (show (mainSingleRowTable 3 addAddiSpinProgram (addAddiSpinJalRow 3)).Constraints from
-        mainSingleRowTable_constraints_of_proverAssumptions 3 addAddiSpinProgram
-          (addAddiSpinJalRow 3) (addAddiSpinJalMain_proverAssumptions 3))
-        (mainRowArray (addAddiSpinJalRow 3)) (by simp [mainSingleRowTable])
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData) := by
+  let env := Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData
+  let proverEnv := addAddiSpinProverEnvFromEnvironment env
+  have h_localLength :
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.localLength
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = 0 := by
+    change (mainWithRomMemAndOpBusElaborated 3 addAddiSpinProgram).localLength
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = 0
+    rfl
+  have h_env : proverEnv.UsesLocalWitnesses
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowOffset
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowOperations := by
+    apply addAddiSpinUsesLocalWitnesses_of_localLength_zero
+    change ((componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.main
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).localLength
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowOffset = 0
+    rw [(componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.localLength_eq]
+    exact h_localLength
+  have h_input_verifier : Eval.eval env
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = row := by
+    dsimp [env]
+    exact eval_mainRawRow_materialize index emptyData row h_segment_l1 h_main_step
+  have h_input : Eval.eval proverEnv
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = row := by
+    rw [ProvableType.eval_varFromOffset_prover]
+    rw [← h_input_verifier]
+    rw [ProvableType.eval_varFromOffset]
+    congr
+  have h_assumptions' :
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.ProverAssumptions
+        (Eval.eval proverEnv (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+        proverEnv.data proverEnv.hint := by
+    rw [h_input]
+    simpa [proverEnv, addAddiSpinProverEnvFromEnvironment, env] using h_assumptions
+  have h_full :=
+    (componentWithRomMemAndOpBus 3 addAddiSpinProgram).circuit.original_full_completeness
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowOffset proverEnv
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar h_env h_assumptions'
+  have h_row :
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowOperations.ConstraintsHold
+        (proverEnv : Environment FGL) := by
+    simpa [Component.rowOperations, Component.rowInputVar, Component.rowOffset] using h_full.1
+  simpa [proverEnv, addAddiSpinProverEnvFromEnvironment, env] using
+    (Component.constraintsHold_iff (component := componentWithRomMemAndOpBus 3 addAddiSpinProgram)
+      (env := (proverEnv : Environment FGL))).mpr h_row
 
 theorem addAddiSpinMainTable_constraints : addAddiSpinMainTable.Constraints := by
-  rw [Table.Constraints]
+  change ∀ arr ∈
+      [ mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow)
+      , mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow)
+      , mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2))
+      , mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3)) ],
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).operations.ConstraintsHold
+        (Environment.fromArray arr emptyData)
   intro arr h_arr
-  simp [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows] at h_arr
-  rcases h_arr with h_arr | h_arr | h_arr | h_arr
-  · subst arr
-    simpa [addAddiSpinMainTable, mainRowsTable, mainRowArray] using
-      addAddiSpinMainRow_constraints (Or.inl rfl)
-  · subst arr
-    simpa [addAddiSpinMainTable, mainRowsTable, mainRowArray] using
-      addAddiSpinMainRow_constraints (Or.inr (Or.inl rfl))
-  · subst arr
-    simpa [addAddiSpinMainTable, mainRowsTable, mainRowArray] using
-      addAddiSpinMainRow_constraints (Or.inr (Or.inr (Or.inl rfl)))
-  · subst arr
-    simpa [addAddiSpinMainTable, mainRowsTable, mainRowArray] using
-      addAddiSpinMainRow_constraints (Or.inr (Or.inr (Or.inr rfl)))
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at h_arr
+  rcases h_arr with rfl | rfl | rfl | rfl
+  · exact addAddiSpinMain_constraintsHold_materialize 0 addAddiSpinAddRow
+      (by rfl) (by rfl) addAddiSpinAddMain_proverAssumptions
+  · exact addAddiSpinMain_constraintsHold_materialize 1 addAddiSpinAddiRow
+      (by rfl) (by rfl) addAddiSpinAddiMain_proverAssumptions
+  · exact addAddiSpinMain_constraintsHold_materialize 2 (addAddiSpinJalRow 2)
+      (by rfl) (by rfl) (addAddiSpinJalMain_proverAssumptions 2)
+  · exact addAddiSpinMain_constraintsHold_materialize 3 (addAddiSpinJalRow 3)
+      (by rfl) (by rfl) (addAddiSpinJalMain_proverAssumptions 3)
 
 theorem addAddiSpinBinaryAddTable_constraints : addAddiSpinBinaryAddTable.Constraints := by
   apply binaryAddRowsTable_constraints_of_proverAssumptions
@@ -255,43 +374,6 @@ theorem addAddiSpinEnsemble_tables :
       , componentWithRomMemAndOpBus 3 addAddiSpinProgram ] := by
   rfl
 
-def addAddiSpinRows : Fin 11 → List (Array FGL) :=
-  fun i =>
-    if i.val = 0 then addAddiSpinBoundaryTable.table
-    else if i.val = 9 then addAddiSpinBinaryAddTable.table
-    else if i.val = 10 then addAddiSpinMainTable.table
-    else []
-
-theorem addAddiSpinRows_uniform :
-    ∀ i : Fin 11,
-      ∀ row ∈ addAddiSpinRows i,
-        row.size = (addAddiSpinEnsemble.tables[i.val]'i.isLt).width := by
-  intro i row h_row
-  fin_cases i
-  · have h_width := addAddiSpinBoundaryTable.uniform_width row (by
-      simpa [addAddiSpinRows] using h_row)
-    simpa only [addAddiSpinBoundaryTable, registerBoundaryRowsTableOf,
-      addAddiSpinEnsemble_tables] using h_width
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · simp [addAddiSpinRows] at h_row
-  · have h_width := addAddiSpinBinaryAddTable.uniform_width row (by
-      simpa [addAddiSpinRows] using h_row)
-    simpa only [addAddiSpinBinaryAddTable, binaryAddRowsTable,
-      addAddiSpinEnsemble_tables] using h_width
-  · have h_width := addAddiSpinMainTable.uniform_width row (by
-      simpa [addAddiSpinRows] using h_row)
-    simpa only [addAddiSpinMainTable, mainRowsTable, addAddiSpinEnsemble_tables] using h_width
-
-def addAddiSpinWitness : EnsembleWitness addAddiSpinEnsemble :=
-  EnsembleWitness.ofRows addAddiSpinEnsemble emptyData () addAddiSpinRows
-    addAddiSpinRows_uniform
-
 def addAddiSpinTables : List (Table FGL) :=
   [ addAddiSpinBoundaryTable
   , emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component
@@ -304,6 +386,32 @@ def addAddiSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent
   , addAddiSpinBinaryAddTable
   , addAddiSpinMainTable ]
+
+def addAddiSpinWitness : EnsembleWitness addAddiSpinEnsemble where
+  tables := addAddiSpinTables
+  data := emptyData
+  publicInput := ()
+  same_length := by
+    simp [addAddiSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
+      addAddiSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
+  same_circuits := by
+    intro i hi
+    have hi' : i < 11 := by
+      simpa [addAddiSpinTables] using hi
+    interval_cases i <;>
+      simp [addAddiSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
+        addAddiSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+        addAddiSpinBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
+        addAddiSpinBinaryAddTable, binaryAddRowsTable, addAddiSpinMainTable, mainRowsTable]
+  same_data := by
+    intro table h_table
+    simp [addAddiSpinTables, addAddiSpinBoundaryTable, registerBoundaryRowsTableOf,
+      emptyComponentTable, addAddiSpinBinaryAddTable, binaryAddRowsTable,
+      addAddiSpinMainTable, mainRowsTable] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rfl
 
 theorem addAddiSpinWitness_tables :
     addAddiSpinWitness.tables = addAddiSpinTables := by
@@ -350,57 +458,160 @@ private theorem addAddiSpinMain_pcHandshake_jal_jal :
     addSpinJalBits, mainRomRowOf]
   ring
 
-private theorem addAddiSpinMainTable_transition (prev curr : MainRowWithRom FGL) :
-    addAddiSpinMainTable.component.transition prev curr = pcHandshakeBetween prev curr := by
-  rfl
-
-private theorem addAddiSpinMainTable_rowInput_zero
+@[simp] theorem addAddiSpinMainTable_eval_rowInputVar_zero
     (h : 0 < addAddiSpinMainTable.table.length) :
-    addAddiSpinMainTable.component.rowInput
-        (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[0]'h)) =
+    Eval.eval (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[0]'h))
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinAddRow := by
-  simpa [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows] using
-    mainRowsTable_rowInput 3 addAddiSpinProgram addAddiSpinMainRows addAddiSpinAddRow
+  change Eval.eval
+      (Environment.fromArray
+        (mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow)) emptyData)
+      (varFromOffset MainRowWithRom 0) = addAddiSpinAddRow
+  exact eval_mainRawRow_materialize 0 emptyData addAddiSpinAddRow (by rfl) (by rfl)
 
-private theorem addAddiSpinMainTable_rowInput_one
+@[simp] theorem addAddiSpinMainTable_eval_rowInputVar_one
     (h : 1 < addAddiSpinMainTable.table.length) :
-    addAddiSpinMainTable.component.rowInput
-        (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[1]'h)) =
+    Eval.eval (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[1]'h))
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinAddiRow := by
-  simpa [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows] using
-    mainRowsTable_rowInput 3 addAddiSpinProgram addAddiSpinMainRows addAddiSpinAddiRow
+  change Eval.eval
+      (Environment.fromArray
+        (mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow)) emptyData)
+      (varFromOffset MainRowWithRom 0) = addAddiSpinAddiRow
+  exact eval_mainRawRow_materialize 1 emptyData addAddiSpinAddiRow (by rfl) (by rfl)
 
-private theorem addAddiSpinMainTable_rowInput_two
+@[simp] theorem addAddiSpinMainTable_eval_rowInputVar_two
     (h : 2 < addAddiSpinMainTable.table.length) :
-    addAddiSpinMainTable.component.rowInput
-        (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[2]'h)) =
+    Eval.eval (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[2]'h))
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinJalRow 2 := by
-  simpa [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows] using
-    mainRowsTable_rowInput 3 addAddiSpinProgram addAddiSpinMainRows (addAddiSpinJalRow 2)
+  change Eval.eval
+      (Environment.fromArray
+        (mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2))) emptyData)
+      (varFromOffset MainRowWithRom 0) = addAddiSpinJalRow 2
+  exact eval_mainRawRow_materialize 2 emptyData (addAddiSpinJalRow 2) (by rfl) (by rfl)
 
-private theorem addAddiSpinMainTable_rowInput_three
+@[simp] theorem addAddiSpinMainTable_eval_rowInputVar_three
     (h : 3 < addAddiSpinMainTable.table.length) :
-    addAddiSpinMainTable.component.rowInput
-        (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[3]'h)) =
+    Eval.eval (addAddiSpinMainTable.environment (addAddiSpinMainTable.table[3]'h))
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinJalRow 3 := by
-  simpa [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows] using
-    mainRowsTable_rowInput 3 addAddiSpinProgram addAddiSpinMainRows (addAddiSpinJalRow 3)
+  change Eval.eval
+      (Environment.fromArray
+        (mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3))) emptyData)
+      (varFromOffset MainRowWithRom 0) = addAddiSpinJalRow 3
+  exact eval_mainRawRow_materialize 3 emptyData (addAddiSpinJalRow 3) (by rfl) (by rfl)
+
+@[simp] theorem addAddiSpinMainTable_evalAt_zero :
+    Eval.eval
+      (addAddiSpinMainTable.environmentAt
+        ⟨0, by simp⟩)
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
+      addAddiSpinAddRow := by
+  simpa [Table.environmentAt] using
+    addAddiSpinMainTable_eval_rowInputVar_zero
+      (by simp)
+
+@[simp] theorem addAddiSpinMainTable_evalAt_one :
+    Eval.eval
+      (addAddiSpinMainTable.environmentAt
+        ⟨1, by simp⟩)
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
+      addAddiSpinAddiRow := by
+  simpa [Table.environmentAt] using
+    addAddiSpinMainTable_eval_rowInputVar_one
+      (by simp)
+
+@[simp] theorem addAddiSpinMainTable_evalAt_two :
+    Eval.eval
+      (addAddiSpinMainTable.environmentAt
+        ⟨2, by simp⟩)
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
+      addAddiSpinJalRow 2 := by
+  simpa [Table.environmentAt] using
+    addAddiSpinMainTable_eval_rowInputVar_two
+      (by simp)
+
+@[simp] theorem addAddiSpinMainTable_evalAt_three :
+    Eval.eval
+      (addAddiSpinMainTable.environmentAt
+        ⟨3, by simp⟩)
+      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
+      addAddiSpinJalRow 3 := by
+  simpa [Table.environmentAt] using
+    addAddiSpinMainTable_eval_rowInputVar_three
+      (by simp)
 
 theorem addAddiSpinMainTable_transitions : addAddiSpinMainTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
-  intro i h_i
-  have h_len : addAddiSpinMainTable.table.length = 4 := by
-    simp [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows]
-  have h_i_lt : i < 3 := by omega
-  interval_cases i
-  · rw [addAddiSpinMainTable_transition, addAddiSpinMainTable_rowInput_zero,
-      addAddiSpinMainTable_rowInput_one]
+  intro index
+  have h_index_lt : index.val < 4 := by
+    rw [← addAddiSpinMainTable_length]
+    exact index.isLt
+  interval_cases h_index : index.val
+  · have h_index : index = ⟨0, by
+        simp⟩ :=
+      Fin.ext (by omega)
+    subst index
+    change pcHandshakeBetween
+      (Eval.eval
+        (addAddiSpinMainTable.previousEnvironment
+          ⟨0, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+      (Eval.eval
+        (addAddiSpinMainTable.environmentAt
+          ⟨0, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+    simp only [Table.previousEnvironment]
+    rw [addAddiSpinMainTable_evalAt_zero]
+    simp [pcHandshakeBetween, addAddiSpinAddRow, addX1Row]
+  · have h_index : index = ⟨1, by
+        simp⟩ :=
+      Fin.ext (by omega)
+    subst index
+    change pcHandshakeBetween
+      (Eval.eval
+        (addAddiSpinMainTable.previousEnvironment
+          ⟨1, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+      (Eval.eval
+        (addAddiSpinMainTable.environmentAt
+          ⟨1, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+    simp only [Table.previousEnvironment]
+    rw [addAddiSpinMainTable_evalAt_zero, addAddiSpinMainTable_evalAt_one]
     exact addAddiSpinMain_pcHandshake_add_addi
-  · rw [addAddiSpinMainTable_transition, addAddiSpinMainTable_rowInput_one,
-      addAddiSpinMainTable_rowInput_two]
+  · have h_index : index = ⟨2, by
+        simp⟩ :=
+      Fin.ext (by omega)
+    subst index
+    change pcHandshakeBetween
+      (Eval.eval
+        (addAddiSpinMainTable.previousEnvironment
+          ⟨2, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+      (Eval.eval
+        (addAddiSpinMainTable.environmentAt
+          ⟨2, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+    simp only [Table.previousEnvironment]
+    rw [addAddiSpinMainTable_evalAt_one, addAddiSpinMainTable_evalAt_two]
     exact addAddiSpinMain_pcHandshake_addi_jal
-  · rw [addAddiSpinMainTable_transition, addAddiSpinMainTable_rowInput_two,
-      addAddiSpinMainTable_rowInput_three]
+  · have h_index : index = ⟨3, by
+        simp⟩ :=
+      Fin.ext (by omega)
+    subst index
+    change pcHandshakeBetween
+      (Eval.eval
+        (addAddiSpinMainTable.previousEnvironment
+          ⟨3, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+      (Eval.eval
+        (addAddiSpinMainTable.environmentAt
+          ⟨3, by simp⟩)
+        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
+    simp only [Table.previousEnvironment]
+    rw [addAddiSpinMainTable_evalAt_two, addAddiSpinMainTable_evalAt_three]
     exact addAddiSpinMain_pcHandshake_jal_jal
 
 theorem addAddiSpinWitness_transitions : addAddiSpinWitness.TransitionConstraints := by
@@ -409,43 +620,28 @@ theorem addAddiSpinWitness_transitions : addAddiSpinWitness.TransitionConstraint
   rcases h_table with h_verifier | h_table
   · subst table
     rw [Table.TransitionConstraints]
-    intro i h_i
-    simp [EnsembleWitness.verifierTable] at h_i
+    intro index
+    simp [EnsembleWitness.verifierTable]
   · rw [addAddiSpinWitness_tables] at h_table
     simp [addAddiSpinTables] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
-      intro i h_i
+      intro index
       simp [addAddiSpinBoundaryTable, registerBoundaryRowsTableOf,
-        ZiskFv.AirsClean.RegisterBoundary.component] at h_i ⊢
+        ZiskFv.AirsClean.RegisterBoundary.component]
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignReadByte.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignByte.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_transitions
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.Binary.staticLookupComponent
     · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
-      simp [emptyComponentTable] at h_i
-    · rw [Table.TransitionConstraints]
-      intro i h_i
+      intro index
       simp [addAddiSpinBinaryAddTable, binaryAddRowsTable,
-        ZiskFv.AirsClean.BinaryAdd.component] at h_i ⊢
+        ZiskFv.AirsClean.BinaryAdd.component]
     · exact addAddiSpinMainTable_transitions
 
 private theorem not_addAddiSpin_main_component_of_name_ne
@@ -524,14 +720,14 @@ private theorem addAddiSpinWitness_mutable_mem_component_tables_empty
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_addAddiSpin_mutable_mem_component_of_name_ne (by decide) h_component
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
-    · simp [emptyComponentTable]
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignReadByte.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignByte.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_table ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+    · exact emptyComponentTable_table ZiskFv.AirsClean.Binary.staticLookupComponent
     · exfalso
       exact not_addAddiSpin_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
@@ -559,10 +755,9 @@ private theorem addAddiSpinMain_segment_l1_first :
         addAddiSpinMainTable).segment_l1 0 = 1 := by
   simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
   unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-  change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray addAddiSpinAddRow))
-      (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).core.segment_l1 = 1
-  simpa [addAddiSpinMainTable] using congrArg (fun row : MainRowWithRom FGL => row.core.segment_l1)
-    (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows addAddiSpinAddRow)
+  rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+  simpa [Table.environmentAt, addAddiSpinAddRow, addX1Row, mainRomRowOf] using
+    congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_zero
 
 private theorem addAddiSpinMain_segment_l1_later
     (idx : Fin addAddiSpinMainTable.table.length) (h_idx : 0 < idx.val) :
@@ -576,28 +771,23 @@ private theorem addAddiSpinMain_segment_l1_later
   interval_cases idx.val
   · simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
     unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray addAddiSpinAddiRow))
-        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).core.segment_l1 = 0
-    simpa [addAddiSpinMainTable] using
-      congrArg (fun row : MainRowWithRom FGL => row.core.segment_l1)
-        (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-          addAddiSpinAddiRow)
+    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+    simpa [Table.environmentAt, addAddiSpinAddiRow, addAddiSpinAddiRowTemplate,
+      addAddiSpinAddiFreeColsTemplate, addAddiSpinAddiProgramRow, addAddiSpinAddiBits,
+      mainRomRowOf] using
+      congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_one
   · simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
     unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray (addAddiSpinJalRow 2)))
-        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).core.segment_l1 = 0
-    simpa [addAddiSpinMainTable] using
-      congrArg (fun row : MainRowWithRom FGL => row.core.segment_l1)
-        (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-          (addAddiSpinJalRow 2))
+    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+    simpa [Table.environmentAt, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
+      addSpinJalBits, mainRomRowOf] using
+      congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_two
   · simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
     unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray (addAddiSpinJalRow 3)))
-        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).core.segment_l1 = 0
-    simpa [addAddiSpinMainTable] using
-      congrArg (fun row : MainRowWithRom FGL => row.core.segment_l1)
-        (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-          (addAddiSpinJalRow 3))
+    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+    simpa [Table.environmentAt, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
+      addSpinJalBits, mainRomRowOf] using
+      congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_three
 
 private theorem addAddiSpinMain_main_step_eq_index :
     ∀ i : Fin 3,
@@ -606,26 +796,20 @@ private theorem addAddiSpinMain_main_step_eq_index :
   intro i
   fin_cases i
   · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray addAddiSpinAddRow))
-        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).rom.main_step = 0
-    simpa [addAddiSpinMainTable] using
-      congrArg (fun row : MainRowWithRom FGL => row.rom.main_step)
-        (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-          addAddiSpinAddRow)
+    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+    simpa [Table.environmentAt, addAddiSpinAddRow, addX1Row, mainRomRowOf] using
+      congrArg MainRowWithRom.rom addAddiSpinMainTable_evalAt_zero
   · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray addAddiSpinAddiRow))
-        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).rom.main_step = 1
-    simpa [addAddiSpinMainTable] using
-      congrArg (fun row : MainRowWithRom FGL => row.rom.main_step)
-        (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-          addAddiSpinAddiRow)
+    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+    simpa [Table.environmentAt, addAddiSpinAddiRow, addAddiSpinAddiRowTemplate,
+      addAddiSpinAddiFreeColsTemplate, addAddiSpinAddiProgramRow, addAddiSpinAddiBits,
+      mainRomRowOf] using
+      congrArg MainRowWithRom.rom addAddiSpinMainTable_evalAt_one
   · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    change (Eval.eval (addAddiSpinMainTable.environment (mainRowArray (addAddiSpinJalRow 2)))
-        (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar).rom.main_step = 2
-    simpa [addAddiSpinMainTable] using
-      congrArg (fun row : MainRowWithRom FGL => row.rom.main_step)
-        (mainRowsTable_eval_rowInputVar 3 addAddiSpinProgram addAddiSpinMainRows
-          (addAddiSpinJalRow 2))
+    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
+    simpa [Table.environmentAt, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
+      addSpinJalBits, mainRomRowOf] using
+      congrArg MainRowWithRom.rom addAddiSpinMainTable_evalAt_two
 
 private theorem addAddiSpinMain_main_step_index_fixed :
     MainStepIndexFixedFacts 3 3 addAddiSpinProgram addAddiSpinMainTable where
@@ -675,6 +859,101 @@ theorem addAddiSpinWitness_segment_l1_fixed :
   subst table
   exact ⟨fun _ => addAddiSpinMain_segment_l1_first, addAddiSpinMain_segment_l1_later⟩
 
+private theorem addAddiSpinMainOpBusInteraction_eval_at
+    (env : Environment FGL) (row : MainRowWithRom FGL)
+    (h_input : Eval.eval env (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = row) :
+    (((OpBusChannel.emitted
+        (-(componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar.core.is_external_op)
+        (opBusMessageExpr
+          (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar.core)).toRaw).eval env) =
+      mainOpBusInteraction row := by
+  let rowVar := (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar
+  have h_core : Eval.eval env rowVar.core = row.core := by
+    rw [ZiskFv.AirsClean.FullEnsemble.mainRowWithRom_eval_core]
+    exact congrArg MainRowWithRom.core h_input
+  have h_field := ZiskFv.AirsClean.FullEnsemble.mainRow_eval_is_external_op env rowVar.core
+  simp [mainOpBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · change Expression.eval env (-rowVar.core.is_external_op) = -row.core.is_external_op
+    simp [Expression.eval, h_field, h_core]
+  constructor
+  · have h_msg_eval :
+        Eval.eval env (opBusMessageExpr rowVar.core) = opBusMessage row.core := by
+      rw [eval_opBusMessageExpr, h_core]
+    rw [toElements_eval_toArray]
+    change (toElements (Eval.eval env (opBusMessageExpr rowVar.core))).toArray =
+      (toElements (opBusMessage row.core)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+private theorem addAddiSpinMainOpBusInteractionsAt
+    (env : Environment FGL) (row : MainRowWithRom FGL)
+    (h_input : Eval.eval env (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = row) :
+    (componentWithRomMemAndOpBus 3 addAddiSpinProgram).operations.interactionValuesWith
+        OpBusChannel.toRaw env = [mainOpBusInteraction row] := by
+  simp [Operations.interactionValuesWith_eq_map,
+    componentWithRomMemAndOpBus_interactionsWith_opBus]
+  exact addAddiSpinMainOpBusInteraction_eval_at env row h_input
+
+theorem addAddiSpinMainTable_interactionsWith_opBus :
+    addAddiSpinMainTable.interactionsWith OpBusChannel.toRaw =
+      [ mainOpBusInteraction addAddiSpinAddRow
+      , mainOpBusInteraction addAddiSpinAddiRow
+      , mainOpBusInteraction (addAddiSpinJalRow 2)
+      , mainOpBusInteraction (addAddiSpinJalRow 3) ] := by
+  rw [Table.interactionsWith, addAddiSpinMainTable_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have h_add :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          OpBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow))) =
+        [mainOpBusInteraction addAddiSpinAddRow] := by
+    simpa [addAddiSpinMainTable, mainRowsTable] using
+      (addAddiSpinMainOpBusInteractionsAt
+        (Environment.fromArray
+          (mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow)) emptyData)
+        addAddiSpinAddRow
+        (eval_mainRawRow_materialize 0 emptyData addAddiSpinAddRow (by rfl) (by rfl)))
+  have h_addi :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          OpBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow))) =
+        [mainOpBusInteraction addAddiSpinAddiRow] := by
+    simpa [addAddiSpinMainTable, mainRowsTable] using
+      (addAddiSpinMainOpBusInteractionsAt
+        (Environment.fromArray
+          (mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow)) emptyData)
+        addAddiSpinAddiRow
+        (eval_mainRawRow_materialize 1 emptyData addAddiSpinAddiRow (by rfl) (by rfl)))
+  have h_jal_two :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          OpBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2)))) =
+        [mainOpBusInteraction (addAddiSpinJalRow 2)] := by
+    simpa [addAddiSpinMainTable, mainRowsTable] using
+      (addAddiSpinMainOpBusInteractionsAt
+        (Environment.fromArray
+          (mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2))) emptyData)
+        (addAddiSpinJalRow 2)
+        (eval_mainRawRow_materialize 2 emptyData (addAddiSpinJalRow 2) (by rfl) (by rfl)))
+  have h_jal_three :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          OpBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3)))) =
+        [mainOpBusInteraction (addAddiSpinJalRow 3)] := by
+    simpa [addAddiSpinMainTable, mainRowsTable] using
+      (addAddiSpinMainOpBusInteractionsAt
+        (Environment.fromArray
+          (mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3))) emptyData)
+        (addAddiSpinJalRow 3)
+        (eval_mainRawRow_materialize 3 emptyData (addAddiSpinJalRow 3) (by rfl) (by rfl)))
+  rw [h_add, h_addi, h_jal_two, h_jal_three]
+  rfl
+
 theorem addAddiSpinOpBus_interactions :
     addAddiSpinWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) =
       [ binaryAddOpBusInteraction addX1BinaryAddRow
@@ -690,8 +969,7 @@ theorem addAddiSpinOpBus_interactions :
   rw [addAddiSpinWitness_tables]
   simp [addAddiSpinTables, h_registerBoundary, emptyComponentTable_interactionsWith,
     addAddiSpinBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus,
-    addAddiSpinBinaryAddRows, addAddiSpinMainTable, mainRowsTable_interactionsWith_opBus,
-    addAddiSpinMainRows]
+    addAddiSpinBinaryAddRows, addAddiSpinMainTable_interactionsWith_opBus]
 
 theorem addAddiSpinWitness_opBus_balanced :
     BalancedInteractions
@@ -882,17 +1160,253 @@ private theorem addAddiSpinIdleBoundaryInteractions_balanced :
   rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
   decide
 
-private theorem addAddiSpinJalMemBusInactive (step : FGL) :
-    MainMemBusInactive (addAddiSpinJalRow step) := by
-  constructor <;>
-    simp [addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-      mainRomRowOf]
+private def addAddiSpinMainMemBusInteractionsAt (env : Environment FGL) : List (Interaction FGL) :=
+  let rowVar := (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar
+  [ ((MemBusChannel.emitted rowVar.rom.a_src_reg (aRegPreMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted (-(rowVar.rom.a_src_mem + rowVar.rom.a_src_reg))
+      (aMemMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted rowVar.rom.b_src_reg (bRegPreMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted
+      (-(rowVar.rom.b_src_mem + rowVar.rom.b_src_ind + rowVar.rom.b_src_reg))
+      (bMemMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted rowVar.rom.store_reg (cRegPreMessageExpr rowVar)).toRaw).eval env
+  , ((MemBusChannel.emitted
+      (-(rowVar.rom.store_mem + rowVar.rom.store_ind + rowVar.rom.store_reg))
+      (cMemMessageExpr rowVar)).toRaw).eval env ]
+
+private theorem addAddiSpinMainMemBusInteractionsAt_eq_valueLevel
+    (env : Environment FGL) (row : MainRowWithRom FGL)
+    (h_input : Eval.eval env (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = row) :
+    addAddiSpinMainMemBusInteractionsAt env = addAddiSpinMainValueMemBusInteractions row := by
+  unfold addAddiSpinMainMemBusInteractionsAt
+  let rowVar := (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar
+  have h_rom : eval env rowVar.rom = row.rom := by
+    rw [mainRowWithRom_eval_rom]
+    exact congrArg MainRowWithRom.rom h_input
+  have h_aSrcReg : Expression.eval env rowVar.rom.a_src_reg = row.rom.a_src_reg := by
+    calc
+      Expression.eval env rowVar.rom.a_src_reg = (eval env rowVar.rom).a_src_reg :=
+        mainRomRow_eval_a_src_reg env rowVar.rom
+      _ = row.rom.a_src_reg := by rw [h_rom]
+  have h_aSrcMem : Expression.eval env rowVar.rom.a_src_mem = row.rom.a_src_mem := by
+    calc
+      Expression.eval env rowVar.rom.a_src_mem = (eval env rowVar.rom).a_src_mem :=
+        mainRomRow_eval_a_src_mem env rowVar.rom
+      _ = row.rom.a_src_mem := by rw [h_rom]
+  have h_bSrcReg : Expression.eval env rowVar.rom.b_src_reg = row.rom.b_src_reg := by
+    calc
+      Expression.eval env rowVar.rom.b_src_reg = (eval env rowVar.rom).b_src_reg :=
+        mainRomRow_eval_b_src_reg env rowVar.rom
+      _ = row.rom.b_src_reg := by rw [h_rom]
+  have h_bSrcMem : Expression.eval env rowVar.rom.b_src_mem = row.rom.b_src_mem := by
+    calc
+      Expression.eval env rowVar.rom.b_src_mem = (eval env rowVar.rom).b_src_mem :=
+        mainRomRow_eval_b_src_mem env rowVar.rom
+      _ = row.rom.b_src_mem := by rw [h_rom]
+  have h_bSrcInd : Expression.eval env rowVar.rom.b_src_ind = row.rom.b_src_ind := by
+    calc
+      Expression.eval env rowVar.rom.b_src_ind = (eval env rowVar.rom).b_src_ind :=
+        mainRomRow_eval_b_src_ind env rowVar.rom
+      _ = row.rom.b_src_ind := by rw [h_rom]
+  have h_storeReg : Expression.eval env rowVar.rom.store_reg = row.rom.store_reg := by
+    calc
+      Expression.eval env rowVar.rom.store_reg = (eval env rowVar.rom).store_reg :=
+        mainRomRow_eval_store_reg env rowVar.rom
+      _ = row.rom.store_reg := by rw [h_rom]
+  have h_storeMem : Expression.eval env rowVar.rom.store_mem = row.rom.store_mem := by
+    calc
+      Expression.eval env rowVar.rom.store_mem = (eval env rowVar.rom).store_mem :=
+        mainRomRow_eval_store_mem env rowVar.rom
+      _ = row.rom.store_mem := by rw [h_rom]
+  have h_storeInd : Expression.eval env rowVar.rom.store_ind = row.rom.store_ind := by
+    calc
+      Expression.eval env rowVar.rom.store_ind = (eval env rowVar.rom).store_ind :=
+        mainRomRow_eval_store_ind env rowVar.rom
+      _ = row.rom.store_ind := by rw [h_rom]
+  have h_aRegPreMessage : eval env (aRegPreMessageExpr rowVar) = aRegPreMessage row := by
+    rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr, h_input]
+  have h_aMemMessage : eval env (aMemMessageExpr rowVar) = aMemMessage row := by
+    rw [ZiskFv.AirsClean.Main.eval_aMemMessageExpr, h_input]
+  have h_bRegPreMessage : eval env (bRegPreMessageExpr rowVar) = bRegPreMessage row := by
+    rw [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr, h_input]
+  have h_bMemMessage : eval env (bMemMessageExpr rowVar) = bMemMessage row := by
+    rw [ZiskFv.AirsClean.Main.eval_bMemMessageExpr, h_input]
+  have h_cRegPreMessage : eval env (cRegPreMessageExpr rowVar) = cRegPreMessage row := by
+    rw [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr, h_input]
+  have h_cMemMessage : eval env (cMemMessageExpr rowVar) = cMemMessage row := by
+    rw [ZiskFv.AirsClean.Main.eval_cMemMessageExpr, h_input]
+  have h_aReg :
+      (((MemBusChannel.emitted rowVar.rom.a_src_reg
+          (aRegPreMessageExpr rowVar)).toRaw).eval env) =
+        mainARegPreInteraction row := by
+    simp [mainARegPreInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+    constructor
+    · exact h_aSrcReg
+    · rw [toElements_eval_toArray, h_aRegPreMessage]
+  have h_aMem :
+      (((MemBusChannel.emitted (-(rowVar.rom.a_src_mem + rowVar.rom.a_src_reg))
+          (aMemMessageExpr rowVar)).toRaw).eval env) =
+        mainAMemInteraction row := by
+    simp [mainAMemInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+    constructor
+    · simp [Expression.eval, h_aSrcMem, h_aSrcReg]
+    · rw [toElements_eval_toArray, h_aMemMessage]
+  have h_bReg :
+      (((MemBusChannel.emitted rowVar.rom.b_src_reg
+          (bRegPreMessageExpr rowVar)).toRaw).eval env) =
+        mainBRegPreInteraction row := by
+    simp [mainBRegPreInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+    constructor
+    · exact h_bSrcReg
+    · rw [toElements_eval_toArray, h_bRegPreMessage]
+  have h_bMem :
+      (((MemBusChannel.emitted
+          (-(rowVar.rom.b_src_mem + rowVar.rom.b_src_ind + rowVar.rom.b_src_reg))
+          (bMemMessageExpr rowVar)).toRaw).eval env) =
+        mainBMemInteraction row := by
+    simp [mainBMemInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+    constructor
+    · simp [Expression.eval, h_bSrcMem, h_bSrcInd, h_bSrcReg]
+    · rw [toElements_eval_toArray, h_bMemMessage]
+  have h_cReg :
+      (((MemBusChannel.emitted rowVar.rom.store_reg
+          (cRegPreMessageExpr rowVar)).toRaw).eval env) =
+        mainCRegPreInteraction row := by
+    simp [mainCRegPreInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+    constructor
+    · exact h_storeReg
+    · rw [toElements_eval_toArray, h_cRegPreMessage]
+  have h_cMem :
+      (((MemBusChannel.emitted
+          (-(rowVar.rom.store_mem + rowVar.rom.store_ind + rowVar.rom.store_reg))
+          (cMemMessageExpr rowVar)).toRaw).eval env) =
+        mainCMemInteraction row := by
+    simp [mainCMemInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+    constructor
+    · simp [Expression.eval, h_storeMem, h_storeInd, h_storeReg]
+    · rw [toElements_eval_toArray, h_cMemMessage]
+  change
+    [(((MemBusChannel.emitted rowVar.rom.a_src_reg (aRegPreMessageExpr rowVar)).toRaw).eval env),
+      (((MemBusChannel.emitted (-(rowVar.rom.a_src_mem + rowVar.rom.a_src_reg))
+        (aMemMessageExpr rowVar)).toRaw).eval env),
+      (((MemBusChannel.emitted rowVar.rom.b_src_reg (bRegPreMessageExpr rowVar)).toRaw).eval env),
+      (((MemBusChannel.emitted
+        (-(rowVar.rom.b_src_mem + rowVar.rom.b_src_ind + rowVar.rom.b_src_reg))
+        (bMemMessageExpr rowVar)).toRaw).eval env),
+      (((MemBusChannel.emitted rowVar.rom.store_reg (cRegPreMessageExpr rowVar)).toRaw).eval env),
+      (((MemBusChannel.emitted
+        (-(rowVar.rom.store_mem + rowVar.rom.store_ind + rowVar.rom.store_reg))
+        (cMemMessageExpr rowVar)).toRaw).eval env)] =
+      [mainARegPreInteraction row, mainAMemInteraction row, mainBRegPreInteraction row,
+        mainBMemInteraction row, mainCRegPreInteraction row, mainCMemInteraction row]
+  simp [h_aReg, h_aMem, h_bReg, h_bMem, h_cReg, h_cMem]
+
+private theorem addAddiSpinMainMemBusInteractionsAt_eq_component
+    (env : Environment FGL) :
+    (componentWithRomMemAndOpBus 3 addAddiSpinProgram).operations.interactionValuesWith
+        MemBusChannel.toRaw env = addAddiSpinMainMemBusInteractionsAt env := by
+  simp [addAddiSpinMainMemBusInteractionsAt, Operations.interactionValuesWith_eq_map,
+    componentWithRomMemAndOpBus_interactionsWith_memBus]
+
+theorem addAddiSpinMainTable_interactionsWith_memBus :
+    addAddiSpinMainTable.interactionsWith MemBusChannel.toRaw =
+      addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow ++
+        addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow ++
+        addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) ++
+        addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3) := by
+  rw [Table.interactionsWith, addAddiSpinMainTable_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have h_add :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          MemBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow))) =
+        addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow := by
+    calc
+      _ = addAddiSpinMainMemBusInteractionsAt
+          (Environment.fromArray
+            (mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow)) emptyData) := by
+        simpa [addAddiSpinMainTable, mainRowsTable] using
+          (addAddiSpinMainMemBusInteractionsAt_eq_component
+            (Environment.fromArray
+              (mainFixedColumns.materialize 0 (mainRawRow addAddiSpinAddRow)) emptyData))
+      _ = addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow :=
+        addAddiSpinMainMemBusInteractionsAt_eq_valueLevel _ addAddiSpinAddRow
+          (eval_mainRawRow_materialize 0 emptyData addAddiSpinAddRow (by rfl) (by rfl))
+  have h_addi :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          MemBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow))) =
+        addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow := by
+    calc
+      _ = addAddiSpinMainMemBusInteractionsAt
+          (Environment.fromArray
+            (mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow)) emptyData) := by
+        simpa [addAddiSpinMainTable, mainRowsTable] using
+          (addAddiSpinMainMemBusInteractionsAt_eq_component
+            (Environment.fromArray
+              (mainFixedColumns.materialize 1 (mainRawRow addAddiSpinAddiRow)) emptyData))
+      _ = addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow :=
+        addAddiSpinMainMemBusInteractionsAt_eq_valueLevel _ addAddiSpinAddiRow
+          (eval_mainRawRow_materialize 1 emptyData addAddiSpinAddiRow (by rfl) (by rfl))
+  have h_jal_two :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          MemBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2)))) =
+        addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) := by
+    calc
+      _ = addAddiSpinMainMemBusInteractionsAt
+          (Environment.fromArray
+            (mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2))) emptyData) := by
+        simpa [addAddiSpinMainTable, mainRowsTable] using
+          (addAddiSpinMainMemBusInteractionsAt_eq_component
+            (Environment.fromArray
+              (mainFixedColumns.materialize 2 (mainRawRow (addAddiSpinJalRow 2))) emptyData))
+      _ = addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) :=
+        addAddiSpinMainMemBusInteractionsAt_eq_valueLevel _ (addAddiSpinJalRow 2)
+          (eval_mainRawRow_materialize 2 emptyData (addAddiSpinJalRow 2) (by rfl) (by rfl))
+  have h_jal_three :
+      addAddiSpinMainTable.component.operations.interactionValuesWith
+          MemBusChannel.toRaw
+          (addAddiSpinMainTable.environment
+            (mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3)))) =
+        addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3) := by
+    calc
+      _ = addAddiSpinMainMemBusInteractionsAt
+          (Environment.fromArray
+            (mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3))) emptyData) := by
+        simpa [addAddiSpinMainTable, mainRowsTable] using
+          (addAddiSpinMainMemBusInteractionsAt_eq_component
+            (Environment.fromArray
+              (mainFixedColumns.materialize 3 (mainRawRow (addAddiSpinJalRow 3))) emptyData))
+      _ = addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3) :=
+        addAddiSpinMainMemBusInteractionsAt_eq_valueLevel _ (addAddiSpinJalRow 3)
+          (eval_mainRawRow_materialize 3 emptyData (addAddiSpinJalRow 3) (by rfl) (by rfl))
+  rw [h_add, h_addi, h_jal_two, h_jal_three]
+  simpa only [List.append_assoc]
 
 private theorem addAddiSpinJalMemBusInteractions_balanced (step : FGL) :
-    BalancedInteractions
-      (mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow step)) := by
-  exact mainMemBusInteractionsFor_balanced_of_inactive 3 addAddiSpinProgram
-    (addAddiSpinJalRow step) (addAddiSpinJalMemBusInactive step)
+    BalancedInteractions (addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow step)) := by
+  refine zeroInteractions_balanced _ ?_ ?_
+  · intro interaction h_interaction
+    simp [addAddiSpinMainValueMemBusInteractions, mainValueMemBusInteractions] at h_interaction
+    rcases h_interaction with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp [addAddiSpinMainValueMemBusInteractions, mainValueMemBusInteractions,
+        mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
+        mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction, addAddiSpinJalRow,
+        addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
+  · left
+    change 6 < ringChar FGL
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
 
 noncomputable def addAddiSpinMemBusInteractions : List (Interaction FGL) :=
   addAddiSpinWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw)
@@ -901,8 +1415,8 @@ private noncomputable def addAddiSpinReducedMemBusInteractions : List (Interacti
   (boundaryInteractions addAddiSpinBoundaryRowX1 ++ idleBoundaryInteractions) ++
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow ++
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow ++
-    mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 2) ++
-    mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 3)
+    addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) ++
+    addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3)
 
 private theorem addAddiSpinMemBusInteractions_eq_tables :
     addAddiSpinMemBusInteractions =
@@ -968,39 +1482,19 @@ private theorem addAddiSpinBinaryAddTableMemBusInteractions_eq_nil :
 
 private theorem addAddiSpinMainTableMemBusInteractions_eq_rows :
     addAddiSpinMainTable.interactionsWith MemBusChannel.toRaw =
-      mainMemBusInteractionsForRows 3 addAddiSpinProgram addAddiSpinMainRows := by
-  unfold addAddiSpinMainTable
-  exact mainRowsTable_interactionsWith_memBus 3 addAddiSpinProgram addAddiSpinMainRows
-
-private theorem addAddiSpinMainRowsMemBusInteractions_eq_expanded :
-    mainMemBusInteractionsForRows 3 addAddiSpinProgram addAddiSpinMainRows =
-      mainMemBusInteractionsFor 3 addAddiSpinProgram addAddiSpinAddRow ++
-        mainMemBusInteractionsFor 3 addAddiSpinProgram addAddiSpinAddiRow ++
-        mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 2) ++
-        mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 3) := by
-  unfold addAddiSpinMainRows
-  exact mainMemBusInteractionsForRows_four 3 addAddiSpinProgram addAddiSpinAddRow
-    addAddiSpinAddiRow (addAddiSpinJalRow 2) (addAddiSpinJalRow 3)
-
-private theorem addAddiSpinExpandedMemBusInteractions_eq_reduced :
-    (boundaryInteractions addAddiSpinBoundaryRowX1 ++ idleBoundaryInteractions) ++
-      (mainMemBusInteractionsFor 3 addAddiSpinProgram addAddiSpinAddRow ++
-        mainMemBusInteractionsFor 3 addAddiSpinProgram addAddiSpinAddiRow ++
-        mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 2) ++
-        mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 3)) =
-      addAddiSpinReducedMemBusInteractions := by
-  unfold addAddiSpinReducedMemBusInteractions
-  rw [mainMemBusInteractionsFor_eq_valueLevel 3 addAddiSpinProgram addAddiSpinAddRow,
-    mainMemBusInteractionsFor_eq_valueLevel 3 addAddiSpinProgram addAddiSpinAddiRow]
-  rfl
+      addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow ++
+        addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow ++
+        addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) ++
+        addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3) :=
+  addAddiSpinMainTable_interactionsWith_memBus
 
 private theorem addAddiSpinReducedMemBusInteractions_balanced :
     BalancedInteractions addAddiSpinReducedMemBusInteractions := by
   unfold addAddiSpinReducedMemBusInteractions
   let addRows := addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow ++
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow
-  let jalRows := mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 2) ++
-    mainMemBusInteractionsFor 3 addAddiSpinProgram (addAddiSpinJalRow 3)
+  let jalRows := addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) ++
+    addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3)
   have h_perm : List.Perm
       ((boundaryInteractions addAddiSpinBoundaryRowX1 ++ idleBoundaryInteractions) ++
         addRows ++ jalRows)
@@ -1043,10 +1537,9 @@ theorem addAddiSpinWitness_memBus_balanced :
     addAddiSpinBinaryAddTableMemBusInteractions_eq_nil,
     addAddiSpinMainTableMemBusInteractions_eq_rows]
   simp only [List.append_nil]
-  rw [addAddiSpinBoundaryRows_interactions,
-    addAddiSpinMainRowsMemBusInteractions_eq_expanded,
-    addAddiSpinExpandedMemBusInteractions_eq_reduced]
-  exact addAddiSpinReducedMemBusInteractions_balanced
+  rw [addAddiSpinBoundaryRows_interactions]
+  simpa [addAddiSpinReducedMemBusInteractions, List.append_assoc] using
+    addAddiSpinReducedMemBusInteractions_balanced
 
 theorem addAddiSpinWitness_balancedChannels : addAddiSpinWitness.BalancedChannels := by
   refine addAddiSpinWitness.balancedChannels_of_tables addAddiSpinEnsemble_verifier ?_
@@ -1071,7 +1564,6 @@ def addAddiSpinAcceptedTrace : AcceptedZiskTrace 3 where
   mem_replay_gsum := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   mem_replay_im0 := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
-  mem_replay_constraints := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   mem_replay_segment_ranges := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   transitions_hold := addAddiSpinWitness_transitions

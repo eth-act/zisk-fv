@@ -22,6 +22,14 @@ works as usual. The Clean dep is pulled as a *source* tree (no
 pre-built oleans inside Nix — Lake compiles it as part of the main
 build using the shared Mathlib v4.28.0 pin).
 
+For Project Closeout S2, `flake.lock` pins the immutable
+`codygunton/clean@c87617d8e29386e1e9e4f98cfbfb6940c2eb63df` fork input. It
+provides the all-row predecessor/current transition surface and canonical
+component-owned indexed fixed-column materialization used by the live Mem and
+Main components. The associated build-input trust note is maintained in
+`trust/trusted-base.md`; the pin is a source dependency, not an accepted-trace
+certificate.
+
 ## Why Nix and not Docker
 
 The previous Docker pipeline used `apt-get install` (unpinned),

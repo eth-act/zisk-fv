@@ -712,12 +712,170 @@ def pcHandshakeBetween (prev curr : MainRowWithRom FGL) : Prop :=
         + (1 - prev.core.set_pc) * (prev.core.pc + prev.core.jmp_offset2)
         + prev.core.flag * (prev.core.jmp_offset1 - prev.core.jmp_offset2))) = 0
 
+/-- ZisK instantiates both the Main witness and fixed traces over this physical
+    domain (`zisk/pil/src/pil_helpers/traces.rs:273-282`). -/
+def mainFixedCapacity : Nat := 4194304
+
+/-- Map the 43 effective `MainRowWithRom` slots to 41 raw witness slots plus
+    the two physical fixed columns. The flattened `ProvableStruct` order is
+    `core.segment_l1` at slot 17 and `rom.main_step` at slot 37. -/
+private def mainFixedLayout (slot : Fin 43) : Sum (Fin 41) (Fin 2) :=
+  if h_segment_l1 : slot.val = 17 then
+    .inr ⟨0, by omega⟩
+  else if h_main_step : slot.val = 37 then
+    .inr ⟨1, by omega⟩
+  else
+    .inl
+      ⟨slot.val - (if 17 < slot.val then 1 else 0) -
+          (if 37 < slot.val then 1 else 0), by
+        split <;> split <;> omega⟩
+
+/-- Main's two fixed columns for the currently modeled segment: `SEGMENT_L1`
+    is `[1, 0, ...]`, and the modeled `main_step` is `SEGMENT_STEP = [0..N-1]`.
+    The latter is the segment-zero specialization of `STEP` from `main.pil:90`,
+    matching the existing single-segment accepted-trace model. -/
+private def mainFixedValues (slot : Fin 2) (row : Fin mainFixedCapacity) : FGL :=
+  if slot.val = 0 then
+    if row.val = 0 then 1 else 0
+  else
+    (row.val : FGL)
+
+/-- Component-owned Main fixed schema. `IndexedFixedColumns.fixedAt` supplies
+    physical-domain periodic access, while `Table.fixed_domain` bounds every
+    materialized Main prefix by this capacity. -/
+def mainFixedColumns : IndexedFixedColumns FGL 41 where
+  capacity := mainFixedCapacity
+  capacity_pos := by decide
+  effectiveWidth := 43
+  fixedWidth := 2
+  layout := mainFixedLayout
+  values := mainFixedValues
+
+/-- The 41 raw witness cells of a Main row, omitting the component-owned
+    `SEGMENT_L1` and `main_step` fixed cells at effective slots 17 and 37. -/
+def mainRawRow (row : MainRowWithRom FGL) : Array FGL :=
+  #[row.core.a_0, row.core.a_1, row.core.b_0, row.core.b_1, row.core.c_0,
+    row.core.c_1, row.core.flag, row.core.pc, row.core.is_external_op,
+    row.core.op, row.core.m32, row.core.ind_width, row.core.set_pc,
+    row.core.jmp_offset1, row.core.jmp_offset2, row.core.store_pc,
+    row.core.im_high_degree_2,
+    row.rom.a_offset_imm0, row.rom.a_imm1, row.rom.b_offset_imm0,
+    row.rom.b_imm1, row.rom.store_offset, row.rom.a_src_imm,
+    row.rom.a_src_mem, row.rom.is_precompiled, row.rom.b_src_imm,
+    row.rom.b_src_mem, row.rom.store_mem, row.rom.store_ind,
+    row.rom.b_src_ind, row.rom.a_src_reg, row.rom.b_src_reg,
+    row.rom.store_reg, row.rom.addr0, row.rom.addr1, row.rom.addr2,
+    row.rom.a_reg_prev_mem_step, row.rom.b_reg_prev_mem_step,
+    row.rom.store_reg_prev_mem_step, row.rom.store_reg_prev_value_0,
+    row.rom.store_reg_prev_value_1]
+
+@[simp] theorem mainRawRow_size (row : MainRowWithRom FGL) : (mainRawRow row).size = 41 := by
+  simp [mainRawRow]
+
+/-- The materialized raw Main prefix reconstructs its core component, with
+    `SEGMENT_L1` supplied solely by the component-owned fixed schema. -/
+private theorem eval_mainRawRow_core_materialize
+    (index : Nat) (data : ProverData FGL) (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index) :
+    Eval.eval
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data)
+      (varFromOffset (F := FGL) MainRow 0) = row.core := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMainRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go, ProvableType.eval_field,
+    ProvableType.varFromOffset_field, Expression.eval, Nat.zero_add]
+  cases row with
+  | mk core rom =>
+    cases core with
+    | mk a_0 a_1 b_0 b_1 c_0 c_1 flag pc is_external_op op m32 ind_width set_pc
+        jmp_offset1 jmp_offset2 store_pc im_high_degree_2 segment_l1 =>
+      change segment_l1 = mainFixedColumns.fixedAt 0 index at h_segment_l1
+      simp [IndexedFixedColumns.materialize, IndexedFixedColumns.fixedAt,
+        mainFixedColumns, mainFixedLayout, mainFixedValues, mainRawRow,
+        ProvableType.size]
+      simpa [IndexedFixedColumns.fixedAt, mainFixedColumns, mainFixedValues] using
+        h_segment_l1.symm
+
+/-- The materialized raw Main prefix reconstructs its ROM component, with
+    `main_step` supplied solely by the component-owned fixed schema. -/
+private theorem eval_mainRawRow_rom_materialize
+    (index : Nat) (data : ProverData FGL) (row : MainRowWithRom FGL)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+    Eval.eval
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data)
+      (varFromOffset (F := FGL) MainRomRow 18) = row.rom := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMainRomRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go, ProvableType.eval_field,
+    ProvableType.varFromOffset_field, Expression.eval]
+  cases row with
+  | mk core rom =>
+    cases rom with
+    | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+        is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+        store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+        store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+      change main_step = mainFixedColumns.fixedAt 1 index at h_main_step
+      simp [IndexedFixedColumns.materialize, IndexedFixedColumns.fixedAt,
+        mainFixedColumns, mainFixedLayout, mainFixedValues, mainRawRow,
+        ProvableType.size]
+      simpa [IndexedFixedColumns.fixedAt, mainFixedColumns, mainFixedValues] using
+        h_main_step.symm
+
+/-- Materializing `mainRawRow` reconstructs the original Main row when its two
+    fixed cells agree with the component-owned fixed schema. -/
+theorem eval_mainRawRow_materialize
+    (index : Nat) (data : ProverData FGL) (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+    Eval.eval
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data)
+      (varFromOffset (F := FGL) MainRowWithRom 0) = row := by
+  have h_core := eval_mainRawRow_core_materialize index data row h_segment_l1
+  have h_rom := eval_mainRawRow_rom_materialize index data row h_main_step
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  change
+    { core := Eval.eval
+        (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data)
+        (varFromOffset (F := FGL) MainRow 0)
+      rom := Eval.eval
+        (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data)
+        (varFromOffset (F := FGL) MainRomRow 18) } = row
+  cases row
+  simp_all
+
+/-- Adapt Main's generated predecessor/current PC equation to Clean's
+    right-indexed transition API. The index is carried by the table contract;
+    this equation reads only the effective predecessor and current rows. At row
+    zero Clean saturates the predecessor to the current row, and the materialized
+    `SEGMENT_L1 = 1` gate makes the equation vacuous as in the PIL. -/
+def pcHandshakeTransition (_index : Nat) (prev curr : Environment FGL) : Prop :=
+  pcHandshakeBetween
+    (Eval.eval prev (varFromOffset (F := FGL) MainRowWithRom 0))
+    (Eval.eval curr (varFromOffset (F := FGL) MainRowWithRom 0))
+
 /-- Unified Main component used by the T7 full ensemble. -/
 def componentWithRomMemAndOpBus
     (length : ℕ) (program : Program length) :
     Air.Flat.Component FGL :=
   { circuit := circuitWithRomMemAndOpBus length program
-    transition := pcHandshakeBetween }
+    rawWidth := 41
+    fixedColumns := some mainFixedColumns
+    transition := pcHandshakeTransition }
+
+/-- The live Main component decodes a materialized raw row without any
+    caller-supplied representation equality. -/
+theorem componentWithRomMemAndOpBus_rowInput_materialize
+    (length : Nat) (program : Program length) (index : Nat) (data : ProverData FGL)
+    (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+    (componentWithRomMemAndOpBus length program).rowInput
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data) = row := by
+  simpa only [Component.rowInput, eval_varFromOffset_valueFromOffset] using
+    eval_mainRawRow_materialize index data row h_segment_l1 h_main_step
 
 /-- Project the generic Clean component `Spec` for the unified
     ROM/memory/op-bus Main component to the concrete Main-row `Spec`. -/
