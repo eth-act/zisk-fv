@@ -8,6 +8,12 @@ open ZiskFv.AirsClean.Mem
 private def memWitnessRow : MemRow FGL :=
   memRowOf true true true false 16 9 10 8 1 2 42 43
 
+/-- Concrete static-table memberships required to construct the live dual-Mem
+    range lookups for this completeness witness. -/
+private theorem memWitnessDualMemRowRangeFacts :
+    dualMemRowRangeFacts memWitnessRow := by
+  norm_num [dualMemRowRangeFacts, memWitnessRow, memRowOf, memReadSameAddrOf, memValueOf]
+
 private theorem memWitnessCircuitProverAssumptions
     (data : ProverData FGL) (hint : ProverHint FGL) :
     circuit.ProverAssumptions memWitnessRow data hint := by
@@ -26,7 +32,7 @@ private theorem memWitnessWithDualMemBusProverAssumptions
     (data : ProverData FGL) (hint : ProverHint FGL) :
     circuitWithDualMemBus.ProverAssumptions memWitnessRow data hint := by
   refine ⟨true, true, true, false, 16, 9, 10, 8, 1, 2, 42, 43,
-    (by intro _; rfl), (by intro _; rfl), ?_⟩
+    (by intro _; rfl), (by intro _; rfl), memWitnessDualMemRowRangeFacts, ?_⟩
   rfl
 
 theorem completeness_witness_mem :

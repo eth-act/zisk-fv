@@ -50,16 +50,34 @@ def main (row : Var MemRow FGL) : Circuit FGL Unit := do
   -- address change without write zeros high value chunk
   assertZero ((row.addr_changes * (1 - row.wr)) * row.value_1)
 
-/-- Lookup-aware source for the ungated mutable-Mem row range facts:
-    `l_increment : bits(22)`, `h_increment : bits(16)`, `addr : bits(29)`,
-    and the three `MEM_STEP_BITS = 40` step columns. -/
+/-- Row-level facts for the range checks that `mem.pil:384-385,397` places on
+    the live dual-Mem component. The completeness witness supplies these
+    constructibly; accepted traces derive them from component constraints. -/
+@[reducible]
+def dualMemRowRangeFacts (row : MemRow FGL) : Prop :=
+  row.increment_0.val < 2 ^ 22
+    ∧ row.increment_1.val < 2 ^ 16
+    ∧ row.addr.val < 2 ^ 29
+    ∧ row.step.val < 2 ^ 40
+    ∧ row.step_dual.val < 2 ^ 40
+    ∧ row.previous_step.val < 2 ^ 40
+    ∧ (row.sel_dual = 1 → (row.step_dual - row.step - row.wr).val < 2 ^ 24)
+
+/-- Lookup-aware source for the ungated mutable-Mem row range facts: increment
+    chunks mirror `mem.pil:384-385`; `addr : bits(29)` mirrors `mem.pil:109`;
+    and the three `MEM_STEP_BITS = 40` step columns mirror `mem.pil:110,122`. -/
 @[circuit_norm]
 def rowRangeLookups (row : Var MemRow FGL) : Circuit FGL Unit := do
+  -- `l_increment : bits(22)` / `h_increment : bits(16)`, `mem.pil:384-385`.
   lookup (Table.fromStatic rangeTable22) row.increment_0
   lookup (Table.fromStatic rangeTable16) row.increment_1
+  -- `addr : bits(29)`, `mem.pil:109`.
   lookup (Table.fromStatic rangeTable29) row.addr
+  -- `step : bits(MEM_STEP_BITS)`, `mem.pil:110`.
   lookup (Table.fromStatic rangeTable40) row.step
+  -- `step_dual : bits(MEM_STEP_BITS)`, `mem.pil:122`.
   lookup (Table.fromStatic rangeTable40) row.step_dual
+  -- `previous_step : bits(40)`, `mem.pil:365`.
   lookup (Table.fromStatic rangeTable40) row.previous_step
 
 /-- Lookup-aware source for the selector-gated dual-step delta range check.
@@ -68,6 +86,14 @@ def rowRangeLookups (row : Var MemRow FGL) : Circuit FGL Unit := do
 @[circuit_norm]
 def dualStepDeltaRangeLookup (row : Var MemRow FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable24) (row.step_dual - row.step - row.wr)
+
+/-- Live selector-gated form of `mem.pil:397`'s dual-step delta range check.
+    Multiplying by `sel_dual` makes inactive rows check the in-range zero while
+    retaining the original expression on active rows. -/
+@[circuit_norm]
+def gatedDualStepDeltaRangeLookup (row : Var MemRow FGL) : Circuit FGL Unit := do
+  lookup (Table.fromStatic rangeTable24)
+    (row.sel_dual * (row.step_dual - row.step - row.wr))
 
 /-- Lookup-aware source for the segment-level `distance_base` range checks
     used by mutable-Mem continuation segments. -/
@@ -234,8 +260,122 @@ def memWithMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
 @[circuit_norm]
 def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
   main row
+  rowRangeLookups row
+  gatedDualStepDeltaRangeLookup row
   MemBusChannel.emit row.sel (memBusMessageExpr row)
   MemBusChannel.emit row.sel_dual (memBusDualMessageExpr row)
+
+/-- Project the live dual-Mem static lookups to the row-level range facts they
+    mirror in `mem.pil:384-385,397`. -/
+theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
+    (row : Var MemRow FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env ((memWithDualMemBus row).operations offset)) :
+    dualMemRowRangeFacts (eval env row) := by
+  simp only [memWithDualMemBus, main, rowRangeLookups,
+    gatedDualStepDeltaRangeLookup, MemBusChannel, circuit_norm] at h_holds
+  have staticRange := fun (table : Table FGL field) (entry : Expression FGL)
+      (h_sound :
+        let lookup : Lookup FGL := { table := table.toRaw, entry := #v[entry] }
+        lookup.Soundness env) =>
+    (Lookup.soundess_def_field table env entry).mp h_sound
+  let increment0Table := Table.fromStatic rangeTable22
+  let increment0Lookup : Lookup FGL :=
+    { table := increment0Table.toRaw, entry := #v[row.increment_0] }
+  let increment1Table := Table.fromStatic rangeTable16
+  let increment1Lookup : Lookup FGL :=
+    { table := increment1Table.toRaw, entry := #v[row.increment_1] }
+  let addrTable := Table.fromStatic rangeTable29
+  let addrLookup : Lookup FGL := { table := addrTable.toRaw, entry := #v[row.addr] }
+  let stepTable := Table.fromStatic rangeTable40
+  let stepLookup : Lookup FGL := { table := stepTable.toRaw, entry := #v[row.step] }
+  let stepDualTable := Table.fromStatic rangeTable40
+  let stepDualLookup : Lookup FGL :=
+    { table := stepDualTable.toRaw, entry := #v[row.step_dual] }
+  let previousStepTable := Table.fromStatic rangeTable40
+  let previousStepLookup : Lookup FGL :=
+    { table := previousStepTable.toRaw, entry := #v[row.previous_step] }
+  let deltaTable := Table.fromStatic rangeTable24
+  let deltaLookup : Lookup FGL :=
+    { table := deltaTable.toRaw,
+      entry := #v[row.sel_dual * (row.step_dual - row.step - row.wr)] }
+  have h_increment_0_contains : increment0Lookup.Contains env := by
+    apply h_holds.2 increment0Lookup
+    dsimp [increment0Lookup, increment0Table, Table.fromStatic, StaticTable.toTable]
+    left
+    rfl
+  have h_increment_1_contains : increment1Lookup.Contains env := by
+    apply h_holds.2 increment1Lookup
+    dsimp [increment1Lookup, increment1Table, Table.fromStatic, StaticTable.toTable]
+    right; left
+    rfl
+  have h_addr_contains : addrLookup.Contains env := by
+    apply h_holds.2 addrLookup
+    dsimp [addrLookup, addrTable, Table.fromStatic, StaticTable.toTable]
+    right; right; left
+    rfl
+  have h_step_contains : stepLookup.Contains env := by
+    apply h_holds.2 stepLookup
+    dsimp [stepLookup, stepTable, Table.fromStatic, StaticTable.toTable]
+    right; right; right; left
+    rfl
+  have h_step_dual_contains : stepDualLookup.Contains env := by
+    apply h_holds.2 stepDualLookup
+    dsimp [stepDualLookup, stepDualTable, Table.fromStatic, StaticTable.toTable]
+    right; right; right; right; left
+    rfl
+  have h_previous_step_contains : previousStepLookup.Contains env := by
+    apply h_holds.2 previousStepLookup
+    dsimp [previousStepLookup, previousStepTable, Table.fromStatic, StaticTable.toTable]
+    right; right; right; right; right; left
+    rfl
+  have h_delta_contains : deltaLookup.Contains env := by
+    apply h_holds.2 deltaLookup
+    dsimp [deltaLookup, deltaTable, Table.fromStatic, StaticTable.toTable]
+    right; right; right; right; right; right
+    rfl
+  have h_increment_0 := staticRange increment0Table row.increment_0
+    (increment0Lookup.table.imply_soundness _ _ h_increment_0_contains)
+  have h_increment_1 := staticRange increment1Table row.increment_1
+    (increment1Lookup.table.imply_soundness _ _ h_increment_1_contains)
+  have h_addr := staticRange addrTable row.addr
+    (addrLookup.table.imply_soundness _ _ h_addr_contains)
+  have h_step := staticRange stepTable row.step
+    (stepLookup.table.imply_soundness _ _ h_step_contains)
+  have h_step_dual := staticRange stepDualTable row.step_dual
+    (stepDualLookup.table.imply_soundness _ _ h_step_dual_contains)
+  have h_previous_step := staticRange previousStepTable row.previous_step
+    (previousStepLookup.table.imply_soundness _ _ h_previous_step_contains)
+  have h_delta := staticRange deltaTable
+    (row.sel_dual * (row.step_dual - row.step - row.wr))
+    (deltaLookup.table.imply_soundness _ _ h_delta_contains)
+  cases row with
+  | mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr previous_step
+      increment_0 increment_1 read_same_addr =>
+    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
+      ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
+      ProvableType.eval_field] at *
+    refine ⟨by simpa [CircuitType.eval_expr, increment0Table, Table.fromStatic,
+        StaticTable.toTable, rangeTable22, rangeStaticTable] using h_increment_0,
+      by simpa [CircuitType.eval_expr, increment1Table, Table.fromStatic,
+        StaticTable.toTable, rangeTable16, rangeStaticTable] using h_increment_1,
+      by simpa [CircuitType.eval_expr, addrTable, Table.fromStatic,
+        StaticTable.toTable, rangeTable29, rangeStaticTable] using h_addr,
+      by simpa [CircuitType.eval_expr, stepTable, Table.fromStatic,
+        StaticTable.toTable, rangeTable40, rangeStaticTable] using h_step,
+      by simpa [CircuitType.eval_expr, stepDualTable, Table.fromStatic,
+        StaticTable.toTable, rangeTable40, rangeStaticTable] using h_step_dual,
+      by simpa [CircuitType.eval_expr, previousStepTable, Table.fromStatic,
+        StaticTable.toTable, rangeTable40, rangeStaticTable] using h_previous_step, ?_⟩
+    have h_delta_range :
+        rangeTable24.Spec
+          (Expression.eval env sel_dual *
+            (Expression.eval env step_dual + -Expression.eval env step + -Expression.eval env wr)) := by
+      simpa [Expression.eval, deltaTable, Table.fromStatic, StaticTable.toTable] using h_delta
+    intro h_sel_dual
+    change Expression.eval env sel_dual = 1 at h_sel_dual
+    rw [h_sel_dual] at h_delta_range
+    simpa [sub_eq_add_neg, rangeTable24, rangeStaticTable] using h_delta_range
 
 /-- Elaborated `memWithMemBus` circuit, ready for use in Clean
     memory-bus component assembly. -/
@@ -266,7 +406,7 @@ def memWithDualMemBus (row : Var MemRow FGL) : Circuit FGL Unit := do
       [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
         , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ]
   channelsLawful := by
-    simp only [circuit_norm, memWithDualMemBus, main, memBusMessageExpr,
-      memBusDualMessageExpr, MemBusChannel]
+    simp only [circuit_norm, memWithDualMemBus, main, rowRangeLookups,
+      gatedDualStepDeltaRangeLookup, memBusMessageExpr, memBusDualMessageExpr, MemBusChannel]
 
 end ZiskFv.AirsClean.Mem

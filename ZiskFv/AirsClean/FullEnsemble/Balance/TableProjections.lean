@@ -916,6 +916,48 @@ structure MemTableGeneratedRangeFacts
       mem.sel_dual idx.val = 1 →
         ZiskFv.Airs.Mem.dual_step_delta_in_range mem idx.val
 
+/-- Derive the concrete Mem row range facts from the live dual-Mem component
+    constraints. The seven static lookups composed in `memWithDualMemBus`
+    mirror `mem.pil:384-385,397`; this consumes the table's actual row
+    constraints rather than a detached lookup witness. -/
+theorem memTableGeneratedRangeFacts_of_component_constraints
+    (table : Table FGL)
+    (gsum im0 im1 : ℕ → FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (h_constraints : table.Constraints) :
+    MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1) := by
+  have rangeAt : ∀ idx : Fin table.table.length,
+      ZiskFv.AirsClean.Mem.dualMemRowRangeFacts
+        (eval (table.environment (table.table.get idx))
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
+    intro idx
+    have h_mem : table.table.get idx ∈ table.table :=
+      List.mem_iff_get.mpr ⟨idx, rfl⟩
+    have h_holds : table.component.operations.ConstraintsHold
+        (table.environment (table.table.get idx)) :=
+      h_constraints (table.table.get idx) h_mem
+    rw [h_component] at h_holds
+    exact ZiskFv.AirsClean.Mem.dualMemRowRangeFacts_of_componentWithDualMemBus_constraints
+      _ h_holds
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · intro idx
+    have h := rangeAt idx
+    rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
+    exact ⟨h.1, h.2.1⟩
+  · intro idx
+    have h := rangeAt idx
+    rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
+    exact h.2.2.1
+  · intro idx
+    have h := rangeAt idx
+    rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
+    exact ⟨h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1⟩
+  · intro idx h_sel_dual
+    have h := rangeAt idx
+    rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
+    exact h.2.2.2.2.2.2 h_sel_dual
+
 /-- Segment-level range facts for one generated Mem table segment.
 
     These facts name the segment-global range-check surface used by

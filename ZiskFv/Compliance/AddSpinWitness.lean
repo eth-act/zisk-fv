@@ -54,19 +54,19 @@ def addSpinJalProgramRow : ZiskRomMessage FGL :=
     ind_width := 8, op := ZiskFv.Trusted.OP_FLAG, store_offset := 0, jmp_offset1 := 0,
     jmp_offset2 := 4, flags := packFlags addSpinJalBits }
 
-def addSpinJalFreeCols (step : FGL) : MainRomFreeCols where
-  a_0 := 0
-  a_1 := 0
-  b_0 := 0
-  b_1 := 0
-  im_high_degree_2 := 0
-  segment_l1 := 0
-  main_step := step
-  a_reg_prev_mem_step := 0
-  b_reg_prev_mem_step := 0
-  store_reg_prev_mem_step := 0
-  store_reg_prev_value_0 := 0
-  store_reg_prev_value_1 := 0
+/-- JAL has no active register access; its inactive predecessor columns come from boot. -/
+@[reducible]
+def addSpinJalFreeCols (step : FGL) : MainRomFreeCols :=
+  mainRomFreeColsWithRegisterPrevious
+    { addX1MainFreeCols with
+      a_0 := 0
+      a_1 := 0
+      b_0 := 0
+      b_1 := 0
+      im_high_degree_2 := 0
+      segment_l1 := 0
+      main_step := step }
+    addX1RegisterInitial
 
 def addSpinJalRow (step : FGL) : MainRowWithRom FGL :=
   mainRomRowOf addSpinJalProgramRow addSpinJalBits MainRomExecKind.internalFlag
@@ -250,8 +250,8 @@ theorem addSpinAddMain_proverAssumptions :
   · decide
   · simp [MainRomExecKind.Coherent, addSpinAddBits, addX1RomFlagBits]
   · simp [MainRomSourceGuard, addSpinProgram, addSpinAddProgramRow, addSpinAddBits,
-      addX1RomFlagBits, addX1MainFreeCols]
-  · simp [MainRomAddressGuard, addSpinAddBits, addX1RomFlagBits, addX1MainFreeCols]
+      addX1RomFlagBits]
+  · simp [MainRomAddressGuard, addSpinAddBits, addX1RomFlagBits]
   · rfl
 
 theorem addSpinJalMain_proverAssumptions (step : FGL) :
@@ -262,9 +262,8 @@ theorem addSpinJalMain_proverAssumptions (step : FGL) :
   · decide
   · norm_num [MainRomExecKind.Coherent, addSpinProgram, addSpinJalProgramRow,
       addSpinJalBits, ZiskFv.Trusted.OP_FLAG]
-  · simp [MainRomSourceGuard, addSpinProgram, addSpinJalProgramRow, addSpinJalBits,
-      addSpinJalFreeCols]
-  · simp [MainRomAddressGuard, addSpinJalBits, addSpinJalFreeCols]
+  · simp [MainRomSourceGuard, addSpinProgram, addSpinJalProgramRow, addSpinJalBits]
+  · simp [MainRomAddressGuard, addSpinJalBits]
   · rfl
 
 private theorem addSpinMainRow_constraints
@@ -307,12 +306,11 @@ theorem addSpinMainTable_constraints :
 theorem addSpinMain_pcHandshake_add_jal :
     pcHandshakeBetween addSpinAddRow (addSpinJalRow 1) := by
   simp [pcHandshakeBetween, addSpinAddRow, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-    addSpinJalFreeCols, addX1Row, mainRomRowOf]
+    addX1Row, mainRomRowOf]
 
 theorem addSpinMain_pcHandshake_jal_jal :
     pcHandshakeBetween (addSpinJalRow 1) (addSpinJalRow 2) := by
-  simp [pcHandshakeBetween, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-    addSpinJalFreeCols, mainRomRowOf]
+  simp [pcHandshakeBetween, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
   ring
 
 theorem addSpinMainTable_rowInput_zero
@@ -989,7 +987,7 @@ theorem addSpinJalMemBusInteractions_balanced (step : FGL) :
     rcases h_interaction with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
         mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction, addSpinJalRow,
-        addSpinJalProgramRow, addSpinJalBits, addSpinJalFreeCols, mainRomRowOf]
+        addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
   · left
     change 6 < ringChar FGL
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
@@ -1036,7 +1034,6 @@ def addSpinAcceptedTrace : AcceptedZiskTrace 2 where
   mem_replay_im0 := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_constraints := fun h => absurd h addSpinWitness_not_mutableMemPresent
-  mem_replay_row_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_segment_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h addSpinWitness_not_mutableMemPresent
   transitions_hold := addSpinWitness_transitions
@@ -1101,7 +1098,6 @@ def addPaddedAcceptedTrace : AcceptedZiskTrace 1 where
   mem_replay_im0 := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_constraints := fun h => absurd h addSpinWitness_not_mutableMemPresent
-  mem_replay_row_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_segment_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h addSpinWitness_not_mutableMemPresent
   transitions_hold := addSpinWitness_transitions

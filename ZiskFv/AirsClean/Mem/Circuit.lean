@@ -173,19 +173,23 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
   { memWithDualMemBusElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
-    -- Completeness covers the same honest rows as `circuit`; the two memory-bus
-    -- emissions add only trivially-true channel guarantees.
+    -- Completeness covers honest Mem rows with the PIL's own range inputs;
+    -- the static lookups make those checks live rather than caller-supplied
+    -- accepted-trace facts.
     ProverAssumptions := fun row _ _ =>
       ∃ sel selDual wr addrChanges addr step stepDual previousStep
         increment_0 increment_1 value_0 value_1,
         (selDual = true → sel = true) ∧ (wr = true → sel = true) ∧
+          dualMemRowRangeFacts row ∧
           row = memRowOf sel selDual wr addrChanges
             addr step stepDual previousStep increment_0 increment_1 value_0 value_1
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
       refine ⟨?_, ?_⟩
-      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h_holds
+      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8,
+          _h_increment_0, _h_increment_1, _h_addr, _h_step, _h_step_dual,
+          _h_previous_step, _h_delta⟩ := h_holds
         exact ⟨ by simpa only [sub_eq_add_neg] using h0
               , by simpa only [sub_eq_add_neg] using h1
               , by simpa only [sub_eq_add_neg] using h2
@@ -197,22 +201,65 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · exact ⟨by intro _; trivial, by intro _; trivial⟩
     completeness := by
-      circuit_proof_start [MemBusChannel]
+      circuit_proof_start [MemBusChannel, Lookup.completeness_def]
       obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
-        increment_0, increment_1, value_0, value_1, h_selDual, h_wr, hrow⟩ :=
+        increment_0, increment_1, value_0, value_1, h_selDual, h_wr, h_ranges, hrow⟩ :=
         h_assumptions
       injection hrow with h_addr h_step h_sel h_addr_changes h_step_dual h_sel_dual
         h_value_0 h_value_1 h_wr_col h_previous_step h_increment_0 h_increment_1
         h_read_same_addr
       subst_vars
-      simpa only [Spec, memRowOf, memReadSameAddrOf, memValueOf, sub_eq_add_neg] using
-        memRowOf_constraintsHold sel selDual wr addrChanges
-          addr step stepDual previousStep increment_0 increment_1 value_0 value_1
-          h_selDual h_wr }
+      rcases h_ranges with
+        ⟨h_increment_0, h_increment_1, h_addr, h_step, h_step_dual, h_previous_step, h_delta⟩
+      have h_main := memRowOf_constraintsHold sel selDual wr addrChanges
+        addr step stepDual previousStep increment_0 increment_1 value_0 value_1 h_selDual h_wr
+      simp only [memRowOf, memReadSameAddrOf, memValueOf] at *
+      rcases h_main with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp
+      · simpa [sub_eq_add_neg] using h1
+      · simp
+      · simp
+      · simp
+      · simpa [sub_eq_add_neg] using h5
+      · simp [sub_eq_add_neg]
+      · simpa [sub_eq_add_neg] using h7
+      · simpa [sub_eq_add_neg] using h8
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable22,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_increment_0
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable16,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_increment_1
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable29,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_addr
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable40,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_step
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable40,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_step_dual
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable40,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_previous_step
+      · cases selDual with
+        | false => simp [boolF, ZiskFv.AirsClean.RangeTables.rangeTable24,
+            ZiskFv.AirsClean.RangeTables.rangeStaticTable]
+        | true =>
+          simpa [boolF, sub_eq_add_neg, ZiskFv.AirsClean.RangeTables.rangeTable24,
+            ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_delta (by simp [boolF]) }
 
 /-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
     memory-bus provider emissions. -/
 def componentWithDualMemBus : Air.Flat.Component FGL := { circuit := circuitWithDualMemBus }
+
+/-- Project the live dual-Mem static lookups to the row-level range facts they
+    mirror in `mem.pil:384-385,397`. -/
+theorem dualMemRowRangeFacts_of_componentWithDualMemBus_constraints
+    (env : Environment FGL)
+    (h_holds : componentWithDualMemBus.operations.ConstraintsHold env) :
+    dualMemRowRangeFacts (eval env componentWithDualMemBus.rowInputVar) := by
+  have h_row : componentWithDualMemBus.rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff (component := componentWithDualMemBus) env).mp h_holds
+  exact dualMemRowRangeFacts_of_memWithDualMemBus_constraints
+    componentWithDualMemBus.rowInputVar componentWithDualMemBus.rowOffset env (by
+      simpa only [componentWithDualMemBus, circuitWithDualMemBus,
+        Component.rowOperations] using h_row)
 
 theorem eval_memRow_sel
     (env : Environment FGL) (row : Var MemRow FGL) :
