@@ -151,16 +151,12 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
         (mem_replay_im1 h))
       (acceptedMemReplayFixedSegment (mem_replay_segment h))
       (mem_replay_permutation h)
-  /-- Guarded row range facts for the selected mutable-Mem table projection. -/
-  mem_replay_row_ranges : ∀ (h : MutableMemPresent witness),
-    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedRangeFacts
-      (mem_replay_table h).1
-      (acceptedMemReplayMem
-        (mem_replay_table h).1
-        (mem_replay_gsum h)
-        (mem_replay_im0 h)
-        (mem_replay_im1 h))
-  /-- Guarded segment range facts for the selected mutable-Mem sidecar segment. -/
+  /-- Guarded segment range facts for the selected mutable-Mem sidecar segment.
+
+      HELD for Project Closeout S3's lookup-wiring extraction. The sidecar
+      `distance_base_*` values are not component-row inputs, so S1a's live Mem
+      lookups do not derive this field. S3 must derive and delete this
+      caller-supplied promise hypothesis; it is not a permanent survivor. -/
   mem_replay_segment_ranges : ∀ (h : MutableMemPresent witness),
     ZiskFv.AirsClean.FullEnsemble.MemSegmentGeneratedRangeFacts
       (acceptedMemReplayFixedSegment (mem_replay_segment h))
@@ -236,6 +232,24 @@ def AcceptedZiskTrace.memReplayTable {n : Nat} (trace : AcceptedZiskTrace n)
     (h_present : MutableMemPresent trace.witness) : Air.Flat.Table FGL :=
   (trace.mem_replay_table h_present).1
 
+/-- The selected mutable-Mem table's row range facts are derived from the
+    accepted live component constraints. The static lookups mirror
+    `mem.pil:384-385,397`; no accepted-trace range certificate remains. -/
+theorem AcceptedZiskTrace.memReplayRowRanges {n : Nat}
+    (trace : AcceptedZiskTrace n)
+    (h_present : MutableMemPresent trace.witness) :
+    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedRangeFacts
+      (trace.memReplayTable h_present)
+      (acceptedMemReplayMem
+        (trace.memReplayTable h_present)
+        (trace.mem_replay_gsum h_present)
+        (trace.mem_replay_im0 h_present)
+        (trace.mem_replay_im1 h_present)) := by
+  apply ZiskFv.AirsClean.FullEnsemble.memTableGeneratedRangeFacts_of_component_constraints
+  · exact (trace.mem_replay_table h_present).2.2.1
+  · exact trace.constraints_hold (trace.memReplayTable h_present)
+      (trace.mem_replay_table h_present).2.1
+
 /-- The guarded raw Mem source sidecar rebuilt from accepted-trace factor fields. -/
 def AcceptedZiskTrace.memReplayRawSourceSidecar {n : Nat} (trace : AcceptedZiskTrace n)
     (h_present : MutableMemPresent trace.witness) :
@@ -248,7 +262,7 @@ def AcceptedZiskTrace.memReplayRawSourceSidecar {n : Nat} (trace : AcceptedZiskT
   im1 := trace.mem_replay_im1 h_present
   facts :=
     { constraints := trace.mem_replay_constraints h_present
-      rowRanges := trace.mem_replay_row_ranges h_present
+      rowRanges := trace.memReplayRowRanges h_present
       segmentRanges := trace.mem_replay_segment_ranges h_present }
 
 /-- The guarded Mem AIR source selected when the accepted witness has mutable-Mem rows, rebuilt
