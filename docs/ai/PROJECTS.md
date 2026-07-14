@@ -1,5 +1,14 @@
 # Projects
 
+## Aristotle Portability
+
+Plan: `docs/ai/plan/PLAN_ARISTOTLE_PORTABILITY.md`. Active worktree:
+`.worktrees/aristotle-portability`, branch `aristotle-portability`. Convert the canonical Lake
+graph from Nix-populated path dependencies to immutable Git package inputs that Aristotle can
+consume, while retaining Nix/CI as the producer and exact-content verifier for generated LeanRV
+and patched Aeneas snapshots; do not maintain a second proof graph or publish artifacts without
+an approved destination.
+
 ## Aeneas Bridge 111
 
 Plan: `docs/ai/plan/PLAN_AENEAS_BRIDGE_111.md` (issue #111). Discharge
