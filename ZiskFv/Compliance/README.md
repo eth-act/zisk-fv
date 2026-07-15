@@ -21,8 +21,9 @@ see `docs/refactor/05-inconsistencies-and-correctness.md` C4.)
 
 The global theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder). `OpEnvelope`
-is a record whose `exec_eq` conclusion is a `True`-padded conjunction of the ten
-per-family `exec_eq_<family>` statements: for any arm, *exactly one* family fires
+is an inductive with one arm per opcode; its `exec_eq` conclusion is a
+`True`-padded conjunction of the two envelope trust facts and the ten per-family
+`exec_eq_<family>` statements: for any arm, *exactly one* family fires
 with a real channel-balance statement and the others are `True`. It is therefore
 not a case-returning dispatch on a sum type, even though the arms partition the
 opcodes; the padded-conjunction encoding is an implementation detail (see
