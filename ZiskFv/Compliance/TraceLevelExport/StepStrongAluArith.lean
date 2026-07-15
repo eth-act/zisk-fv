@@ -27,6 +27,7 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataAluShift
 import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 import ZiskFv.Compliance.TraceLevelExport.EnvOf
+import ZiskFv.Compliance.AcceptedZiskTrace.DerivedRowFacts
 
 namespace ZiskFv.Compliance
 
@@ -109,36 +110,14 @@ theorem stepStrong_sub
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_sub_provided
-      trace i d.toDecode.h_main_active d.toDecode.h_main_op
+    trace.staticBinarySubProviderRowFacts
+      i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.sub_input.r1_val d.toInputs.sub_input.r2_val d.toInputs.sub_input.rd d.toInputs.sub_input.PC
       (PureSpec.execute_RTYPE_sub_pure d.toInputs.sub_input).nextPC
@@ -256,32 +235,10 @@ theorem stepStrong_and
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.and_input.r1_val d.toInputs.and_input.r2_val d.toInputs.and_input.rd d.toInputs.and_input.PC
       (PureSpec.execute_RTYPE_and_pure d.toInputs.and_input).nextPC
@@ -393,32 +350,10 @@ theorem stepStrong_or
       trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.or_input.r1_val d.toInputs.or_input.r2_val d.toInputs.or_input.rd d.toInputs.or_input.PC
       (PureSpec.execute_RTYPE_or_pure d.toInputs.or_input).nextPC
@@ -530,32 +465,10 @@ theorem stepStrong_xor
       trace i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.xor_input.r1_val d.toInputs.xor_input.r2_val d.toInputs.xor_input.rd d.toInputs.xor_input.PC
       (PureSpec.execute_RTYPE_xor_pure d.toInputs.xor_input).nextPC
@@ -668,32 +581,10 @@ theorem stepStrong_slt
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.slt_input.r1_val d.toInputs.slt_input.r2_val d.toInputs.slt_input.rd d.toInputs.slt_input.PC
       (PureSpec.execute_RTYPE_slt_pure d.toInputs.slt_input).nextPC
@@ -805,32 +696,10 @@ theorem stepStrong_sltu
       trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.sltu_input.r1_val d.toInputs.sltu_input.r2_val d.toInputs.sltu_input.rd d.toInputs.sltu_input.PC
       (PureSpec.execute_RTYPE_sltu_pure d.toInputs.sltu_input).nextPC
@@ -941,32 +810,10 @@ theorem stepStrong_andi
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.andi_input.r1_val d.toInputs.andi_input.imm d.toInputs.andi_input.rd d.toInputs.andi_input.PC
       (PureSpec.execute_ITYPE_andi_pure d.toInputs.andi_input).nextPC
@@ -1080,32 +927,10 @@ theorem stepStrong_ori
       trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.ori_input.r1_val d.toInputs.ori_input.imm d.toInputs.ori_input.rd d.toInputs.ori_input.PC
       (PureSpec.execute_ITYPE_ori_pure d.toInputs.ori_input).nextPC
@@ -1219,32 +1044,10 @@ theorem stepStrong_xori
       trace i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.xori_input.r1_val d.toInputs.xori_input.imm d.toInputs.xori_input.rd d.toInputs.xori_input.PC
       (PureSpec.execute_ITYPE_xori_pure d.toInputs.xori_input).nextPC
@@ -1356,32 +1159,10 @@ theorem stepStrong_slti
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.slti_input.r1_val d.toInputs.slti_input.imm d.toInputs.slti_input.rd d.toInputs.slti_input.PC
       (PureSpec.execute_ITYPE_slti_pure d.toInputs.slti_input).nextPC
@@ -1488,32 +1269,10 @@ theorem stepStrong_sltiu
       trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.sltiu_input.r1_val d.toInputs.sltiu_input.imm d.toInputs.sltiu_input.rd d.toInputs.sltiu_input.PC
       (PureSpec.execute_ITYPE_sltiu_pure d.toInputs.sltiu_input).nextPC
@@ -1621,32 +1380,10 @@ theorem stepStrong_sll
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.sll_input.r1_val d.toInputs.sll_input.r2_val d.toInputs.sll_input.rd d.toInputs.sll_input.PC
       (PureSpec.execute_RTYPE_sll_pure d.toInputs.sll_input).nextPC
@@ -1721,32 +1458,10 @@ theorem stepStrong_srl
       trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.srl_input.r1_val d.toInputs.srl_input.r2_val d.toInputs.srl_input.rd d.toInputs.srl_input.PC
       (PureSpec.execute_RTYPE_srl_pure d.toInputs.srl_input).nextPC
@@ -1821,32 +1536,10 @@ theorem stepStrong_sra
       trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.sra_input.r1_val d.toInputs.sra_input.r2_val d.toInputs.sra_input.rd d.toInputs.sra_input.PC
       (PureSpec.execute_RTYPE_sra_pure d.toInputs.sra_input).nextPC
@@ -1917,32 +1610,10 @@ theorem stepStrong_slli
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
       state d.toInputs.slli_input.r1_val d.toInputs.slli_input.shamt d.toInputs.slli_input.rd d.toInputs.slli_input.PC
       (PureSpec.execute_SHIFTIOP_slli_pure d.toInputs.slli_input).nextPC
@@ -2017,32 +1688,10 @@ theorem stepStrong_srli
       trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
       state d.toInputs.srli_input.r1_val d.toInputs.srli_input.shamt d.toInputs.srli_input.rd d.toInputs.srli_input.PC
       (PureSpec.execute_SHIFTIOP_srli_pure d.toInputs.srli_input).nextPC
@@ -2117,32 +1766,10 @@ theorem stepStrong_srai
       trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
       state d.toInputs.srai_input.r1_val d.toInputs.srai_input.shamt d.toInputs.srai_input.rd d.toInputs.srai_input.PC
       (PureSpec.execute_SHIFTIOP_srai_pure d.toInputs.srai_input).nextPC
@@ -2223,32 +1850,10 @@ theorem stepStrong_subw
       trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -2354,32 +1959,10 @@ theorem stepStrong_addw
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -2485,32 +2068,10 @@ theorem stepStrong_addiw
       trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let providerInput :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
@@ -2605,32 +2166,10 @@ theorem stepStrong_sllw
       trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.sllw_input.r1_val d.toInputs.sllw_input.r2_val d.toInputs.sllw_input.rd d.toInputs.sllw_input.PC
       (PureSpec.execute_RTYPE_sllw_pure d.toInputs.sllw_input).nextPC
@@ -2708,32 +2247,10 @@ theorem stepStrong_srlw
       trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.srlw_input.r1_val d.toInputs.srlw_input.r2_val d.toInputs.srlw_input.rd d.toInputs.srlw_input.PC
       (PureSpec.execute_RTYPE_srlw_pure d.toInputs.srlw_input).nextPC
@@ -2812,32 +2329,10 @@ theorem stepStrong_sraw
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.sraw_input.r1_val d.toInputs.sraw_input.r2_val d.toInputs.sraw_input.rd d.toInputs.sraw_input.PC
       (PureSpec.execute_RTYPE_sraw_pure d.toInputs.sraw_input).nextPC
@@ -2916,32 +2411,10 @@ theorem stepStrong_slliw
       trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SLL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
       state d.toClaim.slliw_input.r1_val d.toClaim.slliw_input.rd d.toClaim.slliw_input.PC
       (PureSpec.execute_SHIFTIWOP_slliw_pure d.toClaim.slliw_input).nextPC
@@ -3011,32 +2484,10 @@ theorem stepStrong_srliw
       trace i d.toDecode.h_main_active (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRL_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
       state d.toClaim.srliw_input.r1_val d.toClaim.srliw_input.rd d.toClaim.srliw_input.PC
       (PureSpec.execute_SHIFTIWOP_srliw_pure d.toClaim.srliw_input).nextPC
@@ -3107,32 +2558,10 @@ theorem stepStrong_sraiw
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr d.toDecode.h_main_op)))))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SRA_W :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
       state d.toClaim.sraiw_input.r1_val d.toClaim.sraiw_input.rd d.toClaim.sraiw_input.PC
       (PureSpec.execute_SHIFTIWOP_sraiw_pure d.toClaim.sraiw_input).nextPC
@@ -3208,32 +2637,10 @@ theorem stepStrong_add
       trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.add_input.r1_val d.toInputs.add_input.r2_val d.toInputs.add_input.rd d.toInputs.add_input.PC
       (PureSpec.execute_RTYPE_add_pure d.toInputs.add_input).nextPC
@@ -3359,32 +2766,10 @@ theorem stepStrong_addi
       trace i d.toDecode.h_main_active d.toDecode.h_main_op
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_ADD :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
-  have h_core_store_pc :
-      (mainRowWithRomSub trace i).core.store_pc = 0 := by
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row]
-    simpa [ZiskFv.AirsClean.Main.rowAt] using d.toDecode.h_store_pc
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
-    have h :=
-      ZiskFv.AirsClean.Main.cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
-        (mainRowWithRomSub trace i) h_core_store_pc
-    have h_row :
-        (mainRowWithRomSub trace i).core =
-          ZiskFv.AirsClean.Main.rowAt m i.val := by
-      have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
-        trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-      simpa [mainRowWithRomSub, m,
-        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := ⟨i.val, trace.mainTable_index i⟩)] using this.symm
-    rw [h_row] at h
-    simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
-      ZiskFv.AirsClean.Main.rowAt] using h
+    simpa [m, bus, busSub, mainRowWithRomSub] using
+      trace.registerWriteLanes i d.toDecode.h_store_pc
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.addi_input.r1_val d.toInputs.addi_input.imm d.toInputs.addi_input.rd d.toInputs.addi_input.PC
       (PureSpec.execute_ITYPE_addi_pure d.toInputs.addi_input).nextPC

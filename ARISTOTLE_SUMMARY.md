@@ -1,3 +1,47 @@
+# Summary of changes for run 322f340e-cba5-4f1f-881e-93544a29889c
+Implemented the Phase 2 ensemble-seam refactor and committed it as `66ca240` (`Derive row facts at accepted trace seam`). `ARISTOTLE_SUMMARY.md` was not modified.
+
+### Changes
+- Added `ZiskFv/Compliance/AcceptedZiskTrace/DerivedRowFacts.lean`, providing reusable, proof-derived accepted-trace facts:
+  - `OpProviderRowBranch` / `OpProviderRowFacts`: an opcode-independent four-way classification of the concrete operation-bus provider row, including row membership, component identity, Clean row `Spec`, and exact entry matching.
+  - `AcceptedZiskTrace.opProviderRowFacts`: derives those provider facts from the accepted trace’s constraints, channel balance, and table soundness.
+  - `AcceptedZiskTrace.staticBinarySubProviderRowFacts`: the R-type SUB pilot specialization, eliminating impossible provider branches only after consuming the generic ensemble-seam fact.
+  - `AcceptedZiskTrace.registerWriteLanes`: derives the Main register-write lane relation once for any indexed arithmetic Main row.
+- Migrated the SUB strong-export path to the new generic provider fact rather than directly rebuilding the balance argument through `main_request_sub_provided`.
+- Migrated all 28 repeated register-write-lane derivations in `StepStrongAluArith.lean` to `trace.registerWriteLanes`, deleting 674 lines of duplicated row-selection and transport proofs.
+- Exported the new accepted-trace fact module from `ZiskFv.lean`.
+
+This is a T0 refactor: no root theorem statement or trust premise changed.
+
+### Verification
+- Full `ZiskFv` build succeeds: 9010 jobs.
+- The modified files contain no `sorry` or `admit`.
+- All three new principal theorems have only the permitted standard axiom closure: `propext`, `Classical.choice`, and `Quot.sound`.
+- The complete source-level trust gate passes all 16 checks.
+- The semantic trust checks pass through the project checks; the final extraction-closure check was also run separately and passed for all 824 declarations. The combined script’s only failure was that the submitted snapshot did not preserve executable bits on its nested scripts, not a Lean or trust failure.
+- Working tree is clean.
+
+# Summary of changes for run 65f24360-d87a-426f-b91a-b4a3491a5435
+I investigated the review's critique against the actual code and confirmed it is correct. I then corrected the affected plans.
+
+## What I checked (and found)
+The critique says §4.1 of the refactor plan rests on a stale premise: it treated `aeneasBridgeTrust` and `memoryTimelineConstructionEvidence` as "hidden trust" living in internally-built `OpEnvelope` fields, and proposed lifting them into a root trust binder. Verifying against the source:
+
+- **They are discharged, not outstanding.** `ZiskFv/Compliance/TraceLevelExport/StepStrongAluArith.lean:223` proves `env.aeneasBridgeTrust` from the derived accepted-trace row facts (`h_input_r1_row`/`h_input_r2_row`), and `env.memoryTimelineConstructionEvidence` is `trivial` on non-load arms; for load arms it is `bootSeed`-derived (via `LoadMemoryTimelineCoherenceEvidence`). `OpEnvelope.memoryTimelineConstructionEvidence` is literally `True` for every non-load arm.
+- These two fields are hypotheses of the **internal** lemma `zisk_riscv_compliant_program_bus`, not of `root_soundness`. `ZiskFv/Compliance/TraceLevelExport.lean` documents the three discharge routes and states plainly that these obligations are discharged in place.
+- **The frozen axiom closure confirms it.** `ZiskFv/Audit.lean`'s `#print axioms root_soundness` golden test shows only the trusted Sail-extraction primitives plus the standard permitted axioms — no `sorryAx`, no extra trusted premise hiding in a constructed value.
+- The confusion traces to the C3 doc drift the plan itself diagnosed; the pre-Phase-0.3 `trust/trusted-base.md` described the internal lemma (where they genuinely are hypotheses). That doc is already fixed and needed no further change.
+
+## Conclusion
+The critique is right. Adding these as root binders would **weaken** `root_soundness` by re-introducing premises the proof currently earns. The legitimate remainder of the §4.1 move is only the **T1 bundling** of binders that already exist on the root (`inputsAgree`, `bootSeed`, and the scope binder) into one record for readability — `channels_balanced` is already inside `AcceptedZiskTrace`, so it is not a new binder either.
+
+## What I changed (docs only, no proof code touched)
+I dropped the "lift hidden trust (T2)" component from §4.1 and made the surrounding text consistent across the plan set, adding an explicit correction note and pointing at the code/axiom-closure evidence:
+- `docs/refactor/FINAL-PLAN.md` — §2.3 (corrected consequence + a "Correction note"), §4.1 (removed the `aeneasBridge`/`channelsBalanced` fields from the proposed `SoundnessTrust` record; reclassified as a single T1 move), §6.3, §7, the Phase-1 roadmap step, the effort/risk table (`T1 (+ optional T2)` → `T1`), the §5 residual line, the S1 headline, and the request-mapping table.
+- `docs/refactor/01-architecture-map.md` §1.3, `03-root-theorem-api.md` (rule 2, the record sketch, benefits), `05-inconsistencies-and-correctness.md` (T1 row), `06-roadmap.md` (step 1.1), `07-root-stability-and-upstream-clean.md` (A.1/A.2), and `docs/refactor/README.md` (R1).
+
+`ARISTOTLE_SUMMARY.md` was left untouched. All changes are committed and pushed to `main`.
+
 # Summary of changes for run db5a1315-b78b-4801-b149-a85979b0c83e
 Implemented **Phase 0** and **Phase 1.3** from `docs/refactor/FINAL-PLAN.md` (the "suggested first PR"). All changes build (full `ZiskFv` target compiles cleanly, 9009 jobs) and are committed and pushed to `main`.
 
