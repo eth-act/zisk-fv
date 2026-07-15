@@ -28,9 +28,8 @@ and the wide-PC no-wrap cast (mirroring `WidePCNoWrap`) lifts the field-level
   non-terminal row (`i + 1 < numInstructions`); the terminal row is the
   cross-segment boundary (#103, out of scope).
   The `SEGMENT_L1 = [1,0,…]` fixed-column fact (`main.pil:19`) is **no longer a
-  binder** — it is read off the accepted trace's shared `segment_l1_fixed`
-  certificate via `trace.mainTable_fixed` (a `main_height`-class once-for-all
-  obligation), supplying `segment_l1 (i+1) = 0` (within-segment), the
+  binder** — it is derived from the canonical component-owned fixed schema via
+  `trace.mainTable_fixed`, supplying `segment_l1 (i+1) = 0` (within-segment), the
   non-boundary side condition of the transition.
 * `h_set_pc`, `h_jmp1`, `h_jmp2` — Main decode pins for a register-type SUB row:
   the Rust lowerer's R-type arm `create_register_op(…, "sub", 4)` calls
@@ -161,8 +160,8 @@ theorem sequential_nextPC_discharged
       (execRowOf trace i)[1]!.pc
         = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
   -- (2) Transition certificate + within-segment fixed-column fact.  The
-  -- `SEGMENT_L1 = [1,0,…]` shape is now read off the accepted trace's shared
-  -- `segment_l1_fixed` certificate (`trace.mainTable_fixed`), not a per-arm binder.
+  -- `SEGMENT_L1 = [1,0,…]` shape is derived through `trace.mainTable_fixed`,
+  -- not a per-arm binder.
   have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx
   have h_hand :=
     ZiskFv.Compliance.AcceptedZiskTrace.mainTransition_to_next_pc trace i.val h_idx h_seg
@@ -333,8 +332,8 @@ theorem sub_nextPC_discharged
     transition inputs: the structural next-row-exists side condition `h_idx`, the
     SUB decode pins `h_set_pc`/`h_jmp1`/`h_jmp2`, and the Jal/Auipc-style
     `h_pc_bridge`/`h_pc_bound`. The `SEGMENT_L1` fixed-column fact is no longer a
-    binder here — it is read off the accepted trace's shared `segment_l1_fixed`
-    certificate (`trace.mainTable_fixed`). The opaque cross-row next-PC *promise*
+    binder here — it is derived through `trace.mainTable_fixed` from the canonical
+    component-owned fixed schema. The opaque cross-row next-PC *promise*
     is thereby replaced by a derivation from the in-circuit `pcHandshakeBetween`
     transition — a real reduction of the next-PC trust surface, not a relabel. -/
 theorem construction_sub_sound'

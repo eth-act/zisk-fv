@@ -40,7 +40,7 @@ Lean axiom ledger:
 | Class                         | Declarations | In global closure | Removability                                                                                             |
 | ---                           | ---:         | ---:              | ---                                                                                                      |
 | Aeneas row-lowering condition | 0            | 0                 | Discharge `env.aeneasBridgeTrust` by importing generated Aeneas Lean into main Lake.                      |
-| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` floor (#76 Fold-B; see below), unified on `root_soundness` into one named `BootSegmentMemorySeed` premise (#185), then restated **concretely** (#115) as `memInit`+`boot` (boot/cross-segment seed) + `step` (per-step execution-successor) + guarded direct-Mem read-soundness inputs. The direct-Mem path derives the order certificate from accepted Mem replay evidence when `MutableMemPresent witness` holds, scoped placement/classification, source/target chronology, `main_step_index_fixed`, and `ScopedDirectMemReplayLengthCertificate`; the no-memory path proves read-soundness over an empty execution-row list without a Mem bridge. The opaque cursor `stateAt`/`RowTraceCoherence` is derived by the execution-order fold (`Spike.rowTraceCoherence_of_uniformReplayMem`). The raw `readSound : MemoryBusRowsPrefixReadSound ...` seed field is gone; remaining carried content is boot/initial-memory plus named constructor/cardinality certificates, with MemAlign routed to #242. See below. |
+| Sail memory timeline          | 0            | 0                 | Reduced to the memory-only `RowTraceCoherence` floor (#76 Fold-B; see below), unified on `root_soundness` into one named `BootSegmentMemorySeed` premise (#185), then restated **concretely** (#115) as `memInit`+`boot` (boot/cross-segment seed) + `step` (per-step execution-successor) + guarded direct-Mem read-soundness inputs. The direct-Mem path derives the order certificate from accepted Mem replay evidence when `MutableMemPresent witness` holds, scoped placement/classification, source/target chronology, the derived Main fixed-schema timestamp facts, and `ScopedDirectMemReplayLengthCertificate`; the no-memory path proves read-soundness over an empty execution-row list without a Mem bridge. The opaque cursor `stateAt`/`RowTraceCoherence` is derived by the execution-order fold (`Spike.rowTraceCoherence_of_uniformReplayMem`). The raw `readSound : MemoryBusRowsPrefixReadSound ...` seed field is gone; remaining carried content is boot/initial-memory plus named constructor/cardinality certificates, with MemAlign routed to #242. See below. |
 | Clean completeness            | 0            | 0                 | Retired from source trust; false/circular fields are visible non-claims.                                  |
 
 
@@ -691,12 +691,15 @@ trust surface even though they add no axiom.
 |---|---|---|
 | `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
-| `segment_l1_fixed` (**#100**) | `main.pil:19` | the `SEGMENT_L1` fixed column is `[1,0,0,…]` (row 0 = boundary, all later rows within-segment) |
-| `main_step_index_fixed` (**#115**) | `main.pil:90` (`STEP = main_segment*N + SEGMENT_STEP`) | the Main `main_step` companion column is pinned to the Main row index, with no-wrap evidence for the `2+4*i` / `3+4*i` memory timestamp offsets; this single fixed-column-class certificate replaces the two anticipated step-counter residues (`MainStepDistinct`, `CrossOffsetSeparated`) and also supports target execution chronology |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
 | `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `MutableMemPresent witness`) | Legacy generated Mem sidecar columns | **HELD** for S3's lifecycle audit. S2 does not correlate or consume them; its live source is selected table `ProverData` plus component-owned fixed columns. |
 | `mem_replay_segment_ranges` (**#115**, guarded by `MutableMemPresent witness`) | segment range facts for the selected canonical live Mem segment | **HELD** caller-supplied promise hypothesis for Project Closeout S3 lookup-wiring extraction; S3 must derive and delete it from extracted lookup wiring. Until then it supplies canonical segment range facts used by the replay bridge. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
+
+The Main `SEGMENT_L1 = [1,0,...]` (`main.pil:19`) and `main_step = row index`
+(`main.pil:90`) facts, including the `2+4*i` / `3+4*i` no-wrap representatives,
+are now derived from S2's canonical component-owned indexed fixed schema and its intrinsic
+fixed-domain bound. They are not `AcceptedZiskTrace` fields and add no caller-supplied hypothesis.
 
 **#115 constructor-burden note.** Removing the raw seed
 `MemoryBusRowsPrefixReadSound` field moved real proof work into checked Mem
@@ -707,14 +710,14 @@ the degenerate base case and #219/#220's ADD witnesses, prove
 with mutable-Mem rows must build the guarded `mem_replay_table`, the HELD legacy
 sidecar fields, the HELD canonical `mem_replay_segment_ranges` field, and
 `mem_replay_source_covers`, in addition to
-`constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`/fixed
-columns. Generated constraints and row ranges are derived from the live Mem
+`constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`.
+Generated constraints, row ranges, and Main fixed-column facts are derived from the live
 component. These fields are not read-value agreement predicates, and they no
 longer carry deterministic Mem fixed columns. The paired
 `mem_replay_source_covers` field is a structural table-coverage certificate that
 removes this residue from seed-layer wrappers. For the #115 direct-Mem closeout,
-these fields plus `main_step_index_fixed` and `ScopedDirectMemReplayLengthCertificate`
-are the named constructor/cardinality burdens; #219 owns deriving the row-count
+these fields plus `ScopedDirectMemReplayLengthCertificate` are the named
+constructor/cardinality burdens; #219 owns deriving the row-count
 certificate from whole-channel balance, and #242 owns the MemAlign-routed tail.
 
 **#100 trust-surface change (honest accounting — a SHIFT, documented as such).**
@@ -722,9 +725,10 @@ The next-PC discharge does **not** derive `h_nextPC_matches` from the existing
 `constraints_hold`. It **removes** the 63 per-opcode cross-world
 `h_nextPC_matches` promises (each asserting *circuit next-PC = Sail next-PC*, the
 worst, conclusion-adjacent class) and in their place adds:
-- the **two accepted-trace certificates above** (`transitions_hold`,
-  `segment_l1_fixed`) — `main_height`-class, declared on the Main component via
-  `Air.Flat.Component.transition`, carried once for the whole trace; and
+- the accepted-trace `transitions_hold` certificate — declared on the Main
+  component via `Air.Flat.Component.transition`, carried once for the whole
+  trace — while the needed `SEGMENT_L1` fixed fact is derived from the canonical
+  component-owned fixed schema; and
 - per-opcode **decode pins** (`set_pc`/`jmp_offset…`, the sailTrace-free
   `rowDecode` bucket, dischargeable via #74) and the **PC-provenance bridge**
   (`h_pc_bridge`/`h_pc_bound`, the same class JAL/AUIPC already carried).

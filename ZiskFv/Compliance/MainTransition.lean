@@ -136,14 +136,11 @@ theorem AcceptedZiskTrace.mainTransition_to_next_pc
     segment boundary; every later row is within-segment.
 
     **Faithful Main analog of `MemTableGeneratedFixedColumnFacts`** (the Mem
-    precedent in `Balance/TableProjections.lean`): a fixed-column
-    constructibility obligation in the `main_height` epistemic class. It is
-    PIL-faithful (`SEGMENT_L1` genuinely is the deterministic `[1,0,...]` fixed
-    column) and constructible (a real ZisK Main witness carries this column), so
-    it is supplied as an accepted-trace obligation rather than derived from the
-    single-row `Spec`. Keeping the full `[1,0,...]` shape — both the boundary row
-    and the within-segment rows — makes the fixed-column model explicit instead
-    of asserting a bare `segment_l1 = 0` divorced from the PIL column. -/
+    precedent in `Balance/TableProjections.lean`): the canonical
+    component-owned fixed schema derives the full `[1,0,...]` shape. Keeping
+    both the boundary row and the within-segment rows makes the fixed-column
+    model explicit instead of asserting a bare `segment_l1 = 0` divorced from
+    the PIL column. -/
 structure MainTableGeneratedFixedColumnFacts
     {length : ℕ} (program : Program length) (table : Table FGL) : Prop where
   segmentL1_first :
@@ -162,20 +159,55 @@ theorem MainTableGeneratedFixedColumnFacts.segment_l1_succ
     (mainOfTable program table).segment_l1 (i + 1) = 0 :=
   h_fixed.segmentL1_nonfirst ⟨i + 1, h_idx⟩ (Nat.succ_pos i)
 
-/-- `MainTableGeneratedFixedColumnFacts` for the **derived** Main table, read off
-    the accepted trace's `segment_l1_fixed` certificate and specialized to
-    `mainTable` via its membership and component facts — the exact `main_height`
-    → `mainTable_index` pattern. This is the single, shared home for the
-    SEGMENT_L1 fixed-column obligation: the per-opcode next-PC discharges now read
-    it off the trace (`trace.mainTable_fixed`) instead of carrying a per-arm
-    `h_fixed` binder. -/
+/-- Derive the Main `SEGMENT_L1` shape from the canonical component-owned
+    indexed fixed schema. The table carrier's intrinsic `fixed_domain` rules
+    out the periodic wrap before a concrete table row is observed. -/
+theorem mainTableGeneratedFixedColumnFacts_of_component_fixedColumns
+    {length : Nat} (program : Program length) (table : Table FGL)
+    (h_component :
+      table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program) :
+    MainTableGeneratedFixedColumnFacts program table := by
+  cases table with
+  | mk component rawRows data raw_uniform_width fixed_domain =>
+    change component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program at h_component
+    subst component
+    let table : Table FGL :=
+      { component := ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+        rawRows := rawRows
+        data := data
+        raw_uniform_width := raw_uniform_width
+        fixed_domain := fixed_domain }
+    change MainTableGeneratedFixedColumnFacts program table
+    have h_columns : table.component.fixedColumns = some ZiskFv.AirsClean.Main.mainFixedColumns := by
+      rfl
+    refine ⟨?_, ?_⟩
+    · intro h_nonempty
+      rw [mainOfTable_segment_l1]
+      change (mainTableRowAtOrZero program table 0).core.segment_l1 = 1
+      rw [mainTableRowAtOrZero_segment_l1_eq_fixedAt program table 0 h_nonempty (by rfl)]
+      rw [Table.fixedAt_of_fixedColumns table ZiskFv.AirsClean.Main.mainFixedColumns h_columns]
+      exact ZiskFv.AirsClean.Main.mainFixedColumns_segment_l1_first
+    · intro idx h_positive
+      rw [mainOfTable_segment_l1]
+      change (mainTableRowAtOrZero program table idx.val).core.segment_l1 = 0
+      rw [mainTableRowAtOrZero_segment_l1_eq_fixedAt program table idx.val idx.isLt (by rfl)]
+      rw [Table.fixedAt_of_fixedColumns table ZiskFv.AirsClean.Main.mainFixedColumns h_columns]
+      have h_raw_index : idx.val < table.length := by
+        simpa only [Table.table_length] using idx.isLt
+      have h_capacity : idx.val < ZiskFv.AirsClean.Main.mainFixedColumns.capacity :=
+        Table.index_lt_fixed_capacity table ZiskFv.AirsClean.Main.mainFixedColumns h_columns
+          ⟨idx.val, h_raw_index⟩
+      have h_capacity' : idx.val < ZiskFv.AirsClean.Main.mainFixedCapacity := by
+        simpa [ZiskFv.AirsClean.Main.mainFixedColumns] using h_capacity
+      exact ZiskFv.AirsClean.Main.mainFixedColumns_segment_l1_nonfirst idx.val h_positive h_capacity'
+
+/-- `MainTableGeneratedFixedColumnFacts` for the **derived** Main table, read
+    from its component-owned indexed fixed schema. The per-opcode next-PC
+    discharges share this derived fact through `trace.mainTable_fixed` rather
+    than carrying a per-arm binder. -/
 theorem AcceptedZiskTrace.mainTable_fixed (trace : AcceptedZiskTrace n) :
-    MainTableGeneratedFixedColumnFacts trace.program trace.mainTable where
-  segmentL1_first :=
-    (trace.segment_l1_fixed trace.mainTable trace.mainTable_mem
-      trace.mainTable_component).1
-  segmentL1_nonfirst :=
-    (trace.segment_l1_fixed trace.mainTable trace.mainTable_mem
-      trace.mainTable_component).2
+    MainTableGeneratedFixedColumnFacts trace.program trace.mainTable :=
+  mainTableGeneratedFixedColumnFacts_of_component_fixedColumns trace.program trace.mainTable
+    trace.mainTable_component
 
 end ZiskFv.Compliance

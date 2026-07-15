@@ -54,15 +54,13 @@ def MutableMemPresent
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
       0 < table.table.length
 
-/-- Fixed-column/index certificate for Main's `main_step` ROM companion column.
+/-- Derived fixed-column facts for Main's `main_step` ROM companion column.
 
     PIL defines `STEP = main_segment * N + SEGMENT_STEP` (`main.pil:90`), with
-    `SEGMENT_STEP` the deterministic row counter. Clean now materializes
-    `main_step` as component-owned indexed fixed data. Until S1b derives and
-    deletes this temporary accepted-trace pin, it remains in the same
-    fixed-column class as `segment_l1_fixed`: real traces number Main rows by
-    index, and the no-wrap evidence keeps the memory timestamp offsets
-    `2 + 4*i` / `3 + 4*i` in their natural Goldilocks representatives. -/
+    `SEGMENT_STEP` the deterministic row counter. Clean materializes
+    `main_step` as component-owned indexed fixed data; the canonical table
+    schema and its intrinsic domain bound derive these row-index and no-wrap
+    facts in `mainStepIndexFixedFacts_of_component_fixedColumns`. -/
 structure MainStepIndexFixedFacts
     (numInstructions : Nat)
     (programLength : Nat)
@@ -161,39 +159,6 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       table.component =
           ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus programLength program →
         ∀ i : Fin numInstructions, i.val < table.table.length
-  /-- The Main execution table's `SEGMENT_L1` fixed column is `[1,0,0,...]`
-      (`main.pil:19`): the first row is a segment boundary, every later row is
-      within-segment. Carried here as a fixed-column constructibility certificate
-      in the same `main_height` epistemic class — PIL-faithful and constructible
-      (a real ZisK Main witness genuinely carries this deterministic column). Its
-      within-segment fact `segment_l1 (i + 1) = 0` is exactly what the Main
-      cross-row PC-handshake transition (`mainTransition_to_next_pc`) consumes to
-      derive the per-opcode next-PC relation, so it lives ONCE here (uniform with
-      `main_height` / `transitions_hold`) rather than as a per-arm `h_fixed`
-      binder. Formulated over `witness.allTables` — like `main_height` — because
-      the derived `mainTable` is defined after this struct;
-      `AcceptedZiskTrace.mainTable_fixed` specializes it to that table. -/
-  segment_l1_fixed : ∀ table ∈ witness.allTables,
-      table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus programLength program →
-        (0 < table.table.length →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 0 = 1) ∧
-        (∀ idx : Fin table.table.length, 0 < idx.val →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable program table).segment_l1 idx.val = 0)
-  /-- The Main execution table's `main_step` companion column is pinned to the
-      row index, with no-wrap evidence for the load/store memory timestamp
-      offsets. This is one fixed-column-class accepted-trace certificate
-      (`main.pil:90`, via the fixed `SEGMENT_STEP` row counter), replacing the
-      two anticipated step-counter residues: distinctness and cross-offset
-      separation are derived from this single fact. Formulated over
-      `witness.allTables`, like `main_height` / `segment_l1_fixed`, and
-      specialized to the derived Main table by
-      `AcceptedZiskTrace.mainTable_main_step_index_fixed`. -/
-  main_step_index_fixed : ∀ table ∈ witness.allTables,
-      table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus programLength program →
-        MainStepIndexFixedFacts numInstructions programLength program table
-
 /-- Recover the instruction count from a parameterized `AcceptedZiskTrace`.
     `numInstructions` is now a structure parameter rather than a field; this
     accessor keeps the many value-level `trace.numInstructions` projections

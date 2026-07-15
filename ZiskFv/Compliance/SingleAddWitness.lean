@@ -352,89 +352,6 @@ theorem singleAddWitness_main_height :
   subst table
   simp [mainSingleRowTable]
 
-theorem addX1Main_segment_l1_first :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable addX1Program
-        (mainSingleRowTable 1 addX1Program addX1Row)).segment_l1 0 = 1 := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
-  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-  simp [mainSingleRowTable, mainRowArray]
-  change (eval (Environment.fromArray
-      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
-      (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).core.segment_l1 = 1
-  change (eval (Environment.fromArray
-      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
-      (varFromOffset (F := FGL) MainRowWithRom 0)).core.segment_l1 = 1
-  rw [eval_mainRawRow_materialize 0 emptyData addX1Row (by rfl) (by rfl)]
-  rfl
-
-theorem addX1Main_main_step_eq_index :
-    ∀ i : Fin 1,
-      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addX1Program
-          (mainSingleRowTable 1 addX1Program addX1Row) i.val).rom.main_step = (i.val : FGL) := by
-  intro i
-  fin_cases i
-  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-  simp [mainSingleRowTable, mainRowArray]
-  change (eval (Environment.fromArray
-      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
-      (componentWithRomMemAndOpBus 1 addX1Program).rowInputVar).rom.main_step = 0
-  change (eval (Environment.fromArray
-      (mainFixedColumns.materialize 0 (mainRawRow addX1Row)) emptyData)
-      (varFromOffset (F := FGL) MainRowWithRom 0)).rom.main_step = 0
-  rw [eval_mainRawRow_materialize 0 emptyData addX1Row (by rfl) (by rfl)]
-  rfl
-
-theorem addX1Main_main_step_index_fixed :
-    MainStepIndexFixedFacts 1 1 addX1Program
-      (mainSingleRowTable 1 addX1Program addX1Row) where
-  main_step_eq_index := addX1Main_main_step_eq_index
-  timestamp_bound := by
-    intro i
-    fin_cases i
-    decide
-  load_timestamp_toNat := by
-    intro i
-    fin_cases i
-    rw [addX1Main_main_step_eq_index ⟨0, by decide⟩]
-    decide
-  store_timestamp_toNat := by
-    intro i
-    fin_cases i
-    rw [addX1Main_main_step_eq_index ⟨0, by decide⟩]
-    decide
-
-theorem singleAddWitness_main_step_index_fixed :
-    ∀ table ∈ singleAddWitness.allTables,
-      table.component = componentWithRomMemAndOpBus 1 addX1Program →
-        MainStepIndexFixedFacts 1 1 addX1Program table := by
-  intro table h_table h_component
-  have h_main := singleAddWitness_main_component_cases h_table h_component
-  subst table
-  exact addX1Main_main_step_index_fixed
-
-set_option linter.unnecessarySimpa false in
-theorem singleAddWitness_segment_l1_fixed :
-    ∀ table ∈ singleAddWitness.allTables,
-      table.component = componentWithRomMemAndOpBus 1 addX1Program →
-        (0 < table.table.length →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable addX1Program table).segment_l1 0 = 1) ∧
-        (∀ idx : Fin table.table.length, 0 < idx.val →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable addX1Program table).segment_l1
-              idx.val = 0) := by
-  intro table h_table h_component
-  have h_main := singleAddWitness_main_component_cases h_table h_component
-  subst table
-  constructor
-  · intro _
-    exact addX1Main_segment_l1_first
-  · intro idx h_idx
-    exfalso
-    have h_len : (mainSingleRowTable 1 addX1Program addX1Row).table.length = 1 := by
-      simp [mainSingleRowTable]
-    have h_lt : idx.val < 1 := by
-      simpa [h_len] using idx.isLt
-    omega
-
 theorem addX1OpBusMessage_eq :
     ZiskFv.AirsClean.Main.opBusMessage addX1Row.core =
       ZiskFv.AirsClean.BinaryAdd.opBusMessage addX1BinaryAddRow := by
@@ -555,7 +472,5 @@ def singleAddAcceptedTrace : AcceptedZiskTrace 1 where
   mem_replay_source_covers := fun h => absurd h singleAddWitness_not_mutableMemPresent
   transitions_hold := singleAddWitness_transitions
   main_height := singleAddWitness_main_height
-  segment_l1_fixed := singleAddWitness_segment_l1_fixed
-  main_step_index_fixed := singleAddWitness_main_step_index_fixed
 
 end ZiskFv.Compliance.SingleAddWitness

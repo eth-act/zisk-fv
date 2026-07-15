@@ -51,8 +51,8 @@ set_option maxHeartbeats 8000000
 -- `h_set_pc`/`h_jmp1`/`h_jmp2`) that `Pilot.sub_nextPC_discharged` consumes to
 -- DERIVE the (removed) cross-world `h_nextPC_matches` from the accepted trace's
 -- `transitions_hold` certificate.  The `SEGMENT_L1` fixed-column fact is no
--- longer a per-arm binder: it lives once on the trace as `segment_l1_fixed`
--- (read via `trace.mainTable_fixed`), the `main_height`-class shared home.
+-- longer a per-arm binder: it is derived through `trace.mainTable_fixed` from
+-- the canonical component-owned fixed schema.
 structure Claim_sub (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   r1 : regidx
   r2 : regidx
@@ -78,8 +78,8 @@ structure Decode_sub (trace : AcceptedZiskTrace numInstructions)
   -- `create_register_op(…, "sub", 4)` → `zib.j(4,4)`, no `set_pc()`; cf.
   -- `RowShape/Contract.lean` SUB arm, `main.pil:150-152`).  The `SEGMENT_L1`
   -- fixed-column fact is NOT carried per-arm: `Pilot.sub_nextPC_discharged`
-  -- reads it off the accepted trace's shared `segment_l1_fixed` certificate
-  -- (`trace.mainTable_fixed`), the once-for-all `main_height`-class home.
+  -- derives it through `trace.mainTable_fixed` from the canonical
+  -- component-owned fixed schema.
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_set_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
