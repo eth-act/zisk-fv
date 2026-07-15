@@ -34,7 +34,7 @@ rev = "087a0de2c9869c121788667f0f90cb8957a13d14"
 [[require]]
 name = "Clean"
 git = "https://github.com/codygunton/clean"
-rev = "497e4a4192ae90485647778542636539ef03316d"
+rev = "c87617d8e29386e1e9e4f98cfbfb6940c2eb63df"
 
 [[require]]
 name = "repl"
