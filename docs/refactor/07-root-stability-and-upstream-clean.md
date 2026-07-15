@@ -31,16 +31,22 @@ proposed change into one of three tiers and gate each tier differently:
 | **T2 — change what is claimed/trusted** | Add/remove/relocate a *trusted* premise, change the conclusion's strength, or move something between "checked" and "believed". | **Rare, explicit, reviewed.** Never a side effect of a cleanup. | Its own PR, its own trust-ledger delta, called out in the summary; must *shrink* (never grow) the TCB. |
 
 The initial review's R1 (§`03` 3.2) was written as if the trust-surface record is
-free to alter the root binders. Re-classified under this tier system, R1 is **two
-different moves that must be separated**:
+free to alter the root binders. Re-classified under this tier system, and
+**corrected** for a stale premise, R1 is a **single T1 move**:
 
-- The part of R1 that only *renames/bundles binders already present* is **T1**.
-- The part that *lifts hidden trust* (`aeneasBridgeTrust`,
-  `memoryTimelineConstructionEvidence`) from internal `OpEnvelope` fields up to
-  root binders is **T2**, because it changes *where the TCB lives*. Even though it
-  does not enlarge the TCB (it makes an existing trust visible), it changes the
-  root's type in a trust-relevant way and must be handled as its own reviewed
-  step, not folded into a "readability" pass.
+- R1 only *renames/bundles binders already present* on `root_soundness`
+  (`inputsAgree`, `bootSeed`, and the scope binder) — that is **T1**, made safe by
+  an equivalence bridge (A.3) with an unchanged `#print axioms`.
+- The originally-proposed second move — *lifting "hidden trust"*
+  (`aeneasBridgeTrust`, `memoryTimelineConstructionEvidence`) from internal
+  `OpEnvelope` fields up to root binders — is **dropped**. It rested on a stale
+  premise: those fields are **not** hidden trust of `root_soundness`. They are
+  hypotheses of the *internal* `zisk_riscv_compliant_program_bus`, discharged on
+  the path to the root (`StepStrongAluArith.lean:223`; `trivial`/`bootSeed`-derived
+  for memory), as the frozen `#print axioms root_soundness` in `ZiskFv/Audit.lean`
+  confirms. Making them binders would re-introduce discharged premises and
+  *weaken* the root — a trust-*growing* change, not an honesty fix — so there is no
+  legitimate T2 component here.
 
 ### A.2 Sequence so the root moves last, once, and provably
 
@@ -58,10 +64,13 @@ Reorder the roadmap around root stability:
 3. **Only then, if still desired, reskin the root (T1) behind an equivalence
    proof** (A.3). By this point the binders being bundled are already minimal
    (T0 removed the derivable ones), so the record is small and honest.
-4. **Handle any trust-visibility change (T2) as a final, isolated, clearly
-   flagged step** — or defer it indefinitely. Making `aeneasBridgeTrust` a root
-   binder is desirable for honesty, but it is *optional* for the refactor and can
-   ship as its own reviewed PR long after the structural work.
+4. **No residual trust-visibility (T2) step is required.** The once-suspected
+   hidden trust (`aeneasBridgeTrust`, `memoryTimelineConstructionEvidence`) is
+   discharged, not trusted (A.1), so there is nothing to lift. Making them root
+   binders would *weaken* the theorem and is explicitly **not** planned. If a
+   genuine future trust change ever arises (e.g. importing generated Aeneas Lean
+   that removes an assumption), it ships as its own reviewed PR and must *shrink*
+   the TCB.
 
 Net effect: the root statement is untouched through the entire high-risk portion
 of the work, and changes at most once, late, under a proof obligation.

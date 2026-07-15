@@ -43,9 +43,11 @@ ledger monotonically shrinking, and folds in the two follow-up sanity checks
    make the audit surface opaque and the code hard to extend:
    - **S1 — Two stacked root soundness statements.** The advertised
      `root_soundness` is *implemented on top of* the older
-     `zisk_riscv_compliant_program_bus`; the TCB is split between the theorem's
-     binders and fields of the `OpEnvelope` values the proof constructs
-     internally. (`01` §1.3.)
+     `zisk_riscv_compliant_program_bus`. This is a readability/architecture
+     concern (two endpoints, a padded-conjunction internal theorem), **not** a
+     hidden-trust one: the `OpEnvelope` trust fields are discharged, so the root's
+     TCB is exactly its visible binders plus `AcceptedZiskTrace`/extraction
+     assumptions (see §2.3). (`01` §1.3.)
    - **S2 — Two parallel circuit models.** A legacy record model (`Airs/`,
      `Valid_<AIR>` — `Valid_Main` alone referenced by ~299 files) coexists with
      the Clean model (`AirsClean/`), stitched per-opcode by `Bridge.lean`
@@ -138,12 +140,35 @@ circuit models, the equiv stack, the `OpEnvelope` dispatch — is bespoke.
   `∀ i, StepSound …`. Its per-step proof **constructs an `OpEnvelope.<op>` and
   calls the old theorem.**
 
-**Consequence:** the headline theorem is not self-contained. Its trust premises
-are split between its own binders (`bootSeed`, `hAvoidKnownBugs`, `inputsAgree`)
-and the *fields of the `OpEnvelope` arms it builds internally*
-(`aeneasBridgeTrust`, `memoryTimelineConstructionEvidence`, the `Promises`). An
-auditor cannot read the type and see the whole TCB. (Detail: `01` §1.3, `05`
-T1.)
+**Consequence (corrected — see note below):** the two theorems are *stacked*,
+but the trust surface is **not** split. `aeneasBridgeTrust`,
+`memoryTimelineConstructionEvidence`, and the `Promises` are hypotheses of the
+*old internal* theorem `zisk_riscv_compliant_program_bus`; on the path to
+`root_soundness` they are **discharged**, not trusted. The `StepStrong*` steps
+*construct* each `OpEnvelope.<op>` arm from accepted-trace data and *prove* those
+fields in place (e.g. `StepStrongAluArith.lean:223` proves `env.aeneasBridgeTrust`
+from the derived row-binding facts `h_input_r1_row`/`h_input_r2_row`;
+`memoryTimelineConstructionEvidence` is `trivial` on non-load arms and
+`bootSeed`-derived on load arms). This is confirmed mechanically: the frozen
+`#print axioms root_soundness` in `ZiskFv/Audit.lean` shows **only** the trusted
+Sail-extraction primitives plus the standard permitted axioms — no `sorryAx` and
+no additional trusted premise hiding in a constructed value. So the genuine
+trust surface of `root_soundness` is exactly its visible binders (chiefly
+`inputsAgree`, `bootSeed`) plus the `AcceptedZiskTrace` proof-system trust and
+the two extraction assumptions; the remaining readability gap is only that these
+*existing* binders are loose rather than bundled. (Detail: `01` §1.3, `05` T1;
+`ZiskFv/Compliance/TraceLevelExport.lean` documents the three discharge routes.)
+
+> **Correction note.** An earlier draft of this plan (and of `03`/`05`/`07`)
+> described `aeneasBridgeTrust` and `memoryTimelineConstructionEvidence` as
+> "hidden trust" living in internally-built `OpEnvelope` fields and proposed
+> *lifting* them into root binders. That was a stale premise, inherited from the
+> pre-Phase-0.3 `trust/trusted-base.md` text (the C3 doc drift) which described
+> the *internal* lemma, where they genuinely are hypotheses. They are discharged
+> for `root_soundness`. Lifting them into root binders would **weaken**
+> `root_soundness` by re-introducing premises the proof currently earns, so that
+> move (the T2 component of §4.1) is dropped. The legitimate remainder is the T1
+> bundling of binders that already exist.
 
 ### 2.4 Per-opcode multiplicity (S3, expanded)
 
@@ -248,13 +273,22 @@ named binder; every scope exclusion is a named binder. (Lean below is
 
 ### 4.1 One trust-surface record (the central API move)
 
+This is a **pure T1 re-package of binders that already exist** on
+`root_soundness` (chiefly `inputsAgree` and `bootSeed`), plus the scope binder.
+It adds, removes, weakens, and strengthens **nothing** — it only bundles loose
+binders so the TCB reads off one `structure`. It must be shipped behind an
+`old ↔ new` equivalence bridge and leave `#print axioms root_soundness`
+byte-for-byte unchanged (§7).
+
 ```lean
 -- NEW, e.g. ZiskFv/Compliance/TrustSurface.lean
+-- Bundles ONLY binders root_soundness already has. It does NOT add
+-- `aeneasBridge`/`channelsBalanced`: those are discharged / already inside
+-- `AcceptedZiskTrace` (see the correction note in §2.3), and re-introducing them
+-- as binders would WEAKEN the theorem.
 structure SoundnessTrust (numInstructions : Nat)
     (zisk : AcceptedZiskTrace numInstructions) (sail : SailTrace numInstructions)
     (step : ∀ i, ZiskStep zisk i) : Prop where
-  channelsBalanced : zisk.channels_balanced          -- proof-system trust (logUp/perm)
-  aeneasBridge     : AeneasBridgeTrust zisk step      -- Aeneas row-lowering, until gen Lean imported
   bootSeed         : BootSegmentMemorySeed zisk sail step  -- single cross-segment memory seed (#115/#119)
   inputsAgree      : ∀ i, InputsAgree zisk sail i (step i)
 
@@ -268,16 +302,18 @@ structure SoundnessScope (numInstructions : Nat)
 theorem root_soundness {numInstructions : Nat}
     (zisk : AcceptedZiskTrace numInstructions) (sail : SailTrace numInstructions)
     (step : ∀ i, ZiskStep zisk i) (decode : ∀ i, ProgramDecode zisk i (step i))
-    (trust : SoundnessTrust numInstructions zisk sail step)   -- ← all trust, one binder
-    (scope : SoundnessScope numInstructions zisk step) :       -- ← all exclusions, one binder
+    (trust : SoundnessTrust numInstructions zisk sail step)   -- ← bundled existing trust binders
+    (scope : SoundnessScope numInstructions zisk step) :       -- ← bundled scope binder
     ∀ i, StepSound zisk sail i (step i)
 ```
 
-The entire TCB becomes `SoundnessTrust`'s fields + the two extraction
+The entire TCB becomes `SoundnessTrust`'s fields, the proof-system trust already
+carried inside `AcceptedZiskTrace` (`channels_balanced`), and the two extraction
 assumptions named in `trusted-base.md` (Sail→Lean, ZisK→Lean): a short,
-enumerable list read off one `structure`. `aeneasBridge` and any memory-timeline
-residual become *visible* instead of hiding in constructed `OpEnvelope` values.
-(`03` §3.2, `05` T1/T2.)
+enumerable list read off one `structure` and one type. **What this move does
+*not* do:** it does not add `aeneasBridge` or a memory-timeline residual as
+binders — those are proven for `root_soundness`, not trusted (§2.3), so making
+them binders would re-introduce discharged premises. (`03` §3.2, `05` T1.)
 
 ### 4.2 Demote the old global theorem to an internal per-arm lemma
 
@@ -358,7 +394,10 @@ opcode:
 
 Then `equiv_S` takes no provider/lane/match binders; `StepStrong*` feeds the
 derived facts. The `forbidden-param-shapes` + caller-burden baselines then guard
-a *much smaller* residual (ideally only the genuine external trust from §4.1).
+a *much smaller* residual (ideally only the genuine external trust bundled in
+§4.1, i.e. `inputsAgree`/`bootSeed` plus `AcceptedZiskTrace`'s proof-system trust
+and the two extraction assumptions — not the discharged `aeneasBridge`/timeline
+fields).
 **Correctness guard (`AGENTS.md`):** each removed binder must be *proved*, never
 moved to a broader universal premise; the trust-gate baseline must *shrink* at
 each step. (`04` §4.3.)
@@ -448,10 +487,14 @@ files. (`05` §5.2.)
 
 ### 6.3 Trust-surface visibility
 
-- **T1** `aeneasBridgeTrust`, `memoryTimelineConstructionEvidence` are not
-  binders of `root_soundness` (they live on internally-built `OpEnvelope` arms) —
-  the most important correctness-*presentation* fix; §4.1 lifts them into
-  `SoundnessTrust`.
+- **T1** `root_soundness`'s trust binders (`inputsAgree`, `bootSeed`) are loose
+  rather than bundled — §4.1 packages them into `SoundnessTrust` (a readability
+  re-package, no premise added/removed). **Note (corrected):**
+  `aeneasBridgeTrust` and `memoryTimelineConstructionEvidence` are *not* hidden
+  trust of `root_soundness` — they are hypotheses of the internal
+  `zisk_riscv_compliant_program_bus` and are discharged on the path to the root
+  (see §2.3, confirmed by the frozen `#print axioms`). Do **not** lift them into
+  `SoundnessTrust`; that would re-introduce discharged premises.
 - **T2** Encode the boot-seed "memory-only" scope in the
   `BootSegmentMemorySeed` type/name, not prose.
 - **T3** Rename `skeletal_root_completeness → root_completeness`, bundle
@@ -490,19 +533,23 @@ A; this supersedes `03`/`06` where they conflict on sequencing.)
 | **T1 — reskin, same content** | Re-package existing binders (bundle into `SoundnessTrust`, rename an internal theorem, conjunction→match). No premise added/removed/weakened. | **Only with an `old ↔ new` equivalence proof.** | Machine-checked bridge + unchanged `#print axioms`. |
 | **T2 — change what's claimed/trusted** | Add/remove/relocate a *trusted* premise, change conclusion strength, move between checked/believed. | **Rare, explicit, own PR.** Must *shrink*, never grow, the TCB. | Own trust-ledger delta, called out in the summary. |
 
-**Crucial re-classification of §4.1 (R1):** it is *two* moves that must be
-separated. Bundling/renaming binders that are *already present* is **T1**.
-Lifting hidden trust (`aeneasBridgeTrust`, `memoryTimelineConstructionEvidence`)
-from internal `OpEnvelope` fields up to root binders is **T2** — even though it
-does not enlarge the TCB, it changes *where the TCB lives*, so it ships as its own
-reviewed step, not folded into a readability pass.
+**Classification of §4.1 (R1) — corrected:** §4.1 is a **single T1 move**:
+bundling/renaming binders that are *already present* on `root_soundness`
+(`inputsAgree`, `bootSeed`, and the scope binder). The previously-proposed
+second move — "lifting hidden trust (`aeneasBridgeTrust`,
+`memoryTimelineConstructionEvidence`) from internal `OpEnvelope` fields up to root
+binders" — has been **dropped**: there is no such hidden trust. Those fields are
+discharged for `root_soundness` (§2.3), so adding them as binders would be a
+*trust-growing* T2 change that weakens the theorem, not an honesty fix. It is not
+part of the plan.
 
 **Sequence so the root moves last, once, and provably:** (1) do all T0 work under
 the unchanged root — Phases 2–4 below are entirely T0; (2) add the audit surface
 + golden test early (pure additions, the tripwire for later steps); (3) only then,
 if still desired, reskin the root (T1) behind an equivalence bridge — by which
-point the bundled binders are already minimal; (4) handle any trust-visibility
-change (T2) as a final isolated step, or defer indefinitely.
+point the bundled binders are already minimal. (There is *no* residual
+trust-visibility (T2) step: the once-suspected hidden trust is discharged, per
+§2.3.)
 
 **Equivalence-bridge discipline (how a T1 change is made safe):** never edit the
 root in place. Keep the current root verbatim as `root_soundness_core`; state the
@@ -608,9 +655,11 @@ multi-week. (Detail: `06`, re-sequenced by `07` Part A around root stability.)
 and the root is now guarded against accidental drift.
 
 **Phase 1 — Root theorem API (mostly T0/T1, plus completeness rename).**
-1.1 Introduce `SoundnessTrust`/`SoundnessScope`; restate `root_soundness` behind
-an equivalence bridge (T1), lifting hidden trust as an explicitly-flagged T2 step
-*or deferring it*. 1.2 Rename old theorem → `Internal.perArm_channel_balance`;
+1.1 Introduce `SoundnessTrust`/`SoundnessScope` bundling the *existing* root
+binders (`inputsAgree`, `bootSeed`, scope); restate `root_soundness` behind an
+equivalence bridge (T1). Do **not** lift the discharged `OpEnvelope` fields —
+there is no hidden-trust T2 component (see §2.3, §7). 1.2 Rename old theorem →
+`Internal.perArm_channel_balance`;
 replace the padded conjunction with a dependent match (equivalent, cleaner). 1.3
 Rename `skeletal_root_completeness → root_completeness`; bundle the five
 obligations (honest, still conditional). *Exit:* exactly one advertised theorem
@@ -662,7 +711,7 @@ Phase 2.1 as the first real proof-architecture change.
 | Phase | Theme | Tier | Effort | Risk |
 | --- | --- | --- | --- | --- |
 | 0 | Docs / audit file / golden test | T0 | S | none |
-| 1 | Root API records + dispatch restate | T1 (+ optional T2) | M | low |
+| 1 | Root API records + dispatch restate | T1 | M | low |
 | 2 | Derive facts at seam | T0 | L | medium (the real work) |
 | 3 | One circuit model | T0 | L | medium |
 | 4 | Shape factoring | T0 | L | low once 2–3 done |
@@ -675,7 +724,7 @@ Phase 2.1 as the first real proof-architecture change.
 | Request | Where addressed |
 | --- | --- |
 | "maximum explicitness and readability" of top theorems | §4 (trust record, completeness symmetry, one audit file) |
-| single, honest TCB | §4.1 (trust visible as binders), §4.2 (no second public claim), §7 (golden test) |
+| single, honest TCB | §4.1 (existing trust binders bundled into one record), §4.2 (no second public claim), §7 (golden test); TCB already machine-frozen via `Audit.lean`'s `#print axioms` |
 | soundness ≈ completeness in shape | §4.3 |
 | don't launder trust | §5.2 (each binder proved, not moved), §7 (trust-monotone guardrail) |
 | proofs maintainable/extensible | §5 (Clean spine, per-shape factoring, reusable abstractions), §9 |

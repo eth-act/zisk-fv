@@ -110,12 +110,20 @@ constructs an `OpEnvelope.<op>` and calls `zisk_riscv_compliant_program_bus`.
 E.g. `StepStrongAluArith.lean` builds `OpEnvelope.sub …` and extracts
 `(zisk_riscv_compliant_program_bus env …).2.2.2.2.1`.
 
-**Consequence for the audit surface:** the "headline" theorem is not
-self-contained. Its trust premises are split between its own binders
-(`bootSeed`, `hAvoidKnownBugs`, `inputsAgree`) and the *fields of the
-`OpEnvelope` arms it constructs internally* (`aeneasBridgeTrust`,
-`memoryTimelineConstructionEvidence`, the `Promises`). An auditor cannot read
-`root_soundness`'s statement and see the whole TCB. `03` proposes fixing this.
+**Consequence for the audit surface (corrected):** the "headline" theorem is
+*stacked* on the internal one, but its trust surface is **not** split.
+`aeneasBridgeTrust`, `memoryTimelineConstructionEvidence`, and the `Promises` are
+hypotheses of the *internal* `zisk_riscv_compliant_program_bus`; the
+`StepStrong*` steps **discharge** them from accepted-trace data when constructing
+each `OpEnvelope` arm (e.g. `StepStrongAluArith.lean:223` proves
+`env.aeneasBridgeTrust`; `memoryTimelineConstructionEvidence` is `trivial` on
+non-load arms and `bootSeed`-derived on load arms). The frozen
+`#print axioms root_soundness` in `ZiskFv/Audit.lean` (Sail primitives + standard
+axioms only) confirms nothing unproven hides there. So `root_soundness`'s TCB is
+exactly its *visible* binders (chiefly `inputsAgree`, `bootSeed`) plus the
+proof-system trust inside `AcceptedZiskTrace` and the two extraction assumptions.
+The remaining readability gap `03` addresses is only that these existing binders
+are loose — it bundles them, and must **not** lift the discharged fields.
 
 ## 1.4 The per-opcode multiplicity
 

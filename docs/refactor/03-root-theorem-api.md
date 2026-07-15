@@ -17,11 +17,20 @@ Three rules for both roots:
    `zisk_riscv_compliant_program_bus`) is renamed to make it clearly internal
    (e.g. `perArm_channel_balance`) and documented as "consumed by
    `root_soundness`, not a public endpoint".
-2. **Every trusted premise is a named binder of the endpoint.** No trust may hide
-   inside a value the proof constructs internally (today `aeneasBridgeTrust` and
-   `memoryTimelineConstructionEvidence` live on the `OpEnvelope` arms the trace
-   export builds, so they are invisible in `root_soundness`'s type). Lift them to
-   binders of `root_soundness`.
+2. **Every trusted premise is a named binder of the endpoint.** No *trust* may
+   hide inside a value the proof constructs internally. **Correction (verified):**
+   `aeneasBridgeTrust` and `memoryTimelineConstructionEvidence` are *not* such
+   hidden trust. They are hypotheses of the *internal* theorem
+   `zisk_riscv_compliant_program_bus`, and the `StepStrong*` trace-export steps
+   **discharge** them when constructing each `OpEnvelope` arm (e.g.
+   `StepStrongAluArith.lean:223` proves `env.aeneasBridgeTrust` from derived
+   accepted-trace row facts; `memoryTimelineConstructionEvidence` is `trivial` on
+   non-load arms and `bootSeed`-derived on load arms). The frozen
+   `#print axioms root_soundness` in `ZiskFv/Audit.lean` confirms no unproven
+   premise hides there. So do **not** lift them into `root_soundness` binders —
+   that would re-introduce discharged premises and *weaken* the theorem. This
+   rule therefore only requires bundling the trust binders `root_soundness`
+   *already* has (`inputsAgree`, `bootSeed`).
 3. **Every scope exclusion is a named binder too.** The defect carve-out
    (`hAvoidKnownBugs`/`RowOutsideDefectRegion`) and any out-of-scope predicate
    must appear in the type, keyed to `trust/defects.md`.
@@ -42,14 +51,15 @@ structure SoundnessTrust (numInstructions : Nat)
     (zisk : AcceptedZiskTrace numInstructions)
     (sail : SailTrace numInstructions)
     (step : ∀ i, ZiskStep zisk i) : Prop where
-  /-- logUp / permutation channel-balance argument (proof-system trust). -/
-  channelsBalanced   : zisk.channels_balanced            -- already inside AcceptedZiskTrace
-  /-- Aeneas-extracted row-lowering facts, until generated Lean is imported. -/
-  aeneasBridge       : AeneasBridgeTrust zisk step
   /-- single cross-segment initial-memory seed (#115/#119). -/
   bootSeed           : BootSegmentMemorySeed zisk sail step
   /-- ZisK inputs = Sail model inputs at each step. -/
   inputsAgree        : ∀ i, InputsAgree zisk sail i (step i)
+  -- NOTE: `channelsBalanced` is NOT a field here — it is already carried inside
+  -- `AcceptedZiskTrace` (the logUp/permutation proof-system trust). And there is
+  -- deliberately NO `aeneasBridge` field: the Aeneas row-lowering facts are
+  -- *discharged* for `root_soundness` (see §3.1 rule 2), not trusted, so adding
+  -- them here would re-introduce a proven premise and weaken the theorem.
 
 /-- The complete *scope* surface: what the theorem does NOT claim. -/
 structure SoundnessScope (numInstructions : Nat)
@@ -77,11 +87,13 @@ theorem root_soundness
 ```
 
 Benefits:
-- The entire TCB is `SoundnessTrust`'s fields + the two extraction assumptions
-  named in `trusted-base.md` (Sail→Lean, ZisK→Lean). Four believe-items,
-  enumerable from one `structure`.
-- `aeneasBridge` and any memory-timeline construction residual become **visible**
-  instead of hiding in constructed `OpEnvelope` values.
+- The entire TCB is `SoundnessTrust`'s fields (`bootSeed`, `inputsAgree`), the
+  proof-system trust already inside `AcceptedZiskTrace` (`channels_balanced`),
+  plus the two extraction assumptions named in `trusted-base.md` (Sail→Lean,
+  ZisK→Lean). A short list, enumerable from one `structure` and one type.
+- This is a pure re-package of *existing* binders (T1). It does **not** make
+  `aeneasBridge` or a memory-timeline residual a trusted premise — those are
+  proven for `root_soundness`, so they stay discharged, not lifted.
 - `#print axioms root_soundness` remains the machine check; the human check is now
   "read `SoundnessTrust` and `SoundnessScope`".
 - Adding/removing a trust item is a one-line record edit that shows up in every

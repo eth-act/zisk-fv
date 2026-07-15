@@ -93,9 +93,12 @@ the audit surface opaque:
 - **R1 — Unify the soundness endpoint (API).** Make `root_soundness` the *only*
   advertised soundness theorem, restate `zisk_riscv_compliant_program_bus` as a
   clearly-internal per-arm lemma, and give `root_soundness` a single named
-  **trust-surface record** (channel-balance, boot memory seed, Aeneas bridge,
-  defect exclusion) so the entire trusted premise set is visible in one place.
-  See `03`.
+  **trust-surface record** bundling the *existing* trust binders (boot memory
+  seed, inputs-agree; defect exclusion lives in the scope record) so the entire
+  trusted premise set is visible in one place. Note: `channels_balanced` is
+  already inside `AcceptedZiskTrace`, and the Aeneas bridge / memory-timeline
+  fields are *discharged* for `root_soundness` (not hidden trust), so they are
+  **not** added as binders — doing so would weaken the theorem. See `03`.
 
 - **R2 — Make the Clean component model the spine; demote `Airs/` records to a
   thin generated view (or delete).** Drive the equivalence stack off the Clean

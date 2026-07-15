@@ -20,7 +20,7 @@ story.
 
 | Step | What | Effort | Trust effect |
 | --- | --- | --- | --- |
-| 1.1 | Introduce `SoundnessTrust` / `SoundnessScope` records; restate `root_soundness` to take them; lift `aeneasBridgeTrust` + `memoryTimelineConstructionEvidence` to visible binders. | M | trust becomes visible; **must not** add trust — prove the projections into the per-step layer. |
+| 1.1 | Introduce `SoundnessTrust` / `SoundnessScope` records bundling the *existing* root binders (`inputsAgree`, `bootSeed`, scope); restate `root_soundness` to take them, behind an `old ↔ new` equivalence bridge (T1). **Do NOT** lift `aeneasBridgeTrust` / `memoryTimelineConstructionEvidence`: they are discharged for `root_soundness` (confirmed by the frozen `#print axioms`), not hidden trust, so lifting them would re-introduce proven premises and weaken the theorem. | M | none — pure re-package; `#print axioms` unchanged. |
 | 1.2 | Rename `zisk_riscv_compliant_program_bus → Internal.perArm_channel_balance`; replace `OpEnvelope.exec_eq` (padded conjunction) with `OpEnvelope.channelBalanceConclusion` (dependent match). | M | none (equivalent statement, cleaner) |
 | 1.3 | Rename `skeletal_root_completeness → root_completeness`; bundle the five obligations into `ZiskCompletenessObligations`. | S | none (honest, still conditional) |
 
