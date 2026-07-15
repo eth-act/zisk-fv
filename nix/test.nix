@@ -86,6 +86,15 @@ writeShellApplication {
       test -f build/extraction/Extraction/Mem.lean
       test -f build/extraction/Extraction/MemGeneratedArtifact.lean
       test -f build/extraction/Extraction/MemGeneratedConstraintBridge.lean
+      test -f build/extraction/Extraction/LookupWiring.lean
+      # The lookup-wiring artifact is deliberately not allowed to inherit the
+      # legacy bus-emission renderer's ExtF -> 0 fallback. Mem's range lookup
+      # has an AirValue tuple member, so this is a concrete regeneration gate.
+      grep -Fq 'Expr.airValue 11' build/extraction/Extraction/LookupWiring.lean
+      # The raw `AirValue + 0` source is retained; the generated consistency
+      # module, not the extractor, applies the narrow neutral-term normalizer.
+      grep -Fq '{ name := "Mem.distance_base[0]", value := Expr.add (Expr.airValue 11) (Expr.constant "0") }' build/extraction/Extraction/LookupWiring.lean
+      grep -Fq ':= by rfl' build/extraction/Extraction/LookupWiring.lean
       generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/Circuit.olean \
@@ -96,6 +105,9 @@ writeShellApplication {
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/MemGeneratedArtifact.olean \
         build/extraction/Extraction/MemGeneratedArtifact.lean
+      LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        -o build/extraction/Extraction/LookupWiring.olean \
+        build/extraction/Extraction/LookupWiring.lean
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         build/extraction/Extraction/MemGeneratedConstraintBridge.lean
     }

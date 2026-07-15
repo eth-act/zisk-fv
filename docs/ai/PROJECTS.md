@@ -1,5 +1,19 @@
 # Projects
 
+## Project Closeout S3
+
+Plan: `docs/ai/plan/PLAN_S3_LOOKUP_WIRING.md`. Planning is complete in
+`.worktrees/issue-249-certificate-burndown` on
+`issue-249-lookup-wiring-plan`, after S1b merged as #258 (`13d7dbcb`). S3
+extracts lossless stage-2 lookup wiring and cross-AIR gsum linkage, composes
+recognised range channels with static tables, derives and deletes the HELD
+`mem_replay_segment_ranges` field to close #249, then audits the five legacy
+Mem sidecar fields and the MULH/MULHSU lookup route. PR 1 is active: its
+generated `LookupWiring` manifest preserves raw typed hint ASTs only for
+kernel-checked standard-template links, including Mem c24-c32 and Arith
+c49-c60/c63; unlinked emitted constraints (including Mem c33) remain typed
+constraint-only records and non-emitted AIRs are reported as absent.
+
 ## Aeneas Bridge 111
 
 Plan: `docs/ai/plan/PLAN_AENEAS_BRIDGE_111.md` (issue #111). Discharge

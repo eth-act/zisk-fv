@@ -16,6 +16,8 @@ pil-extract air --pilout <path> --air <needle>
 pil-extract bus-emissions --pilout <path> (--air <needle> | --airs <a,b,...>)
                  [--output <path>] [--bus-id <N>]
 
+pil-extract lookup-wiring --pilout <path> [--output <path>]
+
 pil-extract arith-table --rust-source <path> [--output <path>]
 
 pil-extract clean-component --pilout <path> --air <needle>
@@ -28,6 +30,9 @@ pil-extract mem-air-facts --pilout <path> [--air Mem]
 
 - `air`: emit Lean constraint definitions for one AIR, or list AIRs.
 - `bus-emissions`: emit bus-emission specs from `gsum_debug_data` hints.
+- `lookup-wiring`: emit a closed typed syntax manifest for all pilout AIRs.
+  A hint tuple is retained only when a generated Lean `rfl` check links it to
+  a standard direct or two-hint-cluster accumulator template.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
@@ -68,8 +73,8 @@ definition per pilout constraint, typed over `Circuit F ExtF C` (from
 
 ## Pilout structure observations
 
-- The top-level `PilOut` contains `air_groups`. ZisK's pilout has one group
-  named `Zisk` with 22 AIRs (`Main`, `Rom`, ..., `BinaryAdd`, ...).
+- The top-level `PilOut` contains `air_groups`. The current ZisK pilout has
+  one group named `Zisk` with 35 AIRs.
 - `BinaryAdd` lives at `airs[11]`: 198 expressions, 9 constraints.
 - `air.constraints[i]` is a oneof `{firstRow, lastRow, everyRow, everyFrame}`;
   each variant carries `expression_idx` (an `Operand.Expression` wrapper around
@@ -95,8 +100,8 @@ artefacts in the pilout:
 1. **One or more `Constraint` entries** that update a stage-2 `im_col`
    running-product accumulator. These mix witness cells with `Challenge`
    operands (the `α` / `γ` permutation challenges that compress the tuple
-   into a single field element) and are the constraints the existing
-   extractor skip-stubs as `mixes F (witness cells) with ExtF`.
+   into a single field element). `air` emits these in its single-field
+   `Circuit F F C` specialization; they are not skip-stubbed.
 2. **One `Hint` named `gsum_debug_data`**, attached to the same AIR, that
    records the tuple structurally — bus id, multiplicity expression, and
    per-slot human-readable name + Expression-index pair. The hint payload
@@ -120,6 +125,37 @@ in ZisK's pilout reference only stage-1 witness cells (no challenges), so
 the existing constraint renderer types them cleanly over `F`. The
 `bus-emissions` mode walks these hints and produces `BusEmissionSpec`
 defs.
+
+### Lookup wiring (S3 PR 1, 2026-07)
+
+`lookup-wiring` is intentionally separate from `bus-emissions`. The latter
+targets the older `F`-valued `BusEmissionSpec` interface and still replaces a
+hint operand containing `Challenge`, `AirValue`, or `AirGroupValue` with `0`.
+The lookup-wiring manifest has a closed `Expr` syntax with distinct typed
+constructors for witness, fixed, challenge, AIR value, AIR-group value, and
+opaque operand kinds; it never uses that fallback.
+
+The generated module reports every pilout AIR through `AirStatus`, including
+whether the current Nix extraction emits its constraint file and how many
+mixed constraints and gsum hints it has. PR 1 publishes links only for those
+currently emitted constraint files; all other AIRs are explicit absence
+reports. For an emitted AIR, an unlinked mixed constraint is retained as a
+`ConstraintOnly` typed AST without any hint payload; this preserves, for
+example, the global-sum constraint for later wiring extraction. An unlinked
+hint contributes only to counts: its bus id, multiplicity, and tuple AST are
+not published, so no caller can treat a search witness as a channel emission.
+
+For each published `ValidatedLink`, the generator retains the raw named tuple
+AST, multiplicity, PIOP side, accumulator expression, and the exact alpha and
+gamma `Challenge` ASTs. It builds either the standard direct template or the
+standard two-hint cluster template and emits a Lean `example := by rfl` for
+the extracted constraint. The template passes through `normalise`, a narrow
+syntax normalizer for only `x + 0`, `0 + x`, `x - 0`, and multiplication by
+`1`. This accounts for PIL macro padding such as `AirValue(11) + 0` while the
+raw tuple remains in the manifest; it is not an ExtF-erasure or an algebraic
+solver. `nix/test.nix` regenerates and Lean-compiles the module, checks the
+kernel examples are present, and asserts the Mem `AirValue(11)` raw padding
+survives.
 
 ## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
 

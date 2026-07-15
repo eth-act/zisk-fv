@@ -4,8 +4,9 @@
 # arith-table data / original PIL source) to produce the generated extraction
 # circuit shim, per-AIR Lean files, the operation-bus `Buses.lean`, the
 # memory-bus `MemoryBuses.lean`, the 74-row `ArithTable.lean` lookup data, the
-# Mem AIR sidecar source report, the typed Mem generated-artifact wrapper, and
-# the generated Mem constraint bridge. All output lands in $out/.
+# Mem AIR sidecar source report, the typed Mem generated-artifact wrapper, the
+# generated Mem constraint bridge, and a constraint-linked lookup-wiring
+# manifest. All output lands in $out/.
 
 stdenv.mkDerivation {
   pname = "zisk-fv-extracted-lean";
@@ -94,6 +95,13 @@ stdenv.mkDerivation {
     # ProverData-backed Mem source surface used by the generated artifact.
     ${pil-extract}/bin/pil-extract mem-generated-constraint-bridge \
       --output $out/MemGeneratedConstraintBridge.lean
+
+    # A hint tuple is retained only after the generated module proves by `rfl`
+    # that the extracted constraint is its standard lookup template. The
+    # manifest still reports every AIR, including absent per-AIR artifacts.
+    ${pil-extract}/bin/pil-extract lookup-wiring \
+      --pilout ${zisk-pilout} \
+      --output $out/LookupWiring.lean
 
     runHook postBuild
   '';
