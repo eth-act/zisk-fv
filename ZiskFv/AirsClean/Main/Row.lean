@@ -106,10 +106,9 @@ structure MainRomRow (F : Type) where
       the precompiled path, `addr2 = store_offset + store_ind*a[0]`
       otherwise). -/
   addr2 : F
-  /-- `STEP = main_segment * N + SEGMENT_STEP` (`main.pil:90`). Treated
-      as a witness here; the segment-level relation linking it to the
-      segment public + the SEGMENT_STEP fixed column is a cross-row
-      concern outside the per-row Spec. -/
+  /-- `STEP = main_segment * N + SEGMENT_STEP` (`main.pil:90`). The live Main
+      component materializes this effective-row cell from its indexed fixed
+      schema; the field remains in the named effective-row view. -/
   main_step : F
   -- #225 register-consistency additions: row-local previous-access columns.
   /-- Previous a-register access memory step (`main.pil:261,277-279`). -/

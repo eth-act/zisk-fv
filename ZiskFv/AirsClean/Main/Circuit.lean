@@ -772,6 +772,72 @@ def mainRawRow (row : MainRowWithRom FGL) : Array FGL :=
 @[simp] theorem mainRawRow_size (row : MainRowWithRom FGL) : (mainRawRow row).size = 41 := by
   simp [mainRawRow]
 
+/- Every materialized Main row reads `SEGMENT_L1` from the component-owned fixed schema. -/
+set_option maxRecDepth 10000 in
+theorem eval_mainFixedColumns_segment_l1
+    (index : Nat) (data : ProverData FGL) (raw : Array FGL) :
+  (Eval.eval (Environment.fromArray (mainFixedColumns.materialize index raw) data)
+      (varFromOffset (F := FGL) MainRowWithRom 0)).core.segment_l1 =
+      mainFixedColumns.fixedAt 0 index := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMainRowWithRom, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go]
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMainRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go]
+  rw [ProvableType.eval_varFromOffset]
+  simp only [explicit_provable_type, ProvableType.size,
+    IndexedFixedColumns.materialize, Array.getElem?_ofFn]
+  simp [IndexedFixedColumns.fixedAt, mainFixedColumns,
+    mainFixedLayout, mainFixedValues]
+
+/- Every materialized Main row reads `main_step` from the component-owned fixed schema. -/
+set_option maxRecDepth 10000 in
+theorem eval_mainFixedColumns_main_step
+    (index : Nat) (data : ProverData FGL) (raw : Array FGL) :
+  (Eval.eval (Environment.fromArray (mainFixedColumns.materialize index raw) data)
+      (varFromOffset (F := FGL) MainRowWithRom 0)).rom.main_step =
+      mainFixedColumns.fixedAt 1 index := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMainRowWithRom, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go]
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMainRomRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go]
+  have h_mainRow_size : ProvableStruct.combinedSize MainRow = 18 := rfl
+  rw [ProvableType.eval_varFromOffset]
+  simp only [explicit_provable_type, ProvableType.size,
+    IndexedFixedColumns.materialize, Array.getElem?_ofFn]
+  simp [h_mainRow_size, IndexedFixedColumns.fixedAt, mainFixedColumns,
+    mainFixedLayout, mainFixedValues]
+
+/-- The component-owned `main_step` fixed column is the physical Main row
+    index before the intrinsic fixed-domain bound permits a periodic wrap. -/
+theorem mainFixedColumns_main_step_eq_index (index : Nat)
+    (h_index : index < mainFixedCapacity) :
+    mainFixedColumns.fixedAt 1 index = (index : FGL) := by
+  simp [IndexedFixedColumns.fixedAt, mainFixedColumns, mainFixedValues,
+    Nat.mod_eq_of_lt h_index]
+
+/-- The component-owned `SEGMENT_L1` fixed column marks the physical first
+    Main row as the segment boundary. -/
+theorem mainFixedColumns_segment_l1_first : mainFixedColumns.fixedAt 0 0 = 1 := by
+  simp [IndexedFixedColumns.fixedAt, mainFixedColumns, mainFixedValues]
+
+/-- Away from the physical first row, `SEGMENT_L1` is zero before the
+    intrinsic fixed-domain bound permits a periodic wrap. -/
+theorem mainFixedColumns_segment_l1_nonfirst (index : Nat)
+    (h_positive : 0 < index) (h_index : index < mainFixedCapacity) :
+    mainFixedColumns.fixedAt 0 index = 0 := by
+  have h_mod_ne : index % mainFixedCapacity ≠ 0 := by
+    rw [Nat.mod_eq_of_lt h_index]
+    exact Nat.ne_of_gt h_positive
+  simp [IndexedFixedColumns.fixedAt, mainFixedColumns, mainFixedValues, h_mod_ne]
+
 /-- The materialized raw Main prefix reconstructs its core component, with
     `SEGMENT_L1` supplied solely by the component-owned fixed schema. -/
 private theorem eval_mainRawRow_core_materialize

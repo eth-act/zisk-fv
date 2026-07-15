@@ -750,115 +750,6 @@ theorem addAddiSpinWitness_main_height :
   subst table
   fin_cases i <;> norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows]
 
-private theorem addAddiSpinMain_segment_l1_first :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinProgram
-        addAddiSpinMainTable).segment_l1 0 = 1 := by
-  simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
-  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-  rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-  simpa [Table.environmentAt, addAddiSpinAddRow, addX1Row, mainRomRowOf] using
-    congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_zero
-
-private theorem addAddiSpinMain_segment_l1_later
-    (idx : Fin addAddiSpinMainTable.table.length) (h_idx : 0 < idx.val) :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinProgram
-        addAddiSpinMainTable).segment_l1 idx.val = 0 := by
-  have h_idx_lt : idx.val < 4 := by
-    have h_table_len : addAddiSpinMainTable.table.length = 4 := by
-      simp [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows]
-    rw [← h_table_len]
-    exact idx.isLt
-  interval_cases idx.val
-  · simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
-    unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-    simpa [Table.environmentAt, addAddiSpinAddiRow, addAddiSpinAddiRowTemplate,
-      addAddiSpinAddiFreeColsTemplate, addAddiSpinAddiProgramRow, addAddiSpinAddiBits,
-      mainRomRowOf] using
-      congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_one
-  · simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
-    unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-    simpa [Table.environmentAt, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
-      addSpinJalBits, mainRomRowOf] using
-      congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_two
-  · simp [ZiskFv.AirsClean.FullEnsemble.mainOfTable_segment_l1]
-    unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-    simpa [Table.environmentAt, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
-      addSpinJalBits, mainRomRowOf] using
-      congrArg MainRowWithRom.core addAddiSpinMainTable_evalAt_three
-
-private theorem addAddiSpinMain_main_step_eq_index :
-    ∀ i : Fin 3,
-      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero addAddiSpinProgram
-          addAddiSpinMainTable i.val).rom.main_step = (i.val : FGL) := by
-  intro i
-  fin_cases i
-  · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-    simpa [Table.environmentAt, addAddiSpinAddRow, addX1Row, mainRomRowOf] using
-      congrArg MainRowWithRom.rom addAddiSpinMainTable_evalAt_zero
-  · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-    simpa [Table.environmentAt, addAddiSpinAddiRow, addAddiSpinAddiRowTemplate,
-      addAddiSpinAddiFreeColsTemplate, addAddiSpinAddiProgramRow, addAddiSpinAddiBits,
-      mainRomRowOf] using
-      congrArg MainRowWithRom.rom addAddiSpinMainTable_evalAt_one
-  · unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-    rw [dif_pos (by norm_num [addAddiSpinMainTable, mainRowsTable, addAddiSpinMainRows])]
-    simpa [Table.environmentAt, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
-      addSpinJalBits, mainRomRowOf] using
-      congrArg MainRowWithRom.rom addAddiSpinMainTable_evalAt_two
-
-private theorem addAddiSpinMain_main_step_index_fixed :
-    MainStepIndexFixedFacts 3 3 addAddiSpinProgram addAddiSpinMainTable where
-  main_step_eq_index := addAddiSpinMain_main_step_eq_index
-  timestamp_bound := by
-    intro i
-    fin_cases i <;> decide
-  load_timestamp_toNat := by
-    intro i
-    fin_cases i
-    · rw [addAddiSpinMain_main_step_eq_index ⟨0, by decide⟩]
-      decide
-    · rw [addAddiSpinMain_main_step_eq_index ⟨1, by decide⟩]
-      decide
-    · rw [addAddiSpinMain_main_step_eq_index ⟨2, by decide⟩]
-      decide
-  store_timestamp_toNat := by
-    intro i
-    fin_cases i
-    · rw [addAddiSpinMain_main_step_eq_index ⟨0, by decide⟩]
-      decide
-    · rw [addAddiSpinMain_main_step_eq_index ⟨1, by decide⟩]
-      decide
-    · rw [addAddiSpinMain_main_step_eq_index ⟨2, by decide⟩]
-      decide
-
-theorem addAddiSpinWitness_main_step_index_fixed :
-    ∀ table ∈ addAddiSpinWitness.allTables,
-      table.component = componentWithRomMemAndOpBus 3 addAddiSpinProgram →
-        MainStepIndexFixedFacts 3 3 addAddiSpinProgram table := by
-  intro table h_table h_component
-  have h_main := addAddiSpinWitness_main_component_cases h_table h_component
-  subst table
-  exact addAddiSpinMain_main_step_index_fixed
-
-set_option linter.unnecessarySimpa false in
-theorem addAddiSpinWitness_segment_l1_fixed :
-    ∀ table ∈ addAddiSpinWitness.allTables,
-      table.component = componentWithRomMemAndOpBus 3 addAddiSpinProgram →
-        (0 < table.table.length →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinProgram table).segment_l1 0 = 1) ∧
-        (∀ idx : Fin table.table.length, 0 < idx.val →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinProgram table).segment_l1
-              idx.val = 0) := by
-  intro table h_table h_component
-  have h_main := addAddiSpinWitness_main_component_cases h_table h_component
-  subst table
-  exact ⟨fun _ => addAddiSpinMain_segment_l1_first, addAddiSpinMain_segment_l1_later⟩
-
 private theorem addAddiSpinMainOpBusInteraction_eval_at
     (env : Environment FGL) (row : MainRowWithRom FGL)
     (h_input : Eval.eval env (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar = row) :
@@ -1568,8 +1459,6 @@ def addAddiSpinAcceptedTrace : AcceptedZiskTrace 3 where
   mem_replay_source_covers := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   transitions_hold := addAddiSpinWitness_transitions
   main_height := addAddiSpinWitness_main_height
-  segment_l1_fixed := addAddiSpinWitness_segment_l1_fixed
-  main_step_index_fixed := addAddiSpinWitness_main_step_index_fixed
 
 theorem addAddiSpinAcceptedTrace_mainTable_eq :
     addAddiSpinAcceptedTrace.mainTable = addAddiSpinMainTable := by

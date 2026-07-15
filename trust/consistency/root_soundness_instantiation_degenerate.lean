@@ -11,7 +11,7 @@ The first concrete inhabitant of `ZiskFv.Compliance.AcceptedZiskTrace` fed throu
 This is the DEGENERATE base case: `numInstructions = 0`, every provider table empty.
 It exercises the whole witness-construction pipeline — the 11-table
 `EnsembleWitness` (`same_length`/`same_circuits`/`same_data`), `constraints_hold`,
-`transitions_hold`, `segment_l1_fixed`, and the first forward `BalancedChannels`
+    `transitions_hold`, and the first forward `BalancedChannels`
 proof — and applies `root_soundness` to the result. The `∀ i : Fin 0` conclusion
 is vacuous, so this establishes only that the quantified-over trace object is
 INHABITED and accepted; the non-vacuous single-ADD instance is #219/#220. No new
@@ -63,32 +63,6 @@ private theorem wit_tables_len_le_one (table : Table FGL)
     obtain ⟨i, rfl⟩ := ht
     simp [EnsembleWitness.tableAt, Table.table]
     split <;> simp
-
-/-- The only table of the degenerate witness carrying the Main component has no
-    rows. The provider tables are empty by construction; the single non-empty
-    table is the verifier, whose component exposes NO operation-bus interactions
-    (`verifierTable_interactionsWith_opBus_nil`) while Main's are a non-empty
-    singleton (`componentWithRomMemAndOpBus_interactionsWith_opBus`), so the
-    verifier's component cannot equal Main's. This makes `segment_l1_fixed`
-    vacuous. -/
-private theorem main_component_tables_empty (table : Table FGL)
-    (hmem : table ∈ wit.allTables)
-    (hcomp : table.component =
-      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 0 prog) :
-    table.table = [] := by
-  rw [EnsembleWitness.allTables, List.mem_cons] at hmem
-  rcases hmem with hv | ht
-  · exfalso
-    rw [hv, EnsembleWitness.verifierTable_component] at hcomp
-    have hv_nil :=
-      ZiskFv.AirsClean.FullEnsemble.verifierTable_interactionsWith_opBus_nil 0 prog
-    rw [hcomp,
-      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_opBus 0 prog] at hv_nil
-    exact absurd hv_nil (by simp)
-  · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at ht
-    obtain ⟨i, rfl⟩ := ht
-    simp [EnsembleWitness.tableAt, Table.table]
-    split <;> rfl
 
 /-- Any mutable-Mem component table in the degenerate witness is empty. The verifier table is
     ruled out by its empty MemBus interaction list, while every provider table is empty by
@@ -152,32 +126,8 @@ private theorem wit_transitions : wit.TransitionConstraints := by
     change Fin 0 at index
     exact Fin.elim0 index
 
-private theorem wit_segment_l1 :
-    ∀ table ∈ wit.allTables,
-      table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 0 prog →
-        (0 < table.table.length →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable prog table).segment_l1 0 = 1) ∧
-        (∀ idx : Fin table.table.length, 0 < idx.val →
-            (ZiskFv.AirsClean.FullEnsemble.mainOfTable prog table).segment_l1 idx.val = 0) := by
-  intro table hmem hcomp
-  have htab : table.table = [] := main_component_tables_empty table hmem hcomp
-  exact ⟨fun h => absurd h (by simp [htab]), fun idx _ => absurd idx.isLt (by simp [htab])⟩
-
-private theorem wit_main_step_index_fixed :
-    ∀ table ∈ wit.allTables,
-      table.component =
-          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 0 prog →
-        MainStepIndexFixedFacts 0 0 prog table := by
-  intro table hmem hcomp
-  exact
-    { main_step_eq_index := fun i => i.elim0
-      timestamp_bound := fun i => i.elim0
-      load_timestamp_toNat := fun i => i.elim0
-      store_timestamp_toNat := fun i => i.elim0 }
-
 /-- The degenerate accepted trace: empty program, all-empty witness, trivial
-    channel balance, vacuous transition / row-height / segment-fixed obligations. -/
+    channel balance, and vacuous transition / row-height obligations. -/
 private def trace : AcceptedZiskTrace 0 where
   programLength := 0
   program := prog
@@ -194,8 +144,6 @@ private def trace : AcceptedZiskTrace 0 where
   mem_replay_source_covers := fun h => absurd h wit_not_mutableMemPresent
   transitions_hold := wit_transitions
   main_height := by intro table _ _ i; exact i.elim0
-  segment_l1_fixed := wit_segment_l1
-  main_step_index_fixed := wit_main_step_index_fixed
 
 private def sail : SailTrace 0 := nofun
 
