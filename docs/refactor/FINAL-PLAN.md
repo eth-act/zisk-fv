@@ -620,6 +620,20 @@ cosmetic.
    capability.
 7. Gadget/infra PRs (#372 sha256, #406, bench/CI) — low relevance.
 
+### 8.3.1 Phase-2 seam check (2026-07-16)
+
+Checked upstream `main` at `1e563b9c` and PR #398 at `50f0366`, including
+`Air/Vm.lean` and `Air/OrderedChannel.lean`.  The upstream developments provide
+generic ordering, active-interaction, multiplicity, and pull/push matching
+machinery, but no reusable theorem identifies a ZisK operation-bus provider
+component/row, proves Main register-write lane placement, or packages
+opcode-specific Main pins.  Those conclusions depend on this project's
+full-ensemble component classification and ZisK Main/operation/memory message
+layouts.  The hand-rolled `AcceptedZiskTrace` seam lemmas are therefore retained;
+they are the project-specific specialization on top of Clean's generic balance
+facts.  PR #398 should still be adopted separately when the Clean pin is
+reconciled, but it does not replace these three derivations.
+
 ### 8.4 The transition-constraint divergence — resolve upstream-first
 
 The fork's `FlatComponent.transition` field duplicates a capability upstream

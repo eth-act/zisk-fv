@@ -1,3 +1,22 @@
+# Summary of changes for run 3b98c185-02f3-4cec-bed7-a7d0f8803d23
+Continued the Phase 2 accepted-trace ensemble-seam refactor without changing either root theorem or its trust surface.
+
+### Implemented
+- Added and proved `AcceptedZiskTrace.staticBinaryLogicProviderRowFacts` in `ZiskFv/Compliance/AcceptedZiskTrace/DerivedRowFacts.lean`.
+  - It handles the AND/OR/XOR shape family once at the accepted Clean ensemble seam.
+  - Generic channel-balance row selection comes from `opProviderRowFacts`.
+  - Impossible ArithMul, BinaryExtension, and BinaryAdd branches are eliminated only in the shape specialization.
+  - The surviving static-Binary row carries table/row membership, component identity, table `Spec`, and exact operation-bus matching.
+- Migrated all six AND/OR/XOR strong-export paths in `StepStrongAluArith.lean`—both register and immediate forms—to this seam fact instead of rebuilding balance through `main_request_logic_provided`.
+- Added the direct `SharedBundles` import required by the derived-row-facts module, removing reliance on accidental transitive imports.
+
+### Verification
+- Full `ZiskFv` build succeeds: 9012 jobs.
+- The modified files contain no `sorry` or `admit`.
+- `staticBinaryLogicProviderRowFacts` has only the permitted standard axiom closure: `propext`, `Classical.choice`, and `Quot.sound`.
+- Trust checks 1–12 and 14–16 pass. Check 13 cannot run in this submitted snapshot because the external source file `zisk/core/src/aeneas_extract.rs` is absent; this is unrelated to the Lean changes.
+- All changes are committed and pushed. Working tree is clean.
+
 # Summary of changes for run 322f340e-cba5-4f1f-881e-93544a29889c
 Implemented the Phase 2 ensemble-seam refactor and committed it as `66ca240` (`Derive row facts at accepted trace seam`). `ARISTOTLE_SUMMARY.md` was not modified.
 

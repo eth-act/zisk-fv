@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.AcceptedZiskTrace.MainTable
+import ZiskFv.Compliance.SharedBundles
 import ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridges
 
 /-!
@@ -15,6 +16,8 @@ layers:
 * `registerWriteLanes` derives Main's register-write lane relation for the
   concrete row selected by an instruction index.  Constructions no longer need
   to repeat the `mainTableRowAtOrZero`/`rowAt` transport proof.
+* `mainRowPins` packages the accepted trace's indexed Main activation/opcode
+  facts after transporting them to the canonical `mainOfTable` view.
 
 Both results are consequences of `AcceptedZiskTrace`: no new premise or trust
 surface is introduced.
@@ -221,6 +224,77 @@ theorem AcceptedZiskTrace.staticBinarySubProviderRowFacts
       trace.spec_holds providerTable h_providerTable, h_match_row⟩
   · obtain ⟨_providerRow, _h_row, _h_spec, _h_component, h_match⟩ := h_binaryAdd
     exact False.elim (binaryAdd_provider_branch_ne_staticBinarySub h_match h_op)
+
+/-- Specialize the generic provider branch to the static-Binary provider for
+Boolean logic operations.  This is the shape-level counterpart of
+`staticBinarySubProviderRowFacts`: balance and row selection stay generic while
+only the opcode-family branch eliminations are specialized. -/
+theorem AcceptedZiskTrace.staticBinaryLogicProviderRowFacts
+    {n : Nat} (trace : AcceptedZiskTrace n) (i : Fin n)
+    (h_active : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_AND
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_OR
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_XOR) :
+    ∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable trace.program trace.mainTable) i.val)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  obtain ⟨providerTable, h_providerTable, h_branch⟩ :=
+    trace.opProviderRowFacts i h_active
+  rcases h_branch with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_row, h_spec, h_component, h_match⟩ := h_arithMul
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryLogic
+        h_component h_spec h_match h_op)
+  · obtain ⟨providerRow, _h_row, h_spec, h_component, h_match⟩ := h_binExt
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinaryLogic
+        h_component h_spec h_match h_op)
+  · obtain ⟨providerRow, h_row, _h_spec, h_component, h_match⟩ := h_binary
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main
+            (mainOfTable trace.program trace.mainTable) i.val)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_row, h_component,
+      trace.spec_holds providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨_providerRow, _h_row, _h_spec, _h_component, h_match⟩ := h_binaryAdd
+    exact False.elim (binaryAdd_provider_branch_ne_staticBinaryLogic h_match h_op)
+
+/-- The canonical indexed Main row pins its own activation and opcode columns.
+This is the hypothesis-free seam fact; an opcode arm specializes the two indices
+using the decode equalities already derived from the accepted Main/ROM row. -/
+theorem AcceptedZiskTrace.mainRowPins
+    {n : Nat} (trace : AcceptedZiskTrace n) (i : Fin n) :
+    ZiskFv.Compliance.MainRowPins
+      (mainOfTable trace.program trace.mainTable) i.val
+      ((mainOfTable trace.program trace.mainTable).is_external_op i.val)
+      ((mainOfTable trace.program trace.mainTable).op i.val) := by
+  exact ⟨rfl, rfl⟩
+
+/-- Specialize the hypothesis-free Main pins to literals established by an
+accepted instruction arm's decode facts. -/
+theorem AcceptedZiskTrace.mainRowPinsOfEq
+    {n : Nat} (trace : AcceptedZiskTrace n) (i : Fin n)
+    (active opKind : FGL)
+    (h_active : (mainOfTable trace.program trace.mainTable).is_external_op i.val = active)
+    (h_op : (mainOfTable trace.program trace.mainTable).op i.val = opKind) :
+    ZiskFv.Compliance.MainRowPins
+      (mainOfTable trace.program trace.mainTable) i.val active opKind := by
+  exact ⟨h_active, h_op⟩
 
 /-- Main's concrete `c` memory-bus message has the register-write lane relation
 whenever the indexed Main row is in the arithmetic (`store_pc = 0`) mode. -/

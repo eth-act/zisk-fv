@@ -112,8 +112,9 @@ theorem stepStrong_sub
       h_component, h_table_spec, h_match⟩ :=
     trace.staticBinarySubProviderRowFacts
       i d.toDecode.h_main_active d.toDecode.h_main_op
-  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB :=
-    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
+  let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_SUB := by
+    simpa [m] using trace.mainRowPinsOfEq i 1 OP_SUB
+      d.toDecode.h_main_active d.toDecode.h_main_op
   have h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m i.val bus.e2 := by
     simpa [m, bus, busSub, mainRowWithRomSub] using
@@ -231,8 +232,8 @@ theorem stepStrong_and
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_logic_provided
-      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
+    trace.staticBinaryLogicProviderRowFacts
+      i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
@@ -346,8 +347,8 @@ theorem stepStrong_or
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_logic_provided
-      trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
+    trace.staticBinaryLogicProviderRowFacts
+      i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
@@ -461,8 +462,8 @@ theorem stepStrong_xor
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_logic_provided
-      trace i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
+    trace.staticBinaryLogicProviderRowFacts
+      i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
@@ -806,8 +807,8 @@ theorem stepStrong_andi
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_logic_provided
-      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
+    trace.staticBinaryLogicProviderRowFacts
+      i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_AND :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
@@ -923,8 +924,8 @@ theorem stepStrong_ori
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_logic_provided
-      trace i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
+    trace.staticBinaryLogicProviderRowFacts
+      i d.toDecode.h_main_active (Or.inr (Or.inl d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_OR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
@@ -1040,8 +1041,8 @@ theorem stepStrong_xori
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_logic_provided
-      trace i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
+    trace.staticBinaryLogicProviderRowFacts
+      i d.toDecode.h_main_active (Or.inr (Or.inr d.toDecode.h_main_op))
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_XOR :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
