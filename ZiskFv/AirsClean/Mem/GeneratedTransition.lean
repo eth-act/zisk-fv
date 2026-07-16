@@ -20,12 +20,13 @@ open Air.Flat
 /-- ZisK's Mem witness and fixed traces have one physical `2^22`-row domain. -/
 def memFixedCapacity : Nat := 4194304
 
-/-- Map the 15 effective Mem slots to the 13 raw witness slots followed by
-`SEGMENT_L1` and `__L1__`. -/
-private def memFixedLayout (slot : Fin 15) : Sum (Fin 13) (Fin 2) :=
-  if h_raw : slot.val < 13 then
+/-- Map the 19 effective Mem slots to 17 raw witness slots followed by
+`SEGMENT_L1` and `__L1__`. The extra raw slots carry the four bus-103 values
+that are source-linked to the generated Mem range hints. -/
+private def memFixedLayout (slot : Fin 19) : Sum (Fin 17) (Fin 2) :=
+  if h_raw : slot.val < 17 then
     .inl ⟨slot.val, h_raw⟩
-  else if h_segment_l1 : slot.val = 13 then
+  else if h_segment_l1 : slot.val = 17 then
     .inr ⟨0, by decide⟩
   else
     .inr ⟨1, by decide⟩
@@ -36,10 +37,10 @@ private def memFixedValues (_slot : Fin 2) (row : Fin memFixedCapacity) : FGL :=
 
 /-- Component-owned physical Mem fixed schema. `fixedAt` rotates by its actual
 domain, while `Table.fixed_domain` prevents a materialized table from wrapping. -/
-def memFixedColumns : IndexedFixedColumns FGL 13 where
+def memFixedColumns : IndexedFixedColumns FGL 17 where
   capacity := memFixedCapacity
   capacity_pos := by decide
-  effectiveWidth := 15
+  effectiveWidth := 19
   fixedWidth := 2
   layout := memFixedLayout
   values := memFixedValues
@@ -63,24 +64,59 @@ theorem indexedFixedColumns_smallDomain_rotation_regression :
       smallRotationRegressionColumns.fixedAt 0 2 = 0 := by
   constructor <;> rfl
 
-/-- Materialization preserves every raw Mem witness slot; the two
-    component-owned fixed cells are appended after this 13-cell prefix. -/
+set_option maxHeartbeats 4000000 in
+/-- Materialization preserves the original 13 raw Mem witness slots; the two
+    component-owned fixed cells follow the four range-channel cells. -/
 theorem memFixedColumns_materialize_raw
     (index : Nat) (raw : Array FGL) (slot : Fin 13) :
     (memFixedColumns.materialize index raw)[slot.val]'(by
-      change slot.val < 15
+      change slot.val < 19
       omega) = raw.getD slot.val 0 := by
-  simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout]
+  simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
+    dif_pos (by omega : slot.val < 17)]
 
-/-- The 13 raw witness cells of a Mem row. The component-owned fixed columns
-    are appended after this exact AIR witness layout. -/
+/-- The raw Mem witness row, with zero defaults for the four source-linked
+range cells. Constructors with real prover data use
+`memRawRowWithProverData`; the defaults preserve existing standalone-row
+regressions whose data is empty. -/
 def memRawRow (row : MemRow FGL) : Array FGL :=
   #[row.addr, row.step, row.sel, row.addr_changes, row.step_dual, row.sel_dual,
     row.value_0, row.value_1, row.wr, row.previous_step, row.increment_0,
-    row.increment_1, row.read_same_addr]
+    row.increment_1, row.read_same_addr, 0, 0, 0, 0]
 
-@[simp] theorem memRawRow_size (row : MemRow FGL) : (memRawRow row).size = 13 := by
+@[simp] theorem memRawRow_size (row : MemRow FGL) : (memRawRow row).size = 17 := by
   simp [memRawRow]
+
+/-- Materialize the four range-channel cells from exactly the same canonical
+`ProverData` keys used by the generated Mem sidecar decoder. -/
+def memRawRowWithProverData (data : ProverData FGL) (row : MemRow FGL) : Array FGL :=
+  #[row.addr, row.step, row.sel, row.addr_changes, row.step_dual, row.sel_dual,
+    row.value_0, row.value_1, row.wr, row.previous_step, row.increment_0,
+    row.increment_1, row.read_same_addr,
+    proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase0,
+    proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase1,
+    proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd0,
+    proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1]
+
+@[simp] theorem memRawRowWithProverData_size (data : ProverData FGL) (row : MemRow FGL) :
+    (memRawRowWithProverData data row).size = 17 := by
+  simp [memRawRowWithProverData]
+
+set_option maxHeartbeats 4000000 in
+/-- A selected Mem table row evaluates the first bus-103 raw cell at exactly
+the canonical sidecar value from its shared `ProverData`. -/
+theorem eval_memDistanceBase0Expr_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      memDistanceBase0Expr =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase0 := by
+  change
+    (memFixedColumns.materialize index (memRawRowWithProverData data row))[13]'(by
+      simp [IndexedFixedColumns.materialize, memFixedColumns]) = _
+  simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
+    memRawRowWithProverData]
 
 /-- Materializing a raw Mem row preserves its thirteen witness cells; the
     component-owned fixed cells are outside the `MemRow` input layout. -/
@@ -130,9 +166,22 @@ def memWindow (index : Nat) (previous current : Environment FGL) :
     im_0 := memSidecarIm0OfProverData current.data
     im_1 := memSidecarIm1OfProverData current.data }
 
+/-- The table-resident range cells are definitionally tied to the selected
+Mem table's canonical sidecar source. This is an existing-component transition
+fact, not an accepted-trace field or a new caller-supplied promise hypothesis. -/
+def memRangeSidecarBridge (current : Environment FGL) : Prop :=
+  current memDistanceBase0Expr =
+      proverDataScalar current.data MemRawSidecarDataKey.Segment.distanceBase0
+    ∧ current memDistanceBase1Expr =
+      proverDataScalar current.data MemRawSidecarDataKey.Segment.distanceBase1
+    ∧ current memDistanceEnd0Expr =
+      proverDataScalar current.data MemRawSidecarDataKey.Segment.distanceEnd0
+    ∧ current memDistanceEnd1Expr =
+      proverDataScalar current.data MemRawSidecarDataKey.Segment.distanceEnd1
+
 /-- All non-local generated Mem equations at one row, sourced from canonical
 live data and the component's fixed schema. -/
-def generatedTransition (columns : IndexedFixedColumns FGL 13)
+def generatedTransition (columns : IndexedFixedColumns FGL 17)
     (index : Nat) (previous current : Environment FGL) : Prop :=
   let mem := memWindow index previous current
   let segment := memSegmentColumnsOfProverDataAndFixed current.data
@@ -141,5 +190,6 @@ def generatedTransition (columns : IndexedFixedColumns FGL 13)
     (fun row => columns.fixedAt MemFixedColumn.l1 row)
   ZiskFv.Airs.Mem.segmentResidualEveryRow segment mem index
     ∧ ZiskFv.Airs.Mem.permutation_every_row segment permutation mem index
+    ∧ memRangeSidecarBridge current
 
 end ZiskFv.AirsClean.Mem

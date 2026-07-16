@@ -6,6 +6,7 @@ import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.ArithMul.Circuit
 import ZiskFv.AirsClean.ArithDiv.Circuit
 import ZiskFv.AirsClean.Mem.Circuit
+import ZiskFv.AirsClean.SpecifiedRangesSlice
 import ZiskFv.AirsClean.MemAlign.Circuit
 import ZiskFv.AirsClean.MemAlignByte.Circuit
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
@@ -42,6 +43,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 /-- The sound channel-balanced backbone of the full RV64IM Clean ensemble:
@@ -96,37 +98,56 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
           ZiskFv.AirsClean.ArithDiv.circuit,
           ZiskFv.AirsClean.ArithDiv.arithDivElaborated])
+    |>.addTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
+    |>.addFinishedChannel SpecifiedRangesSliceChannel.toRaw
     |>.addTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
         (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
-          ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-          ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated])
+          ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
         (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
-          ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-          ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated])
+          ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
     |>.addTable ZiskFv.AirsClean.MemAlign.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
           simp)
-        (by simp [circuit_norm])
+        (by
+          intro channel h
+          change channel ∈ [SpecifiedRangesSliceChannel.toRaw] at h
+          simp only [List.mem_singleton] at h
+          subst channel
+          change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
+          simp only [List.mem_singleton]
+          intro h_channel
+          have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h_channel
+          change "SpecifiedRangesSlice103" = "MemoryBus" at h_name
+          simp at h_name)
     |>.addTable ZiskFv.AirsClean.MemAlignByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
           ZiskFv.AirsClean.MemAlignByte.circuit,
           ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
+        (by simp [circuit_norm, SpecifiedRangesSliceChannel,
+          ZiskFv.AirsClean.MemAlignByte.component,
           ZiskFv.AirsClean.MemAlignByte.circuit,
           ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
     |>.addTable ZiskFv.AirsClean.MemAlignReadByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
           ZiskFv.AirsClean.MemAlignReadByte.circuit,
           ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
+        (by simp [circuit_norm, SpecifiedRangesSliceChannel,
+          ZiskFv.AirsClean.MemAlignReadByte.component,
           ZiskFv.AirsClean.MemAlignReadByte.circuit,
           ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
     |>.addTable ZiskFv.AirsClean.RegisterBoundary.component
         (by simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
           ZiskFv.AirsClean.RegisterBoundary.circuit,
           ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+        (by simp [circuit_norm, SpecifiedRangesSliceChannel,
+          ZiskFv.AirsClean.RegisterBoundary.component,
           ZiskFv.AirsClean.RegisterBoundary.circuit,
           ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
     |>.addFinishedChannel OpBusChannel.toRaw
@@ -143,7 +164,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
   clear h_mem
   simp only [fullRv64imSoundEnsemble, circuit_norm, Ensemble.allTables] at h
   rcases h with
-    h | h | h | h | h | h | h | h | h | h | h | h <;>
+    h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     (rw [h]
      trivial)
 

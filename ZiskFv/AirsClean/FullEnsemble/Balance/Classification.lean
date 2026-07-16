@@ -5,6 +5,7 @@ import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.TraceSpec
+import ZiskFv.AirsClean.SpecifiedRangesSlice
 
 namespace ZiskFv.AirsClean.FullEnsemble
 
@@ -12,6 +13,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 
@@ -33,6 +35,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.MemAlignByte.component
       ∨ component = ZiskFv.AirsClean.MemAlign.component
       ∨ component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+      ∨ component = ZiskFv.AirsClean.SpecifiedRangesSlice.component
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
       ∨ component = arithMulProviderComponent
       ∨ component = shiftStaticLookupComponent
@@ -162,7 +165,8 @@ theorem opBus_balanced_of_witness
     (h_balanced : witness.BalancedChannels) :
     BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw) := by
   have h := h_balanced OpBusChannel.toRaw (by
-    change OpBusChannel.toRaw ∈ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change OpBusChannel.toRaw ∈
+      [MemBusChannel.toRaw, OpBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -175,7 +179,8 @@ theorem memBus_balanced_of_witness
     (h_balanced : witness.BalancedChannels) :
     BalancedInteractions (witness.interactionsWith MemBusChannel.toRaw) := by
   have h := h_balanced MemBusChannel.toRaw (by
-    change MemBusChannel.toRaw ∈ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change MemBusChannel.toRaw ∈
+      [MemBusChannel.toRaw, OpBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h

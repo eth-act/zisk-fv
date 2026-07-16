@@ -19,6 +19,7 @@ open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 open ZiskFv.Compliance.AddSpinWitness
 open ZiskFv.Compliance.Instantiation
@@ -366,6 +367,7 @@ theorem addAddiSpinEnsemble_tables :
       , ZiskFv.AirsClean.MemAlignByte.component
       , ZiskFv.AirsClean.MemAlign.component
       , ZiskFv.AirsClean.Mem.componentWithDualMemBus
+      , ZiskFv.AirsClean.SpecifiedRangesSlice.component
       , ZiskFv.AirsClean.ArithDiv.component
       , ZiskFv.AirsClean.ArithMul.componentWithArithTable
       , ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
@@ -380,6 +382,7 @@ def addAddiSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component
   , emptyComponentTable ZiskFv.AirsClean.MemAlign.component
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
   , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
@@ -397,7 +400,7 @@ def addAddiSpinWitness : EnsembleWitness addAddiSpinEnsemble where
       SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 11 := by
+    have hi' : i < 12 := by
       simpa [addAddiSpinTables] using hi
     interval_cases i <;>
       simp [addAddiSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
@@ -410,7 +413,7 @@ def addAddiSpinWitness : EnsembleWitness addAddiSpinEnsemble where
     simp [addAddiSpinTables, addAddiSpinBoundaryTable, registerBoundaryRowsTableOf,
       emptyComponentTable, addAddiSpinBinaryAddTable, binaryAddRowsTable,
       addAddiSpinMainTable, mainRowsTable] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rfl
 
 theorem addAddiSpinWitness_tables :
@@ -422,12 +425,13 @@ theorem addAddiSpinWitness_table_constraints :
   intro table h_table
   rw [addAddiSpinWitness_tables] at h_table
   simp [addAddiSpinTables] at h_table
-  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact addAddiSpinBoundaryTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignByte.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlign.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentWithArithTable
   · exact emptyComponentTable_constraints
@@ -624,7 +628,7 @@ theorem addAddiSpinWitness_transitions : addAddiSpinWitness.TransitionConstraint
     simp [EnsembleWitness.verifierTable]
   · rw [addAddiSpinWitness_tables] at h_table
     simp [addAddiSpinTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
       simp [addAddiSpinBoundaryTable, registerBoundaryRowsTableOf,
@@ -633,6 +637,7 @@ theorem addAddiSpinWitness_transitions : addAddiSpinWitness.TransitionConstraint
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignByte.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlign.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentWithArithTable
     · exact emptyComponentTable_transitions
@@ -676,7 +681,9 @@ private theorem addAddiSpinWitness_main_component_cases
     exact not_addAddiSpin_main_component_of_width_ne (by decide) h_component
   · rw [addAddiSpinWitness_tables] at h_table
     simp [addAddiSpinTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_addAddiSpin_main_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_addAddiSpin_main_component_of_name_ne (by decide) h_component
     · exfalso
@@ -717,13 +724,14 @@ private theorem addAddiSpinWitness_mutable_mem_component_tables_empty
     exact absurd h_verifier_nil (by simp)
   · rw [addAddiSpinWitness_tables] at h_table
     simp [addAddiSpinTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_addAddiSpin_mutable_mem_component_of_name_ne (by decide) h_component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignReadByte.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignByte.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlign.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exact emptyComponentTable_table ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentWithArithTable
     · exact emptyComponentTable_table ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
@@ -1432,16 +1440,71 @@ theorem addAddiSpinWitness_memBus_balanced :
   simpa [addAddiSpinReducedMemBusInteractions, List.append_assoc] using
     addAddiSpinReducedMemBusInteractions_balanced
 
+private theorem addAddiSpinRangeChannel_ne_memBus :
+    SpecifiedRangesSliceChannel.toRaw ≠ MemBusChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "SpecifiedRangesSlice103" = "MemoryBus" at h_name
+  simp at h_name
+
+private theorem addAddiSpinRangeChannel_ne_opBus :
+    SpecifiedRangesSliceChannel.toRaw ≠ OpBusChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "SpecifiedRangesSlice103" = "OperationBus" at h_name
+  simp at h_name
+
+private theorem addAddiSpinBoundary_interactionsWith_rangeChannel_nil :
+    addAddiSpinBoundaryTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
+  simp only [List.mem_singleton]
+  exact addAddiSpinRangeChannel_ne_memBus
+
+private theorem addAddiSpinBinaryAdd_interactionsWith_rangeChannel_nil :
+    addAddiSpinBinaryAddTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw]
+  simp only [List.mem_singleton]
+  exact addAddiSpinRangeChannel_ne_opBus
+
+private theorem addAddiSpinMain_interactionsWith_rangeChannel_nil :
+    addAddiSpinMainTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+  intro h
+  simp only [List.mem_cons] at h
+  rcases h with h | h
+  · exact addAddiSpinRangeChannel_ne_memBus h
+  · rcases h with h | h
+    · exact addAddiSpinRangeChannel_ne_opBus h
+    · simp at h
+
+theorem addAddiSpinWitness_rangeChannel_balanced :
+    BalancedInteractions
+      (addAddiSpinWitness.tables.flatMap (·.interactionsWith SpecifiedRangesSliceChannel.toRaw)) := by
+  rw [addAddiSpinWitness_tables]
+  simp [addAddiSpinTables, addAddiSpinBoundary_interactionsWith_rangeChannel_nil,
+    addAddiSpinBinaryAdd_interactionsWith_rangeChannel_nil,
+    addAddiSpinMain_interactionsWith_rangeChannel_nil, emptyComponentTable_interactionsWith]
+  refine ⟨?_, ?_⟩
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro msg
+    simp [balanceOf]
+
 theorem addAddiSpinWitness_balancedChannels : addAddiSpinWitness.BalancedChannels := by
   refine addAddiSpinWitness.balancedChannels_of_tables addAddiSpinEnsemble_verifier ?_
   intro channel h_channel
   simp [addAddiSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
-  rcases h_channel with rfl | rfl
+  rcases h_channel with rfl | rfl | rfl
   · change BalancedInteractions addAddiSpinMemBusInteractions
     exact addAddiSpinWitness_memBus_balanced
   · exact addAddiSpinWitness_opBus_balanced
+  · exact addAddiSpinWitness_rangeChannel_balanced
 
 def addAddiSpinAcceptedTrace : AcceptedZiskTrace 3 where
   programLength := 3

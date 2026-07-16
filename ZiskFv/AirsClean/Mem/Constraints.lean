@@ -1,7 +1,10 @@
 import ZiskFv.AirsClean.Mem.Spec
+import ZiskFv.AirsClean.Mem.SidecarColumns
+import ZiskFv.AirsClean.Mem.RangeWiring
 import ZiskFv.AirsClean.RangeTables
 import ZiskFv.Airs.Mem
 import ZiskFv.Channels.MemoryBus
+import ZiskFv.Channels.SpecifiedRanges
 import Clean.Circuit.Basic
 
 /-!
@@ -26,6 +29,7 @@ namespace ZiskFv.AirsClean.Mem
 open Goldilocks
 open Circuit (assertZero lookup)
 open ZiskFv.AirsClean.RangeTables
+open ZiskFv.Channels.SpecifiedRanges
 
 /-- The 9 F-typed Mem constraints emitted per row. Returns `Unit`
     because Mem's main constraints introduce no fresh witnesses. -/
@@ -408,5 +412,47 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
   channelsLawful := by
     simp only [circuit_norm, memWithDualMemBus, main, rowRangeLookups,
       gatedDualStepDeltaRangeLookup, memBusMessageExpr, memBusDualMessageExpr, MemBusChannel]
+
+/-- The four source-linked bus-103 range messages retained by the validated
+Mem c29--c32 manifest links. `proves := false` is a consumer-side lookup, so
+these are Clean pulls whose membership guarantee is supplied by balance. -/
+@[reducible]
+def memRangeMessages : List (SpecifiedRangeMessage (Expression FGL)) :=
+  rangeMessages
+
+@[circuit_norm]
+def memWithDualMemBusAndRange (row : Var MemRow FGL) : Circuit FGL Unit := do
+  memWithDualMemBus row
+  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceBase0Wiring.source)
+  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceBase1Wiring.source)
+  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceEnd0Wiring.source)
+  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceEnd1Wiring.source)
+
+/-- Dual Mem component plus the source-linked bus-103 consumer interactions.
+The range cells are table-resident raw values pinned by `generatedTransition`.
+-/
+@[reducible]
+def memWithDualMemBusAndRangeElaborated : ElaboratedCircuit FGL MemRow unit where
+  name := "MemWithDualMemBusAndRange"
+  main := memWithDualMemBusAndRange
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithGuarantees := [SpecifiedRangesSliceChannel.toRaw]
+  channelsWithRequirements := [MemBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
+      , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ] ++
+    expose SpecifiedRangesSliceChannel
+      [ SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceBase0Expr)
+      , SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceBase1Expr)
+      , SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceEnd0Expr)
+      , SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceEnd1Expr) ]
+  channelsLawful := by
+    simp [circuit_norm, memWithDualMemBusAndRange, memWithDualMemBus, main,
+      rowRangeLookups, gatedDualStepDeltaRangeLookup, memBusMessageExpr,
+      memBusDualMessageExpr, memDistanceMessage, memDistanceBase0Expr,
+      memDistanceBase1Expr, memDistanceEnd0Expr, memDistanceEnd1Expr,
+      MemBusChannel, SpecifiedRangesSliceChannel]
 
 end ZiskFv.AirsClean.Mem
