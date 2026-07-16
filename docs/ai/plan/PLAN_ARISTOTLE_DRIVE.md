@@ -44,9 +44,20 @@ document is only about how to drive it.
       entire working tree with its contents, then read REFACTOR_N_PROMPT.md at its root
       and carry out that work order in full."
    ```
-3. **Monitor** — background watcher, harness notifies on exit:
+3. **Monitor** — background watcher, harness notifies on exit. Hard-won details: the
+   CLI's retry path emits to **stderr** (capture `2>&1` or the state is invisible), DNS
+   blips must not kill the loop, the state can be `COMPLETE_WITH_ERRORS` (still done —
+   e.g. only the pre-authorized check-13 gap), and the loop must require a task id
+   different from the previous turn's before accepting a terminal state:
    ```bash
-   until aristotle show 9c5aee26-… | head -1 | grep -qE 'COMPLETE|FAILED'; do sleep 600; done
+   old=<previous task id>; proj=9c5aee26-…
+   while :; do
+     out=$(aristotle show "$proj" 2>&1) || true
+     tid=$(printf '%s\n' "$out" | grep -m1 '^Task:' | awk '{print $2}')
+     printf '%s\n' "$out" | head -1 | grep -qE 'COMPLETE|FAILED' && [ -n "$tid" ] \
+       && [ "$tid" != "$old" ] && { printf 'turn done: %s\n' "$tid"; break; }
+     sleep 600
+   done
    ```
    After a session restart, recover with `aristotle list` + `show`.
 4. **Receive** — `aristotle download 9c5aee26-… --destination <scratch>/turn-N.tar.gz`;
