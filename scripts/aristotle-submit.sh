@@ -21,8 +21,13 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "warning: worktree has uncommitted changes; submitting HEAD without them." >&2
 fi
 
+# NOTE: `aristotle submit` always creates a NEW project (named after this
+# staging dir's basename). To continue an existing project with its context,
+# use `aristotle continue <project-id> <prompt>` instead — no staging needed,
+# but beware: the continued project's server-side tree may be stale.
 root="$(git rev-parse --show-toplevel)"
-stage="$(mktemp -d "${TMPDIR:-/tmp}/aristotle-submit.XXXXXX")"
+branch="$(git rev-parse --abbrev-ref HEAD)"
+stage="$(mktemp -d "${TMPDIR:-/tmp}/zisk-fv-${branch//\//-}.XXXXXX")"
 trap 'rm -rf "$stage"' EXIT
 
 git -C "$root" archive HEAD | tar -x -C "$stage"

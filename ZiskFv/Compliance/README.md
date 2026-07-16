@@ -16,8 +16,11 @@ see `docs/refactor/05-inconsistencies-and-correctness.md` C4.)
   wrapper (it imports `Compliance.Wrappers.<Op>`), not something the wrapper
   consumes — the dependency runs `EquivCore → Wrappers → Equivalence`. The
   wrapper's parameter surface is the *minimal* caller-burden remaining after
-  discharge; that surface is drift-guarded by
-  `trust/generated/baseline-wrapper-caller-burden.txt`.
+  discharge. (The generated caller-burden ledgers that once drift-guarded this
+  surface were retired when the discharge campaign reached 0 project axioms —
+  see the retirement note in `trust/README.md`; the kept axiom-closure
+  baselines under `trust/generated/` mechanically prevent soundness
+  regression.)
 
 The global theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder). `OpEnvelope`

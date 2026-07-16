@@ -2,7 +2,12 @@
 
 ## Where you are — read this before touching anything
 
-You are on branch `refactor-1`, and **this tree is the current source of truth**.
+**The tree delivered with this prompt is the current source of truth** (it is
+branch `refactor-1` of the origin repository). You may receive it either as a
+fresh project checkout or as a snapshot tarball attached to a continue prompt.
+In the tarball case: replace your entire working tree with the tarball's
+contents before doing anything else — your prior local repository state
+(including your own earlier commits) is outdated and must not be trusted.
 Your previous run was seeded from a stale lineage: its export silently reverted
 two merged main PRs (#253 Mem row ranges / #254 indexed fixed columns), the
 Clean-pin sync, and a README fix. That damage was repaired during integration;
@@ -32,7 +37,7 @@ Consequences you must respect:
 
 Done (this branch): 2.1's generic provider fact + the SUB pilot specialization,
 and the `registerWriteLanes` half of 2.2, consumed inside `StepStrong*` only.
-**No `equiv_*`/wrapper signature has changed yet and no baseline has shrunk.**
+**No `equiv_*`/wrapper signature has changed yet.**
 
 Your task is the remainder, per `docs/refactor/FINAL-PLAN.md` §5.2 and §9
 Phase 2 (read the corrected plan, not your memory of it):
@@ -54,10 +59,15 @@ Phase 2 (read the corrected plan, not your memory of it):
    derivable at the seam (`providerTable`, `providerRow`, `h_component`,
    `h_table_spec`, `h_match`, `h_lane_rd`, and any pins covered by
    `main_row_pins`), and feed the derived facts from `StepStrong*` instead.
-   The exit criterion is that
-   `trust/generated/baseline-wrapper-caller-burden.txt` **shrinks**. Regenerate
-   it with the trust-gate tooling; never hand-edit a baseline, and a PR that
-   grows any baseline is wrong by definition.
+   Note: the generated caller-burden *ledgers* were retired at 0 project
+   axioms (see the retirement note in `trust/README.md`) —
+   `trust/generated/baseline-wrapper-caller-burden.txt` no longer exists and
+   you must **not** recreate it or any other baseline. The exit criterion is:
+   (a) the touched `equiv_*`/wrapper theorem signatures demonstrably lose the
+   derived binders — report exact before/after parameter counts per theorem;
+   (b) every existing file under `trust/generated/` is byte-unchanged (they
+   guard axiom closures and the global binder list, which this work must not
+   affect); (c) the full gate suite stays green.
 4. **2.4 — roll across the remaining shapes/families**, one family per commit,
    keeping the build green at every commit.
 
@@ -75,8 +85,8 @@ Phase 2 (read the corrected plan, not your memory of it):
 - Gates before you claim completion, all green:
   `lake build` (full), `trust/scripts/check-all.sh`,
   `trust/scripts/check-all-semantic.sh`.
-- Commit in reviewable per-family chunks with real commit messages. Do not
-  amend or rewrite the existing commits on this branch.
+- Commit in reviewable per-family chunks with real commit messages, always as
+  new commits on top of the provided state; never rewrite or revert it.
 - Prepend your run summary to `ARISTOTLE_SUMMARY.md` as usual, and state
-  plainly in it which of 2.2/2.3/2.4 you completed and what the caller-burden
-  baseline count was before and after.
+  plainly in it which of 2.2/2.3/2.4 you completed, with exact before/after
+  parameter counts for every theorem signature you shrank.
