@@ -301,9 +301,10 @@ theorem construction_andi_sound_claimed_dead
         m providerInput i.val andi_input.imm h_matches h_m32_zero h_match
         h_andi_subset
   exact ZiskFv.Compliance.equiv_ANDI
-    state andi_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
-    h_input_r1_row h_input_imm_row h_andi_subset h_lane_rd promises
+    state andi_input r1 rd imm m i.val bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match,
+        pins, h_lane_rd⟩
+    h_input_r1_row h_input_imm_row h_andi_subset promises
 
 /-- Sound ORI construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE ORI) = (bus_effect …).2`.
@@ -480,9 +481,10 @@ theorem construction_ori_sound_claimed_dead
         m providerInput i.val ori_input.imm h_matches h_m32_zero h_match
         h_ori_subset
   exact ZiskFv.Compliance.equiv_ORI
-    state ori_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
-    h_input_r1_row h_input_imm_row h_ori_subset h_lane_rd promises
+    state ori_input r1 rd imm m i.val bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match,
+        pins, h_lane_rd⟩
+    h_input_r1_row h_input_imm_row h_ori_subset promises
 
 /-- Sound XORI construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE XORI) = (bus_effect …).2`.
@@ -661,9 +663,10 @@ theorem construction_xori_sound_claimed_dead
         m providerInput i.val xori_input.imm h_matches h_m32_zero h_match
         h_xori_subset
   exact ZiskFv.Compliance.equiv_XORI
-    state xori_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
-    h_input_r1_row h_input_imm_row h_xori_subset h_lane_rd promises
+    state xori_input r1 rd imm m i.val bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match,
+        pins, h_lane_rd⟩
+    h_input_r1_row h_input_imm_row h_xori_subset promises
 
 /-- Sound SLTI construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE SLTI) = (bus_effect …).2`.
@@ -836,9 +839,10 @@ theorem construction_slti_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r1) slti_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTI
-    state slti_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match h_m32_zero
-    h_input_r1_row h_slti_subset h_lane_rd promises
+    state slti_input r1 rd imm m i.val bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match,
+        pins, h_lane_rd⟩
+    h_m32_zero h_input_r1_row h_slti_subset promises
 
 /-- Sound SLTIU construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE SLTIU) = (bus_effect …).2`.
@@ -1011,8 +1015,9 @@ theorem construction_sltiu_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r1) sltiu_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTIU
-    state sltiu_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match h_m32_zero
-    h_input_r1_row h_sltiu_subset h_lane_rd promises
+    state sltiu_input r1 rd imm m i.val bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match,
+        pins, h_lane_rd⟩
+    h_m32_zero h_input_r1_row h_sltiu_subset promises
 
 end ZiskFv.Compliance

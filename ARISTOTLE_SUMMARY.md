@@ -1,3 +1,71 @@
+# Summary of changes for run 8e2b9014-647a-42e6-ba5a-db6d87f489b2
+Implemented and verified a substantial partial Phase 2.3/2.4 refactor, with the exact per-item status recorded at the top of `ARISTOTLE_SUMMARY.md`.
+
+Completed:
+- Replaced the working tree with the supplied source-of-truth snapshot.
+- Shrunk all SUB/AND/OR/XOR/SLT/SLTU RTYPE wrapper and canonical surfaces using `StaticBinaryRTypeEvidence`.
+- Shrunk all ANDI/ORI/XORI/SLTI/SLTIU ITYPE wrapper and canonical surfaces using `StaticBinaryProviderEvidence`.
+- Updated the corresponding construction and dispatch callers.
+- Added `AcceptedZiskTrace.staticBinaryCompareProviderRowFacts` and migrated SLT/SLTU strong exports away from rebuilding channel balance.
+- Confirmed branch wrappers have none of the targeted provider/pin/lane binders.
+
+Verification:
+- Full `lake build` passes (9012 jobs), including the unchanged audit golden tests.
+- Semantic trust gate passes all 16 checks, including 824 extraction/decode closure checks.
+- Source trust checks 1–12 and 14–16 pass; check 13 is precisely blocked by the supplied snapshot omitting `zisk/core/src/aeneas_extract.rs`, as anticipated by the work order.
+- `trust/generated/`, root theorem files, audit surface, and build pins remain unchanged.
+- Changes are committed and pushed.
+
+The requested all-family rollout was not completed: Shift, ADD_RTYPEW, DIVU, Remaining, Misc, NoMemOrSimple, LDSD, and final dead-helper cleanup remain. `ARISTOTLE_SUMMARY.md` reports these honestly as not reached and includes the completed per-theorem before/after parameter counts and design choices.
+
+# Summary of changes for refactor-3 Phase 2.3/2.4 continuation (2026-07-16)
+
+This run made a verified partial implementation of the 12-item work order. It did **not** complete the full requested roll-out; the uncompleted items are called out explicitly rather than being represented as done.
+
+## Per-item status
+
+| # | Family / task | Status | Detail |
+|---|---|---|---|
+| 1 | RTYPE | **Done for SUB/AND/OR/XOR/SLT/SLTU** | Added one dependent static-Binary evidence package; all eight seam-derived loose arguments (`providerTable`, `providerRow`, component/spec/row/match, pins, rd lane) are now one package on the six wrapper and canonical surfaces. Updated construction and dispatch callers. Added and consumed `staticBinaryCompareProviderRowFacts`; SLT/SLTU no longer rebuild balance through `main_request_compare_provided`. ADD remains owned by item 4. |
+| 2 | ITYPE | **Done for ANDI/ORI/XORI/SLTI/SLTIU** | Added a common static-Binary provider evidence package; removed the seven common provider/pin/lane binders from all five wrappers and canonicals while retaining genuine opcode-specific input/immediate facts. Updated construction and dispatch callers. |
+| 3 | Shift | **Not reached** | The twelve BinaryExtension wrappers still expose the listed provider/pin/lane arguments. No statement was weakened and no replacement premise was added. |
+| 4 | ADD_RTYPEW | **Not reached** | ADD/ADDI/ADDW/ADDIW/SUBW and their BinaryAdd/static-Binary alternatives remain unchanged. |
+| 5 | DIVU | **Not reached** | The ArithMul specialization and DIVU surface migration remain outstanding. |
+| 6 | Remaining | **Not reached** | M-extension and other `Dispatch/Remaining.lean` surfaces remain unchanged. |
+| 7 | Misc | **Not reached** | No Misc-family wrapper signatures were changed. |
+| 8 | NoMemOrSimple | **Not reached** | No NoMemOrSimple-family wrapper signatures were changed. |
+| 9 | Branch | **No applicable listed binders found** | The six branch wrappers use `BranchInstrOperands` and `BranchPromises`; they do not expose `providerTable`, `providerRow`, component/spec/match, rd lane, or `MainRowPins`. EquivCore nextPC was untouched. |
+| 10 | LDSD | **Not reached** | No load/store timeline binder was forced or removed. |
+| 11 | Cleanup | **Not reached** | No `main_request_*` theorem was deleted. Existing consumers remain and require a later zero-consumer sweep after the remaining migrations. |
+| 12 | Final sweep | **Partial** | Full build and all available trust checks pass as detailed below; the requested all-family parameter table cannot honestly be marked complete because items 3–8 and 10–11 remain. |
+
+## Parameter counts (individual explicit theorem parameters)
+
+The design choice for completed families was **(a)**: each wrapper consumes one dependent evidence package. The package is assembled by existing trace/construction callers; no new independent proposition or trust marker was introduced.
+
+| Theorem(s) | Before | After | Change |
+|---|---:|---:|---:|
+| `equiv_SUB`, `equiv_AND`, `equiv_OR`, `equiv_XOR`, `equiv_SLT`, `equiv_SLTU` (wrapper and canonical each) | 19 | 10 | −9 |
+| `equiv_ANDI`, `equiv_ORI`, `equiv_XORI` (wrapper and canonical each) | 20 | 14 | −6 |
+| `equiv_SLTI`, `equiv_SLTIU` (wrapper and canonical each) | 19 | 13 | −6 |
+
+The RTYPE package includes the two operand-row equalities because those have a uniform type. The ITYPE package intentionally stops at provider selection/pins/rd-lane; immediate routing and Main subset facts remain explicit genuine per-opcode data.
+
+## New reusable facts and structures
+
+- `StaticBinaryProviderEvidence`
+- `StaticBinaryRTypeEvidence`
+- `AcceptedZiskTrace.staticBinaryCompareProviderRowFacts`
+
+## Verification
+
+- `lake build`: **passed**, 9012 jobs; this includes the untouched `ZiskFv/Audit.lean` golden tests.
+- `trust/scripts/check-all.sh`: checks **1–12 and 14–16 passed**. Check 13 alone could not execute because the delivered snapshot has no `zisk/core/src/aeneas_extract.rs`, exactly the pre-authorized snapshot limitation.
+- `trust/scripts/check-all-semantic.sh`: **all 16 checks passed**, including all 824 extraction/decode raw closures.
+- `trust/generated/`: byte-for-byte unchanged.
+- `ZiskFv/Audit.lean`, both root theorem source files/statements, build pins, and lockfiles: untouched.
+- Modified proof sources contain no `sorry` or `admit`.
+
 # Summary of changes for run 3b98c185-02f3-4cec-bed7-a7d0f8803d23
 Continued the Phase 2 accepted-trace ensemble-seam refactor without changing either root theorem or its trust surface.
 

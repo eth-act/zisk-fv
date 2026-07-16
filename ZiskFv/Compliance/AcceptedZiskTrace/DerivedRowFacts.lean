@@ -274,6 +274,53 @@ theorem AcceptedZiskTrace.staticBinaryLogicProviderRowFacts
   · obtain ⟨_providerRow, _h_row, _h_spec, _h_component, h_match⟩ := h_binaryAdd
     exact False.elim (binaryAdd_provider_branch_ne_staticBinaryLogic h_match h_op)
 
+/-- Specialize the generic provider branch to the static-Binary provider for
+signed and unsigned comparison operations. -/
+theorem AcceptedZiskTrace.staticBinaryCompareProviderRowFacts
+    {n : Nat} (trace : AcceptedZiskTrace n) (i : Fin n)
+    (h_active : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_LT
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_LTU) :
+    ∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable trace.program trace.mainTable) i.val)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  obtain ⟨providerTable, h_providerTable, h_branch⟩ :=
+    trace.opProviderRowFacts i h_active
+  rcases h_branch with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_row, h_spec, h_component, h_match⟩ := h_arithMul
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryCompare
+        h_component h_spec h_match h_op)
+  · obtain ⟨providerRow, _h_row, h_spec, h_component, h_match⟩ := h_binExt
+    exact False.elim
+      (staticBinaryExtension_provider_branch_ne_staticBinaryCompare
+        h_component h_spec h_match h_op)
+  · obtain ⟨providerRow, h_row, _h_spec, h_component, h_match⟩ := h_binary
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main
+            (mainOfTable trace.program trace.mainTable) i.val)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.Binary.opBusMessage
+              (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_row, h_component,
+      trace.spec_holds providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨_providerRow, _h_row, _h_spec, _h_component, h_match⟩ := h_binaryAdd
+    exact False.elim
+      (binaryAdd_provider_branch_ne_staticBinaryCompare h_match h_op)
+
 /-- The canonical indexed Main row pins its own activation and opcode columns.
 This is the hypothesis-free seam fact; an opcode arm specializes the two indices
 using the decode equalities already derived from the accepted Main/ROM row. -/

@@ -32,29 +32,10 @@ lemma equiv_AND
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : matches_entry (opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_input_r1_row : and_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_input_r2_row : and_input.r2_val =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (evidence : ZiskFv.Compliance.StaticBinaryRTypeEvidence
+      m r_main bus OP_AND and_input.r1_val and_input.r2_val)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
         (PureSpec.execute_RTYPE_and_pure and_input).nextPC
@@ -65,6 +46,8 @@ lemma equiv_AND
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.AND))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  rcases evidence with ⟨providerTable, providerRow, h_component, h_table_spec,
+    h_provider_row, h_match, h_input_r1_row, h_input_r2_row, pins, h_lane_rd⟩
   let row :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)

@@ -32,31 +32,19 @@ theorem equiv_ORI
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
+    (evidence : ZiskFv.Compliance.StaticBinaryProviderEvidence
+      m r_main bus OP_OR)
     (h_input_r1_row : ori_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
         (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+          (evidence.providerTable.environment evidence.providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 ori_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
         (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+          (evidence.providerTable.environment evidence.providerRow)))
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
         (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
@@ -68,6 +56,8 @@ theorem equiv_ORI
         (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rcases evidence with ⟨providerTable, providerRow, h_component, h_table_spec,
+    h_provider_row, h_match, pins, h_lane_rd⟩
   let row :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)

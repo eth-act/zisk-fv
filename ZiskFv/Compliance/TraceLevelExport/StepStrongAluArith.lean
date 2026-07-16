@@ -578,8 +578,8 @@ theorem stepStrong_slt
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_compare_provided
-      trace i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
+    trace.staticBinaryCompareProviderRowFacts
+      i d.toDecode.h_main_active (Or.inl d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LT :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :
@@ -693,8 +693,8 @@ theorem stepStrong_sltu
   let bus := busSub trace i (Pilot.execRowOf trace i)
   obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
       h_component, h_table_spec, h_match⟩ :=
-    main_request_compare_provided
-      trace i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
+    trace.staticBinaryCompareProviderRowFacts
+      i d.toDecode.h_main_active (Or.inr d.toDecode.h_main_op)
   let pins : ZiskFv.Compliance.MainRowPins m i.val 1 OP_LTU :=
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
   have h_lane_rd :

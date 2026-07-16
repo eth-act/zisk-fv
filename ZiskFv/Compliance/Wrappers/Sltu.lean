@@ -32,29 +32,10 @@ lemma equiv_SLTU
     (sltu_input : PureSpec.SltuInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : matches_entry (opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_input_r1_row : sltu_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_input_r2_row : sltu_input.r2_val =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (evidence : ZiskFv.Compliance.StaticBinaryRTypeEvidence
+      m r_main bus OP_LTU sltu_input.r1_val sltu_input.r2_val)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
         (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
@@ -65,6 +46,8 @@ lemma equiv_SLTU
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.SLTU))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  rcases evidence with ⟨providerTable, providerRow, h_component, h_table_spec,
+    h_provider_row, h_match, h_input_r1_row, h_input_r2_row, pins, h_lane_rd⟩
   let row :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)

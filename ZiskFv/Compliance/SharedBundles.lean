@@ -14,6 +14,7 @@ import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -74,6 +75,70 @@ structure MainRowPins (m : Valid_Main FGL FGL) (r_main : ℕ)
     (active : FGL) (opKind : FGL) where
   main_active : m.is_external_op r_main = active
   main_op : m.op r_main = opKind
+
+/-! ## Accepted-trace static Binary provider evidence -/
+
+/-- Provider selection, Main pins, and destination lane shared by static-Binary
+wrappers whose operand bindings have different shapes (notably I-type forms). -/
+structure StaticBinaryProviderEvidence
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (bus : BusRows) (opKind : FGL) where
+  providerTable : Air.Flat.Table FGL
+  providerRow : Array FGL
+  component :
+    providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+  tableSpec : providerTable.Spec
+  providerRow_mem : providerRow ∈ providerTable.table
+  requestMatch : ZiskFv.Airs.OperationBus.matches_entry
+    (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+    (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+      (ZiskFv.AirsClean.Binary.opBusMessage
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow))) 1)
+  pins : MainRowPins m r_main 1 opKind
+  rdLane : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+
+/-- The row facts shared by the register-register static-Binary wrappers.
+
+This is a dependent package rather than eight loose parameters: the concrete
+provider row owns its component identity, table specification, Main request
+match, operand bindings, Main pins, and destination-write lane.  At trace level
+this package is assembled from `AcceptedZiskTrace` derived facts; it is not a
+new trust premise. -/
+structure StaticBinaryRTypeEvidence
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (bus : BusRows)
+    (opKind : FGL) (inputA inputB : BitVec 64) where
+  providerTable : Air.Flat.Table FGL
+  providerRow : Array FGL
+  component :
+    providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+  tableSpec : providerTable.Spec
+  providerRow_mem : providerRow ∈ providerTable.table
+  requestMatch : ZiskFv.Airs.OperationBus.matches_entry
+    (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+    (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+      (ZiskFv.AirsClean.Binary.opBusMessage
+        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow))) 1)
+  inputA_eq : inputA = BitVec.ofNat 64
+    (let row := ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+     row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+       + row.aBytes.free_in_a_2.val * 65536 + row.aBytes.free_in_a_3.val * 16777216
+       + row.aBytes.free_in_a_4.val * 4294967296
+       + row.aBytes.free_in_a_5.val * 1099511627776
+       + row.aBytes.free_in_a_6.val * 281474976710656
+       + row.aBytes.free_in_a_7.val * 72057594037927936)
+  inputB_eq : inputB = BitVec.ofNat 64
+    (let row := ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+     row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+       + row.bBytes.free_in_b_2.val * 65536 + row.bBytes.free_in_b_3.val * 16777216
+       + row.bBytes.free_in_b_4.val * 4294967296
+       + row.bBytes.free_in_b_5.val * 1099511627776
+       + row.bBytes.free_in_b_6.val * 281474976710656
+       + row.bBytes.free_in_b_7.val * 72057594037927936)
+  pins : MainRowPins m r_main 1 opKind
+  rdLane : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 
 /-! ## Main structural memory witnesses -/
 

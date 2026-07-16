@@ -85,10 +85,10 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Andi.equiv_ANDI
-      state andi_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
-      h_input_r1_row h_input_imm_row h_andi_subset
-      h_lane_rd promises
+      state andi_input r1 rd imm m r_main bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match_static,
+        pins, h_lane_rd⟩
+      h_input_r1_row h_input_imm_row h_andi_subset promises
   | ori ori_input r1 rd imm v bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static
       h_input_r1_row h_input_imm_row h_ori_subset
@@ -102,10 +102,10 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Ori.equiv_ORI
-      state ori_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
-      h_input_r1_row h_input_imm_row h_ori_subset
-      h_lane_rd promises
+      state ori_input r1 rd imm m r_main bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match_static,
+        pins, h_lane_rd⟩
+      h_input_r1_row h_input_imm_row h_ori_subset promises
   | xori xori_input r1 rd imm v bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static
       h_input_r1_row h_input_imm_row h_xori_subset
@@ -119,10 +119,10 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Xori.equiv_XORI
-      state xori_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
-      h_input_r1_row h_input_imm_row h_xori_subset
-      h_lane_rd promises
+      state xori_input r1 rd imm m r_main bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match_static,
+        pins, h_lane_rd⟩
+      h_input_r1_row h_input_imm_row h_xori_subset promises
   | slti slti_input r1 rd imm v bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static
       h_main_m32 h_input_r1_row h_slti_subset h_lane_rd promises =>
@@ -135,9 +135,10 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Slti.equiv_SLTI
-      state slti_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
-      h_main_m32 h_input_r1_row h_slti_subset h_lane_rd promises
+      state slti_input r1 rd imm m r_main bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match_static,
+        pins, h_lane_rd⟩
+      h_main_m32 h_input_r1_row h_slti_subset promises
   | sltiu sltiu_input r1 rd imm v bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static
       h_main_m32 h_input_r1_row h_sltiu_subset h_lane_rd promises =>
@@ -150,9 +151,10 @@ theorem zisk_riscv_compliant_program_bus_itype_binary
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Sltiu.equiv_SLTIU
-      state sltiu_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
-      h_main_m32 h_input_r1_row h_sltiu_subset h_lane_rd promises
+      state sltiu_input r1 rd imm m r_main bus
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row, h_match_static,
+        pins, h_lane_rd⟩
+      h_main_m32 h_input_r1_row h_sltiu_subset promises
   | _ => trivial
 
 end ZiskFv.Compliance

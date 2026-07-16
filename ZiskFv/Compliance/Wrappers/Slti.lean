@@ -35,27 +35,16 @@ lemma equiv_SLTI
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : matches_entry (opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
+    (evidence : ZiskFv.Compliance.StaticBinaryProviderEvidence
+      m r_main bus OP_LT)
     (h_main_m32 : m.m32 r_main = 0)
     (h_input_r1_row : slti_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
         (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+          (evidence.providerTable.environment evidence.providerRow)))
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
         (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
@@ -66,6 +55,8 @@ lemma equiv_SLTI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  rcases evidence with ⟨providerTable, providerRow, h_component, h_table_spec,
+    h_provider_row, h_match, pins, h_lane_rd⟩
   let row :=
     ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
       (providerTable.environment providerRow)
