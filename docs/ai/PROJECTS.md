@@ -1,5 +1,13 @@
 # Projects
 
+## Aristotle Drive
+
+Operator guide for driving the remaining FINAL-PLAN refactor phases through the Aristotle
+service: one continued project (`9c5aee26`), tarball re-seed per turn, phase-scale numbered
+work orders with a completion contract, and Claude running submit → monitor → receive →
+decontaminate → verify → stacked PR autonomously. Remaining schedule T3–T7 maps plan
+Phases 2.3/2.4 through 4. Plan: `docs/ai/plan/PLAN_ARISTOTLE_DRIVE.md`.
+
 ## Aristotle Portability
 
 Plan: `docs/ai/plan/PLAN_ARISTOTLE_PORTABILITY.md`. Active worktree:
