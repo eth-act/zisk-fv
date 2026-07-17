@@ -256,12 +256,11 @@ Current #115 surface note: `AcceptedZiskTrace.mem_replay_table` is guarded by
 mutable-Mem table with at least one row. Under that guard it separately selects
 the concrete mutable-Mem table, witness membership, component identity, and
 nonempty-table proof. Memory-less traces prove the guard impossible; they do not
-fabricate an empty replay bridge. The generated Mem source residue is now split across
-accepted-trace fields: stage-2 sidecar columns (`mem_replay_segment`,
-`mem_replay_permutation`, `mem_replay_gsum`, `mem_replay_im0`,
-`mem_replay_im1`). The legacy sidecar fields are not consumed by S2's live
-derivation; S3 audits their lifecycle. `mem_replay_constraints` is deleted: its segment/permutation
-package is derived from the selected table's live constraints plus its
+fabricate an empty replay bridge. No generated Mem sidecar remains an
+accepted-trace field: the S3 lifecycle audit found the former segment,
+permutation, `gsum`, `im0`, and `im1` fields unconsumed outside their vacuous
+constructor populations and deleted them. `mem_replay_constraints` is deleted:
+its segment/permutation package is derived from the selected table's live constraints plus its
 right-indexed transition, using canonical table `ProverData` and
 component-owned fixed data. Row range facts are likewise derived from live Mem
 `Table.fromStatic` lookups. `memReplayRows`/`memReplayBridge` construct the
@@ -699,7 +698,6 @@ trust surface even though they add no axiom.
 | `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
-| `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `MutableMemPresent witness`) | Legacy generated Mem sidecar columns | **HELD** for S3's lifecycle audit. S2 does not correlate or consume them; its live source is selected table `ProverData` plus component-owned fixed columns. |
 | Derived `memReplaySegmentRanges` (not an `AcceptedZiskTrace` field) | Mem hints 884/886; `mem.pil:267-268` / `285-286`; linked c24–33 at `std_sum.pil:590/599/656/696`; generated `ValidatedLink` entries | derives selected-table `MemSegmentGeneratedRangeFacts` from `constraints_hold`, `channels_balanced`, and `transitions_hold`: the indexed source bridge identifies the canonical `ProverData` chunks, finished bus-103 balance finds the `SpecifiedRangesSlice` provider, and its static table supplies 16-bit membership. `ProverAssumptions` is completeness-only and is not used. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
 

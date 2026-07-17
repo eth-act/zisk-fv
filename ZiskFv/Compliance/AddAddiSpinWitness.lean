@@ -1517,11 +1517,6 @@ def addAddiSpinAcceptedTrace : AcceptedZiskTrace 3 where
   constraints_hold := addAddiSpinWitness_constraints
   channels_balanced := addAddiSpinWitness_balancedChannels
   mem_replay_table := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
-  mem_replay_segment := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
-  mem_replay_permutation := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
-  mem_replay_gsum := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
-  mem_replay_im0 := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
-  mem_replay_im1 := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h addAddiSpinWitness_not_mutableMemPresent
   transitions_hold := addAddiSpinWitness_transitions
   main_height := addAddiSpinWitness_main_height
