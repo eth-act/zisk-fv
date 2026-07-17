@@ -1198,7 +1198,6 @@ def addSpinAcceptedTrace : AcceptedZiskTrace 2 where
   mem_replay_gsum := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_im0 := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h addSpinWitness_not_mutableMemPresent
-  mem_replay_segment_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h addSpinWitness_not_mutableMemPresent
   transitions_hold := addSpinWitness_transitions
   main_height := addSpinWitness_main_height
@@ -1230,7 +1229,6 @@ def addPaddedAcceptedTrace : AcceptedZiskTrace 1 where
   mem_replay_gsum := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_im0 := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_im1 := fun h => absurd h addSpinWitness_not_mutableMemPresent
-  mem_replay_segment_ranges := fun h => absurd h addSpinWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h addSpinWitness_not_mutableMemPresent
   transitions_hold := addSpinWitness_transitions
   main_height := addSpinWitness_main_height_prefix_one

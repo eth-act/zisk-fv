@@ -259,17 +259,24 @@ nonempty-table proof. Memory-less traces prove the guard impossible; they do not
 fabricate an empty replay bridge. The generated Mem source residue is now split across
 accepted-trace fields: stage-2 sidecar columns (`mem_replay_segment`,
 `mem_replay_permutation`, `mem_replay_gsum`, `mem_replay_im0`,
-`mem_replay_im1`), and HELD segment range facts (`mem_replay_segment_ranges`).
-The legacy sidecar fields are not consumed by S2's live derivation; S3 audits
-their lifecycle. `mem_replay_constraints` is deleted: its segment/permutation
+`mem_replay_im1`). The legacy sidecar fields are not consumed by S2's live
+derivation; S3 audits their lifecycle. `mem_replay_constraints` is deleted: its segment/permutation
 package is derived from the selected table's live constraints plus its
 right-indexed transition, using canonical table `ProverData` and
 component-owned fixed data. Row range facts are likewise derived from live Mem
 `Table.fromStatic` lookups. `memReplayRows`/`memReplayBridge` construct the
 canonical replay bridge directly, rather than rebuilding a raw sidecar or
-`FullWitnessMemAirSource`. The HELD range field is now over that same canonical
-segment source; S3 must derive and delete it, so it is not a permanent
-caller-supplied promise hypothesis. `mem_replay_source_covers` remains the
+`FullWitnessMemAirSource`. The former segment range field is deleted: its
+canonical `MemSegmentGeneratedRangeFacts` are derived for the selected table
+by `memReplaySegmentRanges`, from `constraints_hold`, `channels_balanced`, and
+`transitions_hold` only. The chain is the generated `ValidatedLink` entries
+for Mem range hints 884/886, `mem.pil:267-268` (with the companion source
+bridge coverage at `mem.pil:285-286`), their linked c24–33 constraints at
+`std_sum.pil:590/599/656/696`, the indexed transition's materialized
+`ProverData` source cells, finished bus-103 balance, and the
+`SpecifiedRangesSlice` static provider. `ProverAssumptions` is
+completeness-only and is not consumed by this derivation.
+`mem_replay_source_covers` remains the
 matching structural source-correlation certificate: every mutable-Mem table in
 the witness is the selected source table.
 
@@ -440,9 +447,9 @@ explicit initial-memory, scoped direct-Mem placement/classification, source/targ
 chronology, and named row-count/order certificates. This reduces the seed-side
 read-value assumption, but it also adds a nonempty accepted-trace constructor
 burden: `mem_replay_table` must select the concrete mutable Mem AIR table and
-nonempty proof; the HELD `mem_replay_segment_ranges` field must provide the
-remaining canonical segment range factor for that selected table. Generated
-constraints and row ranges are derived from the live Mem component rather than
+nonempty proof. The canonical segment range factor is derived from the
+accepted constraint/balance/transition chain, never supplied by the accepted
+trace. Generated constraints and row ranges are derived from the live Mem component rather than
 supplied by the accepted trace; `mem_replay_source_covers` must certify
 structural coverage of mutable-Mem tables by that selected table.
 The direct-Mem row-count equality is visible as `ScopedDirectMemReplayLengthCertificate`
@@ -693,7 +700,7 @@ trust surface even though they add no axiom.
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
 | `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `MutableMemPresent witness`) | Legacy generated Mem sidecar columns | **HELD** for S3's lifecycle audit. S2 does not correlate or consume them; its live source is selected table `ProverData` plus component-owned fixed columns. |
-| `mem_replay_segment_ranges` (**#115**, guarded by `MutableMemPresent witness`) | segment range facts for the selected canonical live Mem segment | **HELD** caller-supplied promise hypothesis for Project Closeout S3 lookup-wiring extraction; S3 must derive and delete it from extracted lookup wiring. Until then it supplies canonical segment range facts used by the replay bridge. |
+| Derived `memReplaySegmentRanges` (not an `AcceptedZiskTrace` field) | Mem hints 884/886; `mem.pil:267-268` / `285-286`; linked c24–33 at `std_sum.pil:590/599/656/696`; generated `ValidatedLink` entries | derives selected-table `MemSegmentGeneratedRangeFacts` from `constraints_hold`, `channels_balanced`, and `transitions_hold`: the indexed source bridge identifies the canonical `ProverData` chunks, finished bus-103 balance finds the `SpecifiedRangesSlice` provider, and its static table supplies 16-bit membership. `ProverAssumptions` is completeness-only and is not used. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
 
 The Main `SEGMENT_L1 = [1,0,...]` (`main.pil:19`) and `main_step = row index`
@@ -708,10 +715,9 @@ memory-present traces. Constructors whose mutable-Mem table is empty, such as
 the degenerate base case and #219/#220's ADD witnesses, prove
 `MutableMemPresent` impossible instead of supplying replay fields. A constructor
 with mutable-Mem rows must build the guarded `mem_replay_table`, the HELD legacy
-sidecar fields, the HELD canonical `mem_replay_segment_ranges` field, and
-`mem_replay_source_covers`, in addition to
+sidecar fields, and `mem_replay_source_covers`, in addition to
 `constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`.
-Generated constraints, row ranges, and Main fixed-column facts are derived from the live
+Generated constraints, row ranges, canonical segment range facts, and Main fixed-column facts are derived from the live
 component. These fields are not read-value agreement predicates, and they no
 longer carry deterministic Mem fixed columns. The paired
 `mem_replay_source_covers` field is a structural table-coverage certificate that

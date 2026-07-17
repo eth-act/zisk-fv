@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.AcceptedZiskTrace.Spec
+import ZiskFv.Compliance.AcceptedZiskTrace.MemSegmentRanges
 import ZiskFv.Compliance.AcceptedZiskTrace.MainTable
 import ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridges
 

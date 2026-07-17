@@ -125,15 +125,6 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
   /-- Guarded legacy Mem stage-2 `im1` source column, HELD for S3's lifecycle
       audit and not consumed by S2's canonical derivation. -/
   mem_replay_im1 : ∀ (_h : MutableMemPresent witness), ℕ → FGL
-  /-- Guarded segment range facts for the selected canonical live Mem source.
-
-      HELD for Project Closeout S3's lookup-wiring extraction. The sidecar
-      `distance_base_*` values are not component-row inputs, so S2 derives the
-      generated equations but not this range fact. S3 must derive and delete
-      this caller-supplied promise hypothesis; it is not a permanent survivor. -/
-  mem_replay_segment_ranges : ∀ (h : MutableMemPresent witness),
-    ZiskFv.AirsClean.FullEnsemble.MemSegmentGeneratedRangeFacts
-      (ZiskFv.AirsClean.FullEnsemble.memSegmentOfTableData (mem_replay_table h).1)
   /-- Structural source-correlation certificate for the guarded Mem AIR source:
       every mutable-Mem table in the accepted witness is the selected source
       table. This is table identity only, not read-value agreement. It is kept
@@ -216,43 +207,5 @@ def AcceptedZiskTrace.memReplayRows {n : Nat} (trace : AcceptedZiskTrace n)
     List (Interaction.MemoryBusEntry FGL) :=
   ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable
     (trace.memReplayTable h_present)
-
-/-- The accepted Mem replay bridge selected when the accepted witness has mutable-Mem rows. -/
-def AcceptedZiskTrace.memReplayBridge {n : Nat} (trace : AcceptedZiskTrace n)
-    (h_present : MutableMemPresent trace.witness) :
-    ZiskFv.AirsClean.FullEnsemble.FullWitnessMemReplayBridge
-      trace.witness (trace.memReplayRows h_present) :=
-  ZiskFv.AirsClean.FullEnsemble.fullWitnessMemReplayBridge_of_memTable_with_fixedColumns
-    (segment := ZiskFv.AirsClean.FullEnsemble.memSegmentOfTableData
-      (trace.memReplayTable h_present))
-    (permutation := ZiskFv.AirsClean.FullEnsemble.memPermutationOfTableData
-      (trace.memReplayTable h_present))
-    (gsum := ZiskFv.AirsClean.Mem.memSidecarGsumOfProverData
-      (trace.memReplayTable h_present).data)
-    (im0 := ZiskFv.AirsClean.Mem.memSidecarIm0OfProverData
-      (trace.memReplayTable h_present).data)
-    (im1 := ZiskFv.AirsClean.Mem.memSidecarIm1OfProverData
-      (trace.memReplayTable h_present).data)
-    (trace.mem_replay_table h_present).2.1
-    (trace.mem_replay_table h_present).2.2.1
-    (by
-      simpa only [ZiskFv.AirsClean.FullEnsemble.memOfTableData] using
-        ZiskFv.AirsClean.FullEnsemble.generatedAt_of_memTableGeneratedConstraintFacts
-          (trace.memReplayGeneratedConstraintFacts h_present))
-    (by
-      simpa only [ZiskFv.AirsClean.FullEnsemble.memOfTableData] using
-        trace.memReplayRowRanges h_present)
-    (trace.mem_replay_segment_ranges h_present)
-    (ZiskFv.AirsClean.FullEnsemble.memTableGeneratedFixedColumnFacts_of_component_fixedColumns
-      (trace.memReplayTable h_present)
-      (trace.mem_replay_table h_present).2.2.1)
-    (trace.mem_replay_table h_present).2.2.2
-
-@[simp]
-theorem AcceptedZiskTrace.memReplayBridge_table {n : Nat}
-    (trace : AcceptedZiskTrace n)
-    (h_present : MutableMemPresent trace.witness) :
-    (trace.memReplayBridge h_present).table = trace.memReplayTable h_present :=
-  rfl
 
 end ZiskFv.Compliance
