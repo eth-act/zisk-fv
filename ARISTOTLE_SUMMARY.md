@@ -1,3 +1,64 @@
+# Summary of changes for run 38ee2eb7-8349-4552-b0c5-ec050cae6128
+You’re right—the direct answer is:
+
+## Recommended top-level API
+
+Keep exactly two advertised endpoints, collected in `ZiskFv/Audit.lean`:
+
+1. **`root_soundness`** — the unconditional soundness result over an `AcceptedZiskTrace`.
+2. **`root_completeness`** — explicitly conditional on one named `ZiskCompletenessObligations` record until each construction obligation is proved.
+
+For `root_soundness`, preserve the theorem’s meaning and bundle only premises that are already explicit root binders, such as input agreement, boot-memory seed, and scope/defect exclusions. Do **not** add channel balance, Aeneas-bridge evidence, or memory-timeline evidence as new root assumptions: channel balance is already part of `AcceptedZiskTrace`, while the other evidence is derived internally. Adding it to the root would weaken the theorem.
+
+The old `zisk_riscv_compliant_program_bus` theorem should remain an internal per-operation implementation lemma, not a second public soundness endpoint. Freeze both root statements and their axiom closures in `Audit.lean`, so accidental API or trust changes fail the build.
+
+## Recommended proof architecture
+
+The target dependency structure should be:
+
+```text
+Sail semantics + PIL constraints
+          ↓
+Clean component Specs
+          ↓
+Clean FormalEnsemble / channel balance / table soundness
+          ↓
+AcceptedZiskTrace-derived row and lane facts
+          ↓
+~12 instruction-shape theorems
+          ↓
+thin generated opcode instances
+          ↓
+root_soundness
+```
+
+The key changes are:
+
+- **Make Clean `Spec`s the canonical circuit model.** The legacy `Airs/Valid_*` records should become generated compatibility views and ultimately disappear. Equivalence proofs should consume Clean component specifications directly rather than translating each opcode through bespoke `Bridge.lean` files.
+- **Derive facts once at the accepted-trace seam.** Provider-row existence, component identity, row membership, exact entry matching, register lanes, pins, and memory rows should follow from ensemble soundness and channel balance. They should not be repeated as caller-supplied “promises” in every opcode theorem.
+- **Factor by instruction shape, not opcode.** Create reusable families for R-type arithmetic, I-type arithmetic, shifts, branches, loads, stores, binary logic, multiplication, division, and similar shapes. Each family gets one evidence record and one canonical parametric theorem; individual opcode theorems become small instantiations.
+- **Separate evidence from semantics.** A family evidence package should contain only trace-derived structural facts. The canonical family theorem combines that package with the relevant Clean `Spec` to prove the architectural transition. This makes dependencies visible and prevents large positional hypothesis lists.
+- **Keep wrappers one-way and thin.** Compatibility wrappers may project old hypotheses into a family evidence package during migration, but canonical theorems must never depend on wrappers. Delete wrappers once callers move.
+- **Treat caller-burden reduction as the progress metric.** A migration is complete only when premises have been derived from accepted-trace invariants—not merely renamed or bundled.
+
+## Assessment of current Clean usage
+
+The low-level Clean components are substantially idiomatic: they use `GeneralFormalCircuit`, `ProvableStruct`, `assertZero`, lookups, channel pushes, `FormalEnsemble`, and `TableSoundness`. The main divergence is **above** that layer: Clean facts are translated into a parallel legacy AIR model, then reconstructed through per-opcode bridges and large promise surfaces. Thus the best refactor is not to rewrite the circuits; it is to make their `Spec`s the proof spine.
+
+The local Clean fork should also be reconciled deliberately with upstream work, especially zero-multiplicity channel handling and VM/ordered-channel soundness. The bespoke adjacent-row transition extension should either use Clean’s `InductiveTable` abstraction or be upstreamed rather than remain an undocumented fork divergence.
+
+## Safe migration order
+
+1. Keep the root theorem frozen and retain statement/axiom golden tests.
+2. Add generic accepted-trace derivation lemmas at the ensemble seam.
+3. Introduce one evidence package and canonical theorem per instruction shape.
+4. Migrate opcode callers family by family, measuring removed explicit parameters.
+5. Make Clean `Spec`s canonical and demote the legacy `Valid_*` model.
+6. Remove obsolete bridges, wrappers, `OpEnvelope` duplication, and trust-ledger entries.
+7. Only after the lower architecture stabilizes, optionally repackage existing root binders behind a proved old/new equivalence theorem.
+
+The detailed, self-contained version is in `docs/refactor/FINAL-PLAN.md`; `docs/refactor/01-architecture-map.md` through `07-root-stability-and-upstream-clean.md` contain the supporting analysis. Some of this redesign is already implemented: the audit surface and completeness obligations record exist, and accepted-trace row/lane derivations plus several family migrations have begun. The remaining Shift, arithmetic, and load/store migrations require richer typed provider evidence rather than more opcode-specific premises.
+
 # Summary of changes for run af154c69-dade-4a18-bbcf-9d542b3fdfc7
 Installed the supplied source-of-truth snapshot and attempted all nine work-order items.
 
