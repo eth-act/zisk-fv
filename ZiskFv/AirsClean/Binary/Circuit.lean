@@ -29,7 +29,7 @@ namespace ZiskFv.AirsClean.Binary
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
-open ZiskFv.Channels.BinaryTable (BinaryTableMessage)
+open ZiskFv.Channels.BinaryTable (BinaryTableChannel BinaryTableMessage)
 
 /-- Computed `b_op_or_sext` column for Binary honest rows. -/
 def binaryBOpOrSextOf (mode32 cIsSigned : Bool) (bOp : FGL) : FGL :=
@@ -110,6 +110,94 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
       ring_nf }
 
 def component : Air.Flat.Component FGL := { circuit := circuit }
+
+/-- The BinaryTable consumer component carries the same seven algebraic
+constraints and operation-bus emission as `component`, plus the eight negative
+BinaryTable emissions. Its soundness claim deliberately has no table-membership
+conjunct: membership belongs to `BinaryTableSlice` and a finished channel. -/
+def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
+  { binaryWithBinaryTableElaborated with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row
+    ProverAssumptions := fun row _ _ =>
+      ∃ mode32 resultIsA useFirstByte cIsSigned carry7
+        aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp,
+        row = binaryRowOf mode32 resultIsA useFirstByte cIsSigned carry7
+          aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      refine ⟨?_, ?_⟩
+      · obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := h_holds
+        exact ⟨ by simpa [sub_eq_add_neg] using h0
+              , by simpa [sub_eq_add_neg] using h1
+              , by simpa [sub_eq_add_neg] using h2
+              , by simpa [sub_eq_add_neg] using h3
+              , by simpa [sub_eq_add_neg] using h4
+              , by simpa [sub_eq_add_neg] using h5
+              , by simpa [sub_eq_add_neg] using h6 ⟩
+      · intro _
+        trivial
+    completeness := by
+      circuit_proof_start [OpBusChannel, BinaryTableChannel]
+      obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
+        aBytes, bBytes, cBytes, carry0, carry1, carry2, carry3, carry4,
+        carry5, carry6, bOp, hrow⟩ := h_assumptions
+      injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
+      subst aBytes
+      subst bBytes
+      subst cBytes
+      injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
+        h_carry6 h_carry7 h_bOp h_bOpOrSext
+      injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
+        h_mode32AndCIsSigned
+      subst_vars
+      simp [binaryBOpOrSextOf, binaryMode32AndCIsSignedOf]
+      ring_nf }
+
+def tableConsumerComponent : Air.Flat.Component FGL := { circuit := tableConsumerCircuit }
+
+theorem tableConsumerComponent_interactionsWith_binaryTableChannel :
+    tableConsumerComponent.operations.interactionsWith BinaryTableChannel.toRaw =
+      [ ((BinaryTableChannel.emitted (-1)
+            (lookupMessage0 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage1 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage2 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage3 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage4 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage5 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage6 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage7 tableConsumerComponent.rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨BinaryTableChannel.toRaw,
+      [ ((BinaryTableChannel.emitted (-1)
+            (lookupMessage0 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage1 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage2 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage3 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage4 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage5 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage6 tableConsumerComponent.rowInputVar)).toRaw)
+      , ((BinaryTableChannel.emitted (-1)
+            (lookupMessage7 tableConsumerComponent.rowInputVar)).toRaw) ]⟩ ∈
+      tableConsumerComponent.exposedChannels
+  simp only [tableConsumerComponent, tableConsumerCircuit,
+    binaryWithBinaryTableElaborated, Component.exposedChannels, expose,
+    List.mem_append, List.mem_singleton, List.map_cons, List.map_nil]
+  exact Or.inr trivial
 
 @[reducible]
 def lookupFlags012Row (row : BinaryRow FGL) (carry : FGL) : FGL :=

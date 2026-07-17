@@ -141,39 +141,14 @@ def constVar (row : BinaryRow FGL) : Var BinaryRow FGL where
     c_is_signed := .const row.mode.c_is_signed
     mode32_and_c_is_signed := .const row.mode.mode32_and_c_is_signed }
 
-open ZiskFv.Airs.Tables.BinaryTable in
-/-- Constant-row specialization of the lookup-aware BinaryTable channel path.
-    The eight returned facts are sourced from `mainWithBinaryTable`'s channel
-    pulls, not from `bin_table_consumer_wf`. This is C6 groundwork for C7:
-    the theorem is local until the balanced BinaryTable provider side exists. -/
-theorem binary_table_wf_of_lookup_aware_const_soundness
-    (offset : ℕ) (env : Environment FGL) (row : BinaryRow FGL)
-    (h_holds :
-      ConstraintsHold.Soundness env
-        ((mainWithBinaryTable (constVar row)).operations offset)) :
-    StaticBinaryTableWfFacts row := by
-  simp only [mainWithBinaryTable, main, circuit_norm] at h_holds
-  rcases h_holds with
-    ⟨_h0, _h1, _h2, _h3, _h4, _h5, _h6,
-      h0, h1, h2, h3, h4, h5, h6, h7⟩
-  exact ⟨ by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h0
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h1
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h2
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h3
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h4
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h5
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h6
-        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry, sub_eq_add_neg] using h7 ⟩
-
 /-- Constant-row specialization of the static-provider BinaryTable lookup
     path. The eight returned facts are exact decoded-row memberships in
     `AirsClean.BinaryTable.binaryTable`, sourced from
     `mainWithStaticBinaryTable`'s Clean `lookup (Table.fromStatic ...)`
     operations.
 
-    This is the provider-side counterpart to
-    `binary_table_wf_of_lookup_aware_const_soundness`: it proves membership
-    in the static table, not yet the semantic `wf_properties` projection. -/
+    It proves membership in the static table, not yet the semantic
+    `wf_properties` projection. -/
 theorem binary_table_specs_of_static_lookup_const_soundness
     (offset : ℕ) (env : Environment FGL) (row : BinaryRow FGL)
     (h_holds :
@@ -205,10 +180,9 @@ theorem binary_table_specs_of_static_lookup_const_soundness
 
 open ZiskFv.Airs.Tables.BinaryTable in
 /-- Static-provider BinaryTable lookup path, projected all the way to the
-    legacy semantic `wf_properties` facts. Unlike
-    `binary_table_wf_of_lookup_aware_const_soundness`, this consumes exact
-    membership in `AirsClean.BinaryTable.binaryTable` and the proved
-    membership-to-semantics projections, not `bin_table_consumer_wf`. -/
+    legacy semantic `wf_properties` facts. This consumes exact membership in
+    `AirsClean.BinaryTable.binaryTable` and the proved membership-to-semantics
+    projections. -/
 theorem binary_table_wf_of_static_lookup_const_soundness
     (offset : ℕ) (env : Environment FGL) (row : BinaryRow FGL)
     (h_holds :

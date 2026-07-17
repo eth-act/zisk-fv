@@ -10,9 +10,9 @@ Packages ZisK's BinaryExtension AIR as a Clean `Air.Flat.Component`.
 
 BinaryExtension has no F-only `assertZero` constraints: its local semantic
 content is table-lookup based, and its cross-AIR output is the operation-bus
-push emitted by `main`. The Component `Spec` is therefore `True` for this C5
-step; the load-bearing table facts still come through the existing
-`bin_ext_table_consumer_wf` boundary until the Binary-family terminal phase.
+push emitted by `main`. The Component `Spec` is therefore `True`; the terminal
+table-consumer component emits on bus 124, where the exact static provider and
+finished-channel balance carry membership.
 -/
 
 namespace ZiskFv.AirsClean.BinaryExtension
@@ -20,6 +20,7 @@ namespace ZiskFv.AirsClean.BinaryExtension
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.BinaryExtensionTable (BinaryExtensionTableChannel)
 
 /-- BinaryExtension as a Clean `GeneralFormalCircuit`. -/
 def circuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
@@ -36,6 +37,23 @@ def circuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
 
 /-- BinaryExtension as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
+
+/-- The BinaryExtensionTable consumer has the same local `True` specification
+as `component`, but exposes its eight negative table messages. Membership is
+provider-owned and is not a local consumer premise. -/
+def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
+  { binaryExtensionWithTableElaborated with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row
+    ProverAssumptions := fun _ _ _ => True
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      intro _
+      trivial
+    completeness := by circuit_proof_start [OpBusChannel, BinaryExtensionTableChannel] }
+
+def tableConsumerComponent : Air.Flat.Component FGL := { circuit := tableConsumerCircuit }
 
 theorem component_interactionsWith_opBus :
     component.operations.interactionsWith OpBusChannel.toRaw =

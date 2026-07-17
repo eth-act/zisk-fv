@@ -665,6 +665,22 @@ Active conclusions:
   legacy canonical `equiv_MULH`/`equiv_MULHSU` binders remain compatibility
   surfaces while the new constructions consume their shared facts from
   balance/provider soundness.
+- **Binary c10 mixed lookup route (#268).** This is a cited application of
+  the existing lookup/permutation protocol-soundness class, not a new trust
+  kind. The final BinaryTable assumes tuple is the source lookup at
+  `binary.pil:121-124`; its coupled Binary operation tuple occurs in the same
+  accumulator constraint at `std_sum.pil:590`. The generated
+  `Extraction.LookupWiring.link_Binary_10` records those two
+  constraint-derived tuples under `derivedMixed2`, with `hints := []` to make
+  the absent c10 hint provenance explicit; its exact structural identity is
+  kernel-checked by `constraint_Binary_10 = template_Binary_10 := by rfl`.
+  `AirsClean.Binary.c10Wiring.sourceBinding` separately checks that the
+  bus-125 tuple is the live `lookupMessage7` model. Binary and
+  BinaryExtension consumers emit negative messages only; their exact
+  `BinaryTableSlice`/`BinaryExtensionTableSlice` providers and local finished
+  bus-125/bus-124 ensembles carry table membership through balance. No
+  consumer promise or soundness-side `ProverAssumptions` is introduced;
+  provider `ProverAssumptions` is completeness-only.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).

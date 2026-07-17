@@ -9,17 +9,16 @@ import ZiskFv.Airs.Tables.BinaryExtensionTable
 Clean channel wrapper for ZisK's BinaryExtensionTable lookup bus
 (`bus_id = 124`).
 
-`BinaryExtension` rows pull one message per byte. Pulling from the channel
-gives the same table semantic guarantee currently represented by
-`Airs/Tables/BinaryExtensionTable.lean::bin_ext_table_consumer_wf`, but as a
-Clean channel guarantee rather than as an ambient axiom. The balanced
-provider side is terminal C7 work; this file only introduces the typed
-payload and guarantee.
+`BinaryExtension` rows emit one negative consumer message per byte. The static
+provider owns exact membership; finished-channel balance transports that
+membership to the consumer. This wrapper deliberately adds no per-emission
+semantic guarantee.
 
 ## Trust note
 
-No axioms. `BinaryExtensionTableChannel.Guarantees` is a definition over the
-existing `wf_properties` predicate.
+No axioms. `BinaryExtensionTableChannel.Guarantees` is `True`; the provider's
+exact static-table specification and finished-channel balance are the
+soundness route.
 -/
 
 namespace ZiskFv.Channels.BinaryExtensionTable
@@ -54,12 +53,10 @@ def BinaryExtensionTableMessage.toEntry
     c_hi_byte := msg.c_hi_byte
     op_is_shift := msg.op_is_shift }
 
-/-- The BinaryExtensionTable channel. A pull receives the table row
-    semantics for the pulled message; C7 supplies the balanced
-    static/provider side. -/
+/-- The BinaryExtensionTable channel. Consumer emissions make no local
+    membership claim; the provider and finished balance establish it. -/
 instance BinaryExtensionTableChannel : Channel FGL BinaryExtensionTableMessage where
   name := "BinaryExtensionTable"
-  Guarantees msg _data :=
-    wf_properties (BinaryExtensionTableMessage.toEntry msg 1)
+  Guarantees _msg _data := True
 
 end ZiskFv.Channels.BinaryExtensionTable
