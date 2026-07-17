@@ -1,5 +1,4 @@
 import Extraction.LookupWiring
-import Clean.Air.Balance
 import ZiskFv.AirsClean.RangeTables
 import ZiskFv.AirsClean.Mem.SidecarColumns
 import ZiskFv.AirsClean.Mem.GeneratedTransition
@@ -69,13 +68,57 @@ theorem distanceEnd0Wiring_link : distanceEnd0Wiring.link = link_Mem_31 := rfl
 /-- c32 is the kernel-checked direct-template link for `distance_end[1]`. -/
 theorem distanceEnd1Wiring_link : distanceEnd1Wiring.link = link_Mem_32 := rfl
 
-/-! ## Concrete provider-balance demonstration -/
+/-- The c29 checked wiring expression evaluates at the canonical sidecar key
+when its table row is materialized. -/
+theorem eval_distanceBase0Wiring_source_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      distanceBase0Wiring.source =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase0 := by
+  exact eval_memDistanceBase0Expr_materialize index data row
+
+/-- The c30 checked wiring expression evaluates at the canonical sidecar key
+when its table row is materialized. -/
+theorem eval_distanceBase1Wiring_source_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      distanceBase1Wiring.source =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase1 := by
+  exact eval_memDistanceBase1Expr_materialize index data row
+
+/-- The c31 checked wiring expression evaluates at the canonical sidecar key
+when its table row is materialized. -/
+theorem eval_distanceEnd0Wiring_source_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      distanceEnd0Wiring.source =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd0 := by
+  exact eval_memDistanceEnd0Expr_materialize index data row
+
+/-- The c32 checked wiring expression evaluates at the canonical sidecar key
+when its table row is materialized. -/
+theorem eval_distanceEnd1Wiring_source_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      distanceEnd1Wiring.source =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1 := by
+  exact eval_memDistanceEnd1Expr_materialize index data row
+
+/-! ## Concrete source value -/
 
 /-- One table's shared prover data supplies the c29 range value. -/
 def distanceBase0DemoData : ProverData FGL := fun key width =>
   if key = MemRawSidecarDataKey.Segment.distanceBase0 then
     match width with
-    | 1 => #[![7]]
+    | 1 => #[Vector.ofFn fun _ : Fin 1 => (7 : FGL)]
     | _ => #[]
   else #[]
 
@@ -97,6 +140,7 @@ def distanceBase0DemoValue : FGL :=
   Expression.eval distanceBase0DemoEnvironment distanceBase0Wiring.source
 
 theorem distanceBase0DemoValue_eq : distanceBase0DemoValue = 7 := by
+  unfold distanceBase0DemoValue
   rw [show distanceBase0Wiring.source = memDistanceBase0Expr by rfl,
     eval_memDistanceBase0Expr_materialize]
   simp [distanceBase0DemoData, proverDataScalar, proverDataColumn]
@@ -104,60 +148,5 @@ theorem distanceBase0DemoValue_eq : distanceBase0DemoValue = 7 := by
 @[reducible]
 def distanceBase0DemoMessage : SpecifiedRangeMessage FGL :=
   memDistanceMessage distanceBase0DemoValue
-
-@[reducible]
-def distanceBase0DemoInteractions : List (Interaction FGL) :=
-  [ SpecifiedRangesSliceChannel.pulledValue distanceBase0DemoMessage
-  , SpecifiedRangesSliceChannel.pushedValue distanceBase0DemoMessage ]
-
-private theorem distanceBase0DemoProviderMembership :
-    ZiskFv.AirsClean.RangeTables.rangeTable16.Spec distanceBase0DemoValue := by
-  rw [distanceBase0DemoValue_eq]
-  norm_num [ZiskFv.AirsClean.RangeTables.rangeTable16,
-    ZiskFv.AirsClean.RangeTables.rangeStaticTable]
-
-private theorem distanceBase0DemoInteractions_balanced :
-    BalancedInteractions distanceBase0DemoInteractions := by
-  refine balancedInteractions_of_present ?_
-    [(toElements distanceBase0DemoMessage).toArray] ?_ ?_
-  · left
-    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-    decide
-  · intro interaction h_interaction
-    simp [distanceBase0DemoInteractions] at h_interaction
-    rcases h_interaction with rfl | rfl <;> rfl
-  · intro msg h_msg
-    simp only [List.mem_singleton] at h_msg
-    subst msg
-    simp [distanceBase0DemoInteractions, balanceOf]
-
-private theorem distanceBase0DemoInteractions_requirements :
-    ∀ interaction ∈ distanceBase0DemoInteractions,
-      interaction.channel = SpecifiedRangesSliceChannel.toRaw ∧
-        interaction.Requirements distanceBase0DemoData := by
-  intro interaction h_interaction
-  simp [distanceBase0DemoInteractions] at h_interaction
-  rcases h_interaction with rfl | rfl
-  · constructor
-    · rfl
-    · simp [Interaction.Requirements, Channel.toRaw]
-  · constructor
-    · rfl
-    · simpa [Interaction.Requirements, Channel.toRaw, distanceBase0DemoMessage,
-        memDistanceMessage] using distanceBase0DemoProviderMembership
-
-/-- PR 2a's exit demonstration: a value from the selected Mem table's
-`ProverData` is pulled on the c29-linked channel, balanced by the bus-103
-static provider, and derives its 16-bit membership through Clean consistency. -/
-theorem distanceBase0Demo_membership_from_balance :
-    ZiskFv.AirsClean.RangeTables.rangeTable16.Spec distanceBase0DemoValue := by
-  have h_guarantees := RawChannel.Consistent.consistent
-    distanceBase0DemoInteractions distanceBase0DemoData
-    distanceBase0DemoInteractions_balanced distanceBase0DemoInteractions_requirements
-  have h_pull := h_guarantees
-    (SpecifiedRangesSliceChannel.pulledValue distanceBase0DemoMessage) (by
-      simp [distanceBase0DemoInteractions])
-  simpa [Interaction.Guarantees, Channel.toRaw, distanceBase0DemoMessage,
-    memDistanceMessage] using h_pull
 
 end ZiskFv.AirsClean.Mem

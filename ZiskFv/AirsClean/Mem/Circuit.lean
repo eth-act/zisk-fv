@@ -388,36 +388,36 @@ theorem componentWithDualMemBus_interactionsWith_memBus :
             (memBusDualMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
     componentWithDualMemBus.exposedChannels
   simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusAndRangeElaborated,
-    memWithDualMemBusAndRange,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    Component.exposedChannels, expose, List.mem_append, List.mem_singleton, List.map_cons,
     List.map_nil]
+  exact Or.inl trivial
 
-/-- The live Mem component consumes the four range values only through the
-validated bus-103 channel. -/
+/-- The live Mem component sends its four source-linked range values as
+negative consumer emissions on the validated bus-103 channel. -/
 theorem componentWithDualMemBus_interactionsWith_rangeChannel :
     componentWithDualMemBus.operations.interactionsWith SpecifiedRangesSliceChannel.toRaw =
-      [ ((SpecifiedRangesSliceChannel.pulled
+      [ ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase0Expr)).toRaw)
-      , ((SpecifiedRangesSliceChannel.pulled
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase1Expr)).toRaw)
-      , ((SpecifiedRangesSliceChannel.pulled
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd0Expr)).toRaw)
-      , ((SpecifiedRangesSliceChannel.pulled
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd1Expr)).toRaw) ] := by
   apply Component.interactionsWith_of_exposedChannels
   change ⟨SpecifiedRangesSliceChannel.toRaw,
-      [ ((SpecifiedRangesSliceChannel.pulled
+      [ ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase0Expr)).toRaw)
-      , ((SpecifiedRangesSliceChannel.pulled
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase1Expr)).toRaw)
-      , ((SpecifiedRangesSliceChannel.pulled
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd0Expr)).toRaw)
-      , ((SpecifiedRangesSliceChannel.pulled
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd1Expr)).toRaw) ]⟩ ∈
       componentWithDualMemBus.exposedChannels
   simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusAndRangeElaborated,
-    memWithDualMemBusAndRange, Component.exposedChannels, expose, List.mem_append,
-    List.mem_singleton, List.map_cons, List.map_nil, or_true]
+    Component.exposedChannels, expose, List.mem_append, List.mem_singleton, List.map_cons,
+    List.map_nil, or_true]
 
 /-- Project the generic Clean component `Spec` for `componentWithMemBus` to
     the concrete Mem row `Spec`. -/

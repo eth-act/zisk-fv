@@ -105,12 +105,12 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by
           intro channel h
           simp [circuit_norm] at h)
-    |>.addFinishedChannel SpecifiedRangesSliceChannel.toRaw
     |>.addTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
         (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
         (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
+    |>.addFinishedChannel SpecifiedRangesSliceChannel.toRaw
     |>.addTable ZiskFv.AirsClean.MemAlign.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _

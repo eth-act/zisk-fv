@@ -248,7 +248,6 @@ theorem mem_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
       ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-      ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
@@ -283,6 +282,25 @@ theorem arithDiv_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
     change OpBusChannel.toRaw ∉ ([] : List (RawChannel FGL))
     simp
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- The static 16-bit range-slice provider owns only bus 103, so it cannot
+    contribute an operation-bus interaction. -/
+theorem specifiedRangesSlice_table_interactionsWith_opBus_nil
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.SpecifiedRangesSlice.component) :
+    table.interactionsWith OpBusChannel.toRaw = [] := by
+  have h_not :
+      OpBusChannel.toRaw ∉
+        ZiskFv.AirsClean.SpecifiedRangesSlice.component.circuit.channels := by
+    change OpBusChannel.toRaw ∉ [SpecifiedRangesSliceChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -374,6 +392,25 @@ theorem arithDiv_table_interactionsWith_memBus_nil
         ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
     change MemBusChannel.toRaw ∉ ([] : List (RawChannel FGL))
     simp
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- The static 16-bit range-slice provider owns only bus 103, so it cannot
+    contribute a memory-bus interaction. -/
+theorem specifiedRangesSlice_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.SpecifiedRangesSlice.component) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.SpecifiedRangesSlice.component.circuit.channels := by
+    change MemBusChannel.toRaw ∉ [SpecifiedRangesSliceChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemBusChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not

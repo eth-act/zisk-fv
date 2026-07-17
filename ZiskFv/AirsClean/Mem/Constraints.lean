@@ -414,8 +414,9 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
       gatedDualStepDeltaRangeLookup, memBusMessageExpr, memBusDualMessageExpr, MemBusChannel]
 
 /-- The four source-linked bus-103 range messages retained by the validated
-Mem c29--c32 manifest links. `proves := false` is a consumer-side lookup, so
-these are Clean pulls whose membership guarantee is supplied by balance. -/
+Mem c29--c32 manifest links.  They are negative consumer emissions: as for
+Main's consumer channels, this component supplies no local membership
+guarantee; the static provider and finished-channel balance own that fact. -/
 @[reducible]
 def memRangeMessages : List (SpecifiedRangeMessage (Expression FGL)) :=
   rangeMessages
@@ -423,10 +424,10 @@ def memRangeMessages : List (SpecifiedRangeMessage (Expression FGL)) :=
 @[circuit_norm]
 def memWithDualMemBusAndRange (row : Var MemRow FGL) : Circuit FGL Unit := do
   memWithDualMemBus row
-  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceBase0Wiring.source)
-  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceBase1Wiring.source)
-  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceEnd0Wiring.source)
-  SpecifiedRangesSliceChannel.pull (memDistanceMessage distanceEnd1Wiring.source)
+  SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceBase0Wiring.source)
+  SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceBase1Wiring.source)
+  SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceEnd0Wiring.source)
+  SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceEnd1Wiring.source)
 
 /-- Dual Mem component plus the source-linked bus-103 consumer interactions.
 The range cells are table-resident raw values pinned by `generatedTransition`.
@@ -437,17 +438,16 @@ def memWithDualMemBusAndRangeElaborated : ElaboratedCircuit FGL MemRow unit wher
   main := memWithDualMemBusAndRange
   localLength _ := 0
   output _ _ := ()
-  channelsWithGuarantees := [SpecifiedRangesSliceChannel.toRaw]
-  channelsWithRequirements := [MemBusChannel.toRaw]
+  channelsWithRequirements := [MemBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
       , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ] ++
     expose SpecifiedRangesSliceChannel
-      [ SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceBase0Expr)
-      , SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceBase1Expr)
-      , SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceEnd0Expr)
-      , SpecifiedRangesSliceChannel.pulled (memDistanceMessage memDistanceEnd1Expr) ]
+      [ SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase0Expr)
+      , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase1Expr)
+      , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd0Expr)
+      , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd1Expr) ]
   channelsLawful := by
     simp [circuit_norm, memWithDualMemBusAndRange, memWithDualMemBus, main,
       rowRangeLookups, gatedDualStepDeltaRangeLookup, memBusMessageExpr,

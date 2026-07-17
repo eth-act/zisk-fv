@@ -118,6 +118,54 @@ theorem eval_memDistanceBase0Expr_materialize
   simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
     memRawRowWithProverData]
 
+set_option maxHeartbeats 4000000 in
+/-- A selected Mem table row evaluates the second bus-103 raw cell at its
+canonical `ProverData` source. -/
+theorem eval_memDistanceBase1Expr_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      memDistanceBase1Expr =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase1 := by
+  change
+    (memFixedColumns.materialize index (memRawRowWithProverData data row))[14]'(by
+      simp [IndexedFixedColumns.materialize, memFixedColumns]) = _
+  simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
+    memRawRowWithProverData]
+
+set_option maxHeartbeats 4000000 in
+/-- A selected Mem table row evaluates the third bus-103 raw cell at its
+canonical `ProverData` source. -/
+theorem eval_memDistanceEnd0Expr_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      memDistanceEnd0Expr =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd0 := by
+  change
+    (memFixedColumns.materialize index (memRawRowWithProverData data row))[15]'(by
+      simp [IndexedFixedColumns.materialize, memFixedColumns]) = _
+  simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
+    memRawRowWithProverData]
+
+set_option maxHeartbeats 4000000 in
+/-- A selected Mem table row evaluates the fourth bus-103 raw cell at its
+canonical `ProverData` source. -/
+theorem eval_memDistanceEnd1Expr_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      memDistanceEnd1Expr =
+        proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1 := by
+  change
+    (memFixedColumns.materialize index (memRawRowWithProverData data row))[16]'(by
+      simp [IndexedFixedColumns.materialize, memFixedColumns]) = _
+  simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
+    memRawRowWithProverData]
+
 /-- Materializing a raw Mem row preserves its thirteen witness cells; the
     component-owned fixed cells are outside the `MemRow` input layout. -/
 theorem eval_memRawRow_materialize
