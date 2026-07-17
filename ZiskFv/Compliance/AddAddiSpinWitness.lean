@@ -1323,14 +1323,15 @@ private theorem addAddiSpinMemBusInteractions_eq_tables :
   exact congrArg (fun tables => tables.flatMap (·.interactionsWith MemBusChannel.toRaw))
     addAddiSpinWitness_tables
 
-private theorem flatMap_eleven_of_middle_nil
+private theorem flatMap_twelve_of_middle_nil
     {α : Type u} {β : Type v} (f : α → List β)
-    (first e₀ e₁ e₂ e₃ e₄ e₅ e₆ e₇ last₀ last₁ : α)
+    (first e₀ e₁ e₂ e₃ e₄ e₅ e₆ e₇ e₈ last₀ last₁ : α)
     (h₀ : f e₀ = []) (h₁ : f e₁ = []) (h₂ : f e₂ = []) (h₃ : f e₃ = [])
-    (h₄ : f e₄ = []) (h₅ : f e₅ = []) (h₆ : f e₆ = []) (h₇ : f e₇ = []) :
-    [first, e₀, e₁, e₂, e₃, e₄, e₅, e₆, e₇, last₀, last₁].flatMap f =
+    (h₄ : f e₄ = []) (h₅ : f e₅ = []) (h₆ : f e₆ = []) (h₇ : f e₇ = [])
+    (h₈ : f e₈ = []) :
+    [first, e₀, e₁, e₂, e₃, e₄, e₅, e₆, e₇, e₈, last₀, last₁].flatMap f =
       f first ++ f last₀ ++ f last₁ := by
-  simp [h₀, h₁, h₂, h₃, h₄, h₅, h₆, h₇]
+  simp [h₀, h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈]
 
 private theorem addAddiSpinTablesMemBusInteractions_eq_active :
     addAddiSpinTables.flatMap (·.interactionsWith MemBusChannel.toRaw) =
@@ -1338,7 +1339,7 @@ private theorem addAddiSpinTablesMemBusInteractions_eq_active :
         addAddiSpinBinaryAddTable.interactionsWith MemBusChannel.toRaw ++
         addAddiSpinMainTable.interactionsWith MemBusChannel.toRaw := by
   unfold addAddiSpinTables
-  exact flatMap_eleven_of_middle_nil
+  exact flatMap_twelve_of_middle_nil
     (α := Table FGL) (β := Interaction FGL)
     (f := fun table => table.interactionsWith MemBusChannel.toRaw)
     (first := addAddiSpinBoundaryTable)
@@ -1346,10 +1347,11 @@ private theorem addAddiSpinTablesMemBusInteractions_eq_active :
     (e₁ := emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
     (e₂ := emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
     (e₃ := emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
-    (e₄ := emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
-    (e₅ := emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable)
-    (e₆ := emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
-    (e₇ := emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (e₄ := emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+    (e₅ := emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+    (e₆ := emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable)
+    (e₇ := emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (e₈ := emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent)
     (last₀ := addAddiSpinBinaryAddTable) (last₁ := addAddiSpinMainTable)
     (h₀ := emptyComponentTable_interactionsWith
       ZiskFv.AirsClean.MemAlignReadByte.component MemBusChannel.toRaw)
@@ -1360,12 +1362,14 @@ private theorem addAddiSpinTablesMemBusInteractions_eq_active :
     (h₃ := emptyComponentTable_interactionsWith
       ZiskFv.AirsClean.Mem.componentWithDualMemBus MemBusChannel.toRaw)
     (h₄ := emptyComponentTable_interactionsWith
-      ZiskFv.AirsClean.ArithDiv.component MemBusChannel.toRaw)
+      ZiskFv.AirsClean.SpecifiedRangesSlice.component MemBusChannel.toRaw)
     (h₅ := emptyComponentTable_interactionsWith
-      ZiskFv.AirsClean.ArithMul.componentWithArithTable MemBusChannel.toRaw)
+      ZiskFv.AirsClean.ArithDiv.component MemBusChannel.toRaw)
     (h₆ := emptyComponentTable_interactionsWith
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent MemBusChannel.toRaw)
+      ZiskFv.AirsClean.ArithMul.componentWithArithTable MemBusChannel.toRaw)
     (h₇ := emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent MemBusChannel.toRaw)
+    (h₈ := emptyComponentTable_interactionsWith
       ZiskFv.AirsClean.Binary.staticLookupComponent MemBusChannel.toRaw)
 
 private theorem addAddiSpinBoundaryTableMemBusInteractions_eq_rows :
