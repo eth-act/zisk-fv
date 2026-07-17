@@ -24,7 +24,7 @@ out the Add behaviour from `Airs/Main/Main.lean` +
   derived from Main's `(1 - is_external_op) * op * (b - c) = 0`
   constraint. Pure Lean, no new axioms.
 - **`SextLoadBridge.lean`** — sign-extension chain for the LB/LH/LW
-  family. Composes `bin_ext_table_consumer_wf` (class #6) +
+  family. Composes the proved BinaryExtensionTable provider/balance route +
   `binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat` (proved
   in `Airs/Binary/BinaryExtensionPackedCorrect.lean`).
 - **`MulField.lean`, `DivFieldSigned.lean`** — shared field-side

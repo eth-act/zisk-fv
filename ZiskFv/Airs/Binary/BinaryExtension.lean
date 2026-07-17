@@ -15,8 +15,8 @@ lemmas to author.
 
 The structure exists purely so downstream packed-correctness lemmas
 (see `BinaryExtensionPackedCorrect.lean`) can refer to the witness
-columns by name when they consume the trusted byte-level relation
-provided by `Airs/BinaryExtensionTable.lean::bin_ext_table_consumer_wf`.
+columns by name when they consume the proved byte-level relation from the
+exact BinaryExtensionTable provider and finished-channel route.
 
 Column layout taken from the witness-column header in
 `ZiskFv/Extraction/BinaryExtension.lean`:

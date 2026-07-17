@@ -9,8 +9,8 @@ Mirrors `Airs/Binary/BinaryAdd.lean`. Only the seven F-typed constraints
 (0..6) are exposed as named predicates here; constraints 7–13 are
 skipped at the extraction layer because they mix `F` (witness cells)
 with `ExtF` (challenges) — those are the lookup-permutation
-interactions and are handled compositionally via
-`Airs/BinaryTable.lean`'s `bin_table_consumer_wf` axiom.
+interactions. They are handled compositionally by the checked Binary lookup
+wiring, exact static provider, and finished-channel route.
 
 Post-Phase-F1: the `circuit` field, all `_def` fields, the
 `(C : Type → Type → Type) [Circuit F ExtF C]` parameter block, and the
