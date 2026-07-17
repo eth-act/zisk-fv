@@ -660,7 +660,6 @@ fn slot(name: &str, value: Ast) -> Slot {
 /// retain exactly the AST's eight nonzero operation slots rather than invent
 /// a hint-shaped eleven-slot tuple.
 fn binary_c10_derived_tuples() -> Vec<DerivedTuple> {
-    let alpha = Ast::Challenge { stage: 2, index: 0 };
     let mode64 = Ast::sub(Ast::constant("1"), witness(33));
     let lookup_flags = Ast::add(
         Ast::add(
