@@ -12,6 +12,15 @@ document is only about how to drive it.
 - **Its server-side tree is whatever we last re-seeded.** Every turn must attach a fresh
   snapshot tarball and open with the re-seed bootstrap instruction. Skipping this caused
   the #253/#254 revert contamination.
+- **Re-seeding must NOT destroy its build artifacts.** T5 revealed the dominant cost: a
+  naive tree replacement discards `.lake`, forcing a cold ~9k-job build inside its
+  22-minute command windows (progress persists across windows, but hours are burned
+  before its own edits even compile). The bootstrap prompt must instruct: preserve
+  `.lake` across the replacement (extract the tarball OVER the tree; Lake is
+  content-addressed, so artifacts for unchanged modules stay valid), run
+  `lake exe cache get` after installing (mathlib artifacts), and size every build
+  command to complete within the ~22-minute execution window (per-module/per-directory
+  slices for deep-import edits, re-invoking as needed since progress is cached).
 - **Snapshot = `git archive HEAD`** of the turn's base commit (~1.8 MB). Never
   `--project-dir`/attach a live checkout (13 GB `.lake` → apparent hang). The archive has
   no branch history (prompts must not reference commits/branches as available) and no
