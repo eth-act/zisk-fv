@@ -95,6 +95,9 @@ writeShellApplication {
       # module, not the extractor, applies the narrow neutral-term normalizer.
       grep -Fq '{ name := "Mem.distance_base[0]", value := Expr.add (Expr.airValue 11) (Expr.constant "0") }' build/extraction/Extraction/LookupWiring.lean
       grep -Fq ':= by rfl' build/extraction/Extraction/LookupWiring.lean
+      # Binary c10 has no gsum hint. Its constraint-derived mixed template
+      # must nevertheless be checked by the generated Lean rfl example.
+      grep -Fq 'example : constraint_Binary_10 = template_Binary_10 := by rfl' build/extraction/Extraction/LookupWiring.lean
       generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/Circuit.olean \
