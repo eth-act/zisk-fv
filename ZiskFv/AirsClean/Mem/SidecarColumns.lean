@@ -69,6 +69,30 @@ abbrev l1 : Nat := 1
 
 end MemFixedColumn
 
+/-! Raw Mem witness slots materializing the four bus-103 range values. These
+remain table-resident cells; `generatedTransition` pins them to their
+canonical `ProverData` source. -/
+namespace MemRangeSidecarRawColumn
+
+abbrev distanceBase0 : Nat := 13
+abbrev distanceBase1 : Nat := 14
+abbrev distanceEnd0 : Nat := 15
+abbrev distanceEnd1 : Nat := 16
+
+end MemRangeSidecarRawColumn
+
+@[reducible]
+def memDistanceBase0Expr : Expression FGL := var ⟨MemRangeSidecarRawColumn.distanceBase0⟩
+
+@[reducible]
+def memDistanceBase1Expr : Expression FGL := var ⟨MemRangeSidecarRawColumn.distanceBase1⟩
+
+@[reducible]
+def memDistanceEnd0Expr : Expression FGL := var ⟨MemRangeSidecarRawColumn.distanceEnd0⟩
+
+@[reducible]
+def memDistanceEnd1Expr : Expression FGL := var ⟨MemRangeSidecarRawColumn.distanceEnd1⟩
+
 /-- Read one field element from a one-column `ProverData` array. Missing keys
 or out-of-range rows default to zero, matching Clean's `Environment.fromArray`
 convention for absent witness cells. -/

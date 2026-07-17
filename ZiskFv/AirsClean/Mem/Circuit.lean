@@ -29,6 +29,7 @@ namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open Air.Flat
 
 /-- Honest `read_same_addr` column for Mem. -/
@@ -171,7 +172,7 @@ def componentWithMemBus : Air.Flat.Component FGL := { circuit := circuitWithMemB
     It is kept separate from `componentWithMemBus` while the FullEnsemble
     balance layer still expects the primary-only compatibility component. -/
 def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
-  { memWithDualMemBusElaborated with
+  { memWithDualMemBusAndRangeElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers honest Mem rows with the PIL's own range inputs;
@@ -202,7 +203,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · exact ⟨by intro _; trivial, by intro _; trivial⟩
     completeness := by
-      circuit_proof_start [MemBusChannel, Lookup.completeness_def]
+      circuit_proof_start [MemBusChannel, SpecifiedRangesSliceChannel, Lookup.completeness_def]
       obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
         increment_0, increment_1, value_0, value_1, h_selDual, h_wr, h_ranges, hrow⟩ :=
         h_assumptions
@@ -249,7 +250,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
     memory-bus provider emissions. -/
 def componentWithDualMemBus : Air.Flat.Component FGL :=
   { circuit := circuitWithDualMemBus
-    rawWidth := 13
+    rawWidth := 17
     fixedColumns := some memFixedColumns
     transition := generatedTransition memFixedColumns }
 
@@ -386,9 +387,37 @@ theorem componentWithDualMemBus_interactionsWith_memBus :
         , ((MemBusChannel.emitted componentWithDualMemBus.rowInputVar.sel_dual
             (memBusDualMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
     componentWithDualMemBus.exposedChannels
-  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusAndRangeElaborated,
+    Component.exposedChannels, expose, List.mem_append, List.mem_singleton, List.map_cons,
     List.map_nil]
+  exact Or.inl trivial
+
+/-- The live Mem component sends its four source-linked range values as
+negative consumer emissions on the validated bus-103 channel. -/
+theorem componentWithDualMemBus_interactionsWith_rangeChannel :
+    componentWithDualMemBus.operations.interactionsWith SpecifiedRangesSliceChannel.toRaw =
+      [ ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase0Expr)).toRaw)
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase1Expr)).toRaw)
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd0Expr)).toRaw)
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd1Expr)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨SpecifiedRangesSliceChannel.toRaw,
+      [ ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase0Expr)).toRaw)
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceBase1Expr)).toRaw)
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd0Expr)).toRaw)
+      , ((SpecifiedRangesSliceChannel.emitted (-1)
+            (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd1Expr)).toRaw) ]⟩ ∈
+      componentWithDualMemBus.exposedChannels
+  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusAndRangeElaborated,
+    Component.exposedChannels, expose, List.mem_append, List.mem_singleton, List.map_cons,
+    List.map_nil, or_true]
 
 /-- Project the generic Clean component `Spec` for `componentWithMemBus` to
     the concrete Mem row `Spec`. -/

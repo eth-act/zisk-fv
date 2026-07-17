@@ -12,7 +12,10 @@ Mem sidecar fields and the MULH/MULHSU lookup route. PR 1 is active: its
 generated `LookupWiring` manifest preserves raw typed hint ASTs only for
 kernel-checked standard-template links, including Mem c24-c32 and Arith
 c49-c60/c63; unlinked emitted constraints (including Mem c33) remain typed
-constraint-only records and non-emitted AIRs are reported as absent.
+constraint-only records and non-emitted AIRs are reported as absent. PR #259
+is awaiting review; read-only PR 2 preparation found that the planned balance
+discharge needs an owner-approved, source-linked `SpecifiedRanges`
+provider/expression-bridge spike before any held-field deletion.
 
 ## Aeneas Bridge 111
 

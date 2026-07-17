@@ -1,7 +1,7 @@
 name = "zisk-fv"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["ZiskFv"]
+defaultTargets = ["ZiskFv", "Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge"]
 moreLeanArgs = ["--tstack=400000"]
 
 [leanOptions]
@@ -22,11 +22,16 @@ path = "build/sail-lean"
 
 # Auto-generated PIL2 extraction (per-AIR Lean files emitted by
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
-# `nix run .#populate` — never committed. These files use a generated
-# `Extraction.Circuit` shim and are checked directly by the top-level test
-# gate where needed, but they remain outside the main Lake dependency graph.
-# Re-introducing them as library dependencies requires re-extracting against
-# a Clean-Components-aware emitter.
+# `nix run .#populate` — never committed. The narrow, source-linked
+# `LookupWiring` and `MemGeneratedConstraintBridge` modules are compiled in
+# the main Lake graph; the remaining generated AIR files stay direct-tested
+# until a Clean-Components-aware emitter supports them.
+[[lean_lib]]
+name = "Extraction"
+srcDir = "build/extraction"
+roots = ["Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge"]
+globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifact",
+  "Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge"]
 
 # Clean DSL (Verified-zkEVM/clean) source tree. Populated by
 # `nix run .#populate` from the pinned `clean-src` flake input.
@@ -52,6 +57,7 @@ rev = "v4.28.0"
 
 [[lean_lib]]
 name = "ZiskFv"
+roots = ["ZiskFv"]
 
 # The REAL Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`,
 # `import Aeneas`). Imported by ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean

@@ -5,6 +5,7 @@ import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.TraceSpec
+import ZiskFv.AirsClean.SpecifiedRangesSlice
 
 namespace ZiskFv.AirsClean.FullEnsemble
 
@@ -12,6 +13,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 
@@ -33,6 +35,7 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.MemAlignByte.component
       ∨ component = ZiskFv.AirsClean.MemAlign.component
       ∨ component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
+      ∨ component = ZiskFv.AirsClean.SpecifiedRangesSlice.component
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
       ∨ component = arithMulProviderComponent
       ∨ component = shiftStaticLookupComponent
@@ -162,7 +165,8 @@ theorem opBus_balanced_of_witness
     (h_balanced : witness.BalancedChannels) :
     BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw) := by
   have h := h_balanced OpBusChannel.toRaw (by
-    change OpBusChannel.toRaw ∈ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change OpBusChannel.toRaw ∈
+      [MemBusChannel.toRaw, OpBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -175,7 +179,8 @@ theorem memBus_balanced_of_witness
     (h_balanced : witness.BalancedChannels) :
     BalancedInteractions (witness.interactionsWith MemBusChannel.toRaw) := by
   have h := h_balanced MemBusChannel.toRaw (by
-    change MemBusChannel.toRaw ∈ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change MemBusChannel.toRaw ∈
+      [MemBusChannel.toRaw, OpBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -243,7 +248,6 @@ theorem mem_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
       ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-      ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
@@ -278,6 +282,25 @@ theorem arithDiv_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
     change OpBusChannel.toRaw ∉ ([] : List (RawChannel FGL))
     simp
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- The static 16-bit range-slice provider owns only bus 103, so it cannot
+    contribute an operation-bus interaction. -/
+theorem specifiedRangesSlice_table_interactionsWith_opBus_nil
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.SpecifiedRangesSlice.component) :
+    table.interactionsWith OpBusChannel.toRaw = [] := by
+  have h_not :
+      OpBusChannel.toRaw ∉
+        ZiskFv.AirsClean.SpecifiedRangesSlice.component.circuit.channels := by
+    change OpBusChannel.toRaw ∉ [SpecifiedRangesSliceChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [OpBusChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -369,6 +392,25 @@ theorem arithDiv_table_interactionsWith_memBus_nil
         ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
     change MemBusChannel.toRaw ∉ ([] : List (RawChannel FGL))
     simp
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- The static 16-bit range-slice provider owns only bus 103, so it cannot
+    contribute a memory-bus interaction. -/
+theorem specifiedRangesSlice_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.SpecifiedRangesSlice.component) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.SpecifiedRangesSlice.component.circuit.channels := by
+    change MemBusChannel.toRaw ∉ [SpecifiedRangesSliceChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemBusChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
