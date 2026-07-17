@@ -1,3 +1,84 @@
+# Summary of changes for run af154c69-dade-4a18-bbcf-9d542b3fdfc7
+Installed the supplied source-of-truth snapshot and attempted all nine work-order items.
+
+Implemented and verified:
+- Added `ShiftProviderEvidence` in `ZiskFv/Compliance/SharedBundles.lean`.
+- Proved `AcceptedZiskTrace.shiftProviderRowFacts` from the generic accepted-trace provider seam in `ZiskFv/Compliance/AcceptedZiskTrace/DerivedRowFacts.lean`.
+- Preserved `root_soundness`, `root_completeness`, `ZiskFv/Audit.lean`, and every file under `trust/generated/` byte-for-byte.
+- Confirmed the full build passes (9012 jobs).
+- Confirmed source trust checks 1–12 and 14–16 pass; check 13 was deferred because the supplied snapshot omits the `zisk` submodule.
+- Confirmed all semantic trust checks pass, running the final long witness groups separately after the aggregate script exceeded its execution window.
+- Confirmed modified Lean sources contain no prohibited proof placeholders or declarations.
+
+Prepending to `ARISTOTLE_SUMMARY.md`, I recorded:
+- A status for every numbered item.
+- Precise architectural blockers for unfinished family migrations.
+- Before/after theorem-parameter counts covering prior RTYPE/ITYPE work and every family inspected here.
+- Evidence-package design decisions and exact verification results.
+
+The complete wrapper/canonical rollout was not achieved. Shift now has its evidence package and seam specialization, but its surface migration remains coupled to numerous exhaustive `OpEnvelope` consumers. ADD/ADDI require a typed Binary/BinaryAdd provider sum; arithmetic families require provider variants capable of deriving their dependent ArithMul/ArithDiv rows and primary/secondary matches; load/store routes remain tied to their Clean memory witnesses. No theorem was weakened and no new caller premise was introduced.
+
+# Refactor 4 Phase 2.3/2.4 remainder — run summary (2026-07-17)
+
+The supplied source-of-truth snapshot was installed before work began. This run attempted all nine numbered items. It added the BinaryExtension evidence shape and the accepted-trace provider specialization needed by the Shift family, but did not complete the requested wrapper/canonical migration. The remaining statuses below are deliberately reported as blocked/incomplete rather than overstated.
+
+## Per-item status
+
+| # | Family / task | Status | Result / precise blocker |
+|---|---|---|---|
+| 1 | Shift | **Blocked after seam/package implementation** | Added `ShiftProviderEvidence` in `ZiskFv/Compliance/SharedBundles.lean` and proved `AcceptedZiskTrace.shiftProviderRowFacts` in `ZiskFv/Compliance/AcceptedZiskTrace/DerivedRowFacts.lean`, selecting `shiftStaticLookupComponent` from `opProviderRowFacts`. A trial migration of the six 64-bit surfaces compiled in isolation, but changing the `OpEnvelope.sll/srl/sra/slli/srli/srai` constructor arities requires a simultaneous exhaustive update of pattern consumers in `Dispatch/Shift.lean`, `AeneasBridgeTrust/{Base,Shifts}.lean`, `TraceLevelExport/{StepStrongAluArith,Dispatcher,ProgramDecode,BootSegmentMemorySeed}.lean`, and all construction callers. The trial was reverted rather than commit a tree that broke exhaustive patterns. The six W-shift wrappers are not separate `Wrappers/<Op>.lean` declarations; their canonical and `OpEnvelope` surfaces are additionally coupled to the large `Dispatch/Remaining.lean` match. No hypothesis was added or claim weakened. Current counts remain below. |
+| 2 | ADD_RTYPEW | **Blocked / unchanged** | Inspection confirmed two genuinely different providers for ADD/ADDI (`OpEnvelope.add_via_binary` uses static Binary; `add_via_binaryadd` uses BinaryAdd), while ADDW/ADDIW/SUBW use static Binary. A single component-equality package cannot type both alternatives; this needs a sum of a `StaticBinaryRTypeEvidence`-style package and a new BinaryAdd-dependent package, followed by simultaneous changes to `equiv_ADD_via_binaryadd`/`EquivCore.Add.equiv_ADD_of_binaryadd_row`, `OpEnvelope`, `Dispatch/ADD_RTYPEW.lean`, `Dispatch/Misc.lean`, and StepStrong callers. No caller premise was introduced and all surfaces remain unchanged. |
+| 3 | DIVU | **Blocked / unchanged** | The work-order label “ArithMul provider specialization” does not match the actual canonical surface: `ZiskFv/Equivalence/Divu.lean:equiv_DIVU` and `Compliance/Wrappers/Divu.lean:equiv_DIVU_of_table` use `Valid_ArithDiv`, `opBus_row_ArithDiv`, `ArithDivTableWitness`, chunk/carry witnesses, and a remainder-bound witness. The generic seam’s first branch is expressed through `arithMulProviderComponent`, so deriving the exact `Valid_ArithDiv` row/index and all of these dependent witnesses is not a direct specialization of the existing `OpProviderRowBranch`. The surface was not weakened to hide this mismatch. |
+| 4 | Remaining | **Blocked / unchanged** | `Dispatch/Remaining.lean` is not one provider family: it contains loads/stores, six W-shifts, five multiplication forms, seven signed/unsigned div/rem forms, and jumps. The M-extension canonicals depend on different primary/secondary Arith rows and distinct witness packages (examples: `equiv_MUL` 36 binders, `equiv_DIV` 30, `equiv_REMU` 22). The current four-way seam records only one primary Arith provider message and cannot derive secondary matches or the dependent `Valid_ArithDiv` row witnesses used by these theorem statements. Per-op provider variants are therefore required before safe surface shrinkage. |
+| 5 | Misc | **Blocked / unchanged** | `Dispatch/Misc.lean` combines LB/LH/LW memory-provider routes with ADDI’s Binary/BinaryAdd alternatives and ADDIW’s static-Binary route. The load arms’ provider data is tied to `LdCleanWitness`/full-ensemble memory message equality, not `OpProviderRowFacts`; ADDI has the same two-provider sum issue as item 2. No common evidence package can faithfully type all arms. |
+| 6 | NoMemOrSimple | **Attempted; no listed provider binders to remove** | `Dispatch/NoMemOrSimple.lean` covers LUI, AUIPC, AUIPC-x0, and FENCE. These arms have no `providerTable`, `providerRow`, component/spec, provider membership, provider match, or rd-lane binders. Their `MainRowPins` are semantically opcode/control pins and no operation-bus provider row exists for the no-memory forms. No change was appropriate under the item’s provider-specialization recipe. |
+| 7 | LDSD | **Blocked / unchanged** | The canonical LD/SD surfaces already have no loose provider table/row/component/spec/match or rd-lane binders: they consume `LdCleanWitness`/`SdCleanWitness`. The remaining `MainRowPins main r_main 0 OP_COPYB` can be obtained from accepted decode facts, but canonical theorem scope has no `AcceptedZiskTrace`; moving it out requires changing the `OpEnvelope` constructors and all load/store dispatch/trace callers together. Memory timeline facts remain inside the Clean witnesses and were intentionally not forced into the generic operation-bus seam. |
+| 8 | Cleanup | **Done: nothing deletable yet** | A zero-consumer search found every `main_request_*_provided` declaration still has live consumers. In particular, `main_request_shift_provided` has callers in `ConstructionShift.lean` and `TraceLevelExport/StepStrongAluArith.lean`; add/logic/compare/W/div/rem helpers likewise remain consumed. Therefore no balance-rebuild lemma or loose helper was deleted prematurely. |
+| 9 | Final sweep | **Done for the resulting tree; rollout incomplete** | Full build and all available trust checks pass as recorded below. Protected roots, audit file, and `trust/generated/` are byte-identical to the supplied snapshot. The parameter table records both the prior accepted RTYPE/ITYPE migration and every family inspected in this run. |
+
+## Explicit theorem-parameter counts
+
+Counts are individual explicit parameters on the named wrapper/canonical declaration. “Unchanged” means this run did not complete that family’s surface migration.
+
+| Family / theorem(s) | Wrapper before → after | Canonical before → after |
+|---|---:|---:|
+| Prior RTYPE: `equiv_SUB`, `equiv_AND`, `equiv_OR`, `equiv_XOR`, `equiv_SLT`, `equiv_SLTU` | 19 → 10 | 19 → 10 |
+| Prior ITYPE: `equiv_ANDI`, `equiv_ORI`, `equiv_XORI` | 20 → 14 | 20 → 14 |
+| Prior ITYPE compare: `equiv_SLTI`, `equiv_SLTIU` | 19 → 13 | 19 → 13 |
+| Shift64: `equiv_SLL`, `equiv_SRL`, `equiv_SRA`, `equiv_SLLI`, `equiv_SRLI`, `equiv_SRAI` | 19 → 19 | 19 → 19 |
+| ShiftW register: `equiv_SLLW`, `equiv_SRLW`, `equiv_SRAW` | no separate wrapper | 19 → 19 |
+| ShiftW immediate: `equiv_SLLIW`, `equiv_SRLIW`, `equiv_SRAIW` | no separate wrapper | 18 → 18 |
+| ADD static route: `equiv_ADD` | 19 → 19 | 19 → 19 |
+| ADDI static route: `equiv_ADDI` | 20 → 20 | 20 → 20 |
+| W-add: `equiv_ADDW`, `equiv_ADDIW`, `equiv_SUBW` | 19 → 19 | 19 → 19 |
+| DIVU: `equiv_DIVU_of_table` / `equiv_DIVU` | 22 → 22 | 22 → 22 |
+| Remaining MUL: `equiv_MUL`, `equiv_MULH`, `equiv_MULHU`, `equiv_MULHSU`, `equiv_MULW` | 36/34/33/34/23 unchanged | 36/34/33/34/23 unchanged |
+| Remaining DIV/REM: `equiv_DIV`, `equiv_REM`, `equiv_REMU`, `equiv_DIVW`, `equiv_DIVUW`, `equiv_REMW`, `equiv_REMUW` | 29/28/22/37/25/36/27 unchanged | 30/29/22/38/25/37/25 unchanged |
+| Misc loads: `equiv_LB`, `equiv_LH`, `equiv_LW` | 16 → 16 | 16 → 16 |
+| LDSD: `equiv_LD`, `equiv_SD` | canonical compatibility wrappers 10/10 unchanged (`Sd.lean` also has a 28-parameter full-ensemble constructor) | 10 → 10 each |
+| Remaining loads: `equiv_LBU`, `equiv_LHU`, `equiv_LWU` | 12 → 12 | 12 → 12 |
+| Remaining stores: `equiv_SB`, `equiv_SH`, `equiv_SW` | canonical compatibility wrappers 11 each unchanged (full-ensemble constructors are 37/36/34) | 11 → 11 each |
+| NoMemOrSimple: `equiv_LUI`, `equiv_AUIPC`, `equiv_FENCE` | canonical wrappers 16/8/12 unchanged (LUI wrapper file also has a 16-parameter construction theorem) | 16/8/12 unchanged |
+| Remaining jumps: `equiv_JAL`, `equiv_JALR` | canonical wrappers 8/28 unchanged | 8/28 unchanged |
+
+## Evidence-package design
+
+- Prior accepted RTYPE: dependent `StaticBinaryRTypeEvidence`, including provider identity/row/spec/match, two operand bindings, Main pins, and destination lane.
+- Prior accepted ITYPE: `StaticBinaryProviderEvidence`, retaining opcode-specific immediate/subset bindings outside the common provider package.
+- Shift design added here: dependent `ShiftProviderEvidence`, parameterized by Main row, bus, opcode, input A, and natural shift amount. It packages the BinaryExtension table/row/component/spec/match, input-A binding, shift-amount binding, Main pins, and destination lane.
+- ADD/ADDI require a provider sum (static Binary versus BinaryAdd); W-add can reuse a static-Binary dependent package with 32-bit extraction fields.
+- Arith families require distinct primary/secondary and ArithMul/ArithDiv evidence variants; the current generic provider branch is insufficient for the dependent validator/index witnesses.
+- Loads/stores should retain their existing Clean memory witness packages; only accepted-trace caller-side pin assembly is common with the operation families.
+
+## Verification
+
+- `lake build`: **passed**, 9012 jobs, including `ZiskFv/Audit.lean`.
+- Source trust checks: **1–12 and 14–16 passed**; check 13 was deferred exactly as authorized because the supplied snapshot omits the `zisk` submodule.
+- Semantic trust checks: checks **1–13 passed** in the aggregate run; checks 14–16 were then run directly and passed (all Clean completeness witnesses; register MemBus witness; 824 extraction/decode raw closures). The aggregate script exceeded the execution window while replaying the long witness suite, not because of a reported failing check.
+- `ZiskFv/Soundness.lean`, `ZiskFv/Completeness.lean`, and `ZiskFv/Audit.lean`: SHA-256 unchanged from the installed snapshot.
+- `trust/generated/`: byte-for-byte unchanged.
+- Modified Lean sources contain no `sorry`, `admit`, `native_decide`, `opaque`, `partial`, or `implemented_by`.
+
 # Summary of changes for run 8e2b9014-647a-42e6-ba5a-db6d87f489b2
 Implemented and verified a substantial partial Phase 2.3/2.4 refactor, with the exact per-item status recorded at the top of `ARISTOTLE_SUMMARY.md`.
 

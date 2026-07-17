@@ -321,6 +321,60 @@ theorem AcceptedZiskTrace.staticBinaryCompareProviderRowFacts
     exact False.elim
       (binaryAdd_provider_branch_ne_staticBinaryCompare h_match h_op)
 
+/-- Specialize the generic provider branch to the BinaryExtension static shift
+provider.  This replaces the former balance-rebuilding `main_request_shift_provided`
+path with the common accepted-trace seam. -/
+theorem AcceptedZiskTrace.shiftProviderRowFacts
+    {n : Nat} (trace : AcceptedZiskTrace n) (i : Fin n)
+    (h_active : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL_W
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL_W
+        ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA_W) :
+    ∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component =
+          ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (mainOfTable trace.program trace.mainTable) i.val)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+                (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) := by
+  obtain ⟨providerTable, h_providerTable, h_branch⟩ :=
+    trace.opProviderRowFacts i h_active
+  rcases h_branch with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, _h_row, h_spec, h_component, h_match⟩ := h_arithMul
+    exact False.elim
+      (arithMul_provider_branch_ne_staticBinaryExtensionShift
+        h_component h_spec h_match h_op)
+  · obtain ⟨providerRow, h_row, _h_spec, h_component, h_match⟩ := h_binExt
+    have h_match_row :
+        ZiskFv.Airs.OperationBus.matches_entry
+          (ZiskFv.Airs.OperationBus.opBus_row_Main
+            (mainOfTable trace.program trace.mainTable) i.val)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+              (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+                (providerTable.environment providerRow))) 1) := by
+      simpa only [
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr]
+        using h_match
+    exact ⟨providerTable, h_providerTable, providerRow, h_row, h_component,
+      trace.spec_holds providerTable h_providerTable, h_match_row⟩
+  · obtain ⟨providerRow, _h_row, h_spec, h_component, h_match⟩ := h_binary
+    exact False.elim
+      (staticBinary_provider_branch_ne_staticBinaryExtensionShift
+        h_component h_spec h_match h_op)
+  · obtain ⟨_providerRow, _h_row, _h_spec, _h_component, h_match⟩ := h_binaryAdd
+    exact False.elim
+      (binaryAdd_provider_branch_ne_staticBinaryExtensionShift h_match h_op)
+
 /-- The canonical indexed Main row pins its own activation and opcode columns.
 This is the hypothesis-free seam fact; an opcode arm specializes the two indices
 using the decode equalities already derived from the accepted Main/ROM row. -/

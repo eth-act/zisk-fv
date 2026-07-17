@@ -15,6 +15,7 @@ import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithDiv.Bridge
 import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -75,6 +76,36 @@ structure MainRowPins (m : Valid_Main FGL FGL) (r_main : ℕ)
     (active : FGL) (opKind : FGL) where
   main_active : m.is_external_op r_main = active
   main_op : m.op r_main = opKind
+
+/-! ## Accepted-trace BinaryExtension shift evidence -/
+
+/-- The provider selection and row bindings shared by all register and immediate
+shift surfaces.  Every field is assembled at the accepted-trace seam; callers
+no longer pass the provider identity, row membership/specification, Main pins,
+or destination lane separately. -/
+structure ShiftProviderEvidence
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (bus : BusRows)
+    (opKind : FGL) (inputA : BitVec 64) (shiftAmount : Nat) where
+  providerTable : Air.Flat.Table FGL
+  providerRow : Array FGL
+  component : providerTable.component =
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+  tableSpec : providerTable.Spec
+  providerRow_mem : providerRow ∈ providerTable.table
+  requestMatch : ZiskFv.Airs.OperationBus.matches_entry
+    (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+    (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+      (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+        (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (providerTable.environment providerRow))) 1)
+  inputA_row : inputA = ZiskFv.AirsClean.BinaryExtension.rowA64
+    (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+      (providerTable.environment providerRow))
+  shiftAmount_row : shiftAmount = ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+    (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+      (providerTable.environment providerRow))
+  pins : MainRowPins m r_main 1 opKind
+  rdLane : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 
 /-! ## Accepted-trace static Binary provider evidence -/
 
