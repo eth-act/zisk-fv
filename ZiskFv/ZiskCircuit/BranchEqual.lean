@@ -44,7 +44,7 @@ def main_row_in_beq_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.set_pc r_main = 0
 
 /-- Hypotheses needed by `branch_eq_compositional`. Unlike ADD, BEQ
-    does not emit a `Valid_BinaryAdd` row — the bus hop goes to the
+    does not emit a the legacy BinaryAdd validator row — the bus hop goes to the
     full Binary SM for `eq`. We abstract the SM's flag-correctness
     guarantee as an externally-supplied hypothesis (`h_flag_correct`),
     deferring the PIL-level derivation to the audit. -/

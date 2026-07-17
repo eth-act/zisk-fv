@@ -3,7 +3,6 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryExtension
 
@@ -59,8 +58,6 @@ open Goldilocks
     so V2's `whnfR` walker can unfold them when auditing forbidden
     binder types. -/
 inductive OpBusProvider : Type
-  | binaryAdd
-      (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) : OpBusProvider
   | binary
       (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : OpBusProvider
   | binaryExtension
@@ -71,7 +68,6 @@ inductive OpBusProvider : Type
     operation-bus message tuple. -/
 @[reducible]
 def OpBusProvider.opBus_row : OpBusProvider → ℕ → OperationBusEntry FGL
-  | .binaryAdd b, r => opBus_row_BinaryAdd b r
   | .binary b, r => opBus_row_Binary b r
   | .binaryExtension e, r => opBus_row_BinaryExtension e r
 
@@ -81,7 +77,6 @@ def OpBusProvider.opBus_row : OpBusProvider → ℕ → OperationBusEntry FGL
     axioms. -/
 @[reducible]
 def OpBusProvider.handles_op : OpBusProvider → FGL → Prop
-  | .binaryAdd _, op => op = 10
   | .binary _, op =>
       op = 0x02 ∨ op = 0x03 ∨ op = 0x04 ∨ op = 0x05 ∨ op = 0x06
       ∨ op = 0x07 ∨ op = 0x08 ∨ op = 0x09 ∨ op = 0x0a ∨ op = 0x0b

@@ -185,13 +185,8 @@ theorem zisk_riscv_compliant_program_bus_misc
       simpa [row, ZiskFv.AirsClean.BinaryAdd.component_spec] using h_component_spec
     exact ZiskFv.EquivCore.Addi.equiv_ADDI_of_binaryadd_row
       state addi_input r1 rd imm m row r_main bus promises pins
-      h_match_binaryadd
-      (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
-      h_main_subset h_a_lo_t h_a_hi_t
-      (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
-      (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
-      (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
-      h_addi_subset h_m32 h_set_pc h_lane_rd
+      h_match_binaryadd h_facts
+      h_main_subset h_a_lo_t h_a_hi_t h_addi_subset h_m32 h_set_pc h_lane_rd
   | addiw addiw_input r1 rd imm _v bus pins h_addiw_subset providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static h_input_r1_extract
       h_lane_rd promises =>

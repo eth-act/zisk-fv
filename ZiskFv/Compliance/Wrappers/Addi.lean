@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Addi
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -159,12 +159,7 @@ lemma equiv_ADDI_via_binaryadd
       simpa [h_component] using h_table_spec providerRow h_provider_row
     simpa [row, ZiskFv.AirsClean.BinaryAdd.component_spec] using h_component_spec
   exact ZiskFv.EquivCore.Addi.equiv_ADDI_of_binaryadd_row
-    state addi_input r1 rd imm m row r_main bus promises pins h_match
-    (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
-    h_main_subset h_a_lo_t h_a_hi_t
-    (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
-    (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
-    (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
-    h_addi_subset h_m32 h_set_pc h_lane_rd
+    state addi_input r1 rd imm m row r_main bus promises pins h_match h_facts
+    h_main_subset h_a_lo_t h_a_hi_t h_addi_subset h_m32 h_set_pc h_lane_rd
 
 end ZiskFv.Compliance

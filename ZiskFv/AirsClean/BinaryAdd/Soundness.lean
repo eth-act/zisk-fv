@@ -26,7 +26,7 @@ the `ZMod.val_*` lemma surface at all.
 
 No axioms added. This file proves the Spec from the four constraints.
 Step 4 (the next stacked commit) will build on this to provide the
-compatibility lemma with `Valid_BinaryAdd` and retire one axiom
+compatibility lemma with the legacy BinaryAdd validator and retire one axiom
 (floor 116 → 115).
 -/
 

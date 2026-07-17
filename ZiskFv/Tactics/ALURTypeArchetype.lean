@@ -19,7 +19,7 @@ single ZisK microinstruction shape under `create_register_op`:
 * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
 * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
 
-Unlike ADD (which has an extracted `Valid_BinaryAdd` AIR), the other
+Unlike ADD (which has an extracted the legacy BinaryAdd validator AIR), the other
 Binary-SM AIRs (`BinarySub`, `BinaryLogic`, etc.) are **not extracted**.
 We close these six opcodes by parameterizing the archetype over an
 abstract `OperationBusEntry FGL` — exactly the pattern
@@ -48,7 +48,7 @@ lemma sub_compositional
 
 ## Minimalism note
 
-ADD's `Valid_BinaryAdd`-dependent carry-chain identity does **not**
+ADD's the legacy BinaryAdd validator-dependent carry-chain identity does **not**
 generalize — SUB/AND/OR/XOR/SLT/SLTU have no analogous extracted AIR.
 We keep `Spec/Add.lean` untouched and define a narrower archetype here
 that stops at the bus-match identity (Main's `c` lanes equal the bus

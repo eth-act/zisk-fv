@@ -1,7 +1,7 @@
 import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
 import ZiskFv.AirsClean.Binary.Bridge
-import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.RegisterBoundary
 

@@ -133,7 +133,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.Mem

@@ -4,7 +4,6 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
@@ -38,7 +37,6 @@ open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryAdd
 
 
 /-! ## Bus rows: shared by ~52 OpEnvelope arms / wrappers / canonicals -/
@@ -569,15 +567,6 @@ theorem ArithDivSignedCarryRangeWitness.ranges
   ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) :=
   ZiskFv.AirsClean.ArithDiv.signed_carry_ranges_of_lookup_aware_const_soundness w
 
-/-! ## BinaryAdd validator + universal core constraint -/
-
-/-- `Valid_BinaryAdd` provider + the universal-row core-constraint
-    quantifier that canonical theorems and wrappers consume together.
-    Shared by ADD, ADDI. -/
-structure BinaryAddWitness where
-  validator : Valid_BinaryAdd FGL FGL
-  core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row validator r
-
 /-! ## Full mode-register set -/
 
 /-- Four M-mode register snapshots that loads, stores, and JALR all
@@ -602,8 +591,6 @@ structure ModeRegsFull where
     now *derive* that range bound from concrete lookup-aware Clean soundness
     (`ranges_of_lookup_aware_const_soundness`), rather than accept it as a
     caller promise or route through the Clean Component completeness field.
-    Same validator-bundled universal-row-constraint shape as
-    `BinaryAddWitness.core`.
 
     **C2 re-root.** `marb_core` is the MemAlignReadByte AIR's own
     `core_every_row` PIL constraints — the analogous *constructibility*

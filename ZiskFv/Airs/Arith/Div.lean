@@ -10,7 +10,7 @@ Named-column mirror of the ZisK `Arith` AIR, restricted to the
 / REM / REMU rows). After Phase F4 retirement, the structure no longer
 exposes the underlying `C F ExtF` circuit or the `Circuit.main`-backed
 extraction-bridge — the named columns are taken as primitive accessors,
-matching the post-retirement shape of `Valid_BinaryAdd` /
+matching the post-retirement shape of the legacy BinaryAdd validator /
 `Valid_BinaryExtension` / `Valid_Mem*` after Phase D3+D4.
 
 The Arith state machine is the same AIR used for MUL, but a single row

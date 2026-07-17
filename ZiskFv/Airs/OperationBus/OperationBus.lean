@@ -3,7 +3,6 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryExtension
 
@@ -109,32 +108,6 @@ lemma one_sub_one_mul {F : Type} [Field F] (x : F) :
 lemma one_sub_m32_mul_of_eq_one {F : Type} [Field F]
     {m32 : F} (h : m32 = 1) (x : F) : (1 - m32) * x = 0 := by
   subst h; ring
-
-/-- BinaryAdd's operation-bus emission for a given row. Mirrors the
-    `proves_operation(op: OP_ADD, a:, b:, c:)` call at
-    `zisk/state-machines/binary/pil/binary_add.pil:25`. Multiplicity
-    is `1` (the implicit `mul:1` default). `c` is reassembled from
-    `c_chunks` per the per-lane recombination
-    `c[i] := c_chunks[2i+1] * 2^16 + c_chunks[2i]`. -/
-@[simp]
-def opBus_row_BinaryAdd {F ExtF : Type}
-    [Field F] [Field ExtF]
-    (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd F ExtF) (row : ℕ) : OperationBusEntry F :=
-  { multiplicity := 1
-    -- Opcode literal `0x0A` per `zisk/pil/opids.pil`. The bus entry
-    -- is parametric in F, so we use the natural literal directly rather
-    -- than `ZiskFv.Trusted.OP_ADD` (which is fixed to `FGL`).
-    op := 10
-    a_lo := b.a_0 row
-    a_hi := b.a_1 row
-    b_lo := b.b_0 row
-    b_hi := b.b_1 row
-    c_lo := b.c_chunks_1 row * 65536 + b.c_chunks_0 row
-    c_hi := b.c_chunks_3 row * 65536 + b.c_chunks_2 row
-    flag := 0
-    main_step := 0
-    extended_arg := 0
-    extra_args_0 := 0 }
 
 /-- Binary's operation-bus emission for a given row. Mirrors the
     `proves_operation(op: b_op + 0x10 * mode32, a:, b:, c:, flag:cout)` call

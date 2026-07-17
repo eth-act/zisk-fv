@@ -3,7 +3,7 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect
-import ZiskFv.Airs.Binary.BinaryAdd
+import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 

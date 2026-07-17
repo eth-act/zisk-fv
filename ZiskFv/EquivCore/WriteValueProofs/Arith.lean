@@ -4,9 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
-import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
@@ -43,7 +41,7 @@ SLT, SLTU, SLTI, SLTIU live in `BinaryCompare.lean`.
 ## Architecture
 
 **Tier 1 — fully circuit-derived (ADD).** `Spec/Add::add_compositional`
-takes a `Valid_BinaryAdd b` parameter, ties `m.c_0`/`m.c_1` directly
+takes a `Clean BinaryAdd row` parameter, ties `m.c_0`/`m.c_1` directly
 to `b.c_chunks_*` via a bus-row match between Main and BinaryAdd, and
 the K1-A theorem `binary_add_chunks_eq_bv_add` lifts the chunk-level
 carry chain to a `BitVec 64` addition identity. No OUTPUT-EQ
@@ -52,7 +50,7 @@ reaches genuine Tier 1.
 
 **Tier 1.5 — abstract `OperationBusEntry` (ADDI, ADDW, ADDIW, SUB, SUBW).**
 The corresponding `Spec/<Op>::<op>_compositional` theorems take an
-**abstract** `bus_entry : OperationBusEntry FGL` (no `Valid_BinaryAdd`
+**abstract** `bus_entry : OperationBusEntry FGL` (no the legacy BinaryAdd validator
 or `Valid_BinaryExtension` parameter). They prove only
 
 ```
@@ -81,7 +79,7 @@ the chunk-level `h_input_val` is the residual gap.
 
 ADD's success rests on three pieces:
 
-1. The `Valid_BinaryAdd` named-column AIR
+1. The the legacy BinaryAdd validator named-column AIR
    (`Airs/Binary/BinaryAdd.lean`) extracted from the BinaryAdd PIL
    AIR (#11), exposing `a_0`/`a_1`/`b_0`/`b_1`/`c_chunks_*`/`cout_*`
    columns as field accessors.
@@ -111,7 +109,6 @@ open Goldilocks
 open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf)
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
@@ -203,12 +200,15 @@ lemma bv64_of_byte_sum
     5. Byte ranges + c_chunks range bounds give the byte-sum identity.
     6. `bv64_of_byte_sum` closes. -/
 lemma h_rd_val_arith_add
-    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
-    (r_main r_binary : ℕ)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
+    (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (add_input : PureSpec.AddInput)
-    -- Circuit hypothesis
-    (h_circuit : add_circuit_holds m b r_main r_binary)
+    (h_facts : ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts row)
+    (h_bus_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage row) 1))
     -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
     (h_lane_rd  : register_write_lanes_match m r_main e2)
     -- Byte-range hypotheses for e2 (the rd-write entry)
@@ -216,29 +216,23 @@ lemma h_rd_val_arith_add
     (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
     (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
     (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
-    -- BinaryAdd range bounds (needed by K1-A; derivable from byte ranges + lane match)
-    (h_a_range : a_chunks_in_range b r_binary)
-    (h_b_range : b_chunks_in_range b r_binary)
-    (h_c_range : c_chunks_in_range b r_binary)
     -- Input-value hypotheses (connecting Sail inputs to bus entry bytes)
     (h_input_r1 : add_input.r1_val
-      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+      = BitVec.ofNat 64 ((row.a_0).val + (row.a_1).val * 4294967296))
     (h_input_r2 : add_input.r2_val
-      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
+      = BitVec.ofNat 64 ((row.b_0).val + (row.b_1).val * 4294967296)) :
     U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
                 ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8), ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = add_input.r1_val + add_input.r2_val := by
-  -- Extract the carry chain from h_circuit.
-  obtain ⟨_, h_binary_core, h_bus_match, _⟩ := h_circuit
-  -- Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
-  have h_bv_add := ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_via_component
-    b r_binary h_binary_core h_a_range h_b_range h_c_range
+  have h_c_range : ZiskFv.AirsClean.BinaryAdd.RangeFacts row := h_facts.2.2
+  have h_bv_add :=
+    ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_of_component_spec row h_facts
   -- Extract c_lo / c_hi bus match equalities.
   -- From matches_entry, h_bus_match gives field equalities between Main and BinaryAdd bus rows.
-  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_bus_match
+  simp only [matches_entry, opBus_row_Main] at h_bus_match
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus_match
-  -- h_match_clo : m.c_0 r_main = b.c_chunks_1 r_binary * 65536 + b.c_chunks_0 r_binary
-  -- h_match_chi : m.c_1 r_main = b.c_chunks_3 r_binary * 65536 + b.c_chunks_2 r_binary
+  -- h_match_clo : m.c_0 r_main = row.c_chunks_1 * 65536 + row.c_chunks_0
+  -- h_match_chi : m.c_1 r_main = row.c_chunks_3 * 65536 + row.c_chunks_2
   -- From the rd lane match, extract c_0 / c_1 vs memory entry lo/hi.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_c0_eq, h_c1_eq⟩ := h_lane_rd
@@ -253,36 +247,36 @@ lemma h_rd_val_arith_add
   rw [h_input_r1, h_input_r2]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   have h_bv_add_nat :
-      (BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296)
-       + BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)).toNat
+      (BitVec.ofNat 64 ((row.a_0).val + (row.a_1).val * 4294967296)
+       + BitVec.ofNat 64 ((row.b_0).val + (row.b_1).val * 4294967296)).toNat
       = (BitVec.ofNat 64
-          ((b.c_chunks_0 r_binary).val
-            + (b.c_chunks_1 r_binary).val * 65536
-            + (b.c_chunks_2 r_binary).val * 4294967296
-            + (b.c_chunks_3 r_binary).val * 281474976710656)).toNat := by
+          ((row.c_chunks_0).val
+            + (row.c_chunks_1).val * 65536
+            + (row.c_chunks_2).val * 4294967296
+            + (row.c_chunks_3).val * 281474976710656)).toNat := by
     exact congrArg BitVec.toNat h_bv_add
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at h_bv_add_nat
   rw [h_bv_add_nat]
   rw [BitVec.toNat_ofNat]
   have h_lo_eq : (memory_entry_lo e2).val
-      = (b.c_chunks_1 r_binary).val * 65536 + (b.c_chunks_0 r_binary).val := by
+      = (row.c_chunks_1).val * 65536 + (row.c_chunks_0).val := by
     have h_fgl : memory_entry_lo e2
-        = (b.c_chunks_1 r_binary) * 65536 + b.c_chunks_0 r_binary := by
+        = (row.c_chunks_1) * 65536 + row.c_chunks_0 := by
       rw [← h_c0_eq, h_match_clo]
-    have h_cast : b.c_chunks_1 r_binary * 65536 + b.c_chunks_0 r_binary
-        = (((b.c_chunks_1 r_binary).val * 65536 + (b.c_chunks_0 r_binary).val : ℕ) : FGL) := by
+    have h_cast : row.c_chunks_1 * 65536 + row.c_chunks_0
+        = (((row.c_chunks_1).val * 65536 + (row.c_chunks_0).val : ℕ) : FGL) := by
       push_cast; ring
     rw [h_cast] at h_fgl
     have heq := congr_arg Fin.val h_fgl
     simp only [Fin.val_natCast] at heq
     omega
   have h_hi_eq : (memory_entry_hi e2).val
-      = (b.c_chunks_3 r_binary).val * 65536 + (b.c_chunks_2 r_binary).val := by
+      = (row.c_chunks_3).val * 65536 + (row.c_chunks_2).val := by
     have h_fgl : memory_entry_hi e2
-        = (b.c_chunks_3 r_binary) * 65536 + b.c_chunks_2 r_binary := by
+        = (row.c_chunks_3) * 65536 + row.c_chunks_2 := by
       rw [← h_c1_eq, h_match_chi]
-    have h_cast : b.c_chunks_3 r_binary * 65536 + b.c_chunks_2 r_binary
-        = (((b.c_chunks_3 r_binary).val * 65536 + (b.c_chunks_2 r_binary).val : ℕ) : FGL) := by
+    have h_cast : row.c_chunks_3 * 65536 + row.c_chunks_2
+        = (((row.c_chunks_3).val * 65536 + (row.c_chunks_2).val : ℕ) : FGL) := by
       push_cast; ring
     rw [h_cast] at h_fgl
     have heq := congr_arg Fin.val h_fgl
@@ -318,12 +312,15 @@ lemma h_rd_val_arith_add
     4. From lane match: `m.c_0/c_1` equal `memory_entry_lo/hi e2`.
     5. Byte ranges + chunk ranges close the byte-sum identity. -/
 lemma h_rd_val_arith_addi
-    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
-    (r_main r_binary : ℕ)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
+    (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
-    -- Tier-1 circuit hypothesis (bundles Main + BinaryAdd + bus-match + ADDI mode)
-    (h_circuit : ZiskFv.ZiskCircuit.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary)
+    (h_facts : ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts row)
+    (h_bus_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage row) 1))
     -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
     (h_lane_rd : register_write_lanes_match m r_main e2)
     -- Byte-range hypotheses for e2
@@ -331,28 +328,22 @@ lemma h_rd_val_arith_addi
     (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
     (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
     (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
-    -- BinaryAdd chunk-range bounds (needed by K1-A)
-    (h_a_range : a_chunks_in_range b r_binary)
-    (h_b_range : b_chunks_in_range b r_binary)
-    (h_c_range : c_chunks_in_range b r_binary)
     -- TRANSPILE-BRIDGE: r1_val matches BinaryAdd's a-side packing
     (h_input_r1 : r1_val
-      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+      = BitVec.ofNat 64 ((row.a_0).val + (row.a_1).val * 4294967296))
     -- TRANSPILE-BRIDGE: signExtend imm matches BinaryAdd's b-side packing
     -- (ADDI row-shape provenance pins the immediate into Main's b lanes, which the
     -- bus match propagates to BinaryAdd's b lanes)
     (h_input_imm : BitVec.signExtend 64 imm
-      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
+      = BitVec.ofNat 64 ((row.b_0).val + (row.b_1).val * 4294967296)) :
     U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
                 ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8), ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = r1_val + BitVec.signExtend 64 imm := by
-  -- Extract the carry chain from h_circuit.
-  obtain ⟨_, h_binary_core, h_bus_match, _⟩ := h_circuit
-  -- Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
-  have h_bv_add := ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_via_component
-    b r_binary h_binary_core h_a_range h_b_range h_c_range
+  have h_c_range : ZiskFv.AirsClean.BinaryAdd.RangeFacts row := h_facts.2.2
+  have h_bv_add :=
+    ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_of_component_spec row h_facts
   -- Extract c_lo / c_hi bus match equalities.
-  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_bus_match
+  simp only [matches_entry, opBus_row_Main] at h_bus_match
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus_match
   -- From the rd lane match, extract c_0 / c_1 vs memory entry lo/hi.
   simp only [register_write_lanes_match] at h_lane_rd
@@ -366,36 +357,36 @@ lemma h_rd_val_arith_addi
   rw [h_input_r1, h_input_imm]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   have h_bv_add_nat :
-      (BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296)
-       + BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)).toNat
+      (BitVec.ofNat 64 ((row.a_0).val + (row.a_1).val * 4294967296)
+       + BitVec.ofNat 64 ((row.b_0).val + (row.b_1).val * 4294967296)).toNat
       = (BitVec.ofNat 64
-          ((b.c_chunks_0 r_binary).val
-            + (b.c_chunks_1 r_binary).val * 65536
-            + (b.c_chunks_2 r_binary).val * 4294967296
-            + (b.c_chunks_3 r_binary).val * 281474976710656)).toNat := by
+          ((row.c_chunks_0).val
+            + (row.c_chunks_1).val * 65536
+            + (row.c_chunks_2).val * 4294967296
+            + (row.c_chunks_3).val * 281474976710656)).toNat := by
     exact congrArg BitVec.toNat h_bv_add
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at h_bv_add_nat
   rw [h_bv_add_nat]
   rw [BitVec.toNat_ofNat]
   have h_lo_eq : (memory_entry_lo e2).val
-      = (b.c_chunks_1 r_binary).val * 65536 + (b.c_chunks_0 r_binary).val := by
+      = (row.c_chunks_1).val * 65536 + (row.c_chunks_0).val := by
     have h_fgl : memory_entry_lo e2
-        = (b.c_chunks_1 r_binary) * 65536 + b.c_chunks_0 r_binary := by
+        = (row.c_chunks_1) * 65536 + row.c_chunks_0 := by
       rw [← h_c0_eq, h_match_clo]
-    have h_cast : b.c_chunks_1 r_binary * 65536 + b.c_chunks_0 r_binary
-        = (((b.c_chunks_1 r_binary).val * 65536 + (b.c_chunks_0 r_binary).val : ℕ) : FGL) := by
+    have h_cast : row.c_chunks_1 * 65536 + row.c_chunks_0
+        = (((row.c_chunks_1).val * 65536 + (row.c_chunks_0).val : ℕ) : FGL) := by
       push_cast; ring
     rw [h_cast] at h_fgl
     have heq := congr_arg Fin.val h_fgl
     simp only [Fin.val_natCast] at heq
     omega
   have h_hi_eq : (memory_entry_hi e2).val
-      = (b.c_chunks_3 r_binary).val * 65536 + (b.c_chunks_2 r_binary).val := by
+      = (row.c_chunks_3).val * 65536 + (row.c_chunks_2).val := by
     have h_fgl : memory_entry_hi e2
-        = (b.c_chunks_3 r_binary) * 65536 + b.c_chunks_2 r_binary := by
+        = (row.c_chunks_3) * 65536 + row.c_chunks_2 := by
       rw [← h_c1_eq, h_match_chi]
-    have h_cast : b.c_chunks_3 r_binary * 65536 + b.c_chunks_2 r_binary
-        = (((b.c_chunks_3 r_binary).val * 65536 + (b.c_chunks_2 r_binary).val : ℕ) : FGL) := by
+    have h_cast : row.c_chunks_3 * 65536 + row.c_chunks_2
+        = (((row.c_chunks_3).val * 65536 + (row.c_chunks_2).val : ℕ) : FGL) := by
       push_cast; ring
     rw [h_cast] at h_fgl
     have heq := congr_arg Fin.val h_fgl

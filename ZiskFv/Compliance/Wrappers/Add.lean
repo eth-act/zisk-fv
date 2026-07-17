@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Add
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.AirsClean.BinaryFamily.Balance
-import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -152,6 +152,7 @@ lemma equiv_ADD_via_binaryadd
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have _ := h_main_subset
   let row :=
     ZiskFv.AirsClean.BinaryAdd.component.rowInput
       (providerTable.environment providerRow)
@@ -162,12 +163,7 @@ lemma equiv_ADD_via_binaryadd
       simpa [h_component] using h_table_spec providerRow h_provider_row
     simpa [row, ZiskFv.AirsClean.BinaryAdd.component_spec] using h_component_spec
   exact ZiskFv.EquivCore.Add.equiv_ADD_of_binaryadd_row
-    state add_input r1 r2 rd m row r_main bus promises pins h_match
-    (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
-    h_main_subset h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32
-    (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
-    (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
-    (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
-    h_lane_rd
+    state add_input r1 r2 rd m row r_main bus promises pins h_match h_facts
+    h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32 h_lane_rd
 
 end ZiskFv.Compliance

@@ -7,6 +7,32 @@ import ZiskFv.Channels.OperationBus
 This module contains the row-local API consumed by the equivalence and
 compliance layers.  It is stated entirely in terms of the Clean row and
 `GeneralFormalCircuit.Spec`; no legacy named-column validator is involved.
+
+## Q2 constraint correspondence
+
+The four legacy predicates and the four Clean assertions agree exactly after
+projecting the same ten row columns (the only notation difference is
+`x - y = 0` versus `x + -y = 0` after circuit elaboration):
+
+| Legacy predicate | Clean assertion in `BinaryAdd.main` |
+|---|---|
+| `boolean_cout_0` | `assertZero (cout_0 * (1 - cout_0))` |
+| `carry_chain_0` | `assertZero ((a_0 + b_0) - (cout_0 * 2^32 + c_chunks_1 * 2^16 + c_chunks_0))` |
+| `boolean_cout_1` | `assertZero (cout_1 * (1 - cout_1))` |
+| `carry_chain_1` | `assertZero ((a_1 + b_1 + cout_0) - (cout_1 * 2^32 + c_chunks_3 * 2^16 + c_chunks_2))` |
+
+The Clean circuit additionally performs eight static range lookups: 32-bit
+lookups for `a_0`, `a_1`, `b_0`, and `b_1`, and 16-bit lookups for
+`c_chunks_0` through `c_chunks_3`.  On the legacy side these were the
+separate `a_chunks_in_range`, `b_chunks_in_range`, and `c_chunks_in_range`
+predicates, supplied by the range-table soundness path rather than included
+in `core_every_row`.  The Clean `OpBusChannel.push (opBusMessageExpr row)`
+corresponds to the legacy `opBus_row_BinaryAdd` projection and its
+operation-bus permutation/balance proof; it likewise was not one of the four
+legacy algebraic predicates.  Thus there is no constraint divergence: the
+four algebraic constraints coincide, while the extra Clean operations make
+explicit the same range and operation-bus obligations previously carried by
+separate legacy layers.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd

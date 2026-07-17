@@ -1,7 +1,7 @@
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.Binary.Bridge
-import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.GeneratedTransition
