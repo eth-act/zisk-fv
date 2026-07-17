@@ -69,6 +69,13 @@ document is only about how to drive it.
    `Audit.lean` golden tests untouched and passing.
 7. **Land** — commit with a real message crediting the run, push, open the stacked PR
    (base `refactor-(N-1)`), update `STATUS.md`. Merging is always Cody's.
+   Then **review the PR** (not just the gates) and post findings as a PR comment:
+   (a) mechanical conclusion check — no diff line may touch a theorem conclusion
+   (`state_effect_via_channels`/`execute_instruction`/`bus_effect` grep over the commit);
+   (b) full read of every NEW module/structure (laundering check: derived, not renamed);
+   (c) spot-read the largest changed file per category (canonical/wrapper/construction/
+   dispatch) for hypothesis-set preservation; (d) zero added `sorry`/`admit`;
+   (e) note cosmetic issues for a later pass instead of churning the PR.
 8. **Prep the next turn immediately** while context is fresh: re-enumerate what remains.
 
 ## Scope calibration — the core fix
