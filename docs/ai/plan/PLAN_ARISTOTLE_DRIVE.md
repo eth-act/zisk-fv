@@ -28,8 +28,17 @@ document is only about how to drive it.
   pre-authorize deferring exactly that check, nothing else).
 - **Known benign residue in downloads** (decontaminate on receive, anything else = stop):
   `lake-manifest.json` Clean-pin reverts (its Lake cache regenerates it; discard via
-  `git show HEAD:lake-manifest.json > lake-manifest.json`) and lost executable bits
-  (`git diff --summary | grep 'mode change 100755 => 100644'` → `chmod +x`).
+  `git show HEAD:lake-manifest.json > lake-manifest.json`), lost executable bits
+  (`git diff --summary | grep 'mode change 100755 => 100644'` → `chmod +x`), and
+  **reverts of operator commits made AFTER the submitted tarball** (its tree predates
+  them; restore each such file from HEAD).
+- **Mid-task messages can CANCEL the in-flight work task.** A follow-up prompt to the
+  project while a task runs may supersede it (observed: T5's work task CANCELED at
+  ~11.5h by a user follow-up; a 34-minute Q&A task replaced it). Some Q&A reaches the
+  running task without cancelling it, but the safe assumption is: do not message the
+  project mid-task unless prepared to lose the run; committed checkpoints survive
+  (server-side repo persists), uncommitted and unverified work may not. Salvage path:
+  `download` the project tree, verify locally on the warm cache, land the partial.
 - **Prompt lint before submitting**: every file path, gate name, and baseline the prompt
   references must exist at the submitted commit (`git grep` against the tarball tree).
   The retired caller-burden ledger reference cost us a full turn refusal.
@@ -46,13 +55,18 @@ document is only about how to drive it.
    cd .worktrees/refactor-N
    tarball=/tmp/refactor-N-$(git rev-parse --short HEAD).tar.gz
    git archive --format=tar.gz -o "$tarball" HEAD
-   atl continue 9c5aee26-2cfe-4a9c-92b6-b9c304c66afa --files "$tarball" \
-     "Your local repository state is outdated — do not trust your local tree or your own
-      earlier commits. Attached is $(basename "$tarball"), a snapshot of the current
-      source-of-truth tree (it integrates all of your prior accepted work). Replace your
-      entire working tree with its contents, then read REFACTOR_N_PROMPT.md at its root
-      and carry out that work order in full."
+   atl continue 9c5aee26-2cfe-4a9c-92b6-b9c304c66afa "PROMPT" --files "$tarball"
    ```
+   (positionals BEFORE `--files` — it is greedy). The bootstrap PROMPT must use the
+   NON-DESTRUCTIVE install wording: *"Attached is <tarball>, the authoritative
+   source-of-truth tree (it integrates all of your prior accepted work). Install it by
+   extracting OVER your existing tree — do NOT delete `.lake` or other build artifacts;
+   Lake is content-addressed, so unchanged files keep their cache and only real deltas
+   rebuild. If the build is cold anyway, try `lake exe cache get` first. After
+   installing, every tracked file's content must exactly match the tarball. Then read
+   REFACTOR_N_PROMPT.md at its root and carry out that work order in full."*
+   Never say "replace your working tree" — T5 showed that wording destroys the sandbox
+   build cache and costs the whole turn.
 3. **Monitor** — background watcher, harness notifies on exit. Hard-won details: the
    CLI's retry path emits to **stderr** (capture `2>&1` or the state is invisible), DNS
    blips must not kill the loop, the state can be `COMPLETE_WITH_ERRORS` (still done —
