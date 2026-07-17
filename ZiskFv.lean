@@ -4,6 +4,11 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.AirsClean.BinaryAdd.Interface
+import ZiskFv.AirsClean.Binary.Interface
+import ZiskFv.AirsClean.BinaryExtension.Interface
+import ZiskFv.AirsClean.MemAlign.Interface
+import ZiskFv.AirsClean.MemAlignByte.Interface
+import ZiskFv.AirsClean.MemAlignReadByte.Interface
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 
