@@ -151,6 +151,8 @@ import ZiskFv.Compliance.ConstructionLui
 import ZiskFv.Compliance.ConstructionAuipc
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
+import ZiskFv.Compliance.ConstructionMulh
+import ZiskFv.Compliance.ConstructionMulhsu
 import ZiskFv.Compliance.ConstructionDivu
 import ZiskFv.Compliance.ConstructionDivuw
 import ZiskFv.Compliance.ConstructionRemu

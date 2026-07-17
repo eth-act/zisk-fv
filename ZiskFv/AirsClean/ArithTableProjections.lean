@@ -237,6 +237,49 @@ theorem mulhu_mode_pins_of_row
       have hval := congrArg Fin.val hop
       norm_num at hval
 
+/-- Bare-`ArithMulRow` MULH secondary mode pins.  This is the provider-row
+    counterpart of `mulh_basic_mode_pin`, avoiding reduction through a chosen
+    `Valid_ArithMul` view. -/
+theorem mulh_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 181) :
+    row.flags.div = 0 ∧ row.flags.main_mul = 0 ∧ row.flags.main_div = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hdiv, hmain_mul, hmain_div⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
+/-- Bare-`ArithMulRow` MULHSU secondary mode pins, avoiding reduction through
+    a chosen `Valid_ArithMul` view. -/
+theorem mulhsu_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 179) :
+    row.flags.div = 0 ∧ row.flags.main_mul = 0 ∧ row.flags.main_div = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hdiv, hmain_mul, hmain_div⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
 /-- Bare-`ArithMulRow` DIVU mode pins (mirrors `mulw_mode_pins_of_row`).  Reads
     the full unsigned-DIVU mode flags off the balance-selected provider
     `ArithMulRow` (the DIVU provider is the SHARED ArithMul component) WITHOUT

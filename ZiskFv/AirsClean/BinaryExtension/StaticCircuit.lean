@@ -672,6 +672,18 @@ theorem static_table_op_val_ne_arith_mul_uh_of_spec_facts
     row.flags.op.val ≠ 177 ∧ row.flags.op.val ≠ 161 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul_uh h_specs.1
 
+theorem static_table_op_val_ne_arith_mul_h_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 181 ∧ row.flags.op.val ≠ 165 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul_h h_specs.1
+
+theorem static_table_op_val_ne_arith_mul_hsu_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 179 ∧ row.flags.op.val ≠ 163 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul_hsu h_specs.1
+
 theorem static_table_op_val_ne_arith_divu_of_spec_facts
     (row : BinaryExtensionRow FGL)
     (h_specs : StaticBinaryExtensionTableSpecFacts row) :
@@ -818,6 +830,30 @@ theorem shiftStaticLookupComponent_op_val_ne_arith_mul_uh_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 161 := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_arith_mul_uh_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith MULH bus opcode `181` (`OP_MULH`) nor the alternate
+    `m32 = 1` decomposition value `165`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_mul_h_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 181
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 165 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_mul_h_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A row accepted by the shift-aware lookup BinaryExtension component cannot
+    carry the Arith MULHSU bus opcode `179` (`OP_MULSUH`) nor the alternate
+    `m32 = 1` decomposition value `163`. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_mul_hsu_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 179
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 163 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_mul_hsu_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 /-- A row accepted by the shift-aware lookup BinaryExtension component cannot

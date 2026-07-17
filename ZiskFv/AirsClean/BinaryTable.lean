@@ -741,6 +741,56 @@ theorem spec_op_val_ne_arith_mul_uh {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_op_val_ne_arith_mul_uh i
 
+/-- No static BinaryTable row carries the Arith MULH bus opcode `181`
+    (`OP_MULH`) nor the alternate `m32 = 1` decomposition value `165`
+    (`= 181 - 16`). -/
+theorem rowOfIndex_op_val_ne_arith_mul_h (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 181
+      ∧ (rowOfIndex i.val).op.val ≠ 165 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_arith_mul_h {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    t.op.val ≠ 181 ∧ t.op.val ≠ 165 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_arith_mul_h i
+
+/-- No static BinaryTable row carries the Arith MULHSU bus opcode `179`
+    (`OP_MULSUH`) nor the alternate `m32 = 1` decomposition value `163`
+    (`= 179 - 16`). -/
+theorem rowOfIndex_op_val_ne_arith_mul_hsu (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 179
+      ∧ (rowOfIndex i.val).op.val ≠ 163 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_arith_mul_hsu {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    t.op.val ≠ 179 ∧ t.op.val ≠ 163 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_arith_mul_hsu i
+
 theorem rowOfIndex_op_val_ne_arith_divu (i : Fin tableSize) :
     (rowOfIndex i.val).op.val ≠ 184
       ∧ (rowOfIndex i.val).op.val ≠ 168 := by

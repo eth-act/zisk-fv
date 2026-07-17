@@ -648,6 +648,23 @@ Active conclusions:
   signed-M forge exclusion itself remains active; details in
   [`defects.md`](defects.md)
   (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
+- **MULH/MULHSU shared lookup route (S3 PR 3).** The balance-selected Arith
+  provider is `componentWithArithTable`; its `FullSpec` supplies the carry
+  chain, Arith-table membership, c46, 16-bit chunk facts, signed-carry facts,
+  and indexed range facts to the additive `equiv_MULH_of_fullSpec` and
+  `equiv_MULHSU_of_fullSpec` bridges. This is the permitted S1a in-component
+  `Table.fromStatic` route because every looked-up value is a plain Arith row
+  cell: `arithTable`, `arithRangeTable`, `rangeTable16`, and
+  `signedCarryRangeTable` occur in `ArithMul/Constraints.lean`'s
+  `mainWithArithTable`. The extracted Arith c49–c64 survey independently binds
+  range hints on bus 330 and the table hint on bus 331; its generated
+  `ValidatedLink`s cover c49–c60/c63. The provider selection itself is from
+  finished operation-bus balance. c46 remains a separate F-only assertion cited to
+  `arith.pil:262`, not a lookup or a challenge-mixed range route. No
+  `ProverAssumptions` or per-opcode lookup/range caller premise is added; the
+  legacy canonical `equiv_MULH`/`equiv_MULHSU` binders remain compatibility
+  surfaces while the new constructions consume their shared facts from
+  balance/provider soundness.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
