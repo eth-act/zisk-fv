@@ -57,6 +57,7 @@ rev = "v4.28.0"
 
 [[lean_lib]]
 name = "ZiskFv"
+roots = ["ZiskFv"]
 
 # The REAL Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`,
 # `import Aeneas`). Imported by ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean
