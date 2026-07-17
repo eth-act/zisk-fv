@@ -314,7 +314,14 @@ private theorem demoStaticProvider_membership_of_balance_match
   · exact (h_nonnegative rfl).elim
   · exact (h_nonnegative rfl).elim
   · exact (h_nonnegative rfl).elim
-  · exact demoBaseProviderMembership
+  · have h_requirement := demoInteractions_requirements
+      (SpecifiedRangesSliceChannel.pushedValue distanceBase0DemoMessage) (by
+        simp [demoInteractions])
+    change (1 : FGL) ≠ -1 →
+      SpecifiedRangesSliceChannel.Guarantees distanceBase0DemoMessage distanceBase0DemoData
+      at h_requirement
+    exact ZiskFv.Channels.SpecifiedRanges.memDistanceMessage_guarantees_iff
+      distanceBase0DemoValue distanceBase0DemoData |>.mp (h_requirement h_nonnegative)
   · exact (h_messages h_message.symm).elim
   · exact (h_messages h_message.symm).elim
   · exact (h_messages h_message.symm).elim

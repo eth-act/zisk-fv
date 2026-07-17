@@ -9,9 +9,10 @@ import ZiskFv.Channels.SpecifiedRanges
 
 The generated `LookupWiring` links validate the PIL hint tuple against the
 extracted accumulator constraint. This module is the small live-model bridge:
-it associates only those validated links with the Mem table cells and their
-canonical `ProverData` keys. It carries no proof premise and does not assert
-range membership; balance plus the static provider supplies that in PR 2b.
+it carries the validated hint, the exact raw cell used by the live emission,
+and that cell's canonical `ProverData` materialization theorem. It does not
+assert range membership; finished-channel balance plus the static provider
+supplies that in PR 2b.
 -/
 
 namespace ZiskFv.AirsClean.Mem
@@ -22,29 +23,61 @@ open ZiskFv.Channels.SpecifiedRanges
 
 structure MemRangeWiring where
   link : ValidatedLink
+  hint : HintTuple
+  validatedHint : link.hints = [hint]
   rawColumn : Nat
   proverDataKey : String
   source : Expression FGL
+  sourceRawColumn : source = Expression.var ⟨rawColumn⟩
+  sourceMaterializes : ∀ (index : Nat) (data : ProverData FGL) (row : MemRow FGL),
+    Expression.eval
+      (Environment.fromArray
+        (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
+      source = proverDataScalar data proverDataKey
 
 @[reducible]
-def distanceBase0Wiring : MemRangeWiring :=
-  ⟨link_Mem_29, MemRangeSidecarRawColumn.distanceBase0,
-    MemRawSidecarDataKey.Segment.distanceBase0, memDistanceBase0Expr⟩
+def distanceBase0Wiring : MemRangeWiring where
+  link := link_Mem_29
+  hint := hint_Mem_29_0
+  validatedHint := rfl
+  rawColumn := MemRangeSidecarRawColumn.distanceBase0
+  proverDataKey := MemRawSidecarDataKey.Segment.distanceBase0
+  source := memDistanceBase0Expr
+  sourceRawColumn := rfl
+  sourceMaterializes := eval_memDistanceBase0Expr_materialize
 
 @[reducible]
-def distanceBase1Wiring : MemRangeWiring :=
-  ⟨link_Mem_30, MemRangeSidecarRawColumn.distanceBase1,
-    MemRawSidecarDataKey.Segment.distanceBase1, memDistanceBase1Expr⟩
+def distanceBase1Wiring : MemRangeWiring where
+  link := link_Mem_30
+  hint := hint_Mem_30_0
+  validatedHint := rfl
+  rawColumn := MemRangeSidecarRawColumn.distanceBase1
+  proverDataKey := MemRawSidecarDataKey.Segment.distanceBase1
+  source := memDistanceBase1Expr
+  sourceRawColumn := rfl
+  sourceMaterializes := eval_memDistanceBase1Expr_materialize
 
 @[reducible]
-def distanceEnd0Wiring : MemRangeWiring :=
-  ⟨link_Mem_31, MemRangeSidecarRawColumn.distanceEnd0,
-    MemRawSidecarDataKey.Segment.distanceEnd0, memDistanceEnd0Expr⟩
+def distanceEnd0Wiring : MemRangeWiring where
+  link := link_Mem_31
+  hint := hint_Mem_31_0
+  validatedHint := rfl
+  rawColumn := MemRangeSidecarRawColumn.distanceEnd0
+  proverDataKey := MemRawSidecarDataKey.Segment.distanceEnd0
+  source := memDistanceEnd0Expr
+  sourceRawColumn := rfl
+  sourceMaterializes := eval_memDistanceEnd0Expr_materialize
 
 @[reducible]
-def distanceEnd1Wiring : MemRangeWiring :=
-  ⟨link_Mem_32, MemRangeSidecarRawColumn.distanceEnd1,
-    MemRawSidecarDataKey.Segment.distanceEnd1, memDistanceEnd1Expr⟩
+def distanceEnd1Wiring : MemRangeWiring where
+  link := link_Mem_32
+  hint := hint_Mem_32_0
+  validatedHint := rfl
+  rawColumn := MemRangeSidecarRawColumn.distanceEnd1
+  proverDataKey := MemRawSidecarDataKey.Segment.distanceEnd1
+  source := memDistanceEnd1Expr
+  sourceRawColumn := rfl
+  sourceMaterializes := eval_memDistanceEnd1Expr_materialize
 
 @[reducible]
 def memRangeWirings : List MemRangeWiring :=
@@ -77,7 +110,7 @@ theorem eval_distanceBase0Wiring_source_materialize
         (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
       distanceBase0Wiring.source =
         proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase0 := by
-  exact eval_memDistanceBase0Expr_materialize index data row
+  exact distanceBase0Wiring.sourceMaterializes index data row
 
 /-- The c30 checked wiring expression evaluates at the canonical sidecar key
 when its table row is materialized. -/
@@ -88,7 +121,7 @@ theorem eval_distanceBase1Wiring_source_materialize
         (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
       distanceBase1Wiring.source =
         proverDataScalar data MemRawSidecarDataKey.Segment.distanceBase1 := by
-  exact eval_memDistanceBase1Expr_materialize index data row
+  exact distanceBase1Wiring.sourceMaterializes index data row
 
 /-- The c31 checked wiring expression evaluates at the canonical sidecar key
 when its table row is materialized. -/
@@ -99,7 +132,7 @@ theorem eval_distanceEnd0Wiring_source_materialize
         (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
       distanceEnd0Wiring.source =
         proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd0 := by
-  exact eval_memDistanceEnd0Expr_materialize index data row
+  exact distanceEnd0Wiring.sourceMaterializes index data row
 
 /-- The c32 checked wiring expression evaluates at the canonical sidecar key
 when its table row is materialized. -/
@@ -110,7 +143,7 @@ theorem eval_distanceEnd1Wiring_source_materialize
         (memFixedColumns.materialize index (memRawRowWithProverData data row)) data)
       distanceEnd1Wiring.source =
         proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1 := by
-  exact eval_memDistanceEnd1Expr_materialize index data row
+  exact distanceEnd1Wiring.sourceMaterializes index data row
 
 /-! ## Concrete source value -/
 
