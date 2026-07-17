@@ -729,11 +729,12 @@ replay evidence, but the current branch also strengthens `AcceptedZiskTrace` for
 memory-present traces. Constructors whose mutable-Mem table is empty, such as
 the degenerate base case and #219/#220's ADD witnesses, prove
 `MutableMemPresent` impossible instead of supplying replay fields. A constructor
-with mutable-Mem rows must build the guarded `mem_replay_table`, the HELD legacy
-sidecar fields, and `mem_replay_source_covers`, in addition to
+with mutable-Mem rows must build the guarded `mem_replay_table` and
+`mem_replay_source_covers`, in addition to
 `constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`.
-Generated constraints, row ranges, canonical segment range facts, and Main fixed-column facts are derived from the live
-component. These fields are not read-value agreement predicates, and they no
+Generated constraints, row ranges, canonical segment range facts, and Main
+fixed-column facts are derived from the live component. These fields are not
+read-value agreement predicates, and they no
 longer carry deterministic Mem fixed columns. The paired
 `mem_replay_source_covers` field is a structural table-coverage certificate that
 removes this residue from seed-layer wrappers. For the #115 direct-Mem closeout,
