@@ -841,7 +841,8 @@ theorem generatedTransition_iff_canonicalTableData
           (memSegmentOfTableData table) (memOfTableData table) idx.val
         ∧ ZiskFv.Airs.Mem.permutation_every_row
           (memSegmentOfTableData table) (memPermutationOfTableData table)
-          (memOfTableData table) idx.val) := by
+          (memOfTableData table) idx.val
+        ∧ ZiskFv.AirsClean.Mem.memRangeSidecarBridge (table.environmentAt idx)) := by
   rcases table with ⟨component, rawRows, data, raw_uniform_width, fixed_domain⟩
   change component = ZiskFv.AirsClean.Mem.componentWithDualMemBus at h_component
   subst component
@@ -858,7 +859,8 @@ theorem generatedTransition_iff_canonicalTableData
         (memSegmentOfTableData table) (memOfTableData table) idx.val
       ∧ ZiskFv.Airs.Mem.permutation_every_row
         (memSegmentOfTableData table) (memPermutationOfTableData table)
-        (memOfTableData table) idx.val)
+        (memOfTableData table) idx.val
+      ∧ ZiskFv.AirsClean.Mem.memRangeSidecarBridge (table.environmentAt idx))
   have h_fixed_at : ∀ slot row : Nat,
       table.fixedAt slot row =
         ZiskFv.AirsClean.Mem.memFixedColumns.fixedAt slot row := by
@@ -1261,9 +1263,10 @@ theorem memTableGeneratedConstraintFacts_of_component_constraints_transitions
           (memSegmentOfTableData table) (memPermutationOfTableData table)
           (memOfTableData table) idx.val := by
     intro idx
-    apply (generatedTransition_iff_canonicalTableData table h_component idx).mp
-    simpa only [h_component, ZiskFv.AirsClean.Mem.componentWithDualMemBus] using
-      h_transitions idx
+    have h_transition := (generatedTransition_iff_canonicalTableData table h_component idx).mp
+      (by simpa only [h_component, ZiskFv.AirsClean.Mem.componentWithDualMemBus] using
+        h_transitions idx)
+    exact ⟨h_transition.1, h_transition.2.1⟩
   refine ⟨?_, ?_⟩
   · intro idx
     have h_mem : table.table.get idx ∈ table.table :=
