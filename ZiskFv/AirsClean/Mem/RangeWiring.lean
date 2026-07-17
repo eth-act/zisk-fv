@@ -9,8 +9,9 @@ import ZiskFv.Channels.SpecifiedRanges
 
 The generated `LookupWiring` links validate the PIL hint tuple against the
 extracted accumulator constraint. This module is the small live-model bridge:
-it carries the validated hint, the exact raw cell used by the live emission,
-and that cell's canonical `ProverData` materialization theorem. It does not
+it checks the exact generated Mem range slot AST together with its linked
+constraint index, maps that pair to the live raw cell and canonical
+`ProverData` key, and materializes that cell for the emission. It does not
 assert range membership; finished-channel balance plus the static provider
 supplies that in PR 2b.
 -/
@@ -21,12 +22,41 @@ open Goldilocks
 open Extraction.LookupWiring
 open ZiskFv.Channels.SpecifiedRanges
 
+/-- The only four generated Mem bus-103 slots accepted by the live bridge.
+For each linked constraint index, the exact `Expr.airValue` spelling retained
+from `LookupWiring` is paired with its table-resident raw cell and canonical
+sidecar key. -/
+def memRangeSourceOfConstraint (constraintIndex : Nat) :
+    Option (List Slot × Nat × String) :=
+  match constraintIndex with
+  | 29 => some
+      ([{ name := "Mem.distance_base[0]", value := Expr.add (Expr.airValue 11) (Expr.constant "0") }],
+        MemRangeSidecarRawColumn.distanceBase0,
+        MemRawSidecarDataKey.Segment.distanceBase0)
+  | 30 => some
+      ([{ name := "Mem.distance_base[1]", value := Expr.add (Expr.airValue 12) (Expr.constant "0") }],
+        MemRangeSidecarRawColumn.distanceBase1,
+        MemRawSidecarDataKey.Segment.distanceBase1)
+  | 31 => some
+      ([{ name := "Mem.distance_end[0]", value := Expr.add (Expr.airValue 13) (Expr.constant "0") }],
+        MemRangeSidecarRawColumn.distanceEnd0,
+        MemRawSidecarDataKey.Segment.distanceEnd0)
+  | 32 => some
+      ([{ name := "Mem.distance_end[1]", value := Expr.add (Expr.airValue 14) (Expr.constant "0") }],
+        MemRangeSidecarRawColumn.distanceEnd1,
+        MemRawSidecarDataKey.Segment.distanceEnd1)
+  | _ => none
+
 structure MemRangeWiring where
   link : ValidatedLink
   hint : HintTuple
   validatedHint : link.hints = [hint]
+  memLink : link.air = "Mem"
   rawColumn : Nat
   proverDataKey : String
+  sourceBinding :
+    memRangeSourceOfConstraint link.constraintIndex =
+      some (hint.slots, rawColumn, proverDataKey)
   source : Expression FGL
   sourceRawColumn : source = Expression.var ⟨rawColumn⟩
   sourceMaterializes : ∀ (index : Nat) (data : ProverData FGL) (row : MemRow FGL),
@@ -40,8 +70,10 @@ def distanceBase0Wiring : MemRangeWiring where
   link := link_Mem_29
   hint := hint_Mem_29_0
   validatedHint := rfl
+  memLink := rfl
   rawColumn := MemRangeSidecarRawColumn.distanceBase0
   proverDataKey := MemRawSidecarDataKey.Segment.distanceBase0
+  sourceBinding := rfl
   source := memDistanceBase0Expr
   sourceRawColumn := rfl
   sourceMaterializes := eval_memDistanceBase0Expr_materialize
@@ -51,8 +83,10 @@ def distanceBase1Wiring : MemRangeWiring where
   link := link_Mem_30
   hint := hint_Mem_30_0
   validatedHint := rfl
+  memLink := rfl
   rawColumn := MemRangeSidecarRawColumn.distanceBase1
   proverDataKey := MemRawSidecarDataKey.Segment.distanceBase1
+  sourceBinding := rfl
   source := memDistanceBase1Expr
   sourceRawColumn := rfl
   sourceMaterializes := eval_memDistanceBase1Expr_materialize
@@ -62,8 +96,10 @@ def distanceEnd0Wiring : MemRangeWiring where
   link := link_Mem_31
   hint := hint_Mem_31_0
   validatedHint := rfl
+  memLink := rfl
   rawColumn := MemRangeSidecarRawColumn.distanceEnd0
   proverDataKey := MemRawSidecarDataKey.Segment.distanceEnd0
+  sourceBinding := rfl
   source := memDistanceEnd0Expr
   sourceRawColumn := rfl
   sourceMaterializes := eval_memDistanceEnd0Expr_materialize
@@ -73,8 +109,10 @@ def distanceEnd1Wiring : MemRangeWiring where
   link := link_Mem_32
   hint := hint_Mem_32_0
   validatedHint := rfl
+  memLink := rfl
   rawColumn := MemRangeSidecarRawColumn.distanceEnd1
   proverDataKey := MemRawSidecarDataKey.Segment.distanceEnd1
+  sourceBinding := rfl
   source := memDistanceEnd1Expr
   sourceRawColumn := rfl
   sourceMaterializes := eval_memDistanceEnd1Expr_materialize
