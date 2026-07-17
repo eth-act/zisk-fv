@@ -22,6 +22,9 @@ merge.)
   - `Air.Flat.EnsembleWitness.TransitionConstraints` folds that over `allTables`.
   The indexed form is necessary for generated AIR expressions that read periodic fixed data at a successor
   position. Existing components remain unaffected because the default predicate is trivial.
+- **Row-zero warning:** Lean's `row - 1` saturates at row zero; an imported PIL
+  negative rotation is sound only with its source row-zero gate, never as an
+  unguarded predecessor access.
 - **Why:** `Air.Flat` is single-row *by design* (`FlatComponent.lean:8-10`: "There are no direct adjacent-row
   constraints; communication … is expressed by channel interactions"). But ZisK's Main AIR enforces a
   genuine cross-row **polynomial** PC-handshake constraint (`main.pil:409-410`), which is **not** a channel —

@@ -9,6 +9,7 @@ use prost::Message;
 
 mod arith_table;
 mod clean_component;
+mod lookup_wiring;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -38,6 +39,9 @@ enum Cmd {
     Air(AirCmd),
     /// Emit bus-emission specs extracted from `gsum_debug_data` hints.
     BusEmissions(BusEmissionsCmd),
+    /// Emit a lossless, constraint-linked lookup-wiring manifest. Hint tuples
+    /// appear only after a kernel-checked standard-template link.
+    LookupWiring(LookupWiringCmd),
     /// Parse `arith_table_data.rs` and emit `Extraction.ArithTable`.
     ArithTable(ArithTableCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -120,6 +124,17 @@ struct BusEmissionsCmd {
     /// `gsum_debug_data` hint for the AIR.
     #[arg(long, default_value_t = 5000)]
     bus_id: u64,
+}
+
+#[derive(Args, Debug)]
+struct LookupWiringCmd {
+    /// Path to the .pilout file.
+    #[arg(long)]
+    pilout: PathBuf,
+
+    /// Output path for the generated Lean module. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
 }
 
 #[derive(Args, Debug)]
@@ -233,6 +248,7 @@ fn main() -> Result<()> {
         Cmd::CircuitShim(args) => run_circuit_shim(args),
         Cmd::Air(args) => run_air(args),
         Cmd::BusEmissions(args) => run_bus_emissions(args),
+        Cmd::LookupWiring(args) => run_lookup_wiring(args),
         Cmd::CleanComponent(args) => run_clean_component(args),
         Cmd::MemAirFacts(args) => run_mem_air_facts(args),
         Cmd::MemGeneratedArtifact(args) => run_mem_generated_artifact(args),
@@ -342,6 +358,14 @@ fn run_bus_emissions(args: BusEmissionsCmd) -> Result<()> {
         let hit = find_air(&pilout, &args.air)?;
         render_bus_emissions(&pilout, &hit, args.bus_id, &module)?
     };
+    write_output(args.output.as_deref(), &rendered)
+}
+
+fn run_lookup_wiring(args: LookupWiringCmd) -> Result<()> {
+    let bytes = fs::read(&args.pilout)
+        .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
+    let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
+    let rendered = lookup_wiring::render(&pilout)?;
     write_output(args.output.as_deref(), &rendered)
 }
 
