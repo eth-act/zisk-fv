@@ -256,12 +256,11 @@ Current #115 surface note: `AcceptedZiskTrace.mem_replay_table` is guarded by
 mutable-Mem table with at least one row. Under that guard it separately selects
 the concrete mutable-Mem table, witness membership, component identity, and
 nonempty-table proof. Memory-less traces prove the guard impossible; they do not
-fabricate an empty replay bridge. The generated Mem source residue is now split across
-accepted-trace fields: stage-2 sidecar columns (`mem_replay_segment`,
-`mem_replay_permutation`, `mem_replay_gsum`, `mem_replay_im0`,
-`mem_replay_im1`). The legacy sidecar fields are not consumed by S2's live
-derivation; S3 audits their lifecycle. `mem_replay_constraints` is deleted: its segment/permutation
-package is derived from the selected table's live constraints plus its
+fabricate an empty replay bridge. No generated Mem sidecar remains an
+accepted-trace field: the S3 lifecycle audit found the former segment,
+permutation, `gsum`, `im0`, and `im1` fields unconsumed outside their vacuous
+constructor populations and deleted them. `mem_replay_constraints` is deleted:
+its segment/permutation package is derived from the selected table's live constraints plus its
 right-indexed transition, using canonical table `ProverData` and
 component-owned fixed data. Row range facts are likewise derived from live Mem
 `Table.fromStatic` lookups. `memReplayRows`/`memReplayBridge` construct the
@@ -649,6 +648,23 @@ Active conclusions:
   signed-M forge exclusion itself remains active; details in
   [`defects.md`](defects.md)
   (`ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`).
+- **MULH/MULHSU shared lookup route (S3 PR 3).** The balance-selected Arith
+  provider is `componentWithArithTable`; its `FullSpec` supplies the carry
+  chain, Arith-table membership, c46, 16-bit chunk facts, signed-carry facts,
+  and indexed range facts to the additive `equiv_MULH_of_fullSpec` and
+  `equiv_MULHSU_of_fullSpec` bridges. This is the permitted S1a in-component
+  `Table.fromStatic` route because every looked-up value is a plain Arith row
+  cell: `arithTable`, `arithRangeTable`, `rangeTable16`, and
+  `signedCarryRangeTable` occur in `ArithMul/Constraints.lean`'s
+  `mainWithArithTable`. The extracted Arith c49–c64 survey independently binds
+  range hints on bus 330 and the table hint on bus 331; its generated
+  `ValidatedLink`s cover c49–c60/c63. The provider selection itself is from
+  finished operation-bus balance. c46 remains a separate F-only assertion cited to
+  `arith.pil:262`, not a lookup or a challenge-mixed range route. No
+  `ProverAssumptions` or per-opcode lookup/range caller premise is added; the
+  legacy canonical `equiv_MULH`/`equiv_MULHSU` binders remain compatibility
+  surfaces while the new constructions consume their shared facts from
+  balance/provider soundness.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
@@ -699,7 +715,6 @@ trust surface even though they add no axiom.
 | `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
-| `mem_replay_segment` / `mem_replay_permutation` / `mem_replay_gsum` / `mem_replay_im0` / `mem_replay_im1` (**#115**, guarded by `MutableMemPresent witness`) | Legacy generated Mem sidecar columns | **HELD** for S3's lifecycle audit. S2 does not correlate or consume them; its live source is selected table `ProverData` plus component-owned fixed columns. |
 | Derived `memReplaySegmentRanges` (not an `AcceptedZiskTrace` field) | Mem hints 884/886; `mem.pil:267-268` / `285-286`; linked c24–33 at `std_sum.pil:590/599/656/696`; generated `ValidatedLink` entries | derives selected-table `MemSegmentGeneratedRangeFacts` from `constraints_hold`, `channels_balanced`, and `transitions_hold`: the indexed source bridge identifies the canonical `ProverData` chunks, finished bus-103 balance finds the `SpecifiedRangesSlice` provider, and its static table supplies 16-bit membership. `ProverAssumptions` is completeness-only and is not used. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
 
@@ -714,11 +729,12 @@ replay evidence, but the current branch also strengthens `AcceptedZiskTrace` for
 memory-present traces. Constructors whose mutable-Mem table is empty, such as
 the degenerate base case and #219/#220's ADD witnesses, prove
 `MutableMemPresent` impossible instead of supplying replay fields. A constructor
-with mutable-Mem rows must build the guarded `mem_replay_table`, the HELD legacy
-sidecar fields, and `mem_replay_source_covers`, in addition to
+with mutable-Mem rows must build the guarded `mem_replay_table` and
+`mem_replay_source_covers`, in addition to
 `constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`.
-Generated constraints, row ranges, canonical segment range facts, and Main fixed-column facts are derived from the live
-component. These fields are not read-value agreement predicates, and they no
+Generated constraints, row ranges, canonical segment range facts, and Main
+fixed-column facts are derived from the live component. These fields are not
+read-value agreement predicates, and they no
 longer carry deterministic Mem fixed columns. The paired
 `mem_replay_source_covers` field is a structural table-coverage certificate that
 removes this residue from seed-layer wrappers. For the #115 direct-Mem closeout,

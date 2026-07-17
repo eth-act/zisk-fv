@@ -528,11 +528,6 @@ def singleAddAcceptedTrace : AcceptedZiskTrace 1 where
   constraints_hold := singleAddWitness_constraints
   channels_balanced := singleAddWitness_balancedChannels
   mem_replay_table := fun h => absurd h singleAddWitness_not_mutableMemPresent
-  mem_replay_segment := fun h => absurd h singleAddWitness_not_mutableMemPresent
-  mem_replay_permutation := fun h => absurd h singleAddWitness_not_mutableMemPresent
-  mem_replay_gsum := fun h => absurd h singleAddWitness_not_mutableMemPresent
-  mem_replay_im0 := fun h => absurd h singleAddWitness_not_mutableMemPresent
-  mem_replay_im1 := fun h => absurd h singleAddWitness_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h singleAddWitness_not_mutableMemPresent
   transitions_hold := singleAddWitness_transitions
   main_height := singleAddWitness_main_height

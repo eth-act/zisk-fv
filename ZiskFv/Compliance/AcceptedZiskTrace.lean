@@ -108,23 +108,6 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       table ∈ witness.allTables ∧
         table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
           0 < table.table.length }
-  /-- Guarded legacy Mem segment source columns. HELD for S3's lifecycle audit;
-      S2 deliberately derives its live source from selected table data instead. -/
-  mem_replay_segment : ∀ (_h : MutableMemPresent witness),
-    ZiskFv.Airs.Mem.SegmentColumns FGL
-  /-- Guarded legacy Mem permutation source columns. HELD for S3's lifecycle
-      audit; S2 deliberately derives its live source from selected table data. -/
-  mem_replay_permutation : ∀ (_h : MutableMemPresent witness),
-    ZiskFv.Airs.Mem.PermutationColumns FGL
-  /-- Guarded legacy Mem stage-2 `gsum` source column, HELD for S3's lifecycle
-      audit and not consumed by S2's canonical derivation. -/
-  mem_replay_gsum : ∀ (_h : MutableMemPresent witness), ℕ → FGL
-  /-- Guarded legacy Mem stage-2 `im0` source column, HELD for S3's lifecycle
-      audit and not consumed by S2's canonical derivation. -/
-  mem_replay_im0 : ∀ (_h : MutableMemPresent witness), ℕ → FGL
-  /-- Guarded legacy Mem stage-2 `im1` source column, HELD for S3's lifecycle
-      audit and not consumed by S2's canonical derivation. -/
-  mem_replay_im1 : ∀ (_h : MutableMemPresent witness), ℕ → FGL
   /-- Structural source-correlation certificate for the guarded Mem AIR source:
       every mutable-Mem table in the accepted witness is the selected source
       table. This is table identity only, not read-value agreement. It is kept
