@@ -1,3 +1,24 @@
+# Summary of changes for run 3e61ccfd-594f-461c-865f-ae3cd3bade4c
+Installed the authoritative tarball non-destructively and verified all 832 archived regular files byte-for-byte. Preserved `.lake`, removed the uncommitted tarball, and left `ARISTOTLE_SUMMARY.md` untouched as requested.
+
+Implemented additive completed Clean Arith mirrors in `ZiskFv/AirsClean/ArithCompleteConstraints.lean`:
+- ArithMul generated constraints 2 and 40–45, alongside the existing constraint-46 supply.
+- ArithDiv generated constraints 0–5, 9–30, and 39–48.
+- Added the missing `inv_sum_all_bs` ArithDiv witness and updated row adapters/builders.
+- Updated both Q2 interface audit tables.
+
+The full consumer migration and deletion of the five legacy Arith files remain blocked: directly extending the existing lookup-aware circuit changed downstream conjunction layouts and broke the established consumer projections. The completed mirrors were therefore added as compatible `mainComplete` variants, preserving the green build and existing APIs. The verified blocker, per-item status, citations, reference counts, deletion status, and line delta are documented in `REFACTOR_11_REPORT.md`.
+
+Verification:
+- Full `lake build` passes.
+- All 16 semantic trust checks pass.
+- Standard trust checks 1–12 and 14–16 pass; check 13 alone is unavailable because the supplied snapshot lacks `zisk/core/src/aeneas_extract.rs`.
+- `trust/generated/` is unchanged.
+- Root theorem files, `ZiskFv/Audit.lean`, build pins, and lockfiles are unchanged.
+- The non-generated zero-sorry trust gate passes.
+
+All work is committed and pushed; the working tree is clean.
+
 # Summary of changes for run b030a945-bee6-4328-9643-cfc6edd87816
 Completed the Refactor 10 work order to the verified Q2 boundary and documented all results in `REFACTOR_10_REPORT.md` (leaving `ARISTOTLE_SUMMARY.md` unchanged as requested).
 

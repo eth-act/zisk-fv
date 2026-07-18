@@ -143,6 +143,20 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         + 2 * row.flags.np * row.chunks.d_3 * (1 - row.flags.div)
         + row.carries.carry_6 = 0
 
+/-- The generated global selector constraints supplied by the completed
+    ArithMul mirror: `constraint_2_every_row` (`arith.pil:48`) and
+    `constraint_40_every_row`–`constraint_45_every_row`
+    (`arith.pil:238-243`). -/
+@[reducible]
+def ModeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.main_mul * row.flags.main_div = 0
+  ∧ row.flags.m32 * (1 - row.flags.m32) = 0
+  ∧ row.flags.na * (1 - row.flags.na) = 0
+  ∧ row.flags.nb * (1 - row.flags.nb) = 0
+  ∧ row.flags.nr * (1 - row.flags.nr) = 0
+  ∧ row.flags.np * (1 - row.flags.np) = 0
+  ∧ row.flags.sext * (1 - row.flags.sext) = 0
+
 /-- The lookup half of the full ArithTable contract for this row.
     This is separated from `Spec` so the existing carry-chain re-root
     remains usable until the global theorem supplies lookup membership

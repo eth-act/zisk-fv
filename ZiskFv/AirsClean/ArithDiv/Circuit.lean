@@ -164,7 +164,8 @@ def arithDivRowOf (c b : ℕ) (free : ArithDivFreeCols) : ArithDivRow FGL :=
         bus_res1 := free.bus_res1
         multiplicity := free.multiplicity }
     aux :=
-      { carry_0 := cc0 65536 (arithDivE0 c b)
+      { inv_sum_all_bs := 0
+        carry_0 := cc0 65536 (arithDivE0 c b)
         carry_1 := cc1 65536 (arithDivE0 c b) (arithDivE1 c b)
         carry_2 := cc2 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
         carry_3 := cc3 65536 (arithDivE0 c b) (arithDivE1 c b) (arithDivE2 c b)
@@ -248,7 +249,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
       injection h_flags with h_na h_nb h_nr h_np h_sext h_m32 h_div h_div_by_zero
         h_div_overflow h_main_div h_main_mul h_signed h_range_ab h_range_cd h_op h_bus_res1
         h_multiplicity
-      injection h_aux with h_fab h_na_fb h_nb_fa h_carry_0 h_carry_1 h_carry_2
+      injection h_aux with h_inv_sum h_fab h_na_fb h_nb_fa h_carry_0 h_carry_1 h_carry_2
         h_carry_3 h_carry_4 h_carry_5 h_carry_6
       subst_vars
       simp only [h_a_0, h_a_1, h_a_2, h_a_3, h_b_0, h_b_1, h_b_2, h_b_3,
@@ -426,7 +427,8 @@ theorem spec_via_component (row : ArithDivRow FGL)
           bus_res1 := .const row.flags.bus_res1,
           multiplicity := .const row.flags.multiplicity }
       aux :=
-        { fab := .const row.aux.fab, na_fb := .const row.aux.na_fb,
+        { inv_sum_all_bs := .const row.aux.inv_sum_all_bs
+          fab := .const row.aux.fab, na_fb := .const row.aux.na_fb,
           nb_fa := .const row.aux.nb_fa,
           carry_0 := .const row.aux.carry_0, carry_1 := .const row.aux.carry_1,
           carry_2 := .const row.aux.carry_2, carry_3 := .const row.aux.carry_3,

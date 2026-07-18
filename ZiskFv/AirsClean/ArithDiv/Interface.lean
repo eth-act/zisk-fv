@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithDiv.Circuit
+import ZiskFv.AirsClean.ArithCompleteConstraints
 
 /-!
 # Consumer-facing ArithDiv interface
@@ -20,19 +21,17 @@ ArithDiv `Constraints`/`Spec` supply.
 | Arith-table membership and indexed ranges | lookups in `mainWithArithTable`; `FullSpec` projections | exact |
 | chunk and carry ranges | dedicated lookup-aware variants; `FullSpec` projections | exact |
 | primary/secondary operation-bus rows | `primaryOpBusMessageExpr` / `secondaryOpBusMessageExpr` | exact |
-| `main_mul_div_disjoint`; all mode booleans | no corresponding Clean `assertZero` | **missing** |
-| W-mode high-lane-zero constraints | no corresponding Clean `assertZero` | **missing** |
-| `div_by_zero_forces_*` and `div_overflow_forces_*` boundary constraints | no corresponding Clean `assertZero` | **missing** |
-| inverse-sum zero-divisor constraint using legacy `inv_sum_all_bs` | canonical row has no witness column and no corresponding operation | **missing** |
-| zero/overflow scope and disjointness constraints | no corresponding Clean `assertZero` | **missing** |
-| `bus_res1_eq_div` (constraint 46) | bus field is projected, but its defining equality is not emitted | **missing** |
+| `main_mul_div_disjoint`; all mode booleans | generated mirrors in `mainWithArithTable` | exact operation supply |
+| W-mode high-lane-zero constraints | generated constraints 47–48 in `mainWithArithTable` | exact operation supply |
+| `div_by_zero_forces_*` and `div_overflow_forces_*` | generated constraints 9–24 in `mainWithArithTable` | exact operation supply |
+| inverse-sum zero-divisor constraint | `ArithDivAux.inv_sum_all_bs`; generated constraint 25 | exact operation supply |
+| zero/overflow scope and disjointness constraints | generated constraints 26–30 | exact operation supply |
+| `bus_res1_eq_div` (constraint 46) | generated constraint 46 in `mainWithArithTable` | exact operation supply |
 
-The Q2 deletion gate therefore does **not** pass for ArithDiv.  The missing
-boundary constraints are also exactly where the declared DIV/REM defect
-boundary is maintained; migrating them without a faithful Clean supply could
-alter the theorem claim.  The legacy Div model and defect-gate consumers must
-remain unchanged until these operations (including the inverse witness) are
-modeled and proved in Clean.
+The operation-level Q2 correspondence now has an exact generated mirror for every
+previously missing legacy predicate. The separate migration/deletion gate remains
+blocked until these new operations are projected through `FullSpec` and all existing
+consumers are mechanically retargeted.
 -/
 
 namespace ZiskFv.AirsClean.ArithDiv

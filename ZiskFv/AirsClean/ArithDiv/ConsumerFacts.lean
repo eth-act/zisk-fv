@@ -69,7 +69,8 @@ def constVar (row : ArithDivRow FGL) : Var ArithDivRow FGL where
       bus_res1 := .const row.flags.bus_res1,
       multiplicity := .const row.flags.multiplicity }
   aux :=
-    { carry_0 := .const row.aux.carry_0, carry_1 := .const row.aux.carry_1,
+    { inv_sum_all_bs := .const row.aux.inv_sum_all_bs
+      carry_0 := .const row.aux.carry_0, carry_1 := .const row.aux.carry_1,
       carry_2 := .const row.aux.carry_2, carry_3 := .const row.aux.carry_3,
       carry_4 := .const row.aux.carry_4, carry_5 := .const row.aux.carry_5,
       carry_6 := .const row.aux.carry_6, fab := .const row.aux.fab,
@@ -201,7 +202,8 @@ def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
       signed := v.signed r, range_ab := v.range_ab r, range_cd := v.range_cd r
       bus_res1 := v.bus_res1 r, multiplicity := v.multiplicity r }
   aux :=
-    { fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
+    { inv_sum_all_bs := v.inv_sum_all_bs r
+      fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
       carry_0 := v.cy_0 r, carry_1 := v.cy_1 r, carry_2 := v.cy_2 r
       carry_3 := v.cy_3 r, carry_4 := v.cy_4 r, carry_5 := v.cy_5 r
       carry_6 := v.cy_6 r }

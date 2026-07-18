@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithMul.Circuit
+import ZiskFv.AirsClean.ArithCompleteConstraints
 
 /-!
 # Consumer-facing ArithMul interface
@@ -23,16 +24,13 @@ ArithMul circuits.
 | seven carry ranges | lookups in `mainWithUnsignedCarryRanges` / `mainWithSignedCarryRanges`; `FullSpec.carryRanges` | exact |
 | eight indexed ranges | lookups in `mainWithArithTable`; `FullSpec.indexedRanges` | exact |
 | primary/secondary operation-bus rows | `primaryOpBusMessageExpr` / `secondaryOpBusMessageExpr` | exact |
-| `main_mul_div_disjoint` | no `assertZero` in any Clean ArithMul circuit | **missing** |
-| `boolean_m32`, `boolean_na`, `boolean_nb`, `boolean_nr`, `boolean_np`, `boolean_sext` | no corresponding Clean `assertZero` | **missing** |
-| `mul_constraint_46_named` (`bus_res1`) | expression is used by the bus message, but no equality constraint is emitted | **missing** |
+| `main_mul_div_disjoint` | `mainWithArithTable`; `ModeSpec` clause 1 | exact |
+| `boolean_m32`, `boolean_na`, `boolean_nb`, `boolean_nr`, `boolean_np`, `boolean_sext` | `mainWithArithTable`; `ModeSpec` clauses 2–7 | exact |
+| `mul_constraint_46_named` (`bus_res1`) | `mainWithArithTable`; `C46Spec` | exact |
 
-Consequently the Q2 deletion gate does **not** pass for ArithMul.  The Clean
-carry-chain and lookup slice is faithful, but it does not yet supply all
-constraints consumed by the legacy API.  In particular, replacing those
-legacy hypotheses would either weaken the claim or add caller obligations.
-The legacy Mul model must therefore remain until the missing global flag and
-constraint-46 operations are represented and proved by a Clean component.
+The completed lookup-aware circuit now supplies every constraint in the legacy
+ArithMul consumer predicate surface, so the ArithMul Q2 constraint-correspondence
+gate passes. Consumer migration and deletion remain separate reference-count gates.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul

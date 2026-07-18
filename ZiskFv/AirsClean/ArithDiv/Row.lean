@@ -70,6 +70,8 @@ deriving ProvableStruct
       (arith.pil:205-209). The 8th equation closes against
       `(eq[7]) + carry[6] = 0` with no further carry. -/
 structure ArithDivAux (F : Type) where
+  /-- Generated witness column 38 used by `constraint_25_every_row` (`arith.pil:143`). -/
+  inv_sum_all_bs : F
   fab : F
   na_fb : F
   nb_fa : F
