@@ -7,7 +7,7 @@ import ZiskFv.Bits.Execution
 import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.ZiskCircuit.MulW
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Arith.Mul
+import ZiskFv.AirsClean.ArithMul.Semantics
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.mulw

@@ -1,6 +1,6 @@
 import ZiskFv.AirsClean.ArithDiv.Circuit
 import ZiskFv.AirsClean.ArithCompleteConstraints
-import ZiskFv.Airs.Arith.Div
+import ZiskFv.AirsClean.ArithDiv.Semantics
 
 /-!
 # `Valid_ArithDiv` ↔ `ArithDivRow` compatibility bridge (Phase C4 D-6)
@@ -79,6 +79,22 @@ def constVar (row : ArithDivRow FGL) : Var ArithDivRow FGL where
 
 /-- Named local projection from the completed generated mirror. Consumers never need
     to know the positional conjunction layout of `mainComplete`. -/
+
+/-
+Forget the completed mirror's appended local constraints while retaining the
+    lookup-aware base circuit supply.
+-/
+theorem base_soundness_of_complete_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithDivRow FGL)
+    (h_holds : ConstraintsHold.Soundness env
+      ((mainComplete (constVar row)).operations offset)) :
+    ConstraintsHold.Soundness env
+      ((mainWithArithTable (constVar row)).operations offset) := by
+  contrapose! h_holds;
+  simp_all +decide [ mainComplete, ConstraintsHold.Soundness ];
+  convert h_holds using 1;
+  grind +suggestions
+
 theorem complete_local_specs_of_const_soundness
     (offset : ℕ) (env : Environment FGL) (row : ArithDivRow FGL)
     (h_holds : ConstraintsHold.Soundness env

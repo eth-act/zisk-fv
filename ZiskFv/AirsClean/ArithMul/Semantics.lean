@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.OperationBus.OperationBus
-import ZiskFv.Airs.Arith.CarryChain
+import ZiskFv.AirsClean.ArithShared.CarryChain
 
 /-!
 Named-column mirror of the ZisK `Arith` AIR, restricted to the MUL subset.

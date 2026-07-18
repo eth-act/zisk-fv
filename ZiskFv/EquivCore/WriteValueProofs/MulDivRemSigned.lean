@@ -8,8 +8,8 @@ import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.Execution
-import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Div
+import ZiskFv.AirsClean.ArithMul.Semantics
+import ZiskFv.AirsClean.ArithDiv.Semantics
 import ZiskFv.SailSpec.mulw
 import ZiskFv.SailSpec.divw  -- for `to_bits_truncate_32_eq_ofInt_divw`
 import ZiskFv.AirsClean.ArithMul.ConsumerTheorems

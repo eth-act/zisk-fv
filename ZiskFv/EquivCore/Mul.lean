@@ -5,7 +5,7 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Arith.Mul
+import ZiskFv.AirsClean.ArithMul.Semantics
 import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission

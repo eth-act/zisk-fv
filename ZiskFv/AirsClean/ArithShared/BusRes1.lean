@@ -1,8 +1,8 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Div
+import ZiskFv.AirsClean.ArithMul.Semantics
+import ZiskFv.AirsClean.ArithDiv.Semantics
 
 /-!
 **Bridge 1: constraint-46 normalization.**

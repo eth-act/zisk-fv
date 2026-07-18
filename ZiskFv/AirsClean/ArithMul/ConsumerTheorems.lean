@@ -3,9 +3,9 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Div
-import ZiskFv.Airs.Arith.CarryChain
+import ZiskFv.AirsClean.ArithMul.Semantics
+import ZiskFv.AirsClean.ArithDiv.Semantics
+import ZiskFv.AirsClean.ArithShared.CarryChain
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 -- C4 D-6: the ArithDiv Clean Component re-root bridge — the DIV/REM

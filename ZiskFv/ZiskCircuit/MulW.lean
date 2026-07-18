@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Arith.Mul
+import ZiskFv.AirsClean.ArithMul.Semantics
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.ZiskCircuit.Mul
 

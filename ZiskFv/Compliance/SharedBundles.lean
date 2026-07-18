@@ -251,7 +251,7 @@ structure ArithMulTableWitness
   env : Environment FGL
   holds :
     ConstraintsHold.Soundness env
-      ((ZiskFv.AirsClean.ArithMul.mainWithArithTable
+      ((ZiskFv.AirsClean.ArithMul.mainComplete
         (ZiskFv.AirsClean.ArithMul.constVar
           (ZiskFv.AirsClean.ArithMul.rowAt v r))).operations offset)
 
@@ -261,7 +261,9 @@ theorem ArithMulTableWitness.spec
     ZiskFv.AirsClean.ArithMul.ArithTableSpec
       (ZiskFv.AirsClean.ArithMul.rowAt v r) :=
   ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
-    w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
+    w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r)
+    (ZiskFv.AirsClean.ArithMul.base_soundness_of_complete_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds)
 
 /-- Build an `ArithMulTableWitness` from the row's `FullSpec` (its six
     conjuncts: carry-chain `Spec`, `ArithTableSpec`, `C46Spec`, `ChunkRangeSpec`,
@@ -276,17 +278,20 @@ def arithMulTableWitness_of_fullSpec
     ArithMulTableWitness v r := by
   refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
   obtain ⟨h_spec, h_table, h_c46, h_chunks, h_carry, h_indexed⟩ := h
+  obtain ⟨hmd, hm32, hna, hnb, hnr, hnp, hsext⟩ :=
+    ZiskFv.AirsClean.ArithMul.mode_spec_of_arith_table _ h_table
   obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
   obtain ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
           hcc0, hcc1, hcc2, hcc3, hd0, hd1, hd2, hd3⟩ := h_chunks
   obtain ⟨hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩ := h_carry
   obtain ⟨hra1, hrb1, hrc1, hrd1, hra3, hrb3, hrc3, hrd3⟩ := h_indexed
-  simp only [ZiskFv.AirsClean.ArithMul.mainWithArithTable,
+  simp only [ZiskFv.AirsClean.ArithMul.mainComplete,
     ZiskFv.AirsClean.ArithMul.main, circuit_norm]
   refine ⟨
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · linear_combination hc6
   · linear_combination hc7
@@ -344,6 +349,13 @@ def arithMulTableWitness_of_fullSpec
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using hcy4
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using hcy5
   · simpa [ZiskFv.AirsClean.ArithMul.rowAt] using hcy6
+  · linear_combination hmd
+  · linear_combination hm32
+  · linear_combination hna
+  · linear_combination hnb
+  · linear_combination hnr
+  · linear_combination hnp
+  · linear_combination hsext
 
 theorem ArithMulTableWitness.indexed_ranges
     {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
@@ -351,7 +363,9 @@ theorem ArithMulTableWitness.indexed_ranges
     ZiskFv.AirsClean.ArithMul.IndexedRangeSpec
       (ZiskFv.AirsClean.ArithMul.rowAt v r) :=
   ZiskFv.AirsClean.ArithMul.indexed_ranges_of_arith_table_const_soundness
-    w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
+    w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r)
+    (ZiskFv.AirsClean.ArithMul.base_soundness_of_complete_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds)
 
 /-- Chunk range bounds derived from an `ArithMulTableWitness`.
 
@@ -371,7 +385,9 @@ theorem ArithMulTableWitness.chunk_ranges
   ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 := by
   have h :=
     ZiskFv.AirsClean.ArithMul.chunk_ranges_of_arith_table_const_soundness
-      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
+      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r)
+    (ZiskFv.AirsClean.ArithMul.base_soundness_of_complete_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds)
   simpa [ZiskFv.AirsClean.ArithMul.ChunkRangeSpec,
     ZiskFv.AirsClean.ArithMul.rowAt] using h
 
@@ -454,7 +470,8 @@ theorem ArithDivTableWitness.spec
     ZiskFv.AirsClean.ArithDiv.ArithTableSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v r) :=
   ZiskFv.AirsClean.ArithDiv.arith_table_spec_of_lookup_aware_const_soundness
-    w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
+    w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r)
+    w.holds
 
 theorem ArithDivTableWitness.indexed_ranges
     {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
@@ -462,7 +479,8 @@ theorem ArithDivTableWitness.indexed_ranges
     ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v r) :=
   ZiskFv.AirsClean.ArithDiv.indexed_ranges_of_arith_table_const_soundness
-    w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
+    w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r)
+    w.holds
 
 /-- Build an `ArithDivTableWitness` from the row's `FullSpec` (its three conjuncts:
     carry-chain `Spec`, `ArithTableSpec`, and `IndexedRangeSpec`).  The witness's

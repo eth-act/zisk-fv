@@ -6,7 +6,7 @@ import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.AirsClean.ArithMul.ConsumerFacts
 import ZiskFv.AirsClean.ArithTableProjections
-import ZiskFv.Airs.Arith.BusRes1
+import ZiskFv.AirsClean.ArithShared.BusRes1
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.PackedBitVec.Extensions
 

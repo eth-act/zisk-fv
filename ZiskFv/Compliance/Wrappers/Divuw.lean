@@ -4,7 +4,7 @@ import ZiskFv.SailSpec.divuw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Arith.Div
+import ZiskFv.AirsClean.ArithDiv.Semantics
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Divuw

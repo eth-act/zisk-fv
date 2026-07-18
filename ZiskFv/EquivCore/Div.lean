@@ -7,7 +7,7 @@ import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.ZiskCircuit.Div
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Arith.Div
+import ZiskFv.AirsClean.ArithDiv.Semantics
 import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Airs.OperationBus.OperationBus

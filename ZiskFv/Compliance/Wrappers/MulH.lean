@@ -7,7 +7,7 @@ import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.AirsClean.ArithMul.ConsumerFacts
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
-import ZiskFv.Airs.Arith.BusRes1
+import ZiskFv.AirsClean.ArithShared.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift

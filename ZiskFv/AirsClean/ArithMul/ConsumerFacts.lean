@@ -1,6 +1,6 @@
 import ZiskFv.AirsClean.ArithMul.Circuit
 import ZiskFv.AirsClean.ArithCompleteConstraints
-import ZiskFv.Airs.Arith.Mul
+import ZiskFv.AirsClean.ArithMul.Semantics
 
 /-!
 # `Valid_ArithMul` ↔ `ArithMulRow` compatibility + Component re-root
@@ -62,6 +62,39 @@ def constVar (row : ArithMulRow FGL) : Var ArithMulRow FGL where
 
 /-- Named local projection from the completed generated mirror.  Consumers use this
     theorem rather than depending on the positional conjunction emitted by `mainComplete`. -/
+
+/-
+Forget the completed mirror's appended selector constraints while retaining the
+    lookup-aware base circuit supply. Consumers use this named projection rather than
+    depending on the completed circuit's conjunction layout.
+-/
+theorem base_soundness_of_complete_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
+    (h_holds : ConstraintsHold.Soundness env
+      ((mainComplete (constVar row)).operations offset)) :
+    ConstraintsHold.Soundness env
+      ((mainWithArithTable (constVar row)).operations offset) := by
+  contrapose! h_holds
+  simp_all +decide [mainComplete]
+  unfold ConstraintsHold.Soundness at *
+  simp_all +decide
+  intro h
+  have := h
+  simp_all +decide
+  grind +suggestions
+
+/-
+Every row admitted by the static Arith table has boolean/disjoint selector flags.
+-/
+theorem mode_spec_of_arith_table (row : ArithMulRow FGL)
+    (h : ArithTableSpec row) : ModeSpec row := by
+  by_contra h_contra;
+  obtain ⟨i, hi⟩ := h;
+  have h_row : row.flags.op = (ArithTable.rows[i].toArray)[0]! ∧ row.flags.m32 = (ArithTable.rows[i].toArray)[1]! ∧ row.flags.div = (ArithTable.rows[i].toArray)[2]! ∧ row.flags.na = (ArithTable.rows[i].toArray)[3]! ∧ row.flags.nb = (ArithTable.rows[i].toArray)[4]! ∧ row.flags.np = (ArithTable.rows[i].toArray)[5]! ∧ row.flags.nr = (ArithTable.rows[i].toArray)[6]! ∧ row.flags.sext = (ArithTable.rows[i].toArray)[7]! ∧ row.flags.div_by_zero = (ArithTable.rows[i].toArray)[8]! ∧ row.flags.div_overflow = (ArithTable.rows[i].toArray)[9]! ∧ row.flags.main_mul = (ArithTable.rows[i].toArray)[10]! ∧ row.flags.main_div = (ArithTable.rows[i].toArray)[11]! ∧ row.flags.signed = (ArithTable.rows[i].toArray)[12]! ∧ row.flags.range_ab = (ArithTable.rows[i].toArray)[13]! ∧ row.flags.range_cd = (ArithTable.rows[i].toArray)[14]! := by
+    simp +decide [ ← hi ];
+  simp +decide [ h_row, ModeSpec ] at h_contra;
+  fin_cases i <;> simp +decide at h_contra
+
 theorem complete_local_specs_of_const_soundness
     (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
     (h_holds : ConstraintsHold.Soundness env

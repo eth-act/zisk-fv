@@ -1,6 +1,6 @@
 import ZiskFv.AirsClean.ArithDiv.Constraints
 import ZiskFv.AirsClean.ArithDiv.Soundness
-import ZiskFv.Airs.Arith.CarryChainCompleteness
+import ZiskFv.AirsClean.ArithShared.CarryChainCompleteness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 

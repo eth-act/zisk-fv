@@ -4,9 +4,9 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Div
-import ZiskFv.Airs.Arith.BusRes1
+import ZiskFv.AirsClean.ArithMul.Semantics
+import ZiskFv.AirsClean.ArithDiv.Semantics
+import ZiskFv.AirsClean.ArithShared.BusRes1
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
