@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithMul.Circuit
+import ZiskFv.AirsClean.ArithCompleteConstraints
 import ZiskFv.Airs.Arith.Mul
 
 /-!
@@ -58,6 +59,44 @@ def constVar (row : ArithMulRow FGL) : Var ArithMulRow FGL where
       carry_4 := .const row.carries.carry_4, carry_5 := .const row.carries.carry_5,
       carry_6 := .const row.carries.carry_6, fab := .const row.carries.fab,
       na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa }
+
+/-- Named local projection from the completed generated mirror.  Consumers use this
+    theorem rather than depending on the positional conjunction emitted by `mainComplete`. -/
+theorem complete_local_specs_of_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
+    (h_holds : ConstraintsHold.Soundness env
+      ((mainComplete (constVar row)).operations offset)) :
+    Spec row ∧ ModeSpec row ∧ C46Spec row := by
+  simp only [mainComplete, mainWithArithTable, main, circuit_norm, constVar] at h_holds
+  rcases h_holds with
+    ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38,
+      h46, _h_lookup,
+      _hra1, _hrb1, _hrc1, _hrd1, _hra3, _hrb3, _hrc3, _hrd3,
+      _ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      _hc0, _hc1, _hc2, _hc3, _hd0, _hd1, _hd2, _hd3,
+      _hcy0, _hcy1, _hcy2, _hcy3, _hcy4, _hcy5, _hcy6,
+      hmd, h40, h41, h42, h43, h44, h45⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · linear_combination h6
+  · linear_combination h7
+  · linear_combination h8
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+  · linear_combination hmd
+  · linear_combination h40
+  · linear_combination h41
+  · linear_combination h42
+  · linear_combination h43
+  · linear_combination h44
+  · linear_combination h45
+  · linear_combination h46
 
 /-- The lookup-aware Clean circuit sources ArithTable membership from its
     `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.

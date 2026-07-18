@@ -158,6 +158,84 @@ def Spec (row : ArithDivRow FGL) : Prop :=
       + 2 * row.flags.np * row.chunks.d_3 * (1 - row.flags.div)
       + row.aux.carry_6 = 0
 
+/-- Booleanity and selector-disjointness constraints of the completed ArithDiv mirror
+    (generated constraints 0--5 and 39--45). -/
+@[reducible]
+def ModeSpec (row : ArithDivRow FGL) : Prop :=
+  row.flags.main_div * (row.flags.main_div - 1) = 0
+  ∧ row.flags.main_mul * (row.flags.main_mul - 1) = 0
+  ∧ row.flags.main_mul * row.flags.main_div = 0
+  ∧ row.flags.signed * (1 - row.flags.signed) = 0
+  ∧ row.flags.div_by_zero * (1 - row.flags.div_by_zero) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.div_overflow) = 0
+  ∧ row.flags.div * (1 - row.flags.div) = 0
+  ∧ row.flags.m32 * (1 - row.flags.m32) = 0
+  ∧ row.flags.na * (1 - row.flags.na) = 0
+  ∧ row.flags.nb * (1 - row.flags.nb) = 0
+  ∧ row.flags.nr * (1 - row.flags.nr) = 0
+  ∧ row.flags.np * (1 - row.flags.np) = 0
+  ∧ row.flags.sext * (1 - row.flags.sext) = 0
+
+/-- Div-by-zero and signed-overflow boundary equations (generated constraints 9--24). -/
+@[reducible]
+def BoundarySpec (row : ArithDivRow FGL) : Prop :=
+  row.flags.div_by_zero * row.chunks.b_0 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_1 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_2 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_3 = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_0 - 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_1 - 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_2 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_3 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_0 - 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_1 - 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_2 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_3 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * row.chunks.c_0 = 0
+  ∧ row.flags.div_overflow * (row.chunks.c_1 - row.flags.m32 * 32768) = 0
+  ∧ row.flags.div_overflow * row.chunks.c_2 = 0
+  ∧ row.flags.div_overflow * (row.chunks.c_3 - (1 - row.flags.m32) * 32768) = 0
+
+/-- Inverse-sum witness equation detecting a nonzero divisor (generated constraint 25). -/
+@[reducible]
+def InverseSumSpec (row : ArithDivRow FGL) : Prop :=
+  (row.flags.div - row.flags.div_by_zero) *
+    (1 - row.aux.inv_sum_all_bs *
+      (((row.chunks.b_0 + row.chunks.b_1) + row.chunks.b_2) + row.chunks.b_3)) = 0
+
+/-- Scope and exceptional-mode disjointness equations (generated constraints 26--30). -/
+@[reducible]
+def ScopeSpec (row : ArithDivRow FGL) : Prop :=
+  row.flags.div_by_zero * (1 - row.flags.div) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.div) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.signed) = 0
+  ∧ row.flags.div_overflow * row.flags.div_by_zero = 0
+  ∧ row.flags.div_by_zero * row.flags.div_overflow = 0
+
+/-- Result mux equation (generated constraint 46). -/
+@[reducible]
+def C46Spec (row : ArithDivRow FGL) : Prop :=
+  row.flags.bus_res1 -
+    (row.flags.sext * 4294967295 + (1 - row.flags.m32) *
+      (((1 - row.flags.main_mul - row.flags.main_div) *
+          (row.chunks.d_2 + row.chunks.d_3 * 65536)) +
+       row.flags.main_mul * (row.chunks.c_2 + row.chunks.c_3 * 65536) +
+       row.flags.main_div * (row.chunks.a_2 + row.chunks.a_3 * 65536))) = 0
+
+/-- W-mode high-lane equations (generated constraints 47--48). -/
+@[reducible]
+def WModeSpec (row : ArithDivRow FGL) : Prop :=
+  row.flags.m32 *
+    (row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536) +
+      (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)) = 0
+  ∧ row.flags.m32 * (row.chunks.b_2 + row.chunks.b_3 * 65536) = 0
+
+/-- All named local algebraic bundles supplied by `mainComplete`. -/
+@[reducible]
+def CompleteLocalSpec (row : ArithDivRow FGL) : Prop :=
+  Spec row ∧ ModeSpec row ∧ BoundarySpec row ∧ InverseSumSpec row ∧ ScopeSpec row
+    ∧ C46Spec row ∧ WModeSpec row
+
 /-- The lookup half of the full ArithTable contract for this row.
     This is separated from `Spec` so the existing carry-chain re-root
     remains usable until the global theorem supplies lookup membership

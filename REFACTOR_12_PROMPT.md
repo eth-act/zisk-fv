@@ -33,12 +33,15 @@ named-projection pattern the whole refactor uses (`DerivedRowFacts`,
 
 ## Numbered work order
 
-1. **Named projection layer.** For both families, prove soundness projections from
-   `constraints_hold` of `mainComplete` to named specs: the existing `Spec`,
-   `ModeSpec`, `C46Spec` for ArithMul; for ArithDiv define named spec bundles mirroring
-   the legacy predicate groups (mode booleans/disjointness, boundary, inverse-sum,
-   scope, W-mode — group them the way `Airs/Arith/Div.lean` names them) and prove them
-   supplied. No consumer should ever destructure `mainComplete`'s raw conjunction.
+1. **Named projection layer — ALREADY DONE; verify and use, do not redo.** The tree
+   you received contains the completed layer: named spec bundles (`ArithMul.ModeSpec`;
+   `ArithDiv.{ModeSpec, BoundarySpec, InverseSumSpec, ScopeSpec, C46Spec, WModeSpec,
+   CompleteLocalSpec}`) and PROVEN projection theorems
+   `complete_local_specs_of_const_soundness` in both families' `ConsumerFacts.lean`.
+   Consume these named facts everywhere; no consumer should ever destructure
+   `mainComplete`'s raw conjunction. If a consumer needs a projection variant (e.g.
+   general `input_var` instead of `constVar`), add it beside the existing theorem in
+   the same style.
 2. **Swap the live supply to `mainComplete`** wherever the ensemble/static-table/
    construction layer currently uses the incomplete circuit. Witness/row builders must
    genuinely satisfy the added constraints — e.g. `inv_sum_all_bs` must be the actual

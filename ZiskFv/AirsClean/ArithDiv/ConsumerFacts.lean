@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithDiv.Circuit
+import ZiskFv.AirsClean.ArithCompleteConstraints
 import ZiskFv.Airs.Arith.Div
 
 /-!
@@ -75,6 +76,78 @@ def constVar (row : ArithDivRow FGL) : Var ArithDivRow FGL where
       carry_4 := .const row.aux.carry_4, carry_5 := .const row.aux.carry_5,
       carry_6 := .const row.aux.carry_6, fab := .const row.aux.fab,
       na_fb := .const row.aux.na_fb, nb_fa := .const row.aux.nb_fa }
+
+/-- Named local projection from the completed generated mirror. Consumers never need
+    to know the positional conjunction layout of `mainComplete`. -/
+theorem complete_local_specs_of_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithDivRow FGL)
+    (h_holds : ConstraintsHold.Soundness env
+      ((mainComplete (constVar row)).operations offset)) :
+    CompleteLocalSpec row := by
+  simp only [mainComplete, mainWithArithTable, main, circuit_norm, constVar] at h_holds
+  rcases h_holds with
+    ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38,
+      _h_lookup,
+      _hra1, _hrb1, _hrc1, _hrd1, _hra3, _hrb3, _hrc3, _hrd3,
+      hm0, hm1, hm2, hm3, hm4, hm5,
+      hb1, hb2, hb3, hb4, hb5, hb6, hb7, hb8,
+      hb9, hb10, hb11, hb12, hb13, hb14, hb15, hb16,
+      hinv, hs1, hs2, hs3, hs4, hs5,
+      h39, h40, h41, h42, h43, h44, h45,
+      h46, hw1, hw2⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ⟨?_, ?_⟩⟩
+  · linear_combination h6
+  · linear_combination h7
+  · linear_combination h8
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+  · linear_combination hm0
+  · linear_combination hm1
+  · linear_combination hm2
+  · linear_combination hm3
+  · linear_combination hm4
+  · linear_combination hm5
+  · linear_combination h39
+  · linear_combination h40
+  · linear_combination h41
+  · linear_combination h42
+  · linear_combination h43
+  · linear_combination h44
+  · linear_combination h45
+  · linear_combination hb1
+  · linear_combination hb2
+  · linear_combination hb3
+  · linear_combination hb4
+  · linear_combination hb5
+  · linear_combination hb6
+  · linear_combination hb7
+  · linear_combination hb8
+  · linear_combination hb9
+  · linear_combination hb10
+  · linear_combination hb11
+  · linear_combination hb12
+  · linear_combination hb13
+  · linear_combination hb14
+  · linear_combination hb15
+  · linear_combination hb16
+  · linear_combination hinv
+  · linear_combination hs1
+  · linear_combination hs2
+  · linear_combination hs3
+  · linear_combination hs4
+  · linear_combination hs5
+  · linear_combination h46
+  · linear_combination hw1
+  · linear_combination hw2
 
 /-- The lookup-aware Clean circuit sources ArithTable membership from its
     `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
