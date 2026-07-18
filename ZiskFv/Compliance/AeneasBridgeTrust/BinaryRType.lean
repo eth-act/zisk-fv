@@ -93,7 +93,7 @@ theorem OpEnvelope.aeneasBridgeTrust_addViaBinaryOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.addwOfExtractedShape
     (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAddW)
@@ -135,7 +135,7 @@ def OpEnvelope.addwOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_addwOfExtractedShape
     (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAddW)
@@ -179,7 +179,7 @@ theorem OpEnvelope.aeneasBridgeTrust_addwOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.subwOfExtractedShape
     (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opSubW)
@@ -221,7 +221,7 @@ def OpEnvelope.subwOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_subwOfExtractedShape
     (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opSubW)
@@ -265,7 +265,7 @@ theorem OpEnvelope.aeneasBridgeTrust_subwOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.addiwOfExtractedShape
     (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAddW)
@@ -304,7 +304,7 @@ def OpEnvelope.addiwOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_addiwOfExtractedShape
     (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAddW)
@@ -345,7 +345,7 @@ theorem OpEnvelope.aeneasBridgeTrust_addiwOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.subOfExtractedShape
     (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opSub)
@@ -385,7 +385,7 @@ def OpEnvelope.subOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_subOfExtractedShape
     (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opSub)
@@ -427,7 +427,7 @@ theorem OpEnvelope.aeneasBridgeTrust_subOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.andOfExtractedShape
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAnd)
@@ -467,7 +467,7 @@ def OpEnvelope.andOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_andOfExtractedShape
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAnd)
@@ -509,7 +509,7 @@ theorem OpEnvelope.aeneasBridgeTrust_andOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.orOfExtractedShape
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opOr)
@@ -549,7 +549,7 @@ def OpEnvelope.orOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_orOfExtractedShape
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opOr)
@@ -591,7 +591,7 @@ theorem OpEnvelope.aeneasBridgeTrust_orOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.xorOfExtractedShape
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opXor)
@@ -631,7 +631,7 @@ def OpEnvelope.xorOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_xorOfExtractedShape
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opXor)
@@ -673,7 +673,7 @@ theorem OpEnvelope.aeneasBridgeTrust_xorOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.sltOfExtractedShape
     (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLt)
@@ -713,7 +713,7 @@ def OpEnvelope.sltOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_sltOfExtractedShape
     (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLt)
@@ -755,7 +755,7 @@ theorem OpEnvelope.aeneasBridgeTrust_sltOfExtractedShape
 activation/opcode pins from production-extracted row-shape equalities. -/
 def OpEnvelope.sltuOfExtractedShape
     (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLtu)
@@ -795,7 +795,7 @@ def OpEnvelope.sltuOfExtractedShape
 constructed from extracted row-shape pins and provider source-lane facts. -/
 theorem OpEnvelope.aeneasBridgeTrust_sltuOfExtractedShape
     (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLtu)

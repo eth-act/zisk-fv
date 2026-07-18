@@ -4,8 +4,8 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryPackedCorrect
+import ZiskFv.AirsClean.Binary.Trace
+import ZiskFv.AirsClean.Binary.PackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
@@ -72,7 +72,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf)
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus

@@ -119,7 +119,7 @@ row/range/operation-bus evidence.
 For the SIGNED arms the only residual unsoundness is the documented
 `LT_ABS_NP` byte-chain false positive (`trust/defects.md`,
 `ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`, witnessed by
-`ZiskFv.Airs.Binary.ltAbsNpByteChain_falsePositive_eqAbs256`): the per-byte
+`ZiskFv.AirsClean.Binary.ltAbsNpByteChain_falsePositive_eqAbs256`): the per-byte
 absolute-compare chain accepts a remainder whose magnitude *equals* the
 divisor magnitude (`|r| = |op2|`) as though `|r| < |op2|`.  An HONEST signed
 division ALWAYS has `|r| < |op2|` strictly (e.g. `x/x` has remainder `0`), so

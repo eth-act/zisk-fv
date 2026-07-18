@@ -1,6 +1,6 @@
 import ZiskFv.AirsClean.Binary.Circuit
 import ZiskFv.Airs.Tables.BinaryExtensionTable
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.BinaryTable
@@ -291,132 +291,18 @@ theorem static_table_lt_abs_pn_facts_of_spec_facts
         , ZiskFv.AirsClean.BinaryTable.spec_wf_LT_ABS_PN h7 ⟩
 
 @[reducible]
-def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
-    BinaryRow FGL where
-  aBytes := {
-    free_in_a_0 := v.free_in_a_0 r
-    free_in_a_1 := v.free_in_a_1 r
-    free_in_a_2 := v.free_in_a_2 r
-    free_in_a_3 := v.free_in_a_3 r
-    free_in_a_4 := v.free_in_a_4 r
-    free_in_a_5 := v.free_in_a_5 r
-    free_in_a_6 := v.free_in_a_6 r
-    free_in_a_7 := v.free_in_a_7 r
-  }
-  bBytes := {
-    free_in_b_0 := v.free_in_b_0 r
-    free_in_b_1 := v.free_in_b_1 r
-    free_in_b_2 := v.free_in_b_2 r
-    free_in_b_3 := v.free_in_b_3 r
-    free_in_b_4 := v.free_in_b_4 r
-    free_in_b_5 := v.free_in_b_5 r
-    free_in_b_6 := v.free_in_b_6 r
-    free_in_b_7 := v.free_in_b_7 r
-  }
-  cBytes := {
-    free_in_c_0 := v.free_in_c_0 r
-    free_in_c_1 := v.free_in_c_1 r
-    free_in_c_2 := v.free_in_c_2 r
-    free_in_c_3 := v.free_in_c_3 r
-    free_in_c_4 := v.free_in_c_4 r
-    free_in_c_5 := v.free_in_c_5 r
-    free_in_c_6 := v.free_in_c_6 r
-    free_in_c_7 := v.free_in_c_7 r
-  }
-  chain := {
-    carry_0 := v.carry_0 r
-    carry_1 := v.carry_1 r
-    carry_2 := v.carry_2 r
-    carry_3 := v.carry_3 r
-    carry_4 := v.carry_4 r
-    carry_5 := v.carry_5 r
-    carry_6 := v.carry_6 r
-    carry_7 := v.carry_7 r
-    b_op := v.b_op r
-    b_op_or_sext := v.b_op_or_sext r
-  }
-  mode := {
-    mode32 := v.mode32 r
-    result_is_a := v.result_is_a r
-    use_first_byte := v.use_first_byte r
-    c_is_signed := v.c_is_signed r
-    mode32_and_c_is_signed := v.mode32_and_c_is_signed r
-  }
+def rowAt (v : Valid_Binary FGL FGL) (r : ℕ) : BinaryRow FGL := v r
 
 @[reducible]
-def validOfRow (row : BinaryRow FGL) :
-    ZiskFv.Airs.Binary.Valid_Binary FGL FGL where
-  b_op := fun _ => row.chain.b_op
-  free_in_a_0 := fun _ => row.aBytes.free_in_a_0
-  free_in_a_1 := fun _ => row.aBytes.free_in_a_1
-  free_in_a_2 := fun _ => row.aBytes.free_in_a_2
-  free_in_a_3 := fun _ => row.aBytes.free_in_a_3
-  free_in_a_4 := fun _ => row.aBytes.free_in_a_4
-  free_in_a_5 := fun _ => row.aBytes.free_in_a_5
-  free_in_a_6 := fun _ => row.aBytes.free_in_a_6
-  free_in_a_7 := fun _ => row.aBytes.free_in_a_7
-  free_in_b_0 := fun _ => row.bBytes.free_in_b_0
-  free_in_b_1 := fun _ => row.bBytes.free_in_b_1
-  free_in_b_2 := fun _ => row.bBytes.free_in_b_2
-  free_in_b_3 := fun _ => row.bBytes.free_in_b_3
-  free_in_b_4 := fun _ => row.bBytes.free_in_b_4
-  free_in_b_5 := fun _ => row.bBytes.free_in_b_5
-  free_in_b_6 := fun _ => row.bBytes.free_in_b_6
-  free_in_b_7 := fun _ => row.bBytes.free_in_b_7
-  free_in_c_0 := fun _ => row.cBytes.free_in_c_0
-  free_in_c_1 := fun _ => row.cBytes.free_in_c_1
-  free_in_c_2 := fun _ => row.cBytes.free_in_c_2
-  free_in_c_3 := fun _ => row.cBytes.free_in_c_3
-  free_in_c_4 := fun _ => row.cBytes.free_in_c_4
-  free_in_c_5 := fun _ => row.cBytes.free_in_c_5
-  free_in_c_6 := fun _ => row.cBytes.free_in_c_6
-  free_in_c_7 := fun _ => row.cBytes.free_in_c_7
-  carry_0 := fun _ => row.chain.carry_0
-  carry_1 := fun _ => row.chain.carry_1
-  carry_2 := fun _ => row.chain.carry_2
-  carry_3 := fun _ => row.chain.carry_3
-  carry_4 := fun _ => row.chain.carry_4
-  carry_5 := fun _ => row.chain.carry_5
-  carry_6 := fun _ => row.chain.carry_6
-  carry_7 := fun _ => row.chain.carry_7
-  mode32 := fun _ => row.mode.mode32
-  result_is_a := fun _ => row.mode.result_is_a
-  use_first_byte := fun _ => row.mode.use_first_byte
-  c_is_signed := fun _ => row.mode.c_is_signed
-  b_op_or_sext := fun _ => row.chain.b_op_or_sext
-  mode32_and_c_is_signed := fun _ => row.mode.mode32_and_c_is_signed
-  gsum := fun _ => 0
-  im_0 := fun _ => 0
-  im_1 := fun _ => 0
-  im_2 := fun _ => 0
-  im_3 := fun _ => 0
+def validOfRow (row : BinaryRow FGL) : Valid_Binary FGL FGL := fun _ => row
 
 theorem rowAt_validOfRow_zero (row : BinaryRow FGL) :
-    rowAt (validOfRow row) 0 = row := by
-  cases row
-  rfl
+    rowAt (validOfRow row) 0 = row := rfl
 
-/-- Project the lookup-aware Binary component's algebraic `Spec` to the
-    legacy `core_every_row` predicate on the one-row `validOfRow` view. -/
+/-- Project canonical Clean `Spec` to the trace-level row predicate. -/
 theorem core_every_row_of_spec
     (row : BinaryRow FGL) (h_spec : Spec row) :
-    ZiskFv.Airs.Binary.core_every_row (validOfRow row) 0 := by
-  rcases h_spec with ⟨h0, h1, h2, h3, h4, h5, h6⟩
-  exact ⟨ by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_mode32,
-            sub_eq_add_neg] using h0
-        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_carry_7,
-            sub_eq_add_neg] using h1
-        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_result_is_a,
-            sub_eq_add_neg] using h2
-        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_use_first_byte,
-            sub_eq_add_neg] using h3
-        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_c_is_signed,
-            sub_eq_add_neg] using h4
-        , by simpa [validOfRow, ZiskFv.Airs.Binary.b_op_or_sext_def_holds,
-            sub_eq_add_neg] using h5
-        , by simpa [validOfRow,
-            ZiskFv.Airs.Binary.mode32_and_c_is_signed_def_holds,
-            sub_eq_add_neg] using h6 ⟩
+    core_every_row (validOfRow row) 0 := h_spec
 
 /-- Exact static BinaryTable membership rules out the ambiguous
     `b_op + 16 * mode32 = 16` / `mode32 = 1` shape. If the Binary op-bus
@@ -867,7 +753,7 @@ theorem static_table_op_val_ne_arith_remuw_of_emit
     This is intentionally family-level and row-indexed; it is the shape a
     terminal Binary-family ensemble can provide once the static provider is
     wired into the same Clean path. -/
-def StaticLookupSoundness (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : Prop :=
+def StaticLookupSoundness (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) : Prop :=
   ∀ (r offset : ℕ) (env : Environment FGL),
     ConstraintsHold.Soundness env
       ((mainWithStaticBinaryTable (constVar (rowAt v r))).operations offset)
@@ -875,7 +761,7 @@ def StaticLookupSoundness (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : Prop :
 /-- Project the shared C7 Binary static-lookup witness to the legacy
     per-byte semantic facts for row `r`. -/
 theorem static_lookup_wf_facts
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
     (env : Environment FGL) (h_static : StaticLookupSoundness v) :
     StaticBinaryTableWfFacts (rowAt v r) :=
   binary_table_wf_of_static_lookup_const_soundness offset env (rowAt v r)
@@ -886,7 +772,7 @@ theorem static_lookup_wf_facts
     `static_lookup_wf_facts` and is needed when downstream code must rule out
     ambiguous opcode shapes before projecting semantic `wf_properties`. -/
 theorem static_lookup_spec_facts
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
     (env : Environment FGL) (h_static : StaticLookupSoundness v) :
     StaticBinaryTableSpecFacts (rowAt v r) :=
   binary_table_specs_of_static_lookup_const_soundness offset env (rowAt v r)
@@ -895,7 +781,7 @@ theorem static_lookup_spec_facts
 /-- The same static-lookup path also contains Binary's seven F-typed core
     constraints, projected to the Clean-row `Spec` shape. -/
 theorem spec_of_static_lookup
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
     (env : Environment FGL) (h_static : StaticLookupSoundness v) :
     Spec (rowAt v r) := by
   have h_holds := h_static r offset env
@@ -916,25 +802,25 @@ theorem spec_of_static_lookup
     do not need to supply Binary core facts separately from
     `StaticLookupSoundness`. -/
 theorem core_every_row_of_static_lookup
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
     (env : Environment FGL) (h_static : StaticLookupSoundness v) :
-    ZiskFv.Airs.Binary.core_every_row v r := by
+    ZiskFv.AirsClean.Binary.core_every_row v r := by
   have h_holds := h_static r offset env
   simp only [mainWithStaticBinaryTable, main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨h0, h1, h2, h3, h4, h5, h6, _h7, _h8, _h9, _h10, _h11, _h12, _h13, _h14⟩
-  exact ⟨ by simpa [ZiskFv.Airs.Binary.boolean_mode32, sub_eq_add_neg] using h0
-        , by simpa [ZiskFv.Airs.Binary.boolean_carry_7, sub_eq_add_neg] using h1
-        , by simpa [ZiskFv.Airs.Binary.boolean_result_is_a, sub_eq_add_neg] using h2
-        , by simpa [ZiskFv.Airs.Binary.boolean_use_first_byte, sub_eq_add_neg] using h3
-        , by simpa [ZiskFv.Airs.Binary.boolean_c_is_signed, sub_eq_add_neg] using h4
-        , by simpa [ZiskFv.Airs.Binary.b_op_or_sext_def_holds, sub_eq_add_neg] using h5
-        , by simpa [ZiskFv.Airs.Binary.mode32_and_c_is_signed_def_holds,
+  exact ⟨ by simpa [ZiskFv.AirsClean.Binary.boolean_mode32, sub_eq_add_neg] using h0
+        , by simpa [ZiskFv.AirsClean.Binary.boolean_carry_7, sub_eq_add_neg] using h1
+        , by simpa [ZiskFv.AirsClean.Binary.boolean_result_is_a, sub_eq_add_neg] using h2
+        , by simpa [ZiskFv.AirsClean.Binary.boolean_use_first_byte, sub_eq_add_neg] using h3
+        , by simpa [ZiskFv.AirsClean.Binary.boolean_c_is_signed, sub_eq_add_neg] using h4
+        , by simpa [ZiskFv.AirsClean.Binary.b_op_or_sext_def_holds, sub_eq_add_neg] using h5
+        , by simpa [ZiskFv.AirsClean.Binary.mode32_and_c_is_signed_def_holds,
             sub_eq_add_neg] using h6 ⟩
 
 /-- The 7 F-typed Binary row constraints at row `r`, expressed against
     a `Valid_Binary` via its named accessors (`v.mode32 r`, etc.). -/
-def constraints_at (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) : Prop :=
+def constraints_at (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ) : Prop :=
   v.mode32 r * (1 - v.mode32 r) = 0
   ∧ v.carry_7 r * (1 - v.carry_7 r) = 0
   ∧ v.result_is_a r * (1 - v.result_is_a r) = 0
@@ -1097,7 +983,7 @@ theorem staticLookupComponent_eval_opBusMessageExpr
         (eval_varFromOffset_valueFromOffset staticLookupComponent.Input 0 env))
 
 theorem opBusMessage_toEntry_rowAt_eq_opBus_row
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ) :
     OpBusMessage.toEntry (opBusMessage (rowAt v r)) 1 =
       ZiskFv.Airs.OperationBus.opBus_row_Binary v r := by
   rfl
@@ -1105,7 +991,7 @@ theorem opBusMessage_toEntry_rowAt_eq_opBus_row
 /-- **Bridge theorem.** Converts v1's named-accessor constraint
     hypotheses into the Component's `rowAt`-projected Spec form. -/
 theorem spec_of_valid
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ)
     (_h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

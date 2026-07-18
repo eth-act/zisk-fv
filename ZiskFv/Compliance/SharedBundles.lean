@@ -13,7 +13,7 @@ import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithDiv.Bridge
-import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.Binary.ConsumerFacts
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.Channels.MemoryBusBytes
 

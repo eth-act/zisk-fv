@@ -3,9 +3,9 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryPackedCorrect
-import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.Binary.Trace
+import ZiskFv.AirsClean.Binary.PackedCorrect
+import ZiskFv.AirsClean.Binary.ConsumerFacts
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
@@ -49,12 +49,12 @@ The payoff: each Binary-shape opcode drops 25 caller binders
 once lands their refactors.
 -/
 
-namespace ZiskFv.EquivCore.Bridge.Binary
+namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.OperationBus
 
 private lemma fgl_boolean_cases_local {x : FGL} (h : x * (1 - x) = 0) :
@@ -85,7 +85,7 @@ def byte_ranges_at (v : Valid_Binary FGL FGL) (r : ℕ) : Prop :=
 
 lemma chain_a_byte_lt_256
     {op : ℕ} {a b c cin flags pos : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
     a.val < 256 := by
   obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h
   rw [← h_a]
@@ -93,7 +93,7 @@ lemma chain_a_byte_lt_256
 
 lemma chain_b_byte_lt_256
     {op : ℕ} {a b c cin flags pos : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
     b.val < 256 := by
   obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h
   rw [← h_b]
@@ -101,19 +101,19 @@ lemma chain_b_byte_lt_256
 
 private lemma chain_range_of_wf
     {op : ℕ} {a b c cin flags pos : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
     ZiskFv.Airs.Tables.BinaryTable.range_conditions
       (Classical.choose h) := by
   exact (Classical.choose_spec h).1.1
 
 lemma carry_7_val_lt_2_of_row_core
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0) :
-    ((ZiskFv.AirsClean.Binary.validOfRow row).carry_7 0).val < 2 := by
+    (row.chain.carry_7).val < 2 := by
   rcases h_core with ⟨_, h_carry_7_bool, _, _, _, _, _⟩
   have h_bool : row.chain.carry_7 * (1 - row.chain.carry_7) = 0 := by
-    simpa [ZiskFv.Airs.Binary.boolean_carry_7,
+    simpa [ZiskFv.AirsClean.Binary.boolean_carry_7,
       ZiskFv.AirsClean.Binary.validOfRow] using h_carry_7_bool
   rcases fgl_boolean_cases_local h_bool with h_zero | h_one
   · simp [h_zero]
@@ -121,7 +121,7 @@ lemma carry_7_val_lt_2_of_row_core
 
 /-! ## Static-table carry_7 discharge for AND / OR / XOR rows -/
 
-open ZiskFv.Airs.Binary in
+open ZiskFv.AirsClean.Binary in
 private lemma boolean_carry_implies_eq_zero {x : FGL}
     (h_bool : x * (1 - x) = 0) (h_mod : x.val % 2 = 0) :
     x = 0 := by
@@ -139,7 +139,7 @@ private lemma boolean_carry_implies_eq_zero {x : FGL}
 
 lemma lookup_flags7_mod_two_eq_carry
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0) :
     (ZiskFv.AirsClean.Binary.lookupFlags7Row row).val % 2 =
       row.chain.carry_7.val % 2 := by
@@ -148,19 +148,19 @@ lemma lookup_flags7_mod_two_eq_carry
     ⟨_, h_carry_7_bool, h_result_bool, h_use_bool, h_c_signed_bool, _, _⟩
   have hc : row.chain.carry_7 = 0 ∨ row.chain.carry_7 = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_carry_7,
+    simpa [ZiskFv.AirsClean.Binary.boolean_carry_7,
       ZiskFv.AirsClean.Binary.validOfRow] using h_carry_7_bool
   have hr : row.mode.result_is_a = 0 ∨ row.mode.result_is_a = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_result_is_a,
+    simpa [ZiskFv.AirsClean.Binary.boolean_result_is_a,
       ZiskFv.AirsClean.Binary.validOfRow] using h_result_bool
   have hu : row.mode.use_first_byte = 0 ∨ row.mode.use_first_byte = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_use_first_byte,
+    simpa [ZiskFv.AirsClean.Binary.boolean_use_first_byte,
       ZiskFv.AirsClean.Binary.validOfRow] using h_use_bool
   have hs : row.mode.c_is_signed = 0 ∨ row.mode.c_is_signed = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_c_is_signed,
+    simpa [ZiskFv.AirsClean.Binary.boolean_c_is_signed,
       ZiskFv.AirsClean.Binary.validOfRow] using h_c_signed_bool
   rcases hc with hc | hc <;>
   rcases hr with hr | hr <;>
@@ -171,7 +171,7 @@ lemma lookup_flags7_mod_two_eq_carry
 private lemma lookup_flags012_mod_two_eq_carry
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) (carry : FGL)
     (h_carry : carry.val < 2)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0) :
     (ZiskFv.AirsClean.Binary.lookupFlags012Row row carry).val % 2 =
       carry.val % 2 := by
@@ -183,11 +183,11 @@ private lemma lookup_flags012_mod_two_eq_carry
     · right; apply Fin.ext; simpa using h1
   have hr : row.mode.result_is_a = 0 ∨ row.mode.result_is_a = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_result_is_a,
+    simpa [ZiskFv.AirsClean.Binary.boolean_result_is_a,
       ZiskFv.AirsClean.Binary.validOfRow] using h_result_bool
   have hu : row.mode.use_first_byte = 0 ∨ row.mode.use_first_byte = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_use_first_byte,
+    simpa [ZiskFv.AirsClean.Binary.boolean_use_first_byte,
       ZiskFv.AirsClean.Binary.validOfRow] using h_use_bool
   rcases hc with hc | hc <;>
   rcases hr with hr | hr <;>
@@ -197,7 +197,7 @@ private lemma lookup_flags012_mod_two_eq_carry
 private lemma lookup_flags3456_mod_two_eq_carry
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) (carry : FGL)
     (h_carry : carry.val < 2)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0) :
     (ZiskFv.AirsClean.Binary.lookupFlags3456Row row carry).val % 2 =
       carry.val % 2 := by
@@ -211,25 +211,25 @@ private lemma lookup_flags3456_mod_two_eq_carry
     · right; apply Fin.ext; simpa using h1
   have hr : row.mode.result_is_a = 0 ∨ row.mode.result_is_a = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_result_is_a,
+    simpa [ZiskFv.AirsClean.Binary.boolean_result_is_a,
       ZiskFv.AirsClean.Binary.validOfRow] using h_result_bool
   have hu : row.mode.use_first_byte = 0 ∨ row.mode.use_first_byte = 1 := by
     apply fgl_boolean_cases_local
-    simpa [ZiskFv.Airs.Binary.boolean_use_first_byte,
+    simpa [ZiskFv.AirsClean.Binary.boolean_use_first_byte,
       ZiskFv.AirsClean.Binary.validOfRow] using h_use_bool
   have hm : row.mode.mode32_and_c_is_signed = 0 ∨ row.mode.mode32_and_c_is_signed = 1 := by
     -- Product of two booleans from the core row.
     rcases h_core_copy with ⟨h_mode_bool, _, _, _, h_signed_bool, _, h_prod⟩
     have h_mode := fgl_boolean_cases_local
-      (by simpa [ZiskFv.Airs.Binary.boolean_mode32,
+      (by simpa [ZiskFv.AirsClean.Binary.boolean_mode32,
         ZiskFv.AirsClean.Binary.validOfRow] using h_mode_bool)
     have h_signed := fgl_boolean_cases_local
-      (by simpa [ZiskFv.Airs.Binary.boolean_c_is_signed,
+      (by simpa [ZiskFv.AirsClean.Binary.boolean_c_is_signed,
         ZiskFv.AirsClean.Binary.validOfRow] using h_signed_bool)
     have h_eq : row.mode.mode32_and_c_is_signed =
         row.mode.mode32 * row.mode.c_is_signed := by
       exact sub_eq_zero.mp (by
-        simpa [ZiskFv.Airs.Binary.mode32_and_c_is_signed_def_holds,
+        simpa [ZiskFv.AirsClean.Binary.mode32_and_c_is_signed_def_holds,
           ZiskFv.AirsClean.Binary.validOfRow] using h_prod)
     rcases h_mode with hm0 | hm1 <;> rcases h_signed with hs0 | hs1
     · left; rw [h_eq, hm0]; ring
@@ -282,13 +282,13 @@ private lemma lookup_flags3456_eq_eight_sign_forces
 
 private lemma w_mode_b_op_or_sext_eq
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_mode32_one : row.mode.mode32 = 1) :
     row.chain.b_op_or_sext = row.mode.c_is_signed + 512 := by
   rcases h_core with ⟨_, _, _, _, _, h_bop_or_sext_def, _⟩
   have h_eq := sub_eq_zero.mp (by
-    simpa [ZiskFv.Airs.Binary.b_op_or_sext_def_holds,
+    simpa [ZiskFv.AirsClean.Binary.b_op_or_sext_def_holds,
       ZiskFv.AirsClean.Binary.validOfRow] using h_bop_or_sext_def)
   rw [h_mode32_one] at h_eq
   rw [h_eq]
@@ -296,13 +296,13 @@ private lemma w_mode_b_op_or_sext_eq
 
 private lemma w_mode32_and_c_is_signed_eq
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_mode32_one : row.mode.mode32 = 1) :
     row.mode.mode32_and_c_is_signed = row.mode.c_is_signed := by
   rcases h_core with ⟨_, _, _, _, _, _, h_prod⟩
   have h_eq := sub_eq_zero.mp (by
-    simpa [ZiskFv.Airs.Binary.mode32_and_c_is_signed_def_holds,
+    simpa [ZiskFv.AirsClean.Binary.mode32_and_c_is_signed_def_holds,
       ZiskFv.AirsClean.Binary.validOfRow] using h_prod)
   rw [h_eq, h_mode32_one]
   ring
@@ -349,10 +349,10 @@ private lemma wf_properties_replace_flags
 
 lemma consumer_byte_match_chain_wf_replace_flags
     {op_val : ℕ} {a b c cin flags pos_ind flags' : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       op_val a b c cin flags pos_ind)
     (h_mod : flags'.val % 2 = flags.val % 2) :
-    ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       op_val a b c cin flags' pos_ind := by
   rcases h with ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin, h_flags, h_pos⟩
   have h_mod_e : flags'.val % 2 = e.flags.val % 2 := by
@@ -368,7 +368,7 @@ lemma consumer_byte_match_chain_wf_replace_flags
   · rfl
   · simpa using h_pos
 
-open ZiskFv.Airs.Binary in
+open ZiskFv.AirsClean.Binary in
 private lemma static_binary_table_wf_slot7
     (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v) :
@@ -517,21 +517,21 @@ bundled helper consumes one mode-pin hypothesis and delivers all
     a single conjunction at opcode `op_val`. -/
 @[simp]
 def all_byte_matches_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) : Prop :=
-    ZiskFv.Airs.Binary.consumer_byte_match op_val
+    ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
 
 /-- The 8 per-byte `consumer_byte_match_wf` predicates packaged as
@@ -542,21 +542,21 @@ def all_byte_matches_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) : Pr
     the older multiplicity-based consumer axiom. -/
 @[simp]
 def all_byte_matches_wf_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) : Prop :=
-    ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+    ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r)
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
 
 /-- Row-native form of `all_byte_matches_wf_at` for Clean `BinaryRow`s.
@@ -565,21 +565,21 @@ def all_byte_matches_wf_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) :
 @[simp]
 def all_byte_matches_wf_at_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) (op_val : ℕ) : Prop :=
-    ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+    ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_0 row.bBytes.free_in_b_0 row.cBytes.free_in_c_0
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_1 row.bBytes.free_in_b_1 row.cBytes.free_in_c_1
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_2 row.bBytes.free_in_b_2 row.cBytes.free_in_c_2
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_3 row.bBytes.free_in_b_3 row.cBytes.free_in_c_3
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_4 row.bBytes.free_in_b_4 row.cBytes.free_in_c_4
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_5 row.bBytes.free_in_b_5 row.cBytes.free_in_c_5
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_6 row.bBytes.free_in_b_6 row.cBytes.free_in_c_6
-  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+  ∧ ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val
       row.aBytes.free_in_a_7 row.bBytes.free_in_b_7 row.cBytes.free_in_c_7
 
 private lemma two_mul_boolean_ne_one {x : FGL} (h_bool : x * (1 - x) = 0) :
@@ -596,43 +596,43 @@ private lemma two_mul_boolean_ne_one {x : FGL} (h_bool : x * (1 - x) = 0) :
     instead of the older multiplicity-based table consumer predicate. -/
 structure BinaryChainStaticOut64 (v : Valid_Binary FGL FGL) (r : ℕ)
     (op_val : ℕ) : Prop where
-  chain_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_0 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
               0
               (ZiskFv.AirsClean.Binary.lookupFlags012Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_0 r))
               (2 * v.use_first_byte r)
-  chain_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_1 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
               (v.carry_0 r)
               (ZiskFv.AirsClean.Binary.lookupFlags012Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_1 r)) 0
-  chain_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_2 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
               (v.carry_1 r)
               (ZiskFv.AirsClean.Binary.lookupFlags012Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_2 r)) 0
-  chain_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_3 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
               (v.carry_2 r)
               (ZiskFv.AirsClean.Binary.lookupFlags3456Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_3 r)) (v.mode32 r)
-  chain_4 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_4 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r)
               (v.carry_3 r)
               (ZiskFv.AirsClean.Binary.lookupFlags3456Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_4 r)) 0
-  chain_5 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_5 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r)
               (v.carry_4 r)
               (ZiskFv.AirsClean.Binary.lookupFlags3456Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_5 r)) 0
-  chain_6 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_6 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r)
               (v.carry_5 r)
               (ZiskFv.AirsClean.Binary.lookupFlags3456Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_6 r)) 0
-  chain_7 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_7 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
               (v.carry_6 r)
               (ZiskFv.AirsClean.Binary.lookupFlags7Row
@@ -757,13 +757,13 @@ structure BinaryChainSpecialOut64
   pi7_eq : (1 - v.mode32 r).val = 1
 
 abbrev BinaryChainGtStaticOut64 (v : Valid_Binary FGL FGL) (r : ℕ) : Prop :=
-  BinaryChainSpecialOut64 ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_GT v r
+  BinaryChainSpecialOut64 ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf_GT v r
 
 abbrev BinaryChainLtAbsNpStaticOut64 (v : Valid_Binary FGL FGL) (r : ℕ) : Prop :=
-  BinaryChainSpecialOut64 ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_LT_ABS_NP v r
+  BinaryChainSpecialOut64 ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf_LT_ABS_NP v r
 
 abbrev BinaryChainLtAbsPnStaticOut64 (v : Valid_Binary FGL FGL) (r : ℕ) : Prop :=
-  BinaryChainSpecialOut64 ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_LT_ABS_PN v r
+  BinaryChainSpecialOut64 ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf_LT_ABS_PN v r
 
 private lemma wf_GT_transfer
     {e e' : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL}
@@ -837,7 +837,7 @@ lemma static_ltu_chain_flags7_iff_lt
         + (v.free_in_b_5 r).val * 1099511627776
         + (v.free_in_b_6 r).val * 281474976710656
         + (v.free_in_b_7 r).val * 72057594037927936) := by
-  exact ZiskFv.Airs.Binary.binary_ltu_chunks_eq_bv_ult_of_wf
+  exact ZiskFv.AirsClean.Binary.binary_ltu_chunks_eq_bv_ult_of_wf
     (v.free_in_a_0 r) (v.free_in_a_1 r) (v.free_in_a_2 r) (v.free_in_a_3 r)
     (v.free_in_a_4 r) (v.free_in_a_5 r) (v.free_in_a_6 r) (v.free_in_a_7 r)
     (v.free_in_b_0 r) (v.free_in_b_1 r) (v.free_in_b_2 r) (v.free_in_b_3 r)
@@ -893,11 +893,11 @@ lemma static_ltu_chain_flags7_iff_lt
 lemma static_lt_chain_flags7_iff_slt
     (v : Valid_Binary FGL FGL) (r : ℕ)
     (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_LT)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_mode32_zero : v.mode32 r = 0) :
     ((ZiskFv.AirsClean.Binary.lookupFlags7Row
         (ZiskFv.AirsClean.Binary.rowAt v r)).val % 2 = 1 ↔
-      ZiskFv.Airs.Binary.signed_lt_64'
+      ZiskFv.AirsClean.Binary.signed_lt_64'
         ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
           + (v.free_in_a_2 r).val * 65536
           + (v.free_in_a_3 r).val * 16777216
@@ -913,7 +913,7 @@ lemma static_lt_chain_flags7_iff_slt
           + (v.free_in_b_6 r).val * 281474976710656
           + (v.free_in_b_7 r).val * 72057594037927936)) := by
   rcases h_core with ⟨_, _, _, h_ufb_bool, _, _, _⟩
-  exact ZiskFv.Airs.Binary.binary_lt_chunks_eq_bv_slt_of_wf
+  exact ZiskFv.AirsClean.Binary.binary_lt_chunks_eq_bv_slt_of_wf
     (v.free_in_a_0 r) (v.free_in_a_1 r) (v.free_in_a_2 r) (v.free_in_a_3 r)
     (v.free_in_a_4 r) (v.free_in_a_5 r) (v.free_in_a_6 r) (v.free_in_a_7 r)
     (v.free_in_b_0 r) (v.free_in_b_1 r) (v.free_in_b_2 r) (v.free_in_b_3 r)
@@ -973,7 +973,7 @@ lemma static_lt_chain_flags7_iff_slt
 lemma static_eq_chain_flags7_iff_eq
     (v : Valid_Binary FGL FGL) (r : ℕ)
     (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_EQ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_mode32_zero : v.mode32 r = 0) :
     ((ZiskFv.AirsClean.Binary.lookupFlags7Row
         (ZiskFv.AirsClean.Binary.rowAt v r)).val % 2 = 1 ↔
@@ -993,7 +993,7 @@ lemma static_eq_chain_flags7_iff_eq
           + (v.free_in_b_6 r).val * 281474976710656
           + (v.free_in_b_7 r).val * 72057594037927936)) := by
   rcases h_core with ⟨_, _, _, h_ufb_bool, _, _, _⟩
-  exact ZiskFv.Airs.Binary.binary_eq_chunks_eq_bv_eq_of_wf
+  exact ZiskFv.AirsClean.Binary.binary_eq_chunks_eq_bv_eq_of_wf
     (v.free_in_a_0 r) (v.free_in_a_1 r) (v.free_in_a_2 r) (v.free_in_a_3 r)
     (v.free_in_a_4 r) (v.free_in_a_5 r) (v.free_in_a_6 r) (v.free_in_a_7 r)
     (v.free_in_b_0 r) (v.free_in_b_1 r) (v.free_in_b_2 r) (v.free_in_b_3 r)
@@ -1050,7 +1050,7 @@ lemma static_eq_chain_flags7_iff_eq
     byte comparison. -/
 lemma static_ltu_chain_carry7_one_implies_lt
     (v : Valid_Binary FGL FGL) (r : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
     (h_carry7 : v.carry_7 r = 1) :
       (v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
@@ -1082,23 +1082,23 @@ lemma static_ltu_chain_carry7_one_implies_lt
     BinaryTable lookup rows. -/
 structure BinaryChainWLow4 (v : Valid_Binary FGL FGL) (r : ℕ)
     (op_val : ℕ) : Prop where
-  chain_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_0 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
               0
               (ZiskFv.AirsClean.Binary.lookupFlags012Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_0 r))
               (2 * v.use_first_byte r)
-  chain_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_1 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
               (v.carry_0 r)
               (ZiskFv.AirsClean.Binary.lookupFlags012Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_1 r)) 0
-  chain_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_2 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
               (v.carry_1 r)
               (ZiskFv.AirsClean.Binary.lookupFlags012Row
                 (ZiskFv.AirsClean.Binary.rowAt v r) (v.carry_2 r)) 0
-  chain_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+  chain_3 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
               (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
               (v.carry_2 r)
               (ZiskFv.AirsClean.Binary.lookupFlags3456Row
@@ -1130,7 +1130,7 @@ lemma byte_chain_W_low4_discharge_of_static_lookup
     (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
     (op_val : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_mode32_one : v.mode32 r = 1)
     (h_b_op : (v.b_op r).val = op_val) :
     BinaryChainWLow4 v r op_val := by
@@ -1244,7 +1244,7 @@ lemma byte_chain_W_low4_discharge_of_static_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (op_val : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_mode32_one : row.mode.mode32 = 1)
     (h_b_op : row.chain.b_op.val = op_val) :
@@ -1354,14 +1354,16 @@ lemma byte_chain_W_low4_discharge_of_static_row
 
 lemma b_op_or_sext_val_eq_of_mode32_zero
     (v : Valid_Binary FGL FGL) (r op_val : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_mode32_zero : v.mode32 r = 0)
     (h_b_op : (v.b_op r).val = op_val) :
     (v.b_op_or_sext r).val = op_val := by
+  simp only [Valid_Binary.mode32, Valid_Binary.b_op,
+    Valid_Binary.b_op_or_sext] at *
   rcases h_core with ⟨_, _, _, _, _, h_bop_or_sext_def, _⟩
   have h_eq := sub_eq_zero.mp h_bop_or_sext_def
   rw [h_mode32_zero] at h_eq
-  have h_bop_or : v.b_op_or_sext r = v.b_op r := by
+  have h_bop_or : (v r).chain.b_op_or_sext = (v r).chain.b_op := by
     simpa using h_eq
   rw [h_bop_or]
   exact h_b_op
@@ -1374,7 +1376,7 @@ lemma b_op_or_sext_val_eq_of_mode32_zero
 lemma chain_row_shape_W_of_emit
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_spec_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (op_emit : ℕ)
     (h_op_W : op_emit = 0x1A ∨ op_emit = 0x1B)
@@ -1388,7 +1390,7 @@ lemma chain_row_shape_W_of_emit
   have h_mode32_cases : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
     have h_bool : row.mode.mode32 * (1 - row.mode.mode32) = 0 := by
       simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
-        ZiskFv.Airs.Binary.boolean_mode32] using h_mode32_bool
+        ZiskFv.AirsClean.Binary.boolean_mode32] using h_mode32_bool
     rcases mul_eq_zero.mp h_bool with h_zero | h_one_sub
     · exact Or.inl h_zero
     · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
@@ -1433,7 +1435,7 @@ lemma w_mode_sext_choice_and_carry_7_zero_of_static_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_spec_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_mode32_one : row.mode.mode32 = 1)
     (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD ∨
@@ -1454,7 +1456,7 @@ lemma w_mode_sext_choice_and_carry_7_zero_of_static_row
   rcases h_core with
     ⟨h_mode_bool, h_carry7_bool, h_result_bool, h_use_bool,
       h_signed_bool, h_bop_or_def, h_prod⟩
-  let core : ZiskFv.Airs.Binary.core_every_row
+  let core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0 :=
     ⟨h_mode_bool, h_carry7_bool, h_result_bool, h_use_bool,
       h_signed_bool, h_bop_or_def, h_prod⟩
@@ -1512,12 +1514,12 @@ lemma w_mode_sext_choice_and_carry_7_zero_of_static_row
   have h_forced := lookup_flags3456_eq_eight_sign_forces row row.chain.carry_3
     (ZiskFv.AirsClean.BinaryTable.signByte row.cBytes.free_in_c_3.val)
     hcarry3_lt
-    (by simpa [ZiskFv.Airs.Binary.boolean_result_is_a,
+    (by simpa [ZiskFv.AirsClean.Binary.boolean_result_is_a,
       ZiskFv.AirsClean.Binary.validOfRow] using h_result_bool)
-    (by simpa [ZiskFv.Airs.Binary.boolean_use_first_byte,
+    (by simpa [ZiskFv.AirsClean.Binary.boolean_use_first_byte,
       ZiskFv.AirsClean.Binary.validOfRow] using h_use_bool)
     h_mode_signed
-    (by simpa [ZiskFv.Airs.Binary.boolean_c_is_signed,
+    (by simpa [ZiskFv.AirsClean.Binary.boolean_c_is_signed,
       ZiskFv.AirsClean.Binary.validOfRow] using h_signed_bool)
     (ZiskFv.AirsClean.BinaryTable.signByte_lt_two row.cBytes.free_in_c_3.val)
     h_flags3_eq
@@ -1621,7 +1623,7 @@ lemma w_mode_sext_choice_and_carry_7_zero_of_static_row
         simpa [ZiskFv.AirsClean.Binary.lookupMessage7Row,
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using hflag
       apply boolean_carry_implies_eq_zero
-        (by simpa [ZiskFv.Airs.Binary.boolean_carry_7,
+        (by simpa [ZiskFv.AirsClean.Binary.boolean_carry_7,
           ZiskFv.AirsClean.Binary.validOfRow] using h_carry7_bool)
       rw [← lookup_flags7_mod_two_eq_carry row core, hflag', hcarry6_zero]
       norm_num
@@ -1705,7 +1707,7 @@ lemma w_mode_sext_choice_and_carry_7_zero_of_static_row
         simpa [ZiskFv.AirsClean.Binary.lookupMessage7Row,
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using hflag
       apply boolean_carry_implies_eq_zero
-        (by simpa [ZiskFv.Airs.Binary.boolean_carry_7,
+        (by simpa [ZiskFv.AirsClean.Binary.boolean_carry_7,
           ZiskFv.AirsClean.Binary.validOfRow] using h_carry7_bool)
       rw [← lookup_flags7_mod_two_eq_carry row core, hflag', hcarry6_zero]
       norm_num
@@ -1722,7 +1724,7 @@ lemma logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (op_val : ℕ)
     (h_op_lt : op_val < 16)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
     row.mode.mode32 = 0
@@ -1732,7 +1734,7 @@ lemma logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
     have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h_static.1
     simpa using h
   have h_mode_bool : row.mode.mode32 * (1 - row.mode.mode32) = 0 := by
-    simpa [ZiskFv.Airs.Binary.boolean_mode32,
+    simpa [ZiskFv.AirsClean.Binary.boolean_mode32,
       ZiskFv.AirsClean.Binary.validOfRow] using h_core.1
   rcases fgl_boolean_cases_local h_mode_bool with h_mode_zero | h_mode_one
   · have h_bop_val : row.chain.b_op.val = op_val := by
@@ -1784,7 +1786,7 @@ private lemma static_binary_table_wf_row_slot7
 
 private lemma carry_7_zero_row_of_static_facts
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_cout_zero :
       (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
@@ -1796,7 +1798,7 @@ private lemma carry_7_zero_row_of_static_facts
       ZiskFv.AirsClean.Binary.lookupMessage7Row] using h_cout_zero
   rcases h_core with ⟨_, h_carry_7_bool, _, _, _, _, _⟩
   have h_bool : row.chain.carry_7 * (1 - row.chain.carry_7) = 0 := by
-    simpa [ZiskFv.Airs.Binary.boolean_carry_7,
+    simpa [ZiskFv.AirsClean.Binary.boolean_carry_7,
       ZiskFv.AirsClean.Binary.validOfRow] using h_carry_7_bool
   exact boolean_carry_implies_eq_zero h_bool
     h_mod
@@ -1804,7 +1806,7 @@ private lemma carry_7_zero_row_of_static_facts
 /-- Clean-row static-table route for `carry_7 = 0` on AND rows. -/
 lemma carry_7_zero_AND_row_of_static_facts
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_op_AND :
@@ -1828,7 +1830,7 @@ lemma carry_7_zero_AND_row_of_static_facts
 /-- Clean-row static-table route for `carry_7 = 0` on OR rows. -/
 lemma carry_7_zero_OR_row_of_static_facts
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_op_OR :
@@ -1852,7 +1854,7 @@ lemma carry_7_zero_OR_row_of_static_facts
 /-- Clean-row static-table route for `carry_7 = 0` on XOR rows. -/
 lemma carry_7_zero_XOR_row_of_static_facts
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_op_XOR :
@@ -1882,7 +1884,7 @@ lemma byte_chain_discharge_64_of_static_lookup
     (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
     (op_val : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_mode32_zero : v.mode32 r = 0)
     (h_b_op : (v.b_op r).val = op_val) :
     BinaryChainStaticOut64 v r op_val := by
@@ -2081,7 +2083,7 @@ lemma byte_chain_discharge_64_of_static_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (op_val : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_mode32_zero : row.mode.mode32 = 0)
     (h_b_op : row.chain.b_op.val = op_val) :
@@ -2292,18 +2294,18 @@ lemma byte_chain_discharge_64_of_static_row
 
 lemma chain7_carry_flag_of_static_row_out
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (op_val : ℕ)
     (out : BinaryChainStaticOut64
       (ZiskFv.AirsClean.Binary.validOfRow row) 0 op_val) :
-    ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
-      ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_a_7 0)
-      ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_7 0)
-      ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_c_7 0)
-      ((ZiskFv.AirsClean.Binary.validOfRow row).carry_6 0)
-      ((ZiskFv.AirsClean.Binary.validOfRow row).carry_7 0)
-      (1 - (ZiskFv.AirsClean.Binary.validOfRow row).mode32 0) := by
+    ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op_val
+      (row.aBytes.free_in_a_7)
+      (row.bBytes.free_in_b_7)
+      (row.cBytes.free_in_c_7)
+      (row.chain.carry_6)
+      (row.chain.carry_7)
+      (1 - row.mode.mode32) := by
   apply consumer_byte_match_chain_wf_replace_flags out.chain_7
   have hmod := lookup_flags7_mod_two_eq_carry row h_core
   simpa [ZiskFv.AirsClean.Binary.validOfRow] using hmod.symm
@@ -2314,7 +2316,7 @@ lemma chain7_carry_flag_of_static_row_out
 lemma carry_7_zero_SUB_of_static_chain
     (v : Valid_Binary FGL FGL) (r : ℕ)
     (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_SUB)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_carry_7_bool : v.carry_7 r * (1 - v.carry_7 r) = 0) :
     v.carry_7 r = 0 := by
   obtain ⟨e, h_wf, h_op, _, _, _, _, h_flags, h_pos⟩ := out.chain_7
@@ -2337,7 +2339,7 @@ lemma carry_7_zero_SUB_of_static_chain
 lemma carry_7_zero_ADD_of_static_chain
     (v : Valid_Binary FGL FGL) (r : ℕ)
     (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_ADD)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_carry_7_bool : v.carry_7 r * (1 - v.carry_7 r) = 0) :
     v.carry_7 r = 0 := by
   obtain ⟨e, h_wf, h_op, _, _, _, _, h_flags, h_pos⟩ := out.chain_7
@@ -2354,7 +2356,7 @@ lemma carry_7_zero_ADD_of_static_chain
 
 private lemma c_byte_zero_of_chain_wf_LTU
     {a b c cin flags pos : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_LTU a b c cin flags pos) :
     c = 0 := by
   obtain ⟨e, h_wf, h_op, _, _, h_c, _, _, _⟩ := h
@@ -2366,7 +2368,7 @@ private lemma c_byte_zero_of_chain_wf_LTU
 
 private lemma c_byte_zero_of_chain_wf_LT
     {a b c cin flags pos : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_LT a b c cin flags pos) :
     c = 0 := by
   obtain ⟨e, h_wf, h_op, _, _, h_c, _, _, _⟩ := h
@@ -2631,7 +2633,7 @@ lemma byte_chain_discharge_logic_of_static_row
 
 private lemma byte_ranges_of_consumer_byte_match_wf
     {op_val : ℕ} {a b c : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_wf op_val a b c) :
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_wf op_val a b c) :
     a.val < 256 ∧ b.val < 256 ∧ c.val < 256 := by
   obtain ⟨e, h_wf, _h_op, h_a, h_b, h_c⟩ := h
   rcases h_wf.1 with ⟨ha, hb, hc, _hcin⟩
@@ -2682,7 +2684,7 @@ lemma binary_row_and_chunks_eq_bv_and_of_wf
   obtain ⟨ha6, hb6, _hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
   obtain ⟨ha7, hb7, _hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
   simpa [ZiskFv.AirsClean.Binary.validOfRow] using
-    ZiskFv.Airs.Binary.binary_and_chunks_eq_bv_and_of_wf
+    ZiskFv.AirsClean.Binary.binary_and_chunks_eq_bv_and_of_wf
       (ZiskFv.AirsClean.Binary.validOfRow row) 0
       h0 h1 h2 h3 h4 h5 h6 h7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
@@ -2728,7 +2730,7 @@ lemma binary_row_or_chunks_eq_bv_or_of_wf
   obtain ⟨ha6, hb6, _hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
   obtain ⟨ha7, hb7, _hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
   simpa [ZiskFv.AirsClean.Binary.validOfRow] using
-    ZiskFv.Airs.Binary.binary_or_chunks_eq_bv_or_of_wf
+    ZiskFv.AirsClean.Binary.binary_or_chunks_eq_bv_or_of_wf
       (ZiskFv.AirsClean.Binary.validOfRow row) 0
       h0 h1 h2 h3 h4 h5 h6 h7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
@@ -2774,7 +2776,7 @@ lemma binary_row_xor_chunks_eq_bv_xor_of_wf
   obtain ⟨ha6, hb6, _hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
   obtain ⟨ha7, hb7, _hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
   simpa [ZiskFv.AirsClean.Binary.validOfRow] using
-    ZiskFv.Airs.Binary.binary_xor_chunks_eq_bv_xor_of_wf
+    ZiskFv.AirsClean.Binary.binary_xor_chunks_eq_bv_xor_of_wf
       (ZiskFv.AirsClean.Binary.validOfRow row) 0
       h0 h1 h2 h3 h4 h5 h6 h7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
@@ -2788,27 +2790,30 @@ lemma binary_row_xor_chunks_eq_bv_xor_of_wf
     use `b_op`, bytes 4-7 use `b_op_or_sext`. -/
 lemma b_op_val_eq_of_logic_core
     (v : Valid_Binary FGL FGL) (r op_val : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row v r)
     (h_op : op_val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
           ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
           ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
     (h_emit : v.b_op r + 16 * v.mode32 r = (op_val : FGL))
     (h_bop_or_sext : (v.b_op_or_sext r).val = op_val) :
     (v.b_op r).val = op_val := by
+  simp only [Valid_Binary.mode32,
+    Valid_Binary.b_op, Valid_Binary.b_op_or_sext] at *
   rcases h_core with
     ⟨h_mode32_bool, _, _, _, h_c_signed_bool, h_bop_or_sext_def, _⟩
   have h_mode32_cases := fgl_boolean_cases_local h_mode32_bool
   rcases h_mode32_cases with h_mode32_zero | h_mode32_one
-  · have h_bop_eq : v.b_op r = (op_val : FGL) := by
+  · have h_bop_eq : (v r).chain.b_op = (op_val : FGL) := by
       rw [h_mode32_zero] at h_emit
       simpa using h_emit
+    change ((v r).chain.b_op).val = op_val
     rw [h_bop_eq]
     rcases h_op with h_and | h_or | h_xor
     · simp [h_and, ZiskFv.Airs.Tables.BinaryTable.OP_AND]
     · simp [h_or, ZiskFv.Airs.Tables.BinaryTable.OP_OR]
     · simp [h_xor, ZiskFv.Airs.Tables.BinaryTable.OP_XOR]
   · have h_c_signed_cases := fgl_boolean_cases_local h_c_signed_bool
-    have h_bop_or_sext_eq : v.b_op_or_sext r = v.c_is_signed r + 512 := by
+    have h_bop_or_sext_eq : (v r).chain.b_op_or_sext = (v r).mode.c_is_signed + 512 := by
       have h_zero := sub_eq_zero.mp h_bop_or_sext_def
       rw [h_mode32_one] at h_zero
       rw [h_zero]
@@ -2822,11 +2827,11 @@ lemma b_op_val_eq_of_logic_core
       · right; right
         simpa [ZiskFv.Airs.Tables.BinaryTable.OP_XOR] using h_xor
     rcases h_c_signed_cases with h_c_zero | h_c_one
-    · have h_val : (v.b_op_or_sext r).val = 512 := by
+    · have h_val : ((v r).chain.b_op_or_sext).val = 512 := by
         rw [h_bop_or_sext_eq, h_c_zero]
         simp
       omega
-    · have h_val : (v.b_op_or_sext r).val = 513 := by
+    · have h_val : ((v r).chain.b_op_or_sext).val = 513 := by
         rw [h_bop_or_sext_eq, h_c_one]
         simp
       omega
@@ -3310,6 +3315,11 @@ lemma main_c_lanes_carryfree_of_match
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
   obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, h_flag_m, _, _, _⟩ := h_match'
+  simp only [validOfRow, Valid_Binary.free_in_c_0, Valid_Binary.free_in_c_1,
+    Valid_Binary.free_in_c_2, Valid_Binary.free_in_c_3,
+    Valid_Binary.free_in_c_4, Valid_Binary.free_in_c_5,
+    Valid_Binary.free_in_c_6, Valid_Binary.free_in_c_7,
+    Valid_Binary.carry_7] at h_c_lo_m h_c_hi_m h_flag_m
   have h_carry7 : row.chain.carry_7 = 0 := h_flag_m.symm.trans h_flag
   refine ⟨?_, ?_⟩
   · rw [h_c_lo_m, h_carry7]; ring
@@ -3595,7 +3605,7 @@ lemma match_clo_chi_AND_row_of_static_facts
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (r_main : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -3619,7 +3629,7 @@ lemma match_clo_chi_OR_row_of_static_facts
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (r_main : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -3643,7 +3653,7 @@ lemma match_clo_chi_XOR_row_of_static_facts
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (r_main : ℕ)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -3845,4 +3855,4 @@ lemma itype_imm_subset_binary_row_of_main_row
   rw [h_b0_val, h_b1_val]
   ring
 
-end ZiskFv.EquivCore.Bridge.Binary
+end ZiskFv.AirsClean.Binary

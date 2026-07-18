@@ -20,7 +20,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SLTIU`'s closur
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.Binary (Valid_Binary)
+open ZiskFv.AirsClean.Binary (Valid_Binary)
 open ZiskFv.Trusted (OP_LT OP_LTU)
 open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
 

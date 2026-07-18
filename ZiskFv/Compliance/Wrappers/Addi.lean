@@ -9,7 +9,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Compliance.SharedBundles
 
@@ -28,7 +28,7 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
@@ -92,7 +92,7 @@ lemma equiv_ADDI
     rw [← h_op_match]
     simpa [ZiskFv.Trusted.OP_ADD] using h_main_op_add
   obtain ⟨h_mode32_zero, h_bop_val, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+    ZiskFv.AirsClean.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       row h_spec_facts 10 (by decide) h_core h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val

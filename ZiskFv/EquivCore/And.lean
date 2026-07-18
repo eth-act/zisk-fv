@@ -6,7 +6,7 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.And
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
-import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.and
 import ZiskFv.SailSpec.BusEffect
@@ -14,7 +14,7 @@ import ZiskFv.Tactics.ALURTypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.EquivCore.WriteValueProofs.BinaryLogic
 import ZiskFv.EquivCore.Add
@@ -85,7 +85,7 @@ lemma equiv_AND_of_static_row
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
     (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
@@ -106,7 +106,7 @@ lemma equiv_AND_of_static_row
           h_rd_idx⟩ := promises
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
+    ZiskFv.AirsClean.Binary.e2_byte_ranges_discharge e2
   have h_emit : row.chain.b_op + 16 * row.mode.mode32 =
       (ZiskFv.Airs.Tables.BinaryTable.OP_AND : FGL) := by
     have h_match_op := h_match
@@ -122,10 +122,10 @@ lemma equiv_AND_of_static_row
       h_static ZiskFv.Airs.Tables.BinaryTable.OP_AND
       (.inl rfl) h_emit
   have h_byte_matches :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+    ZiskFv.AirsClean.Binary.byte_chain_discharge_logic_of_static_row
       row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_AND h_bop h_bop_or_sext
   obtain ⟨h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.match_clo_chi_AND_row_of_static_facts
+    ZiskFv.AirsClean.Binary.match_clo_chi_AND_row_of_static_facts
       m row r_main h_core h_facts h_match h_bop_or_sext
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_match_clo_mem :

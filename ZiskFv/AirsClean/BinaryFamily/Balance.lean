@@ -1,5 +1,5 @@
 import ZiskFv.AirsClean.BinaryFamily.Ensemble
-import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.Binary.ConsumerFacts
 
 /-!
 # Binary-family operation-bus balance projections
@@ -167,7 +167,7 @@ theorem staticBinary_core_and_wf_of_table_spec
     (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
     (h_spec : table.Spec)
     {row : Array FGL} (h_row : row ∈ table.table) :
-    ZiskFv.Airs.Binary.core_every_row
+    ZiskFv.AirsClean.Binary.core_every_row
         (ZiskFv.AirsClean.Binary.validOfRow
           (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
             (table.environment row))) 0

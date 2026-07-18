@@ -1,3 +1,23 @@
+# Summary of changes for run fd33428b-7bde-44f5-9bb6-48040853a08b
+Completed the Refactor 9 Binary-family work order.
+
+- Installed the authoritative archive non-destructively and verified all 826 archived files byte-for-byte.
+- Migrated Binary’s shared balance/static-table, compare, logic, arithmetic/input, wrappers, constructions, trace exports, and equivalence consumers to canonical Clean rows.
+- Added `AirsClean/Binary/Trace.lean` and moved retained semantics into `PackedCorrect.lean`, `ConsumerFacts.lean`, and `ConsumerTheorems.lean` under the Clean Binary family.
+- Deleted the legacy Binary model, packed-correctness path, and old bridge surfaces.
+- Confirmed zero remaining legacy Binary imports or qualified references.
+- The migration commit changed 87 files: 895 lines added, 1,141 deleted, net −246 lines.
+- Added the full consumer map, per-item status, deletion list, reference counts, and gate results to `REFACTOR_9_REPORT.md`.
+- Left `ARISTOTLE_SUMMARY.md` unchanged as explicitly requested.
+
+Verification:
+- `lake build ZiskFv` passed (9,014 jobs).
+- All 16 semantic trust checks passed.
+- Trust checks 1–12 and 14–16 passed; check 13 was deferred because the supplied tree lacks the `zisk` submodule.
+- The non-generated zero-sorry gate passed.
+- `trust/generated/`, `Soundness.lean`, `Completeness.lean`, and `Audit.lean` remain byte-unchanged.
+- All retained work was committed and pushed.
+
 # Summary of changes for run 244ce64a-5440-418e-907a-b64e2e64a156
 Completed Refactor 8 with one family fully migrated and deleted, following the work order’s prioritization rule.
 

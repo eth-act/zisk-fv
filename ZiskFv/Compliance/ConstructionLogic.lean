@@ -243,29 +243,29 @@ theorem construction_or_sound_claimed_dead
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_OR, ZiskFv.Trusted.OP_OR] using
       h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+    ZiskFv.AirsClean.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_OR (by
         simp [ZiskFv.Airs.Tables.BinaryTable.OP_OR])
       h_core h_emit
   have h_out :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+    ZiskFv.AirsClean.Binary.byte_chain_discharge_64_of_static_row
       providerInput h_facts
       ZiskFv.Airs.Tables.BinaryTable.OP_OR h_core h_row_m32 h_bop
   have h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
     allByteMatchesOfStaticOut64_local h_out
   -- Lane → Sail binding: from lane bridges (binders) + provider match.
   have h_input_r1_row :
       or_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      ZiskFv.AirsClean.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) or_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   have h_input_r2_row :
       or_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
+      ZiskFv.AirsClean.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) or_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_OR
@@ -449,21 +449,21 @@ theorem construction_xor_sound_claimed_dead
       (.inr (.inr rfl)) h_emit
   -- `_logic` byte-chain (already returns `all_byte_matches_wf_at_row`).
   have h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_XOR :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+    ZiskFv.AirsClean.Binary.byte_chain_discharge_logic_of_static_row
       providerInput h_facts ZiskFv.Airs.Tables.BinaryTable.OP_XOR h_bop_row h_bop_or_sext
   -- Lane → Sail binding: from lane bridges (binders) + provider match.
   have h_input_r1_row :
       xor_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      ZiskFv.AirsClean.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) xor_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   have h_input_r2_row :
       xor_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
+      ZiskFv.AirsClean.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) xor_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_XOR

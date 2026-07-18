@@ -53,8 +53,13 @@ def SequentialPcDomain (pc : BitVec 64) : Prop :=
     (the RTYPE/ITYPE/W binary `OpEnvelope` arms carry it as an unused field).
     Building it with `0` lanes is non-vacuous: it imposes no constraint and
     makes no hypothesis contradictory. -/
-noncomputable def zeroValidBinary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL := by
-  constructor <;> exact fun _ => 0
+noncomputable def zeroValidBinary : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL :=
+  fun _ =>
+    { aBytes := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩
+      bBytes := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩
+      cBytes := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩
+      chain := ⟨0, 0, 0, 0, 0, 0, 0, 0, 0, 0⟩
+      mode := ⟨0, 0, 0, 0, 0⟩ }
 
 /-- `NoKnownDefect env` is exactly the conjunction of its three per-defect
     components: the env is outside the signed-MUL forge shape, outside the

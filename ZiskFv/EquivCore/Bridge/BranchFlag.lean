@@ -1,4 +1,4 @@
-import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.EquivCore.Add
 
 /-!
@@ -23,11 +23,11 @@ drives the branch mux `pc + jmp_offset2 + flag*(jmp_offset1 -
 jmp_offset2)` (`Pilot.branch_path_nextPC_field`).
 -/
 
-namespace ZiskFv.EquivCore.Bridge.Binary
+namespace ZiskFv.AirsClean.Binary
 
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.Binary (Valid_Binary)
+open ZiskFv.AirsClean.Binary (Valid_Binary)
 
 /-- **BLTU/BGEU branch FLAG = unsigned-comparison.** For a Main row whose
     operation-bus request is provided by a static-table LTU Binary row,
@@ -46,7 +46,7 @@ lemma branch_flag_ltu_of_static_row
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_zero : row.mode.mode32 = 0)
@@ -165,7 +165,7 @@ lemma branch_flag_lt_of_static_row
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_zero : row.mode.mode32 = 0)
@@ -251,7 +251,7 @@ lemma branch_flag_lt_of_static_row
     exact Nat.mod_eq_of_lt hB_lt
   -- (7) Conclude: `m.flag = carry_7 = (if slt r1 r2 then 1 else 0)`.
   rw [h_flag_eq]
-  have h_brid := ZiskFv.Airs.Binary.signed_lt_64'_iff_bv_slt r1_val r2_val
+  have h_brid := ZiskFv.AirsClean.Binary.signed_lt_64'_iff_bv_slt r1_val r2_val
   rw [h_r1_toNat, h_r2_toNat] at h_brid
   cases h_slt : BitVec.slt r1_val r2_val with
   | true =>
@@ -282,7 +282,7 @@ lemma branch_flag_eq_of_static_row
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_zero : row.mode.mode32 = 0)
@@ -405,4 +405,4 @@ lemma branch_flag_eq_of_static_row
     simp only [Bool.false_eq_true, if_false]
     exact Fin.ext (by rw [h0]; rfl)
 
-end ZiskFv.EquivCore.Bridge.Binary
+end ZiskFv.AirsClean.Binary

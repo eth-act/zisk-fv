@@ -13,7 +13,7 @@ import ZiskFv.EquivCore.Addw
 PR5 / Wave 6 of the P4 SWEEP: the m32 = 1 word-ALU families. These were
 NEEDS-WORK because the prerequisite m32 = 1 32-bit lane-binding lemma did not
 exist; it is now authored as
-`ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row` /
+`ZiskFv.AirsClean.Binary.input_r1_packed_a32_row` /
 `input_r2_packed_b32_row` (the binary analog of the BinaryExtension shift
 bridge's `packed_a_lo32_eq_of_shift_match_m32_1_of_a_range`). With that lemma in
 place these three constructions instantiate the honest §2 ALU template against the
@@ -240,14 +240,14 @@ theorem construction_subw_sound_claimed_dead
       (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
+      ZiskFv.AirsClean.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) subw_input.r1_val
         ha0 ha1 ha2 ha3 h_m32_one h_a_lo_t h_a_hi_t h_match h_input_r1
   have h_input_r2_extract :
       (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
+      ZiskFv.AirsClean.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin r2) subw_input.r2_val
         hb0 hb1 hb2 hb3 h_m32_one h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SUBW
@@ -413,14 +413,14 @@ theorem construction_addw_sound_claimed_dead
       (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
+      ZiskFv.AirsClean.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) addw_input.r1_val
         ha0 ha1 ha2 ha3 h_m32_one h_a_lo_t h_a_hi_t h_match h_input_r1
   have h_input_r2_extract :
       (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
+      ZiskFv.AirsClean.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin r2) addw_input.r2_val
         hb0 hb1 hb2 hb3 h_m32_one h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_ADDW
@@ -573,7 +573,7 @@ theorem construction_addiw_sound_claimed_dead
       (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
+      ZiskFv.AirsClean.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) addiw_input.r1_val
         ha0 ha1 ha2 ha3 h_m32_one h_a_lo_t h_a_hi_t h_match h_input_r1
   exact ZiskFv.Compliance.equiv_ADDIW

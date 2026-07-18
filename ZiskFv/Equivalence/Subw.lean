@@ -20,7 +20,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SUBW`'s closure
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.Binary (Valid_Binary)
+open ZiskFv.AirsClean.Binary (Valid_Binary)
 open ZiskFv.Trusted (OP_ADD_W OP_SUB_W)
 
 namespace ZiskFv.Equivalence.Subw
@@ -91,7 +91,7 @@ lemma equiv_SUBW_of_static_row
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_one : row.mode.mode32 = 1)

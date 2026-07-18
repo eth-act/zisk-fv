@@ -20,7 +20,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_ANDI`'s closure
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.Binary (Valid_Binary)
+open ZiskFv.AirsClean.Binary (Valid_Binary)
 open ZiskFv.Trusted (OP_AND OP_OR OP_XOR)
 open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
 
@@ -93,7 +93,7 @@ lemma equiv_ANDI_of_static_row
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)

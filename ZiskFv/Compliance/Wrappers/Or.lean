@@ -7,7 +7,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
@@ -124,7 +124,7 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 

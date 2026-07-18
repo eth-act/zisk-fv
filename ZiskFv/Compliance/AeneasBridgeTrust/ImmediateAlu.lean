@@ -11,7 +11,7 @@ variable {m : Valid_Main FGL FGL} {r_main : Nat}
 
 def OpEnvelope.andiOfExtractedShape
     (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAnd)
@@ -52,7 +52,7 @@ def OpEnvelope.andiOfExtractedShape
 
 theorem OpEnvelope.aeneasBridgeTrust_andiOfExtractedShape
     (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opAnd)
@@ -94,7 +94,7 @@ theorem OpEnvelope.aeneasBridgeTrust_andiOfExtractedShape
 
 def OpEnvelope.oriOfExtractedShape
     (ori_input : PureSpec.OriInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opOr)
@@ -135,7 +135,7 @@ def OpEnvelope.oriOfExtractedShape
 
 theorem OpEnvelope.aeneasBridgeTrust_oriOfExtractedShape
     (ori_input : PureSpec.OriInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opOr)
@@ -177,7 +177,7 @@ theorem OpEnvelope.aeneasBridgeTrust_oriOfExtractedShape
 
 def OpEnvelope.xoriOfExtractedShape
     (xori_input : PureSpec.XoriInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opXor)
@@ -218,7 +218,7 @@ def OpEnvelope.xoriOfExtractedShape
 
 theorem OpEnvelope.aeneasBridgeTrust_xoriOfExtractedShape
     (xori_input : PureSpec.XoriInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opXor)
@@ -260,7 +260,7 @@ theorem OpEnvelope.aeneasBridgeTrust_xoriOfExtractedShape
 
 def OpEnvelope.sltiOfExtractedShape
     (slti_input : PureSpec.SltiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLt)
@@ -299,7 +299,7 @@ def OpEnvelope.sltiOfExtractedShape
 
 theorem OpEnvelope.aeneasBridgeTrust_sltiOfExtractedShape
     (slti_input : PureSpec.SltiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLt)
@@ -339,7 +339,7 @@ theorem OpEnvelope.aeneasBridgeTrust_sltiOfExtractedShape
 
 def OpEnvelope.sltiuOfExtractedShape
     (sltiu_input : PureSpec.SltiuInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLtu)
@@ -378,7 +378,7 @@ def OpEnvelope.sltiuOfExtractedShape
 
 theorem OpEnvelope.aeneasBridgeTrust_sltiuOfExtractedShape
     (sltiu_input : PureSpec.SltiuInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (h_op : provenance.extractedRow.op = ExtractedConst.opLtu)

@@ -4,13 +4,13 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryPackedCorrect
+import ZiskFv.AirsClean.Binary.Trace
+import ZiskFv.AirsClean.Binary.PackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
-import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 
 /-!
@@ -68,7 +68,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf)
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
@@ -351,7 +351,7 @@ lemma h_rd_val_logic_and_row_of_wf
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
     (h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_AND)
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row OP_AND)
     (h_match_clo :
         row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
           + row.cBytes.free_in_c_2 * 65536
@@ -395,10 +395,10 @@ lemma h_rd_val_logic_and_row_of_wf
   obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
   obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
   have h_matches' :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_AND :=
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row OP_AND :=
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   have h_bv :=
-    ZiskFv.EquivCore.Bridge.Binary.binary_row_and_chunks_eq_bv_and_of_wf
+    ZiskFv.AirsClean.Binary.binary_row_and_chunks_eq_bv_and_of_wf
       row h_matches'
   have h_byte_sum := byte_sum_from_binary_row_lane_match row e2
     h_match_clo h_match_chi
@@ -434,7 +434,7 @@ lemma h_rd_val_logic_or_row_of_wf
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
     (h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_OR)
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row OP_OR)
     (h_match_clo :
         row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
           + row.cBytes.free_in_c_2 * 65536
@@ -478,10 +478,10 @@ lemma h_rd_val_logic_or_row_of_wf
   obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
   obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
   have h_matches' :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_OR :=
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row OP_OR :=
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   have h_bv :=
-    ZiskFv.EquivCore.Bridge.Binary.binary_row_or_chunks_eq_bv_or_of_wf
+    ZiskFv.AirsClean.Binary.binary_row_or_chunks_eq_bv_or_of_wf
       row h_matches'
   have h_byte_sum := byte_sum_from_binary_row_lane_match row e2
     h_match_clo h_match_chi
@@ -517,7 +517,7 @@ lemma h_rd_val_logic_xor_row_of_wf
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
     (h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_XOR)
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row OP_XOR)
     (h_match_clo :
         row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
           + row.cBytes.free_in_c_2 * 65536
@@ -561,10 +561,10 @@ lemma h_rd_val_logic_xor_row_of_wf
   obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
   obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
   have h_matches' :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_XOR :=
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row OP_XOR :=
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   have h_bv :=
-    ZiskFv.EquivCore.Bridge.Binary.binary_row_xor_chunks_eq_bv_xor_of_wf
+    ZiskFv.AirsClean.Binary.binary_row_xor_chunks_eq_bv_xor_of_wf
       row h_matches'
   have h_byte_sum := byte_sum_from_binary_row_lane_match row e2
     h_match_clo h_match_chi

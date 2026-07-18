@@ -7,8 +7,8 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.Binary.Binary
-import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.Binary.Trace
+import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
@@ -24,7 +24,7 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.EquivCore.Promises
@@ -77,31 +77,32 @@ lemma equiv_SLTIU
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LTU, ZiskFv.Trusted.OP_LTU] using
       h_main_op_sltiu
   obtain ⟨h_row_m32, h_bop, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+    ZiskFv.AirsClean.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       row h_spec_facts ZiskFv.Airs.Tables.BinaryTable.OP_LTU (by
         simp [ZiskFv.Airs.Tables.BinaryTable.OP_LTU])
       h_core h_emit
   let v := ZiskFv.AirsClean.Binary.validOfRow row
   have h_match_v : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v 0) := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+    simpa [
       ZiskFv.AirsClean.Binary.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       opBus_row_Binary] using h_match
-  have h_row_m32_v : v.mode32 0 = 0 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_row_m32
-  have h_bop_v : (v.b_op 0).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_bop
+  have h_row_m32_v : row.mode.mode32 = 0 := by
+    simpa [] using h_row_m32
+  have h_bop_v : (row.chain.b_op).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU := by
+    simpa [] using h_bop
   have h_bop_or_sext : row.chain.b_op_or_sext.val =
       ZiskFv.Airs.Tables.BinaryTable.OP_LTU := by
-    have h :=
-      ZiskFv.EquivCore.Bridge.Binary.b_op_or_sext_val_eq_of_mode32_zero
-        v 0 ZiskFv.Airs.Tables.BinaryTable.OP_LTU h_core h_row_m32_v h_bop_v
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h
+    rcases h_core with ⟨_, _, _, _, _, hdef, _⟩
+    have heq := sub_eq_zero.mp hdef
+    rw [h_row_m32_v] at heq
+    rw [show row.chain.b_op_or_sext = row.chain.b_op by simpa using heq]
+    exact h_bop_v
   have h_matches :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+    ZiskFv.AirsClean.Binary.byte_chain_discharge_logic_of_static_row
       row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_LTU h_bop h_bop_or_sext
   have h_input_imm_v :=
-    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+    ZiskFv.AirsClean.Binary.itype_imm_subset_binary_row_of_main_row
       m row r_main sltiu_input.imm h_matches h_main_m32 h_match h_sltiu_subset
   have h_input_imm_row : BitVec.signExtend 64 sltiu_input.imm
       = BitVec.ofNat 64

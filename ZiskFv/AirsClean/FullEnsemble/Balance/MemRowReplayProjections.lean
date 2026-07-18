@@ -1,6 +1,6 @@
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.ArithTableProjections
-import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.Binary.ConsumerFacts
 import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 import ZiskFv.AirsClean.Mem.Bridge

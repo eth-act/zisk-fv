@@ -83,8 +83,8 @@ set_option maxHeartbeats 2000000
     (`rcases`/`exact`) over a public structure — no trust content. -/
 theorem consumerByteMatchOfChainWf_local
     {op : Nat} {a b c cin flags pos : FGL}
-    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
-    ZiskFv.Airs.Binary.consumer_byte_match_wf op a b c := by
+    (h : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
+    ZiskFv.AirsClean.Binary.consumer_byte_match_wf op a b c := by
   rcases h with ⟨e, h_wf, h_op, h_a, h_b, h_c, _h_cin, _h_flags, _h_pos⟩
   exact ⟨e, h_wf, h_op, h_a, h_b, h_c⟩
 
@@ -95,9 +95,9 @@ theorem consumerByteMatchOfChainWf_local
     the stripped construction block; it is a pure projection over public lemmas. -/
 theorem allByteMatchesOfStaticOut64_local
     {row : ZiskFv.AirsClean.Binary.BinaryRow FGL} {op : Nat}
-    (out : ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64
+    (out : ZiskFv.AirsClean.Binary.BinaryChainStaticOut64
       (ZiskFv.AirsClean.Binary.validOfRow row) 0 op) :
-    ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row op := by
+    ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row row op := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simpa [ZiskFv.AirsClean.Binary.validOfRow] using
       consumerByteMatchOfChainWf_local out.chain_0
@@ -319,29 +319,29 @@ theorem construction_sub_sound_claimed_dead
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB, ZiskFv.Trusted.OP_SUB] using
       h_main_op
   obtain ⟨h_row_m32, h_bop, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+    ZiskFv.AirsClean.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_SUB (by
         simp [ZiskFv.Airs.Tables.BinaryTable.OP_SUB])
       h_core h_emit
   have h_out :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+    ZiskFv.AirsClean.Binary.byte_chain_discharge_64_of_static_row
       providerInput h_facts
       ZiskFv.Airs.Tables.BinaryTable.OP_SUB h_core h_row_m32 h_bop
   have h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     allByteMatchesOfStaticOut64_local h_out
   -- Lane → Sail binding: from lane bridges (binders) + provider match.
   have h_input_r1_row :
       sub_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      ZiskFv.AirsClean.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) sub_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   have h_input_r2_row :
       sub_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
-      ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
+      ZiskFv.AirsClean.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) sub_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SUB

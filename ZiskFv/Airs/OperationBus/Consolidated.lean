@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.AirsClean.BinaryExtension.Trace
 
 /-!
@@ -59,7 +59,7 @@ open Goldilocks
     binder types. -/
 inductive OpBusProvider : Type
   | binary
-      (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : OpBusProvider
+      (b : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) : OpBusProvider
   | binaryExtension
       (e : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL) :
         OpBusProvider

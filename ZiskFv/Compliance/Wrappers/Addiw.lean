@@ -8,7 +8,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Compliance.SharedBundles
 
@@ -23,7 +23,7 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.EquivCore.Promises
@@ -88,74 +88,74 @@ lemma equiv_ADDIW
     rw [← h_op_match]
     simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op_addiw
   obtain ⟨h_mode32_one, h_bop_val⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
+    ZiskFv.AirsClean.Binary.chain_row_shape_W_of_emit
       row h_spec_facts h_core 0x1A (Or.inl rfl) h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
   let v := ZiskFv.AirsClean.Binary.validOfRow row
   obtain ⟨h_sext_choice_row, h_carry_7_zero_row⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+    ZiskFv.AirsClean.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
       row h_spec_facts h_facts h_core h_mode32_one (Or.inl h_b_op)
-  have h_b_lo_m : m.b_0 r_main = v.free_in_b_0 0 + 256 * v.free_in_b_1 0
-                                  + 65536 * v.free_in_b_2 0
-                                  + 16777216 * v.free_in_b_3 0 := by
+  have h_b_lo_m : m.b_0 r_main = row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+                                  + 65536 * row.bBytes.free_in_b_2
+                                  + 16777216 * row.bBytes.free_in_b_3 := by
     have h_match_proj := h_match
     simp only [matches_entry, opBus_row_Main,
       ] at h_match_proj
     have h_b_lo := h_match_proj.2.2.2.2.1
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_b_lo
+    simpa [] using h_b_lo
   have h_input_imm := promises.input_imm_eq
   have h_subset := h_addiw_subset
   simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main,
              h_input_imm] at h_subset
-  have hb0 : (v.free_in_b_0 0).val < 256 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+  have hb0 : (row.bBytes.free_in_b_0).val < 256 := by
+    simpa [
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
-  have hb1 : (v.free_in_b_1 0).val < 256 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+  have hb1 : (row.bBytes.free_in_b_1).val < 256 := by
+    simpa [
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.1.1.2.1
-  have hb2 : (v.free_in_b_2 0).val < 256 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+  have hb2 : (row.bBytes.free_in_b_2).val < 256 := by
+    simpa [
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.1.1.2.1
-  have hb3 : (v.free_in_b_3 0).val < 256 := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+  have hb3 : (row.bBytes.free_in_b_3).val < 256 := by
+    simpa [
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.2.1
   have h_b0_val : (m.b_0 r_main).val =
-      (v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
-      + (v.free_in_b_2 0).val * 65536
-      + (v.free_in_b_3 0).val * 16777216 := by
+      (row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
+      + (row.bBytes.free_in_b_2).val * 65536
+      + (row.bBytes.free_in_b_3).val * 16777216 := by
     rw [h_b_lo_m]
     have h_cast :
-        v.free_in_b_0 0 + 256 * v.free_in_b_1 0
-          + 65536 * v.free_in_b_2 0 + 16777216 * v.free_in_b_3 0
-        = ((((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
-              + (v.free_in_b_2 0).val * 65536
-              + (v.free_in_b_3 0).val * 16777216 : ℕ) : FGL)) := by
+        row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+          + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+        = ((((row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
+              + (row.bBytes.free_in_b_2).val * 65536
+              + (row.bBytes.free_in_b_3).val * 16777216 : ℕ) : FGL)) := by
       push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt
     have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
     omega
   have h_byte_lt :
-      (v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
-        + (v.free_in_b_2 0).val * 65536
-        + (v.free_in_b_3 0).val * 16777216 < 4294967296 := by
+      (row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
+        + (row.bBytes.free_in_b_2).val * 65536
+        + (row.bBytes.free_in_b_3).val * 16777216 < 4294967296 := by
     omega
   have h_input_imm_extract :
       (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0
         : BitVec (31 - 0 + 1)).toNat
-      = (((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_0 0).val
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_1 0).val * 256
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_2 0).val * 65536
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_3 0).val * 16777216)
+      = ((row.bBytes.free_in_b_0).val
+          + (row.bBytes.free_in_b_1).val * 256
+          + (row.bBytes.free_in_b_2).val * 65536
+          + (row.bBytes.free_in_b_3).val * 16777216)
               % 2^32 := by
-    show _ = ((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
-              + (v.free_in_b_2 0).val * 65536
-              + (v.free_in_b_3 0).val * 16777216) % 2^32
+    show _ = ((row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
+              + (row.bBytes.free_in_b_2).val * 65536
+              + (row.bBytes.free_in_b_3).val * 16777216) % 2^32
     rw [h_subset]
     simp only [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
                BitVec.toNat_ofNat, Nat.shiftRight_zero,

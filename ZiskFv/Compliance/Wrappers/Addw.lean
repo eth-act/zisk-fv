@@ -8,7 +8,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -22,7 +22,7 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.Binary
+open ZiskFv.AirsClean.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
@@ -88,12 +88,12 @@ lemma equiv_ADDW
     rw [← h_op_match]
     simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op_addw
   obtain ⟨h_mode32_one, h_bop_val⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
+    ZiskFv.AirsClean.Binary.chain_row_shape_W_of_emit
       row h_spec_facts h_core 0x1A (Or.inl rfl) h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
   obtain ⟨h_sext_choice_row, h_carry_7_zero_row⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+    ZiskFv.AirsClean.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
       row h_spec_facts h_facts h_core h_mode32_one (Or.inl h_b_op)
   exact ZiskFv.EquivCore.Addw.equiv_ADDW_of_static_row
     state addw_input r1 r2 rd m row r_main bus promises

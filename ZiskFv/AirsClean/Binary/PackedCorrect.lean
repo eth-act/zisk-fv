@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.Airs.Tables.BinaryTable
 
 /-!
@@ -27,7 +27,7 @@ The three AND/OR/XOR theorems compose this with `Nat.testBit_and` /
 
 set_option maxHeartbeats 4000000
 
-namespace ZiskFv.Airs.Binary
+namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
 open ZiskFv.Airs.Tables.BinaryTable
@@ -2634,4 +2634,4 @@ lemma binary_eq_chunks_eq_bv_eq_of_wf
     (by rw [h_cin7]; exact step6)
   exact step7
 
-end ZiskFv.Airs.Binary
+end ZiskFv.AirsClean.Binary

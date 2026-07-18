@@ -96,7 +96,7 @@ theorem jalr_c0_val_eq_masked_operand
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (c0 c1 : FGL) (operand : BitVec 64)
     (h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row
         row ZiskFv.Airs.Tables.BinaryTable.OP_AND)
     (h_match_clo :
       c0 = row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
@@ -114,7 +114,7 @@ theorem jalr_c0_val_eq_masked_operand
     c0.val = (0xFFFFFFFFFFFFFFFE#64 &&& operand).toNat := by
   -- (1) The 64-bit packed AND identity: mask &&& operand = ofNat (Σ all c-bytes).
   have h_chunks :=
-    ZiskFv.EquivCore.Bridge.Binary.binary_row_and_chunks_eq_bv_and_of_wf row h_matches
+    ZiskFv.AirsClean.Binary.binary_row_and_chunks_eq_bv_and_of_wf row h_matches
   simp only [ZiskFv.EquivCore.Add.binaryRowA64] at h_a_mask
   simp only [ZiskFv.EquivCore.Add.binaryRowB64] at h_b_operand
   rw [h_a_mask, h_b_operand] at h_chunks
@@ -187,7 +187,7 @@ theorem jalr_setpc_nextPC_discharged
     (h_set_pc : (mainOfTable trace.program trace.mainTable).set_pc i.val = 1)
     (h_flag : (mainOfTable trace.program trace.mainTable).flag i.val = 0)
     (h_matches :
-      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+      ZiskFv.AirsClean.Binary.all_byte_matches_wf_at_row
         row ZiskFv.Airs.Tables.BinaryTable.OP_AND)
     (h_match_clo :
       (mainOfTable trace.program trace.mainTable).c_0 i.val

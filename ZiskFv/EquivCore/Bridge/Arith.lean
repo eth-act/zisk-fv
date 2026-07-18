@@ -12,7 +12,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 -- chain-witness lemmas below route `div_carry_chain_holds` through
 -- `AirsClean/ArithDiv/circuit`'s proven `soundness`.
 import ZiskFv.AirsClean.ArithDiv.Bridge
-import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.EquivCore.Promises.ArithHelpers
 
 /-!
@@ -64,7 +64,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 
 private lemma binary_bytes_lo_val_eq
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ)
     (ha0 : (v.free_in_a_0 r).val < 256)
     (ha1 : (v.free_in_a_1 r).val < 256)
     (ha2 : (v.free_in_a_2 r).val < 256)
@@ -86,7 +86,7 @@ private lemma binary_bytes_lo_val_eq
   omega
 
 private lemma binary_bytes_hi_val_eq
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ)
     (ha4 : (v.free_in_a_4 r).val < 256)
     (ha5 : (v.free_in_a_5 r).val < 256)
     (ha6 : (v.free_in_a_6 r).val < 256)
@@ -108,7 +108,7 @@ private lemma binary_bytes_hi_val_eq
   omega
 
 private lemma binary_b_bytes_lo_val_eq
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ)
     (hb0 : (v.free_in_b_0 r).val < 256)
     (hb1 : (v.free_in_b_1 r).val < 256)
     (hb2 : (v.free_in_b_2 r).val < 256)
@@ -130,7 +130,7 @@ private lemma binary_b_bytes_lo_val_eq
   omega
 
 private lemma binary_b_bytes_hi_val_eq
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r : ℕ)
     (hb4 : (v.free_in_b_4 r).val < 256)
     (hb5 : (v.free_in_b_5 r).val < 256)
     (hb6 : (v.free_in_b_6 r).val < 256)
@@ -162,11 +162,11 @@ private lemma binary_b_bytes_hi_val_eq
     packing and mode simplifications from these fields. -/
 structure ArithDivRemainderBoundWitness
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
-  binary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL
+  binary : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL
   r_binary : ℕ
-  binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
+  binary_core : ZiskFv.AirsClean.Binary.core_every_row binary r_binary
   binary_ltu_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
+    ZiskFv.AirsClean.Binary.BinaryChainStaticOut64 binary r_binary
       ZiskFv.Airs.Tables.BinaryTable.OP_LTU
   remainder_bound_match :
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
@@ -183,18 +183,18 @@ each operation-specific semantic branch. Downstream lemmas case-split on the
 real row signs and consume only the selected branch. -/
 structure ArithDivSignedRemainderBoundWitness
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
-  binary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL
+  binary : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL
   r_binary : ℕ
-  binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
+  binary_core : ZiskFv.AirsClean.Binary.core_every_row binary r_binary
   binary_ltu_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
+    ZiskFv.AirsClean.Binary.BinaryChainStaticOut64 binary r_binary
       ZiskFv.Airs.Tables.BinaryTable.OP_LTU
   binary_lt_abs_np_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary
+    ZiskFv.AirsClean.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary
   binary_lt_abs_pn_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary
+    ZiskFv.AirsClean.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary
   binary_gt_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary
+    ZiskFv.AirsClean.Binary.BinaryChainGtStaticOut64 binary r_binary
   remainder_bound_match :
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
       (opBus_row_Binary binary r_binary)
@@ -227,7 +227,7 @@ lemma arith_div_remainder_bound_binary_byte_lt
   simp only [matches_entry, ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
     opBus_row_Binary] at h_lane_eqs
   obtain ⟨_, _, _, _, _, _, _, _, h_flag, _, _, _⟩ := h_lane_eqs
-  exact ZiskFv.EquivCore.Bridge.Binary.static_ltu_chain_carry7_one_implies_lt
+  exact ZiskFv.AirsClean.Binary.static_ltu_chain_carry7_one_implies_lt
     w.binary w.r_binary w.binary_core w.binary_ltu_chain h_flag.symm
 
 @[reducible] def ArithMulChunkRangesAt
@@ -369,37 +369,37 @@ lemma arith_div_remainder_bound_unsigned
           + 65536 * w.binary.free_in_b_6 w.r_binary
           + 16777216 * w.binary.free_in_b_7 w.r_binary := by
     simpa [h_nb] using h_b_hi
-  have ha0 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha0 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_0
-  have ha1 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha1 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_1
-  have ha2 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha2 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_2
-  have ha3 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha3 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_3
-  have ha4 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha4 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_4
-  have ha5 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha5 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_5
-  have ha6 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha6 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_6
-  have ha7 := ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256
+  have ha7 := ZiskFv.AirsClean.Binary.chain_a_byte_lt_256
     w.binary_ltu_chain.chain_7
-  have hbb0 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb0 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_0
-  have hbb1 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb1 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_1
-  have hbb2 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb2 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_2
-  have hbb3 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb3 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_3
-  have hbb4 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb4 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_4
-  have hbb5 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb5 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_5
-  have hbb6 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb6 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_6
-  have hbb7 := ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256
+  have hbb7 := ZiskFv.AirsClean.Binary.chain_b_byte_lt_256
     w.binary_ltu_chain.chain_7
   have h_d_lo_val := congrArg Fin.val h_a_lo
   rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.d_0 r) (a.d_1 r) hd0 hd1,

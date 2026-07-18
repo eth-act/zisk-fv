@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.AirsClean.BinaryExtension.Trace
 
 /-!
@@ -124,7 +124,7 @@ lemma one_sub_m32_mul_of_eq_one {F : Type} [Field F]
 @[simp]
 def opBus_row_Binary {F ExtF : Type}
     [Field F] [Field ExtF]
-    (b : ZiskFv.Airs.Binary.Valid_Binary F ExtF) (row : ℕ) : OperationBusEntry F :=
+    (b : ZiskFv.AirsClean.Binary.Valid_Binary F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := 1
     op := b.b_op row + 16 * b.mode32 row
     a_lo := b.free_in_a_0 row + 256 * b.free_in_a_1 row

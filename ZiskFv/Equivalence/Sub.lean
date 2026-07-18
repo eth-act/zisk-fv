@@ -20,7 +20,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SUB`'s closure 
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.Binary (Valid_Binary)
+open ZiskFv.AirsClean.Binary (Valid_Binary)
 open ZiskFv.Trusted (OP_SUB OP_AND OP_OR OP_XOR)
 
 namespace ZiskFv.Equivalence.Sub
@@ -69,7 +69,7 @@ theorem equiv_SUB
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB, ZiskFv.Trusted.OP_SUB] using
       h_main_op_sub
   obtain ⟨h_row_m32, h_bop, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+    ZiskFv.AirsClean.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       row h_spec_facts ZiskFv.Airs.Tables.BinaryTable.OP_SUB (by
         simp [ZiskFv.Airs.Tables.BinaryTable.OP_SUB])
       h_core h_emit

@@ -18,9 +18,9 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 import ZiskFv.EquivCore.WriteValueProofs.SailBridge
 import ZiskFv.EquivCore.Bridge.SailStateBridge
-import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.EquivCore.Addw
-import ZiskFv.Airs.Binary.Binary
+import ZiskFv.AirsClean.Binary.Trace
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
@@ -92,23 +92,23 @@ lemma equiv_ADDIW_of_wf
         state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
         (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
-    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
+    (v : ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (_h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (c0 c1 c2 c3 c4 c5 c6 c7
      cin0 cin1 cin2 cin3
      fl0 fl1 fl2 fl3
      pi0 pi1 pi2 pi3 : FGL)
-    (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h_byte_0 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary) c0 cin0 fl0 pi0)
-    (h_byte_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h_byte_1 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary) c1 cin1 fl1 pi1)
-    (h_byte_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h_byte_2 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary) c2 cin2 fl2 pi2)
-    (h_byte_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+    (h_byte_3 : ZiskFv.AirsClean.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary) c3 cin3 fl3 pi3)
     (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
@@ -150,7 +150,7 @@ lemma equiv_ADDIW_of_wf
           h_rd_idx⟩ := promises
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
+    ZiskFv.AirsClean.Binary.e2_byte_ranges_discharge e2
   have ha0 : (v.free_in_a_0 r_binary).val < 256 := by
     obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_0
     rw [← h_a]; exact h_wf.1.1
@@ -240,7 +240,7 @@ lemma equiv_ADDIW_of_static_row
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_one : row.mode.mode32 = 1)
@@ -264,10 +264,10 @@ lemma equiv_ADDIW_of_static_row
     (h_input_imm_extract :
       (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0
         : BitVec (31 - 0 + 1)).toNat
-      = (((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_0 0).val
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_1 0).val * 256
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_2 0).val * 65536
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_3 0).val * 16777216)
+      = ((row.bBytes.free_in_b_0).val
+          + (row.bBytes.free_in_b_1).val * 256
+          + (row.bBytes.free_in_b_2).val * 65536
+          + (row.bBytes.free_in_b_3).val * 16777216)
               % 2^32) :
     (do
       Sail.writeReg Register.nextPC
@@ -284,7 +284,7 @@ lemma equiv_ADDIW_of_static_row
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       opBus_row_Binary] using h_match
   have out :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_W_low4_discharge_of_static_row
+    ZiskFv.AirsClean.Binary.byte_chain_W_low4_discharge_of_static_row
       row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_ADD h_core
       h_mode32_one h_b_op
   have h_lane_eqs := h_match_v

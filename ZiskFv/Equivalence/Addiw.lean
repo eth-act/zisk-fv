@@ -21,7 +21,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_ADDIW`'s closur
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main add_subset_holds)
-open ZiskFv.Airs.Binary (Valid_Binary)
+open ZiskFv.AirsClean.Binary (Valid_Binary)
 open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
 open ZiskFv.Trusted (OP_ADD OP_ADD_W)
 
@@ -86,7 +86,7 @@ lemma equiv_ADDIW_of_static_row
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_core : ZiskFv.Airs.Binary.core_every_row
+    (h_core : ZiskFv.AirsClean.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_mode32_one : row.mode.mode32 = 1)
@@ -114,10 +114,10 @@ lemma equiv_ADDIW_of_static_row
     (h_input_imm_extract :
       (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0
         : BitVec (31 - 0 + 1)).toNat
-      = (((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_0 0).val
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_1 0).val * 256
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_2 0).val * 65536
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_3 0).val * 16777216)
+      = ((row.bBytes.free_in_b_0).val
+          + (row.bBytes.free_in_b_1).val * 256
+          + (row.bBytes.free_in_b_2).val * 65536
+          + (row.bBytes.free_in_b_3).val * 16777216)
               % 2^32)
     : (do
       Sail.writeReg Register.nextPC

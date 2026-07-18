@@ -1,6 +1,6 @@
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.ArithTableProjections
-import ZiskFv.AirsClean.Binary.Bridge
+import ZiskFv.AirsClean.Binary.ConsumerFacts
 import ZiskFv.AirsClean.BinaryAdd.Interface
 import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 import ZiskFv.AirsClean.Mem.Bridge
@@ -407,56 +407,11 @@ def binaryTableRowAtOrZero
   else
     zeroBinaryRow
 
-/-- Named-column Binary view obtained from the concrete Clean Binary table. -/
+/-- Canonical Binary trace obtained from the concrete Clean table. -/
 @[reducible]
-def binaryOfTable
-    (table : Table FGL) :
-    ZiskFv.Airs.Binary.Valid_Binary FGL FGL where
-  b_op := fun row => (binaryTableRowAtOrZero table row).chain.b_op
-  free_in_a_0 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_0
-  free_in_a_1 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_1
-  free_in_a_2 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_2
-  free_in_a_3 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_3
-  free_in_a_4 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_4
-  free_in_a_5 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_5
-  free_in_a_6 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_6
-  free_in_a_7 := fun row => (binaryTableRowAtOrZero table row).aBytes.free_in_a_7
-  free_in_b_0 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_0
-  free_in_b_1 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_1
-  free_in_b_2 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_2
-  free_in_b_3 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_3
-  free_in_b_4 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_4
-  free_in_b_5 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_5
-  free_in_b_6 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_6
-  free_in_b_7 := fun row => (binaryTableRowAtOrZero table row).bBytes.free_in_b_7
-  free_in_c_0 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_0
-  free_in_c_1 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_1
-  free_in_c_2 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_2
-  free_in_c_3 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_3
-  free_in_c_4 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_4
-  free_in_c_5 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_5
-  free_in_c_6 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_6
-  free_in_c_7 := fun row => (binaryTableRowAtOrZero table row).cBytes.free_in_c_7
-  carry_0 := fun row => (binaryTableRowAtOrZero table row).chain.carry_0
-  carry_1 := fun row => (binaryTableRowAtOrZero table row).chain.carry_1
-  carry_2 := fun row => (binaryTableRowAtOrZero table row).chain.carry_2
-  carry_3 := fun row => (binaryTableRowAtOrZero table row).chain.carry_3
-  carry_4 := fun row => (binaryTableRowAtOrZero table row).chain.carry_4
-  carry_5 := fun row => (binaryTableRowAtOrZero table row).chain.carry_5
-  carry_6 := fun row => (binaryTableRowAtOrZero table row).chain.carry_6
-  carry_7 := fun row => (binaryTableRowAtOrZero table row).chain.carry_7
-  mode32 := fun row => (binaryTableRowAtOrZero table row).mode.mode32
-  result_is_a := fun row => (binaryTableRowAtOrZero table row).mode.result_is_a
-  use_first_byte := fun row => (binaryTableRowAtOrZero table row).mode.use_first_byte
-  c_is_signed := fun row => (binaryTableRowAtOrZero table row).mode.c_is_signed
-  b_op_or_sext := fun row => (binaryTableRowAtOrZero table row).chain.b_op_or_sext
-  mode32_and_c_is_signed :=
-    fun row => (binaryTableRowAtOrZero table row).mode.mode32_and_c_is_signed
-  gsum := fun _ => 0
-  im_0 := fun _ => 0
-  im_1 := fun _ => 0
-  im_2 := fun _ => 0
-  im_3 := fun _ => 0
+def binaryOfTable (table : Table FGL) :
+    ZiskFv.AirsClean.Binary.Valid_Binary FGL FGL :=
+  fun row => binaryTableRowAtOrZero table row
 
 /-- In-range concrete Binary table projection agrees with `List.get`. -/
 theorem binaryTableRowAtOrZero_get
@@ -475,19 +430,9 @@ theorem rowAt_binaryOfTable
     (idx : Fin table.table.length) :
     ZiskFv.AirsClean.Binary.rowAt (binaryOfTable table) idx.val =
       eval (table.environment (table.table.get idx))
-        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
-  simp [ZiskFv.AirsClean.Binary.rowAt, binaryTableRowAtOrZero_get table idx]
-  let row :=
-    eval (table.environment (table.table.get idx))
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
-  change
-    { aBytes := row.aBytes
-      bBytes := row.bBytes
-      cBytes := row.cBytes
-      chain := row.chain
-      mode := row.mode } = row
-  cases row
-  rfl
+        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar  := by
+  change binaryTableRowAtOrZero table idx.val = _
+  exact binaryTableRowAtOrZero_get table idx
 
 /-- The legacy `opBus_row_Binary` view of `binaryOfTable` is the Clean Binary
     operation-bus message evaluated on the same concrete row. -/
