@@ -15,9 +15,9 @@ This module gives the provider side as a non-enumerated Clean
 membership in that decoded row set. This is the faithful large-ROM pattern;
 there is no `decide` over millions of literal rows.
 
-It intentionally does not retire `bin_ext_table_consumer_wf` by itself.
-Load-bearing retirement still needs the consumer lookup path and this
-provider table to be connected in the terminal Binary-family ensemble.
+`BinaryExtensionTableSlice` uses this model as the positive provider for the
+BinaryExtension consumer's negative bus-124 emissions. This module remains the
+exact static membership source rather than a channel-level semantic guarantee.
 
 ## Trust note
 

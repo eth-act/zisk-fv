@@ -15,9 +15,8 @@ lookups (one per input byte) consumes a 7-tuple
 `(op, byte_index = i, a_byte = free_in_a[i], shift_amount = free_in_b,
   c_lo_byte = free_in_c[i], c_hi_byte = free_in_c[i+8], op_is_shift)`.
 
-Under the trusted axiom `bin_ext_table_consumer_wf` (consumer at
-multiplicity = 1), each entry satisfies the per-row well-formedness
-predicate. For SLL, this gives:
+The checked lookup-wiring/static-provider route supplies each consumer entry's
+per-row well-formedness predicate at multiplicity 1. For SLL, this gives:
 
 ```
   c_lo_byte.val + c_hi_byte.val * 2^32

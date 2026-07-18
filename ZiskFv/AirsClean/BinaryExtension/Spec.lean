@@ -21,8 +21,9 @@ the lookup-channel framework — not through `main`'s `assertZero`.
 
 ## Trust note
 
-No axioms in Spec/Soundness. The lookup-channel soundness is the
-trust assumption (`bin_ext_table_consumer_wf` in the trust ledger).
+No axioms in Spec/Soundness. The lookup channel has a negative consumer,
+an exact static provider, and a finished-channel balance route; no local
+consumer membership promise is used.
 -/
 
 namespace ZiskFv.AirsClean.BinaryExtension

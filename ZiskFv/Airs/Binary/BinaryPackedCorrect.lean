@@ -10,9 +10,9 @@ import ZiskFv.Airs.Tables.BinaryTable
 For each of `OP_AND`, `OP_OR`, `OP_XOR`, the Binary AIR consumes 8
 lookup entries against `BinaryTable` (one per byte at `multiplicity = 1`)
 and exposes byte-shaped operands `free_in_a_*`, `free_in_b_*`, result
-`free_in_c_*`. From `bin_table_consumer_wf`'s per-op clause we extract
-`c_byte = a_byte &&& b_byte` (etc.) for each byte. Reassembling into
-the 64-bit packing yields the `BitVec` identity:
+`free_in_c_*`. The checked lookup-wiring/static-provider route supplies the
+per-byte semantic relation `c_byte = a_byte &&& b_byte` (etc.). Reassembling
+into the 64-bit packing yields the `BitVec` identity:
 
 ```
 BitVec.and (BitVec.ofNat 64 (∑ a_i · 256^i))

@@ -15,9 +15,9 @@ membership in that decoded row set. This follows the large-ROM pattern in
 the other static-table providers; there is no literal enumeration of the
 5.5M-row table.
 
-It intentionally does not retire `bin_table_consumer_wf` by itself.
-Load-bearing retirement still needs the Binary consumer lookup path and this
-provider table to be connected in the terminal Binary-family ensemble.
+`BinaryTableSlice` uses this model as the positive provider for the Binary
+consumer's negative bus-125 emissions. This module remains the exact static
+membership source rather than a channel-level semantic guarantee.
 
 ## Trust note
 

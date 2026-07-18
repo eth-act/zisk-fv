@@ -107,6 +107,16 @@ struct HintData {
 enum LinkShape {
     Direct,
     Cluster2,
+    DerivedMixed2,
+}
+
+#[derive(Clone)]
+struct DerivedTuple {
+    piop: String,
+    proves: bool,
+    bus_id: Ast,
+    multiplicity: Ast,
+    slots: Vec<Slot>,
 }
 
 struct LinkedConstraint {
@@ -116,6 +126,7 @@ struct LinkedConstraint {
     alpha: Ast,
     gamma: Ast,
     hints: Vec<HintData>,
+    derived_tuples: Vec<DerivedTuple>,
     shape: LinkShape,
 }
 
@@ -380,7 +391,7 @@ fn build_air_manifest(
     let mixed_constraint_count = mixed_constraints.len();
     let (links, unlinked_mixed_constraint_count) = if emitted_constraint_file {
         let challenges = protocol_challenges(pilout);
-        find_links(&mixed_constraints, &hints, &challenges)?
+        find_links(&air_name, &mixed_constraints, &hints, &challenges)?
     } else {
         (Vec::new(), mixed_constraint_count)
     };
@@ -507,6 +518,7 @@ fn protocol_challenges(pilout: &PilOut) -> Vec<Ast> {
 }
 
 fn find_links(
+    air_name: &str,
     constraints: &[(usize, Ast)],
     hints: &[HintData],
     challenges: &[Ast],
@@ -548,6 +560,7 @@ fn find_links(
                 alpha,
                 gamma,
                 hints: vec![hints[left].clone(), hints[right].clone()],
+                derived_tuples: Vec::new(),
                 shape: LinkShape::Cluster2,
             });
             continue;
@@ -569,12 +582,177 @@ fn find_links(
                 alpha,
                 gamma,
                 hints: vec![hints[hint].clone()],
+                derived_tuples: Vec::new(),
                 shape: LinkShape::Direct,
             });
+            continue;
+        }
+
+        if let Some(link) = derived_mixed_link(air_name, *constraint_index, constraint) {
+            links.push(link);
         }
     }
     let unlinked = constraints.len().saturating_sub(links.len());
     Ok((links, unlinked))
+}
+
+/// The Binary c10 final-byte lookup shares its accumulator constraint with
+/// `proves_operation`, but pilout supplies no gsum hint payload for either
+/// tuple. Keep that provenance explicit: this is a constraint-derived link,
+/// accepted only when its independently reconstructed mixed template is
+/// definitionally the extracted AST. The template itself is generic; c10 is
+/// the only approved application in this pass.
+fn derived_mixed_link(
+    air_name: &str,
+    constraint_index: usize,
+    constraint: &Ast,
+) -> Option<LinkedConstraint> {
+    if air_name != "Binary" || constraint_index != 10 {
+        return None;
+    }
+    let alpha = Ast::Challenge { stage: 2, index: 0 };
+    let gamma = Ast::Challenge { stage: 2, index: 1 };
+    let accumulator = Ast::Witness {
+        stage: 2,
+        column: 4,
+        row_offset: 0,
+    };
+    let derived_tuples = binary_c10_derived_tuples();
+    let [left, right] = derived_tuples.as_slice() else {
+        unreachable!("Binary c10 has exactly two derived tuples");
+    };
+    (normalise(derived_mixed_template(
+        accumulator.clone(),
+        left,
+        right,
+        &alpha,
+        &gamma,
+    )) == *constraint)
+        .then_some(LinkedConstraint {
+            constraint_index,
+            constraint: constraint.clone(),
+            accumulator,
+            alpha,
+            gamma,
+            hints: Vec::new(),
+            derived_tuples,
+            shape: LinkShape::DerivedMixed2,
+        })
+}
+
+fn witness(column: u32) -> Ast {
+    Ast::Witness {
+        stage: 1,
+        column,
+        row_offset: 0,
+    }
+}
+
+fn slot(name: &str, value: Ast) -> Slot {
+    Slot {
+        name: name.to_string(),
+        value,
+    }
+}
+
+/// Constraint-derived c10 operands. The source's `proves_operation` macro
+/// has three trailing zero slots, already omitted in the raw mixed AST. We
+/// retain exactly the AST's eight nonzero operation slots rather than invent
+/// a hint-shaped eleven-slot tuple.
+fn binary_c10_derived_tuples() -> Vec<DerivedTuple> {
+    let mode64 = Ast::sub(Ast::constant("1"), witness(33));
+    let lookup_flags = Ast::add(
+        Ast::add(
+            Ast::add(witness(32), Ast::mul(Ast::constant("2"), witness(34))),
+            Ast::mul(Ast::constant("4"), witness(35)),
+        ),
+        Ast::mul(Ast::constant("8"), witness(36)),
+    );
+    let a_lo = Ast::add(
+        Ast::add(
+            Ast::add(witness(1), Ast::mul(Ast::constant("256"), witness(2))),
+            Ast::mul(Ast::constant("65536"), witness(3)),
+        ),
+        Ast::mul(Ast::constant("16777216"), witness(4)),
+    );
+    let a_hi = Ast::add(
+        Ast::add(
+            Ast::add(witness(5), Ast::mul(Ast::constant("256"), witness(6))),
+            Ast::mul(Ast::constant("65536"), witness(7)),
+        ),
+        Ast::mul(Ast::constant("16777216"), witness(8)),
+    );
+    let b_lo = Ast::add(
+        Ast::add(
+            Ast::add(witness(9), Ast::mul(Ast::constant("256"), witness(10))),
+            Ast::mul(Ast::constant("65536"), witness(11)),
+        ),
+        Ast::mul(Ast::constant("16777216"), witness(12)),
+    );
+    let b_hi = Ast::add(
+        Ast::add(
+            Ast::add(witness(13), Ast::mul(Ast::constant("256"), witness(14))),
+            Ast::mul(Ast::constant("65536"), witness(15)),
+        ),
+        Ast::mul(Ast::constant("16777216"), witness(16)),
+    );
+    let c_lo = Ast::add(
+        Ast::add(
+            Ast::add(
+                Ast::add(witness(17), Ast::mul(Ast::constant("256"), witness(18))),
+                Ast::mul(Ast::constant("65536"), witness(19)),
+            ),
+            Ast::mul(Ast::constant("16777216"), witness(20)),
+        ),
+        witness(32),
+    );
+    let c_hi = Ast::add(
+        Ast::add(
+            Ast::add(witness(21), Ast::mul(Ast::constant("256"), witness(22))),
+            Ast::mul(Ast::constant("65536"), witness(23)),
+        ),
+        Ast::mul(Ast::constant("16777216"), witness(24)),
+    );
+
+    vec![
+        DerivedTuple {
+            piop: "Lookup".to_string(),
+            proves: false,
+            bus_id: Ast::constant("125"),
+            multiplicity: Ast::constant("1"),
+            slots: vec![
+                slot("mode64", mode64),
+                slot("b_op_or_sext", witness(37)),
+                slot("free_in_a[7]", witness(8)),
+                slot("free_in_b[7]", witness(16)),
+                slot("carry[6]", witness(31)),
+                slot("free_in_c[7]", witness(24)),
+                slot(
+                    "carry[7] + 2 * result_is_a + 4 * use_first_byte + 8 * c_is_signed",
+                    lookup_flags,
+                ),
+            ],
+        },
+        DerivedTuple {
+            piop: "Operation".to_string(),
+            proves: true,
+            bus_id: Ast::constant("5000"),
+            multiplicity: Ast::constant("1"),
+            slots: vec![
+                slot(
+                    "op",
+                    Ast::add(witness(0), Ast::mul(Ast::constant("16"), witness(33))),
+                ),
+                slot("a_lo", a_lo),
+                slot("a_hi", a_hi),
+                slot("b_lo", b_lo),
+                slot("b_hi", b_hi),
+                slot("c_lo", c_lo),
+                slot("c_hi", c_hi),
+                slot("flag", witness(32)),
+            ],
+        },
+    ]
 }
 
 fn single_matches(
@@ -761,6 +939,48 @@ fn cluster_template(
     )
 }
 
+/// The same accumulator/correction shape as `cluster_template`, but with
+/// operands reconstructed from the constraint rather than supplied by gsum
+/// hints. Keeping the operand type distinct prevents a derived tuple from
+/// acquiring invented hint provenance.
+fn derived_mixed_template(
+    accumulator: Ast,
+    left: &DerivedTuple,
+    right: &DerivedTuple,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Ast {
+    let left_mix = derived_std_mix(left, alpha, gamma).expect("derived tuple has a slot");
+    let right_mix = derived_std_mix(right, alpha, gamma).expect("derived tuple has a slot");
+    Ast::sub(
+        Ast::mul(accumulator, Ast::mul(left_mix.clone(), right_mix.clone())),
+        Ast::add(
+            Ast::mul(derived_signed_multiplicity(left), right_mix),
+            Ast::mul(derived_signed_multiplicity(right), left_mix),
+        ),
+    )
+}
+
+fn derived_std_mix(tuple: &DerivedTuple, alpha: &Ast, gamma: &Ast) -> Option<Ast> {
+    let mut values = tuple.slots.iter().rev();
+    let mut value = values.next()?.value.clone();
+    for slot in values {
+        value = Ast::add(Ast::mul(value, alpha.clone()), slot.value.clone());
+    }
+    Some(Ast::add(
+        Ast::add(Ast::mul(value, alpha.clone()), tuple.bus_id.clone()),
+        gamma.clone(),
+    ))
+}
+
+fn derived_signed_multiplicity(tuple: &DerivedTuple) -> Ast {
+    if tuple.proves {
+        tuple.multiplicity.clone()
+    } else {
+        field_neg(tuple.multiplicity.clone())
+    }
+}
+
 /// The upstream macro normalizes only neutral field syntax before emitting its
 /// constraint. Keep this deliberately small: it is not an algebraic solver.
 fn normalise(value: Ast) -> Ast {
@@ -820,8 +1040,10 @@ fn write_prelude(out: &mut String) {
     out.push_str("Lossless, constraint-linked extraction of gsum lookup wiring.\n\n");
     out.push_str("A `ValidatedLink` contains a hint tuple only after its `constraint`\n");
     out.push_str("is definitionally equal to the standard template instantiated with\n");
-    out.push_str("that tuple. Hints which have no such link are represented only by\n");
-    out.push_str("their per-AIR count; their tuple payload is deliberately withheld.\n");
+    out.push_str("that tuple. A `DerivedTuple` instead records a tuple reconstructed\n");
+    out.push_str("from an exact constraint template when the source has no gsum hint.\n");
+    out.push_str("Hints which have no such link are represented only by their per-AIR\n");
+    out.push_str("count; their tuple payload is deliberately withheld.\n");
     out.push_str("-/\n\n");
     out.push_str("inductive Expr where\n");
     out.push_str("  | constant (value : String)\n");
@@ -840,11 +1062,14 @@ fn write_prelude(out: &mut String) {
     out.push_str("structure HintTuple where\n");
     out.push_str("  hintIndex : Nat\n  piop : String\n  proves : Bool\n  busId : Expr\n");
     out.push_str("  multiplicity : Expr\n  slots : List Slot\n\n");
-    out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  deriving Repr, DecidableEq\n\n");
+    out.push_str("structure DerivedTuple where\n");
+    out.push_str("  piop : String\n  proves : Bool\n  busId : Expr\n");
+    out.push_str("  multiplicity : Expr\n  slots : List Slot\n\n");
+    out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | derivedMixed2\n  deriving Repr, DecidableEq\n\n");
     out.push_str("structure ValidatedLink where\n");
     out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
     out.push_str("  accumulator : Expr\n  alpha : Expr\n  gamma : Expr\n  constraint : Expr\n  template : Expr\n");
-    out.push_str("  hints : List HintTuple\n\n");
+    out.push_str("  hints : List HintTuple\n  derivedTuples : List DerivedTuple\n\n");
     out.push_str("structure ConstraintOnly where\n");
     out.push_str("  air : String\n  constraintIndex : Nat\n  constraint : Expr\n\n");
     out.push_str("structure AirStatus where\n");
@@ -889,6 +1114,13 @@ fn write_prelude(out: &mut String) {
     out.push_str("  let rightMix := stdMix alpha gamma right.busId right.slots\n");
     out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
     out.push_str("    (.add (.mul (signedSelector left) rightMix) (.mul (signedSelector right) leftMix))\n\n");
+    out.push_str("def signedDerivedSelector (tuple : DerivedTuple) : Expr :=\n");
+    out.push_str("  if tuple.proves then tuple.multiplicity else negSelector tuple.multiplicity\n\n");
+    out.push_str("def derivedMixed2Template (alpha gamma accumulator : Expr) (left right : DerivedTuple) : Expr :=\n");
+    out.push_str("  let leftMix := stdMix alpha gamma left.busId left.slots\n");
+    out.push_str("  let rightMix := stdMix alpha gamma right.busId right.slots\n");
+    out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
+    out.push_str("    (.add (.mul (signedDerivedSelector left) rightMix) (.mul (signedDerivedSelector right) leftMix))\n\n");
 }
 
 fn write_air_status(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -931,6 +1163,9 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
     for (index, hint) in link.hints.iter().enumerate() {
         write_hint(out, &format!("hint_{}_{}", label, index), hint)?;
     }
+    for (index, tuple) in link.derived_tuples.iter().enumerate() {
+        write_derived_tuple(out, &format!("derivedTuple_{}_{}", label, index), tuple)?;
+    }
     writeln!(out, "def constraint_{} : Expr := {}", label, lean_expr(&link.constraint))?;
     match link.shape {
         LinkShape::Direct => writeln!(
@@ -945,6 +1180,16 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
         LinkShape::Cluster2 => writeln!(
             out,
             "def template_{} : Expr := normalise (cluster2Template ({}) ({}) ({}) hint_{}_0 hint_{}_1)",
+            label,
+            lean_expr(&link.alpha),
+            lean_expr(&link.gamma),
+            lean_expr(&link.accumulator),
+            label,
+            label
+        )?,
+        LinkShape::DerivedMixed2 => writeln!(
+            out,
+            "def template_{} : Expr := normalise (derivedMixed2Template ({}) ({}) ({}) derivedTuple_{}_0 derivedTuple_{}_1)",
             label,
             lean_expr(&link.alpha),
             lean_expr(&link.gamma),
@@ -967,6 +1212,7 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
         match link.shape {
             LinkShape::Direct => "direct",
             LinkShape::Cluster2 => "cluster2",
+            LinkShape::DerivedMixed2 => "derivedMixed2",
         }
     )?;
     writeln!(out, "  accumulator := {},", lean_expr(&link.accumulator))?;
@@ -974,7 +1220,8 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
     writeln!(out, "  gamma := {},", lean_expr(&link.gamma))?;
     writeln!(out, "  constraint := constraint_{},", label)?;
     writeln!(out, "  template := template_{},", label)?;
-    writeln!(out, "  hints := [{}]", (0..link.hints.len()).map(|index| format!("hint_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    writeln!(out, "  hints := [{}],", (0..link.hints.len()).map(|index| format!("hint_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    writeln!(out, "  derivedTuples := [{}]", (0..link.derived_tuples.len()).map(|index| format!("derivedTuple_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
     out.push_str("}\n\n");
     Ok(())
 }
@@ -988,6 +1235,25 @@ fn write_hint(out: &mut String, name: &str, hint: &HintData) -> Result<()> {
     writeln!(out, "  multiplicity := {},", lean_expr(&hint.multiplicity))?;
     out.push_str("  slots := [\n");
     for slot in &hint.slots {
+        writeln!(
+            out,
+            "    {{ name := \"{}\", value := {} }},",
+            lean_string(&slot.name),
+            lean_expr(&slot.value)
+        )?;
+    }
+    out.push_str("  ]\n}\n\n");
+    Ok(())
+}
+
+fn write_derived_tuple(out: &mut String, name: &str, tuple: &DerivedTuple) -> Result<()> {
+    writeln!(out, "def {} : DerivedTuple := {{", name)?;
+    writeln!(out, "  piop := \"{}\",", lean_string(&tuple.piop))?;
+    writeln!(out, "  proves := {},", tuple.proves)?;
+    writeln!(out, "  busId := {},", lean_expr(&tuple.bus_id))?;
+    writeln!(out, "  multiplicity := {},", lean_expr(&tuple.multiplicity))?;
+    out.push_str("  slots := [\n");
+    for slot in &tuple.slots {
         writeln!(
             out,
             "    {{ name := \"{}\", value := {} }},",
@@ -1123,5 +1389,29 @@ mod tests {
             cluster_accumulator(&constraint, &left, &right, &alpha, &gamma),
             Some(accumulator)
         );
+    }
+
+    #[test]
+    fn derived_mixed_link_has_no_hint_provenance() {
+        let alpha = Ast::Challenge { stage: 2, index: 0 };
+        let gamma = Ast::Challenge { stage: 2, index: 1 };
+        let accumulator = Ast::Witness {
+            stage: 2,
+            column: 4,
+            row_offset: 0,
+        };
+        let tuples = binary_c10_derived_tuples();
+        let constraint = normalise(derived_mixed_template(
+            accumulator,
+            &tuples[0],
+            &tuples[1],
+            &alpha,
+            &gamma,
+        ));
+        let link = derived_mixed_link("Binary", 10, &constraint).expect("c10 link");
+
+        assert!(link.hints.is_empty());
+        assert_eq!(link.derived_tuples.len(), 2);
+        assert!(matches!(link.shape, LinkShape::DerivedMixed2));
     }
 }

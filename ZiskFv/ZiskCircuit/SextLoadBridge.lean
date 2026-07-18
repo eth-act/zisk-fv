@@ -18,8 +18,8 @@ Replaces the trusted closure axiom
 sign-extension load opcode, derives the rd-write bus-entry's packed
 8-byte value from circuit witnesses:
 
-* `binary_extension_sext_<X>_chunks_eq_signextend_nat` (per-byte
-  `bin_ext_table_consumer_wf` lift to the Nat-form sign-extension
+* `binary_extension_sext_<X>_chunks_eq_signextend_nat` (the per-byte exact
+  BinaryExtensionTable provider/balance lift to the Nat-form sign-extension
   identity) — provided by `Airs/Binary/BinaryExtensionPackedCorrect.lean`.
 * The Main↔BinaryExtension operation-bus c-side match (Main's `c_0`/`c_1`
   equal sums of BinaryExtension's `free_in_c_<i>` lo/hi byte halves).
