@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 
 /-!
 ZisK operation-bus schema and Main↔BinaryAdd projection.
@@ -162,7 +162,7 @@ def opBus_row_Binary {F ExtF : Type}
 @[simp]
 def opBus_row_BinaryExtension {F ExtF : Type}
     [Field F] [Field ExtF]
-    (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension F ExtF)
+    (e : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension F ExtF)
     (row : ℕ) : OperationBusEntry F :=
   let a0 := e.free_in_a_0 row + 256 * e.free_in_a_1 row
             + 65536 * e.free_in_a_2 row + 16777216 * e.free_in_a_3 row

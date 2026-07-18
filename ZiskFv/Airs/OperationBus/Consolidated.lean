@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 
 /-!
 # OperationBus permutation soundness — consolidated bus-level axiom
@@ -61,7 +61,7 @@ inductive OpBusProvider : Type
   | binary
       (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : OpBusProvider
   | binaryExtension
-      (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) :
+      (e : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL) :
         OpBusProvider
 
 /-- The provider's row at index `r`, projected onto the

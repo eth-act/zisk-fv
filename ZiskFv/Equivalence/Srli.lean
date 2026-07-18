@@ -19,7 +19,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SRLI`'s closure
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.BinaryExtension (Valid_BinaryExtension)
+open ZiskFv.AirsClean.BinaryExtension (Valid_BinaryExtension)
 open ZiskFv.Trusted (OP_SRL OP_SRA)
 
 namespace ZiskFv.Equivalence.Srli

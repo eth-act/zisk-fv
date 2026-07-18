@@ -3,8 +3,8 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.Trace
+import ZiskFv.AirsClean.BinaryExtension.PackedCorrect
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -57,7 +57,7 @@ namespace ZiskFv.EquivCore.Bridge.BinaryExtension
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryExtension
+open ZiskFv.AirsClean.BinaryExtension
 open ZiskFv.Airs.OperationBus
 
 /-! ## Per-opcode partial *promise discharge*
@@ -248,7 +248,7 @@ lemma packed_a_eq_of_shift_match_m32_0_of_a_range
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary))
-    (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary) :
+    (h_a_range : ZiskFv.AirsClean.BinaryExtension.a_bytes_in_range v r_binary) :
     r1_val
       = BitVec.ofNat 64
           ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
@@ -307,8 +307,8 @@ lemma shift_pin_eq_of_shift_match_m32_0_of_b0_range
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary))
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
     r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64 := by
   have h_b_main : (v.free_in_b r_binary).val < 256 := by
@@ -353,8 +353,8 @@ lemma shift_pin_immediate_eq_of_shift_match_of_b0_range
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary))
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
     shamt.toNat = (v.free_in_b r_binary).val % 64 := by
   have h_b_main : (v.free_in_b r_binary).val < 256 := by
@@ -410,7 +410,7 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary))
-    (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary) :
+    (h_a_range : ZiskFv.AirsClean.BinaryExtension.a_bytes_in_range v r_binary) :
     (Sail.BitVec.extractLsb r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
       = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
           + (v.free_in_a_2 r_binary).val * 65536
@@ -459,8 +459,8 @@ lemma shift_pin_w_eq_of_shift_match_of_b0_range
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary))
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
     (Sail.BitVec.extractLsb r2_val 31 0 : BitVec (31 - 0 + 1)).toNat % 32
       = (v.free_in_b r_binary).val % 32 := by
@@ -507,8 +507,8 @@ lemma shift_pin_w_immediate_eq_of_shift_match_of_b0_range
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary))
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
     shamt.toNat = (v.free_in_b r_binary).val % 32 := by
   have h_b_main : (v.free_in_b r_binary).val < 256 := by
@@ -600,8 +600,8 @@ packed four-byte BinExt input, so this route does not consume
 lemma sext_lane_match_bytes_eq_of_match_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_main_b0_eq : m.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1)
     (h_op_is_shift_zero : v.op_is_shift r_binary = 0)
     (h_match : matches_entry (opBus_row_Main m r_main)

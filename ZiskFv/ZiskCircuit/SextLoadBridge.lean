@@ -6,8 +6,8 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Airs.Tables.BinaryExtensionTable
-import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.Trace
+import ZiskFv.AirsClean.BinaryExtension.PackedCorrect
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 
 /-!
@@ -45,7 +45,7 @@ open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.Tables.BinaryExtensionTable
-open ZiskFv.Airs.BinaryExtension
+open ZiskFv.AirsClean.BinaryExtension
 
 
 /-! ## Nat-form `signExtend` identities

@@ -2,7 +2,7 @@ import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Interface
-import ZiskFv.AirsClean.BinaryExtension.Bridge
+import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.Mem.GeneratedTransition
 import ZiskFv.AirsClean.Mem.TraceSpec
@@ -558,67 +558,8 @@ def binaryExtensionTableRowAtOrZero
 @[reducible]
 def binaryExtensionOfTable
     (table : Table FGL) :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL where
-  op := fun row => (binaryExtensionTableRowAtOrZero table row).flags.op
-  free_in_a_0 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_0
-  free_in_a_1 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_1
-  free_in_a_2 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_2
-  free_in_a_3 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_3
-  free_in_a_4 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_4
-  free_in_a_5 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_5
-  free_in_a_6 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_6
-  free_in_a_7 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).aCols.free_in_a_7
-  free_in_b := fun row => (binaryExtensionTableRowAtOrZero table row).flags.free_in_b
-  free_in_c_0 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_0
-  free_in_c_1 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_1
-  free_in_c_2 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_2
-  free_in_c_3 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_3
-  free_in_c_4 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_4
-  free_in_c_5 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_5
-  free_in_c_6 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_6
-  free_in_c_7 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsLo.free_in_c_7
-  free_in_c_8 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_8
-  free_in_c_9 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_9
-  free_in_c_10 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_10
-  free_in_c_11 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_11
-  free_in_c_12 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_12
-  free_in_c_13 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_13
-  free_in_c_14 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_14
-  free_in_c_15 := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).cColsHi.free_in_c_15
-  op_is_shift := fun row =>
-    (binaryExtensionTableRowAtOrZero table row).flags.op_is_shift
-  b_0 := fun row => (binaryExtensionTableRowAtOrZero table row).flags.b_0
-  b_1 := fun row => (binaryExtensionTableRowAtOrZero table row).flags.b_1
-  gsum := fun _ => 0
-  im_0 := fun _ => 0
-  im_1 := fun _ => 0
-  im_2 := fun _ => 0
-  im_3 := fun _ => 0
-  im_high_degree_0 := fun _ => 0
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL :=
+  binaryExtensionTableRowAtOrZero table
 
 /-- In-range concrete BinaryExtension table projection agrees with `List.get`. -/
 theorem binaryExtensionTableRowAtOrZero_get
@@ -638,19 +579,8 @@ theorem rowAt_binaryExtensionOfTable
     ZiskFv.AirsClean.BinaryExtension.rowAt
       (binaryExtensionOfTable table) idx.val =
       eval (table.environment (table.table.get idx))
-        shiftStaticLookupComponent.rowInputVar := by
-  simp [ZiskFv.AirsClean.BinaryExtension.rowAt,
-    binaryExtensionTableRowAtOrZero_get table idx]
-  let row :=
-    eval (table.environment (table.table.get idx))
-      shiftStaticLookupComponent.rowInputVar
-  change
-    { aCols := row.aCols
-      cColsLo := row.cColsLo
-      cColsHi := row.cColsHi
-      flags := row.flags } = row
-  cases row
-  rfl
+        shiftStaticLookupComponent.rowInputVar  := by
+  exact binaryExtensionTableRowAtOrZero_get table idx
 
 /-- The legacy `opBus_row_BinaryExtension` view of `binaryExtensionOfTable` is
     the Clean BinaryExtension operation-bus message evaluated on the same row. -/

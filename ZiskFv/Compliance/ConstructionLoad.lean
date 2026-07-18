@@ -706,7 +706,7 @@ theorem construction_lb_sound_claimed_dead
     (mem : Valid_Mem FGL FGL)
     (r_mem : ℕ)
     -- (b) BinaryExtension op-bus provider (irreducible — see header)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -842,7 +842,7 @@ theorem construction_lh_sound_claimed_dead
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
     (r_mem : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -972,7 +972,7 @@ theorem construction_lw_sound_claimed_dead
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
     (r_mem : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :

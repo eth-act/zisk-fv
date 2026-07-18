@@ -4,9 +4,9 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
-import ZiskFv.Airs.Binary.BinaryExtensionRanges
+import ZiskFv.AirsClean.BinaryExtension.Trace
+import ZiskFv.AirsClean.BinaryExtension.PackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.Ranges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
@@ -63,7 +63,7 @@ namespace ZiskFv.EquivCore.Promises
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryExtension
+open ZiskFv.AirsClean.BinaryExtension
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
@@ -127,15 +127,15 @@ lemma load_full_discharge_LB_of_match_clean
   have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SIGNEXTEND_B := by
     rw [← h_op_fgl, h_main_op]
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
-    ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_B_of_static_lookup
+    ZiskFv.AirsClean.BinaryExtension.op_is_shift_zero_SIGNEXTEND_B_of_static_lookup
       v r_binary offset env h_static h_op_v_eq
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
     simpa [h_bytes] using
-      ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
+      ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
         v r_binary offset env h_static
   obtain ⟨hc_lo_sum_lt, hc_hi_sum_lt⟩ :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_sext_b_c_sums_lt_of_wf
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_sext_b_c_sums_lt_of_wf
       v r_binary h_op_binary h_bytes h_wfs
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
@@ -174,15 +174,15 @@ lemma load_full_discharge_LH_of_match_clean
   have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SIGNEXTEND_H := by
     rw [← h_op_fgl, h_main_op]
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
-    ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_H_of_static_lookup
+    ZiskFv.AirsClean.BinaryExtension.op_is_shift_zero_SIGNEXTEND_H_of_static_lookup
       v r_binary offset env h_static h_op_v_eq
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
     simpa [h_bytes] using
-      ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
+      ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
         v r_binary offset env h_static
   obtain ⟨hc_lo_sum_lt, hc_hi_sum_lt⟩ :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_sext_h_c_sums_lt_of_wf
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_sext_h_c_sums_lt_of_wf
       v r_binary h_op_binary h_bytes h_wfs
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
@@ -221,15 +221,15 @@ lemma load_full_discharge_LW_of_match_clean
   have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SIGNEXTEND_W := by
     rw [← h_op_fgl, h_main_op]
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
-    ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
+    ZiskFv.AirsClean.BinaryExtension.op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
       v r_binary offset env h_static h_op_v_eq
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
     simpa [h_bytes] using
-      ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
+      ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
         v r_binary offset env h_static
   obtain ⟨hc_lo_sum_lt, hc_hi_sum_lt⟩ :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_sext_w_c_sums_lt_of_wf
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_sext_w_c_sums_lt_of_wf
       v r_binary h_op_binary h_bytes h_wfs
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf

@@ -134,7 +134,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.Binary
-open ZiskFv.Airs.BinaryExtension
+open ZiskFv.AirsClean.BinaryExtension
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.ArithDiv
@@ -1765,7 +1765,7 @@ inductive OpEnvelope
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -1827,7 +1827,7 @@ inductive OpEnvelope
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -1889,7 +1889,7 @@ inductive OpEnvelope
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :

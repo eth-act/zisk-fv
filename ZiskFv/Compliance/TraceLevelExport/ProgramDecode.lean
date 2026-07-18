@@ -1478,7 +1478,7 @@ structure ProgramDecode_lb {numInstructions : Nat}
     (c : Claim_lb trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
   v :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary :
     ℕ
   offset :
@@ -1520,7 +1520,7 @@ structure ProgramDecode_lh {numInstructions : Nat}
     (c : Claim_lh trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
   v :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary :
     ℕ
   offset :
@@ -1562,7 +1562,7 @@ structure ProgramDecode_lw {numInstructions : Nat}
     (c : Claim_lw trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
   v :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary :
     ℕ
   offset :

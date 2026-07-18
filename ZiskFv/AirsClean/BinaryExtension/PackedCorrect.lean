@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.RowShape.Contract
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 
 /-!
@@ -55,7 +55,7 @@ this set per row — so summing the 4 active bytes recovers
 set_option maxHeartbeats 1600000
 set_option maxRecDepth 4096
 
-namespace ZiskFv.Airs.BinaryExtension
+namespace ZiskFv.AirsClean.BinaryExtension
 
 open Goldilocks
 open ZiskFv.Airs.Tables.BinaryExtensionTable
@@ -5179,4 +5179,4 @@ lemma binary_extension_sext_w_c_sums_lt_of_wf
     rw [h3lo_eq]
     constructor <;> omega
 
-end ZiskFv.Airs.BinaryExtension
+end ZiskFv.AirsClean.BinaryExtension

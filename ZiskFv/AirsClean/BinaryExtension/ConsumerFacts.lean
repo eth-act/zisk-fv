@@ -1,5 +1,5 @@
 import ZiskFv.AirsClean.BinaryExtension.Circuit
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.BinaryExtensionTable
@@ -18,89 +18,15 @@ open ZiskFv.Channels.OperationBus
 open ZiskFv.Channels.BinaryExtensionTable
 
 @[reducible]
-def rowAt (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : ℕ) :
-    BinaryExtensionRow FGL where
-  aCols := {
-    free_in_a_0 := v.free_in_a_0 r
-    free_in_a_1 := v.free_in_a_1 r
-    free_in_a_2 := v.free_in_a_2 r
-    free_in_a_3 := v.free_in_a_3 r
-    free_in_a_4 := v.free_in_a_4 r
-    free_in_a_5 := v.free_in_a_5 r
-    free_in_a_6 := v.free_in_a_6 r
-    free_in_a_7 := v.free_in_a_7 r
-  }
-  cColsLo := {
-    free_in_c_0 := v.free_in_c_0 r
-    free_in_c_1 := v.free_in_c_1 r
-    free_in_c_2 := v.free_in_c_2 r
-    free_in_c_3 := v.free_in_c_3 r
-    free_in_c_4 := v.free_in_c_4 r
-    free_in_c_5 := v.free_in_c_5 r
-    free_in_c_6 := v.free_in_c_6 r
-    free_in_c_7 := v.free_in_c_7 r
-  }
-  cColsHi := {
-    free_in_c_8 := v.free_in_c_8 r
-    free_in_c_9 := v.free_in_c_9 r
-    free_in_c_10 := v.free_in_c_10 r
-    free_in_c_11 := v.free_in_c_11 r
-    free_in_c_12 := v.free_in_c_12 r
-    free_in_c_13 := v.free_in_c_13 r
-    free_in_c_14 := v.free_in_c_14 r
-    free_in_c_15 := v.free_in_c_15 r
-  }
-  flags := {
-    op := v.op r
-    free_in_b := v.free_in_b r
-    op_is_shift := v.op_is_shift r
-    b_0 := v.b_0 r
-    b_1 := v.b_1 r
-  }
+def rowAt (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
+    BinaryExtensionRow FGL := v r
 
 @[reducible]
 def validOfRow (row : BinaryExtensionRow FGL) :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL where
-  op := fun _ => row.flags.op
-  free_in_a_0 := fun _ => row.aCols.free_in_a_0
-  free_in_a_1 := fun _ => row.aCols.free_in_a_1
-  free_in_a_2 := fun _ => row.aCols.free_in_a_2
-  free_in_a_3 := fun _ => row.aCols.free_in_a_3
-  free_in_a_4 := fun _ => row.aCols.free_in_a_4
-  free_in_a_5 := fun _ => row.aCols.free_in_a_5
-  free_in_a_6 := fun _ => row.aCols.free_in_a_6
-  free_in_a_7 := fun _ => row.aCols.free_in_a_7
-  free_in_b := fun _ => row.flags.free_in_b
-  free_in_c_0 := fun _ => row.cColsLo.free_in_c_0
-  free_in_c_1 := fun _ => row.cColsLo.free_in_c_1
-  free_in_c_2 := fun _ => row.cColsLo.free_in_c_2
-  free_in_c_3 := fun _ => row.cColsLo.free_in_c_3
-  free_in_c_4 := fun _ => row.cColsLo.free_in_c_4
-  free_in_c_5 := fun _ => row.cColsLo.free_in_c_5
-  free_in_c_6 := fun _ => row.cColsLo.free_in_c_6
-  free_in_c_7 := fun _ => row.cColsLo.free_in_c_7
-  free_in_c_8 := fun _ => row.cColsHi.free_in_c_8
-  free_in_c_9 := fun _ => row.cColsHi.free_in_c_9
-  free_in_c_10 := fun _ => row.cColsHi.free_in_c_10
-  free_in_c_11 := fun _ => row.cColsHi.free_in_c_11
-  free_in_c_12 := fun _ => row.cColsHi.free_in_c_12
-  free_in_c_13 := fun _ => row.cColsHi.free_in_c_13
-  free_in_c_14 := fun _ => row.cColsHi.free_in_c_14
-  free_in_c_15 := fun _ => row.cColsHi.free_in_c_15
-  op_is_shift := fun _ => row.flags.op_is_shift
-  b_0 := fun _ => row.flags.b_0
-  b_1 := fun _ => row.flags.b_1
-  gsum := fun _ => 0
-  im_0 := fun _ => 0
-  im_1 := fun _ => 0
-  im_2 := fun _ => 0
-  im_3 := fun _ => 0
-  im_high_degree_0 := fun _ => 0
+    Valid_BinaryExtension FGL FGL := fun _ => row
 
 theorem rowAt_validOfRow_zero (row : BinaryExtensionRow FGL) :
-    rowAt (validOfRow row) 0 = row := by
-  cases row
-  rfl
+    rowAt (validOfRow row) 0 = row := rfl
 
 @[reducible]
 def constVar (row : BinaryExtensionRow FGL) : Var BinaryExtensionRow FGL :=
@@ -429,14 +355,14 @@ theorem binary_extension_table_wf_of_static_lookup_const_soundness
 
 /-- BinaryExtension has zero F-typed per-row constraints. -/
 def constraints_at
-    (_v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (_r : ℕ) :
+    (_v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL) (_r : ℕ) :
     Prop := True
 
 /-- Shared C7 witness surface for BinaryExtension's static-table lookup path.
     This remains a family-level row-indexed predicate until the terminal
     Binary-family ensemble wires the static provider into the same Clean path. -/
 def StaticLookupSoundness
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) : Prop :=
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL) : Prop :=
   ∀ (r offset : ℕ) (env : Environment FGL),
     ConstraintsHold.Soundness env
       ((mainWithStaticBinaryExtensionTable (constVar (rowAt v r))).operations offset)
@@ -444,7 +370,7 @@ def StaticLookupSoundness
 /-- Project the shared C7 BinaryExtension static-lookup witness to the legacy
     per-byte semantic facts for row `r`. -/
 theorem static_lookup_wf_facts
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r offset : ℕ) (env : Environment FGL) (h_static : StaticLookupSoundness v) :
     StaticBinaryExtensionTableWfFacts (rowAt v r) :=
   binary_extension_table_wf_of_static_lookup_const_soundness offset env (rowAt v r)
@@ -470,7 +396,7 @@ def aHiValue (row : BinaryExtensionRow FGL) : FGL :=
     + 65536 * row.aCols.free_in_a_6 + 16777216 * row.aCols.free_in_a_7
 
 @[reducible]
-def validA64 (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+def validA64 (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r : ℕ) : BitVec 64 :=
   BitVec.ofNat 64
     ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
@@ -493,7 +419,7 @@ def rowA64 (row : BinaryExtensionRow FGL) : BitVec 64 :=
       + (row.aCols.free_in_a_7).val * 72057594037927936)
 
 @[reducible]
-def validA32 (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+def validA32 (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r : ℕ) : ℕ :=
   ((v.free_in_a_0 r).val + (v.free_in_a_1 r).val * 256
     + (v.free_in_a_2 r).val * 65536
@@ -506,7 +432,7 @@ def rowA32 (row : BinaryExtensionRow FGL) : ℕ :=
     + (row.aCols.free_in_a_3).val * 16777216) % 2^32
 
 @[reducible]
-def validShiftAmount (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+def validShiftAmount (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r : ℕ) : ℕ :=
   (v.free_in_b r).val % 64
 
@@ -515,7 +441,7 @@ def rowShiftAmount (row : BinaryExtensionRow FGL) : ℕ :=
   row.flags.free_in_b.val % 64
 
 @[reducible]
-def validShiftAmount32 (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+def validShiftAmount32 (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r : ℕ) : ℕ :=
   (v.free_in_b r).val % 32
 
@@ -548,13 +474,13 @@ def opBusMessage (row : BinaryExtensionRow FGL) : OpBusMessage FGL :=
     extra_args_0 := 0 }
 
 theorem opBusMessage_toEntry_rowAt_eq_opBus_row
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : ℕ) :
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : ℕ) :
     OpBusMessage.toEntry (opBusMessage (rowAt v r)) 1 =
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r := by
   rfl
 
 theorem spec_of_valid
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : ℕ)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : ℕ)
     (_h_assumptions : Assumptions (rowAt v r))
     (_h_constraints : constraints_at v r) :
     Spec (rowAt v r) :=

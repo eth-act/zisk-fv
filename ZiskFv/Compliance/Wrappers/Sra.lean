@@ -7,7 +7,7 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
@@ -23,7 +23,7 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryExtension
+open ZiskFv.AirsClean.BinaryExtension
 open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 

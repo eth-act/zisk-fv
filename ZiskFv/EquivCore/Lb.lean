@@ -7,7 +7,7 @@ import ZiskFv.ZiskCircuit.LoadByte
 import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.ZiskCircuit.SextLoadBridge
 import ZiskFv.Airs.Tables.BinaryExtensionTable
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -88,12 +88,12 @@ lemma equiv_LB_clean_provider_of_wf
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main r_mem : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
       (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B)
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
       + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val

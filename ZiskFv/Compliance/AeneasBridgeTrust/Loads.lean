@@ -584,7 +584,7 @@ def OpEnvelope.lbOfExtractedShape
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -662,7 +662,7 @@ def OpEnvelope.lhOfExtractedShape
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -740,7 +740,7 @@ def OpEnvelope.lwOfExtractedShape
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -817,7 +817,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lbOfExtractedShape
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -894,7 +894,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lhOfExtractedShape
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -971,7 +971,7 @@ theorem OpEnvelope.aeneasBridgeTrust_lwOfExtractedShape
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :

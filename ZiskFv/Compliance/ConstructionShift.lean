@@ -128,14 +128,14 @@ theorem shift_m32_0_input_r1_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]
       using h_facts
-  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v 0 := by
+  have h_a_range : ZiskFv.AirsClean.BinaryExtension.a_bytes_in_range v 0 := by
     obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
       h_bytes
     exact ⟨
@@ -182,9 +182,9 @@ theorem shift_m32_0_shift_pin_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]
@@ -246,14 +246,14 @@ theorem shift_op_is_shift_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]
       using h_facts
-  exact (ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin_of_wf_hypotheses
+  exact (ZiskFv.AirsClean.BinaryExtension.binary_extension_op_is_shift_pin_of_wf_hypotheses
     v 0 h_wfs).1 h_op_sel
 
 /-- Shift-amount pin for the m32 = 0 **immediate** shift group (SLLI/SRLI/SRAI):
@@ -279,9 +279,9 @@ theorem shift_imm_shift_pin_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]
@@ -1274,14 +1274,14 @@ theorem shift_m32_1_input_r1_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]
       using h_facts
-  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v 0 := by
+  have h_a_range : ZiskFv.AirsClean.BinaryExtension.a_bytes_in_range v 0 := by
     obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
       h_bytes
     exact ⟨
@@ -1331,9 +1331,9 @@ theorem shift_m32_1_shift_pin_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]
@@ -1381,9 +1381,9 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry]

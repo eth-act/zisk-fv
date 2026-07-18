@@ -15,9 +15,9 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
-import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
-import ZiskFv.AirsClean.BinaryExtension.Bridge
+import ZiskFv.AirsClean.BinaryExtension.Trace
+import ZiskFv.AirsClean.BinaryExtension.PackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 import ZiskFv.EquivCore.WriteValueProofs.BinaryShift
 import ZiskFv.EquivCore.WriteValueProofs.SailBridge
 import ZiskFv.EquivCore.Bridge.BinaryExtension
@@ -89,7 +89,7 @@ lemma equiv_SLLI_of_wf
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
@@ -103,8 +103,8 @@ lemma equiv_SLLI_of_wf
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_bytes : ZiskFv.AirsClean.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (_h_op_is_shift : v.op_is_shift r_binary = 1)
     (_h_b0_range : (v.b_0 r_binary).val < 2 ^ 24)
     (h_input_r1_circuit :
@@ -126,7 +126,7 @@ lemma equiv_SLLI_of_wf
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
     rw [← h_op_fgl, h_main_op]; decide
-  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary := by
+  have h_a_range : ZiskFv.AirsClean.BinaryExtension.a_bytes_in_range v r_binary := by
     obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
       h_bytes
     exact ⟨
@@ -152,10 +152,10 @@ lemma equiv_SLLI_of_wf
   -- BinaryExtensionTable rows, with no range-bus axiom.
   obtain ⟨hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
           hc8, hc9, hc10, hc11, hc12, hc13, hc14, hc15⟩ :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_sll_c_lanes_lt_of_wf
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_sll_c_lanes_lt_of_wf
       v r_binary h_op h_bytes h_wfs
   obtain ⟨hc_lo_sum_lt, hc_hi_sum_lt⟩ :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_sll_c_sums_lt_of_wf
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_sll_c_sums_lt_of_wf
       v r_binary h_op h_bytes h_wfs h_a_range
   set shift : ℕ := slli_input.shamt.toNat with h_shift_def
   have h_discharge :=
@@ -227,9 +227,9 @@ lemma equiv_SLLI_of_static_row
       ZiskFv.AirsClean.BinaryExtension.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
-    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+  let h_bytes := ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups,
       ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry] using h_facts
@@ -239,7 +239,7 @@ lemma equiv_SLLI_of_static_row
   have h_op_v_eq : v.op 0 = ZiskFv.Trusted.OP_SLL := by
     rw [← h_op_fgl, h_main_op]
   have h_op_is_shift : v.op_is_shift 0 = 1 :=
-    (ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin_of_wf_hypotheses
+    (ZiskFv.AirsClean.BinaryExtension.binary_extension_op_is_shift_pin_of_wf_hypotheses
       v 0 h_wfs).1 (Or.inl h_op_v_eq)
   exact equiv_SLLI_of_wf state slli_input r1 rd shamt m v r_main 0 bus
     promises ⟨h_main_active, h_main_op⟩ h_match_v h_lane_rd

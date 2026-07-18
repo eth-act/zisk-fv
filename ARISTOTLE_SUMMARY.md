@@ -1,3 +1,28 @@
+# Summary of changes for run 244ce64a-5440-418e-907a-b64e2e64a156
+Completed Refactor 8 with one family fully migrated and deleted, following the work order’s prioritization rule.
+
+- Installed the authoritative archive non-destructively and verified every archived file byte-for-byte.
+- Removed accumulated root submission tarballs without committing them.
+- Produced the declaration-level consumer map in `REFACTOR_8_REPORT.md`.
+- Fully migrated BinaryExtension consumers to canonical Clean rows across balance/static-table, EquivCore shift/load bridges, operation-bus code, constructions, wrappers, and equivalence exports.
+- Added `AirsClean/BinaryExtension/Trace.lean`, making traces families of `BinaryExtensionRow` values.
+- Moved retained semantic proofs into the Clean family as `PackedCorrect.lean` and `Ranges.lean`.
+- Replaced the old compatibility `Bridge.lean` surface with `ConsumerFacts.lean` using direct canonical-row projections.
+- Deleted all BinaryExtension legacy model files and its old bridge surface.
+- Left Binary intact rather than half-migrating it; the report records its precise remaining blockers and references.
+- Net change from the authoritative checkpoint: 394 lines added, 602 deleted, net −208 lines.
+
+Verification completed:
+- `lake build ZiskFv` passed (9014 jobs).
+- Trust checks 1–12 and 14–16 passed; check 13 was deferred because the supplied tree lacks the `zisk` submodule.
+- All 16 semantic trust checks passed.
+- The non-generated zero-sorry gate passed.
+- `trust/generated/` is unchanged.
+- `Soundness.lean`, `Completeness.lean`, and `Audit.lean` remain byte-identical.
+- No forbidden proof constructs or `OpEnvelope` arity changes were introduced.
+
+Full details, consumer map, reference counts, deleted-file list, blockers, and gate results are in `REFACTOR_8_REPORT.md`. `ARISTOTLE_SUMMARY.md` was left unchanged as requested. All retained work was committed and pushed.
+
 # Summary of changes for run 44985a2a-c8cf-4f3a-aef0-d20b61119b16
 Completed the Refactor 7 work order to the extent permitted by verified architectural blockers.
 

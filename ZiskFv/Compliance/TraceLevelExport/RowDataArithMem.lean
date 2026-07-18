@@ -2664,7 +2664,7 @@ structure Claim_lb (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
 
 structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
-  v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+  v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary : ℕ
   offset : ℕ
   env : Environment FGL
@@ -2754,7 +2754,7 @@ structure Claim_lh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
 
 structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
-  v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+  v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary : ℕ
   offset : ℕ
   env : Environment FGL
@@ -2844,7 +2844,7 @@ structure Claim_lw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.nu
 
 structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
-  v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
+  v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL
   r_binary : ℕ
   offset : ℕ
   env : Environment FGL

@@ -19,7 +19,7 @@ No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SRAIW`'s closur
 open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
-open ZiskFv.Airs.BinaryExtension (Valid_BinaryExtension)
+open ZiskFv.AirsClean.BinaryExtension (Valid_BinaryExtension)
 open ZiskFv.Trusted (OP_SLL_W OP_SRL_W OP_SRA_W)
 
 namespace ZiskFv.Equivalence.Sraiw

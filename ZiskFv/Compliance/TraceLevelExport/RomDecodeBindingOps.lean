@@ -3130,7 +3130,7 @@ def Decode_lb_of_program
     (c : Claim_lb trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
     (v :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary :
     ℕ)
     (offset :
@@ -3225,7 +3225,7 @@ def Decode_lh_of_program
     (c : Claim_lh trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
     (v :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary :
     ℕ)
     (offset :
@@ -3320,7 +3320,7 @@ def Decode_lw_of_program
     (c : Claim_lw trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
     (v :
-    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary :
     ℕ)
     (offset :

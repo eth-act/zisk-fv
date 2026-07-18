@@ -1,9 +1,9 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
-import ZiskFv.AirsClean.BinaryExtension.Bridge
+import ZiskFv.AirsClean.BinaryExtension.Trace
+import ZiskFv.AirsClean.BinaryExtension.PackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 
 /-!
 # BinaryExtension static lookup adapters
@@ -13,7 +13,7 @@ helpers are structural adapters from the Clean static BinaryExtension-table
 witness to the legacy row-byte lookup bundles used by signed-load bridges.
 -/
 
-namespace ZiskFv.Airs.BinaryExtension
+namespace ZiskFv.AirsClean.BinaryExtension
 
 open Goldilocks
 open ZiskFv.Airs.Tables.BinaryExtensionTable
@@ -68,4 +68,4 @@ lemma op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
   (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).2
     (Or.inr (Or.inr h_op))
 
-end ZiskFv.Airs.BinaryExtension
+end ZiskFv.AirsClean.BinaryExtension

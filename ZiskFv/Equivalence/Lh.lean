@@ -21,7 +21,7 @@ theorem equiv_LH
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :

@@ -11,7 +11,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.Trace
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Compliance.SharedBundles
 
@@ -44,7 +44,7 @@ lemma equiv_LB
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
@@ -80,10 +80,10 @@ lemma equiv_LB
       main v r_main r_binary offset env e1 h_static h_match h_main_op
       h_clean_bundle.1.1
   let h_bytes :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  have h_wfs : ZiskFv.AirsClean.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
     simpa [h_bytes] using
-    ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
+    ZiskFv.AirsClean.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
       v r_binary offset env h_static
   exact ZiskFv.EquivCore.Lb.equiv_LB_clean_provider_of_wf
     state lb_input regs
@@ -109,7 +109,7 @@ theorem lb_eq_of_full_ensemble_mem_provider
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main r_mem : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (v : ZiskFv.AirsClean.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :

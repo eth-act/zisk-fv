@@ -1,4 +1,4 @@
-import ZiskFv.AirsClean.BinaryExtension.Bridge
+import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
