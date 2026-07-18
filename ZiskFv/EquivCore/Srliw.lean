@@ -20,7 +20,7 @@ import ZiskFv.AirsClean.BinaryExtension.PackedCorrect
 import ZiskFv.AirsClean.BinaryExtension.ConsumerFacts
 import ZiskFv.EquivCore.WriteValueProofs.BinaryShift
 import ZiskFv.EquivCore.WriteValueProofs.SailBridge
-import ZiskFv.EquivCore.Bridge.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.ConsumerTheorems
 import ZiskFv.EquivCore.Promises.ShiftImm
 import ZiskFv.Compliance.SharedBundles
 
@@ -110,7 +110,7 @@ lemma equiv_SRLIW_of_wf
           h_rd_idx⟩ := promises
   -- Project matches_entry into (op, c_lo, c_hi) sub-facts.
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+    ZiskFv.AirsClean.BinaryExtension.project_match_op_clo_chi
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W := by
     rw [← h_op_fgl, h_main_op]; decide
@@ -252,7 +252,7 @@ lemma equiv_SRLIW_of_static_row
       ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry] using h_facts
   obtain ⟨h_op_fgl, _, _⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+    ZiskFv.AirsClean.BinaryExtension.project_match_op_clo_chi
       m v r_main 0 h_match_v
   have h_op_v_eq : v.op 0 = ZiskFv.Trusted.OP_SRL_W := by
     rw [← h_op_fgl, h_main_op]

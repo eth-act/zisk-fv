@@ -69,7 +69,7 @@ lemma equiv_DIVU_of_table
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : divu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val)
@@ -170,7 +170,7 @@ lemma equiv_DIVU
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : divu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val)

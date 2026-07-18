@@ -148,7 +148,7 @@ theorem shift_m32_0_input_r1_row_of_facts
       by simpa [h6.2.2.2.1] using h_wfs.2.2.2.2.2.2.1.1.1,
       by simpa [h7.2.2.2.1] using h_wfs.2.2.2.2.2.2.2.1.1 ⟩
   have h :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0_of_a_range
+    ZiskFv.AirsClean.BinaryExtension.packed_a_eq_of_shift_match_m32_0_of_a_range
       m v r_main 0 rs1 r1_val
       h_m32 h_a_lo_t h_a_hi_t h_read_r1 h_op_is_shift h_match_v h_a_range
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
@@ -193,7 +193,7 @@ theorem shift_m32_0_shift_pin_row_of_facts
     simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range
   have h :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0_of_b0_range
+    ZiskFv.AirsClean.BinaryExtension.shift_pin_eq_of_shift_match_m32_0_of_b0_range
       m v r_main 0 rs2 r2_val
       h_m32 h_b_lo_t h_b_hi_t h_read_r2 h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
@@ -217,7 +217,7 @@ theorem shift_op_pin_eq_of_match
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
   obtain ⟨h_op_fgl, _, _⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi m v r_main 0 h_match_v
+    ZiskFv.AirsClean.BinaryExtension.project_match_op_clo_chi m v r_main 0 h_match_v
   exact h_op_fgl.symm
 
 /-- Op-is-shift derivation for the m32 = 0 shift group, opaque `row`: derives
@@ -290,7 +290,7 @@ theorem shift_imm_shift_pin_row_of_facts
     simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range
   have h :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_immediate_eq_of_shift_match_of_b0_range
+    ZiskFv.AirsClean.BinaryExtension.shift_pin_immediate_eq_of_shift_match_of_b0_range
       m v r_main 0 shamt h_b_lo_t h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowShiftAmount] using h
@@ -1294,7 +1294,7 @@ theorem shift_m32_1_input_r1_row_of_facts
       by simpa [h6.2.2.2.1] using h_wfs.2.2.2.2.2.2.1.1.1,
       by simpa [h7.2.2.2.1] using h_wfs.2.2.2.2.2.2.2.1.1 ⟩
   have h :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
+    ZiskFv.AirsClean.BinaryExtension.packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
       m v r_main 0 rs1 r1_val
       h_m32 h_a_lo_t h_a_hi_t h_read_r1 h_op_is_shift h_match_v h_a_range
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
@@ -1342,7 +1342,7 @@ theorem shift_m32_1_shift_pin_row_of_facts
     simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range
   have h :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_w_eq_of_shift_match_of_b0_range
+    ZiskFv.AirsClean.BinaryExtension.shift_pin_w_eq_of_shift_match_of_b0_range
       m v r_main 0 rs2 r2_val
       h_b_lo_t h_b_hi_t h_read_r2 h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   -- bridge LHS is `(extractLsb r2_val 31 0).toNat % 32`; the low 5 bits are
@@ -1392,7 +1392,7 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
     simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range
   have h :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_w_immediate_eq_of_shift_match_of_b0_range
+    ZiskFv.AirsClean.BinaryExtension.shift_pin_w_immediate_eq_of_shift_match_of_b0_range
       m v r_main 0 shamt h_b_lo_t h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32] using h

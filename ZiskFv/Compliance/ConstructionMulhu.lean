@@ -3,8 +3,8 @@ import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.EquivCore.MulHU
 import ZiskFv.EquivCore.Promises.ArithHelpers
-import ZiskFv.EquivCore.Bridge.Arith
-import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
+import ZiskFv.AirsClean.ArithMul.ConsumerFacts
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
@@ -76,7 +76,7 @@ theorem unsigned_carry_step_nat_claimed_dead
     cy.val < 983041 :=
   -- Now a thin re-export of the shared Bridge lemma (single proof source);
   -- the sibling DIVU/REMU/DIVUW/REMUW constructions reference this name.
-  ZiskFv.EquivCore.Bridge.Arith.unsigned_carry_step_nat N c cy h_eq hc h_N h_sgn
+  ZiskFv.AirsClean.ArithConsumerTheorems.unsigned_carry_step_nat N c cy h_eq hc h_N h_sgn
 
 /-! ### Loose-bound FGL → ℕ chunk lifts (carry bound `< 983041`)
 
@@ -288,8 +288,8 @@ open ZiskFv.Airs.ArithMul in
     stays below `983040·2^16`, using the previous carry's bound). -/
 private lemma mulhu_carry_bounds_claimed_dead
     (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
-    (h_chunks : ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
-    (h_csgn : ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+    (h_chunks : ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
+    (h_csgn : ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     (heqs :
       (v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + v.cy_0 r_a * 65536)
       ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.cy_0 r_a
@@ -535,9 +535,9 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
       v r_a h_arith_table h_op_arith_mulhu
   -- ============ Chunk / carry ranges from FullSpec ============
   have h_carry_ranges_signed :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a := h_carry_ranges_spec
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a := h_carry_ranges_spec
   have h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a := h_chunk_ranges_spec
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a := h_chunk_ranges_spec
   obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
           h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,

@@ -3,8 +3,8 @@ import Mathlib
 import ZiskFv.EquivCore.MulHSU
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
-import ZiskFv.EquivCore.Bridge.Arith
-import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
+import ZiskFv.AirsClean.ArithMul.ConsumerFacts
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.BusRes1

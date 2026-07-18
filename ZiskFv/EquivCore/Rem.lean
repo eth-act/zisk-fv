@@ -9,7 +9,7 @@ import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.ZiskCircuit.Rem
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -162,9 +162,9 @@ lemma equiv_REM
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
   have h_chunk_ranges :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
+    ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
   have h_carry_ranges :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
+    ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
   have h_rd_val :
       U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),

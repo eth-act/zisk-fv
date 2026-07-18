@@ -11,8 +11,8 @@ import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.AirsClean.MemAlignByte.Bridge
 import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 import ZiskFv.AirsClean.Main.Bridge
-import ZiskFv.AirsClean.ArithMul.Bridge
-import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.AirsClean.ArithMul.ConsumerFacts
+import ZiskFv.AirsClean.ArithDiv.ConsumerFacts
 import ZiskFv.AirsClean.Binary.ConsumerFacts
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.Channels.MemoryBusBytes
@@ -244,7 +244,7 @@ theorem StorePcMemoryWitness.lanes
 This is structural unpacking of the former raw
 `ArithTableSpec (rowAt v r)` binder: callers expose the Clean operation
 soundness proof for `mainWithArithTable`, and the table membership is
-derived by `AirsClean.ArithMul.Bridge`. -/
+derived by `AirsClean.ArithMul.ConsumerFacts`. -/
 structure ArithMulTableWitness
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) where
   offset : ℕ

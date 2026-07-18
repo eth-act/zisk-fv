@@ -1,5 +1,5 @@
-import ZiskFv.AirsClean.ArithMul.Bridge
-import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.AirsClean.ArithMul.ConsumerFacts
+import ZiskFv.AirsClean.ArithDiv.ConsumerFacts
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 
 /-!

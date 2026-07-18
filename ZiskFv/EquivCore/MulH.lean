@@ -6,7 +6,7 @@ import ZiskFv.RowShape.Contract
 import ZiskFv.ZiskCircuit.Mul
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
-import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -106,9 +106,9 @@ lemma equiv_MULH
           - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
             * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
     (h_div : v.div r_a = 0)

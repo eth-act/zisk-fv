@@ -11,7 +11,7 @@ import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.Mem
-import ZiskFv.EquivCore.Bridge.BinaryExtension
+import ZiskFv.AirsClean.BinaryExtension.ConsumerTheorems
 
 /-!
 # BinaryExtension-family wrapper helpers
@@ -119,7 +119,7 @@ lemma load_full_discharge_LB_of_match_clean
     LoadFullDischargeAt main v r_main r_binary e1
       ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+    ZiskFv.AirsClean.BinaryExtension.project_match_op_clo_chi
       main v r_main r_binary h_match
   have h_op_binary : (v.op r_binary).val
       = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
@@ -138,7 +138,7 @@ lemma load_full_discharge_LB_of_match_clean
     ZiskFv.AirsClean.BinaryExtension.binary_extension_sext_b_c_sums_lt_of_wf
       v r_binary h_op_binary h_bytes h_wfs
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
+    ZiskFv.AirsClean.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
       main v r_main r_binary e1 h_bytes h_wfs
       h_main_b0_eq h_op_is_shift_zero h_match
   exact
@@ -166,7 +166,7 @@ lemma load_full_discharge_LH_of_match_clean
     LoadFullDischargeAt main v r_main r_binary e1
       ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+    ZiskFv.AirsClean.BinaryExtension.project_match_op_clo_chi
       main v r_main r_binary h_match
   have h_op_binary : (v.op r_binary).val
       = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
@@ -185,7 +185,7 @@ lemma load_full_discharge_LH_of_match_clean
     ZiskFv.AirsClean.BinaryExtension.binary_extension_sext_h_c_sums_lt_of_wf
       v r_binary h_op_binary h_bytes h_wfs
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
+    ZiskFv.AirsClean.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
       main v r_main r_binary e1 h_bytes h_wfs
       h_main_b0_eq h_op_is_shift_zero h_match
   exact
@@ -213,7 +213,7 @@ lemma load_full_discharge_LW_of_match_clean
     LoadFullDischargeAt main v r_main r_binary e1
       ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+    ZiskFv.AirsClean.BinaryExtension.project_match_op_clo_chi
       main v r_main r_binary h_match
   have h_op_binary : (v.op r_binary).val
       = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
@@ -232,7 +232,7 @@ lemma load_full_discharge_LW_of_match_clean
     ZiskFv.AirsClean.BinaryExtension.binary_extension_sext_w_c_sums_lt_of_wf
       v r_binary h_op_binary h_bytes h_wfs
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
+    ZiskFv.AirsClean.BinaryExtension.sext_lane_match_bytes_eq_of_match_wf
       main v r_main r_binary e1 h_bytes h_wfs
       h_main_b0_eq h_op_is_shift_zero h_match
   exact

@@ -51,7 +51,7 @@ theorem equiv_REMUW
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :

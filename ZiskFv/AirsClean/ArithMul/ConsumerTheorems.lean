@@ -11,7 +11,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 -- C4 D-6: the ArithDiv Clean Component re-root bridge — the DIV/REM
 -- chain-witness lemmas below route `div_carry_chain_holds` through
 -- `AirsClean/ArithDiv/circuit`'s proven `soundness`.
-import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.AirsClean.ArithDiv.ConsumerFacts
 import ZiskFv.AirsClean.Binary.ConsumerTheorems
 import ZiskFv.EquivCore.Promises.ArithHelpers
 
@@ -57,7 +57,7 @@ discharge shape used here.)
 
 set_option maxHeartbeats 2000000
 
-namespace ZiskFv.EquivCore.Bridge.Arith
+namespace ZiskFv.AirsClean.ArithConsumerTheorems
 
 open Goldilocks
 open ZiskFv.Airs.Main
@@ -2502,4 +2502,4 @@ example (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
   · left; rw [h6]; decide
   · rw [h0]; decide
 
-end ZiskFv.EquivCore.Bridge.Arith
+end ZiskFv.AirsClean.ArithConsumerTheorems

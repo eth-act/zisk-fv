@@ -5,7 +5,7 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
@@ -91,7 +91,7 @@ lemma equiv_REMUW
     (chunk_ranges : ZiskFv.AirsClean.ArithDiv.ChunkRangeLookupWitness v r_a)
     (carry_ranges : ZiskFv.AirsClean.ArithDiv.SignedCarryRangeLookupWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
     (_h_m32 : v.m32 r_a = 1)
@@ -128,14 +128,14 @@ lemma equiv_REMUW
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
+    ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_chunk_ranges_at_holds v r_a chunk_ranges
   have h_carry_ranges :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
+    ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
   obtain ⟨h_d23, h_d_lt_b_arith⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_remainder_bound_unsigned_w
+    ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_remainder_bound_unsigned_w
       remainder_bound
-      (ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
+      (ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
       h_nr h_nb h_b23
   have h_d_lt_b :
       (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
@@ -150,9 +150,9 @@ lemma equiv_REMUW
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.div_unsigned_chain_witnesses_of_signed_carry_ranges
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_unsigned_chain_witnesses_of_signed_carry_ranges
       v r_a h_chain h_na h_nb h_np h_nr h_div
-      (ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
+      (ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_chunk_ranges_at_holds v r_a chunk_ranges)
       h_carry_ranges
   have h_packed_nat : ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
         (v.a_2 r_a).val (v.a_3 r_a).val

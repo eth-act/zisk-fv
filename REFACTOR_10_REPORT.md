@@ -1,0 +1,550 @@
+# Refactor 10 report
+
+## Item status
+
+1. **Consumer map:** complete (pre-migration map below).
+2. **Q2 audits + Interfaces:** complete; both audits found verified missing Clean counterparts.
+3. **Consumer migration:** blocked by the Q2 gates. Existing bridge consumers cannot be restated from the current Clean supply without weakening hypotheses or adding caller obligations; no semantic migration was attempted past that verified boundary.
+4. **Bridge retirement:** complete as a consistency relocation: the two Clean compatibility modules are now `ConsumerFacts.lean`, and the shared Arith theorem surface is `AirsClean/ArithMul/ConsumerTheorems.lean`; imports and namespaces were retargeted with no theorem-statement change.
+5. **Legacy deletion:** blocked by the Q2 gates; all five legacy files remain. No legacy constraint was papered over.
+6. **BinaryExtension consistency relocation:** complete. `EquivCore/Bridge/BinaryExtension.lean` moved to `AirsClean/BinaryExtension/ConsumerTheorems.lean`; all importers and qualified references were retargeted.
+7. **Final sweep:** complete. Full build and semantic checks pass; trust checks 1–12 and 14–16 pass, while check 13 is deferred because the supplied tree has no `zisk` submodule.
+
+## Pre-migration reference counts
+
+- Files importing or referring to the Arith legacy/bridge surfaces: **77**.
+- Legacy `Airs/Arith/*` files: **5**.
+- `EquivCore/Bridge/Arith.lean` importers: **24** (work-order baseline).
+
+## Consumer map
+
+### mul
+- `ZiskFv/Airs/Arith/Mul.lean`
+  - 55: `structure Valid_ArithMul (F ExtF : Type)`
+  - 119: `def main_mul_div_disjoint (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 124: `def boolean_m32 (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 129: `def boolean_na (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 134: `def boolean_nb (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 139: `def boolean_nr (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 144: `def boolean_np (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 149: `def boolean_sext (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 155: `def mul_mode_booleans (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - 199: `def opBus_row_Arith {F ExtF : Type} [Field F] [Field ExtF]`
+  - 228: `def opBus_row_ArithMulSecondary {F ExtF : Type} [Field F] [Field ExtF]`
+  - 291: `def mul_constraint_6_named (v : Valid_ArithMul F ExtF) (row : ℕ) : Prop :=`
+  - … 24 additional declarations
+- `ZiskFv/AirsClean/ArithMul/Bridge.lean`
+  - 31: `def constVar (row : ArithMulRow FGL) : Var ArithMulRow FGL where`
+  - 68: `theorem arith_table_spec_of_lookup_aware_soundness`
+  - 97: `theorem indexed_ranges_of_arith_table_soundness`
+  - 155: `theorem chunk_ranges_of_arith_table_soundness`
+  - 224: `theorem arith_table_spec_of_lookup_aware_const_soundness`
+  - 239: `theorem chunk_ranges_of_arith_table_const_soundness`
+  - 249: `theorem indexed_ranges_of_arith_table_const_soundness`
+  - 263: `def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :`
+  - 289: `structure ChunkRangeLookupWitness`
+  - 297: `theorem chunk_ranges_of_lookup_aware_const_soundness`
+  - 335: `def chunkRangeLookupWitness_of_spec`
+  - 378: `structure UnsignedCarryRangeLookupWitness`
+  - … 16 additional declarations
+- `ZiskFv/AirsClean/ArithMul/Circuit.lean`
+  - 45: `structure ArithMulFreeCols where`
+  - 58: `def arithMulE0 (a b : ℕ) : FGL :=`
+  - 61: `def arithMulE1 (a b : ℕ) : FGL :=`
+  - 65: `def arithMulE2 (a b : ℕ) : FGL :=`
+  - 70: `def arithMulE3 (a b : ℕ) : FGL :=`
+  - 76: `def arithMulE4 (a b : ℕ) : FGL :=`
+  - 81: `def arithMulE5 (a b : ℕ) : FGL :=`
+  - 85: `def arithMulE6 (a b : ℕ) : FGL :=`
+  - 88: `def arithMulE7 (a b : ℕ) : FGL :=`
+  - 91: `lemma arithMulProduct_lt (a b : ℕ) (ha : a < 65536 ^ 4) (hb : b < 65536 ^ 4) :`
+  - 95: `lemma arithMulChainSum_zero (a b : ℕ) (ha : a < 65536 ^ 4) (hb : b < 65536 ^ 4) :`
+  - 111: `def arithMulRowOf (a b : ℕ) (free : ArithMulFreeCols) : ArithMulRow FGL :=`
+  - … 11 additional declarations
+- `ZiskFv/Compliance/AeneasBridgeTrust/Mul.lean`
+  - 14: `def OpEnvelope.mulOfExtractedShape`
+  - 57: `theorem OpEnvelope.aeneasBridgeTrust_mulOfExtractedShape`
+  - 107: `def OpEnvelope.mulhOfExtractedShape`
+  - 149: `theorem OpEnvelope.aeneasBridgeTrust_mulhOfExtractedShape`
+  - 198: `def OpEnvelope.mulhuOfExtractedShape`
+  - 240: `theorem OpEnvelope.aeneasBridgeTrust_mulhuOfExtractedShape`
+  - 289: `def OpEnvelope.mulhsuOfExtractedShape`
+  - 331: `theorem OpEnvelope.aeneasBridgeTrust_mulhsuOfExtractedShape`
+  - 380: `def OpEnvelope.mulwOfExtractedShape`
+  - 437: `theorem OpEnvelope.aeneasBridgeTrust_mulwOfExtractedShape`
+- `ZiskFv/EquivCore/Mul.lean`
+  - 56: `lemma equiv_MUL_sail`
+  - 96: `lemma equiv_MUL`
+- `ZiskFv/EquivCore/MulH.lean`
+  - 53: `lemma equiv_MULH_sail`
+  - 87: `lemma equiv_MULH`
+- `ZiskFv/EquivCore/MulHSU.lean`
+  - 52: `lemma equiv_MULHSU_sail`
+  - 86: `lemma equiv_MULHSU`
+- `ZiskFv/EquivCore/MulHU.lean`
+  - 51: `lemma equiv_MULHU_sail`
+  - 90: `lemma equiv_MULHU`
+- `ZiskFv/EquivCore/MulW.lean`
+  - 55: `lemma equiv_MULW_sail`
+  - 95: `lemma equiv_MULW`
+- `ZiskFv/Tactics/MulArchetype.lean`
+  - 40: `lemma (`mul_archetype_bus_match`) parameterized by an `opcode_lit : FGL`.`
+  - 48: `theorem equiv_MULH (...) := by`
+  - 77: `def main_row_in_mul_archetype_mode`
+  - 90: `def mul_archetype_circuit_holds`
+  - 105: `lemma mul_archetype_bus_match`
+
+### div
+- `ZiskFv/Airs/Arith/Div.lean`
+  - 96: `structure Valid_ArithDiv (F ExtF : Type)`
+  - 149: `def main_mul_div_disjoint (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 154: `def boolean_m32 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 159: `def boolean_na (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 164: `def boolean_nb (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 169: `def boolean_nr (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 174: `def boolean_np (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 179: `def boolean_sext (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 186: `def boolean_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 194: `def w_mode_bus_a_hi_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 202: `def w_mode_bus_b_hi_zero (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - 216: `def boolean_main_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=`
+  - … 78 additional declarations
+- `ZiskFv/AirsClean/ArithDiv/Bridge.lean`
+  - 47: `def constVar (row : ArithDivRow FGL) : Var ArithDivRow FGL where`
+  - 84: `theorem arith_table_spec_of_lookup_aware_soundness`
+  - 110: `theorem indexed_ranges_of_arith_table_soundness`
+  - 164: `theorem arith_table_spec_of_lookup_aware_const_soundness`
+  - 175: `theorem indexed_ranges_of_arith_table_const_soundness`
+  - 189: `def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)`
+  - 215: `structure ChunkRangeLookupWitness`
+  - 223: `theorem chunk_ranges_of_lookup_aware_const_soundness`
+  - 259: `structure UnsignedCarryRangeLookupWitness`
+  - 267: `theorem unsigned_carry_ranges_of_lookup_aware_const_soundness`
+  - 289: `structure SignedCarryRangeLookupWitness`
+  - 297: `theorem signed_carry_ranges_of_lookup_aware_const_soundness`
+  - … 10 additional declarations
+- `ZiskFv/AirsClean/ArithDiv/Circuit.lean`
+  - 45: `structure ArithDivFreeCols where`
+  - 58: `def arithDivE0 (c b : ℕ) : FGL :=`
+  - 62: `def arithDivE1 (c b : ℕ) : FGL :=`
+  - 67: `def arithDivE2 (c b : ℕ) : FGL :=`
+  - 73: `def arithDivE3 (c b : ℕ) : FGL :=`
+  - 80: `def arithDivE4 (c b : ℕ) : FGL :=`
+  - 85: `def arithDivE5 (c b : ℕ) : FGL :=`
+  - 89: `def arithDivE6 (c b : ℕ) : FGL :=`
+  - 92: `def arithDivE7 (_c _b : ℕ) : FGL :=`
+  - 95: `lemma arithDivQuotient_lt (c b : ℕ) (hc : c < 65536 ^ 4) :`
+  - 100: `lemma arithDivRemainder_lt (c b : ℕ) (hb : b < 65536 ^ 4) (hb_ne : b ≠ 0) :`
+  - 106: `lemma arithDivChainSum_zero (c b : ℕ) (hc : c < 65536 ^ 4) (hb : b < 65536 ^ 4)`
+  - … 4 additional declarations
+- `ZiskFv/Compliance/AeneasBridgeTrust/DivRem.lean`
+  - 14: `def OpEnvelope.divOfExtractedShape`
+  - 90: `theorem OpEnvelope.aeneasBridgeTrust_divOfExtractedShape`
+  - 173: `def OpEnvelope.divuOfExtractedShape`
+  - 217: `theorem OpEnvelope.aeneasBridgeTrust_divuOfExtractedShape`
+  - 268: `def OpEnvelope.divwOfExtractedShape`
+  - 358: `theorem OpEnvelope.aeneasBridgeTrust_divwOfExtractedShape`
+  - 455: `def OpEnvelope.divuwOfExtractedShape`
+  - 511: `theorem OpEnvelope.aeneasBridgeTrust_divuwOfExtractedShape`
+  - 574: `def OpEnvelope.remOfExtractedShape`
+  - 648: `theorem OpEnvelope.aeneasBridgeTrust_remOfExtractedShape`
+  - 729: `def OpEnvelope.remuOfExtractedShape`
+  - 773: `theorem OpEnvelope.aeneasBridgeTrust_remuOfExtractedShape`
+  - … 4 additional declarations
+- `ZiskFv/EquivCore/Div.lean`
+  - 57: `lemma equiv_DIV_sail`
+  - 91: `lemma equiv_DIV`
+  - 193: `lemma equiv_DIV_boundary_split`
+- `ZiskFv/EquivCore/Divu.lean`
+  - 54: `lemma equiv_DIVU_sail`
+  - 88: `lemma equiv_DIVU`
+- `ZiskFv/EquivCore/Divuw.lean`
+  - 59: `lemma equiv_DIVUW_sail`
+  - 97: `lemma equiv_DIVUW`
+- `ZiskFv/EquivCore/Divw.lean`
+  - 54: `lemma equiv_DIVW_sail`
+  - 95: `lemma equiv_DIVW`
+  - 206: `lemma equiv_DIVW_boundary_split`
+- `ZiskFv/EquivCore/Rem.lean`
+  - 59: `lemma equiv_REM_sail`
+  - 93: `lemma equiv_REM`
+- `ZiskFv/EquivCore/Remu.lean`
+  - 52: `lemma equiv_REMU_sail`
+  - 86: `lemma equiv_REMU`
+- `ZiskFv/EquivCore/Remuw.lean`
+  - 49: `lemma equiv_REMUW_sail`
+  - 78: `lemma equiv_REMUW`
+- `ZiskFv/EquivCore/Remw.lean`
+  - 55: `lemma equiv_REMW_sail`
+  - 96: `lemma equiv_REMW`
+- `ZiskFv/EquivCore/WriteValueProofs/MulDivRemSigned.lean`
+  - 189: `lemma signed_div_overflow_operands_of_boundary`
+  - 278: `lemma signed_divw_overflow_operands_of_boundary`
+  - 366: `lemma h_rd_val_mdrs_div_by_zero_chunked`
+  - 441: `lemma h_rd_val_mdrs_mul_low_chunked`
+  - 742: `lemma h_rd_val_mdrs_mulh_chunked`
+  - 817: `lemma h_rd_val_mdrs_mulhsu_chunked`
+  - 908: `lemma h_rd_val_mdrs_mulw_chunked`
+  - 1355: `lemma h_rd_val_mdrs_div_chunked`
+  - 1573: `lemma h_rd_val_mdrs_rem_chunked`
+  - 1785: `lemma h_rd_val_mdrs_rem_by_zero_chunked`
+  - 2056: `lemma h_rd_val_mdrs_divw_by_zero_chunked`
+  - 2184: `lemma h_rd_val_mdrs_divw_chunked`
+  - … 2 additional declarations
+
+### carry-chain / bus-res
+- `ZiskFv/Airs/Arith/BusRes1.lean`
+  - 52: `lemma mul_bus_res1_eq_c_hi`
+  - 70: `lemma div_bus_res1_eq_a_hi`
+  - 92: `lemma mulh_bus_res1_eq_d_hi`
+  - 108: `lemma rem_bus_res1_eq_d_hi`
+- `ZiskFv/Airs/Arith/CarryChain.lean`
+  - 74: `lemma arith_mul_unsigned_carry_identity`
+  - 128: `lemma arith_div_unsigned_carry_identity`
+  - 179: `lemma arith_mul_signed_carry_identity`
+  - 254: `lemma arith_div_signed_carry_identity`
+  - 353: `lemma arith_mul_w_carry_identity`
+  - 407: `lemma arith_div_w_carry_identity`
+- `ZiskFv/Airs/Arith/CarryChainCompleteness.lean`
+  - 19: `def chunk16 (x k : ℕ) : ℕ :=`
+  - 22: `lemma chunk16_lt (x k : ℕ) : chunk16 x k < 65536 := by`
+  - 26: `lemma nat_decomp4 (x : ℕ) (h : x < 65536 ^ 4) :`
+  - 32: `lemma nat_decomp8 (x : ℕ) (h : x < 65536 ^ 8) :`
+  - 40: `lemma fgl_decomp4 (x : ℕ) (h : x < 65536 ^ 4) :`
+  - 47: `lemma fgl_decomp8 (x : ℕ) (h : x < 65536 ^ 8) :`
+  - 56: `lemma fgl_65536_ne_zero : (65536 : FGL) ≠ 0 := by`
+  - 62: `def cc0 (B e0 : F) : F :=`
+  - 66: `def cc1 (B e0 e1 : F) : F :=`
+  - 70: `def cc2 (B e0 e1 e2 : F) : F :=`
+  - 74: `def cc3 (B e0 e1 e2 e3 : F) : F :=`
+  - 78: `def cc4 (B e0 e1 e2 e3 e4 : F) : F :=`
+  - … 10 additional declarations
+
+### balance / table
+- `ZiskFv/AirsClean/ArithTableProjections.lean`
+  - 23: `def packed2 (c₀ c₁ : ℕ) : ℕ :=`
+  - 65: `theorem sign_eq_msb64_of_pos_range_lookup {sign rangeId c₀ c₁ c₂ c₃ : FGL}`
+  - 77: `theorem sign_eq_msb64_of_neg_range_lookup {sign rangeId c₀ c₁ c₂ c₃ : FGL}`
+  - 89: `theorem sign_eq_msb32_of_pos_range_lookup {sign rangeId c₀ c₁ : FGL}`
+  - 101: `theorem sign_eq_msb32_of_neg_range_lookup {sign rangeId c₀ c₁ : FGL}`
+  - 113: `theorem mulhsu_np_xor_not_static :`
+  - 126: `theorem mulh_np_xor_not_static :`
+  - 139: `theorem mulw_sext_zero_not_static :`
+  - 149: `theorem divuw_sext_zero_not_static :`
+  - 159: `theorem divw_sext_zero_not_static :`
+  - 176: `theorem op_val_ge_176`
+  - 196: `theorem mulw_mode_pins_of_row`
+  - … 56 additional declarations
+- `ZiskFv/Compliance/OpEnvelope.lean`
+  - 85: `theorem `zisk_riscv_compliant_program_bus` in `Compliance.lean`.`
+  - 157: `def StoreRmwPreservedBytesAtPrefix`
+  - 173: `def StoreRmwMemoryCoherenceEvidence`
+  - 193: `theorem storeRmwPreservedByte_of_coherenceEvidence`
+  - 2483: `def OpEnvelope.memoryTimelineEvidence`
+  - 2525: `def LoadMemoryTimelineConstructionEvidence`
+  - 2538: `theorem loadMemoryTimelineEvidence_of_constructionEvidence`
+  - 2578: `def LoadMemoryTimelineCoherenceEvidence`
+  - 2597: `theorem loadMemoryTimelineEvidence_of_coherenceEvidence`
+  - 2639: `def OpEnvelope.memoryTimelineConstructionEvidence`
+  - 2662: `theorem OpEnvelope.memoryTimelineEvidence_of_constructionEvidence`
+- `ZiskFv/Compliance/SharedBundles.lean`
+  - 48: `structure BusRows where`
+  - 60: `structure BranchInstrOperands where`
+  - 73: `structure MainRowPins (m : Valid_Main FGL FGL) (r_main : ℕ)`
+  - 84: `structure ShiftProviderEvidence`
+  - 112: `structure StaticBinaryProviderEvidence`
+  - 136: `structure StaticBinaryRTypeEvidence`
+  - 183: `structure ExternalArithMemoryWitness`
+  - 194: `theorem ExternalArithMemoryWitness.c_lanes`
+  - 203: `theorem ExternalArithMemoryWitness.c_lane_vals`
+  - 220: `structure StorePcMemoryWitness`
+  - 230: `theorem StorePcMemoryWitness.lanes`
+  - 248: `structure ArithMulTableWitness`
+  - … 25 additional declarations
+
+### exports / wrappers / constructions
+- `ZiskFv/Compliance/ConstructionDivu.lean`
+  - 93: `def vOfDivuRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :`
+  - 146: `theorem arithDiv_fullSpec_of_arithMul_fullSpec`
+  - 180: `theorem divu_row_constraints_of_arithMul_fullSpec`
+  - 213: `theorem primaryOpBusMessage_toEntry_eq_opBus_row_ArithDiv`
+  - 230: `theorem match_opBus_row_ArithDiv_vOfDivuRow`
+  - 456: `theorem divuArow_fullSpec_row`
+  - 474: `theorem divuArow_match_row`
+  - 495: `theorem divuArow_mode_pins`
+  - 525: `theorem divuArow_match`
+  - 561: `lemma equiv_DIVU_of_fullSpec_claimed_dead`
+  - 739: `theorem construction_divu_sound_claimed_dead`
+- `ZiskFv/Compliance/ConstructionDivuw.lean`
+  - 317: `theorem divuwArow_fullSpec_row`
+  - 335: `theorem divuwArow_match_row`
+  - 356: `theorem divuwArow_mode_pins`
+  - 387: `theorem divuwArow_match`
+  - 423: `lemma equiv_DIVUW_of_fullSpec_claimed_dead`
+  - 638: `theorem construction_divuw_sound_claimed_dead`
+- `ZiskFv/Compliance/ConstructionMulhu.lean`
+  - 70: `theorem unsigned_carry_step_nat_claimed_dead`
+  - 476: `lemma equiv_MULHU_of_fullSpec_claimed_dead`
+  - 633: `theorem mulhuArow_fullSpec_row`
+  - 649: `theorem mulhuArow_fullSpec`
+  - 665: `theorem match_opBus_row_ArithMulSecondary_vOfMulwRow`
+  - 683: `theorem mulhuArow_match_row`
+  - 704: `theorem mulhuArow_mode_pins`
+  - 728: `theorem mulhuArow_match`
+  - 751: `theorem construction_mulhu_sound_claimed_dead`
+- `ZiskFv/Compliance/ConstructionMulw.lean`
+  - 92: `def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :`
+  - 162: `theorem fullSpec_rowAt_vOfMulwRow`
+  - 173: `theorem mulwArow_fullSpec_row`
+  - 191: `theorem mulwArow_fullSpec`
+  - 212: `theorem match_opBus_row_Arith_vOfMulwRow`
+  - 233: `theorem mulwArow_match_row`
+  - 264: `theorem mulwArow_mode_pins`
+  - 293: `theorem mulwArow_match`
+  - 315: `theorem construction_mulw_sound_claimed_dead`
+- `ZiskFv/Compliance/ConstructionRemu.lean`
+  - 100: `theorem primaryOpBusMessage_toEntry_eq_opBus_row_ArithDivSecondary`
+  - 117: `theorem match_opBus_row_ArithDivSecondary_vOfDivuRow`
+  - 153: `theorem remuArow_fullSpec_row`
+  - 171: `theorem remuArow_match_row`
+  - 192: `theorem remuArow_mode_pins`
+  - 222: `theorem remuArow_match`
+  - 443: `lemma equiv_REMU_of_fullSpec_claimed_dead`
+  - 620: `theorem construction_remu_sound_claimed_dead`
+- `ZiskFv/Compliance/ConstructionRemuw.lean`
+  - 315: `theorem remuwArow_fullSpec_row`
+  - 333: `theorem remuwArow_match_row`
+  - 354: `theorem remuwArow_mode_pins`
+  - 386: `theorem remuwArow_match`
+  - 422: `lemma equiv_REMUW_of_fullSpec_claimed_dead`
+  - 637: `theorem construction_remuw_sound_claimed_dead`
+- `ZiskFv/Compliance/TraceLevelExport/Dispatcher.lean`
+  - 125: `def RowDecode (ziskTrace : AcceptedZiskTrace numInstructions)`
+  - 191: `def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)`
+  - 264: `def MemoryOpEvidenceFor`
+  - 311: `def MainSequentialPcDomain (ziskTrace : AcceptedZiskTrace numInstructions)`
+  - 315: `def MainBranchRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)`
+  - 320: `structure MainAuipcRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)`
+  - 330: `structure MainJalRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)`
+  - 338: `structure MainJalrRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)`
+  - 345: `theorem sequentialPcDomain_of_main`
+  - 355: `theorem branchRangeDomain_of_main`
+  - 365: `theorem auipcRangeDomain_of_main`
+  - 380: `theorem jalRangeDomain_of_main`
+  - … 4 additional declarations
+- `ZiskFv/Compliance/TraceLevelExport/RowDataArithMem.lean`
+  - 50: `structure AuipcRangeDomain (auipc_input : PureSpec.AuipcInput) : Prop where`
+  - 77: `structure RTypePromisesNoNextPC`
+  - 104: `def RTypePromisesNoNextPC.withNextPC`
+  - 134: `structure Claim_add (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where`
+  - 139: `structure Decode_add (trace : AcceptedZiskTrace numInstructions)`
+  - 169: `structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)`
+  - 206: `structure RowData_add`
+  - 212: `def toRowData_add {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}`
+  - 220: `structure Claim_addi (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where`
+  - 225: `structure Decode_addi (trace : AcceptedZiskTrace numInstructions)`
+  - 262: `structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)`
+  - 287: `structure RowData_addi`
+  - … 146 additional declarations
+- `ZiskFv/Compliance/TraceLevelExport/StepStrongLoadMext.lean`
+  - 52: `theorem load_addr2_eq_ind_of_decode`
+  - 69: `theorem load_addr2_zero_iff_of_decode`
+  - 83: `theorem load_addr2_idx_of_decode`
+  - 98: `theorem load_addr_arith_of_decode`
+  - 136: `theorem load_addr1_of_decode`
+  - 175: `theorem stepStrong_ld`
+  - 269: `theorem stepStrong_lbu`
+  - 362: `theorem stepStrong_lhu`
+  - 455: `theorem stepStrong_lwu`
+  - 549: `theorem stepStrong_lb`
+  - 643: `theorem stepStrong_lh`
+  - 737: `theorem stepStrong_lw`
+  - … 6 additional declarations
+- `ZiskFv/Compliance/Wrappers/Div.lean`
+  - 102: `lemma equiv_DIV_of_table`
+  - 231: `lemma equiv_DIV`
+- `ZiskFv/Compliance/Wrappers/Divu.lean`
+  - 48: `lemma equiv_DIVU_of_table`
+  - 149: `lemma equiv_DIVU`
+- `ZiskFv/Compliance/Wrappers/Divuw.lean`
+  - 58: `lemma equiv_DIVUW_of_table`
+  - 143: `lemma equiv_DIVUW`
+- `ZiskFv/Compliance/Wrappers/Divw.lean`
+  - 55: `lemma equiv_DIVW_of_table`
+  - 139: `lemma equiv_DIVW`
+- `ZiskFv/Compliance/Wrappers/Mul.lean`
+  - 84: `lemma equiv_MUL_of_table`
+  - 238: `lemma equiv_MUL`
+- `ZiskFv/Compliance/Wrappers/MulH.lean`
+  - 52: `lemma equiv_MULH_of_table`
+  - 236: `lemma equiv_MULH`
+- `ZiskFv/Compliance/Wrappers/MulHSU.lean`
+  - 50: `lemma equiv_MULHSU_of_table`
+  - 202: `lemma equiv_MULHSU`
+- `ZiskFv/Compliance/Wrappers/MulHU.lean`
+  - 60: `lemma equiv_MULHU_of_table`
+  - 181: `lemma equiv_MULHU`
+- `ZiskFv/Compliance/Wrappers/MulW.lean`
+  - 67: `lemma equiv_MULW_of_table`
+  - 198: `lemma equiv_MULW_of_fullSpec`
+  - 306: `lemma equiv_MULW`
+- `ZiskFv/Compliance/Wrappers/Rem.lean`
+  - 45: `lemma equiv_REM_of_table`
+  - 170: `lemma equiv_REM`
+- `ZiskFv/Compliance/Wrappers/Remu.lean`
+  - 39: `lemma equiv_REMU_of_table`
+  - 141: `lemma equiv_REMU`
+- `ZiskFv/Compliance/Wrappers/Remuw.lean`
+  - 41: `lemma equiv_REMUW_of_table`
+  - 126: `lemma equiv_REMUW`
+- `ZiskFv/Compliance/Wrappers/Remw.lean`
+  - 41: `lemma equiv_REMW_of_table`
+  - 120: `lemma equiv_REMW`
+- `ZiskFv/Equivalence/Div.lean`
+  - 32: `theorem equiv_DIV`
+- `ZiskFv/Equivalence/Divu.lean`
+  - 30: `theorem equiv_DIVU`
+- `ZiskFv/Equivalence/Divuw.lean`
+  - 33: `theorem equiv_DIVUW`
+- `ZiskFv/Equivalence/Divw.lean`
+  - 34: `theorem equiv_DIVW`
+- `ZiskFv/Equivalence/Mul.lean`
+  - 30: `theorem equiv_MUL`
+- `ZiskFv/Equivalence/MulH.lean`
+  - 32: `theorem equiv_MULH`
+- `ZiskFv/Equivalence/MulHSU.lean`
+  - 31: `theorem equiv_MULHSU`
+- `ZiskFv/Equivalence/MulHU.lean`
+  - 30: `theorem equiv_MULHU`
+- `ZiskFv/Equivalence/MulW.lean`
+  - 32: `theorem equiv_MULW`
+- `ZiskFv/Equivalence/Rem.lean`
+  - 32: `theorem equiv_REM`
+- `ZiskFv/Equivalence/Remu.lean`
+  - 31: `theorem equiv_REMU`
+- `ZiskFv/Equivalence/Remuw.lean`
+  - 33: `theorem equiv_REMUW`
+- `ZiskFv/Equivalence/Remw.lean`
+  - 34: `theorem equiv_REMW`
+- `ZiskFv/ZiskCircuit/Div.lean`
+  - 41: `def main_row_in_div_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 53: `def div_circuit_holds`
+  - 69: `lemma div_compositional`
+- `ZiskFv/ZiskCircuit/Divu.lean`
+  - 34: `def main_row_in_divu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 43: `def divu_circuit_holds`
+  - 56: `lemma divu_compositional`
+- `ZiskFv/ZiskCircuit/Mul.lean`
+  - 47: `def main_row_in_mul_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 59: `def arith_row_in_mul_mode (v : Valid_ArithMul FGL FGL) (r_arith : ℕ) : Prop :=`
+  - 71: `def mul_circuit_holds`
+  - 84: `def arith_c_packed (v : Valid_ArithMul FGL FGL) (r : ℕ) : FGL :=`
+  - 89: `def main_c_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=`
+  - 103: `lemma mul_compositional`
+- `ZiskFv/ZiskCircuit/MulH.lean`
+  - 46: `def main_row_in_mulh_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 60: `def mulh_circuit_holds`
+  - 77: `lemma mulh_compositional`
+- `ZiskFv/ZiskCircuit/MulHSU.lean`
+  - 46: `def main_row_in_mulhsu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 58: `def mulhsu_circuit_holds`
+  - 75: `lemma mulhsu_compositional`
+- `ZiskFv/ZiskCircuit/MulHU.lean`
+  - 46: `def main_row_in_mulhu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 60: `def mulhu_circuit_holds`
+  - 77: `lemma mulhu_compositional`
+- `ZiskFv/ZiskCircuit/MulW.lean`
+  - 56: `def main_row_in_mulw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 67: `def arith_row_in_mulw_mode (v : Valid_ArithMul FGL FGL) (r_arith : ℕ) : Prop :=`
+  - 80: `def mulw_circuit_holds`
+  - 97: `lemma mulw_compositional`
+- `ZiskFv/ZiskCircuit/Rem.lean`
+  - 36: `def main_row_in_rem_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 47: `def rem_circuit_holds`
+  - 60: `lemma rem_compositional`
+- `ZiskFv/ZiskCircuit/Remu.lean`
+  - 33: `def main_row_in_remu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=`
+  - 42: `def remu_circuit_holds`
+  - 55: `lemma remu_compositional`
+
+### other
+- `ZiskFv/Compliance/Defects.lean`
+  - 32: `def IsX0Reg : regidx → Prop`
+  - 41: `def FenceKnownGoodShape`
+  - 70: `def MaliciousSignedMulWitnessShape`
+  - 86: `def signedRemainderInt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=`
+  - 94: `def signedRemainderIntW (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=`
+  - 101: `def signedDivisorInt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=`
+  - 108: `def signedDivisorIntW (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=`
+  - 137: `def ArithDivDynamicWitnessShape`
+  - 181: `def SignedMulForge (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ) : Prop :=`
+  - 188: `def DivRemForge (op2 : BitVec 64)`
+  - 195: `def DivRemForgeW (op2 : BitVec 64)`
+  - 203: `def FenceKnownGood (fm : BitVec 4) (rs rd : regidx) : Prop :=`
+  - … 12 additional declarations
+- `ZiskFv/EquivCore/Bridge/Arith.lean`
+  - 163: `structure ArithDivRemainderBoundWitness`
+  - 184: `structure ArithDivSignedRemainderBoundWitness`
+  - 206: `lemma arith_div_remainder_bound_binary_byte_lt`
+  - 283: `lemma arith_div_chunk_ranges_at_holds`
+  - 291: `lemma arith_div_unsigned_carry_ranges_at_holds`
+  - 299: `lemma arith_div_signed_carry_ranges_at_holds`
+  - 315: `lemma arith_div_remainder_bound_op_of_signs`
+  - 341: `lemma arith_div_remainder_bound_unsigned`
+  - 422: `lemma arith_div_remainder_bound_unsigned_w`
+  - 477: `lemma mul_unsigned_chain_witnesses_of_carry_ranges`
+  - 531: `lemma div_unsigned_chain_witnesses_of_carry_ranges`
+  - 609: `theorem unsigned_carry_step_nat`
+  - … 8 additional declarations
+- `ZiskFv/EquivCore/Promises/ArithHelpers.lean`
+  - 61: `lemma arith_h_pair_lift (x y : FGL)`
+  - 85: `lemma arith_packed4_lt_2_64 (x0 x1 x2 x3 : ℕ)`
+  - 112: `lemma arith_packed4_unsigned_of_pair (x0 x1 x2 x3 : ℕ)`
+  - 134: `lemma arith_r_val_toNat_eq_packed4`
+  - 163: `lemma arith_byte_lane_eq_of_match`
+  - 196: `lemma arith_chunk_pair_eq_zero_of_m32_one`
+  - 216: `lemma arith_rs_toNat_eq_packed4_nonW`
+  - 251: `lemma arith_mul_primary_op_eq`
+  - 263: `lemma arith_mul_secondary_op_eq`
+  - 275: `lemma arith_div_primary_op_eq`
+  - 287: `lemma arith_div_secondary_op_eq`
+  - 322: `structure ArithLaneProjections (m_a_lo m_a_hi m_b_lo m_b_hi m_c_lo m_c_hi : FGL)`
+  - … 4 additional declarations
+- `ZiskFv/Tactics/ArithSMArchetype.lean`
+  - 68: `def main_row_in_div_archetype_mode`
+  - 82: `def arith_row_in_div_primary_mode (v : Valid_ArithDiv FGL FGL) (r_arith : ℕ) : Prop :=`
+  - 94: `def arith_row_in_rem_secondary_mode (v : Valid_ArithDiv FGL FGL) (r_arith : ℕ) : Prop :=`
+  - 106: `def div_primary_circuit_holds`
+  - 120: `def rem_secondary_circuit_holds`
+  - 137: `def arith_quotient_packed (v : Valid_ArithDiv FGL FGL) (r : ℕ) : FGL :=`
+  - 147: `def arith_remainder_packed (v : Valid_ArithDiv FGL FGL) (r : ℕ) : FGL :=`
+  - 155: `lemma arith_archetype_div_bus_match`
+  - 169: `lemma arith_archetype_rem_bus_match`
+
+## Q2 audit outcomes
+
+**ArithMul: deletion gate failed.** The 11 carry-chain constraints, table/range lookups, and bus projections correspond exactly. Missing Clean operations: `main_mul_div_disjoint`, six boolean constraints (`m32`, `na`, `nb`, `nr`, `np`, `sext`), and the defining constraint 46 for `bus_res1`. See `AirsClean/ArithMul/Interface.lean`.
+
+**ArithDiv: deletion gate failed.** The 11 carry-chain constraints, table/range lookups, and bus projections correspond exactly. Missing Clean operations include global mode booleans/disjointness, W-mode high-lane-zero constraints, zero-divisor and overflow boundary constraints, the inverse-sum constraint (whose witness is absent from the canonical row), scope/disjointness constraints, and constraint 46. See `AirsClean/ArithDiv/Interface.lean`. The DIV/REM defect boundary was therefore left untouched.
+
+## Post-migration reference counts
+
+- Old bridge path references (`EquivCore.Bridge.Arith`, `AirsClean.Arith{Mul,Div}.Bridge`, `EquivCore.Bridge.BinaryExtension`): **0**.
+- Files still referring to legacy `Airs.Arith` declarations: **77** (**789** occurrences), retained because both Q2 gates failed.
+- Legacy files remaining: **5**.
+
+## Deletions and line delta
+
+- Deleted legacy Arith files: **none** (Q2-blocked).
+- Relocated files: three Arith bridge surfaces and the BinaryExtension theorem surface.
+- Work-order implementation delta after the initial map commit: **+350 / −258 lines, net +92**.
+
+## Gate results
+
+- `lake build ZiskFv`: **passed**, 9,014 jobs.
+- `trust/scripts/check-all-semantic.sh`: **all 16 passed**.
+- `trust/scripts/check-all.sh`: checks **1–12 and 14–16 passed**; check 13 alone is deferred because `zisk/core/src/aeneas_extract.rs` is absent with the pre-acknowledged missing `zisk` submodule.
+- Non-generated zero-sorry gate: **passed**.
+- `trust/generated/`: byte-unchanged.
+- `ZiskFv/Soundness.lean`, `ZiskFv/Completeness.lean`, and `ZiskFv/Audit.lean`: byte-unchanged.
+- DIV/REM defect-boundary declarations and exclusions: unchanged.

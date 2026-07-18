@@ -199,7 +199,7 @@ def OpEnvelope.divuOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : divu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val)
@@ -243,7 +243,7 @@ theorem OpEnvelope.aeneasBridgeTrust_divuOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : divu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val)
@@ -481,7 +481,7 @@ def OpEnvelope.divuwOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
@@ -537,7 +537,7 @@ theorem OpEnvelope.aeneasBridgeTrust_divuwOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
@@ -755,7 +755,7 @@ def OpEnvelope.remuOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : remu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val)
@@ -799,7 +799,7 @@ theorem OpEnvelope.aeneasBridgeTrust_remuOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_rs1_value : remu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
           (v.c_2 r_a).val (v.c_3 r_a).val)
@@ -1033,7 +1033,7 @@ def OpEnvelope.remuwOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :
@@ -1089,7 +1089,7 @@ theorem OpEnvelope.aeneasBridgeTrust_remuwOfExtractedShape
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     (h_sext_choice :

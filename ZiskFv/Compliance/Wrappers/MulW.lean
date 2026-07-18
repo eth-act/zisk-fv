@@ -3,8 +3,8 @@ import Mathlib
 import ZiskFv.EquivCore.MulW
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
-import ZiskFv.EquivCore.Bridge.Arith
-import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
+import ZiskFv.AirsClean.ArithMul.ConsumerFacts
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.BusRes1
@@ -271,9 +271,9 @@ lemma equiv_MULW_of_fullSpec
     decide
   -- ============ Chunk / carry ranges from FullSpec ============
   have h_arith_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a := h_chunk_ranges_spec
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a := h_chunk_ranges_spec
   have h_arith_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a :=
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a :=
     h_carry_ranges_spec
   obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
           _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,

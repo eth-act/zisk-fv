@@ -15,7 +15,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
@@ -116,9 +116,9 @@ lemma equiv_MULW
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     -- W operand chunk facts from op-bus high-lane collapse.
     (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)

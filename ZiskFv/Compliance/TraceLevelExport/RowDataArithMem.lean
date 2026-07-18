@@ -1709,7 +1709,7 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU),
-    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+    ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness
       (vOfDivuRow (divuArow trace binding i ha ho)) 0
   h_rs1_value :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
@@ -1792,7 +1792,7 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
-    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+    ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness
       (vOfDivuRow (divuwArow trace binding i ha ho)) 0
   h_b23 :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
@@ -1896,7 +1896,7 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU),
-    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+    ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness
       (vOfDivuRow (remuArow trace binding i ha ho)) 0
   h_rs1_value :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
@@ -1979,7 +1979,7 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
-    ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+    ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness
       (vOfDivuRow (remuwArow trace binding i ha ho)) 0
   h_b23 :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)

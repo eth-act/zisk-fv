@@ -5,9 +5,9 @@ import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
 import ZiskFv.EquivCore.Divuw
 import ZiskFv.EquivCore.Promises.ArithHelpers
-import ZiskFv.EquivCore.Bridge.Arith
-import ZiskFv.AirsClean.ArithMul.Bridge
-import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
+import ZiskFv.AirsClean.ArithMul.ConsumerFacts
+import ZiskFv.AirsClean.ArithDiv.ConsumerFacts
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.BusRes1
@@ -175,8 +175,8 @@ private lemma divuw_chain_eqs_claimed_dead
     `ConstructionMulhu`). -/
 private lemma divuw_carry_bounds_claimed_dead
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
-    (h_chunks : ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt (vOfDivuRow arow) 0)
-    (h_csgn : ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0)
+    (h_chunks : ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt (vOfDivuRow arow) 0)
+    (h_csgn : ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0)
     (heqs :
       (arow.chunks.a_0 * arow.chunks.b_0 + arow.chunks.d_0
           = arow.chunks.c_0 + arow.carries.carry_0 * 65536)
@@ -439,7 +439,7 @@ lemma equiv_DIVUW_of_fullSpec_claimed_dead
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_full_spec : ZiskFv.AirsClean.ArithMul.FullSpec arow)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness (vOfDivuRow arow) 0)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness (vOfDivuRow arow) 0)
     -- W-mode high-lane zeros (CIRCUIT-CONSTRAINT / bus W-pin): the divisor and
     -- dividend high chunks are zero in W-mode.  Residual, mirroring the
     -- canonical `equiv_DIVUW`'s `h_b23` / `h_c23`.
@@ -487,10 +487,10 @@ lemma equiv_DIVUW_of_fullSpec_claimed_dead
   have h_nr : (vOfDivuRow arow).nr 0 = 0 := h_nr_arow
   -- ============ Chunk / carry ranges (ArithDiv view, from FullSpec) ==========
   have h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt (vOfDivuRow arow) 0 :=
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt (vOfDivuRow arow) 0 :=
     h_chunk_ranges_spec
   have h_carry_ranges_signed :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0 :=
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt (vOfDivuRow arow) 0 :=
     h_carry_ranges_spec
   obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
           h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
@@ -510,7 +510,7 @@ lemma equiv_DIVUW_of_fullSpec_claimed_dead
       ⟨hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩
   -- ============ Remainder bound (RESIDUAL): d < b in low-32 chunk form =======
   obtain ⟨h_d23, h_d_lt_b_arith⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_remainder_bound_unsigned_w
+    ZiskFv.AirsClean.ArithConsumerTheorems.arith_div_remainder_bound_unsigned_w
       remainder_bound h_chunk_ranges_spec h_nr h_nb h_b23
   have h_d23' : (arow.chunks.d_2).val = 0 ∧ (arow.chunks.d_3).val = 0 := h_d23
   have h_d_lt_b :
@@ -675,7 +675,7 @@ theorem construction_divuw_sound_claimed_dead
     -- LTU consumer edge is a finished-channel self-edge absent from the
     -- ensemble).
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness
         (vOfDivuRow (divuwArow trace binding i h_main_active h_main_op)) 0)
     -- (b) W-mode RESIDUAL high-lane zeros (CIRCUIT-CONSTRAINT / bus W-pin),
     -- mirroring the canonical `equiv_DIVUW`'s `h_b23` / `h_c23`.

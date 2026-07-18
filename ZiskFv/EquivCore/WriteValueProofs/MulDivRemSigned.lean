@@ -12,7 +12,7 @@ import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.SailSpec.mulw
 import ZiskFv.SailSpec.divw  -- for `to_bits_truncate_32_eq_ofInt_divw`
-import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.AirsClean.ArithMul.ConsumerTheorems
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
 import ZiskFv.Channels.MemoryBusBytes
 
@@ -372,7 +372,7 @@ lemma h_rd_val_mdrs_div_by_zero_chunked
     (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_boundary :
       ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
@@ -460,9 +460,9 @@ lemma h_rd_val_mdrs_mul_low_chunked
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     -- Byte-pack lane match (LANE-MATCH): bytes pack c-chunks (low half).
     (h_byte_lo :
       (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
@@ -490,7 +490,7 @@ lemma h_rd_val_mdrs_mul_low_chunked
   -- Signed chain identity over packed chunks.
   have h_carry_ranges_arg := h_carry_ranges
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.mul_signed_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.mul_signed_chain_witnesses
       v r_a h_chain
       (h_chunk_ranges := h_chunk_ranges_arg) (h_carry_ranges := h_carry_ranges_arg)
       h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
@@ -607,9 +607,9 @@ private lemma mdrs_mulh_core_data
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     (h_byte_lo :
       (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
@@ -642,7 +642,7 @@ private lemma mdrs_mulh_core_data
     h_chunk_ranges
   have h_carry_ranges_arg := h_carry_ranges
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.mul_signed_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.mul_signed_chain_witnesses
       v r_a h_chain
       (h_chunk_ranges := h_chunk_ranges_arg) (h_carry_ranges := h_carry_ranges_arg)
       h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
@@ -762,9 +762,9 @@ lemma h_rd_val_mdrs_mulh_chunked
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     -- Byte-pack lane match (LANE-MATCH): bytes pack the d-chunks (high half).
     (h_byte_lo :
       (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
@@ -834,9 +834,9 @@ lemma h_rd_val_mdrs_mulhsu_chunked
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     (h_byte_lo :
       (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
@@ -929,9 +929,9 @@ lemma h_rd_val_mdrs_mulw_chunked
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithMulSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithMulSignedCarryRangesAt v r_a)
     -- W-mode operand chunk pin, derived from op-bus high-lane collapse.
     (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
@@ -971,7 +971,7 @@ lemma h_rd_val_mdrs_mulw_chunked
   -- invoke W chain witnesses.
   have h_carry_ranges_arg := h_carry_ranges
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.mul_w_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.mul_w_chain_witnesses
       v r_a h_chain
       (h_chunk_ranges := h_chunk_ranges_arg) (h_carry_ranges := h_carry_ranges_arg)
       h_nr h_m32 h_div h_na_bool h_nb_bool h_np_xor
@@ -1362,9 +1362,9 @@ lemma h_rd_val_mdrs_div_chunked
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt v r_a)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1416,7 +1416,7 @@ lemma h_rd_val_mdrs_div_chunked
           h_d0, h_d1, h_d2, h_d3⟩ :=
     h_chunk_ranges
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_signed_chain_witnesses
       v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
@@ -1580,9 +1580,9 @@ lemma h_rd_val_mdrs_rem_chunked
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt v r_a)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1634,7 +1634,7 @@ lemma h_rd_val_mdrs_rem_chunked
           h_d0, h_d1, h_d2, h_d3⟩ :=
     h_chunk_ranges
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_signed_chain_witnesses
       v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
@@ -1792,9 +1792,9 @@ lemma h_rd_val_mdrs_rem_by_zero_chunked
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt v r_a)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1838,7 +1838,7 @@ lemma h_rd_val_mdrs_rem_by_zero_chunked
           h_d0, h_d1, h_d2, h_d3⟩ :=
     h_chunk_ranges
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_signed_chain_witnesses
       v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
@@ -2062,7 +2062,7 @@ lemma h_rd_val_mdrs_divw_by_zero_chunked
     (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_boundary :
       ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (_h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
@@ -2191,9 +2191,9 @@ lemma h_rd_val_mdrs_divw_chunked
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt v r_a)
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -2248,7 +2248,7 @@ lemma h_rd_val_mdrs_divw_chunked
   obtain ⟨h_d2_val, h_d3_val⟩ := h_d23
   -- W-mode chain identity over ℤ.
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_w_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_w_chain_witnesses
       v r_a h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_val h_a3_val h_b2_val h_b3_val h_d2_val h_d3_val
@@ -2474,9 +2474,9 @@ lemma h_rd_val_mdrs_remw_by_zero_chunked
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt v r_a)
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -2522,7 +2522,7 @@ lemma h_rd_val_mdrs_remw_by_zero_chunked
   obtain ⟨h_b2_val, h_b3_val⟩ := h_b23
   obtain ⟨h_d2_val, h_d3_val⟩ := h_d23
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_w_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_w_chain_witnesses
       v r_a h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_val h_a3_val h_b2_val h_b3_val h_d2_val h_d3_val
@@ -2739,9 +2739,9 @@ lemma h_rd_val_mdrs_remw_chunked
     (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_chunk_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivChunkRangesAt v r_a)
     (h_carry_ranges :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivSignedCarryRangesAt v r_a)
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -2795,7 +2795,7 @@ lemma h_rd_val_mdrs_remw_chunked
   obtain ⟨h_b2_val, h_b3_val⟩ := h_b23
   obtain ⟨h_d2_val, h_d3_val⟩ := h_d23
   have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_w_chain_witnesses
+    ZiskFv.AirsClean.ArithConsumerTheorems.div_w_chain_witnesses
       v r_a h_chain h_chunk_ranges h_carry_ranges h_m32 h_div
       h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_val h_a3_val h_b2_val h_b3_val h_d2_val h_d3_val

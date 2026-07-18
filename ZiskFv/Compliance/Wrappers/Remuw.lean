@@ -62,7 +62,7 @@ lemma equiv_REMUW_of_table
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (mirror DIVUW: bus encoding /
     -- operand bridge in W-form).
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
@@ -147,7 +147,7 @@ lemma equiv_REMUW
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
     (remainder_bound :
-      ZiskFv.EquivCore.Bridge.Arith.ArithDivRemainderBoundWitness v r_a)
+      ZiskFv.AirsClean.ArithConsumerTheorems.ArithDivRemainderBoundWitness v r_a)
     -- Pass-through caller burdens (mirror DIVUW: bus encoding /
     -- operand bridge in W-form).
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
