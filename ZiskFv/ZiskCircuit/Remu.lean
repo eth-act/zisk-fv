@@ -43,7 +43,6 @@ def remu_circuit_holds
     (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
-  ∧ div_mode_booleans v r_arith
   ∧ matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_arith)
   ∧ main_row_in_remu_mode m r_main
   ∧ arith_row_in_rem_secondary_mode v r_arith

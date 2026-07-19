@@ -81,7 +81,6 @@ def mulw_circuit_holds
     (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
-  ∧ mul_mode_booleans v r_arith
   ∧ matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_arith)
   ∧ main_row_in_mulw_mode m r_main
   ∧ arith_row_in_mulw_mode v r_arith
@@ -99,7 +98,7 @@ lemma mulw_compositional
     (r_main r_arith : ℕ)
     (h : mulw_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith := by
-  obtain ⟨_h_main_subset, _h_arith_bool, h_bus, _h_mode_main, _h_mode_arith⟩ := h
+  obtain ⟨_h_main_subset, h_bus, _h_mode_main, _h_mode_arith⟩ := h
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus
   simp only [opBus_row_Main, opBus_row_Arith] at h_match_clo h_match_chi
   unfold main_c_packed arith_c_packed

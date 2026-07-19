@@ -107,7 +107,6 @@ def div_primary_circuit_holds
     (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
-  ∧ div_mode_booleans v r_arith
   ∧ matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_arith)
   ∧ main_row_in_div_archetype_mode m r_main opcode_lit
   ∧ arith_row_in_div_primary_mode v r_arith
@@ -121,7 +120,6 @@ def rem_secondary_circuit_holds
     (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
-  ∧ div_mode_booleans v r_arith
   ∧ matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_arith)
   ∧ main_row_in_div_archetype_mode m r_main opcode_lit
   ∧ arith_row_in_rem_secondary_mode v r_arith
@@ -157,7 +155,7 @@ lemma arith_archetype_div_bus_match
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : div_primary_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_quotient_packed v r_arith := by
-  obtain ⟨_h_main_subset, _h_arith_bool, h_bus, _h_mode_main, _h_mode_arith⟩ := h
+  obtain ⟨_h_main_subset, h_bus, _h_mode_main, _h_mode_arith⟩ := h
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus
   simp only [opBus_row_Main, opBus_row_ArithDiv] at h_match_clo h_match_chi
   unfold main_c_packed arith_quotient_packed
@@ -171,7 +169,7 @@ lemma arith_archetype_rem_bus_match
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : rem_secondary_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_remainder_packed v r_arith := by
-  obtain ⟨_h_main_subset, _h_arith_bool, h_bus, _h_mode_main, _h_mode_arith⟩ := h
+  obtain ⟨_h_main_subset, h_bus, _h_mode_main, _h_mode_arith⟩ := h
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus
   simp only [opBus_row_Main, opBus_row_ArithDivSecondary] at h_match_clo h_match_chi
   unfold main_c_packed arith_remainder_packed

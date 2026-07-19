@@ -357,6 +357,17 @@ def arithMulTableWitness_of_fullSpec
   · linear_combination hnp
   · linear_combination hsext
 
+/-- The completed Clean supply discharges the legacy local MUL carry-chain and
+    result-mux bundle; callers need not provide it separately. -/
+theorem ArithMulTableWitness.row_constraints
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulTableWitness v r) :
+    ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r := by
+  obtain ⟨hchain, _hmode, hc46⟩ :=
+    ZiskFv.AirsClean.ArithMul.complete_local_specs_of_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
+  exact ⟨hchain, hc46⟩
+
 theorem ArithMulTableWitness.indexed_ranges
     {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
     (w : ArithMulTableWitness v r) :

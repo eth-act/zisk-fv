@@ -61,7 +61,6 @@ def mulhu_circuit_holds
     (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
-  ∧ mul_mode_booleans v r_arith
   ∧ matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_arith)
   ∧ main_row_in_mulhu_mode m r_main
   ∧ arith_row_in_mul_mode v r_arith

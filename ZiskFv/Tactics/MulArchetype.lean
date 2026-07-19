@@ -91,7 +91,6 @@ def mul_archetype_circuit_holds
     (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
-  ∧ mul_mode_booleans v r_arith
   ∧ matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_arith)
   ∧ main_row_in_mul_archetype_mode m r_main opcode_lit
   ∧ arith_row_in_mul_mode v r_arith
@@ -107,7 +106,7 @@ lemma mul_archetype_bus_match
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : mul_archetype_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_c_packed v r_arith := by
-  obtain ⟨_h_main_subset, _h_arith_bool, h_bus, h_mode_main, _h_mode_arith⟩ := h
+  obtain ⟨_h_main_subset, h_bus, h_mode_main, _h_mode_arith⟩ := h
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus
   obtain ⟨_h_isext, _h_op, h_m32, _h_flag, _h_setpc⟩ := h_mode_main
   simp only [opBus_row_Main, opBus_row_Arith] at h_match_clo h_match_chi

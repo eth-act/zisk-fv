@@ -81,7 +81,7 @@ lemma equiv_MULW_of_table
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
-    (h_row_constraints :
+    (_h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
@@ -109,6 +109,7 @@ lemma equiv_MULW_of_table
         (instruction.MULW (r2, r1, rd))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   have h_arith_table := arith_table.spec
+  have h_row_constraints := arith_table.row_constraints
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨_h_main_active, h_main_op_mulw⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
@@ -320,8 +321,6 @@ lemma equiv_MULW
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
-    (h_row_constraints :
-      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithMulSignedCarryRangeWitness v r_a)
@@ -348,8 +347,8 @@ lemma equiv_MULW
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_MULW_of_table
     state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem
-    arith_table
-    h_row_constraints arith_chunk_ranges arith_carry_ranges
+    arith_table arith_table.row_constraints
+    arith_chunk_ranges arith_carry_ranges
     h_a23 h_b23 h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

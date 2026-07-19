@@ -1,3 +1,36 @@
+# Summary of changes for run a1b57c95-a03e-4bff-8a9f-34483b10ac1d
+Completed Refactor 13 to the verified boundary and documented the full audit in `REFACTOR_13_REPORT.md`.
+
+Key results:
+- Installed and byte-verified all 836 archived files/symlinks non-destructively while preserving `.lake`; the tarball was not committed.
+- Removed all 12 mode-boolean caller conjuncts across ArithMul and ArithDiv circuit/archetype surfaces.
+- Added `ArithMulTableWitness.row_constraints`, derived from `mainComplete`, and changed Mul wrapper proofs to use this Clean supply rather than caller evidence.
+- Removed row-constraint obligations from the five public Mul forwarding wrappers. Five ignored compatibility binders remain on `_of_table` declarations because removing their positional parameters would require modifying byte-frozen `Equivalence/` callers.
+- Corrected both Arith Q2 interface tables to name `mainComplete` as the true supplier of appended generated constraints.
+- Verified an ArithDiv blocker: the delivered `ArithDivTableWitness` still carries `mainWithArithTable` soundness, whereas the needed projection requires `mainComplete`; its old `FullSpec` also omits C46 and the appended local constraints. The remaining 16 Div wrapper obligations therefore cannot be honestly removed without strengthening the upstream provider contract.
+- Code delta: +41/−49, net −8 lines, excluding the report.
+
+Verification:
+- Full `lake build` passes.
+- Standard trust checks 1–12 and 14–16 pass; check 13 alone was deferred because the supplied tree lacks `zisk/core/src/aeneas_extract.rs`.
+- All 16 semantic checks pass; long-running checks were resumed using the suite’s exact component commands after command cutoffs.
+- Roots, `Equivalence/`, `ZiskFv/Audit.lean`, `Compliance/Defects.lean`, build pins/lockfiles, and `trust/generated/` are unchanged.
+- No prohibited constructs were introduced.
+
+All changes are committed and pushed.
+
+# Summary of changes for Refactor 13
+Installed and byte-verified the authoritative tarball non-destructively (836 archived files/symlinks), preserving `.lake`; the attached tarball was not committed.
+
+Completed the Refactor 13 audit and implementation to the verified boundary documented in `REFACTOR_13_REPORT.md`:
+- Removed all six ArithMul and all six ArithDiv mode-boolean caller conjuncts from circuit/archetype surfaces.
+- Added `ArithMulTableWitness.row_constraints`, derived from `mainComplete`, and made all Mul wrapper proofs use that supply rather than their caller argument. Public forwarding wrappers no longer request the argument; five `_of_table` compatibility binders remain ignored because byte-frozen `Equivalence/` callers require their positional API.
+- Corrected both Arith Q2 interface tables to identify `mainComplete` as the supplier of appended generated constraints.
+- Verified and documented the ArithDiv blocker: the delivered `ArithDivTableWitness` still carries `mainWithArithTable` soundness, while the required projection consumes `mainComplete`; its old `FullSpec` also lacks C46 and appended local constraints. Sixteen Div wrapper obligations therefore cannot be honestly removed without strengthening the upstream provider contract.
+- Code delta is +41/-49, net -8 lines. Roots, `Equivalence/`, `ZiskFv/Audit.lean`, `Compliance/Defects.lean`, build pins/lockfiles, and `trust/generated/` are unchanged.
+
+Verification: full `lake build` passes. Standard trust checks 1–12 and 14–16 pass; check 13 alone is deferred because the supplied tree lacks `zisk/core/src/aeneas_extract.rs`. All 16 semantic checks pass (the long suite was resumed using its exact component commands after command cutoffs). No prohibited construct was introduced.
+
 # Summary of changes for run 3e61ccfd-594f-461c-865f-ae3cd3bade4c
 Installed the authoritative tarball non-destructively and verified all 832 archived regular files byte-for-byte. Preserved `.lake`, removed the uncommitted tarball, and left `ARISTOTLE_SUMMARY.md` untouched as requested.
 

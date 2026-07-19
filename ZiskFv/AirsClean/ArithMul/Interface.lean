@@ -24,9 +24,9 @@ ArithMul circuits.
 | seven carry ranges | lookups in `mainWithUnsignedCarryRanges` / `mainWithSignedCarryRanges`; `FullSpec.carryRanges` | exact |
 | eight indexed ranges | lookups in `mainWithArithTable`; `FullSpec.indexedRanges` | exact |
 | primary/secondary operation-bus rows | `primaryOpBusMessageExpr` / `secondaryOpBusMessageExpr` | exact |
-| `main_mul_div_disjoint` | `mainWithArithTable`; `ModeSpec` clause 1 | exact |
-| `boolean_m32`, `boolean_na`, `boolean_nb`, `boolean_nr`, `boolean_np`, `boolean_sext` | `mainWithArithTable`; `ModeSpec` clauses 2–7 | exact |
-| `mul_constraint_46_named` (`bus_res1`) | `mainWithArithTable`; `C46Spec` | exact |
+| `main_mul_div_disjoint` | `mainComplete`; `ModeSpec` clause 1 | exact |
+| `boolean_m32`, `boolean_na`, `boolean_nb`, `boolean_nr`, `boolean_np`, `boolean_sext` | `mainComplete`; `ModeSpec` clauses 2–7 | exact |
+| `mul_constraint_46_named` (`bus_res1`) | `mainComplete`; `C46Spec` | exact |
 
 The completed lookup-aware circuit now supplies every constraint in the legacy
 ArithMul consumer predicate surface, so the ArithMul Q2 constraint-correspondence

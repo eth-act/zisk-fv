@@ -99,7 +99,7 @@ lemma equiv_MUL_of_table
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_row_constraints :
+    (_h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
@@ -132,6 +132,7 @@ lemma equiv_MUL_of_table
              signed_rs2 := srs2 }))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   have h_arith_table := arith_table.spec
+  have h_row_constraints := arith_table.row_constraints
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨_h_main_active, h_main_op_mul⟩ := pins
@@ -253,8 +254,6 @@ lemma equiv_MUL
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_row_constraints :
-      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
     (arith_carry_ranges :
@@ -280,8 +279,7 @@ lemma equiv_MUL
              signed_rs2 := srs2 }))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
-    pins h_match_primary promises arith_mem bounds h_row_constraints
-    arith_table arith_chunk_ranges arith_carry_ranges
+    pins h_match_primary promises arith_mem bounds arith_table.row_constraints arith_table arith_chunk_ranges arith_carry_ranges
     h_rs1_value h_rs2_value h_not_forge
 
 end ZiskFv.Compliance

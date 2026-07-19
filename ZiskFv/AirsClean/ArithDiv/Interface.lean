@@ -21,12 +21,12 @@ ArithDiv `Constraints`/`Spec` supply.
 | Arith-table membership and indexed ranges | lookups in `mainWithArithTable`; `FullSpec` projections | exact |
 | chunk and carry ranges | dedicated lookup-aware variants; `FullSpec` projections | exact |
 | primary/secondary operation-bus rows | `primaryOpBusMessageExpr` / `secondaryOpBusMessageExpr` | exact |
-| `main_mul_div_disjoint`; all mode booleans | generated mirrors in `mainWithArithTable` | exact operation supply |
-| W-mode high-lane-zero constraints | generated constraints 47–48 in `mainWithArithTable` | exact operation supply |
-| `div_by_zero_forces_*` and `div_overflow_forces_*` | generated constraints 9–24 in `mainWithArithTable` | exact operation supply |
-| inverse-sum zero-divisor constraint | `ArithDivAux.inv_sum_all_bs`; generated constraint 25 | exact operation supply |
-| zero/overflow scope and disjointness constraints | generated constraints 26–30 | exact operation supply |
-| `bus_res1_eq_div` (constraint 46) | generated constraint 46 in `mainWithArithTable` | exact operation supply |
+| `main_mul_div_disjoint`; all mode booleans | generated mirrors in `mainComplete` | exact operation supply |
+| W-mode high-lane-zero constraints | generated constraints 47–48 in `mainComplete` | exact operation supply |
+| `div_by_zero_forces_*` and `div_overflow_forces_*` | generated constraints 9–24 in `mainComplete` | exact operation supply |
+| inverse-sum zero-divisor constraint | `ArithDivAux.inv_sum_all_bs`; generated constraint 25 in `mainComplete` | exact operation supply |
+| zero/overflow scope and disjointness constraints | generated constraints 26–30 in `mainComplete` | exact operation supply |
+| `bus_res1_eq_div` (constraint 46) | generated constraint 46 in `mainComplete` | exact operation supply |
 
 The operation-level Q2 correspondence now has an exact generated mirror for every
 previously missing legacy predicate. The separate migration/deletion gate remains
