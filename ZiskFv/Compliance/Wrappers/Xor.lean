@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.EquivCore.Xor
+import ZiskFv.Compliance.ParametricStaticBinary
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.RowShape.Contract
 import ZiskFv.Airs.Main.Main
@@ -46,25 +47,14 @@ lemma equiv_XOR
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.XOR))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  rcases evidence with ⟨providerTable, providerRow, h_component, h_table_spec,
-    h_provider_row, h_match, h_input_r1_row, h_input_r2_row, pins, h_lane_rd⟩
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
+  apply ZiskFv.Compliance.ParametricStaticBinary.dischargeRType evidence
+  intro row pins h_match h_row_spec h_core h_static_specs h_facts
+    h_input_r1_row h_input_r2_row h_lane_rd
   exact ZiskFv.EquivCore.Xor.equiv_XOR_of_static_row
     state xor_input r1 r2 rd m row r_main bus promises pins
     h_match h_row_spec h_core h_static_specs h_facts
-    (by simpa [row] using h_input_r1_row)
-    (by simpa [row] using h_input_r2_row)
+    h_input_r1_row
+    h_input_r2_row
     h_lane_rd
 
 end ZiskFv.Compliance

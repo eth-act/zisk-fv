@@ -1,3 +1,30 @@
+# Summary of changes for run dcea4ffd-3717-42e9-b5ba-6fab6f389dc0
+Completed and documented the Refactor 16 pilot.
+
+- Installed the authoritative archive non-destructively and byte-verified all 842 archived files/symlinks while preserving `.lake`.
+- Produced the full 22-opcode shape inventory and factoring map in `REFACTOR_16_REPORT.md` before migration.
+- Added a proved reusable static-Binary provider-elimination layer and migrated the AND/OR/XOR R-type wrappers to it.
+- Recorded precise blockers for the remaining logic, compare, and shift collapse, including the tested I-type elaboration failures and missing dependent opcode interface.
+- Reported the exact retained proof-code delta: +97/−48, net +49 lines. The ≥5,000 deletion target was not met, and no per-opcode tower files reached zero references.
+- Prepended the run summary to `ARISTOTLE_SUMMARY.md`.
+
+Verification completed:
+- Full `lake build ZiskFv` passed (9,016 jobs).
+- Standard trust checks 1–12 and 14–16 passed; check 13 was deferred exactly because the supplied tree lacks the `zisk` submodule.
+- All 16 semantic trust checks passed.
+- The zero-sorry gate passed.
+- Root theorems, public `Equivalence` files, `Audit.lean`, `Defects.lean`, build pins/lockfiles, and generated trust files were untouched.
+
+All retained changes were committed and pushed.
+
+# Summary of changes for Refactor 16
+
+Installed and byte-verified the authoritative Refactor 16 archive non-destructively (842 files/symlinks), preserving `.lake`. Completed the requested 22-opcode shape inventory and recorded the factoring map in `REFACTOR_16_REPORT.md` before migration.
+
+The pilot did **not** meet its GO threshold. I proved a reusable static-Binary provider-elimination layer and migrated the AND/OR/XOR R-type wrappers to it, but this only yields +97/−48 proof-code lines (net +49), with no tower files deleted. A tested I-type use hit deterministic elaboration timeouts even at 1,200,000 heartbeats. The deeper class collapse is blocked by the absence of a dependent interface tying each opcode’s distinct generated Sail input/executor/instruction types to the shared write-value core; compare and shift additionally need signed/carry and width/sign-extension interfaces. The exact diagnostics, unchanged reference counts, and per-item blocker statuses are in `REFACTOR_16_REPORT.md`.
+
+Verification: full `lake build ZiskFv` passed (9,016 jobs); standard trust checks 1–12 and 14–16 passed, with check 13 deferred exactly for the authorized absent `zisk` submodule; all 16 semantic trust checks passed; zero-sorry passed. Roots, public Equivalence files, Audit, Defects, pins/lockfiles, and generated trust files were untouched.
+
 # Summary of changes for run f1bb6e7f-eec5-4d3b-8a81-c9e1e49bee44
 Completed Refactor 15 through the verified live-provider boundary and documented the result in `REFACTOR_15_REPORT.md`; prepended the required summary to `ARISTOTLE_SUMMARY.md`.
 
