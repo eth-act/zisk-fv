@@ -172,6 +172,106 @@ theorem arithDiv_fullSpec_of_arithMul_fullSpec
       ZiskFv.AirsClean.ArithDiv.rowAt, vOfDivuRow,
       ZiskFv.AirsClean.ArithMul.IndexedRangeSpec] using h_indexed
 
+/-- The ArithDiv-view `CompleteLocalSpec` of a provider `ArithMulRow`, transported
+    from the SHARED provider's live complete-local supply: the carry chain and c46
+    (already named on the ArithMul side) plus the appended Div block
+    (`SharedDivBlockSpec`).  Pure algebraic re-view of the same facts over the
+    `vOfDivuRow` field mapping — no new trust, no caller premise. -/
+theorem arithDiv_completeLocal_of_sharedDivBlock
+    (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_spec : ZiskFv.AirsClean.ArithMul.Spec arow)
+    (h_c46 : ZiskFv.AirsClean.ArithMul.C46Spec arow)
+    (h_div : ZiskFv.AirsClean.ArithMul.SharedDivBlockSpec arow) :
+    ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt (vOfDivuRow arow) 0) := by
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  obtain ⟨⟨hm0, hm1, hm2, hm3, hm4, hm5, hm39, hm40, hm41, hm42, hm43, hm44, hm45⟩,
+    ⟨hb1, hb2, hb3, hb4, hb5, hb6, hb7, hb8,
+      hb9, hb10, hb11, hb12, hb13, hb14, hb15, hb16⟩,
+    hinv, ⟨hs1, hs2, hs3, hs4, hs5⟩, hw1, hw2⟩ := h_div
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+  · linear_combination hc6
+  · linear_combination hc7
+  · linear_combination hc8
+  · linear_combination hc31
+  · linear_combination hc32
+  · linear_combination hc33
+  · linear_combination hc34
+  · linear_combination hc35
+  · linear_combination hc36
+  · linear_combination hc37
+  · linear_combination hc38
+  · linear_combination hm0
+  · linear_combination hm1
+  · linear_combination hm2
+  · linear_combination hm3
+  · linear_combination hm4
+  · linear_combination hm5
+  · linear_combination hm39
+  · linear_combination hm40
+  · linear_combination hm41
+  · linear_combination hm42
+  · linear_combination hm43
+  · linear_combination hm44
+  · linear_combination hm45
+  · linear_combination hb1
+  · linear_combination hb2
+  · linear_combination hb3
+  · linear_combination hb4
+  · linear_combination hb5
+  · linear_combination hb6
+  · linear_combination hb7
+  · linear_combination hb8
+  · linear_combination hb9
+  · linear_combination hb10
+  · linear_combination hb11
+  · linear_combination hb12
+  · linear_combination hb13
+  · linear_combination hb14
+  · linear_combination hb15
+  · linear_combination hb16
+  · linear_combination hinv
+  · linear_combination hs1
+  · linear_combination hs2
+  · linear_combination hs3
+  · linear_combination hs4
+  · linear_combination hs5
+  · linear_combination h_c46
+  · linear_combination hw1
+  · linear_combination hw2
+
+/-- `CompleteLocalSpec` of the ArithDiv view of a balance-selected live provider
+    row, read off the selected table's `constraints_hold`.  This is the seam the
+    R14/R15 audits identified: the appended Div-block facts are validated by the
+    live `componentComplete` table, so the view needs no caller premise. -/
+theorem arithDiv_completeLocal_of_selected_provider
+    {providerTable : Air.Flat.Table FGL} {providerRow : Array FGL}
+    (h_constraints : providerTable.Constraints)
+    (h_pr_mem : providerRow ∈ providerTable.table)
+    (h_component : providerTable.component
+      = ZiskFv.AirsClean.FullEnsemble.arithMulProviderComponent) :
+    ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt
+        (vOfDivuRow (componentComplete.rowInput
+          (providerTable.environment providerRow))) 0) := by
+  have h_holds : componentComplete.operations.ConstraintsHold
+      (providerTable.environment providerRow) := by
+    have h := h_constraints providerRow h_pr_mem
+    rwa [h_component] at h
+  have h_facts := ZiskFv.AirsClean.ArithMul.completeLocal_of_componentComplete_constraints
+    (providerTable.environment providerRow) h_holds
+  have h_row_eq :
+      eval (providerTable.environment providerRow) componentComplete.rowInputVar
+        = componentComplete.rowInput (providerTable.environment providerRow) := by
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+      eval_varFromOffset_valueFromOffset componentComplete.Input 0
+        (providerTable.environment providerRow)
+  rw [h_row_eq] at h_facts
+  exact arithDiv_completeLocal_of_sharedDivBlock _ h_facts.1 h_facts.2.2.1 h_facts.2.2.2
+
 /-- The ArithDiv-view `div_row_constraints_with_c46` of a provider `ArithMulRow`,
     derived from the SHARED-ArithMul-provider `FullSpec arow`.  The 11-clause
     `div_carry_chain_holds` is the same algebra as the ArithMul `Spec` (carry
@@ -467,6 +567,27 @@ theorem divuArow_fullSpec_row
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
     h_component (h_spec h_rest.choose h_pr_mem)
+
+/-- `CompleteLocalSpec` of the ArithDiv view of the balance-selected DIVU
+    provider row, DERIVED from the live table's `constraints_hold`
+    (`trace.constraints_hold`) — the transported complete-local supply that
+    upgrades `ArithDivTableWitness` without a caller premise. -/
+theorem divuArow_completeLocal
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU) :
+    ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt
+        (vOfDivuRow (divuArow trace binding i h_main_active h_main_op)) 0) := by
+  unfold divuArow
+  set H := main_request_divu_provided
+    trace i h_main_active h_main_op with hH
+  obtain ⟨h_pt_mem, h_rest⟩ := H.choose_spec
+  obtain ⟨h_pr_mem, h_component, _h_spec, _h_match⟩ := h_rest.choose_spec
+  exact arithDiv_completeLocal_of_selected_provider
+    (trace.constraints_hold H.choose h_pt_mem) h_pr_mem h_component
 
 /-- The op-bus match of the balance-selected DIVU provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form (cheap: free

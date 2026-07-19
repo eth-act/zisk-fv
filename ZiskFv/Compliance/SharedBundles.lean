@@ -464,14 +464,17 @@ theorem ArithMulSignedCarryRangeWitness.ranges
 
 /-- Lookup-aware Clean witness for a selected ArithDiv row's
     `arith_table_assumes` tuple. Same shape as `ArithMulTableWitness`,
-    specialized to the Div view of the Arith AIR. -/
+    specialized to the Div view of the Arith AIR: `holds` carries the
+    COMPLETED circuit (`ArithDiv.mainComplete`), i.e. the base
+    carry-chain/lookup supply plus every appended generated local
+    constraint audited in `ArithCompleteConstraints`. -/
 structure ArithDivTableWitness
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
   offset : ℕ
   env : Environment FGL
   holds :
     ConstraintsHold.Soundness env
-      ((ZiskFv.AirsClean.ArithDiv.mainWithArithTable
+      ((ZiskFv.AirsClean.ArithDiv.mainComplete
         (ZiskFv.AirsClean.ArithDiv.constVar
           (ZiskFv.AirsClean.ArithDiv.rowAt v r))).operations offset)
 
@@ -482,7 +485,8 @@ theorem ArithDivTableWitness.spec
       (ZiskFv.AirsClean.ArithDiv.rowAt v r) :=
   ZiskFv.AirsClean.ArithDiv.arith_table_spec_of_lookup_aware_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r)
-    w.holds
+    (ZiskFv.AirsClean.ArithDiv.base_soundness_of_complete_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds)
 
 theorem ArithDivTableWitness.indexed_ranges
     {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
@@ -491,25 +495,68 @@ theorem ArithDivTableWitness.indexed_ranges
       (ZiskFv.AirsClean.ArithDiv.rowAt v r) :=
   ZiskFv.AirsClean.ArithDiv.indexed_ranges_of_arith_table_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r)
-    w.holds
+    (ZiskFv.AirsClean.ArithDiv.base_soundness_of_complete_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds)
 
-/-- Build an `ArithDivTableWitness` from the row's `FullSpec` (its three conjuncts:
-    carry-chain `Spec`, `ArithTableSpec`, and `IndexedRangeSpec`).  The witness's
-    `holds` is a constant-row proof for `mainWithArithTable`: carry-chain
-    constraints, the ArithTable lookup, and the eight indexed Arith range-table
-    lookups. -/
+/-- The completed Clean supply discharges the legacy local DIV carry-chain and
+    result-mux bundle; callers need not provide it separately.  Mirror of
+    `ArithMulTableWitness.row_constraints`. -/
+theorem ArithDivTableWitness.row_constraints
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivTableWitness v r) :
+    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r := by
+  obtain ⟨h_spec, _h_mode, _h_boundary, _h_inv, _h_scope, h_c46, _h_wmode⟩ :=
+    ZiskFv.AirsClean.ArithDiv.complete_local_specs_of_const_soundness
+      w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
+  obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [ZiskFv.Airs.ArithDiv.fab_eq_div]; linear_combination hc6
+  · simp only [ZiskFv.Airs.ArithDiv.na_fb_eq_div]; linear_combination hc7
+  · simp only [ZiskFv.Airs.ArithDiv.nb_fa_eq_div]; linear_combination hc8
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_0_div]; linear_combination hc31
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_1_div]; linear_combination hc32
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_2_div]; linear_combination hc33
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_3_div]; linear_combination hc34
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_4_div]; linear_combination hc35
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_5_div]; linear_combination hc36
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_6_div]; linear_combination hc37
+  · simp only [ZiskFv.Airs.ArithDiv.carry_eq_7_div]; linear_combination hc38
+  · simp only [ZiskFv.Airs.ArithDiv.bus_res1_eq_div,
+      ZiskFv.AirsClean.ArithDiv.C46Spec] at h_c46 ⊢
+    linear_combination h_c46
+
+/-- Build an `ArithDivTableWitness` from the row's `FullSpec` (carry-chain
+    `Spec`, `ArithTableSpec`, `IndexedRangeSpec`) plus the transported
+    complete-local supply `CompleteLocalSpec` (the appended generated local
+    constraints, read off the live provider row's `constraints_hold` and
+    transported through the `vOfDivuRow` view).  The witness's `holds` is a
+    constant-row proof for the COMPLETED `mainComplete` circuit. -/
 def arithDivTableWitness_of_fullSpec
     {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
-    (h : ZiskFv.AirsClean.ArithDiv.FullSpec (ZiskFv.AirsClean.ArithDiv.rowAt v r)) :
+    (h : ZiskFv.AirsClean.ArithDiv.FullSpec (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_complete :
+      ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec (ZiskFv.AirsClean.ArithDiv.rowAt v r)) :
     ArithDivTableWitness v r := by
   refine ⟨0, ⟨fun _ => 0, fun _ _ => #[]⟩, ?_⟩
   obtain ⟨h_spec, h_table, h_indexed⟩ := h
+  obtain ⟨_h_spec', h_mode, h_boundary, h_inv, h_scope, h_c46, h_wmode⟩ := h_complete
   obtain ⟨hc6, hc7, hc8, hc31, hc32, hc33, hc34, hc35, hc36, hc37, hc38⟩ := h_spec
   obtain ⟨hra1, hrb1, hrc1, hrd1, hra3, hrb3, hrc3, hrd3⟩ := h_indexed
-  simp only [ZiskFv.AirsClean.ArithDiv.mainWithArithTable,
+  obtain ⟨hm0, hm1, hm2, hm3, hm4, hm5, hm39, hm40, hm41, hm42, hm43, hm44, hm45⟩ := h_mode
+  obtain ⟨hb1, hb2, hb3, hb4, hb5, hb6, hb7, hb8,
+    hb9, hb10, hb11, hb12, hb13, hb14, hb15, hb16⟩ := h_boundary
+  obtain ⟨hs1, hs2, hs3, hs4, hs5⟩ := h_scope
+  obtain ⟨hw1, hw2⟩ := h_wmode
+  simp only [ZiskFv.AirsClean.ArithDiv.mainComplete,
+    ZiskFv.AirsClean.ArithDiv.mainWithArithTable,
     ZiskFv.AirsClean.ArithDiv.main, circuit_norm]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_⟩
   · linear_combination hc6
   · linear_combination hc7
   · linear_combination hc8
@@ -542,6 +589,44 @@ def arithDivTableWitness_of_fullSpec
       Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrc3
   · simpa [ZiskFv.AirsClean.ArithDiv.constVar, ZiskFv.AirsClean.ArithDiv.rowAt,
       Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw] using hrd3
+  · linear_combination hm0
+  · linear_combination hm1
+  · linear_combination hm2
+  · linear_combination hm3
+  · linear_combination hm4
+  · linear_combination hm5
+  · linear_combination hb1
+  · linear_combination hb2
+  · linear_combination hb3
+  · linear_combination hb4
+  · linear_combination hb5
+  · linear_combination hb6
+  · linear_combination hb7
+  · linear_combination hb8
+  · linear_combination hb9
+  · linear_combination hb10
+  · linear_combination hb11
+  · linear_combination hb12
+  · linear_combination hb13
+  · linear_combination hb14
+  · linear_combination hb15
+  · linear_combination hb16
+  · linear_combination h_inv
+  · linear_combination hs1
+  · linear_combination hs2
+  · linear_combination hs3
+  · linear_combination hs4
+  · linear_combination hs5
+  · linear_combination hm39
+  · linear_combination hm40
+  · linear_combination hm41
+  · linear_combination hm42
+  · linear_combination hm43
+  · linear_combination hm44
+  · linear_combination hm45
+  · linear_combination h_c46
+  · linear_combination hw1
+  · linear_combination hw2
 
 /-- Lookup-aware Clean witness for a selected ArithDiv row's sixteen
     `bits(16)` chunk checks. This is the Div-family counterpart of

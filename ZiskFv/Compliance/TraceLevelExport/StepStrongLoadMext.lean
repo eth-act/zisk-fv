@@ -1106,10 +1106,14 @@ theorem stepStrong_divu
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  have h_complete_div : ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) := by
+    rw [hv, harow]
+    exact divuArow_completeLocal trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
     h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
-    arithDivTableWitness_of_fullSpec h_full_div
+    arithDivTableWitness_of_fullSpec h_full_div h_complete_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
@@ -1215,10 +1219,14 @@ theorem stepStrong_divuw
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  have h_complete_div : ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) := by
+    rw [hv, harow]
+    exact divuwArow_completeLocal trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
     h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
-    arithDivTableWitness_of_fullSpec h_full_div
+    arithDivTableWitness_of_fullSpec h_full_div h_complete_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
@@ -1321,10 +1329,14 @@ theorem stepStrong_remu
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  have h_complete_div : ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) := by
+    rw [hv, harow]
+    exact remuArow_completeLocal trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
     h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
-    arithDivTableWitness_of_fullSpec h_full_div
+    arithDivTableWitness_of_fullSpec h_full_div h_complete_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=
@@ -1426,10 +1438,14 @@ theorem stepStrong_remuw
   have h_full_div : ZiskFv.AirsClean.ArithDiv.FullSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v 0) :=
     arithDiv_fullSpec_of_arithMul_fullSpec arow h_full_mul
+  have h_complete_div : ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v 0) := by
+    rw [hv, harow]
+    exact remuwArow_completeLocal trace binding i d.toDecode.h_main_active d.toDecode.h_main_op
   obtain ⟨h_mul_spec, h_mul_table, h_mul_c46, h_mul_chunks, h_mul_carry,
     h_mul_indexed_ranges⟩ := h_full_mul
   let arith_table : ZiskFv.Compliance.ArithDivTableWitness v 0 :=
-    arithDivTableWitness_of_fullSpec h_full_div
+    arithDivTableWitness_of_fullSpec h_full_div h_complete_div
   let arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v 0 :=
     ZiskFv.AirsClean.ArithDiv.chunkRangeLookupWitness_of_spec h_full_div.1 h_mul_chunks
   let arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v 0 :=

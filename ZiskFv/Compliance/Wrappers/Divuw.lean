@@ -73,7 +73,11 @@ lemma equiv_DIVUW_of_table
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
-    (h_row_constraints :
+    -- Compatibility-only binder: the row bundle is DERIVED from
+    -- `arith_table.row_constraints` below.  The positional parameter must
+    -- remain because the byte-frozen `Equivalence/Divuw.lean` calls this
+    -- declaration in this order.
+    (_h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
@@ -99,6 +103,7 @@ lemma equiv_DIVUW_of_table
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   have h_arith_table := arith_table.spec
+  have h_row_constraints := arith_table.row_constraints
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨_h_main_active, h_main_op_divuw⟩ := pins
@@ -158,8 +163,6 @@ lemma equiv_DIVUW
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
-    (h_row_constraints :
-      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
@@ -184,7 +187,7 @@ lemma equiv_DIVUW
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_DIVUW_of_table state divuw_input r1 r2 rd bus m r_main v r_a
-    pins h_match_primary promises arith_mem bounds arith_table h_row_constraints
+    pins h_match_primary promises arith_mem bounds arith_table arith_table.row_constraints
     arith_chunk_ranges arith_carry_ranges remainder_bound
     h_b23 h_c23 h_sext_choice h_rs1_value h_rs2_value
 

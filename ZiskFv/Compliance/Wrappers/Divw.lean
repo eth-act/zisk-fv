@@ -69,11 +69,15 @@ lemma equiv_DIVW_of_table
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (_arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_row_constraints :
+    -- Compatibility-only binder: the row bundle is DERIVED from
+    -- `arith_table.row_constraints` below.  The positional parameter must
+    -- remain because the byte-frozen `Equivalence/Divw.lean` calls this
+    -- declaration in this order.
+    (_h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_boundary :
       ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
-    (_arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a)
     (arith_carry_ranges :
       ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a)
@@ -126,6 +130,7 @@ lemma equiv_DIVW_of_table
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have h_row_constraints := arith_table.row_constraints
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
   exact ZiskFv.EquivCore.Divw.equiv_DIVW_boundary_split
@@ -153,8 +158,6 @@ lemma equiv_DIVW
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
-    (h_row_constraints :
-      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_boundary :
       ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
@@ -207,7 +210,7 @@ lemma equiv_DIVW
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_DIVW_of_table state divw_input r1 r2 rd bus m r_main v r_a pins h_match_primary
-    promises arith_mem bounds h_row_constraints h_boundary arith_table
+    promises arith_mem bounds arith_table.row_constraints h_boundary arith_table
     arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_m32 h_div h_a23 h_b23 h_d23 h_c23 h_byte_lo h_sext_choice
     h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign

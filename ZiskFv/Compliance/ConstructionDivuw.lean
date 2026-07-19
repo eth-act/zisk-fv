@@ -330,6 +330,26 @@ theorem divuwArow_fullSpec_row
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
     h_component (h_spec h_rest.choose h_pr_mem)
 
+/-- `CompleteLocalSpec` of the ArithDiv view of the balance-selected DIVUW
+    provider row, DERIVED from the live table's `constraints_hold`.
+    Mirrors `divuArow_completeLocal`. -/
+theorem divuwArow_completeLocal
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W) :
+    ZiskFv.AirsClean.ArithDiv.CompleteLocalSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt
+        (vOfDivuRow (divuwArow trace binding i h_main_active h_main_op)) 0) := by
+  unfold divuwArow
+  set H := main_request_divuw_provided
+    trace i h_main_active h_main_op with hH
+  obtain ⟨h_pt_mem, h_rest⟩ := H.choose_spec
+  obtain ⟨h_pr_mem, h_component, _h_spec, _h_match⟩ := h_rest.choose_spec
+  exact arithDiv_completeLocal_of_selected_provider
+    (trace.constraints_hold H.choose h_pt_mem) h_pr_mem h_component
+
 /-- The op-bus match of the balance-selected DIVUW provider row against the Main
     row's emission, in `toEntry (primaryOpBusMessage …) 1` form. -/
 theorem divuwArow_match_row

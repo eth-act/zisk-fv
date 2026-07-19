@@ -132,6 +132,201 @@ theorem complete_local_specs_of_const_soundness
   · linear_combination h45
   · linear_combination h46
 
+set_option maxHeartbeats 1600000 in
+/-- Project the completed shared provider circuit's row-local generated assertions
+    to their named bundles: the carry chain (`Spec`), the MUL-view selector block
+    (`ModeSpec`), the result mux (`C46Spec`), and the appended Div block
+    (`SharedDivBlockSpec`).  Same live-constraint projection pattern as
+    `Mem.spec_of_componentWithDualMemBus_constraints`: every fact is read off the
+    flattened `sharedMainComplete` constraint list, not supplied by a caller. -/
+theorem completeLocal_of_sharedMainComplete_constraints
+    (offset : ℕ) (env : Environment FGL) (row : Var ArithMulRow FGL)
+    (h_main : Operations.ConstraintsHold env
+      ((sharedMainComplete row).operations offset)) :
+    Spec (eval env row) ∧ ModeSpec (eval env row) ∧ C46Spec (eval env row)
+      ∧ SharedDivBlockSpec (eval env row) := by
+  simp only [sharedMainComplete, mainWithArithTable, main, circuit_norm] at h_main
+  cases row with
+  | mk chunks flags carries =>
+    cases chunks with
+    | mk a_0 a_1 a_2 a_3 b_0 b_1 b_2 b_3 c_0 c_1 c_2 c_3 d_0 d_1 d_2 d_3 =>
+    cases flags with
+    | mk na nb nr np sext m32 div div_by_zero div_overflow main_div main_mul signed
+        range_ab range_cd op bus_res1 multiplicity =>
+    cases carries with
+    | mk carry_0 carry_1 carry_2 carry_3 carry_4 carry_5 carry_6 fab na_fb nb_fa
+        inv_sum_all_bs =>
+    simp only [Spec, ModeSpec, C46Spec, SharedDivBlockSpec, DivModeSpec, DivBoundarySpec,
+      DivInverseSumSpec, DivScopeSpec, DivWModeSpec,
+      ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
+      ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
+      ProvableType.eval_field] at *
+    refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+      ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_,
+      ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+      ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+      ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ⟨?_, ?_⟩⟩
+    -- Carry chain (constraints 6, 7, 8, 31--38).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab - ((1 - 2 * na) - 2 * nb + 4 * na * nb)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (na_fb - na * (1 - 2 * nb)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (nb_fa - nb * (1 - 2 * na)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_0 * b_0 - c_0 + 2 * np * c_0 + div * d_0 - 2 * nr * d_0
+          - carry_0 * 65536) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_1 * b_0 + fab * a_0 * b_1 - c_1 + 2 * np * c_1 + div * d_1
+          - 2 * nr * d_1 + carry_0 - carry_1 * 65536) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_2 * b_0 + fab * a_1 * b_1 + fab * a_0 * b_2
+          + a_0 * nb_fa * m32 + b_0 * na_fb * m32 - c_2 + 2 * np * c_2 + div * d_2
+          - 2 * nr * d_2 - np * div * m32 + nr * m32 + carry_1 - carry_2 * 65536)
+          (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_3 * b_0 + fab * a_2 * b_1 + fab * a_1 * b_2 + fab * a_0 * b_3
+          + a_1 * nb_fa * m32 + b_1 * na_fb * m32 - c_3 + 2 * np * c_3 + div * d_3
+          - 2 * nr * d_3 + carry_2 - carry_3 * 65536) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_3 * b_1 + fab * a_2 * b_2 + fab * a_1 * b_3 + na * nb * m32
+          + b_0 * na_fb * (1 - m32) + a_0 * nb_fa * (1 - m32)
+          - np * m32 * (1 - div) - np * (1 - m32) * div + nr * (1 - m32)
+          - d_0 * (1 - div) + 2 * np * d_0 * (1 - div) + carry_3 - carry_4 * 65536)
+          (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_3 * b_2 + fab * a_2 * b_3 + b_1 * na_fb * (1 - m32)
+          + a_1 * nb_fa * (1 - m32) - d_1 * (1 - div) + d_1 * 2 * np * (1 - div)
+          + carry_4 - carry_5 * 65536) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (fab * a_3 * b_3 + a_2 * nb_fa * (1 - m32) + b_2 * na_fb * (1 - m32)
+          - d_2 * (1 - div) + 2 * np * d_2 * (1 - div) + carry_5 - carry_6 * 65536)
+          (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (65536 * na * nb * (1 - m32) + a_3 * nb_fa * (1 - m32)
+          + b_3 * na_fb * (1 - m32) - 65536 * np * (1 - div) * (1 - m32)
+          - d_3 * (1 - div) + 2 * np * d_3 * (1 - div) + carry_6) (by simp)
+    -- MUL-view selector block (constraints 2 and 40--45).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (main_mul * main_div) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (m32 * (1 - m32)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (na * (1 - na)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (nb * (1 - nb)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (nr * (1 - nr)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (np * (1 - np)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (sext * (1 - sext)) (by simp)
+    -- Result mux (constraint 46).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (bus_res1 - (sext * 4294967295
+          + (1 - m32) * ((1 - main_mul - main_div) * (d_2 + d_3 * 65536)
+            + main_mul * (c_2 + c_3 * 65536) + main_div * (a_2 + a_3 * 65536))))
+          (by simp)
+    -- Div selector booleans (constraints 0--5 and 39--45).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (main_div * (main_div - 1)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (main_mul * (main_mul - 1)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (main_mul * main_div) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (signed * (1 - signed)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * (1 - div_by_zero)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (1 - div_overflow)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div * (1 - div)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (m32 * (1 - m32)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (na * (1 - na)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (nb * (1 - nb)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (nr * (1 - nr)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (np * (1 - np)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (sext * (1 - sext)) (by simp)
+    -- Boundary equations (constraints 9--24).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * b_0) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * b_1) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * b_2) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * b_3) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * (a_0 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * (a_1 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * (a_2 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * (a_3 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (b_0 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (b_1 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (b_2 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (b_3 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * c_0) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (c_1 - m32 * 32768)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * c_2) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (c_3 - (1 - m32) * 32768)) (by simp)
+    -- Inverse-sum witness equation (constraint 25).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 ((div - div_by_zero)
+          * (1 - inv_sum_all_bs * (((b_0 + b_1) + b_2) + b_3))) (by simp)
+    -- Scope equations (constraints 26--30).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * (1 - div)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (1 - div)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * (1 - signed)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_overflow * div_by_zero) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (div_by_zero * div_overflow) (by simp)
+    -- W-mode high-lane equations (constraints 47--48).
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (m32 * (div * (c_2 + c_3 * 65536) + (1 - div) * (a_2 + a_3 * 65536)))
+          (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h_main.1 (m32 * (b_2 + b_3 * 65536)) (by simp)
+
+/-- Component-level entry point of
+    `completeLocal_of_sharedMainComplete_constraints`: transport a live
+    `componentComplete` table row's `constraints_hold` into the named local
+    bundles over the provider row. -/
+theorem completeLocal_of_componentComplete_constraints
+    (env : Environment FGL)
+    (h_holds : componentComplete.operations.ConstraintsHold env) :
+    Spec (eval env componentComplete.rowInputVar)
+    ∧ ModeSpec (eval env componentComplete.rowInputVar)
+    ∧ C46Spec (eval env componentComplete.rowInputVar)
+    ∧ SharedDivBlockSpec (eval env componentComplete.rowInputVar) := by
+  have h_row : componentComplete.rowOperations.ConstraintsHold env :=
+    (Air.Flat.Component.constraintsHold_iff (component := componentComplete) env).mp h_holds
+  exact completeLocal_of_sharedMainComplete_constraints
+    componentComplete.rowOffset env componentComplete.rowInputVar (by
+      simpa only [componentComplete, circuitComplete, arithMulCompleteElaborated,
+        Air.Flat.Component.rowOperations] using h_row)
+
 /-- The lookup-aware Clean circuit sources ArithTable membership from its
     `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
 

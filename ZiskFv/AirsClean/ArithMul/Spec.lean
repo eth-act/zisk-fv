@@ -249,4 +249,91 @@ def FullSpec (row : ArithMulRow FGL) : Prop :=
   Spec row ∧ ArithTableSpec row ∧ C46Spec row ∧ ChunkRangeSpec row ∧ CarryRangeSpec row
     ∧ IndexedRangeSpec row
 
+/-! ## Div-block bundles over the shared provider row
+
+The completed shared Arith provider (`sharedMainComplete`) checks every
+generated local constraint, including the Div-family block that the narrower
+`ArithDiv` view names in `ArithDiv.{ModeSpec, BoundarySpec, InverseSumSpec,
+ScopeSpec, WModeSpec}`.  These bundles restate that block clause-for-clause
+over the shared `ArithMulRow`, so the ArithDiv view facts can be transported
+from the live provider row without a caller premise. -/
+
+/-- Booleanity and selector-disjointness of the Div-relevant flags
+    (generated constraints 0--5 and 39--45; PIL `arith.pil:46-53,237-243`),
+    mirroring `ArithDiv.ModeSpec` clause-for-clause. -/
+@[reducible]
+def DivModeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.main_div * (row.flags.main_div - 1) = 0
+  ∧ row.flags.main_mul * (row.flags.main_mul - 1) = 0
+  ∧ row.flags.main_mul * row.flags.main_div = 0
+  ∧ row.flags.signed * (1 - row.flags.signed) = 0
+  ∧ row.flags.div_by_zero * (1 - row.flags.div_by_zero) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.div_overflow) = 0
+  ∧ row.flags.div * (1 - row.flags.div) = 0
+  ∧ row.flags.m32 * (1 - row.flags.m32) = 0
+  ∧ row.flags.na * (1 - row.flags.na) = 0
+  ∧ row.flags.nb * (1 - row.flags.nb) = 0
+  ∧ row.flags.nr * (1 - row.flags.nr) = 0
+  ∧ row.flags.np * (1 - row.flags.np) = 0
+  ∧ row.flags.sext * (1 - row.flags.sext) = 0
+
+/-- Div-by-zero and signed-overflow boundary equations (generated
+    constraints 9--24; PIL `arith.pil:130-141`), mirroring
+    `ArithDiv.BoundarySpec` clause-for-clause. -/
+@[reducible]
+def DivBoundarySpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.div_by_zero * row.chunks.b_0 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_1 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_2 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_3 = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_0 - 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_1 - 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_2 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_3 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_0 - 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_1 - 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_2 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_3 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * row.chunks.c_0 = 0
+  ∧ row.flags.div_overflow * (row.chunks.c_1 - row.flags.m32 * 32768) = 0
+  ∧ row.flags.div_overflow * row.chunks.c_2 = 0
+  ∧ row.flags.div_overflow * (row.chunks.c_3 - (1 - row.flags.m32) * 32768) = 0
+
+/-- Inverse-sum witness equation detecting a nonzero divisor (generated
+    constraint 25; PIL `arith.pil:143`), mirroring `ArithDiv.InverseSumSpec`
+    over the shared committed column `carries.inv_sum_all_bs`. -/
+@[reducible]
+def DivInverseSumSpec (row : ArithMulRow FGL) : Prop :=
+  (row.flags.div - row.flags.div_by_zero) *
+    (1 - row.carries.inv_sum_all_bs *
+      (((row.chunks.b_0 + row.chunks.b_1) + row.chunks.b_2) + row.chunks.b_3)) = 0
+
+/-- Scope and exceptional-mode disjointness equations (generated constraints
+    26--30; PIL `arith.pil:145-153`), mirroring `ArithDiv.ScopeSpec`. -/
+@[reducible]
+def DivScopeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.div_by_zero * (1 - row.flags.div) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.div) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.signed) = 0
+  ∧ row.flags.div_overflow * row.flags.div_by_zero = 0
+  ∧ row.flags.div_by_zero * row.flags.div_overflow = 0
+
+/-- W-mode high-lane equations (generated constraints 47--48;
+    PIL `arith.pil:265-266`), mirroring `ArithDiv.WModeSpec`. -/
+@[reducible]
+def DivWModeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.m32 *
+    (row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536) +
+      (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)) = 0
+  ∧ row.flags.m32 * (row.chunks.b_2 + row.chunks.b_3 * 65536) = 0
+
+/-- The appended Div-block facts supplied by the completed shared provider
+    (`sharedMainComplete`) beyond `Spec`/`ModeSpec`/`C46Spec`: exactly the
+    `ArithDiv.CompleteLocalSpec` content minus the carry chain and the
+    result mux, stated over the shared `ArithMulRow`. -/
+@[reducible]
+def SharedDivBlockSpec (row : ArithMulRow FGL) : Prop :=
+  DivModeSpec row ∧ DivBoundarySpec row ∧ DivInverseSumSpec row ∧ DivScopeSpec row
+    ∧ DivWModeSpec row
+
 end ZiskFv.AirsClean.ArithMul
