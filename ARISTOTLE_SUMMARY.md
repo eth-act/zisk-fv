@@ -1,3 +1,37 @@
+# Summary of changes for run e1d22ee1-db39-4a62-bdeb-99cf4f2a1aae
+Completed the Refactor 14 work order to its verified boundary.
+
+- Installed and byte-verified all 838 archived files/symlinks non-destructively while preserving `.lake`; the attached tarball was not committed.
+- Audited the complete `ArithDivTableWitness` construction path and documented it in `REFACTOR_14_REPORT.md`.
+- Verified a precise blocker: the live ensemble validates the shared `ArithMul.mainWithArithTable` provider, not `ArithDiv.mainComplete`; moreover, `vOfDivuRow` sets the unavailable inverse witness `inv_sum_all_bs` to zero, making the required inverse-sum equation false for ordinary nonzero DIV/REM rows. Therefore upgrading the contract or deleting the 16 wrapper obligations would be unsound obligation laundering.
+- Documented all eight wrappers at 2 → 2 obligations, the necessary architectural remediation, zero proof-code line delta, and all protected-file invariants.
+- Prepended the same run summary to `ARISTOTLE_SUMMARY.md` as required.
+
+Verification:
+- Full `lake build` passed.
+- Trust checks 1–12 and 14–16 passed; check 13 was deferred because the supplied tree lacks `zisk/core/src/aeneas_extract.rs`, as authorized by the work order.
+- All 16 semantic trust checks passed.
+- Roots, `ZiskFv/Audit.lean`, `Compliance/Defects.lean`, `Equivalence/`, build pins/lockfiles, and `trust/generated/` remain unchanged from the delivered tree.
+
+All retained changes were committed and pushed.
+
+# Summary of changes for Refactor 14
+
+Installed and byte-verified all 838 archived files/symlinks non-destructively while preserving `.lake`; the attached tarball remains untracked and was not committed.
+
+Per-item status:
+1. **Construction-path audit complete.** `REFACTOR_14_REPORT.md` maps the sole `ArithDivTableWitness` constructor, its four trace-level call sites, the four balance-selected shared-ArithMul provider facts, and the `FullEnsemble` projection supplying them.
+2. **Contract upgrade blocked by a verified provider-model mismatch.** The live ensemble validates `ArithMul.componentWithArithTable` / `ArithMul.mainWithArithTable`, not `ArithDiv.mainComplete`. More decisively, `vOfDivuRow` has no source inverse-sum column and sets `inv_sum_all_bs := 0`; for an ordinary active nonzero DIV/REM row, the required inverse-sum equation then reduces to `1 = 0`. Upgrading `ArithDivTableWitness.holds` would therefore make its only constructor impossible. No caller premise or trust escape hatch was added.
+3. **The 16 Div wrapper obligations remain blocked by item 2.** Each of `Div`, `Divu`, `Divw`, `Divuw`, `Rem`, `Remu`, `Remw`, and `Remuw` remains at 2 → 2 obligations. Removing them before the live shared provider preserves the inverse witness and validates the completed generated constraints would launder the obligation rather than derive it.
+4. **Final sweep complete.** Proof-code net delta is 0 lines. Roots, `ZiskFv/Audit.lean`, `Compliance/Defects.lean`, `Equivalence/`, and `trust/generated/` are byte-unchanged from the delivered tree. No prohibited construct was introduced. The target of only five owner-gated compatibility binders is not reachable until the provider blocker is fixed.
+
+Verification:
+- Full `lake build` passed (the build made incremental progress across four command cutoffs and completed on the fifth invocation).
+- Standard trust checks 1–12 and 14–16 passed; check 13 alone was deferred exactly as authorized because the supplied tree lacks `zisk/core/src/aeneas_extract.rs`.
+- All 16 semantic trust checks passed.
+
+The precise blocker, construction-site map, per-wrapper counts, remediation boundary, and gate results are in `REFACTOR_14_REPORT.md`.
+
 # Summary of changes for run a1b57c95-a03e-4bff-8a9f-34483b10ac1d
 Completed Refactor 13 to the verified boundary and documented the full audit in `REFACTOR_13_REPORT.md`.
 
