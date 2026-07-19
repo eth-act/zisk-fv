@@ -1,3 +1,40 @@
+# Summary of changes for run f1bb6e7f-eec5-4d3b-8a81-c9e1e49bee44
+Completed Refactor 15 through the verified live-provider boundary and documented the result in `REFACTOR_15_REPORT.md`; prepended the required summary to `ARISTOTLE_SUMMARY.md`.
+
+Key results:
+- Installed and byte-verified all 840 archived files/symlinks non-destructively, preserving `.lake`; attached tarballs were not committed.
+- Audited every shared Arith provider row family. No unsatisfiable row was found. Active nonzero DIV/REM rows require the actual inverse of the divisor-chunk sum; multiplication and division-by-zero rows may use zero.
+- Added and mechanically propagated the physical `inv_sum_all_bs` witness column.
+- Added the full frozen generated local-constraint set to a completed shared Arith circuit and proved its component sound.
+- Swapped the live ensemble, construction modules, and fixtures to the completed provider.
+- Updated `vOfDivuRow` to project the committed inverse witness rather than fabricate zero.
+- Precisely identified the remaining item-4 seam: selected provider-row construction currently retains stable `FullSpec` but does not transport that row’s complete `constraints_hold` proof into the ArithDiv view. Therefore the eight Div-family wrappers honestly remain at 2 → 2 obligations; removing them now would still launder obligations. The required follow-up projection is detailed in the report.
+- Proof-code delta excluding reports: +259/−98, net +161 lines.
+
+Verification:
+- Full `lake build ZiskFv` passed (9,015 jobs).
+- Standard trust checks 1–12 and 14–16 passed; check 13 was deferred as authorized because the supplied tree lacks the `zisk` submodule.
+- All 16 semantic trust checks passed.
+- The non-generated zero-sorry gate passed.
+- Roots, `ZiskFv/Audit.lean`, `Compliance/Defects.lean`, `Equivalence/`, build pins/lockfiles, and `trust/generated/` remain byte-unchanged.
+
+All retained changes were committed and pushed.
+
+# Summary of changes for Refactor 15
+
+Completed the Refactor 15 work order through the green live-provider boundary, with the remaining wrapper migration precisely blocked and documented in `REFACTOR_15_REPORT.md`.
+
+- Installed and byte-verified all 840 archived files/symlinks non-destructively while preserving `.lake`; attached tarballs remain untracked.
+- Completed the constructibility precheck for all six concrete balance-selected Arith rows, ordinary shared MUL rows, the generic fixture, and spin/fixture search. No genuinely unsatisfiable row was found. Active nonzero DIV/REM rows require the real inverse of the divisor-chunk sum; multiplication and div-by-zero rows may use zero.
+- Added the physical `inv_sum_all_bs` column to `ArithMulRow` and propagated it mechanically.
+- Added the complete frozen generated local constraint set to the shared Arith circuit and proved a completed component sound.
+- Swapped the live full ensemble and all concrete construction/fixture consumers to the completed provider.
+- Changed `vOfDivuRow` to project the committed inverse witness instead of fabricating zero.
+- Verified the remaining item-4 blocker: construction selection retains stable `FullSpec` but does not yet transport the selected table row's complete `constraints_hold` into the ArithDiv view. Consequently all eight Div-family wrappers honestly remain at 2 → 2 obligations; deleting them now would still launder obligations. The exact remediation seam is recorded.
+- Code delta excluding reports: +259/−98, net +161 lines.
+
+Verification: full `lake build ZiskFv` passed (9,015 jobs); standard trust checks 1–12 and 14–16 passed, with check 13 deferred because the supplied tree lacks the `zisk` submodule; all 16 semantic checks passed; zero-sorry passed. Protected roots, `Audit.lean`, `Compliance/Defects.lean`, `Equivalence/`, build pins/lockfiles, and `trust/generated/` are byte-unchanged.
+
 # Summary of changes for run e1d22ee1-db39-4a62-bdeb-99cf4f2a1aae
 Completed the Refactor 14 work order to its verified boundary.
 

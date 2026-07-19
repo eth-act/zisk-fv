@@ -19,14 +19,14 @@ Unsigned RV64M DIVU (`OP_DIVU = 184`), mirroring the MULW / MULHU
 constructions.  The Arith provider witnesses (ArithTable membership, chunk
 ranges, signed-carry ranges, c46, carry-chain) are **DERIVED FROM BALANCE**
 via the SHARED ArithMul provider component's lookup-aware
-`componentWithArithTable.Spec = FullSpec`, not carried as caller binders.
+`componentComplete.Spec = FullSpec`, not carried as caller binders.
 
 ## Why the shared ArithMul provider (not ArithDiv)
 
 `ArithDiv.component` carries NO operation-bus interactions in the full
 ensemble (`arithDiv_table_interactionsWith_opBus_nil`): its
 `circuit.channels = []`.  The DIVU Main op-bus emission is therefore balanced
-by the SHARED ArithMul provider (`componentWithArithTable`), whose `FullSpec`
+by the SHARED ArithMul provider (`componentComplete`), whose `FullSpec`
 covers div rows too (the carry chain is mode-shared via the `div` flag).  The
 muxed primary op-bus message, at the DIVU mode pins (`div = 1`,
 `main_div = 1`, `main_mul = 0`), reduces to the div quotient-lane message
@@ -73,7 +73,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
@@ -130,7 +130,7 @@ def vOfDivuRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
   signed := fun _ => arow.flags.signed
   div_by_zero := fun _ => arow.flags.div_by_zero
   div_overflow := fun _ => arow.flags.div_overflow
-  inv_sum_all_bs := fun _ => 0
+  inv_sum_all_bs := fun _ => arow.carries.inv_sum_all_bs
   op := fun _ => arow.flags.op
   bus_res1 := fun _ => arow.flags.bus_res1
   multiplicity := fun _ => 1
@@ -436,7 +436,7 @@ private lemma divu_carry_bounds_claimed_dead
 
 /-- The balance-selected Arith-Mul provider row at trace index `i` for a DIVU
     operation, as a concrete `ArithMulRow`.  It is the
-    `componentWithArithTable.rowInput` of the provider row chosen by the DIVU
+    `componentComplete.rowInput` of the provider row chosen by the DIVU
     keep-arithMul balance wrapper
     `main_request_divu_provided`.
     Mirrors `mulwArow`. -/
@@ -449,10 +449,10 @@ noncomputable def divuArow
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_divu_provided
     trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected DIVU provider row, derived from the
-    provider component's proven soundness (`componentWithArithTable.Spec`). -/
+    provider component's proven soundness (`componentComplete.Spec`). -/
 theorem divuArow_fullSpec_row
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
@@ -544,7 +544,7 @@ open ZiskFv.EquivCore.Promises in
 /-- **F4 extraction bridge for `equiv_DIVU`.**  Mirror of
     `equiv_MULHU_of_fullSpec`: the four lookup-aware Arith witness records are
     replaced by the single `FullSpec arow` hypothesis (the SHARED ArithMul
-    provider's `componentWithArithTable.Spec`), with the ArithDiv-view facts
+    provider's `componentComplete.Spec`), with the ArithDiv-view facts
     read off the same row through `vOfDivuRow arow`.
 
     Like MULHU, DIVU's `equiv_DIVU` demands the *unsigned* carry bound
@@ -727,7 +727,7 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
-    lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
+    lookup-aware `componentComplete.Spec = FullSpec`, NOT supplied as
     binders.
 
     The ONE non-balance-derived residual is `remainder_bound`

@@ -178,7 +178,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_int
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -216,7 +216,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_int
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -440,7 +440,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -478,7 +478,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -704,7 +704,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -742,7 +742,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -967,7 +967,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_in
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -1005,7 +1005,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_in
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -1231,7 +1231,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_int
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -1269,7 +1269,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_int
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -1496,7 +1496,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_in
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -1534,7 +1534,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_in
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :

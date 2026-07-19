@@ -309,7 +309,7 @@ theorem exists_arithMul_row_eval_of_interaction_mem
           (table.environment row) := by
   apply exists_opBus_row_eval_of_singleton_interactionsWith
   · simpa [h_component] using
-      ZiskFv.AirsClean.ArithMul.componentWithArithTable_interactionsWith_opBus
+      ZiskFv.AirsClean.ArithMul.componentComplete_interactionsWith_opBus
   · exact h_mem
 
 /-- Project the lookup-aware ArithMul provider branch's generic component
@@ -323,7 +323,7 @@ theorem arithMul_fullSpec_of_component_spec
         (table.environment row)) := by
   rw [h_component] at h_spec
   simpa [arithMulProviderComponent,
-    ZiskFv.AirsClean.ArithMul.componentWithArithTable_spec] using h_spec
+    ZiskFv.AirsClean.ArithMul.componentComplete_spec] using h_spec
 
 /-- A lookup-aware ArithMul provider branch can only match Main rows whose
     operation-bus opcode lies in the Arith ROM opcode range. -/

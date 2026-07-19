@@ -16,7 +16,7 @@ binders.
 
 This is the anti-laundering payoff of the c46 + chunk-range + carry-range
 composition into the shared ArithMul component: the provider's
-`componentWithArithTable.Spec` is now exactly
+`componentComplete.Spec` is now exactly
 `FullSpec = Spec ∧ ArithTableSpec ∧ C46Spec ∧ ChunkRangeSpec ∧ CarryRangeSpec`,
 which contains everything the MULW wrapper needs from the multiplier AIR. The
 construction reads that `FullSpec` straight off the balance-derived provider row
@@ -31,7 +31,7 @@ construction reads that `FullSpec` straight off the balance-derived provider row
   - the row-native `Valid_ArithMul` view `vOfMulwRow (mulwArow …)` of the
     balance-selected provider row,
   - **the arith witnesses** — `FullSpec (rowAt v 0)` from the provider's
-    `componentWithArithTable.Spec` (carry-chain + ArithTable membership + c46 +
+    `componentComplete.Spec` (carry-chain + ArithTable membership + c46 +
     chunk ranges + signed-carry ranges, ALL balance-derived),
   - the MemBus rd-write witness (`ExternalArithMemoryWitness`, from
     `store_pc = 0`),
@@ -76,7 +76,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
@@ -136,7 +136,7 @@ def vOfMulwRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
   range_cd := fun _ => arow.flags.range_cd
 
 /-- The balance-selected Arith-Mul provider row at trace index `i`, as a concrete
-    `ArithMulRow`. It is the `componentWithArithTable.rowInput` of the provider
+    `ArithMulRow`. It is the `componentComplete.rowInput` of the provider
     row chosen by the keep-arithMul balance wrapper
     `main_request_mulw_provided`.
 
@@ -153,7 +153,7 @@ noncomputable def mulwArow
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_mulw_provided
     trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` transports along the row-native view: a `FullSpec` for a concrete
     `ArithMulRow` carries over to `rowAt (vOfMulwRow arow) 0`, because the two
@@ -165,7 +165,7 @@ theorem fullSpec_rowAt_vOfMulwRow
     ZiskFv.AirsClean.ArithMul.FullSpec (rowAt (vOfMulwRow arow) 0) := h
 
 /-- `FullSpec` of the balance-selected MULW provider row, derived from the
-    provider component's proven soundness (`componentWithArithTable.Spec`).
+    provider component's proven soundness (`componentComplete.Spec`).
 
     Proved here, at the `mulwArow` definition site, so the `Classical.choose`
     underlying `mulwArow` matches the one this proof picks — keeping the defeq
@@ -183,7 +183,7 @@ theorem mulwArow_fullSpec_row
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   -- Cheap projection of the provider component's generic `Spec` to `FullSpec`
-  -- (the heavy `componentWithArithTable.Spec` unfold lives once in `Balance`).
+  -- (the heavy `componentComplete.Spec` unfold lives once in `Balance`).
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
     h_component (h_spec h_rest.choose h_pr_mem)
 
@@ -258,7 +258,7 @@ theorem mulwArow_match_row
     application whose fields explode under whnf.  We therefore `set arow := …`
     so `arow` is an opaque fvar — `ArithTableSpec`, the op-pin, and the ROM
     `fin_cases` all act on `arow.flags.*` SYMBOLICALLY, never forcing the row's
-    `componentWithArithTable.rowInput` evaluation.  The op-pin is read off the
+    `componentComplete.rowInput` evaluation.  The op-pin is read off the
     op-bus match via the CHEAP `rfl`-projection lemma `primaryOpBusMessage_toEntry_op`
     (a rewrite, not a reduction). -/
 theorem mulwArow_mode_pins
@@ -311,7 +311,7 @@ theorem mulwArow_match
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
-    `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
+    `componentComplete.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulw_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)

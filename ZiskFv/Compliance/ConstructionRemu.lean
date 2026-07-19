@@ -20,14 +20,14 @@ Unsigned RV64M **REMU** (`OP_REMU = 185`), the remainder sibling of DIVU.
 The Arith provider witnesses (ArithTable membership, chunk ranges,
 signed-carry ranges, c46, carry-chain) are **DERIVED FROM BALANCE** via the
 SHARED ArithMul provider component's lookup-aware
-`componentWithArithTable.Spec = FullSpec`, not carried as caller binders.
+`componentComplete.Spec = FullSpec`, not carried as caller binders.
 
 ## Why the shared ArithMul provider (not ArithDiv)
 
 `ArithDiv.component` carries NO operation-bus interactions in the full
 ensemble (`arithDiv_table_interactionsWith_opBus_nil`): its
 `circuit.channels = []`.  The REMU Main op-bus emission is therefore balanced
-by the SHARED ArithMul provider (`componentWithArithTable`), whose `FullSpec`
+by the SHARED ArithMul provider (`componentComplete`), whose `FullSpec`
 covers div rows too (the carry chain is mode-shared via the `div` flag).
 
 ## The REMU SECONDARY lane (delta from DIVU)
@@ -80,7 +80,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
@@ -133,7 +133,7 @@ theorem match_opBus_row_ArithDivSecondary_vOfDivuRow
 
 /-- The balance-selected Arith-Mul provider row at trace index `i` for a REMU
     operation, as a concrete `ArithMulRow`.  It is the
-    `componentWithArithTable.rowInput` of the provider row chosen by the REMU
+    `componentComplete.rowInput` of the provider row chosen by the REMU
     keep-arithMul balance wrapper
     `main_request_remu_provided`.
     Mirrors `divuArow`. -/
@@ -146,10 +146,10 @@ noncomputable def remuArow
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_remu_provided
     trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected REMU provider row, derived from the
-    provider component's proven soundness (`componentWithArithTable.Spec`). -/
+    provider component's proven soundness (`componentComplete.Spec`). -/
 theorem remuArow_fullSpec_row
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
@@ -428,7 +428,7 @@ open ZiskFv.EquivCore.Promises in
 /-- **F4 extraction bridge for `equiv_REMU`.**  Mirror of
     `equiv_DIVU_of_fullSpec` for the remainder (secondary) lane.  The four
     lookup-aware Arith witness records are replaced by the single `FullSpec arow`
-    hypothesis (the SHARED ArithMul provider's `componentWithArithTable.Spec`),
+    hypothesis (the SHARED ArithMul provider's `componentComplete.Spec`),
     with the ArithDiv-view facts read off the same row through `vOfDivuRow arow`.
 
     Like DIVU, this derives the looser balance bound `< 983041` (via
@@ -608,7 +608,7 @@ lemma equiv_REMU_of_fullSpec_claimed_dead
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
-    lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
+    lookup-aware `componentComplete.Spec = FullSpec`, NOT supplied as
     binders.
 
     The ONE non-balance-derived residual is `remainder_bound`

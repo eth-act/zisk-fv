@@ -73,6 +73,9 @@ structure ArithMulCarries (F : Type) where
   fab : F
   na_fb : F
   nb_fa : F
+  /-- Arith AIR stage-1 column 38, used by `constraint_25_every_row`
+      (`arith.pil:143`) to witness the inverse of the divisor-chunk sum. -/
+  inv_sum_all_bs : F
 deriving ProvableStruct
 
 structure ArithMulRow (F : Type) where

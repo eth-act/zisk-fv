@@ -688,7 +688,7 @@ theorem main_request_shift_provided
     `exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_interaction`.
 
     Unlike the static-Binary wrappers, the provider here is the lookup-aware
-    `arithMulProviderComponent` (= `ArithMul.componentWithArithTable`), so
+    `arithMulProviderComponent` (= `ArithMul.componentComplete`), so
     `providerTable.Spec` is `FullSpec (rowInput …)` and the match is against the
     ArithMul primary op-bus message. -/
 theorem main_request_mulw_provided
@@ -712,7 +712,7 @@ theorem main_request_mulw_provided
               i.val)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
     trace.mainTable_index i
@@ -806,7 +806,7 @@ theorem main_request_mulhu_provided
               i.val)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
     trace.mainTable_index i
@@ -902,7 +902,7 @@ theorem main_request_divu_provided
               i.val)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
     trace.mainTable_index i
@@ -997,7 +997,7 @@ theorem main_request_divuw_provided
               i.val)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
     trace.mainTable_index i
@@ -1093,7 +1093,7 @@ theorem main_request_remu_provided
               i.val)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
     trace.mainTable_index i
@@ -1190,7 +1190,7 @@ theorem main_request_remuw_provided
               i.val)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
     trace.mainTable_index i
