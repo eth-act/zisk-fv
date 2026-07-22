@@ -10,8 +10,9 @@ The bus-133 provider is backed by the exact 256-row `memAlignRomTable` model.
 It owns membership; a later MemAlign consumer emits the matching negative
 message and a finished channel transports membership through balance.
 
-This provider is deliberately not inserted into `FullEnsemble` yet: without
-the consumer, finishing bus 133 would create an unbalanced channel.
+`FullEnsemble` adds this provider alongside the MemAlign h998 consumer and
+then finishes bus 133. On its own, the provider would be unbalanced; it never
+serves as a standalone membership premise.
 
 ## Trust note
 
