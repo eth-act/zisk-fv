@@ -3,10 +3,10 @@ import ZiskFv.Compliance.AcceptedZiskTrace
 /-!
 # Derived per-AIR spec accessor
 
-`AcceptedZiskTrace` carries only the two genuine accepted-trace fields
-(`constraints_hold`, `channels_balanced`). The per-AIR *spec* — that each table
-really computes its intended relation — is **derived**, not assumed, and lives
-here as the accessor `AcceptedZiskTrace.spec_holds`.
+`AcceptedZiskTrace` carries its core constraints/balance fields plus the
+separately documented verifier-checked certificate fields. The per-AIR *spec*
+— that each table really computes its intended relation — is **derived**, not
+assumed, and lives here as the accessor `AcceptedZiskTrace.spec_holds`.
 -/
 
 namespace ZiskFv.Compliance

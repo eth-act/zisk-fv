@@ -8,6 +8,7 @@ import ZiskFv.AirsClean.ArithDiv.Circuit
 import ZiskFv.AirsClean.Mem.Circuit
 import ZiskFv.AirsClean.SpecifiedRangesSlice
 import ZiskFv.AirsClean.MemAlign.Circuit
+import ZiskFv.AirsClean.MemAlignRomSlice
 import ZiskFv.AirsClean.MemAlignByte.Circuit
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
 import ZiskFv.AirsClean.RegisterBoundary
@@ -44,7 +45,29 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
+open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+
+private theorem specifiedRangesSliceChannel_ne_memBus :
+    SpecifiedRangesSliceChannel.toRaw ≠ MemBusChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "SpecifiedRangesSlice103" = "MemoryBus" at h_name
+  simp at h_name
+
+private theorem specifiedRangesSliceChannel_ne_memAlignRom :
+    SpecifiedRangesSliceChannel.toRaw ≠ MemAlignRomChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "SpecifiedRangesSlice103" = "MemAlignRom133" at h_name
+  simp at h_name
+
+private theorem memAlignRomChannel_ne_memBus :
+    MemAlignRomChannel.toRaw ≠ MemBusChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "MemAlignRom133" = "MemoryBus" at h_name
+  simp at h_name
 
 /-- The sound channel-balanced backbone of the full RV64IM Clean ensemble:
     every migrated component added as a table, with the operation and memory
@@ -111,6 +134,20 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
     |>.addFinishedChannel SpecifiedRangesSliceChannel.toRaw
+    |>.addTable ZiskFv.AirsClean.MemAlignRomSlice.component
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          change channel ∈ [SpecifiedRangesSliceChannel.toRaw] at h
+          have h_range : channel = SpecifiedRangesSliceChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h
+          subst channel
+          change SpecifiedRangesSliceChannel.toRaw ∉ [MemAlignRomChannel.toRaw]
+          intro h_channel
+          apply specifiedRangesSliceChannel_ne_memAlignRom
+          simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_channel)
     |>.addTable ZiskFv.AirsClean.MemAlign.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
@@ -118,38 +155,91 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by
           intro channel h
           change channel ∈ [SpecifiedRangesSliceChannel.toRaw] at h
-          simp only [List.mem_singleton] at h
+          have h_range : channel = SpecifiedRangesSliceChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h
           subst channel
-          change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
-          simp only [List.mem_singleton]
+          change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw,
+            MemAlignRomChannel.toRaw]
           intro h_channel
-          have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h_channel
-          change "SpecifiedRangesSlice103" = "MemoryBus" at h_name
-          simp at h_name)
+          have h_channel' : SpecifiedRangesSliceChannel.toRaw = MemBusChannel.toRaw ∨
+              SpecifiedRangesSliceChannel.toRaw = MemAlignRomChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_channel
+          rcases h_channel' with h_channel | h_channel
+          · exact specifiedRangesSliceChannel_ne_memBus h_channel
+          · exact specifiedRangesSliceChannel_ne_memAlignRom h_channel)
+    |>.addFinishedChannel MemAlignRomChannel.toRaw
     |>.addTable ZiskFv.AirsClean.MemAlignByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
           ZiskFv.AirsClean.MemAlignByte.circuit,
           ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
-        (by simp [circuit_norm, SpecifiedRangesSliceChannel,
-          ZiskFv.AirsClean.MemAlignByte.component,
-          ZiskFv.AirsClean.MemAlignByte.circuit,
-          ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
+        (by
+          intro channel h_finished h_memBus
+          have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
+              SpecifiedRangesSliceChannel.toRaw] := by
+            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
+              ZiskFv.AirsClean.MemAlignByte.circuit,
+              ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated] using h_finished
+          have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
+            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
+              ZiskFv.AirsClean.MemAlignByte.circuit,
+              ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated] using h_memBus
+          have h_finished' : channel = MemAlignRomChannel.toRaw ∨
+              channel = SpecifiedRangesSliceChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
+          have h_memBus' : channel = MemBusChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_memBus_list
+          subst channel
+          rcases h_finished' with h_finished | h_finished
+          · exact memAlignRomChannel_ne_memBus h_finished.symm
+          · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
     |>.addTable ZiskFv.AirsClean.MemAlignReadByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
           ZiskFv.AirsClean.MemAlignReadByte.circuit,
           ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
-        (by simp [circuit_norm, SpecifiedRangesSliceChannel,
-          ZiskFv.AirsClean.MemAlignReadByte.component,
-          ZiskFv.AirsClean.MemAlignReadByte.circuit,
-          ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
+        (by
+          intro channel h_finished h_memBus
+          have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
+              SpecifiedRangesSliceChannel.toRaw] := by
+            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
+              ZiskFv.AirsClean.MemAlignReadByte.circuit,
+              ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated] using h_finished
+          have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
+            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
+              ZiskFv.AirsClean.MemAlignReadByte.circuit,
+              ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated] using h_memBus
+          have h_finished' : channel = MemAlignRomChannel.toRaw ∨
+              channel = SpecifiedRangesSliceChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
+          have h_memBus' : channel = MemBusChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_memBus_list
+          subst channel
+          rcases h_finished' with h_finished | h_finished
+          · exact memAlignRomChannel_ne_memBus h_finished.symm
+          · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
     |>.addTable ZiskFv.AirsClean.RegisterBoundary.component
         (by simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
           ZiskFv.AirsClean.RegisterBoundary.circuit,
           ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
-        (by simp [circuit_norm, SpecifiedRangesSliceChannel,
-          ZiskFv.AirsClean.RegisterBoundary.component,
-          ZiskFv.AirsClean.RegisterBoundary.circuit,
-          ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
+        (by
+          intro channel h_finished h_memBus
+          have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
+              SpecifiedRangesSliceChannel.toRaw] := by
+            simpa [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+              ZiskFv.AirsClean.RegisterBoundary.circuit,
+              ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated] using h_finished
+          have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
+            simpa [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+              ZiskFv.AirsClean.RegisterBoundary.circuit,
+              ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated] using h_memBus
+          have h_finished' : channel = MemAlignRomChannel.toRaw ∨
+              channel = SpecifiedRangesSliceChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
+          have h_memBus' : channel = MemBusChannel.toRaw := by
+            simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_memBus_list
+          subst channel
+          rcases h_finished' with h_finished | h_finished
+          · exact memAlignRomChannel_ne_memBus h_finished.symm
+          · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.addFinishedChannel MemBusChannel.toRaw
 
@@ -164,7 +254,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
   clear h_mem
   simp only [fullRv64imSoundEnsemble, circuit_norm, Ensemble.allTables] at h
   rcases h with
-    h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     (rw [h]
      trivial)
 

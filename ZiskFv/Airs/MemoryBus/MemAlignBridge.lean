@@ -333,7 +333,7 @@ theorem memalign_row_matches_load_entry_of_message_match_valid_with_multiplicity
     (ma : Valid_MemAlign FGL FGL) (r_ma : ℕ)
     (row : ZiskFv.AirsClean.MemAlign.MemAlignRow FGL)
     (e : MemoryBusEntry FGL) (multiplicity : FGL)
-    (h_row : row = ZiskFv.AirsClean.MemAlign.rowAt ma r_ma)
+    (h_row : row = ZiskFv.AirsClean.MemAlign.rowAtWithDelta ma r_ma row.delta_pc)
     (h_sel_prove : ma.sel_prove r_ma = 1)
     (h_sel_up_to_down : ma.sel_up_to_down r_ma = 0)
     (h_sel_down_to_up : ma.sel_down_to_up r_ma = 0)
@@ -346,17 +346,17 @@ theorem memalign_row_matches_load_entry_of_message_match_valid_with_multiplicity
   obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
   rw [h_row] at h_ptr h_v0 h_v1 h_ts
   refine ⟨h_sel_prove, h_sel_up_to_down, h_sel_down_to_up, h_wr, ?_, ?_, ?_, ?_, h_as⟩
-  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAtWithDelta,
       ZiskFv.AirsClean.MemAlign.memBusMessage,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ptr.symm
-  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAtWithDelta,
       ZiskFv.AirsClean.MemAlign.memBusMessage,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ts.symm
-  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAtWithDelta,
       ZiskFv.AirsClean.MemAlign.memBusMessage,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
       memory_entry_lo] using h_v0.symm
-  · simpa [ZiskFv.AirsClean.MemAlign.rowAt,
+  · simpa [ZiskFv.AirsClean.MemAlign.rowAtWithDelta,
       ZiskFv.AirsClean.MemAlign.memBusMessage,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
       memory_entry_hi] using h_v1.symm
@@ -416,9 +416,10 @@ into the `high_bytes_zero_for_width` predicate. -/
     **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
     bound is derived from the MemAlignReadByte AIR's own `core_every_row`
     PIL constraints plus lookup-aware Clean range evidence. The general
-    MemAlign branch's low-value bounds are carried by the structural
-    provider witness because the MemAlignRom table is not yet extracted
-    as a first-class Lean table. -/
+    MemAlign branch's low-value bounds remain carried by the structural
+    provider witness; #242's extracted MemAlignRom table separately derives
+    the source-linked h998 lookup membership and does not replace those lane
+    bounds. -/
 
 /-- **Derived theorem** replacing the old
     `memalign_load_high_bytes_zero` axiom. Given a structural provider

@@ -105,7 +105,7 @@ def memAlignValue1Of (phase : MemAlignPhase)
 def memAlignRowOf (phase : MemAlignPhase) (isBoot wr reset : Bool)
     (sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7 : Bool)
     (reg_0 reg_1 reg_2 reg_3 reg_4 reg_5 reg_6 reg_7 : FGL)
-    (addr offset width step delta_addr pcVal : FGL) : MemAlignRow FGL :=
+    (addr offset width step delta_addr delta_pc pcVal : FGL) : MemAlignRow FGL :=
   { addr := addr
     offset := offset
     width := width
@@ -134,6 +134,7 @@ def memAlignRowOf (phase : MemAlignPhase) (isBoot wr reset : Bool)
     sel_prove := phase.selProve
     preL1 := boolF isBoot
     delta_addr := delta_addr
+    delta_pc := delta_pc
     value_0 := memAlignValue0Of phase sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
       reg_0 reg_1 reg_2 reg_3 reg_4 reg_5 reg_6 reg_7
     value_1 := memAlignValue1Of phase sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
@@ -142,7 +143,7 @@ def memAlignRowOf (phase : MemAlignPhase) (isBoot wr reset : Bool)
 set_option maxRecDepth 2000 in
 set_option maxHeartbeats 4000000 in
 def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
-  { memAlignWithMemBusElaborated with
+  { memAlignWithMemBusAndMemAlignRomElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers rows built by `memAlignRowOf`: phase and Boolean
@@ -150,11 +151,11 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
     ProverAssumptions := fun row _ _ =>
       ∃ phase isBoot wr reset sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
         reg_0 reg_1 reg_2 reg_3 reg_4 reg_5 reg_6 reg_7
-        addr offset width step delta_addr pcVal,
+        addr offset width step delta_addr delta_pc pcVal,
         row = memAlignRowOf phase isBoot wr reset
           sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
           reg_0 reg_1 reg_2 reg_3 reg_4 reg_5 reg_6 reg_7
-          addr offset width step delta_addr pcVal
+          addr offset width step delta_addr delta_pc pcVal
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
@@ -181,18 +182,19 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
         trivial
     completeness := by
       circuit_proof_start_core
-      simp only [mainWithMemBus, main, circuit_norm, selAssumeExpr,
-        memBusMessageExpr, MemBusChannel]
+      simp only [mainWithMemBusAndMemAlignRom, mainWithMemBus, main, circuit_norm,
+        selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
+        MemBusChannel, ZiskFv.Channels.MemAlignRom.MemAlignRomChannel]
       obtain ⟨phase, isBoot, wr, reset, sel_0, sel_1, sel_2, sel_3,
         sel_4, sel_5, sel_6, sel_7, reg_0, reg_1, reg_2, reg_3,
         reg_4, reg_5, reg_6, reg_7, addr, offset, width, step,
-        delta_addr, pcVal, hrow⟩ := h_assumptions
+        delta_addr, delta_pc, pcVal, hrow⟩ := h_assumptions
       rw [hrow] at h_input
       simp only [circuit_norm] at h_input
       injection h_input with h_addr h_offset h_width h_wr h_pc h_reset h_sel_up_to_down
         h_sel_down_to_up h_reg_0 h_reg_1 h_reg_2 h_reg_3 h_reg_4 h_reg_5
         h_reg_6 h_reg_7 h_sel_0 h_sel_1 h_step h_sel_2 h_sel_3 h_sel_4
-        h_sel_5 h_sel_6 h_sel_7 h_sel_prove h_preL1 h_delta_addr
+        h_sel_5 h_sel_6 h_sel_7 h_sel_prove h_preL1 h_delta_addr h_delta_pc
         h_value_0 h_value_1
       cases isBoot <;> cases phase <;>
         simp [h_wr, h_pc, h_reset, h_sel_up_to_down, h_sel_down_to_up, h_reg_0,
@@ -203,7 +205,20 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
         ring_nf <;>
         simp }
 
-def component : Air.Flat.Component FGL := { circuit := circuit }
+/-- The exact source-linked `pc' - pc` relation for MemAlign hint #998.
+    `successor` is selected by Clean's D3 cyclic table semantics, so the final
+    effective row is checked against row zero rather than against a caller
+    supplied boundary fact. -/
+def rowInputOfEnvironment (environment : Environment FGL) : MemAlignRow FGL :=
+  valueFromOffset MemAlignRow 0 environment
+
+def cyclicSuccessorTransition (_ : Nat) (current successor : Environment FGL) : Prop :=
+  (rowInputOfEnvironment current).delta_pc =
+    (rowInputOfEnvironment successor).pc - (rowInputOfEnvironment current).pc
+
+def component : Air.Flat.Component FGL :=
+  { circuit := circuit
+    cyclicSuccessorTransition := cyclicSuccessorTransition }
 
 /-- Project the generic Clean component `Spec` to the concrete MemAlign row
     `Spec`. -/
@@ -223,9 +238,55 @@ theorem component_interactionsWith_memBus :
           (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
           (memBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, memAlignWithMemBusElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
-    List.map_nil]
+  change ⟨MemBusChannel.toRaw,
+      [((MemBusChannel.emitted
+          (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
+          (memBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    expose MemBusChannel
+      [MemBusChannel.emitted
+        (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
+        (memBusMessageExpr component.rowInputVar)] ++
+    expose ZiskFv.Channels.MemAlignRom.MemAlignRomChannel
+      [ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
+        (memAlignRomMessageExpr component.rowInputVar)]
+  simp [expose]
+
+/-- MemAlign's h998 consumer emission is exactly one negative bus-133
+    interaction per effective row. -/
+theorem component_interactionsWith_memAlignRomChannel :
+    component.operations.interactionsWith ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.toRaw =
+      [((ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
+          (memAlignRomMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.toRaw,
+      [((ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
+          (memAlignRomMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  change ⟨ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.toRaw,
+      [((ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
+          (memAlignRomMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    expose MemBusChannel
+      [MemBusChannel.emitted
+        (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
+        (memBusMessageExpr component.rowInputVar)] ++
+    expose ZiskFv.Channels.MemAlignRom.MemAlignRomChannel
+      [ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
+        (memAlignRomMessageExpr component.rowInputVar)]
+  simp [expose]
+
+/-- Read `delta_pc` from the intrinsic cyclic successor view. -/
+theorem delta_pc_eq_successor_pc_sub_pc
+    {table : Table FGL} (h_component : table.component = component)
+    (h_cyclic : table.CyclicSuccessorTransitionConstraints)
+    (index : Fin table.length) :
+    (rowInputOfEnvironment (table.environmentAt index)).delta_pc =
+      (rowInputOfEnvironment (table.successorEnvironment index)).pc -
+        (rowInputOfEnvironment (table.environmentAt index)).pc := by
+  have h := h_cyclic index
+  rw [h_component] at h
+  change cyclicSuccessorTransition index.val (table.environmentAt index)
+    (table.successorEnvironment index) at h
+  exact h
 
 theorem spec_via_component (row : MemAlignRow FGL)
     (_h_assumptions : Assumptions row)
