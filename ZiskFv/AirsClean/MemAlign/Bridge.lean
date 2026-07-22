@@ -13,6 +13,7 @@ Connects the existing named-column `Valid_MemAlign` interface to the Clean
 namespace ZiskFv.AirsClean.MemAlign
 
 open Goldilocks
+open Extraction.LookupWiring
 open ZiskFv.Channels.MemoryBus
 
 /-- Generator acceptance check for the linked h998 compression constraint.
@@ -20,6 +21,52 @@ The structured tuple bridge below is intentionally checked alongside the
 manifest's exact rfl identity rather than re-parsing an adjacent rendering. -/
 example : Extraction.LookupWiring.constraint_MemAlign_36 =
     Extraction.LookupWiring.template_MemAlign_36 := by rfl
+
+/-- Interpret the exact h998 slot AST in the two-row source model. The
+fallback is unreachable for `hint_MemAlign_36_1`; it makes this syntax map
+total without assigning any meaning to unrelated manifest terms. In
+particular, witness `(1, 4, 1)` is deliberately the successor PC, not a
+row-local cell. -/
+@[reducible]
+def h998ExprToField (current successor : MemAlignRow FGL) : Expr → FGL
+  | .constant "0" => 0
+  | .constant "1" => 1
+  | .constant "2" => 2
+  | .constant "4" => 4
+  | .constant "8" => 8
+  | .constant "16" => 16
+  | .constant "32" => 32
+  | .constant "64" => 64
+  | .constant "128" => 128
+  | .constant "256" => 256
+  | .constant "512" => 512
+  | .constant "1024" => 1024
+  | .constant "2048" => 2048
+  | .witness 1 1 0 => current.offset
+  | .witness 1 2 0 => current.width
+  | .witness 1 3 0 => current.wr
+  | .witness 1 4 0 => current.pc
+  | .witness 1 4 1 => successor.pc
+  | .witness 1 5 0 => current.reset
+  | .witness 1 6 0 => current.sel_up_to_down
+  | .witness 1 7 0 => current.sel_down_to_up
+  | .witness 1 16 0 => current.sel_0
+  | .witness 1 17 0 => current.sel_1
+  | .witness 1 18 0 => current.sel_2
+  | .witness 1 19 0 => current.sel_3
+  | .witness 1 20 0 => current.sel_4
+  | .witness 1 21 0 => current.sel_5
+  | .witness 1 22 0 => current.sel_6
+  | .witness 1 23 0 => current.sel_7
+  | .witness 1 25 0 => current.delta_addr
+  | .add (.witness 1 1 0) (.constant "0") => current.offset
+  | .add (.witness 1 2 0) (.constant "0") => current.width
+  | .add (.witness 1 4 0) (.constant "0") => current.pc
+  | .add (.witness 1 25 0) (.constant "0") => current.delta_addr
+  | .add lhs rhs => h998ExprToField current successor lhs + h998ExprToField current successor rhs
+  | .sub lhs rhs => h998ExprToField current successor lhs - h998ExprToField current successor rhs
+  | .mul lhs rhs => h998ExprToField current successor lhs * h998ExprToField current successor rhs
+  | _ => 0
 
 /-- Project a legacy `Valid_MemAlign` row plus an explicitly preserved
 `delta_pc` cell into the Clean row structure. The legacy record predates h998
@@ -123,8 +170,9 @@ def memAlignRomMessage (row : MemAlignRow FGL) : ZiskFv.Channels.MemAlignRom.Mem
     offset := row.offset
     width := row.width
     flags := row.sel_0 + row.sel_1 * 2 + row.sel_2 * 4 + row.sel_3 * 8 + row.sel_4 * 16 +
-      row.sel_5 * 32 + row.sel_6 * 64 + row.sel_7 * 128 + row.wr * 256 + row.reset * 512 +
-      row.sel_up_to_down * 1024 + row.sel_down_to_up * 2048 }
+      row.sel_5 * 32 + row.sel_6 * 64 + row.sel_7 * 128 +
+        (row.wr * 256 + row.reset * 512 + row.sel_up_to_down * 1024 +
+          row.sel_down_to_up * 2048) }
 
 /-- The h998 tuple expressed directly through the cyclic successor row.  This
 is the source-linked form from `mem_align.pil:139-143`; its second slot is not
@@ -139,8 +187,60 @@ def memAlignRomSuccessorMessage
     width := current.width
     flags := current.sel_0 + current.sel_1 * 2 + current.sel_2 * 4 + current.sel_3 * 8 +
       current.sel_4 * 16 + current.sel_5 * 32 + current.sel_6 * 64 + current.sel_7 * 128 +
-        current.wr * 256 + current.reset * 512 + current.sel_up_to_down * 1024 +
-          current.sel_down_to_up * 2048 }
+        (current.wr * 256 + current.reset * 512 + current.sel_up_to_down * 1024 +
+          current.sel_down_to_up * 2048) }
+
+/-- The actual generated h998 slots, translated with its rotated PC witness
+read through the successor row. -/
+@[reducible]
+def h998TupleFromLink (current successor : MemAlignRow FGL) : List FGL :=
+  hint_MemAlign_36_1.slots.map (fun slot => h998ExprToField current successor slot.value)
+
+/-- Field-list view of the live successor-indexed bus-133 model. -/
+@[reducible]
+def memAlignRomSuccessorTuple (current successor : MemAlignRow FGL) : List FGL :=
+  let message := memAlignRomSuccessorMessage current successor
+  [message.pc, message.deltaPc, message.deltaAddr, message.offset, message.width, message.flags]
+
+/-- Proof-carrying acceptance binding for MemAlign's h998 lookup. `link` and
+`romHint` identify the generated constraint-linked tuple, while
+`sourceBinding` proves that its rotated witness slot is exactly the live D3
+successor-row model. -/
+structure MemAlignRomWiring where
+  link : ValidatedLink
+  rangeHint : HintTuple
+  romHint : HintTuple
+  memAlignLink : link = link_MemAlign_36
+  linkedHints : link.hints = [rangeHint, romHint]
+  romHintIndex : romHint.hintIndex = 998
+  romBus : romHint.busId = Expr.constant "133"
+  romIsAssumes : romHint.proves = false
+  romMultiplicity : romHint.multiplicity = Expr.constant "1"
+  sourceBinding : ∀ current successor,
+    h998TupleFromLink current successor = memAlignRomSuccessorTuple current successor
+
+@[reducible]
+def h998Wiring : MemAlignRomWiring where
+  link := link_MemAlign_36
+  rangeHint := hint_MemAlign_36_0
+  romHint := hint_MemAlign_36_1
+  memAlignLink := rfl
+  linkedHints := rfl
+  romHintIndex := rfl
+  romBus := rfl
+  romIsAssumes := rfl
+  romMultiplicity := rfl
+  sourceBinding := by
+    intro current successor
+    rfl
+
+/-- Lean-side acceptance cross-check: h998's actual generated six-slot tuple
+is the live current/successor MemAlign model. D3 subsequently identifies this
+model with the emitted row-local `delta_pc` tuple. -/
+theorem h998_tuple_matches_successor_message
+    (current successor : MemAlignRow FGL) :
+    h998TupleFromLink current successor = memAlignRomSuccessorTuple current successor := by
+  exact h998Wiring.sourceBinding current successor
 
 /-- D3 turns the row-local consumer tuple into the exact successor-indexed
 h998 tuple, including the intrinsic final-row-to-row-zero instance. -/

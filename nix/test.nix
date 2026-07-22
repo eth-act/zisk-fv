@@ -102,6 +102,10 @@ writeShellApplication {
       # MemAlign's zero-tail and assumes-neg forms are separate exact
       # templates; retain a composed-form kernel-rfl regression gate.
       grep -Fq 'example : constraint_MemAlignByte_14 = template_MemAlignByte_14 := by rfl' build/extraction/Extraction/LookupWiring.lean
+      # MemAlign h998 is the source-bound bus-133 lookup; preserve its
+      # generated constraint/template rfl gate alongside the Lean-side
+      # current/successor tuple binding.
+      grep -Fq 'example : constraint_MemAlign_36 = template_MemAlign_36 := by rfl' build/extraction/Extraction/LookupWiring.lean
       # MemAlignRom is virtual and extracted from its source fixed columns;
       # retain the physical table key and nonzero reset-padding row.
       grep -Fq 'def tableId : Nat := 133' build/extraction/Extraction/MemAlignRom.lean

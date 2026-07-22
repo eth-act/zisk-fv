@@ -701,11 +701,13 @@ Active conclusions:
   kind. `mem_align.pil:139-143` defines the unmasked h998 assumes tuple
   `[pc, pc' - pc, delta_addr, offset, width, flags]`; generated
   `link_MemAlign_36` kernel-checks its cluster-2 constraint/template identity
-  with the real h996/h998 tuples. `MemAlign.Circuit` reads `pc'` from D3's
-  intrinsic cyclic successor environment, including the final-row-to-row-zero
-  instance. The consumer emits that exact negative tuple on finished bus 133;
-  balance selects a `MemAlignRomSlice` positive row, and the exact provider
-  specification comes from the extracted fixed virtual table
+  with the real h996/h998 tuples, and `MemAlign.h998Wiring.sourceBinding`
+  kernel-checks h998's actual slots against the live current/successor tuple
+  (including the rotated witness slot). `MemAlign.Circuit` reads `pc'` from
+  D3's intrinsic cyclic successor environment, including the
+  final-row-to-row-zero instance. The consumer emits that exact negative tuple
+  on finished bus 133. Balance selects a `MemAlignRomSlice` positive row, and
+  the exact provider specification comes from the extracted fixed virtual table
   (`mem_align_rom.pil:6-313`, mirrored by `mem_align_sm.rs`). Thus membership
   is derived from constraints and balance, never promised by the consumer or a
   caller. The D3 premise is the separately documented verifier-checked
@@ -778,7 +780,8 @@ the degenerate base case and #219/#220's ADD witnesses, prove
 `MutableMemPresent` impossible instead of supplying replay fields. A constructor
 with mutable-Mem rows must build the guarded `mem_replay_table` and
 `mem_replay_source_covers`, in addition to
-`constraints_hold`/`channels_balanced`/`transitions_hold`/`main_height`.
+`constraints_hold`/`channels_balanced`/`transitions_hold`/
+`cyclic_successor_transitions_hold`/`main_height`.
 Generated constraints, row ranges, canonical segment range facts, and Main
 fixed-column facts are derived from the live component. These fields are not
 read-value agreement predicates, and they no

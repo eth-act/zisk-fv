@@ -416,9 +416,10 @@ into the `high_bytes_zero_for_width` predicate. -/
     **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
     bound is derived from the MemAlignReadByte AIR's own `core_every_row`
     PIL constraints plus lookup-aware Clean range evidence. The general
-    MemAlign branch's low-value bounds are carried by the structural
-    provider witness because the MemAlignRom table is not yet extracted
-    as a first-class Lean table. -/
+    MemAlign branch's low-value bounds remain carried by the structural
+    provider witness; #242's extracted MemAlignRom table separately derives
+    the source-linked h998 lookup membership and does not replace those lane
+    bounds. -/
 
 /-- **Derived theorem** replacing the old
     `memalign_load_high_bytes_zero` axiom. Given a structural provider

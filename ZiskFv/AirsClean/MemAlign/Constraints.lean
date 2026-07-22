@@ -99,8 +99,9 @@ def memBusMessageExpr (row : Var MemAlignRow FGL) :
 @[reducible]
 def memAlignRomFlagsExpr (row : Var MemAlignRow FGL) : Expression FGL :=
   row.sel_0 + row.sel_1 * 2 + row.sel_2 * 4 + row.sel_3 * 8 + row.sel_4 * 16 +
-    row.sel_5 * 32 + row.sel_6 * 64 + row.sel_7 * 128 + row.wr * 256 +
-      row.reset * 512 + row.sel_up_to_down * 1024 + row.sel_down_to_up * 2048
+    row.sel_5 * 32 + row.sel_6 * 64 + row.sel_7 * 128 +
+      (row.wr * 256 + row.reset * 512 + row.sel_up_to_down * 1024 +
+        row.sel_down_to_up * 2048)
 
 /-- The bus-133 assumes tuple from MemAlign hint #998.  Its `deltaPc` cell is
     constrained by the component's D3 cyclic-successor transition, so this is
