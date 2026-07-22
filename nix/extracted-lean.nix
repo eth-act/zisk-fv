@@ -4,9 +4,9 @@
 # arith-table data / original PIL source) to produce the generated extraction
 # circuit shim, per-AIR Lean files, the operation-bus `Buses.lean`, the
 # memory-bus `MemoryBuses.lean`, the 74-row `ArithTable.lean` lookup data, the
-# Mem AIR sidecar source report, the typed Mem generated-artifact wrapper, the
-# generated Mem constraint bridge, and a constraint-linked lookup-wiring
-# manifest. All output lands in $out/.
+# 256-row virtual `MemAlignRom.lean`, the Mem AIR sidecar source report, the
+# typed Mem generated-artifact wrapper, the generated Mem constraint bridge,
+# and a constraint-linked lookup-wiring manifest. All output lands in $out/.
 
 stdenv.mkDerivation {
   pname = "zisk-fv-extracted-lean";
@@ -73,6 +73,14 @@ stdenv.mkDerivation {
     ${pil-extract}/bin/pil-extract arith-table \
       --rust-source ${zisk-src}/state-machines/arith/src/arith_table_data.rs \
       --output $out/ArithTable.lean
+
+    # MemAlignRom is virtual and therefore absent from pilout. Extract its
+    # 256 physical fixed rows from the upstream PIL fixed columns and verify
+    # the physical table parameters against the state-machine builder.
+    ${pil-extract}/bin/pil-extract mem-align-rom \
+      --pil-source ${zisk-src}/state-machines/mem/pil/mem_align_rom.pil \
+      --rust-source ${zisk-src}/state-machines/mem/src/mem_align_rom_sm.rs \
+      --output $out/MemAlignRom.lean
 
     # Mem generated AIR facts and sidecar source map. This is not a Lake
     # dependency; it is the reproducible source manifest for the generated

@@ -11,10 +11,29 @@ merge.)
 
 ---
 
+## D0 — `Air.Flat` nonzero-balance helpers and namespace hygiene  · zisk-fv S2  · **UPSTREAM CANDIDATE (strong)**
+
+- **Fork main / provenance:** `main` @ `8edf71f8`; the base-patch commits are
+  `8b1f8cb4` (nonzero push from a balanced pull) and `ef6dfbcd` (namespace
+  hygiene plus incidental Keccak/Utils adjustments).
+- **What:** `Clean.Air.Balance` gains the helpers that derive a nonzero provider
+  push from a balanced consumer pull. The same lineage qualifies
+  `Fin.foldl_eq_foldl_finRange` under `Clean.Fin`, avoiding an import collision
+  with Mathlib/Batteries; `Clean.Gadgets.Keccak.Permutation` and
+  `Clean.Utils.Misc` carry the small supporting adjustments.
+- **Why:** the balance helper is the existing protocol-soundness route used by
+  the static lookup providers, while the namespace qualification permits their
+  `Clean.Air.*` imports to coexist with Zisk's Mathlib imports. These are
+  build-input changes, not accepted-trace facts or caller-supplied promises.
+- **Upstream candidacy — strong.** Both are general Clean infrastructure and
+  have no Zisk-specific semantic dependency.
+
+---
+
 ## D1 — `Air.Flat` indexed adjacent-row (transition) constraints  · zisk-fv #100 / #226  · **UPSTREAM CANDIDATE (strong)**
 
-- **Branch / commit:** `air-flat-indexed-fixed-columns` @ `c87617d8` (which includes the prior
-  `air-flat-transition-constraints` commit `497e4a41`).
+- **Fork main / provenance:** `main` @ `8edf71f8`; introduced by commit
+  `497e4a41`.
 - **What:** an *additive* transition-constraint facility on the modern `Air.Flat` layer:
   - `Air.Flat.Component.transition : Nat → Environment F → Environment F → Prop := fun _ _ _ => True`;
   - `Air.Flat.Table.TransitionConstraints` applies it at every row index to the canonical predecessor/current
@@ -52,7 +71,8 @@ merge.)
 
 ## D2 — `Air.Flat` component-owned indexed fixed columns  · zisk-fv #243 / S1b  · **UPSTREAM CANDIDATE (strong)**
 
-- **Branch / commit:** `air-flat-indexed-fixed-columns` @ `c87617d8`.
+- **Fork main / provenance:** `main` @ `8edf71f8`; introduced by commit
+  `c87617d8`.
 - **What:** `IndexedFixedColumns` declares a physical capacity, a raw-or-fixed layout for each effective
   output cell, and periodic fixed values. `Component` owns an optional schema; `Table` stores only raw rows
   and definitionally materializes canonical effective `table` rows. The same rows feed constraints, channel
@@ -67,3 +87,27 @@ merge.)
   makes the modern `Air.Flat` layer usable for preprocessed-column AIRs without introducing a parallel table
   model. The eventual upstream convergence should establish a soundness lift for both D1 and D2; this fork
   deliberately does not claim that larger result.
+
+---
+
+## D3 — `Air.Flat` intrinsic cyclic successor transitions  · zisk-fv #242 / S4  · **UPSTREAM CANDIDATE (strong)**
+
+- **Fork main / provenance:** `main` @ `8edf71f8`, introduced by the same
+  commit (PR [codygunton/clean#2](https://github.com/codygunton/clean/pull/2)).
+- **What:** an additive `Component.cyclicSuccessorTransition` predicate with a
+  trivial default, `Table.successorIndex` and `successorEnvironment` over the
+  component's materialized effective rows, and table/ensemble predicates that
+  apply it at every row. The `Fin table.length` successor is modulo the effective
+  length, so the final effective row maps definitionally to row zero.
+- **Why:** D1 deliberately retains predecessor/current semantics, including
+  row-zero predecessor saturation. MemAlign's unmasked bus-133 lookup reads
+  `DELTA_PC = pc' - pc` at every physical row, including the last-to-first
+  rotation; modeling that with D1 would omit the required wrap or move it into a
+  caller-supplied boundary promise. D3 owns that indexing relation structurally
+  while leaving D1 and every existing D1 consumer unchanged.
+- **Upstream candidacy — strong.** This is a small, general flat-AIR primitive
+  for circuits whose next-row rotation is semantically cyclic. As with D1, the
+  current predicate is inert in Clean's own soundness lift; any zisk-fv use must
+  be carried by a verifier-checked accepted-trace certificate, never by a caller
+  assumption. The longer-term upstream design should thread it through the
+  ensemble soundness theorem alongside the D1 transition surface.
