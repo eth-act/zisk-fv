@@ -85,41 +85,67 @@ theorem exists_memAlign_row_eval_of_interaction_mem
       ZiskFv.AirsClean.MemAlign.component_interactionsWith_memBus
   · exact h_mem
 
-/-- Row extraction for a MemAlignByte memory-bus provider interaction in the
-    full ensemble. -/
+/-- A non-pull MemAlignByte interaction is its source-faithful positive byte
+    emission.  The component also carries the h1022 aligned-read pull; the
+    explicit multiplicity premise distinguishes the provider route without
+    pretending that the consumer interaction is a provider. -/
 theorem exists_memAlignByte_row_eval_of_interaction_mem
     {table : Table FGL}
     (h_component : table.component = ZiskFv.AirsClean.MemAlignByte.component)
     {interaction : Interaction FGL}
-    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw)
+    (h_nonpull : interaction.mult ≠ -1) :
     ∃ row ∈ table.table,
       interaction =
         ((MemBusChannel.pushed
           (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
             ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
           (table.environment row) := by
-  apply exists_memBus_row_eval_of_singleton_interactionsWith
-  · simpa [h_component] using
+  have h_pair :
+      table.component.operations.interactionsWith MemBusChannel.toRaw =
+        [ ((MemBusChannel.pulled
+        (ZiskFv.AirsClean.MemAlignByte.memReadMessageExpr
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw)
+        , ((MemBusChannel.pushed
+        (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw) ] := by
+    simpa [h_component] using
       ZiskFv.AirsClean.MemAlignByte.component_interactionsWith_memBus
-  · exact h_mem
+  rcases exists_memBus_row_eval_of_pair_interactionsWith h_pair h_mem with
+    h_read | h_push
+  · obtain ⟨row, h_row, h_eval⟩ := h_read
+    exact False.elim (h_nonpull (by rw [h_eval]; rfl))
+  · exact h_push
 
-/-- Row extraction for a MemAlignReadByte memory-bus provider interaction in
-    the full ensemble. -/
+/-- A non-pull MemAlignReadByte interaction is its positive byte emission.
+    The h1049 aligned-read pull is intentionally kept distinct. -/
 theorem exists_memAlignReadByte_row_eval_of_interaction_mem
     {table : Table FGL}
     (h_component : table.component = ZiskFv.AirsClean.MemAlignReadByte.component)
     {interaction : Interaction FGL}
-    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw)
+    (h_nonpull : interaction.mult ≠ -1) :
     ∃ row ∈ table.table,
       interaction =
         ((MemBusChannel.pushed
           (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
             ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw).eval
           (table.environment row) := by
-  apply exists_memBus_row_eval_of_singleton_interactionsWith
-  · simpa [h_component] using
+  have h_pair :
+      table.component.operations.interactionsWith MemBusChannel.toRaw =
+        [ ((MemBusChannel.pulled
+        (ZiskFv.AirsClean.MemAlignReadByte.memReadMessageExpr
+          ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw)
+        , ((MemBusChannel.pushed
+        (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw) ] := by
+    simpa [h_component] using
       ZiskFv.AirsClean.MemAlignReadByte.component_interactionsWith_memBus
-  · exact h_mem
+  rcases exists_memBus_row_eval_of_pair_interactionsWith h_pair h_mem with
+    h_read | h_push
+  · obtain ⟨row, h_row, h_eval⟩ := h_read
+    exact False.elim (h_nonpull (by rw [h_eval]; rfl))
+  · exact h_push
 
 /-! ## Full-ensemble Mem read-replay row projections -/
 

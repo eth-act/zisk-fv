@@ -82,7 +82,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
     ProverAssumptions := fun row _ _ =>
       ∃ sel_high_4b sel_high_2b sel_high_b byteVal
         direct_value value_16b value_8b addr_w step,
-        byteVal < 2 ^ 8 ∧
+        byteVal < 2 ^ 8 ∧ value_16b.val < 2 ^ 16 ∧ value_8b.val < 2 ^ 8 ∧
           row = memAlignReadByteRowOf sel_high_4b sel_high_2b sel_high_b
             byteVal direct_value value_16b value_8b addr_w step
     ProverSpec := fun _ _ _ => True
@@ -94,7 +94,8 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
         -- the `bits(8)` range clause comes from the static range lookup
         -- prepended to `main`. The 3 boolean constraints (0, 1, 2) are
         -- unused.
-        obtain ⟨h_byte_range, _h0, _h1, _h2, h_composed⟩ := h_holds
+        obtain ⟨h_byte_range, _h_value16_range, _h_dual_byte_range,
+          _h0, _h1, _h2, h_composed, _h_aligned_read⟩ := h_holds
         simp only [byte_value_factor, value_8b_factor, value_16b_factor]
         refine ⟨?_, ?_⟩
         · linear_combination h_composed
@@ -106,16 +107,23 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
     completeness := by
       circuit_proof_start [MemBusChannel, Lookup.completeness_def]
       obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, byteVal,
-        direct_value, value_16b, value_8b, addr_w, step, h_byte, hrow⟩ :=
+        direct_value, value_16b, value_8b, addr_w, step, h_byte, h_value16,
+        h_value8, hrow⟩ :=
         h_assumptions
       injection hrow with h_sel_high_4b h_sel_high_2b h_sel_high_b h_direct_value
         h_composed_value h_value_16b h_value_8b h_byte_value h_addr_w h_step
       subst_vars
       simp [memAlignReadByteComposedValueOf, byte_value_factor, value_8b_factor,
         value_16b_factor] at h_input ⊢
-      refine ⟨?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_⟩
       · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
         exact fgl_natCast_val_lt_of_lt (by decide) h_byte
+      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+        exact h_value16
+      · simpa [Lookup.Completeness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+          RangeTables.dualByteTable, h_input] using
+          (show ((byteVal : FGL).val < 2 ^ 8 ∧ value_8b.val < 2 ^ 8) from
+            ⟨fgl_natCast_val_lt_of_lt (by decide) h_byte, h_value8⟩)
       · ring }
 
 /-- MemAlignReadByte as a Clean `Air.Flat.Component`. -/
@@ -129,10 +137,12 @@ theorem component_spec (env : Environment FGL) :
 
 theorem component_interactionsWith_memBus :
     component.operations.interactionsWith MemBusChannel.toRaw =
-      [((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw)] := by
+      [ ((MemBusChannel.pulled (memReadMessageExpr component.rowInputVar)).toRaw)
+      , ((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw) ] := by
   apply Component.interactionsWith_of_exposedChannels
   change ⟨MemBusChannel.toRaw,
-      [((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+      [ ((MemBusChannel.pulled (memReadMessageExpr component.rowInputVar)).toRaw)
+      , ((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw) ]⟩ ∈
     component.exposedChannels
   simp only [component, circuit, memAlignReadByteElaborated,
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
@@ -158,7 +168,9 @@ theorem spec_via_component (row : MemAlignReadByteRow FGL)
     (h_b0 : row.sel_high_4b * (1 - row.sel_high_4b) = 0)
     (h_b1 : row.sel_high_2b * (1 - row.sel_high_2b) = 0)
     (h_b2 : row.sel_high_b * (1 - row.sel_high_b) = 0)
-    (h_byte_value_range : row.byte_value.val < 2 ^ 8) :
+    (h_byte_value_range : row.byte_value.val < 2 ^ 8)
+    (h_value16_range : row.value_16b.val < 2 ^ 16)
+    (h_value8_range : row.value_8b.val < 2 ^ 8) :
     Spec row := by
   have hsound := circuit.soundness
   simp only [GeneralFormalCircuit.Soundness, circuit, memAlignReadByteElaborated,
@@ -177,6 +189,12 @@ theorem spec_via_component (row : MemAlignReadByteRow FGL)
     row ?_ ?_).1
   · simp [circuit_norm]
   · simp only [circuit_norm]
-    exact ⟨h_byte_value_range, h_b0, h_b1, h_b2, h_composed⟩
+    exact ⟨h_byte_value_range, h_value16_range,
+      by
+        simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+          RangeTables.dualByteTable] using
+          (show (row.byte_value.val < 2 ^ 8 ∧ row.value_8b.val < 2 ^ 8) from
+            ⟨h_byte_value_range, h_value8_range⟩),
+      h_b0, h_b1, h_b2, ⟨h_composed, trivial⟩⟩
 
 end ZiskFv.AirsClean.MemAlignReadByte

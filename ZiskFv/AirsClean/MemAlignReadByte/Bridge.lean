@@ -105,10 +105,10 @@ def constraints_at
       + v.value_8b r * value_8b_factor (v.sel_high_2b r) (v.sel_high_b r)
       + v.value_16b r * value_16b_factor (v.sel_high_2b r)) = 0
 
-/-- Lookup-aware Clean witness for the byte-value range lookup in a
-    selected MemAlignReadByte row. This exposes the real
-    `lookup (rangeTable8) byte_value` operation from `main`; it is
-    structural evidence, not a replacement range axiom. -/
+/-- Lookup-aware Clean witness for the byte-assembly static lookups in a
+    selected MemAlignReadByte row. It includes the source h1052 16-bit
+    lookup and h1053 ordered `DualByte` tuple; it is structural evidence,
+    not a replacement range axiom. -/
 structure RangeLookupWitness
     (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r : ℕ) where
   offset : ℕ
@@ -117,16 +117,33 @@ structure RangeLookupWitness
     ConstraintsHold.Soundness env
       ((main (constVar (rowAt v r))).operations offset)
 
-/-- Project the byte-value range fact supplied by the Clean lookup
-    operation in `MemAlignReadByte.main`. -/
+/-- Project the byte-assembly range facts supplied by the source-faithful
+    static lookup operations in `MemAlignReadByte.main`. -/
+theorem ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL} {r : ℕ}
+    (w : RangeLookupWitness v r) :
+    (v.byte_value r).val < 2 ^ 8
+    ∧ (v.value_16b r).val < 2 ^ 16
+    ∧ (v.value_8b r).val < 2 ^ 8 := by
+  have h_holds := w.holds
+  simp only [main, circuit_norm] at h_holds
+  rcases h_holds with ⟨h_byte_range, h_value16_range, h_dual_byte_range,
+    _h0, _h1, _h2, _h_composed⟩
+  have h_dual :
+      (v.byte_value r).val < 2 ^ 8 ∧ (v.value_8b r).val < 2 ^ 8 := by
+    simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+      rowAt, constVar, ZiskFv.AirsClean.RangeTables.dualByteTable] using
+      h_dual_byte_range
+  exact ⟨by simpa [rowAt, constVar] using h_byte_range,
+    by simpa [rowAt, constVar] using h_value16_range, h_dual.2⟩
+
+/-- The byte component's source-faithful lookup bundle supplies the existing
+    byte-value range projection. -/
 theorem byte_value_range_of_lookup_aware_const_soundness
     {v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL} {r : ℕ}
     (w : RangeLookupWitness v r) :
-    (v.byte_value r).val < 2 ^ 8 := by
-  have h_holds := w.holds
-  simp only [main, circuit_norm] at h_holds
-  rcases h_holds with ⟨h_byte_range, _h0, _h1, _h2, _h_composed⟩
-  simpa [rowAt, constVar] using h_byte_range
+    (v.byte_value r).val < 2 ^ 8 :=
+  (ranges_of_lookup_aware_const_soundness w).1
 
 /-- **Bridge theorem.** Given a row of a `Valid_MemAlignReadByte`
     satisfying the 4 Clean Component constraints + the boolean
@@ -170,13 +187,13 @@ theorem byte_value_in_range_via_component
     (h_lookup : RangeLookupWitness v r) :
     (v.byte_value r).val < 2 ^ 8 := by
   obtain ⟨h_b0, h_b1, h_b2, h_composed⟩ := h_core
-  have h_byte_value_range :=
-    byte_value_range_of_lookup_aware_const_soundness h_lookup
+  obtain ⟨h_byte_value_range, h_value16_range, h_value8_range⟩ :=
+    ranges_of_lookup_aware_const_soundness h_lookup
   -- `rowAt v r` projects the AIR row into the Clean Component row;
   -- each `rowAt` field is `@[reducible]`-defeq to `v.<col> r`.
   have h_spec : Spec (rowAt v r) :=
     spec_via_component (rowAt v r) h_composed h_b0 h_b1 h_b2
-      h_byte_value_range
+      h_byte_value_range h_value16_range h_value8_range
   exact h_spec.2
 
 end ZiskFv.AirsClean.MemAlignReadByte
