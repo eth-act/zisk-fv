@@ -815,12 +815,16 @@ LeanZKCircuit, the Sail-to-Lean compiler output, or flake-pinned upstream
 inputs. Their audit surface is the Lake/Nix configuration and `flake.lock`,
 not `generated/baseline-axioms.txt`.
 
-Project Closeout S2 pins the immutable
-`codygunton/clean@c87617d8e29386e1e9e4f98cfbfb6940c2eb63df` source input.
-It provides D1's all-row predecessor/current transition contract and D2's
-canonical component-owned indexed fixed-column materialization. D1 remains
-inert to Clean's existing soundness theorem, so project-side accepted traces
-explicitly carry `transitions_hold`; D2 is consumed by canonical table
-materialization, constraints, interactions, transitions, and projections. The
-structural fixed-domain/no-wrap bound belongs to `Air.Flat.Table`, not to an
-accepted-trace field or caller-supplied promise hypothesis.
+Project Closeout S2/S4 pins the immutable
+`codygunton/clean@8edf71f8023dbe70d07004bd081a913be41e2af0` source input.
+It provides D1's all-row predecessor/current transition contract, D2's
+canonical component-owned indexed fixed-column materialization, and D3's
+intrinsic cyclic current/successor transition surface. D1 remains inert to
+Clean's existing soundness theorem, so project-side accepted traces explicitly
+carry `transitions_hold`; D2 is consumed by canonical table materialization,
+constraints, interactions, transitions, and projections. D3 is not cited by a
+derivation yet; when MemAlign consumes it, the cyclic relation must likewise be
+carried by a verifier-checked accepted-trace certificate, never by a caller
+assumption. The structural fixed-domain/no-wrap bound and cyclic successor
+indexing belong to `Air.Flat.Table`, not to an accepted-trace field or
+caller-supplied promise hypothesis.

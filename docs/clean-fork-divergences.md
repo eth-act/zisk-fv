@@ -67,3 +67,28 @@ merge.)
   makes the modern `Air.Flat` layer usable for preprocessed-column AIRs without introducing a parallel table
   model. The eventual upstream convergence should establish a soundness lift for both D1 and D2; this fork
   deliberately does not claim that larger result.
+
+---
+
+## D3 — `Air.Flat` intrinsic cyclic successor transitions  · zisk-fv #242 / S4  · **UPSTREAM CANDIDATE (strong)**
+
+- **Branch / commit:** `air-flat-cyclic-successor` @ `8edf71f8` (PR
+  [codygunton/clean#2](https://github.com/codygunton/clean/pull/2)), stacked on
+  `air-flat-indexed-fixed-columns` @ `c87617d8`.
+- **What:** an additive `Component.cyclicSuccessorTransition` predicate with a
+  trivial default, `Table.successorIndex` and `successorEnvironment` over the
+  component's materialized effective rows, and table/ensemble predicates that
+  apply it at every row. The `Fin table.length` successor is modulo the effective
+  length, so the final effective row maps definitionally to row zero.
+- **Why:** D1 deliberately retains predecessor/current semantics, including
+  row-zero predecessor saturation. MemAlign's unmasked bus-133 lookup reads
+  `DELTA_PC = pc' - pc` at every physical row, including the last-to-first
+  rotation; modeling that with D1 would omit the required wrap or move it into a
+  caller-supplied boundary promise. D3 owns that indexing relation structurally
+  while leaving D1 and every existing D1 consumer unchanged.
+- **Upstream candidacy — strong.** This is a small, general flat-AIR primitive
+  for circuits whose next-row rotation is semantically cyclic. As with D1, the
+  current predicate is inert in Clean's own soundness lift; any zisk-fv use must
+  be carried by a verifier-checked accepted-trace certificate, never by a caller
+  assumption. The longer-term upstream design should thread it through the
+  ensemble soundness theorem alongside the D1 transition surface.
