@@ -696,6 +696,21 @@ Active conclusions:
   #1031/#1032, #1050, and #1054/#1055. The terminal std_sum constraints
   c15/c9 (`:696`) remain explicitly global finalizers, not lookup links.
   No caller promise or soundness-side `ProverAssumptions` is introduced.
+- **MemAlign virtual-ROM bus-133 route (#242).** This is a cited application
+  of the existing lookup/permutation protocol-soundness class, not a new trust
+  kind. `mem_align.pil:139-143` defines the unmasked h998 assumes tuple
+  `[pc, pc' - pc, delta_addr, offset, width, flags]`; generated
+  `link_MemAlign_36` kernel-checks its cluster-2 constraint/template identity
+  with the real h996/h998 tuples. `MemAlign.Circuit` reads `pc'` from D3's
+  intrinsic cyclic successor environment, including the final-row-to-row-zero
+  instance. The consumer emits that exact negative tuple on finished bus 133;
+  balance selects a `MemAlignRomSlice` positive row, and the exact provider
+  specification comes from the extracted fixed virtual table
+  (`mem_align_rom.pil:6-313`, mirrored by `mem_align_sm.rs`). Thus membership
+  is derived from constraints and balance, never promised by the consumer or a
+  caller. The D3 premise is the separately documented verifier-checked
+  accepted-trace certificate below; no soundness-side `ProverAssumptions` is
+  used.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
@@ -745,6 +760,7 @@ trust surface even though they add no axiom.
 |---|---|---|
 | `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
 | `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
+| `cyclic_successor_transitions_hold` (**#242**) | `mem_align.pil:139-143` | the D3 cyclic successor relation holds on every effective MemAlign row, so h998's unmasked `DELTA_PC = pc' - pc` reads the actual successor PC, including the final-row-to-row-zero instance; its bus-133 ROM membership is then derived from finished-channel balance and the static provider |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
 | Derived `memReplaySegmentRanges` (not an `AcceptedZiskTrace` field) | Mem hints 884/886; `mem.pil:267-268` / `285-286`; linked c24–33 at `std_sum.pil:590/599/656/696`; generated `ValidatedLink` entries | derives selected-table `MemSegmentGeneratedRangeFacts` from `constraints_hold`, `channels_balanced`, and `transitions_hold`: the indexed source bridge identifies the canonical `ProverData` chunks, finished bus-103 balance finds the `SpecifiedRangesSlice` provider, and its static table supplies 16-bit membership. `ProverAssumptions` is completeness-only and is not used. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
@@ -822,9 +838,9 @@ canonical component-owned indexed fixed-column materialization, and D3's
 intrinsic cyclic current/successor transition surface. D1 remains inert to
 Clean's existing soundness theorem, so project-side accepted traces explicitly
 carry `transitions_hold`; D2 is consumed by canonical table materialization,
-constraints, interactions, transitions, and projections. D3 is not cited by a
-derivation yet; when MemAlign consumes it, the cyclic relation must likewise be
-carried by a verifier-checked accepted-trace certificate, never by a caller
-assumption. The structural fixed-domain/no-wrap bound and cyclic successor
-indexing belong to `Air.Flat.Table`, not to an accepted-trace field or
+constraints, interactions, transitions, and projections. D3 is consumed by
+the #242 MemAlign h998/bus-133 derivation: its cyclic relation is carried as
+the verifier-checked `cyclic_successor_transitions_hold` accepted-trace
+certificate, never by a caller assumption. The structural fixed-domain/no-wrap
+bound and cyclic successor indexing belong to `Air.Flat.Table`, not to a
 caller-supplied promise hypothesis.

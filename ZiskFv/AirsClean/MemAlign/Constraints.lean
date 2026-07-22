@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.MemAlign.Spec
 import Clean.Circuit.Basic
 import ZiskFv.Channels.MemoryBus
+import ZiskFv.Channels.MemAlignRom
 
 /-!
 # MemAlign circuit operations
@@ -31,6 +32,7 @@ namespace ZiskFv.AirsClean.MemAlign
 open Goldilocks
 open Circuit (assertZero)
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
+open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel MemAlignRomMessage)
 
 @[circuit_norm]
 def main (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
@@ -91,10 +93,38 @@ def memBusMessageExpr (row : Var MemAlignRow FGL) :
     value_0 := row.value_0
     value_1 := row.value_1 }
 
+/-- The exact `FLAGS` slot of MemAlign hint #998.  This is the literal
+    `mem_align.pil:139-143` packing, retained independently of the separate
+    D3 successor relation for `delta_pc`. -/
+@[reducible]
+def memAlignRomFlagsExpr (row : Var MemAlignRow FGL) : Expression FGL :=
+  row.sel_0 + row.sel_1 * 2 + row.sel_2 * 4 + row.sel_3 * 8 + row.sel_4 * 16 +
+    row.sel_5 * 32 + row.sel_6 * 64 + row.sel_7 * 128 + row.wr * 256 +
+      row.reset * 512 + row.sel_up_to_down * 1024 + row.sel_down_to_up * 2048
+
+/-- The bus-133 assumes tuple from MemAlign hint #998.  Its `deltaPc` cell is
+    constrained by the component's D3 cyclic-successor transition, so this is
+    the source-linked `[pc, pc' - pc, delta_addr, offset, width, flags]`
+    tuple on every effective row, including the final-to-zero wrap. -/
+@[reducible]
+def memAlignRomMessageExpr (row : Var MemAlignRow FGL) :
+    MemAlignRomMessage (Expression FGL) :=
+  { pc := row.pc
+    deltaPc := row.delta_pc
+    deltaAddr := row.delta_addr
+    offset := row.offset
+    width := row.width
+    flags := memAlignRomFlagsExpr row }
+
 @[circuit_norm]
 def mainWithMemBus (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
   main row
   MemBusChannel.emit (row.sel_prove - selAssumeExpr row) (memBusMessageExpr row)
+
+@[circuit_norm]
+def mainWithMemBusAndMemAlignRom (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
+  mainWithMemBus row
+  MemAlignRomChannel.emit (-1) (memAlignRomMessageExpr row)
 
 @[reducible] def memAlignWithMemBusElaborated :
     ElaboratedCircuit FGL MemAlignRow unit where
@@ -109,5 +139,22 @@ def mainWithMemBus (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
   channelsLawful := by
     simp only [circuit_norm, mainWithMemBus, main, selAssumeExpr,
       memBusMessageExpr, MemBusChannel]
+
+@[reducible] def memAlignWithMemBusAndMemAlignRomElaborated :
+    ElaboratedCircuit FGL MemAlignRow unit where
+  name := "MemAlignWithMemBusAndMemAlignRom"
+  main := mainWithMemBusAndMemAlignRom
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [MemBusChannel.toRaw, MemAlignRomChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [MemBusChannel.emitted (row.sel_prove - selAssumeExpr row) (memBusMessageExpr row)] ++
+    expose MemAlignRomChannel
+      [MemAlignRomChannel.emitted (-1) (memAlignRomMessageExpr row)]
+  channelsLawful := by
+    simp [circuit_norm, mainWithMemBusAndMemAlignRom, mainWithMemBus, main,
+      selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
+      MemBusChannel, MemAlignRomChannel]
 
 end ZiskFv.AirsClean.MemAlign

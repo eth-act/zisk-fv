@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.MemAlign.Circuit
 import ZiskFv.Airs.MemAlign
+import Extraction.LookupWiring
 
 /-!
 # `Valid_MemAlign` ↔ `MemAlignRow` compatibility
@@ -14,9 +15,17 @@ namespace ZiskFv.AirsClean.MemAlign
 open Goldilocks
 open ZiskFv.Channels.MemoryBus
 
-/-- Project a legacy `Valid_MemAlign` row into the Clean row structure. -/
+/-- Generator acceptance check for the linked h998 compression constraint.
+The structured tuple bridge below is intentionally checked alongside the
+manifest's exact rfl identity rather than re-parsing an adjacent rendering. -/
+example : Extraction.LookupWiring.constraint_MemAlign_36 =
+    Extraction.LookupWiring.template_MemAlign_36 := by rfl
+
+/-- Project a legacy `Valid_MemAlign` row plus an explicitly preserved
+`delta_pc` cell into the Clean row structure. The legacy record predates h998
+and therefore has no column for this source-linked cell. -/
 @[reducible]
-def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) :
+def rowAtWithDelta (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) (delta_pc : FGL) :
     MemAlignRow FGL where
   addr := v.addr r
   offset := v.offset r
@@ -46,8 +55,17 @@ def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) :
   sel_prove := v.sel_prove r
   preL1 := v.preL1 r
   delta_addr := v.delta_addr r
+  delta_pc := delta_pc
   value_0 := v.value_0 r
   value_1 := v.value_1 r
+
+/-- The pre-h998 legacy projection has no `DELTA_PC` source, so its explicit
+compatibility view is zero only. It is not used as the bus-133 soundness
+source; that route uses `rowAtWithDelta` plus D3. -/
+@[reducible]
+def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) :
+    MemAlignRow FGL :=
+  rowAtWithDelta v r 0
 
 /-- Constant-row legacy view of one Clean `MemAlignRow`. -/
 @[reducible]
@@ -95,6 +113,44 @@ def memBusMessage (row : MemAlignRow FGL) : MemBusMessage FGL :=
     value_0 := row.value_0
     value_1 := row.value_1 }
 
+/-- Concrete bus-133 h998 tuple.  D3, rather than this row-local projection,
+    establishes that `deltaPc` is the cyclic successor-PC difference. -/
+@[reducible]
+def memAlignRomMessage (row : MemAlignRow FGL) : ZiskFv.Channels.MemAlignRom.MemAlignRomMessage FGL :=
+  { pc := row.pc
+    deltaPc := row.delta_pc
+    deltaAddr := row.delta_addr
+    offset := row.offset
+    width := row.width
+    flags := row.sel_0 + row.sel_1 * 2 + row.sel_2 * 4 + row.sel_3 * 8 + row.sel_4 * 16 +
+      row.sel_5 * 32 + row.sel_6 * 64 + row.sel_7 * 128 + row.wr * 256 + row.reset * 512 +
+      row.sel_up_to_down * 1024 + row.sel_down_to_up * 2048 }
+
+/-- The h998 tuple expressed directly through the cyclic successor row.  This
+is the source-linked form from `mem_align.pil:139-143`; its second slot is not
+a caller-provided next-PC fact. -/
+@[reducible]
+def memAlignRomSuccessorMessage
+    (current successor : MemAlignRow FGL) : ZiskFv.Channels.MemAlignRom.MemAlignRomMessage FGL :=
+  { pc := current.pc
+    deltaPc := successor.pc - current.pc
+    deltaAddr := current.delta_addr
+    offset := current.offset
+    width := current.width
+    flags := current.sel_0 + current.sel_1 * 2 + current.sel_2 * 4 + current.sel_3 * 8 +
+      current.sel_4 * 16 + current.sel_5 * 32 + current.sel_6 * 64 + current.sel_7 * 128 +
+        current.wr * 256 + current.reset * 512 + current.sel_up_to_down * 1024 +
+          current.sel_down_to_up * 2048 }
+
+/-- D3 turns the row-local consumer tuple into the exact successor-indexed
+h998 tuple, including the intrinsic final-row-to-row-zero instance. -/
+theorem memAlignRomMessage_eq_successorMessage_of_delta_pc_eq
+    (current successor : MemAlignRow FGL)
+    (h_delta_pc : current.delta_pc = successor.pc - current.pc) :
+    memAlignRomMessage current = memAlignRomSuccessorMessage current successor := by
+  rw [ZiskFv.Channels.MemAlignRom.MemAlignRomMessage.mk.injEq]
+  simp [h_delta_pc]
+
 theorem eval_memBusMessageExpr
     (env : Environment FGL) (row : Var MemAlignRow FGL) :
     eval env (memBusMessageExpr row) = memBusMessage (eval env row) := by
@@ -103,6 +159,18 @@ theorem eval_memBusMessageExpr
     ProvableStruct.eval_eq_eval, ProvableStruct.eval,
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  repeat constructor
+
+/-- Lean-side h998 tuple cross-check: the consumer expression is precisely
+    the concrete `[pc, deltaPc, deltaAddr, offset, width, flags]` model. -/
+theorem eval_memAlignRomMessageExpr
+    (env : Environment FGL) (row : Var MemAlignRow FGL) :
+    eval env (memAlignRomMessageExpr row) = memAlignRomMessage (eval env row) := by
+  rw [ZiskFv.Channels.MemAlignRom.MemAlignRomMessage.mk.injEq]
+  simp only [memAlignRomMessageExpr, memAlignRomFlagsExpr,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
     ProvableType.eval_field, Expression.eval]
   repeat constructor
 

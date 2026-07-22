@@ -50,6 +50,9 @@ structure MemAlignRow (F : Type) where
   sel_prove : F
   preL1 : F
   delta_addr : F
+  /-- The exact `pc' - pc` lookup payload.  D3 binds it to the component's
+      cyclic successor row; it is not an independent source-side value. -/
+  delta_pc : F
   value_0 : F
   value_1 : F
 deriving ProvableStruct

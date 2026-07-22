@@ -14,6 +14,7 @@ namespace ZiskFv.AirsClean.FullEnsemble
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.SpecifiedRanges
   (SpecifiedRangeMessage SpecifiedRangesSliceChannel memDistanceMessage)
@@ -33,6 +34,13 @@ private theorem specifiedRangesSliceChannel_ne_opBus :
   change "SpecifiedRangesSlice103" = "OperationBus" at h_name
   simp at h_name
 
+private theorem specifiedRangesSliceChannel_ne_memAlignRom :
+    SpecifiedRangesSliceChannel.toRaw ≠ MemAlignRomChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun channel : RawChannel FGL => channel.name) h
+  change "SpecifiedRangesSlice103" = "MemAlignRom133" at h_name
+  simp at h_name
+
 /-- Project finished bus-103 balance from the full ensemble. -/
 theorem specifiedRangesSlice_balanced_of_witness
     {length : Nat} {program : Program length}
@@ -41,7 +49,8 @@ theorem specifiedRangesSlice_balanced_of_witness
     BalancedInteractions (witness.interactionsWith SpecifiedRangesSliceChannel.toRaw) := by
   have h := h_balanced SpecifiedRangesSliceChannel.toRaw (by
     change SpecifiedRangesSliceChannel.toRaw ∈
-      [MemBusChannel.toRaw, OpBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
+      [MemBusChannel.toRaw, OpBusChannel.toRaw, MemAlignRomChannel.toRaw,
+        SpecifiedRangesSliceChannel.toRaw]
     simp)
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
@@ -113,7 +122,7 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
       providerTable.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_mem | h_ranges |
+    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_memAlignRom | h_mem | h_ranges |
       h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -145,12 +154,21 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_align]
-      change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
-      simp only [List.mem_singleton]
+      change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw, MemAlignRomChannel.toRaw]
       intro h
-      have h_name := congrArg (fun channel : RawChannel FGL => channel.name) h
-      change "SpecifiedRangesSlice103" = "MemoryBus" at h_name
-      simp at h_name
+      simp only [List.mem_cons] at h
+      rcases h with h | h
+      · exact specifiedRangesSliceChannel_ne_memBus h
+      · rcases h with h | h
+        · exact specifiedRangesSliceChannel_ne_memAlignRom h
+        · simp at h
+    simp [h_nil] at h_providerInteraction
+  · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
+      apply Table.interactionsWith_nil_of_channel_not_mem
+      rw [h_memAlignRom]
+      change SpecifiedRangesSliceChannel.toRaw ∉ [MemAlignRomChannel.toRaw]
+      simp only [List.mem_singleton]
+      exact specifiedRangesSliceChannel_ne_memAlignRom
     simp [h_nil] at h_providerInteraction
   · exact False.elim (h_nonpull
       (mem_table_specifiedRangesSlice_mult_neg_one h_mem h_providerInteraction))
