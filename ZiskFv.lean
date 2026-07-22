@@ -8,6 +8,7 @@ import ZiskFv.AirsClean.Binary.Wiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
+import ZiskFv.AirsClean.MemAlignRomSlice
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 

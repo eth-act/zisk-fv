@@ -87,6 +87,7 @@ writeShellApplication {
       test -f build/extraction/Extraction/MemGeneratedArtifact.lean
       test -f build/extraction/Extraction/MemGeneratedConstraintBridge.lean
       test -f build/extraction/Extraction/LookupWiring.lean
+      test -f build/extraction/Extraction/MemAlignRom.lean
       # The lookup-wiring artifact is deliberately not allowed to inherit the
       # legacy bus-emission renderer's ExtF -> 0 fallback. Mem's range lookup
       # has an AirValue tuple member, so this is a concrete regeneration gate.
@@ -101,6 +102,10 @@ writeShellApplication {
       # MemAlign's zero-tail and assumes-neg forms are separate exact
       # templates; retain a composed-form kernel-rfl regression gate.
       grep -Fq 'example : constraint_MemAlignByte_14 = template_MemAlignByte_14 := by rfl' build/extraction/Extraction/LookupWiring.lean
+      # MemAlignRom is virtual and extracted from its source fixed columns;
+      # retain the physical table key and nonzero reset-padding row.
+      grep -Fq 'def tableId : Nat := 133' build/extraction/Extraction/MemAlignRom.lean
+      grep -Fq 'flags := (512 : FGL)' build/extraction/Extraction/MemAlignRom.lean
       generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/Circuit.olean \
@@ -114,6 +119,9 @@ writeShellApplication {
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/LookupWiring.olean \
         build/extraction/Extraction/LookupWiring.lean
+      LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
+        -o build/extraction/Extraction/MemAlignRom.olean \
+        build/extraction/Extraction/MemAlignRom.lean
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         build/extraction/Extraction/MemGeneratedConstraintBridge.lean
     }

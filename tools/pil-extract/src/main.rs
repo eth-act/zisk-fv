@@ -10,6 +10,7 @@ use prost::Message;
 mod arith_table;
 mod clean_component;
 mod lookup_wiring;
+mod mem_align_rom;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -44,6 +45,8 @@ enum Cmd {
     LookupWiring(LookupWiringCmd),
     /// Parse `arith_table_data.rs` and emit `Extraction.ArithTable`.
     ArithTable(ArithTableCmd),
+    /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
+    MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
     /// `ProvableStruct` and the `main` do-block (assertZero constraints +
     /// the operation-bus `OpBusChannel.push`). Plan step C0g / D-EXT.
@@ -149,6 +152,21 @@ struct ArithTableCmd {
 }
 
 #[derive(Args, Debug)]
+struct MemAlignRomCmd {
+    /// Path to upstream `state-machines/mem/pil/mem_align_rom.pil`.
+    #[arg(long)]
+    pil_source: PathBuf,
+
+    /// Path to upstream `state-machines/mem/src/mem_align_rom_sm.rs`.
+    #[arg(long)]
+    rust_source: PathBuf,
+
+    /// Output path for the generated Lean module. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
 struct CleanComponentCmd {
     /// Path to the .pilout file.
     #[arg(long)]
@@ -240,6 +258,17 @@ fn main() -> Result<()> {
     match cli.cmd {
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;
+            if args.output.is_none() {
+                print!("{}", rendered);
+            }
+            Ok(())
+        }
+        Cmd::MemAlignRom(args) => {
+            let rendered = mem_align_rom::run(
+                &args.pil_source,
+                &args.rust_source,
+                args.output.as_deref(),
+            )?;
             if args.output.is_none() {
                 print!("{}", rendered);
             }
