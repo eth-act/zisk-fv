@@ -43,7 +43,7 @@
       # `exists_nonzero_push_of_pull` balance strengthening, the D1 all-row
       # predecessor/current transition, D2 canonical component-owned indexed
       # fixed-column materialization, and D3 cyclic successor transitions
-      # (branch air-flat-cyclic-successor; see docs/clean-fork-divergences.md).
+      # (fork main @ 8edf71f8; see docs/clean-fork-divergences.md).
       # To be upstreamed; re-point at Verified-zkEVM/clean once all merge.
       # Pinned by rev so the lock is immutable; fetched over HTTPS so CI needs
       # no SSH key.
