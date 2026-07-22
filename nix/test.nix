@@ -98,6 +98,9 @@ writeShellApplication {
       # Binary c10 has no gsum hint. Its constraint-derived mixed template
       # must nevertheless be checked by the generated Lean rfl example.
       grep -Fq 'example : constraint_Binary_10 = template_Binary_10 := by rfl' build/extraction/Extraction/LookupWiring.lean
+      # MemAlign's zero-tail and assumes-neg forms are separate exact
+      # templates; retain a composed-form kernel-rfl regression gate.
+      grep -Fq 'example : constraint_MemAlignByte_14 = template_MemAlignByte_14 := by rfl' build/extraction/Extraction/LookupWiring.lean
       generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/Circuit.olean \

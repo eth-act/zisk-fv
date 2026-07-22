@@ -681,6 +681,21 @@ Active conclusions:
   bus-125/bus-124 ensembles carry table membership through balance. No
   consumer promise or soundness-side `ProverAssumptions` is introduced;
   provider `ProverAssumptions` is completeness-only.
+- **MemAlign byte-assembly exact lookup wiring (#242).** This is a cited
+  application of the existing lookup/permutation protocol-soundness class,
+  not a new trust kind. The shared MemAlignByte PIL template emits the live
+  byte-memory permutation at `mem_align_byte.pil:66-100`, the 16-bit/byte
+  range and lookup facts at `:103-104`, and the direct padding updates at
+  `:106-118`; MemAlignReadByte instantiates that same template through its
+  Rust witness builder. The generated `ValidatedLink` entries kernel-check
+  the normal byte links plus the exact zero-tail routes
+  `MemAlignByte c9/c13` and `MemAlignReadByte c6/c7` at std_sum
+  `:590/:656/:599/:656`, and their composed exact assumes-neg/zero-tail
+  routes `MemAlignByte c14` and `MemAlignReadByte c8` at `:656`, each by
+  `constraint = template := by rfl` with the real hints #1025/#1027,
+  #1031/#1032, #1050, and #1054/#1055. The terminal std_sum constraints
+  c15/c9 (`:696`) remain explicitly global finalizers, not lookup links.
+  No caller promise or soundness-side `ProverAssumptions` is introduced.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).

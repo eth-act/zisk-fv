@@ -108,6 +108,10 @@ enum LinkShape {
     Direct,
     Cluster2,
     DerivedMixed2,
+    DirectZeroTail,
+    Cluster2ZeroTail,
+    DirectAssumesNegForm,
+    DirectAssumesNegFormZeroTail,
 }
 
 #[derive(Clone)]
@@ -526,6 +530,7 @@ fn find_links(
     let mut links = Vec::new();
     let mut consumed = HashSet::new();
     let mut by_mix: HashMap<Ast, Vec<MixCandidate>> = HashMap::new();
+    let mut zero_tail_by_mix: HashMap<Ast, Vec<MixCandidate>> = HashMap::new();
     for (index, hint) in hints.iter().enumerate() {
         for alpha in challenges {
             for gamma in challenges {
@@ -538,6 +543,16 @@ fn find_links(
                         alpha: alpha.clone(),
                         gamma: gamma.clone(),
                     });
+                }
+                if let Some(mix) = zero_tail_std_mix(hint, alpha, gamma) {
+                    zero_tail_by_mix
+                        .entry(normalise(mix))
+                        .or_default()
+                        .push(MixCandidate {
+                            hint: index,
+                            alpha: alpha.clone(),
+                            gamma: gamma.clone(),
+                        });
                 }
             }
         }
@@ -588,12 +603,130 @@ fn find_links(
             continue;
         }
 
+        if zero_tail_template_scope(air_name) {
+            let pair_matches = zero_tail_pair_matches(
+                constraint,
+                hints,
+                &consumed,
+                &zero_tail_by_mix,
+            );
+            if pair_matches.len() > 1 {
+                bail!(
+                    "constraint #{constraint_index} has {} possible two-hint zero-tail template links",
+                    pair_matches.len()
+                );
+            }
+            if let Some((left, right, accumulator, alpha, gamma)) = pair_matches.into_iter().next() {
+                consumed.insert(left);
+                consumed.insert(right);
+                links.push(LinkedConstraint {
+                    constraint_index: *constraint_index,
+                    constraint: constraint.clone(),
+                    accumulator,
+                    alpha,
+                    gamma,
+                    hints: vec![hints[left].clone(), hints[right].clone()],
+                    derived_tuples: Vec::new(),
+                    shape: LinkShape::Cluster2ZeroTail,
+                });
+                continue;
+            }
+
+            let single_matches = zero_tail_single_matches(
+                constraint,
+                hints,
+                &consumed,
+                &zero_tail_by_mix,
+            );
+            if single_matches.len() > 1 {
+                bail!(
+                    "constraint #{constraint_index} has {} possible direct zero-tail template links",
+                    single_matches.len()
+                );
+            }
+            if let Some((hint, accumulator, alpha, gamma)) = single_matches.into_iter().next() {
+                consumed.insert(hint);
+                links.push(LinkedConstraint {
+                    constraint_index: *constraint_index,
+                    constraint: constraint.clone(),
+                    accumulator,
+                    alpha,
+                    gamma,
+                    hints: vec![hints[hint].clone()],
+                    derived_tuples: Vec::new(),
+                    shape: LinkShape::DirectZeroTail,
+                });
+                continue;
+            }
+
+            let sign_form_matches = direct_assumes_neg_form_matches(
+                constraint,
+                hints,
+                &consumed,
+                &by_mix,
+            );
+            if sign_form_matches.len() > 1 {
+                bail!(
+                    "constraint #{constraint_index} has {} possible direct assumes-neg template links",
+                    sign_form_matches.len()
+                );
+            }
+            if let Some((hint, accumulator, alpha, gamma)) = sign_form_matches.into_iter().next() {
+                consumed.insert(hint);
+                links.push(LinkedConstraint {
+                    constraint_index: *constraint_index,
+                    constraint: constraint.clone(),
+                    accumulator,
+                    alpha,
+                    gamma,
+                    hints: vec![hints[hint].clone()],
+                    derived_tuples: Vec::new(),
+                    shape: LinkShape::DirectAssumesNegForm,
+                });
+                continue;
+            }
+
+            let composed_matches = direct_assumes_neg_form_zero_tail_matches(
+                constraint,
+                hints,
+                &consumed,
+                &zero_tail_by_mix,
+            );
+            if composed_matches.len() > 1 {
+                bail!(
+                    "constraint #{constraint_index} has {} possible direct assumes-neg zero-tail template links",
+                    composed_matches.len()
+                );
+            }
+            if let Some((hint, accumulator, alpha, gamma)) = composed_matches.into_iter().next() {
+                consumed.insert(hint);
+                links.push(LinkedConstraint {
+                    constraint_index: *constraint_index,
+                    constraint: constraint.clone(),
+                    accumulator,
+                    alpha,
+                    gamma,
+                    hints: vec![hints[hint].clone()],
+                    derived_tuples: Vec::new(),
+                    shape: LinkShape::DirectAssumesNegFormZeroTail,
+                });
+                continue;
+            }
+        }
+
         if let Some(link) = derived_mixed_link(air_name, *constraint_index, constraint) {
             links.push(link);
         }
     }
     let unlinked = constraints.len().saturating_sub(links.len());
     Ok((links, unlinked))
+}
+
+/// The approved zero-tail route is deliberately bounded to the MemAlign
+/// family. Other unlinked shapes, including Arith c61/c62, retain their
+/// recorded disposition until separately approved.
+fn zero_tail_template_scope(air_name: &str) -> bool {
+    matches!(air_name, "MemAlign" | "MemAlignByte" | "MemAlignReadByte")
 }
 
 /// The Binary c10 final-byte lookup shares its accumulator constraint with
@@ -825,6 +958,155 @@ fn pair_matches(
     matches
 }
 
+fn zero_tail_single_matches(
+    constraint: &Ast,
+    hints: &[HintData],
+    consumed: &HashSet<usize>,
+    by_mix: &HashMap<Ast, Vec<MixCandidate>>,
+) -> Vec<(usize, Ast, Ast, Ast)> {
+    let Some(mix) = direct_mix(constraint) else {
+        return Vec::new();
+    };
+    by_mix
+        .get(mix)
+        .into_iter()
+        .flatten()
+        .filter(|candidate| !consumed.contains(&candidate.hint))
+        .filter(|candidate| has_literal_zero_tail(&hints[candidate.hint]))
+        .filter_map(|candidate| {
+            zero_tail_direct_accumulator(
+                constraint,
+                &hints[candidate.hint],
+                &candidate.alpha,
+                &candidate.gamma,
+            )
+            .map(|accumulator| {
+                (
+                    candidate.hint,
+                    accumulator,
+                    candidate.alpha.clone(),
+                    candidate.gamma.clone(),
+                )
+            })
+        })
+        .collect()
+}
+
+fn zero_tail_pair_matches(
+    constraint: &Ast,
+    hints: &[HintData],
+    consumed: &HashSet<usize>,
+    by_mix: &HashMap<Ast, Vec<MixCandidate>>,
+) -> Vec<(usize, usize, Ast, Ast, Ast)> {
+    let Some((left_mix, right_mix)) = cluster_mixes(constraint) else {
+        return Vec::new();
+    };
+    let mut matches = Vec::new();
+    for left in by_mix.get(left_mix).into_iter().flatten() {
+        if consumed.contains(&left.hint) {
+            continue;
+        }
+        for right in by_mix.get(right_mix).into_iter().flatten() {
+            if left.hint == right.hint
+                || left.alpha != right.alpha
+                || left.gamma != right.gamma
+                || consumed.contains(&right.hint)
+                || !(has_literal_zero_tail(&hints[left.hint])
+                    || has_literal_zero_tail(&hints[right.hint]))
+            {
+                continue;
+            }
+            if let Some(accumulator) = zero_tail_cluster_accumulator(
+                constraint,
+                &hints[left.hint],
+                &hints[right.hint],
+                &left.alpha,
+                &left.gamma,
+            ) {
+                matches.push((
+                    left.hint,
+                    right.hint,
+                    accumulator,
+                    left.alpha.clone(),
+                    left.gamma.clone(),
+                ));
+            }
+        }
+    }
+    matches
+}
+
+fn direct_assumes_neg_form_matches(
+    constraint: &Ast,
+    hints: &[HintData],
+    consumed: &HashSet<usize>,
+    by_mix: &HashMap<Ast, Vec<MixCandidate>>,
+) -> Vec<(usize, Ast, Ast, Ast)> {
+    let Some(mix) = direct_mix(constraint) else {
+        return Vec::new();
+    };
+    by_mix
+        .get(mix)
+        .into_iter()
+        .flatten()
+        .filter(|candidate| !consumed.contains(&candidate.hint))
+        .filter(|candidate| !hints[candidate.hint].proves)
+        .filter_map(|candidate| {
+            direct_assumes_neg_form_accumulator(
+                constraint,
+                &hints[candidate.hint],
+                &candidate.alpha,
+                &candidate.gamma,
+            )
+            .map(|accumulator| {
+                (
+                    candidate.hint,
+                    accumulator,
+                    candidate.alpha.clone(),
+                    candidate.gamma.clone(),
+                )
+            })
+        })
+        .collect()
+}
+
+fn direct_assumes_neg_form_zero_tail_matches(
+    constraint: &Ast,
+    hints: &[HintData],
+    consumed: &HashSet<usize>,
+    by_mix: &HashMap<Ast, Vec<MixCandidate>>,
+) -> Vec<(usize, Ast, Ast, Ast)> {
+    let Some(mix) = direct_mix(constraint) else {
+        return Vec::new();
+    };
+    by_mix
+        .get(mix)
+        .into_iter()
+        .flatten()
+        .filter(|candidate| !consumed.contains(&candidate.hint))
+        .filter(|candidate| {
+            let hint = &hints[candidate.hint];
+            !hint.proves && has_literal_zero_tail(hint)
+        })
+        .filter_map(|candidate| {
+            direct_assumes_neg_form_zero_tail_accumulator(
+                constraint,
+                &hints[candidate.hint],
+                &candidate.alpha,
+                &candidate.gamma,
+            )
+            .map(|accumulator| {
+                (
+                    candidate.hint,
+                    accumulator,
+                    candidate.alpha.clone(),
+                    candidate.gamma.clone(),
+                )
+            })
+        })
+        .collect()
+}
+
 fn direct_mix(constraint: &Ast) -> Option<&Ast> {
     match constraint {
         Ast::Add(lhs, _) | Ast::Sub(lhs, _) => match lhs.as_ref() {
@@ -870,6 +1152,93 @@ fn direct_accumulator(constraint: &Ast, hint: &HintData, alpha: &Ast, gamma: &As
     }
 }
 
+fn zero_tail_direct_accumulator(
+    constraint: &Ast,
+    hint: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Option<Ast> {
+    match (hint.proves, constraint) {
+        (false, Ast::Add(lhs, rhs)) => match lhs.as_ref() {
+            Ast::Mul(accumulator, _) if **rhs == normalise(hint.multiplicity.clone()) => {
+                let accumulator = (**accumulator).clone();
+                (normalise(zero_tail_direct_template(
+                    accumulator.clone(),
+                    hint,
+                    alpha,
+                    gamma,
+                )) == *constraint)
+                    .then_some(accumulator)
+            }
+            _ => None,
+        },
+        (true, Ast::Sub(lhs, rhs)) => match lhs.as_ref() {
+            Ast::Mul(accumulator, _) if **rhs == normalise(hint.multiplicity.clone()) => {
+                let accumulator = (**accumulator).clone();
+                (normalise(zero_tail_direct_template(
+                    accumulator.clone(),
+                    hint,
+                    alpha,
+                    gamma,
+                )) == *constraint)
+                    .then_some(accumulator)
+            }
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn direct_assumes_neg_form_accumulator(
+    constraint: &Ast,
+    hint: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Option<Ast> {
+    let Ast::Sub(lhs, rhs) = constraint else {
+        return None;
+    };
+    let Ast::Mul(accumulator, _) = lhs.as_ref() else {
+        return None;
+    };
+    if **rhs != normalise(assumes_neg_multiplicity(hint)) {
+        return None;
+    }
+    let accumulator = (**accumulator).clone();
+    (normalise(direct_assumes_neg_form_template(
+        accumulator.clone(),
+        hint,
+        alpha,
+        gamma,
+    )) == *constraint)
+        .then_some(accumulator)
+}
+
+fn direct_assumes_neg_form_zero_tail_accumulator(
+    constraint: &Ast,
+    hint: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Option<Ast> {
+    let Ast::Sub(lhs, rhs) = constraint else {
+        return None;
+    };
+    let Ast::Mul(accumulator, _) = lhs.as_ref() else {
+        return None;
+    };
+    if **rhs != normalise(assumes_neg_multiplicity(hint)) {
+        return None;
+    }
+    let accumulator = (**accumulator).clone();
+    (normalise(direct_assumes_neg_form_zero_tail_template(
+        accumulator.clone(),
+        hint,
+        alpha,
+        gamma,
+    )) == *constraint)
+        .then_some(accumulator)
+}
+
 fn cluster_accumulator(
     constraint: &Ast,
     left: &HintData,
@@ -889,8 +1258,37 @@ fn cluster_accumulator(
         .then_some(accumulator)
 }
 
+fn zero_tail_cluster_accumulator(
+    constraint: &Ast,
+    left: &HintData,
+    right: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Option<Ast> {
+    let product = match constraint {
+        Ast::Sub(product, _) => product.as_ref(),
+        _ => return None,
+    };
+    let Ast::Mul(accumulator, _) = product else {
+        return None;
+    };
+    let accumulator = (**accumulator).clone();
+    (normalise(zero_tail_cluster_template(
+        accumulator.clone(),
+        left,
+        right,
+        alpha,
+        gamma,
+    )) == *constraint)
+        .then_some(accumulator)
+}
+
 fn std_mix(hint: &HintData, alpha: &Ast, gamma: &Ast) -> Option<Ast> {
-    let mut values = hint.slots.iter().rev();
+    std_mix_slots(&hint.slots, &hint.bus_id, alpha, gamma)
+}
+
+fn std_mix_slots(slots: &[Slot], bus_id: &Ast, alpha: &Ast, gamma: &Ast) -> Option<Ast> {
+    let mut values = slots.iter().rev();
     let mut value = values.next()?.value.clone();
     for slot in values {
         value = Ast::add(Ast::mul(value, alpha.clone()), slot.value.clone());
@@ -898,10 +1296,26 @@ fn std_mix(hint: &HintData, alpha: &Ast, gamma: &Ast) -> Option<Ast> {
     Some(Ast::add(
         Ast::add(
             Ast::mul(value, alpha.clone()),
-            hint.bus_id.clone(),
+            bus_id.clone(),
         ),
         gamma.clone(),
     ))
+}
+
+/// Mirror the upstream macro's exact compression: remove a contiguous tail
+/// of literal-zero slots before the Horner fold, while retaining literal zero
+/// slots that occur before a nonzero slot. This is a template constructor,
+/// not an algebraic normalization.
+fn zero_tail_std_mix(hint: &HintData, alpha: &Ast, gamma: &Ast) -> Option<Ast> {
+    let end = hint
+        .slots
+        .iter()
+        .rposition(|slot| !is_zero(&slot.value))?;
+    std_mix_slots(&hint.slots[..=end], &hint.bus_id, alpha, gamma)
+}
+
+fn has_literal_zero_tail(hint: &HintData) -> bool {
+    matches!(hint.slots.last(), Some(slot) if is_zero(&slot.value))
 }
 
 fn signed_multiplicity(hint: &HintData) -> Ast {
@@ -910,6 +1324,13 @@ fn signed_multiplicity(hint: &HintData) -> Ast {
     } else {
         field_neg(hint.multiplicity.clone())
     }
+}
+
+/// PIL's assumes-side direct update renders the correction as `0 - m` and
+/// subtracts that term. Preserve the spelling exactly; this is not field
+/// negation normalization.
+fn assumes_neg_multiplicity(hint: &HintData) -> Ast {
+    Ast::sub(Ast::constant("0"), hint.multiplicity.clone())
 }
 
 fn direct_template(accumulator: Ast, hint: &HintData, alpha: &Ast, gamma: &Ast) -> Ast {
@@ -921,6 +1342,55 @@ fn direct_template(accumulator: Ast, hint: &HintData, alpha: &Ast, gamma: &Ast) 
     }
 }
 
+fn zero_tail_direct_template(
+    accumulator: Ast,
+    hint: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Ast {
+    let product = Ast::mul(
+        accumulator,
+        zero_tail_std_mix(hint, alpha, gamma).expect("hint has a nonzero slot"),
+    );
+    if hint.proves {
+        Ast::sub(product, hint.multiplicity.clone())
+    } else {
+        Ast::add(product, hint.multiplicity.clone())
+    }
+}
+
+fn direct_assumes_neg_form_template(
+    accumulator: Ast,
+    hint: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Ast {
+    debug_assert!(!hint.proves);
+    Ast::sub(
+        Ast::mul(
+            accumulator,
+            std_mix(hint, alpha, gamma).expect("hint has a slot"),
+        ),
+        assumes_neg_multiplicity(hint),
+    )
+}
+
+fn direct_assumes_neg_form_zero_tail_template(
+    accumulator: Ast,
+    hint: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Ast {
+    debug_assert!(!hint.proves);
+    Ast::sub(
+        Ast::mul(
+            accumulator,
+            zero_tail_std_mix(hint, alpha, gamma).expect("hint has a nonzero slot"),
+        ),
+        assumes_neg_multiplicity(hint),
+    )
+}
+
 fn cluster_template(
     accumulator: Ast,
     left: &HintData,
@@ -930,6 +1400,24 @@ fn cluster_template(
 ) -> Ast {
     let left_mix = std_mix(left, alpha, gamma).expect("hint has a slot");
     let right_mix = std_mix(right, alpha, gamma).expect("hint has a slot");
+    Ast::sub(
+        Ast::mul(accumulator, Ast::mul(left_mix.clone(), right_mix.clone())),
+        Ast::add(
+            Ast::mul(signed_multiplicity(left), right_mix),
+            Ast::mul(signed_multiplicity(right), left_mix),
+        ),
+    )
+}
+
+fn zero_tail_cluster_template(
+    accumulator: Ast,
+    left: &HintData,
+    right: &HintData,
+    alpha: &Ast,
+    gamma: &Ast,
+) -> Ast {
+    let left_mix = zero_tail_std_mix(left, alpha, gamma).expect("hint has a nonzero slot");
+    let right_mix = zero_tail_std_mix(right, alpha, gamma).expect("hint has a nonzero slot");
     Ast::sub(
         Ast::mul(accumulator, Ast::mul(left_mix.clone(), right_mix.clone())),
         Ast::add(
@@ -1065,7 +1553,7 @@ fn write_prelude(out: &mut String) {
     out.push_str("structure DerivedTuple where\n");
     out.push_str("  piop : String\n  proves : Bool\n  busId : Expr\n");
     out.push_str("  multiplicity : Expr\n  slots : List Slot\n\n");
-    out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | derivedMixed2\n  deriving Repr, DecidableEq\n\n");
+    out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | derivedMixed2\n  | directZeroTail\n  | cluster2ZeroTail\n  | directAssumesNegForm\n  | directAssumesNegFormZeroTail\n  deriving Repr, DecidableEq\n\n");
     out.push_str("structure ValidatedLink where\n");
     out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
     out.push_str("  accumulator : Expr\n  alpha : Expr\n  gamma : Expr\n  constraint : Expr\n  template : Expr\n");
@@ -1082,6 +1570,11 @@ fn write_prelude(out: &mut String) {
     out.push_str("  | [] => .add busId gamma\n");
     out.push_str("  | first :: rest =>\n");
     out.push_str("    .add (.add (.mul (rest.foldl (fun acc slot => .add (.mul acc alpha) slot.value) first.value) alpha) busId) gamma\n\n");
+    out.push_str("def literalZeroSlot : Slot → Bool\n");
+    out.push_str("  | ⟨_, .constant \"0\"⟩ => true\n");
+    out.push_str("  | _ => false\n\n");
+    out.push_str("def zeroTailSlots (slots : List Slot) : List Slot :=\n");
+    out.push_str("  (slots.reverse.dropWhile literalZeroSlot).reverse\n\n");
     out.push_str("def normalise : Expr → Expr\n");
     out.push_str("  | .add lhs rhs =>\n");
     out.push_str("    match normalise lhs, normalise rhs with\n");
@@ -1104,6 +1597,17 @@ fn write_prelude(out: &mut String) {
     out.push_str("    .sub (.mul accumulator (stdMix alpha gamma hint.busId hint.slots)) hint.multiplicity\n");
     out.push_str("  else\n");
     out.push_str("    .add (.mul accumulator (stdMix alpha gamma hint.busId hint.slots)) hint.multiplicity\n\n");
+    out.push_str("def directZeroTailTemplate (alpha gamma accumulator : Expr) (hint : HintTuple) : Expr :=\n");
+    out.push_str("  if hint.proves then\n");
+    out.push_str("    .sub (.mul accumulator (stdMix alpha gamma hint.busId (zeroTailSlots hint.slots))) hint.multiplicity\n");
+    out.push_str("  else\n");
+    out.push_str("    .add (.mul accumulator (stdMix alpha gamma hint.busId (zeroTailSlots hint.slots))) hint.multiplicity\n\n");
+    out.push_str("def assumesNegMultiplicity (hint : HintTuple) : Expr :=\n");
+    out.push_str("  .sub (.constant \"0\") hint.multiplicity\n\n");
+    out.push_str("def directAssumesNegFormTemplate (alpha gamma accumulator : Expr) (hint : HintTuple) : Expr :=\n");
+    out.push_str("  .sub (.mul accumulator (stdMix alpha gamma hint.busId hint.slots)) (assumesNegMultiplicity hint)\n\n");
+    out.push_str("def directAssumesNegFormZeroTailTemplate (alpha gamma accumulator : Expr) (hint : HintTuple) : Expr :=\n");
+    out.push_str("  .sub (.mul accumulator (stdMix alpha gamma hint.busId (zeroTailSlots hint.slots))) (assumesNegMultiplicity hint)\n\n");
     out.push_str("def negSelector : Expr → Expr\n");
     out.push_str("  | .constant \"1\" => .constant \"18446744069414584320\"\n");
     out.push_str("  | value => .sub (.constant \"0\") value\n\n");
@@ -1112,6 +1616,11 @@ fn write_prelude(out: &mut String) {
     out.push_str("def cluster2Template (alpha gamma accumulator : Expr) (left right : HintTuple) : Expr :=\n");
     out.push_str("  let leftMix := stdMix alpha gamma left.busId left.slots\n");
     out.push_str("  let rightMix := stdMix alpha gamma right.busId right.slots\n");
+    out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
+    out.push_str("    (.add (.mul (signedSelector left) rightMix) (.mul (signedSelector right) leftMix))\n\n");
+    out.push_str("def cluster2ZeroTailTemplate (alpha gamma accumulator : Expr) (left right : HintTuple) : Expr :=\n");
+    out.push_str("  let leftMix := stdMix alpha gamma left.busId (zeroTailSlots left.slots)\n");
+    out.push_str("  let rightMix := stdMix alpha gamma right.busId (zeroTailSlots right.slots)\n");
     out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
     out.push_str("    (.add (.mul (signedSelector left) rightMix) (.mul (signedSelector right) leftMix))\n\n");
     out.push_str("def signedDerivedSelector (tuple : DerivedTuple) : Expr :=\n");
@@ -1197,6 +1706,43 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
             label,
             label
         )?,
+        LinkShape::DirectZeroTail => writeln!(
+            out,
+            "def template_{} : Expr := normalise (directZeroTailTemplate ({}) ({}) ({}) hint_{}_0)",
+            label,
+            lean_expr(&link.alpha),
+            lean_expr(&link.gamma),
+            lean_expr(&link.accumulator),
+            label
+        )?,
+        LinkShape::Cluster2ZeroTail => writeln!(
+            out,
+            "def template_{} : Expr := normalise (cluster2ZeroTailTemplate ({}) ({}) ({}) hint_{}_0 hint_{}_1)",
+            label,
+            lean_expr(&link.alpha),
+            lean_expr(&link.gamma),
+            lean_expr(&link.accumulator),
+            label,
+            label
+        )?,
+        LinkShape::DirectAssumesNegForm => writeln!(
+            out,
+            "def template_{} : Expr := normalise (directAssumesNegFormTemplate ({}) ({}) ({}) hint_{}_0)",
+            label,
+            lean_expr(&link.alpha),
+            lean_expr(&link.gamma),
+            lean_expr(&link.accumulator),
+            label
+        )?,
+        LinkShape::DirectAssumesNegFormZeroTail => writeln!(
+            out,
+            "def template_{} : Expr := normalise (directAssumesNegFormZeroTailTemplate ({}) ({}) ({}) hint_{}_0)",
+            label,
+            lean_expr(&link.alpha),
+            lean_expr(&link.gamma),
+            lean_expr(&link.accumulator),
+            label
+        )?,
     }
     writeln!(
         out,
@@ -1213,6 +1759,10 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
             LinkShape::Direct => "direct",
             LinkShape::Cluster2 => "cluster2",
             LinkShape::DerivedMixed2 => "derivedMixed2",
+            LinkShape::DirectZeroTail => "directZeroTail",
+            LinkShape::Cluster2ZeroTail => "cluster2ZeroTail",
+            LinkShape::DirectAssumesNegForm => "directAssumesNegForm",
+            LinkShape::DirectAssumesNegFormZeroTail => "directAssumesNegFormZeroTail",
         }
     )?;
     writeln!(out, "  accumulator := {},", lean_expr(&link.accumulator))?;
@@ -1388,6 +1938,142 @@ mod tests {
         assert_eq!(
             cluster_accumulator(&constraint, &left, &right, &alpha, &gamma),
             Some(accumulator)
+        );
+    }
+
+    #[test]
+    fn zero_tail_mix_trims_only_terminal_literal_zero_slots() {
+        let tail_hint = hint(
+            true,
+            vec![
+                Ast::constant("1"),
+                Ast::constant("0"),
+                Ast::constant("0"),
+                Ast::constant("8"),
+                Ast::constant("0"),
+                Ast::constant("0"),
+            ],
+        );
+        let expected = hint(
+            true,
+            vec![
+                Ast::constant("1"),
+                Ast::constant("0"),
+                Ast::constant("0"),
+                Ast::constant("8"),
+            ],
+        );
+        let alpha = Ast::Challenge { stage: 1, index: 0 };
+        let gamma = Ast::Challenge { stage: 1, index: 1 };
+
+        assert!(has_literal_zero_tail(&tail_hint));
+        assert_eq!(
+            zero_tail_std_mix(&tail_hint, &alpha, &gamma),
+            std_mix(&expected, &alpha, &gamma),
+        );
+        assert_ne!(
+            zero_tail_std_mix(&tail_hint, &alpha, &gamma),
+            std_mix(&tail_hint, &alpha, &gamma),
+        );
+    }
+
+    #[test]
+    fn zero_tail_cluster_requires_a_terminal_zero_hint() {
+        let left = hint(false, vec![Ast::Witness {
+            stage: 1,
+            column: 4,
+            row_offset: 0,
+        }]);
+        let right = hint(
+            true,
+            vec![
+                Ast::Witness {
+                    stage: 1,
+                    column: 5,
+                    row_offset: 0,
+                },
+                Ast::constant("0"),
+            ],
+        );
+        let accumulator = Ast::Witness {
+            stage: 2,
+            column: 6,
+            row_offset: 0,
+        };
+        let alpha = Ast::Challenge { stage: 1, index: 0 };
+        let gamma = Ast::Challenge { stage: 1, index: 1 };
+        let constraint = normalise(zero_tail_cluster_template(
+            accumulator.clone(),
+            &left,
+            &right,
+            &alpha,
+            &gamma,
+        ));
+
+        assert_eq!(
+            zero_tail_cluster_accumulator(&constraint, &left, &right, &alpha, &gamma),
+            Some(accumulator),
+        );
+    }
+
+    #[test]
+    fn direct_assumes_neg_form_preserves_the_pilout_sign_spelling() {
+        let hint = HintData {
+            multiplicity: Ast::add(Ast::AirValue(0), Ast::constant("0")),
+            ..hint(false, vec![Ast::constant("1")])
+        };
+        let accumulator = Ast::Witness {
+            stage: 2,
+            column: 6,
+            row_offset: 0,
+        };
+        let alpha = Ast::Challenge { stage: 1, index: 0 };
+        let gamma = Ast::Challenge { stage: 1, index: 1 };
+        let constraint = normalise(direct_assumes_neg_form_template(
+            accumulator.clone(),
+            &hint,
+            &alpha,
+            &gamma,
+        ));
+
+        assert_eq!(
+            direct_assumes_neg_form_accumulator(&constraint, &hint, &alpha, &gamma),
+            Some(accumulator),
+        );
+        assert!(matches!(
+            constraint,
+            Ast::Sub(_, rhs) if *rhs == Ast::sub(Ast::constant("0"), Ast::AirValue(0))
+        ));
+    }
+
+    #[test]
+    fn direct_assumes_neg_form_zero_tail_composes_exactly() {
+        let hint = HintData {
+            multiplicity: Ast::add(Ast::AirValue(0), Ast::constant("0")),
+            ..hint(false, vec![Ast::constant("1"), Ast::constant("0")])
+        };
+        let accumulator = Ast::Witness {
+            stage: 2,
+            column: 6,
+            row_offset: 0,
+        };
+        let alpha = Ast::Challenge { stage: 1, index: 0 };
+        let gamma = Ast::Challenge { stage: 1, index: 1 };
+        let constraint = normalise(direct_assumes_neg_form_zero_tail_template(
+            accumulator.clone(),
+            &hint,
+            &alpha,
+            &gamma,
+        ));
+
+        assert_eq!(
+            direct_assumes_neg_form_zero_tail_accumulator(
+                &constraint,
+                &hint,
+                &alpha,
+                &gamma,
+            ),
+            Some(accumulator),
         );
     }
 
