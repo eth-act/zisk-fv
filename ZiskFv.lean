@@ -142,6 +142,7 @@ import ZiskFv.Compliance.AcceptedZiskTrace.Spec
 import ZiskFv.Compliance.AcceptedZiskTrace.MemTable
 import ZiskFv.Compliance.AcceptedZiskTrace.MemSegmentRanges
 import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
+import ZiskFv.Compliance.AcceptedZiskTrace.MemAlignRanges
 import ZiskFv.Compliance.SailTrace
 import ZiskFv.Compliance.OpBusProviderMatch
 import ZiskFv.Compliance.ConstructionSub
