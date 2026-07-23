@@ -209,4 +209,81 @@ def sdLdMainRows : List (MainRowWithRom FGL) :=
   [ sdLdAddiX1A0Row, sdLdSlliX1Row, sdLdAddiX1EightRow, sdLdAddiX2Row
   , sdLdSdRow, sdLdLdRow, sdLdJalRow 6, sdLdJalRow 7 ]
 
+/-- The three non-idle register lanes close at their actual last Main access. -/
+def sdLdBoundaryRowX1 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
+  registerBoundaryRowFromLast 1 (aMemMessage sdLdLdRow)
+
+def sdLdBoundaryRowX2 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
+  registerBoundaryRowFromLast 2 (bMemMessage sdLdSdRow)
+
+def sdLdBoundaryRowX3 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
+  registerBoundaryRowFromLast 3 (cMemMessage sdLdLdRow)
+
+def sdLdX1Telescope :=
+  registerTelescopingInteractions
+    (ZiskFv.AirsClean.RegisterBoundary.bootMessage sdLdBoundaryRowX1)
+    [ cMemMessage sdLdAddiX1A0Row
+    , aMemMessage sdLdSlliX1Row, cMemMessage sdLdSlliX1Row
+    , aMemMessage sdLdAddiX1EightRow, cMemMessage sdLdAddiX1EightRow
+    , aMemMessage sdLdSdRow, aMemMessage sdLdLdRow ]
+
+def sdLdX2Telescope :=
+  registerTelescopingInteractions
+    (ZiskFv.AirsClean.RegisterBoundary.bootMessage sdLdBoundaryRowX2)
+    [cMemMessage sdLdAddiX2Row, bMemMessage sdLdSdRow]
+
+def sdLdX3Telescope :=
+  registerTelescopingInteractions
+    (ZiskFv.AirsClean.RegisterBoundary.bootMessage sdLdBoundaryRowX3)
+    [cMemMessage sdLdLdRow]
+
+theorem sdLdX1Telescope_balanced : BalancedInteractions sdLdX1Telescope := by
+  apply registerTelescopingInteractions_balanced
+  left
+  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+  decide
+
+theorem sdLdX2Telescope_balanced : BalancedInteractions sdLdX2Telescope := by
+  apply registerTelescopingInteractions_balanced
+  left
+  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+  decide
+
+theorem sdLdX3Telescope_balanced : BalancedInteractions sdLdX3Telescope := by
+  apply registerTelescopingInteractions_balanced
+  left
+  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+  decide
+
+/-- The store's c-slot is exactly Mem's primary provider tuple at timestamp 19. -/
+theorem sdLdStoreMessage_eq_mem :
+    cMemMessage sdLdSdRow = ZiskFv.AirsClean.Mem.memBusMessage sdMemRow := by
+  norm_num [cMemMessage, ZiskFv.AirsClean.Mem.memBusMessage, sdLdSdRow,
+    sdLdSdRowTemplate, sdLdSdProgramRow, sdLdSdBits, sdLdFreeCols,
+    sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate,
+    sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, sdLdAddiX1A0RowWithLast,
+    sdLdAddiX1A0RowTemplate, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
+    sdLdAddiX1EightProgramRow, addiX0Bits, addiX1Bits, mainRomRowOf,
+    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
+    materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle, sdMemRow,
+    ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memReadSameAddrOf,
+    ZiskFv.AirsClean.Mem.memValueOf]
+
+/-- The load's b-slot is exactly Mem's primary provider tuple at timestamp 22. -/
+theorem sdLdLoadMessage_eq_mem :
+    bMemMessage sdLdLdRow = ZiskFv.AirsClean.Mem.memBusMessage ldMemRow := by
+  norm_num [bMemMessage, ZiskFv.AirsClean.Mem.memBusMessage, sdLdLdRow,
+    sdLdLdRowTemplate, sdLdLdProgramRow, sdLdLdBits, sdLdFreeCols,
+    sdLdSdRow, sdLdSdRowTemplate, sdLdSdProgramRow, sdLdSdBits,
+    sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate,
+    sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, sdLdAddiX1A0RowWithLast,
+    sdLdAddiX1A0RowTemplate, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
+    sdLdAddiX1EightProgramRow, addiX0Bits, addiX1Bits, mainRomRowOf,
+    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
+    materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle, ldMemRow,
+    ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memReadSameAddrOf,
+    ZiskFv.AirsClean.Mem.memValueOf]
+
 end ZiskFv.Compliance.SdLdSpinWitness
