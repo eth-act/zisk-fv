@@ -281,13 +281,16 @@ the witness is the selected source table.
 
 MemAlign scope note (#242): #115's closeout is direct-Mem only. MemAlign-routed
 accesses remain undischarged, named follow-on burdens rather than derived
-read-soundness. The open residues are `MemAlignLoadProviderRomValueFacts`
-(`MemBusRowBridges.lean`), `MemAlignCoreLookupFacts`
-(`Compliance/SharedBundles.lean`), `ActiveMainMemAlignSelectedProveBranchPins`,
-and the direct-Mem branch exclusions `LoadBDirectMutableMemResidues.no_marb`,
-`no_mab`, and `no_memAlign`. Issue #242 owns replacing these exclusions/residues
-with a through-MemAlign derivation, gated on MemAlignRom extraction (#108) and a
-timeline argument from MemAlign provider rows back to the accepted Mem replay.
+read-soundness. The remaining structural residue is
+`MemAlignLoadProviderRomValueFacts` (`MemBusRowBridges.lean`), plus the
+direct-Mem branch exclusions `LoadBDirectMutableMemResidues.no_marb`, `no_mab`,
+and `no_memAlign`. `MemAlignCoreLookupFacts` and the selected-prove branch pin
+are retired: a selected MemAlignByte/ReadByte provider carries its exact
+in-circuit static-lookup byte range directly in the structural witness, and the
+trace-local #1142 exclusion derives the selected prove pins. Issue #242 owns
+replacing the remaining exclusion/residue with a through-MemAlign derivation,
+gated on MemAlignRom extraction (#108) and a timeline argument from MemAlign
+provider rows back to the accepted Mem replay.
 The component-fidelity prerequisite is now intrinsic: generated c29 plus
 c1/c3/.../c15 are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its
 D3 predicate; the existing accepted-trace transition certificates check those
@@ -700,7 +703,10 @@ Active conclusions:
   `constraint = template := by rfl` with the real hints #1025/#1027,
   #1031/#1032, #1050, and #1054/#1055. The terminal std_sum constraints
   c15/c9 (`:696`) remain explicitly global finalizers, not lookup links.
-  No caller promise or soundness-side `ProverAssumptions` is introduced.
+  The selected byte-provider bridge consumes that exact component `Spec` to
+  carry only its needed `< 256` fact into the structural load witness; no
+  universal validator residue, caller promise, or soundness-side
+  `ProverAssumptions` is introduced.
 - **MemAlign virtual-ROM bus-133 route (#242).** This is a cited application
   of the existing lookup/permutation protocol-soundness class, not a new trust
   kind. `mem_align.pil:139-143` defines the unmasked h998 assumes tuple

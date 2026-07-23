@@ -259,12 +259,6 @@ lemma load_lbu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
-    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_mab_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
-    (h_marb_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
     (h_provider :
       ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
         m mab marb ma r_main e1) :
@@ -279,8 +273,7 @@ lemma load_lbu_c_packed
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_mab_core
-      h_marb_core h_mab_lookup h_marb_lookup h_provider
+      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_provider
   -- Width = 1 chunk-shape zero-pad: e1.value_1 = 0 ∧ e1.value_0.val < 256.
   obtain ⟨hv1_zero, hv0_lt⟩ := h_zero_pad.1 h_width
   -- Derive the 7 zero-byte facts at the FGL level (byteAt e1 i for i = 1..7).
@@ -342,12 +335,6 @@ lemma load_lhu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
-    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_mab_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
-    (h_marb_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
     (h_provider :
       ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
         m mab marb ma r_main e1) :
@@ -362,8 +349,7 @@ lemma load_lhu_c_packed
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_mab_core
-      h_marb_core h_mab_lookup h_marb_lookup h_provider
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_provider
   -- Width = 2 chunk-shape zero-pad: e1.value_1 = 0 ∧ e1.value_0.val < 65536.
   obtain ⟨hv1_zero, hv0_lt⟩ := h_zero_pad.2.1 h_width
   -- Derive bytes 2..7 of e1 are 0 at the FGL level.
@@ -421,12 +407,6 @@ lemma load_lwu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
-    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_mab_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
-    (h_marb_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
     (h_provider :
       ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
         m mab marb ma r_main e1) :
@@ -442,8 +422,7 @@ lemma load_lwu_c_packed
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_mab_core
-      h_marb_core h_mab_lookup h_marb_lookup h_provider
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_provider
   -- Width = 4 chunk-shape zero-pad: e1.value_1 = 0.
   have hv1_zero : e1.value_1 = 0 := h_zero_pad.2.2 h_width
   -- Derive bytes 4..7 of e1 are 0 at the FGL level.

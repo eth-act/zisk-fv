@@ -1792,9 +1792,10 @@ def MemAlignLoadProviderRowMatchSpec
     branch of the legacy subdoubleword provider witness, once the Main row's
     load width is pinned to one byte.
 
-This deliberately returns only the provider witness with the selected
-one-row `validOfRow` view. The surrounding `MemAlignWitness` still needs the
-legacy core/lookup bundles for the MemAlign-family validators. -/
+The selected row's byte range comes directly from the Clean component `Spec`:
+that is the source-faithful static-lookup conclusion carried by the accepted
+table, not a whole-table validator premise. -/
+set_option maxHeartbeats 1000000 in
 theorem exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderRowMatchSpec
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -1809,21 +1810,27 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderR
         main mab marb ma r_main entry := by
   rcases h_provider with
     ⟨providerTable, _h_providerTable, providerRow, _h_providerRow,
-      _h_spec, _h_component, h_match⟩
+      h_spec, h_component, h_match⟩
+  have h_row_spec : ZiskFv.AirsClean.MemAlignReadByte.Spec
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar) := by
+    rw [h_component] at h_spec
+    simpa only [ZiskFv.AirsClean.MemAlignReadByte.component_spec] using h_spec
   refine ⟨
     ZiskFv.AirsClean.MemAlignReadByte.validOfRow
       (eval (providerTable.environment providerRow)
         ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar),
     ?_⟩
   exact
-    { provider := Or.inr (Or.inl ⟨0, h_match, h_width⟩) }
+    { provider := Or.inr (Or.inl ⟨0, h_match, h_width, h_row_spec.2⟩) }
 
 /-- A structural MemAlignByte load-provider row supplies the corresponding
     branch of the legacy subdoubleword provider witness, once the Main row's
     load width is pinned to one byte.
 
-As above, this only constructs the provider branch; the legacy
-`MemAlignWitness` core/lookup fields remain a separate obligation. -/
+As above, the selected row's range is derived from the table's in-circuit
+static lookup through its Clean component `Spec`. -/
+set_option maxHeartbeats 1000000 in
 theorem exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMatchSpec
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -1838,14 +1845,19 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMa
         main mab marb ma r_main entry := by
   rcases h_provider with
     ⟨providerTable, _h_providerTable, providerRow, _h_providerRow,
-      _h_spec, _h_component, h_match⟩
+      h_spec, h_component, h_match⟩
+  have h_row_spec : ZiskFv.AirsClean.MemAlignByte.Spec
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar) := by
+    rw [h_component] at h_spec
+    simpa only [ZiskFv.AirsClean.MemAlignByte.component_spec] using h_spec
   refine ⟨
     ZiskFv.AirsClean.MemAlignByte.validOfRow
       (eval (providerTable.environment providerRow)
         ZiskFv.AirsClean.MemAlignByte.component.rowInputVar),
     ?_⟩
   exact
-    { provider := Or.inl ⟨0, h_match, h_width⟩ }
+    { provider := Or.inl ⟨0, h_match, h_width, h_row_spec.2.2.2.2.2.1⟩ }
 
 /-- ROM/range residue for the selected general MemAlign load-provider row.
 
