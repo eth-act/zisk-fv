@@ -11,7 +11,8 @@ private def memAlignReadByteWitnessRow : MemAlignReadByteRow FGL :=
 private theorem memAlignReadByteWitnessProverAssumptions
     (data : ProverData FGL) (hint : ProverHint FGL) :
     circuit.ProverAssumptions memAlignReadByteWitnessRow data hint := by
-  refine ⟨false, true, false, 42, 1000, 2, 3, 4, 5, by norm_num, ?_⟩
+  refine ⟨false, true, false, 42, 1000, 2, 3, 4, 5,
+    by norm_num, by norm_num, by norm_num, ?_⟩
   rfl
 
 theorem completeness_witness_memalignreadbyte :
