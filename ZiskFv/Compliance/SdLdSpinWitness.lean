@@ -209,6 +209,76 @@ def sdLdMainRows : List (MainRowWithRom FGL) :=
   [ sdLdAddiX1A0Row, sdLdSlliX1Row, sdLdAddiX1EightRow, sdLdAddiX2Row
   , sdLdSdRow, sdLdLdRow, sdLdJalRow 6, sdLdJalRow 7 ]
 
+theorem sdLdMain_pc_addi_slli :
+    pcHandshakeBetween sdLdAddiX1A0Row sdLdSlliX1Row := by
+  simp [pcHandshakeBetween, sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast,
+    sdLdAddiX1A0RowTemplate, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
+    sdLdSlliX1RowTemplate, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
+    addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
+    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
+    materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+
+theorem sdLdMain_pc_slli_addi :
+    pcHandshakeBetween sdLdSlliX1Row sdLdAddiX1EightRow := by
+  simp [pcHandshakeBetween, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
+    sdLdSlliX1RowTemplate, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+    sdLdAddiX1EightRowTemplate, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
+    addiX1Bits, mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
+    materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+
+theorem sdLdMain_pc_addi_addi :
+    pcHandshakeBetween sdLdAddiX1EightRow sdLdAddiX2Row := by
+  simp [pcHandshakeBetween, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+    sdLdAddiX1EightRowTemplate, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
+    sdLdAddiX2RowTemplate, sdLdAddiX1EightProgramRow, sdLdAddiX2ProgramRow,
+    addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
+    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
+    materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+
+theorem sdLdMain_pc_addi_sd :
+    pcHandshakeBetween sdLdAddiX2Row sdLdSdRow := by
+  simp [pcHandshakeBetween, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
+    sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate, sdLdAddiX2ProgramRow,
+    sdLdSdProgramRow, addiX0Bits, sdLdSdBits, mainRomRowOf, sdLdFreeCols,
+    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
+    materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+
+theorem sdLdMain_pc_sd_ld : pcHandshakeBetween sdLdSdRow sdLdLdRow := by
+  simp [pcHandshakeBetween, sdLdSdRow, sdLdSdRowTemplate, sdLdLdRow,
+    sdLdLdRowTemplate, sdLdSdProgramRow, sdLdLdProgramRow, sdLdSdBits, sdLdLdBits,
+    mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
+    materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+
+theorem sdLdMain_pc_ld_jal : pcHandshakeBetween sdLdLdRow (sdLdJalRow 6) := by
+  simp [pcHandshakeBetween, sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow,
+    sdLdLdProgramRow, sdLdJalProgramRow, sdLdLdBits, AddSpinWitness.addSpinJalBits,
+    mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
+    materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+
+theorem sdLdMain_pc_jal_jal : pcHandshakeBetween (sdLdJalRow 6) (sdLdJalRow 7) := by
+  simp [pcHandshakeBetween, sdLdJalRow, sdLdJalProgramRow, AddSpinWitness.addSpinJalBits,
+    mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+  ring
+
+def sdLdProgram : Program 7
+  | ⟨0, _⟩ => sdLdAddiX1A0ProgramRow
+  | ⟨1, _⟩ => sdLdSlliX1ProgramRow
+  | ⟨2, _⟩ => sdLdAddiX1EightProgramRow
+  | ⟨3, _⟩ => sdLdAddiX2ProgramRow
+  | ⟨4, _⟩ => sdLdSdProgramRow
+  | ⟨5, _⟩ => sdLdLdProgramRow
+  | ⟨6, _⟩ => sdLdJalProgramRow
+
+theorem sdLdMainRows_fixed_domain : sdLdMainRows.length ≤ mainFixedCapacity := by
+  norm_num [sdLdMainRows, mainFixedCapacity]
+
 /-- The three non-idle register lanes close at their actual last Main access. -/
 def sdLdBoundaryRowX1 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
   registerBoundaryRowFromLast 1 (aMemMessage sdLdLdRow)
@@ -218,6 +288,17 @@ def sdLdBoundaryRowX2 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FG
 
 def sdLdBoundaryRowX3 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
   registerBoundaryRowFromLast 3 (cMemMessage sdLdLdRow)
+
+def sdLdBoundaryRows :
+    List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
+  [sdLdBoundaryRowX1, sdLdBoundaryRowX2, sdLdBoundaryRowX3] ++
+    (List.range 28).map (fun i => boundaryRowIdle ((i + 4 : Nat) : FGL))
+
+def sdLdBoundaryTable : Air.Flat.Table FGL :=
+  registerBoundaryRowsTableOf sdLdBoundaryRows
+
+def sdLdMainTable : Air.Flat.Table FGL :=
+  AddSpinWitness.mainRowsTable 7 sdLdProgram sdLdMainRows sdLdMainRows_fixed_domain
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions
