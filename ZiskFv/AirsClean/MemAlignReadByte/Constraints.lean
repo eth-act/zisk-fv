@@ -37,6 +37,21 @@ def memBusMessageExpr (row : Var MemAlignReadByteRow FGL) :
     value_0 := row.byte_value
     value_1 := 0 }
 
+/-- The source-faithful aligned read consumed by MemAlignReadByte before it
+    proves the selected byte to Main.  This is the exact h1049
+    `permutation_assumes` tuple from the MemAlignByte template's read-only
+    specialization; its two reconstructed lanes are expressions, not
+    detached row fields. -/
+@[reducible]
+def memReadMessageExpr (row : Var MemAlignReadByteRow FGL) :
+    MemBusMessage (Expression FGL) :=
+  { mem_op := 1
+    ptr := row.addr_w * 8
+    timestamp := row.step
+    width := 8
+    value_0 := row.sel_high_4b * (row.direct_value - row.composed_value) + row.composed_value
+    value_1 := row.sel_high_4b * (row.composed_value - row.direct_value) + row.direct_value }
+
 /-- The 4 F-constraints and memory bus push, taking the row's slot
     values as `Expression FGL`s. Returns `Unit` (MemAlignReadByte is a pure
     assertion — no fresh witnesses introduced inside the circuit). -/
@@ -44,6 +59,12 @@ def memBusMessageExpr (row : Var MemAlignReadByteRow FGL) :
 def main (row : Var MemAlignReadByteRow FGL) : Circuit FGL Unit := do
   -- range lookup for the byte value bits declaration
   lookup (Table.fromStatic rangeTable8) row.byte_value
+  -- h1052: `range_check(value_16b)` on virtual bus 103
+  -- (`mem_align_byte.pil:103`) through the local static S1a route.
+  lookup (Table.fromStatic rangeTable16) row.value_16b
+  -- h1053: exact `DualByte` membership in source tuple order
+  -- `[byte_value, value_8b]` (`zisk.pil:62-76`, `mem_align_byte.pil:104`).
+  lookup (Table.fromStatic dualByteTable) #v[row.byte_value, row.value_8b]
   -- constraint 0 (mem/pil/mem_align_byte.pil:35)
   assertZero (row.sel_high_4b * (1 - row.sel_high_4b))
   -- constraint 1 (mem/pil/mem_align_byte.pil:36)
@@ -52,6 +73,9 @@ def main (row : Var MemAlignReadByteRow FGL) : Circuit FGL Unit := do
   assertZero (row.sel_high_b * (1 - row.sel_high_b))
   -- constraint 3 (mem/pil/mem_align_byte.pil:59)
   assertZero (row.composed_value - (((row.byte_value * (((((16777216 * row.sel_high_2b) * row.sel_high_b) + ((65536 * row.sel_high_2b) * (1 - row.sel_high_b))) + ((256 * (1 - row.sel_high_2b)) * row.sel_high_b)) + ((1 - row.sel_high_2b) * (1 - row.sel_high_b)))) + (row.value_8b * (((((16777216 * row.sel_high_2b) * (1 - row.sel_high_b)) + ((65536 * row.sel_high_2b) * row.sel_high_b)) + ((256 * (1 - row.sel_high_2b)) * (1 - row.sel_high_b))) + ((1 - row.sel_high_2b) * row.sel_high_b)))) + (row.value_16b * ((65536 * (1 - row.sel_high_2b)) + row.sel_high_2b))))
+  -- Bus consumer: the aligned 8-byte load consumed by this read-only byte
+  -- assembly (`permutation_assumes`, h1049).
+  MemBusChannel.pull (memReadMessageExpr row)
   -- Bus emission: MemAlignReadByte pushes its proves-side tuple onto memory bus 10.
   -- Reconstructed from the proves-side `gsum_debug_data` hint;
   -- slot-for-slot faithful to the hand-written reference.
@@ -68,8 +92,10 @@ def main (row : Var MemAlignReadByteRow FGL) : Circuit FGL Unit := do
   output _ _ := ()
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
-    expose MemBusChannel [MemBusChannel.pushed (memBusMessageExpr row)]
+    expose MemBusChannel
+      [ MemBusChannel.pulled (memReadMessageExpr row)
+      , MemBusChannel.pushed (memBusMessageExpr row) ]
   channelsLawful := by
-    simp only [circuit_norm, main, memBusMessageExpr, MemBusChannel]
+    simp only [circuit_norm, main, memBusMessageExpr, memReadMessageExpr, MemBusChannel]
 
 end ZiskFv.AirsClean.MemAlignReadByte

@@ -7,19 +7,21 @@ import Clean.Utils.Tactics
 /-!
 # MemAlign Clean Component
 
-Packages the MemAlign AIR per-row constraints and its unified memory-bus
-interaction as a Clean `Air.Flat.Component`.
+Packages the MemAlign AIR per-row constraints, intrinsic D1/D3 source
+transitions, and its unified memory/ROM/range interactions as a Clean
+`Air.Flat.Component`.
 
-The channel emission is structural: it adds no new row-level soundness
-obligation because `MemBusChannel.Guarantees` is `True`. Cross-row
-continuity remains in `CrossRow.lean`.
+The channel emissions are structural: their consumer guarantees are `True`.
+Exact ROM and byte-range membership is supplied by their static providers and
+finished-channel balance, not by the consumer or caller.
 
 ## Trust note
 
 No axioms. Completeness is a constructibility claim for rows equal to
 `memAlignRowOf ...`: a concrete phase, Boolean flags/selectors, registers, and
 address fields with `value_0`, `value_1`, `preL1`, and `pc` computed by the
-builder. Cross-row continuity remains outside this row-local proof.
+builder. Source predecessor/successor constraints are separately certified
+by the component-owned D1/D3 accepted-trace predicates.
 -/
 
 namespace ZiskFv.AirsClean.MemAlign
@@ -140,10 +142,21 @@ def memAlignRowOf (phase : MemAlignPhase) (isBoot wr reset : Bool)
     value_1 := memAlignValue1Of phase sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
       reg_0 reg_1 reg_2 reg_3 reg_4 reg_5 reg_6 reg_7 }
 
+/-- A concrete source-shaped padding/idle row.  All eight bytes are zero,
+    `reset` is asserted, and the row is closed under both source transition
+    families.  This is the non-vacuous base case for the strengthened
+    component's honest-row construction; arbitrary real trace rows use the
+    same `memAlignRowOf` builder with their source-provided adjacent values. -/
+def memAlignIdleRow : MemAlignRow FGL :=
+  memAlignRowOf .idle true false true
+    false false false false false false false false
+    0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0
+
 set_option maxRecDepth 2000 in
 set_option maxHeartbeats 4000000 in
 def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
-  { memAlignWithMemBusAndMemAlignRomElaborated with
+  { memAlignWithMemBusAndMemAlignRomAndRangesElaborated with
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers rows built by `memAlignRowOf`: phase and Boolean
@@ -182,9 +195,11 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
         trivial
     completeness := by
       circuit_proof_start_core
-      simp only [mainWithMemBusAndMemAlignRom, mainWithMemBus, main, circuit_norm,
+      simp only [mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main, circuit_norm,
         selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
-        MemBusChannel, ZiskFv.Channels.MemAlignRom.MemAlignRomChannel]
+        memAlignRangeMessageExpr, MemBusChannel,
+        ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
+        ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel]
       obtain ⟨phase, isBoot, wr, reset, sel_0, sel_1, sel_2, sel_3,
         sel_4, sel_5, sel_6, sel_7, reg_0, reg_1, reg_2, reg_3,
         reg_4, reg_5, reg_6, reg_7, addr, offset, width, step,
@@ -205,19 +220,65 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
         ring_nf <;>
         simp }
 
-/-- The exact source-linked `pc' - pc` relation for MemAlign hint #998.
-    `successor` is selected by Clean's D3 cyclic table semantics, so the final
-    effective row is checked against row zero rather than against a caller
-    supplied boundary fact. -/
+/-- The source's predecessor/current MemAlign constraints: c29's gated
+    `delta_addr` relation and c1/c3/.../c15's register continuity.
+
+    This is the exact `mem_align.pil:116-117,142` / extracted c1/c29 spelling.
+    D1's saturated row zero is sound here only because the source's own
+    `(1 - reset)` gate remains part of c29; no boundary condition is supplied
+    by a caller. -/
 def rowInputOfEnvironment (environment : Environment FGL) : MemAlignRow FGL :=
   valueFromOffset MemAlignRow 0 environment
 
+def transitionRows (previous current : MemAlignRow FGL) : Prop :=
+  current.delta_addr - (current.addr - previous.addr) * (1 - current.reset) = 0
+  ∧ (previous.reg_0 - current.reg_0) * current.sel_0 * current.sel_down_to_up = 0
+  ∧ (previous.reg_1 - current.reg_1) * current.sel_1 * current.sel_down_to_up = 0
+  ∧ (previous.reg_2 - current.reg_2) * current.sel_2 * current.sel_down_to_up = 0
+  ∧ (previous.reg_3 - current.reg_3) * current.sel_3 * current.sel_down_to_up = 0
+  ∧ (previous.reg_4 - current.reg_4) * current.sel_4 * current.sel_down_to_up = 0
+  ∧ (previous.reg_5 - current.reg_5) * current.sel_5 * current.sel_down_to_up = 0
+  ∧ (previous.reg_6 - current.reg_6) * current.sel_6 * current.sel_down_to_up = 0
+  ∧ (previous.reg_7 - current.reg_7) * current.sel_7 * current.sel_down_to_up = 0
+
+def transition (_ : Nat) (previous current : Environment FGL) : Prop :=
+  transitionRows (rowInputOfEnvironment previous) (rowInputOfEnvironment current)
+
+/-- The exact source-linked successor/current MemAlign constraints: h998's
+    `pc' - pc` relation and c0/c2/.../c14's register continuity.
+
+    The generated terms are every-row expressions with no last-row mask
+    (`Extraction/MemAlign.lean:51`); D3 therefore checks the final effective
+    row against row zero, rather than omitting it or accepting a boundary
+    promise. -/
+def cyclicSuccessorTransitionRows (current successor : MemAlignRow FGL) : Prop :=
+  current.delta_pc = successor.pc - current.pc
+  ∧ (successor.reg_0 - current.reg_0) * current.sel_0 * current.sel_up_to_down = 0
+  ∧ (successor.reg_1 - current.reg_1) * current.sel_1 * current.sel_up_to_down = 0
+  ∧ (successor.reg_2 - current.reg_2) * current.sel_2 * current.sel_up_to_down = 0
+  ∧ (successor.reg_3 - current.reg_3) * current.sel_3 * current.sel_up_to_down = 0
+  ∧ (successor.reg_4 - current.reg_4) * current.sel_4 * current.sel_up_to_down = 0
+  ∧ (successor.reg_5 - current.reg_5) * current.sel_5 * current.sel_up_to_down = 0
+  ∧ (successor.reg_6 - current.reg_6) * current.sel_6 * current.sel_up_to_down = 0
+  ∧ (successor.reg_7 - current.reg_7) * current.sel_7 * current.sel_up_to_down = 0
+
 def cyclicSuccessorTransition (_ : Nat) (current successor : Environment FGL) : Prop :=
-  (rowInputOfEnvironment current).delta_pc =
-    (rowInputOfEnvironment successor).pc - (rowInputOfEnvironment current).pc
+  cyclicSuccessorTransitionRows (rowInputOfEnvironment current)
+    (rowInputOfEnvironment successor)
+
+theorem transitionRows_memAlignIdleRow :
+    transitionRows memAlignIdleRow memAlignIdleRow := by
+  norm_num [transitionRows, memAlignIdleRow, memAlignRowOf, memAlignValue0Of,
+    memAlignValue1Of, memAlignLane]
+
+theorem cyclicSuccessorTransitionRows_memAlignIdleRow :
+    cyclicSuccessorTransitionRows memAlignIdleRow memAlignIdleRow := by
+  norm_num [cyclicSuccessorTransitionRows, memAlignIdleRow, memAlignRowOf,
+    memAlignValue0Of, memAlignValue1Of, memAlignLane]
 
 def component : Air.Flat.Component FGL :=
   { circuit := circuit
+    transition := transition
     cyclicSuccessorTransition := cyclicSuccessorTransition }
 
 /-- Project the generic Clean component `Spec` to the concrete MemAlign row
@@ -248,7 +309,24 @@ theorem component_interactionsWith_memBus :
         (memBusMessageExpr component.rowInputVar)] ++
     expose ZiskFv.Channels.MemAlignRom.MemAlignRomChannel
       [ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
-        (memAlignRomMessageExpr component.rowInputVar)]
+        (memAlignRomMessageExpr component.rowInputVar)] ++
+    expose ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel
+      [ ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_0)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_1)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_2)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_3)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_4)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_5)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_6)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_7)]
   simp [expose]
 
 /-- MemAlign's h998 consumer emission is exactly one negative bus-133
@@ -271,7 +349,90 @@ theorem component_interactionsWith_memAlignRomChannel :
         (memBusMessageExpr component.rowInputVar)] ++
     expose ZiskFv.Channels.MemAlignRom.MemAlignRomChannel
       [ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
-        (memAlignRomMessageExpr component.rowInputVar)]
+        (memAlignRomMessageExpr component.rowInputVar)] ++
+    expose ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel
+      [ ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_0)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_1)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_2)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_3)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_4)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_5)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_6)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_7)]
+  simp [expose]
+
+/-- MemAlign's eight source Range Check hints are exactly eight negative
+    one-slot bus-107 consumer interactions, in `reg[0]` through `reg[7]`
+    order (`mem_align.pil:113-118`; #982/#984/#986/#988/#990/#992/#994/#996). -/
+theorem component_interactionsWith_memAlignRangeChannel :
+    component.operations.interactionsWith
+        ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw =
+      [ ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_0)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_1)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_2)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_3)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_4)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_5)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_6)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_7)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw,
+      [ ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_0)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_1)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_2)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_3)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_4)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_5)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_6)).toRaw)
+      , ((ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+            (memAlignRangeMessageExpr component.rowInputVar.reg_7)).toRaw) ]⟩ ∈
+    expose MemBusChannel
+      [MemBusChannel.emitted
+        (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
+        (memBusMessageExpr component.rowInputVar)] ++
+    expose ZiskFv.Channels.MemAlignRom.MemAlignRomChannel
+      [ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.emitted (-1)
+        (memAlignRomMessageExpr component.rowInputVar)] ++
+    expose ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel
+      [ ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_0)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_1)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_2)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_3)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_4)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_5)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_6)
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.emitted (-1)
+          (memAlignRangeMessageExpr component.rowInputVar.reg_7)]
   simp [expose]
 
 /-- Read `delta_pc` from the intrinsic cyclic successor view. -/
@@ -286,7 +447,7 @@ theorem delta_pc_eq_successor_pc_sub_pc
   rw [h_component] at h
   change cyclicSuccessorTransition index.val (table.environmentAt index)
     (table.successorEnvironment index) at h
-  exact h
+  exact h.1
 
 theorem spec_via_component (row : MemAlignRow FGL)
     (_h_assumptions : Assumptions row)

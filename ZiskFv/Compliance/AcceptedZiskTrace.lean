@@ -117,19 +117,18 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
     ∀ table ∈ witness.allTables,
       table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
         table = (mem_replay_table h).1
-  /-- The Main AIR's cross-row PC-handshake transition constraint (`main.pil:409-410`) holds on every
-      consecutive Main-table row pair. This polynomial transition CANNOT be expressed by the single-row
-      Clean `Air.Flat` per-row `Constraints` (which is exactly why it was dropped from the per-row Spec);
-      it is declared on the Main component via `Air.Flat.Component.transition` and carried here as a
-      verifier-checked certificate, in the same epistemic class as `main_height` — a PIL-faithful,
-      constructible accepted-trace obligation. It consolidates the per-opcode cross-world
-      `h_nextPC_matches` promises into one in-circuit constraint. See `trust/trusted-base.md`. -/
+  /-- Component-owned predecessor/current transitions hold on every table row.
+      This includes Main's PC handshake (`main.pil:409-410`) and MemAlign's
+      gated predecessor `delta_addr` plus `down_to_up` register continuity
+      (`mem_align.pil:116-117,142`). These polynomial relations are declared
+      by their components' intrinsic D1 predicates and are verifier-checked,
+      constructible accepted-trace obligations—not caller assumptions. -/
   transitions_hold : witness.TransitionConstraints
-  /-- The MemAlign h998 successor-PC relation (`mem_align.pil:139-143`) holds
-      on every effective MemAlign row, including the intrinsic final-row to
-      row-zero wrap. This is a verifier-checked D3 certificate over the
-      materialized witness table, parallel to `transitions_hold`; it is never
-      a caller assumption. -/
+  /-- MemAlign's D3 successor/current relations hold on every effective row:
+      h998 `DELTA_PC = pc' - pc` and the `up_to_down` register continuity
+      constraints (`mem_align.pil:113-118,139-143`), including the intrinsic
+      final-row to row-zero wrap. This is a verifier-checked certificate over
+      component-owned predicates, never a caller assumption. -/
   cyclic_successor_transitions_hold : witness.CyclicSuccessorTransitionConstraints
   /-- The Main execution table covers every instruction: any witness table with
       the Main component has a row for each instruction. This is the one genuine

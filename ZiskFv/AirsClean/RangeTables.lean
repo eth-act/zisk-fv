@@ -55,6 +55,49 @@ def rangeTable7 : StaticTable FGL field :=
 def rangeTable8 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 8) (by decide) "range-8"
 
+/-- Exact static model of ZisK's virtual `DualRange` byte table.  The source
+    declares `DualByte` as two independently bounded byte coordinates
+    (`zisk/pil/zisk.pil:62-76`), and MemAlignByte consumes its ordered tuple
+    as `[byte_value, value_8b]` at `mem_align_byte.pil:104`. -/
+def dualByteTable : StaticTable FGL (fields 2) where
+  name := "dual-range-byte"
+  length := 2 ^ 16
+  row i := #v[((i.val % 256 : ℕ) : FGL), ((i.val / 256 : ℕ) : FGL)]
+  index t := t[0].val + 256 * t[1].val
+  Spec t := t[0].val < 256 ∧ t[1].val < 256
+  contains_iff := by
+    intro t
+    constructor
+    · rintro ⟨i, rfl⟩
+      constructor
+      · have h_byte : ((i.val % 256 : ℕ) : FGL).val < 256 := by
+          rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
+          exact Nat.mod_lt _ (by omega)
+        simpa using h_byte
+      · have h_byte : ((i.val / 256 : ℕ) : FGL).val < 256 := by
+          rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
+          have hi := i.isLt
+          omega
+        simpa using h_byte
+    · rintro ⟨h0, h1⟩
+      let i : Fin (2 ^ 16) := ⟨t[0].val + 256 * t[1].val, by omega⟩
+      refine ⟨i, ?_⟩
+      apply Vector.ext
+      intro j hj
+      interval_cases j
+      · apply Fin.ext
+        have h_byte : t[0].val = ((i.val % 256 : ℕ) : FGL).val := by
+          rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
+          dsimp [i]
+          omega
+        simpa using h_byte
+      · apply Fin.ext
+        have h_byte : t[1].val = ((i.val / 256 : ℕ) : FGL).val := by
+          rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
+          dsimp [i]
+          omega
+        simpa using h_byte
+
 def rangeTable16 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 16) (by decide) "range-16"
 

@@ -7,10 +7,9 @@ import Mathlib.Tactic.LinearCombination
 Each per-row Spec clause is 1:1 with its constraint hypothesis; the
 proof is structural.
 
-The cross-row constraints (`delta_addr_definition` + 8
-`down_to_up_continuity_N`) live as a separate `cross_row_at`
-adjacency predicate in `CrossRow.lean`. They are consumed by
-downstream callers directly, not via per-row Soundness.
+The source's cross-row constraints are component-owned D1/D3 transition
+predicates in `Circuit.lean`; their verifier-checked certificates are consumed
+from `AcceptedZiskTrace`, not supplied by downstream callers.
 
 ## Trust note
 

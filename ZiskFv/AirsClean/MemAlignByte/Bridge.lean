@@ -133,11 +133,10 @@ def constraints_at
       - (v.is_write r * (v.written_byte_value r - v.byte_value r)
          + v.byte_value r) = 0
 
-/-- Lookup-aware Clean witness for the range lookups in a selected
-    MemAlignByte row. This exposes the `lookup (rangeTable8) bus_byte`,
-    `lookup (rangeTable8) byte_value`, and `lookup (rangeTable1) is_write`
-    obligations from `main`; it is structural evidence, not a replacement
-    range axiom. -/
+/-- Lookup-aware Clean witness for the static byte-assembly lookups in a
+    selected MemAlignByte row.  It includes the exact source h1029
+    16-bit lookup and h1030 `DualByte` tuple, in addition to the existing
+    byte and selector lookups; it is structural evidence, not a range axiom. -/
 structure RangeLookupWitness
     (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ) where
   offset : ℕ
@@ -146,22 +145,32 @@ structure RangeLookupWitness
     ConstraintsHold.Soundness env
       ((main (constVar (rowAt v r))).operations offset)
 
-/-- Project the three range facts supplied by the Clean lookup operations
-    in `MemAlignByte.main`. -/
+/-- Project all range facts supplied by the source-faithful static lookup
+    operations in `MemAlignByte.main`. -/
 theorem ranges_of_lookup_aware_const_soundness
     {v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL} {r : ℕ}
     (w : RangeLookupWitness v r) :
     (v.bus_byte r).val < 2 ^ 8
     ∧ (v.byte_value r).val < 2 ^ 8
-    ∧ (v.is_write r).val < 2 ^ 1 := by
+    ∧ (v.is_write r).val < 2 ^ 1
+    ∧ (v.value_16b r).val < 2 ^ 16
+    ∧ (v.value_8b r).val < 2 ^ 8 := by
   have h_holds := w.holds
   simp only [main, circuit_norm] at h_holds
   rcases h_holds with
-    ⟨h_bus_range, h_byte_range, h_is_write_range,
+    ⟨h_bus_range, h_byte_range, h_is_write_range, h_value16_range,
+      h_dual_byte_range,
       _h0, _h1, _h2, _h_composed, _h4, _h_written, _h_m0, _h_m1, _h_bus⟩
+  have h_dual :
+      (v.byte_value r).val < 2 ^ 8 ∧ (v.value_8b r).val < 2 ^ 8 := by
+    simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+      rowAt, constVar, ZiskFv.AirsClean.RangeTables.dualByteTable] using
+      h_dual_byte_range
   exact ⟨by simpa [rowAt, constVar] using h_bus_range,
     by simpa [rowAt, constVar] using h_byte_range,
-    by simpa [rowAt, constVar] using h_is_write_range⟩
+    by simpa [rowAt, constVar] using h_is_write_range,
+    by simpa [rowAt, constVar] using h_value16_range,
+    h_dual.2⟩
 
 /-- **Bridge theorem.** -/
 theorem spec_of_valid
@@ -204,7 +213,8 @@ theorem bus_byte_in_range_via_component
     (h_lookup : RangeLookupWitness v r) :
     (v.bus_byte r).val < 2 ^ 8 := by
   obtain ⟨h_b0, h_b1, h_b2, h_composed, h_b4, h_written, h_m0, h_m1, h_bus⟩ := h_core
-  obtain ⟨h_bus_byte_range, h_byte_value_range, h_is_write_range⟩ :=
+  obtain ⟨h_bus_byte_range, h_byte_value_range, h_is_write_range,
+    h_value16_range, h_value8_range⟩ :=
     ranges_of_lookup_aware_const_soundness h_lookup
   -- `rowAt v r` projects the AIR row into the Clean Component row;
   -- each `rowAt` field is `@[reducible]`-defeq to `v.<col> r`.
@@ -212,7 +222,7 @@ theorem bus_byte_in_range_via_component
       Spec (rowAt v r) :=
     spec_via_component (rowAt v r) h_composed h_written h_m0 h_m1 h_bus
       h_b0 h_b1 h_b2 h_b4
-      h_bus_byte_range h_byte_value_range h_is_write_range
+      h_bus_byte_range h_byte_value_range h_is_write_range h_value16_range h_value8_range
   exact h_spec.2.2.2.2.2.1
 
 end ZiskFv.AirsClean.MemAlignByte

@@ -12,7 +12,7 @@ private theorem memAlignByteWitnessProverAssumptions
     (data : ProverData FGL) (hint : ProverHint FGL) :
     circuit.ProverAssumptions memAlignByteWitnessRow data hint := by
   refine ⟨false, true, false, true, 42, 99, 1000, 2, 3, 4, 5,
-    by norm_num, by norm_num, ?_⟩
+    by norm_num, by norm_num, by norm_num, by norm_num, ?_⟩
   rfl
 
 theorem completeness_witness_memalignbyte :

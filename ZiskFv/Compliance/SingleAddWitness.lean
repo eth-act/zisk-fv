@@ -22,6 +22,7 @@ open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
+open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.Compliance.RegisterMemBusBalance
 
@@ -82,6 +83,20 @@ private theorem rangeChannel_ne_opBus :
   intro h
   have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
   change "SpecifiedRangesSlice103" = "OperationBus" at h_name
+  simp at h_name
+
+private theorem memAlignRangeChannel_ne_memBus :
+    MemAlignRangeChannel.toRaw ≠ MemBusChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "MemAlignRange107" = "MemoryBus" at h_name
+  simp at h_name
+
+private theorem memAlignRangeChannel_ne_opBus :
+    MemAlignRangeChannel.toRaw ≠ OpBusChannel.toRaw := by
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "MemAlignRange107" = "OperationBus" at h_name
   simp at h_name
 
 def addX1BinaryAddRow : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL :=
@@ -148,6 +163,7 @@ def singleAddTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component
   , emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component
   , emptyComponentTable ZiskFv.AirsClean.MemAlign.component
+  , emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component
   , emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
@@ -175,7 +191,7 @@ def singleAddWitness : EnsembleWitness singleAddEnsemble where
       SoundEnsemble.empty_tables, Ensemble.addTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 13 := by
+    have hi' : i < 14 := by
       simpa [singleAddTables] using hi
     interval_cases i <;>
       simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, singleAddTables,
@@ -187,18 +203,19 @@ def singleAddWitness : EnsembleWitness singleAddEnsemble where
     intro table h_table
     simp [singleAddTables, registerBoundaryRowsTable, registerBoundaryRowsTableOf,
       emptyComponentTable, binaryAddRowsTable, mainSingleRowTable] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rfl
 
 theorem singleAddWitness_table_constraints :
     ∀ table ∈ singleAddWitness.tables, table.Constraints := by
   intro table h_table
   simp [singleAddWitness, singleAddTables] at h_table
-  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact registerBoundaryRowsTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignByte.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlign.component
+  · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRangeSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRomSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
@@ -252,7 +269,7 @@ theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints :=
     intro index
     simp [EnsembleWitness.verifierTable]
   · simp [singleAddWitness, singleAddTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
       simp [registerBoundaryRowsTable, registerBoundaryRowsTableOf,
@@ -260,6 +277,7 @@ theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints :=
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignReadByte.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignByte.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignRangeSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.SpecifiedRangesSlice.component
@@ -283,7 +301,7 @@ theorem singleAddWitness_cyclicSuccessorTransitions :
     intro index
     simp [EnsembleWitness.verifierTable]
   · simp [singleAddWitness, singleAddTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
       simp [registerBoundaryRowsTable, registerBoundaryRowsTableOf,
@@ -292,6 +310,8 @@ theorem singleAddWitness_cyclicSuccessorTransitions :
         ZiskFv.AirsClean.MemAlignReadByte.component
     · exact emptyComponentTable_cyclicSuccessorTransitions ZiskFv.AirsClean.MemAlignByte.component
     · exact emptyComponentTable_cyclicSuccessorTransitions ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_cyclicSuccessorTransitions
+        ZiskFv.AirsClean.MemAlignRangeSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.Mem.componentWithDualMemBus
@@ -347,7 +367,9 @@ private theorem singleAddWitness_main_component_cases
     exfalso
     exact not_main_component_of_width_ne (by decide) h_component
   · simp [singleAddWitness, singleAddTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_main_component_of_name_ne (by decide) h_component
     · exfalso
@@ -390,12 +412,13 @@ private theorem singleAddWitness_mutable_mem_component_tables_empty (table : Tab
       ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
     exact absurd h_verifier_nil (by simp)
   · simp [singleAddWitness, singleAddTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_mutable_mem_component_of_name_ne (by decide) h_component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignReadByte.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignByte.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlign.component
+    · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignRangeSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
     · exact emptyComponentTable_table ZiskFv.AirsClean.SpecifiedRangesSlice.component
@@ -562,6 +585,47 @@ theorem singleAddWitness_rangeChannel_balanced :
   · intro msg
     simp [balanceOf]
 
+private theorem registerBoundaryRowsTable_interactionsWith_memAlignRangeChannel_nil :
+    registerBoundaryRowsTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change MemAlignRangeChannel.toRaw ∉ [MemBusChannel.toRaw]
+  simp only [List.mem_singleton]
+  exact memAlignRangeChannel_ne_memBus
+
+private theorem binaryAddRowsTable_interactionsWith_memAlignRangeChannel_nil :
+    (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemAlignRangeChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change MemAlignRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
+  simp only [List.mem_singleton]
+  exact memAlignRangeChannel_ne_opBus
+
+private theorem mainSingleRowTable_interactionsWith_memAlignRangeChannel_nil :
+    (mainSingleRowTable 1 addX1Program addX1Row).interactionsWith MemAlignRangeChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change MemAlignRangeChannel.toRaw ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+  intro h
+  simp only [List.mem_cons] at h
+  rcases h with h | h
+  · exact memAlignRangeChannel_ne_memBus h
+  · rcases h with h | h
+    · exact memAlignRangeChannel_ne_opBus h
+    · simp at h
+
+theorem singleAddWitness_memAlignRangeChannel_balanced :
+    BalancedInteractions
+      (singleAddWitness.tables.flatMap (·.interactionsWith MemAlignRangeChannel.toRaw)) := by
+  rw [show singleAddWitness.tables = singleAddTables from rfl]
+  simp [singleAddTables, registerBoundaryRowsTable_interactionsWith_memAlignRangeChannel_nil,
+    binaryAddRowsTable_interactionsWith_memAlignRangeChannel_nil,
+    mainSingleRowTable_interactionsWith_memAlignRangeChannel_nil,
+    emptyComponentTable_interactionsWith]
+  refine ⟨?_, ?_⟩
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro msg
+    simp [balanceOf]
+
 private theorem registerBoundaryRowsTable_interactionsWith_memAlignRomChannel_nil :
     registerBoundaryRowsTable.interactionsWith MemAlignRomChannel.toRaw = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
@@ -621,7 +685,8 @@ theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels :=
   simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
-  rcases h_channel with rfl | rfl | rfl | rfl
+  rcases h_channel with rfl | rfl | rfl | rfl | rfl
+  · exact singleAddWitness_memAlignRangeChannel_balanced
   · exact singleAddWitness_memBus_balanced
   · exact singleAddWitness_opBus_balanced
   · exact singleAddWitness_memAlignRomChannel_balanced

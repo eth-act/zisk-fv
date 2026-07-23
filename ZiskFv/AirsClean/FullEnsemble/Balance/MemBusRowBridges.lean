@@ -419,11 +419,11 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
   rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main | h_regBoundary
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_memAlignReadByte_row_eval_of_interaction_mem
-        h_marb h_providerInteraction
+        h_marb h_providerInteraction h_nonpull
     left
     exact ⟨providerRow, h_providerRow, h_marb, h_providerEval⟩
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
-      exists_memAlignByte_row_eval_of_interaction_mem h_mab h_providerInteraction
+      exists_memAlignByte_row_eval_of_interaction_mem h_mab h_providerInteraction h_nonpull
     right
     left
     exact ⟨providerRow, h_providerRow, h_mab, h_providerEval⟩
@@ -753,7 +753,7 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
   rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main | h_regBoundary
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_memAlignReadByte_row_eval_of_interaction_mem
-        h_marb h_providerInteraction
+        h_marb h_providerInteraction h_nonpull
     left
     refine ⟨providerRow, h_providerRow,
       h_providerSpecs providerRow h_providerRow, h_marb, h_providerEval, ?_⟩
@@ -761,7 +761,7 @@ theorem exists_mem_provider_row_matches_entry_spec_of_active_main_eval
     rw [← h_providerEval, ← h_mainEval]
     exact h_msg
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
-      exists_memAlignByte_row_eval_of_interaction_mem h_mab h_providerInteraction
+      exists_memAlignByte_row_eval_of_interaction_mem h_mab h_providerInteraction h_nonpull
     right
     left
     refine ⟨providerRow, h_providerRow,

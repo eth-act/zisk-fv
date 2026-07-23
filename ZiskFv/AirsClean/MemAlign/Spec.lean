@@ -14,11 +14,9 @@ multiplexers and the register-byte chain. This Spec captures the
 * `value_0_reconstruction`, `value_1_reconstruction` — 9-term selector
   multiplexers over `reg_0..7`
 
-Cross-row constraints (`delta_addr_definition` + 8
-`down_to_up_continuity_N`) live in a separate `cross_row_at`
-adjacency predicate in `CrossRow.lean`. The per-row Spec below is
-what the Clean `Air.Flat.Component`'s constraint-emitting `main`
-captures.
+The source's predecessor/current and successor/current constraints are
+component-owned D1/D3 transition predicates in `Circuit.lean`; this per-row
+Spec contains only the source's 16 single-row constraints.
 
 ## Constructibility audit
 

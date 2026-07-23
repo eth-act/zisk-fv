@@ -54,7 +54,8 @@ theorem memAlignRom_balanced_of_witness
     BalancedInteractions (witness.interactionsWith MemAlignRomChannel.toRaw) := by
   have h := h_balanced MemAlignRomChannel.toRaw (by
     change MemAlignRomChannel.toRaw ∈
-      [ ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw
+      [ ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw
+      , ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw
       , ZiskFv.Channels.OperationBus.OpBusChannel.toRaw
       , MemAlignRomChannel.toRaw
       , ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel.toRaw ]
@@ -123,7 +124,7 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
       providerTable.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_rom | h_mem | h_ranges |
+    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_rom | h_mem | h_ranges |
       h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
   · have h_nil : providerTable.interactionsWith MemAlignRomChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -136,6 +137,7 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
   · simp [memAlignByte_table_interactionsWith_memAlignRom_nil h_alignByte] at h_providerInteraction
   · exact False.elim (h_nonpull
       (memAlign_table_memAlignRom_mult_neg_one h_align h_providerInteraction))
+  · simp [memAlignRangeSlice_table_interactionsWith_memAlignRom_nil h_range107] at h_providerInteraction
   · refine ⟨providerInteraction, ?_, h_message, h_nonpull, h_nonzero,
       providerTable, h_providerTable, h_providerInteraction, h_rom⟩
     rw [EnsembleWitness.mem_interactionsWith]

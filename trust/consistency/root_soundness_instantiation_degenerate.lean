@@ -126,6 +126,19 @@ private theorem wit_transitions : wit.TransitionConstraints := by
     change Fin 0 at index
     exact Fin.elim0 index
 
+private theorem wit_cyclicSuccessorTransitions : wit.CyclicSuccessorTransitionConstraints := by
+  intro table hmem
+  rw [Table.CyclicSuccessorTransitionConstraints]
+  intro index
+  rw [EnsembleWitness.allTables, List.mem_cons] at hmem
+  rcases hmem with h_verifier | h_table
+  · subst table
+    simp [EnsembleWitness.verifierTable]
+  · simp only [wit, EnsembleWitness.ofRows_tables, List.mem_ofFn] at h_table
+    obtain ⟨i, rfl⟩ := h_table
+    change Fin 0 at index
+    exact Fin.elim0 index
+
 /-- The degenerate accepted trace: empty program, all-empty witness, trivial
     channel balance, and vacuous transition / row-height obligations. -/
 private def trace : AcceptedZiskTrace 0 where
@@ -137,6 +150,7 @@ private def trace : AcceptedZiskTrace 0 where
   mem_replay_table := fun h => absurd h wit_not_mutableMemPresent
   mem_replay_source_covers := fun h => absurd h wit_not_mutableMemPresent
   transitions_hold := wit_transitions
+  cyclic_successor_transitions_hold := wit_cyclicSuccessorTransitions
   main_height := by intro table _ _ i; exact i.elim0
 
 private def sail : SailTrace 0 := nofun
