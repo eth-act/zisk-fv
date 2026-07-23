@@ -618,11 +618,14 @@ theorem exists_subdoublewordLoadProviderWitness_of_not_memAlignNarrowLoadLaneFor
     h_providerTable h_providerRow h_spec h_component h_match
   have h_width : ma.width 0 = main.ind_width r_main := h_fits.1.trans h_main_width.symm
   have h_value_1_zero : ma.value_1 0 = 0 := (h_fits.2.1 rfl).1
-  have h_value_0_lt_1 : (ma.value_0 0).val < 256 := (h_fits.2.1 rfl).2
+  have h_value_0_lt_1 : ma.width 0 = 1 → (ma.value_0 0).val < 256 := by
+    intro _
+    exact (h_fits.2.1 rfl).2
   have h_value_0_lt_2 : ma.width 0 = 2 → (ma.value_0 0).val < 65536 := by
     intro h_width_2
     have h_one_eq_two : (1 : FGL) = 2 := h_fits.1.symm.trans h_width_2
-    norm_num at h_one_eq_two
+    have h_one_eq_two_nat : (1 : ℕ) = 2 := congrArg Fin.val h_one_eq_two
+    norm_num at h_one_eq_two_nat
   refine ⟨ma, ?_⟩
   exact { provider := Or.inr (Or.inr
     ⟨0, h_match, h_width, h_value_1_zero, h_value_0_lt_1, h_value_0_lt_2⟩) }
