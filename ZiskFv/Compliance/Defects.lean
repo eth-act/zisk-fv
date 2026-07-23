@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.OpEnvelope
+import ZiskFv.AirsClean.FullEnsemble.Balance.MemAlignSkippableProve
 
 /-!
 # Known-defect predicates for the global compliance theorem
@@ -25,6 +26,8 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 inductive DefectId where
   | arithMulSignedWitnessSoundness
   | arithDivDynamicWitnessSoundness
+  | memAlignNarrowLoadLaneSoundness
+  | memAlignSkippableProveSoundness
   | fenceIncomplete
   deriving DecidableEq, Repr
 
@@ -197,6 +200,263 @@ def DivRemForgeW (op2 : BitVec 64)
   Sail.BitVec.extractLsb op2 31 0 ≠ 0#32
     ∧ (signedRemainderIntW v r_a).natAbs = (Sail.BitVec.extractLsb op2 31 0).toInt.natAbs
 
+/-- The exact narrow-load value shape used by the legacy provider bridge.
+
+    This is the per-chunk form of `value.toNat < 2^(8 * width)`: the row has
+    the expected width, its high 32-bit chunk is zero for every sub-doubleword
+    width, and its low chunk fits the one- or two-byte cases.  Keeping this in
+    the same representation as `SubdoublewordLoadProviderWitness` avoids a
+    lossy 64-bit `FGL` packing while preserving the full zero-extension fact. -/
+def MemAlignNarrowLoadValueFits
+    (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) (expectedWidth : FGL) : Prop :=
+  v.width r = expectedWidth
+    ∧ (expectedWidth = 1 → v.value_1 r = 0 ∧ (v.value_0 r).val < 256)
+    ∧ (expectedWidth = 2 → v.value_1 r = 0 ∧ (v.value_0 r).val < 65536)
+    ∧ (expectedWidth = 4 → v.value_1 r = 0)
+
+/-- Exact trace-local forge for ZisK v0.17.0's general-MemAlign narrow-load
+    value-lane defect.
+
+    `mem_align.pil:167-189` reconstructs both 32-bit chunks from byte-range
+    registers but does not constrain every unused lane to zero on selected
+    width-1/2/4 prove rows.  The through-MemAlign timeline needs the exact
+    width-conditioned zero-extension shape above.  This forge is therefore a
+    concrete accepted-witness MemAlign row selected by the Main load entry
+    whose reconstructed value fails that shape.  It does not exclude LD, an
+    entire MemAlign table, or rows unrelated to the selected Main message.
+
+    The row/table quantifiers intentionally live here rather than in a caller
+    input record.  `RowOutsideDefectRegion` negates this trace-local predicate
+    only on the six narrow-load arms; the bridge lemma below then discharges
+    the exact width and lane facts the legacy provider witness needs. -/
+def MemAlignNarrowLoadLaneForge
+    {length : Nat}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble)
+    (expectedWidth : FGL) (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ∃ providerTable ∈ witness.allTables,
+    ∃ providerRow ∈ providerTable.table,
+      providerTable.component.Spec (providerTable.environment providerRow)
+        ∧ providerTable.component = ZiskFv.AirsClean.MemAlign.component
+        ∧ ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
+            (ZiskFv.AirsClean.MemAlign.validOfRow
+              (Eval.eval (providerTable.environment providerRow)
+                ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+            0 entry
+        ∧ ¬ MemAlignNarrowLoadValueFits
+            (ZiskFv.AirsClean.MemAlign.validOfRow
+              (Eval.eval (providerTable.environment providerRow)
+                ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+            0 expectedWidth
+
+/-- Negating the exact trace-local forge yields the selected general-MemAlign
+    row's full width-conditioned zero-extension shape. -/
+theorem memAlignNarrowLoadLane_fits_of_not_forge
+    {length : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    {entry : Interaction.MemoryBusEntry FGL}
+    {expectedWidth : FGL}
+    (h_not_forge : ¬ MemAlignNarrowLoadLaneForge program witness expectedWidth entry)
+    {providerTable : Air.Flat.Table FGL} (h_providerTable : providerTable ∈ witness.allTables)
+    {providerRow : Array FGL} (h_providerRow : providerRow ∈ providerTable.table)
+    (h_spec : providerTable.component.Spec (providerTable.environment providerRow))
+    (h_component : providerTable.component = ZiskFv.AirsClean.MemAlign.component)
+    (h_match : ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
+      (ZiskFv.AirsClean.MemAlign.validOfRow
+        (Eval.eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+      0 entry) :
+    MemAlignNarrowLoadValueFits
+      (ZiskFv.AirsClean.MemAlign.validOfRow
+        (Eval.eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+      0 expectedWidth := by
+  by_contra h_not_fits
+  apply h_not_forge
+  exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+    h_spec, h_component, h_match, h_not_fits⟩
+
+/-- Envelope-local image of the narrow-load value forge.  The trace-local
+    predicate above is the actual soundness boundary; this impossible shape
+    keeps `Blocks` faithful to an already-built provider witness. -/
+def MemAlignNarrowLoadLaneShape
+    : OpEnvelope state m r_main → Prop
+  | .lbu _ _ _ bus align ..
+  | .lhu _ _ _ bus align ..
+  | .lwu _ _ _ bus align .. =>
+      ∃ r,
+        ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
+          align.ma r bus.e1
+        ∧ MemAlignNarrowLoadValueFits align.ma r (m.ind_width r_main)
+        ∧ ¬ MemAlignNarrowLoadValueFits align.ma r (m.ind_width r_main)
+  | _ => False
+
+/-- The post-selection envelope form cannot be forged: it records an explicit
+    contradiction.  The dispatcher enforces the real trace-local predicate. -/
+@[simp] theorem no_memAlignNarrowLoadLaneShape
+    (env : OpEnvelope state m r_main) : ¬ MemAlignNarrowLoadLaneShape env := by
+  cases env <;> simp [MemAlignNarrowLoadLaneShape]
+  all_goals rintro ⟨_, _, h_fits, h_not_fits⟩; exact h_not_fits h_fits
+
+/-- Anti-vacuity guard for the trace-local carve-out: any selected general
+    provider row whose reconstructed value fits its selected narrow width lies
+    outside the forge region. -/
+theorem honest_memAlign_narrow_load_not_forge
+    {length : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (expectedWidth : FGL)
+    (entry : Interaction.MemoryBusEntry FGL)
+    (h_honest : ∀ providerTable providerRow,
+      providerTable ∈ witness.allTables →
+      providerRow ∈ providerTable.table →
+      providerTable.component.Spec (providerTable.environment providerRow) →
+      providerTable.component = ZiskFv.AirsClean.MemAlign.component →
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
+      (ZiskFv.AirsClean.MemAlign.validOfRow
+        (Eval.eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+        0 entry →
+      MemAlignNarrowLoadValueFits
+        (ZiskFv.AirsClean.MemAlign.validOfRow
+          (Eval.eval (providerTable.environment providerRow)
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+        0 expectedWidth) :
+    ¬ MemAlignNarrowLoadLaneForge program witness expectedWidth entry := by
+  rintro ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+    h_spec, h_component, h_match, h_not_fits⟩
+  exact h_not_fits
+    (h_honest providerTable providerRow h_providerTable h_providerRow h_spec
+      h_component h_match)
+
+/-- Exact trace-local forge for the already-known MemAlign skippable-prove
+    defect (upstream #1142).
+
+    The Memory-bus counterpart selected for a Main load can be a general
+    MemAlign interaction, but `mem_align.pil:163-189` does not constrain that
+    interaction to use the prove selector.  This predicate records precisely
+    the case the through-MemAlign bridge cannot admit: a non-pull, nonzero
+    general-MemAlign interaction whose payload matches the Main load entry but
+    whose row does not satisfy the prove-side selector pins.  It is expressed
+    solely over accepted-witness data; no row-data or caller witness is part of
+    the exclusion. -/
+abbrev MemAlignSkippableProveForge
+    {length : Nat}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ZiskFv.AirsClean.FullEnsemble.MemAlignSkippableProveForge
+    program witness entry
+
+/-- The negated skippable-prove forge supplies the exact selector pins that a
+    matched general MemAlign load row needs. -/
+theorem memAlign_selected_prove_pins_of_not_skippable_prove_forge
+    {length : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_not_forge : ¬ MemAlignSkippableProveForge program witness entry)
+    {providerInteraction : Interaction FGL}
+    (h_providerInteraction : providerInteraction ∈
+      witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw)
+    (h_nonpull : providerInteraction.mult ≠ -1)
+    (h_nonzero : providerInteraction.mult ≠ 0)
+    {providerTable : Air.Flat.Table FGL} (h_providerTable : providerTable ∈ witness.allTables)
+    (h_providerTableInteraction : providerInteraction ∈
+      providerTable.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw)
+    {providerRow : Array FGL} (h_providerRow : providerRow ∈ providerTable.table)
+    (h_spec : providerTable.component.Spec (providerTable.environment providerRow))
+    (h_component : providerTable.component = ZiskFv.AirsClean.MemAlign.component)
+    (h_providerEval : providerInteraction =
+      ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+          - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+        (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+        (providerTable.environment providerRow))
+    {multiplicity : FGL}
+    (h_entry : ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (Eval.eval (providerTable.environment providerRow)
+          (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+        multiplicity 2)) :
+    (Eval.eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
+    ∧ (Eval.eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
+    ∧ (Eval.eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0 := by
+  by_contra h_pins
+  apply h_not_forge
+  exact ⟨providerInteraction, h_providerInteraction, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerTableInteraction, providerRow,
+    h_providerRow, h_spec, h_component, h_providerEval, multiplicity, h_entry, h_pins⟩
+
+/-- Anti-vacuity guard for the skippable-prove exclusion.  An honest provider
+    population that uses the prove pins for every matched general-MemAlign
+    interaction lies outside this defect region. -/
+theorem honest_memAlign_selected_prove_not_skippable_forge
+    {length : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (entry : Interaction.MemoryBusEntry FGL)
+    (h_honest : ∀ providerInteraction providerTable providerRow multiplicity,
+      providerInteraction ∈ witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw →
+      providerInteraction.mult ≠ -1 →
+      providerInteraction.mult ≠ 0 →
+      providerTable ∈ witness.allTables →
+      providerInteraction ∈
+        providerTable.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw →
+      providerRow ∈ providerTable.table →
+      providerTable.component.Spec (providerTable.environment providerRow) →
+      providerTable.component = ZiskFv.AirsClean.MemAlign.component →
+      providerInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+          (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+            - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+              ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+          (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow) →
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (Eval.eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+          multiplicity 2) →
+      (Eval.eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
+      ∧ (Eval.eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
+      ∧ (Eval.eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0) :
+    ¬ MemAlignSkippableProveForge program witness entry := by
+  rintro ⟨providerInteraction, h_providerInteraction, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerTableInteraction, providerRow,
+    h_providerRow, h_spec, h_component, h_providerEval, multiplicity, h_entry, h_not_pins⟩
+  exact h_not_pins
+    (h_honest providerInteraction providerTable providerRow multiplicity
+      h_providerInteraction h_nonpull h_nonzero h_providerTable
+      h_providerTableInteraction h_providerRow h_spec h_component h_providerEval h_entry)
+
+/-- The generic envelope is built only after the selected provider has already
+    established its prove pins.  The soundness boundary for #1142 is the
+    trace-local predicate above, not an envelope-local surrogate. -/
+def MemAlignSkippableProveShape (_ : OpEnvelope state m r_main) : Prop := False
+
+@[simp] theorem no_memAlignSkippableProveShape
+    (env : OpEnvelope state m r_main) : ¬ MemAlignSkippableProveShape env := by
+  simp [MemAlignSkippableProveShape]
+
 /-- Row-data form of ZisK's currently accepted known-good FENCE subset
     (`fm = 0 ∧ rs1 = x0 ∧ rd = x0`).  Same condition as the `.fence` arm of
     `FenceKnownGoodShape`. -/
@@ -211,6 +471,10 @@ def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
       MaliciousSignedMulWitnessShape env
   | .arithDivDynamicWitnessSoundness =>
       ArithDivDynamicWitnessShape env
+  | .memAlignNarrowLoadLaneSoundness =>
+      MemAlignNarrowLoadLaneShape env
+  | .memAlignSkippableProveSoundness =>
+      MemAlignSkippableProveShape env
   | .fenceIncomplete =>
       ¬ FenceKnownGoodShape env
 

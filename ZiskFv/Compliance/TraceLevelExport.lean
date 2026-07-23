@@ -102,7 +102,10 @@ global theorem produces:
    DIV/REM, divisor values are reconstructed from witness chunks rather than
    from `InputsAgree` or Sail operands.  FENCE remains row-local through the
    honest pins (`fm=0, rs1=x0, rd=x0`), and MULH/MULHSU sign facts are derived
-   from the indexed Arith range-table evidence exposed by #169.
+   from the indexed Arith range-table evidence exposed by #169.  The six
+   narrow-load arms have a separate trace-local MemAlign high-lane boundary:
+   it is not an envelope-local shape because the selected provider is still
+   raw accepted-witness data at that point.
 
 ## Threaded defect-exclusion hypothesis (`h_known_bugs`)
 
@@ -113,15 +116,18 @@ The `h_known_bugs` premise is the per-step defect-exclusion obligation
 `stepStrong_<op>`.  It takes two shapes across the 63 arms, all SATISFIABLE for
 honest traces with honest Main-row results (so this export is NOT vacuous):
   * **Non-defect arms** (op-bus ALU + M-ext-unsigned + control-flow / U-type /
-    store / load): no defect obligation — the arm is `True`.  Each `stepStrong_<op>`
+    store / LD): no defect obligation — the arm is `True`.  Each `stepStrong_<op>`
     builds `NoKnownDefect` of its own env locally via `noKnownDefect_of_shapes`
-    (the three defect shapes are vacuous for a non-defect constructor).
-  * **8 defect-capable arms** (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW + FENCE): the
+    (the envelope-local defect shapes are vacuous for a non-defect constructor).
+  * **14 defect-capable arms** (MUL/MULH/MULHSU/DIV/REM/DIVW/REMW, FENCE, and
+    LBU/LHU/LWU/LB/LH/LW): the
     trace-local matcher requires the forge-negation (`¬ SignedMulForge` /
     `¬ DivRemForge` / `¬ DivRemForgeW`) for every arith witness row whose
-    operation-bus row matches the accepted Main row, or FENCE-known-good
-    (`FenceKnownGood`) directly from the decoded Main row.  This universal is a
-    strict trace-side obligation, not merely the old caller-supplied row fact:
+    operation-bus row matches the accepted Main row; FENCE-known-good
+    (`FenceKnownGood`) directly from the decoded Main row; or the exact
+    negation of `MemAlignNarrowLoadLaneForge` for the selected narrow-load
+    memory-bus entry.  This is a strict trace-side obligation, not merely the
+    old caller-supplied row fact:
     `matches_entry` includes the result lanes, so an honest Main row is not
     matched by a forge witness that computes a different result.  The dispatcher
     later instantiates the universal with the arith row evidence already present

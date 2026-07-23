@@ -279,20 +279,22 @@ completeness-only and is not consumed by this derivation.
 matching structural source-correlation certificate: every mutable-Mem table in
 the witness is the selected source table.
 
-MemAlign scope note (#242): #115's closeout is direct-Mem only. MemAlign-routed
-accesses remain undischarged, named follow-on burdens rather than derived
-read-soundness. The open residues are `MemAlignLoadProviderRomValueFacts`
-(`MemBusRowBridges.lean`), `MemAlignCoreLookupFacts`
-(`Compliance/SharedBundles.lean`), `ActiveMainMemAlignSelectedProveBranchPins`,
-and the direct-Mem branch exclusions `LoadBDirectMutableMemResidues.no_marb`,
-`no_mab`, and `no_memAlign`. Issue #242 owns replacing these exclusions/residues
-with a through-MemAlign derivation, gated on MemAlignRom extraction (#108) and a
-timeline argument from MemAlign provider rows back to the accepted Mem replay.
-The component-fidelity prerequisite is now intrinsic: generated c29 plus
-c1/c3/.../c15 are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its
-D3 predicate; the existing accepted-trace transition certificates check those
-component-owned relations. The remaining issue is their semantic consumption
-by the through-MemAlign timeline, not an omitted circuit constraint.
+MemAlign provider route (#242): the former provider-side carve-out is closed.
+`MemAlignLoadProviderRomValueFacts` and `MemAlignCoreLookupFacts` are retired:
+a selected MemAlignByte/ReadByte provider carries its exact in-circuit
+static-lookup byte range directly in the structural witness, while the
+trace-local narrow-load boundary supplies the general provider's complete
+selected-width value shape. The trace-local #1142 exclusion derives the
+selected prove pins. Existing `MemAlignWitness` parameters remain consumer
+interfaces, not detached whole-table lookup facts or new caller promises. The
+remaining direct-Mem branch exclusions are
+`LoadBDirectMutableMemResidues.no_marb`, `no_mab`, and `no_memAlign`.
+The component-fidelity route is intrinsic: generated c29 plus c1/c3/.../c15
+are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its D3 predicate;
+the existing accepted-trace transition certificates check those
+component-owned relations. The final provider bridge consumes those accepted
+component facts and the two proof-triggered defect boundaries; it does not add
+a parallel timeline assumption.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
@@ -700,7 +702,10 @@ Active conclusions:
   `constraint = template := by rfl` with the real hints #1025/#1027,
   #1031/#1032, #1050, and #1054/#1055. The terminal std_sum constraints
   c15/c9 (`:696`) remain explicitly global finalizers, not lookup links.
-  No caller promise or soundness-side `ProverAssumptions` is introduced.
+  The selected byte-provider bridge consumes that exact component `Spec` to
+  carry only its needed `< 256` fact into the structural load witness; no
+  universal validator residue, caller promise, or soundness-side
+  `ProverAssumptions` is introduced.
 - **MemAlign virtual-ROM bus-133 route (#242).** This is a cited application
   of the existing lookup/permutation protocol-soundness class, not a new trust
   kind. `mem_align.pil:139-143` defines the unmasked h998 assumes tuple
@@ -730,16 +735,32 @@ Active conclusions:
   membership. Consumer guarantees are `True`; no caller promise and no
   soundness-side `ProverAssumptions` is used. The provider's identical
   `ProverAssumptions` predicate is completeness-only.
+- **MemAlign narrow-load value lanes (#242).** The through-MemAlign route uses
+  the exact selected general-provider row reconstructed at
+  `mem_align.pil:181-189`. For widths 1, 2, or 4, its reconstructed two-chunk
+  value must fit the selected width: `value_1 = 0` plus `value_0 < 2^8` or
+  `2^16` for widths 1 or 2. The trace-local
+  `Defects.MemAlignNarrowLoadLaneForge` records exactly the negation of that
+  complete selected-row shape (including the bridge's selected-width equality);
+  `RowOutsideDefectRegion` excludes it only for LBU/LHU/LWU/LB/LH/LW. Its
+  negation derives the complete value shape at the bridge point and deletes
+  `MemAlignLoadProviderRomValueFacts`. This is a claim boundary, not a new
+  trust kind, caller promise, or soundness-side `ProverAssumptions`; the source
+  repro checks both a nonzero high chunk and `value_0 = 256` for width one in
+  `trust/consistency/memalign_narrow_load_lane_defect.lean`, against the
+  physical ROM tuple at `mem_align_rom.pil:6-313`.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
 
-Trace-level export note (2026-06-30): `RowOutsideDefectRegion` for the strong
+Trace-level export note (2026-07-23): `RowOutsideDefectRegion` for the strong
 trace theorem is now stated over the accepted ZisK trace row, not over
 `SailTrace` or `InputsAgree`. The signed-MUL and signed-DIV/REM defect gates
 range over matching Arith witness rows from the operation bus, with DIV/REM
 divisors reconstructed from witness chunks; the active defect predicates
-themselves are unchanged.
+themselves are unchanged. The six narrow-load arms additionally negate the
+selected-row `MemAlignNarrowLoadLaneForge`; the forge predicate ranges over
+the accepted witness and the exact Main-selected memory-bus entry.
 
 ## Active Caller Burden
 

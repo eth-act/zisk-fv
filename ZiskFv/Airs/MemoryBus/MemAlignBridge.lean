@@ -26,10 +26,10 @@ provided by the **MemAlign\*** AIR family:
   is the literal `0`.
 * **MemAlignReadByte** (`mem_align_read_byte.pil`) — read-only
   specialization; width=1; `value[1]` literal `0`.
-* **MemAlign** (`mem_align.pil:189`) — widths 1/2/4 (and 8) via the
-  general unaligned multi-row chain; `value[1]` is a witness column
-  whose value-zero claim for sub-doubleword widths is mediated by the
-  MemAlignRom lookup.
+* **MemAlign** (`mem_align.pil:181-189`) — widths 1/2/4 (and 8) via the
+  general unaligned multi-row chain. The selected sub-doubleword value must
+  be zero-padded outside its width; the v0.17.0 circuit does not establish
+  that complete value shape, so the trace-level defect boundary supplies it.
 
 This file consumes an explicit structural provider witness for the
 MemAlign\* row selected by the Clean memory-bus route, then derives
@@ -119,9 +119,11 @@ This is the structural-unpacking replacement for the former
 `memalign_load_perm_sound` and
 `mem_align_rom_subdoubleword_load_value_1_zero` trust-ledger axioms.
 The first two branches are direct MemAlignByte/MemAlignReadByte provider
-rows whose bus tuple already carries a literal high chunk of zero. The
-general MemAlign branch carries the selected provider row plus the
-ROM-derived low/high value facts needed by the zero-padding theorem.
+rows whose bus tuple already carries a literal high chunk of zero. Each also
+carries the selected row's range fact, derived by that component's in-circuit
+static lookup. The general MemAlign branch carries its selected provider row
+and the width-conditioned value shape discharged from the trace-local defect
+boundary.
 
 No protocol fact is hidden behind a top-level axiom here: callers must
 provide the selected provider row and the exact branch facts. -/
@@ -133,9 +135,11 @@ structure SubdoublewordLoadProviderWitness
     (r_main : ℕ) (e : MemoryBusEntry FGL) : Prop where
   provider :
     (∃ r, memalign_byte_row_matches_load_entry mab r e
-        ∧ main.ind_width r_main = 1)
+        ∧ main.ind_width r_main = 1
+        ∧ (mab.bus_byte r).val < 256)
   ∨ (∃ r, memalign_read_byte_row_matches_load_entry marb r e
-        ∧ main.ind_width r_main = 1)
+        ∧ main.ind_width r_main = 1
+        ∧ (marb.byte_value r).val < 256)
   ∨ (∃ r, memalign_row_matches_load_entry ma r e
         ∧ ma.width r = main.ind_width r_main
         ∧ ma.value_1 r = 0
@@ -416,10 +420,10 @@ into the `high_bytes_zero_for_width` predicate. -/
     **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
     bound is derived from the MemAlignReadByte AIR's own `core_every_row`
     PIL constraints plus lookup-aware Clean range evidence. The general
-    MemAlign branch's low-value bounds remain carried by the structural
-    provider witness; #242's extracted MemAlignRom table separately derives
-    the source-linked h998 lookup membership and does not replace those lane
-    bounds. -/
+    MemAlign branch's complete width-conditioned value shape is carried by
+    the structural provider witness only after the trace-level #242 defect
+    boundary discharges the exact selected-row fact. The extracted
+    MemAlignRom route separately establishes source-linked h998 membership. -/
 
 /-- **Derived theorem** replacing the old
     `memalign_load_high_bytes_zero` axiom. Given a structural provider
@@ -427,20 +431,12 @@ into the `high_bytes_zero_for_width` predicate. -/
     MemAlignReadByte Clean components, produce
     `high_bytes_zero_for_width e (main.ind_width r_main)`.
 
-    **C1 re-root.** The MemAlignByte branch's `bus_byte < 256` bound
-    is derived from `h_mab_core` (the MemAlignByte AIR's own
-    `core_every_row` PIL constraints) and `h_mab_lookup` (the Clean
-    `lookup rangeTable*` evidence) through the soundness-only
-    `ranges_of_lookup_aware_const_soundness` projection — not from
-    `range_bus_sound` and not through the Clean Component completeness field.
-
-    **C2 re-root.** Likewise the MemAlignReadByte branch's
-    `byte_value < 256` bound is derived from `h_marb_core` (the
-    MemAlignReadByte AIR's own `core_every_row` PIL constraints)
-    and `h_marb_lookup` (the Clean `lookup rangeTable8` evidence) through the
-    soundness-only `byte_value_range_of_lookup_aware_const_soundness`
-    projection — not from `range_bus_sound` and not through the Clean
-    Component completeness field. -/
+    **C1/C2 direct route.** The MemAlignByte / MemAlignReadByte branches
+    carry the selected row's range conclusion.  The accepted-trace bridge
+    derives it from the row's Clean component `Spec`, whose corresponding
+    static lookup is part of the verifier-checked constraints.  This avoids
+    reconstructing irrelevant whole-table validator facts and does not use
+    `range_bus_sound`, completeness, or a caller promise. -/
 lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
@@ -453,35 +449,24 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     (_h_subdw : main.ind_width r_main = 1
              ∨ main.ind_width r_main = 2
              ∨ main.ind_width r_main = 4)
-    (_h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
-    (_h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_mab_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
-    (h_marb_lookup :
-      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
     (h_provider : SubdoublewordLoadProviderWitness main mab marb ma r_main e) :
     high_bytes_zero_for_width e (main.ind_width r_main) := by
   rcases h_provider.provider with
-    ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩ |
+    ⟨r, h_match, h_w_eq, h_bus_byte_lt⟩ | ⟨r, h_match, h_w_eq, h_byte_value_lt⟩ |
       ⟨r, h_match, h_w_eq, h_value_1_zero, h_v0_lt_1, h_v0_lt_2⟩
   · -- MemAlignByte branch: provider's width is literal 1.
     have h_v1 := memalign_byte_load_high_bytes_zero mab r e h_match
-    have h_mab_ranges :=
-      ZiskFv.AirsClean.MemAlignByte.ranges_of_lookup_aware_const_soundness
-        (h_mab_lookup r)
     have h_v0_lt := memalign_byte_load_low_bytes_zero mab r e h_match
-      h_mab_ranges.1
+      h_bus_byte_lt
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · exact ⟨h_v1, h_v0_lt⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
   · -- MemAlignReadByte branch: provider's width is literal 1. The
     -- `byte_value < 256` bound is derived from the MemAlignReadByte
-    -- lookup-aware Clean range projection, not a caller promise.
     have h_v1 := memalign_read_byte_load_high_bytes_zero marb r e h_match
     have h_v0_lt := memalign_read_byte_load_low_bytes_zero marb r e h_match
-      (ZiskFv.AirsClean.MemAlignReadByte.byte_value_range_of_lookup_aware_const_soundness
-        (h_marb_lookup r))
+      h_byte_value_lt
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · exact ⟨h_v1, h_v0_lt⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)

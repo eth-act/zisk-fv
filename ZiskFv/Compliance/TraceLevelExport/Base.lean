@@ -56,21 +56,24 @@ def SequentialPcDomain (pc : BitVec 64) : Prop :=
 noncomputable def zeroValidBinary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL := by
   constructor <;> exact fun _ => 0
 
-/-- `NoKnownDefect env` is exactly the conjunction of its three per-defect
+/-- `NoKnownDefect env` is exactly the conjunction of its four per-defect
     components: the env is outside the signed-MUL forge shape, outside the
-    DIV/REM forge shape, and inside the FENCE known-good shape.  This is the
+    DIV/REM forge shape, outside the MemAlign narrow-load shape, and inside the
+    FENCE known-good shape.  This is the
     `∀ id, ¬ Blocks id env` unfolding, packaged so every OpEnvelope-route
-    `stepStrong_<op>` proof can assemble `NoKnownDefect` from the three facts of
+    `stepStrong_<op>` proof can assemble `NoKnownDefect` from the local facts of
     the specific env it constructs.
 
-    * Non-defect arms discharge all three definitionally: the MUL and DIV/REM
-      shapes are `False` (`fun h => h`) and the FENCE shape is `True`
-      (`trivial`).
+    * Non-defect arms discharge the MUL, DIV/REM, and post-selection MemAlign
+      shapes definitionally; the FENCE shape is `True` (`trivial`).
     * A defect arm (the 7 signed-M arms + FENCE) supplies its threaded
       row-data forge-negation in the one matching slot (`¬ SignedMulForge` /
       `¬ DivRemForge` / `FenceKnownGood`, definitionally equal to the
       corresponding `Shape` of the `<op>EnvOf` env via the bridge lemmas in
-      `EnvOf`) and discharges the other two definitionally. -/
+      `EnvOf`) and discharges the other shapes definitionally.  The MemAlign
+      high-lane boundary is imposed earlier, directly over the accepted trace
+      by `RowOutsideDefectRegion`, before a selected provider witness is
+      constructed. -/
 theorem noKnownDefect_of_shapes
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r : ℕ}
@@ -83,6 +86,9 @@ theorem noKnownDefect_of_shapes
   cases id with
   | arithMulSignedWitnessSoundness => exact h_mul
   | arithDivDynamicWitnessSoundness => exact h_div
+  | memAlignNarrowLoadLaneSoundness => exact Defects.no_memAlignNarrowLoadLaneShape env
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape env
   | fenceIncomplete => exact not_not_intro h_fence
 
 /-- Build a `MainRowProvenance m r` from the FIVE Main-row mode/control pins

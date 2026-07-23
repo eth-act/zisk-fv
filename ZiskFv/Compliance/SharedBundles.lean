@@ -498,38 +498,16 @@ structure ModeRegsFull where
 /-- The three MemAlign-family provider witnesses plus the low-byte
     pinning bridge they jointly support. Shared by LBU, LHU, LWU.
 
-    **C1 re-root.** `mab_core` is the MemAlignByte AIR's own
-    `core_every_row` PIL constraints — a *constructibility* fact (a
-    real ZisK MemAlignByte trace satisfies its PIL). It replaces the
-    former free-floating `bus_byte < 256` promise (`byte_value_lt`,
-    removed from the MemAlign provider witness): the narrow loads
-    now *derive* that range bound from concrete lookup-aware Clean soundness
-    (`ranges_of_lookup_aware_const_soundness`), rather than accept it as a
-    caller promise or route through the Clean Component completeness field.
-    Same validator-bundled universal-row-constraint shape as
-    `BinaryAddWitness.core`.
-
-    **C2 re-root.** `marb_core` is the MemAlignReadByte AIR's own
-    `core_every_row` PIL constraints — the analogous *constructibility*
-    fact. It replaces the former free-floating `byte_value < 256`
-    promise (`read_byte_value_lt`, removed from
-    `SubdoublewordLoadLowBytePinning`): the narrow loads now *derive*
-    that range bound from concrete lookup-aware Clean soundness
-    (`byte_value_range_of_lookup_aware_const_soundness`), rather than accept
-    it as a caller promise or route through the Clean Component completeness
-    field.
-
     **T4 structural unpacking.** `provider` replaces the former
     MemAlign-family permutation and MemAlignRom trust-ledger axioms with
     an explicit selected-provider-row witness. The general MemAlign
     branch carries the ROM-derived row facts because `MemAlignRom` is not
     currently extracted as a first-class Lean table.
 
-    **T7 range re-root.** `mab_lookup` / `marb_lookup` expose
-    lookup-aware Clean `ConstraintsHold.Soundness` for the selected
-    MemAlignByte / MemAlignReadByte rows. The byte bounds now come from
-    those concrete `lookup rangeTable*` operations instead of
-    `range_bus_sound`. -/
+    **T7 range route.** The selected MemAlignByte / MemAlignReadByte branch
+    carries its own exact byte-range conclusion from the live component
+    `Spec`; that Spec is derived from the in-circuit static lookup, not from
+    `range_bus_sound`, completeness, or a caller-supplied whole-table fact. -/
 structure MemAlignWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (r_main : ℕ)
@@ -537,47 +515,9 @@ structure MemAlignWitness
   mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
   marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL
-  mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
-  marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r
-  mab_lookup :
-    ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r
-  marb_lookup :
-    ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r
   provider :
     ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
       main mab marb ma r_main e
-
-/-- The remaining MemAlignByte/MemAlignReadByte validator facts needed to build
-    a full `MemAlignWitness` once a selected provider branch is known. -/
-structure MemAlignCoreLookupFacts
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) where
-  mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
-  marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r
-  mab_lookup : ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r
-  marb_lookup : ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r
-
-/-- Assemble the legacy `MemAlignWitness` bundle from the selected provider row
-    and the remaining validator core/lookup residue. -/
-def memAlignWitness_of_coreLookupFacts_provider
-    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
-    {mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL}
-    {marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL}
-    {ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL}
-    {r_main : ℕ} {e : Interaction.MemoryBusEntry FGL}
-    (h_coreLookup : MemAlignCoreLookupFacts mab marb)
-    (h_provider :
-      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
-        main mab marb ma r_main e) :
-    MemAlignWitness main r_main e :=
-  { mab := mab
-    marb := marb
-    ma := ma
-    mab_core := h_coreLookup.mab_core
-    marb_core := h_coreLookup.marb_core
-    mab_lookup := h_coreLookup.mab_lookup
-    marb_lookup := h_coreLookup.marb_lookup
-    provider := h_provider }
 
 /-! ## Byte-range bounds on a memory-bus entry -/
 
