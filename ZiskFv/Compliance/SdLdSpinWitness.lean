@@ -4,9 +4,9 @@ import ZiskFv.Compliance.AddAddiSpinWitness
 /-!
 # Concrete SD/LD spin witness (#221)
 
-The Phase-2 witness starts from the pinned ZisK RV64IM lowering: x0 operands
-are immediate zero, immediate operands occupy the `b` source, and every
-program message is paired with its actual Main emitter row.
+The Phase-2 witness follows the canonical dispatcher binding shapes: ADDI
+uses the `a` register source and `b` immediate source, and every program
+message is paired with its actual Main emitter row.
 -/
 
 open Goldilocks
@@ -20,7 +20,7 @@ open ZiskFv.Compliance.RegisterMemBusBalance
 namespace ZiskFv.Compliance.SdLdSpinWitness
 
 def addiX0Bits : RomFlagBits where
-  a_src_imm := true
+  a_src_imm := false
   a_src_mem := false
   is_precompiled := false
   b_src_imm := true
@@ -32,7 +32,7 @@ def addiX0Bits : RomFlagBits where
   set_pc := false
   m32 := false
   b_src_ind := false
-  a_src_reg := false
+  a_src_reg := true
   b_src_reg := false
   store_reg := true
 
