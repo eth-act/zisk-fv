@@ -126,10 +126,87 @@ def sdLdAddiX1A0FreeCols : MainRomFreeCols :=
       im_high_degree_2 := 0, segment_l1 := 0, main_step := 0 }
     addX1RegisterInitial
 
-example : MainRomSourceGuard sdLdAddiX1A0ProgramRow addiX0Bits sdLdAddiX1A0FreeCols := by
+theorem sdLdAddiX1A0_sourceGuard :
+    MainRomSourceGuard sdLdAddiX1A0ProgramRow addiX0Bits sdLdAddiX1A0FreeCols := by
   norm_num [MainRomSourceGuard, sdLdAddiX1A0ProgramRow, addiX0Bits,
     sdLdAddiX1A0FreeCols, mainRomFreeColsWithRegisterPrevious,
     SingleAddWitness.addX1MainFreeCols, addX1RegisterInitial, boundaryRowIdle,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage]
+
+/-! The register histories are kept separately: x1 is written then read twice,
+x2 is written then read by SD, and x3 is written by LD.  x0 is immediate-zero
+in the two ADDI rows and deliberately has no boundary lane. -/
+
+@[reducible] def sdLdFreeCols (step a0 a1 b0 b1 : FGL) : MainRomFreeCols :=
+  mainRomFreeColsWithRegisterPrevious
+    { SingleAddWitness.addX1MainFreeCols with
+      a_0 := a0, a_1 := a1, b_0 := b0, b_1 := b1,
+      im_high_degree_2 := 0, segment_l1 := 0, main_step := step }
+    addX1RegisterInitial
+
+@[reducible] def sdLdAddiX1A0RowTemplate : MainRowWithRom FGL :=
+  mainRomRowOf sdLdAddiX1A0ProgramRow addiX0Bits
+    (MainRomExecKind.external false 160 0) (sdLdFreeCols 0 0 0 160 0)
+
+@[reducible] def sdLdAddiX1A0RowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterRow addX1RegisterInitial sdLdAddiX1A0RowTemplate [.store]
+
+def sdLdAddiX1A0Row : MainRowWithRom FGL := sdLdAddiX1A0RowWithLast.2
+
+@[reducible] def sdLdSlliX1RowTemplate : MainRowWithRom FGL :=
+  mainRomRowOf sdLdSlliX1ProgramRow addiX1Bits
+    (MainRomExecKind.external false 2684354560 0) (sdLdFreeCols 1 160 0 24 0)
+
+@[reducible] def sdLdSlliX1RowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterRow sdLdAddiX1A0RowWithLast.1 sdLdSlliX1RowTemplate [.a, .store]
+
+def sdLdSlliX1Row : MainRowWithRom FGL := sdLdSlliX1RowWithLast.2
+
+@[reducible] def sdLdAddiX1EightRowTemplate : MainRowWithRom FGL :=
+  mainRomRowOf sdLdAddiX1EightProgramRow addiX1Bits
+    (MainRomExecKind.external false 2684354568 0) (sdLdFreeCols 2 2684354560 0 8 0)
+
+@[reducible] def sdLdAddiX1EightRowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterRow sdLdSlliX1RowWithLast.1 sdLdAddiX1EightRowTemplate [.a, .store]
+
+def sdLdAddiX1EightRow : MainRowWithRom FGL := sdLdAddiX1EightRowWithLast.2
+
+@[reducible] def sdLdAddiX2RowTemplate : MainRowWithRom FGL :=
+  mainRomRowOf sdLdAddiX2ProgramRow addiX0Bits
+    (MainRomExecKind.external false 42 0) (sdLdFreeCols 3 0 0 42 0)
+
+@[reducible] def sdLdAddiX2RowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
+  materializeMainRegisterRow addX1RegisterInitial sdLdAddiX2RowTemplate [.store]
+
+def sdLdAddiX2Row : MainRowWithRom FGL := sdLdAddiX2RowWithLast.2
+
+@[reducible] def sdLdSdRowTemplate : MainRowWithRom FGL :=
+  mainRomRowOf sdLdSdProgramRow sdLdSdBits MainRomExecKind.internalCopyB
+    (sdLdFreeCols 4 2684354568 0 42 0)
+
+def sdLdSdRow : MainRowWithRom FGL :=
+  withMainRegisterPrevious .b sdLdAddiX2RowWithLast.1 <|
+    withMainRegisterPrevious .a sdLdAddiX1EightRowWithLast.1 sdLdSdRowTemplate
+
+@[reducible] def sdLdLdRowTemplate : MainRowWithRom FGL :=
+  mainRomRowOf sdLdLdProgramRow sdLdLdBits MainRomExecKind.internalCopyB
+    (sdLdFreeCols 5 2684354568 0 42 0)
+
+def sdLdLdRow : MainRowWithRom FGL :=
+  withMainRegisterPrevious .store addX1RegisterInitial <|
+    withMainRegisterPrevious .a (aMemMessage sdLdSdRow) sdLdLdRowTemplate
+
+def sdLdJalProgramRow : ZiskRomMessage FGL :=
+  { line := 24, a_offset_imm0 := 0, a_imm1 := 0, b_offset_imm0 := 0, b_imm1 := 0,
+    ind_width := 8, op := ZiskFv.Trusted.OP_FLAG, store_offset := 0, jmp_offset1 := 0,
+    jmp_offset2 := 4, flags := packFlags AddSpinWitness.addSpinJalBits }
+
+def sdLdJalRow (step : FGL) : MainRowWithRom FGL :=
+  mainRomRowOf sdLdJalProgramRow AddSpinWitness.addSpinJalBits MainRomExecKind.internalFlag
+    (sdLdFreeCols step 0 0 0 0)
+
+def sdLdMainRows : List (MainRowWithRom FGL) :=
+  [ sdLdAddiX1A0Row, sdLdSlliX1Row, sdLdAddiX1EightRow, sdLdAddiX2Row
+  , sdLdSdRow, sdLdLdRow, sdLdJalRow 6, sdLdJalRow 7 ]
 
 end ZiskFv.Compliance.SdLdSpinWitness
