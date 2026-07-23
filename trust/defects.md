@@ -76,6 +76,18 @@ the divisor to `Defects.signedDivisorInt` / `Defects.signedDivisorIntW`, so the
 defect exclusion no longer reads caller-supplied `Inputs_<op>` or Sail operand
 values.
 
+### ZISK-DEFECT-MEMALIGN-NARROW-LOAD-LANE-SOUNDNESS
+
+| Field                  | Value |
+|------------------------|-------|
+| `kind`                 | `circuit-soundness` |
+| `status`               | `open` |
+| `affected`             | The general MemAlign prove-row path for `LBU`, `LHU`, `LWU`, `LB`, `LH`, and `LW`; `LD` is not affected. |
+| `condition`            | For a selected narrow-load MemAlign provider row, `value_1` is reconstructed from `reg_4..reg_7` but is not constrained to zero. The through-MemAlign read proof needs exactly `value_1 = 0` to obtain the architectural zero-extended 64-bit value. `Defects.MemAlignNarrowLoadLaneForge` is the smallest trace-local exception: a `MemAlign.component` row in the accepted witness, selected by the Main load's memory-bus entry, whose `value_1` is nonzero. |
+| `evidence`             | This is the sole new repro target for the v0.17.0 audit. The extracted local constraint surface at `mem_align.pil:181-189` reconstructs both value lanes but contains no narrow-width high-lane-zero condition. The checked Lean repro `trust/consistency/memalign_narrow_load_lane_defect.lean` fixes the real virtual-ROM row `[pc, delta_pc, delta_addr, offset, width, flags] = [1, -1, 0, 0, 1, 1]` (`mem_align_rom.pil:6-313`; generated row 2) and a prove row with `reg_4 = 1`, so it satisfies the extracted per-row and D1/D3 constraints while `value_1 = 1`. It is intentionally a constraint-level repro, not a claim that a complete malicious proof has been produced. |
+| `claim impact`         | `RowOutsideDefectRegion` negates the trace-local forge exactly on the six narrow-load arms. `memAlignNarrowLoadLane_zero_of_not_forge` then supplies the missing selected-row equality inside the MemAlign bridge; it is not a caller promise and it does not cover `LD`. `Defects.honest_memAlign_narrow_load_not_forge` is the anti-vacuity guard: any honest selected provider population with zero high lane is outside the exception. The checked honest counterpart in the same repro has the identical ROM/D1/D3 shape with `reg_4 = 0`, hence `value_1 = 0`. |
+| `retirement condition` | ZisK constrains `value_1 = 0` for all selected width-1/2/4 load rows, or a complete accepted-witness proof establishes that fact from existing constraints and balance. The local repro must then fail. |
+
 ### ZISK-DEFECT-FENCE-INCOMPLETE
 
 | Field                  | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |

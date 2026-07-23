@@ -7,6 +7,7 @@
 #   trust/generated/baseline-equiv-axiom-deps.txt        — V2: per-theorem axiom closure
 #   trust/generated/baseline-zisk-riscv-compliant.txt    — V2: uber-theorem project-axiom closure
 #   trust/generated/baseline-global-theorem-binders.txt  — V2: uber-theorem binder list
+#   trust/generated/baseline-defect-count.txt            — active theorem-side defect identifiers
 #
 # The V2 baseline requires `lake build` to have run (consumes oleans);
 # we skip it gracefully if the build artefact isn't present.
@@ -14,6 +15,10 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 python3 trust/scripts/regenerate.py
+
+echo "Refreshing active defect-count baseline..."
+python3 trust/scripts/regenerate-defect-count.py > trust/generated/baseline-defect-count.txt
+echo "  → trust/generated/baseline-defect-count.txt"
 
 echo "Refreshing trust-ledger axiom index..."
 python3 tools/trust-ledger-index.py > trust/generated/axiom-index.md

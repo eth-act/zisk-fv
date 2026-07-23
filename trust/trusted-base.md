@@ -730,16 +730,29 @@ Active conclusions:
   membership. Consumer guarantees are `True`; no caller promise and no
   soundness-side `ProverAssumptions` is used. The provider's identical
   `ProverAssumptions` predicate is completeness-only.
+- **MemAlign narrow-load high lane (#242).** The through-MemAlign route uses
+  the exact selected general-provider row reconstructed at
+  `mem_align.pil:181-189`, which gives the low lane and byte ranges but does
+  not force the high lane to zero for widths 1, 2, or 4. The trace-local
+  `Defects.MemAlignNarrowLoadLaneForge` therefore records precisely a selected
+  MemAlign row with `value_1 ≠ 0`; `RowOutsideDefectRegion` excludes it only
+  for LBU/LHU/LWU/LB/LH/LW. Its negation derives `value_1 = 0` at the bridge
+  point. This is a claim boundary, not a new trust kind, caller promise, or
+  soundness-side `ProverAssumptions`; its concrete source-shape repro is
+  checked in `trust/consistency/memalign_narrow_load_lane_defect.lean` against
+  the physical ROM tuple at `mem_align_rom.pil:6-313`.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
 
-Trace-level export note (2026-06-30): `RowOutsideDefectRegion` for the strong
+Trace-level export note (2026-07-23): `RowOutsideDefectRegion` for the strong
 trace theorem is now stated over the accepted ZisK trace row, not over
 `SailTrace` or `InputsAgree`. The signed-MUL and signed-DIV/REM defect gates
 range over matching Arith witness rows from the operation bus, with DIV/REM
 divisors reconstructed from witness chunks; the active defect predicates
-themselves are unchanged.
+themselves are unchanged. The six narrow-load arms additionally negate the
+selected-row `MemAlignNarrowLoadLaneForge`; the forge predicate ranges over
+the accepted witness and the exact Main-selected memory-bus entry.
 
 ## Active Caller Burden
 

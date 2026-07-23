@@ -558,6 +558,56 @@ abbrev LoadBMemAlignRomValueFacts
   MemAlignLoadProviderRomValueFacts ziskTrace.program ziskTrace.witness
     main r_main entry
 
+/-- Trace-level form of the narrow-load defect boundary for every legacy entry
+matching the concrete Main load-`b` row.  `RowOutsideDefectRegion` supplies
+this at the dispatcher; it is not a provider-side or caller-supplied data fact. -/
+abbrev LoadBNoMemAlignNarrowLoadLaneForge
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions) : Prop :=
+  ∀ entry,
+    ZiskFv.Airs.MemoryBus.matches_memory_entry
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness entry
+
+/-- Extend the dispatcher-provided selected-entry exclusion across the legacy
+    equality-shaped memory-entry adapter used by the load-provider bridge. -/
+theorem loadBNoMemAlignNarrowLoadLaneForge_of_selected
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (h_selected :
+      ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+        (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1) :
+    LoadBNoMemAlignNarrowLoadLaneForge ziskTrace i := by
+  intro entry h_match
+  have h_eq : (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 = entry :=
+    ZiskFv.ZiskCircuit.MemTimeline.eq_of_matches_memory_entry h_match
+  rw [← h_eq]
+  exact h_selected
+
+/-- The trace-level narrow-load defect exclusion supplies the high-lane equality
+for a selected general MemAlign provider row.  This is the only route from the
+v0.17.0 defect boundary into the legacy subdoubleword provider witness; the
+separate ROM/range package contains no data-lane assertion. -/
+theorem exists_subdoublewordLoadProviderWitness_of_not_memAlignNarrowLoadLaneForge
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    {main : ZiskFv.Airs.Main.Valid_Main FGL FGL}
+    {mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL}
+    {marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL}
+    {r_main : ℕ} {entry : MemoryBusEntry FGL}
+    (h_not_forge : ¬ Defects.MemAlignNarrowLoadLaneForge program witness entry)
+    (h_rom : MemAlignLoadProviderRomValueFacts program witness main r_main entry)
+    (h_provider : MemAlignLoadProviderRowMatchSpec program witness entry) :
+    ∃ ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL,
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        main mab marb ma r_main entry := by
+  refine exists_subdoublewordLoadProviderWitness_of_memAlignLoadProviderRowMatchSpec
+    (main := main) (mab := mab) (marb := marb) (r_main := r_main) h_rom ?_ h_provider
+  intro providerTable providerRow h_providerTable h_providerRow h_spec h_component h_match
+  exact Defects.memAlignNarrowLoadLane_zero_of_not_forge h_not_forge h_providerTable
+    h_providerRow h_spec h_component h_match
+
 /-- The accepted mutable-Mem provider path places the concrete load `b` row in
 the accepted Mem replay row list before any seed-specific order certificate is
 used.
@@ -1229,7 +1279,8 @@ theorem AcceptedZiskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProv
       ∀ entry,
         ZiskFv.Airs.MemoryBus.matches_memory_entry
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
-        LoadBMemAlignRomValueFacts ziskTrace main r_main entry) :
+        LoadBMemAlignRomValueFacts ziskTrace main r_main entry)
+    (h_no_narrow_load_lane_forge : LoadBNoMemAlignNarrowLoadLaneForge ziskTrace i) :
     ∃ entry : MemoryBusEntry FGL,
       ZiskFv.Airs.MemoryBus.matches_memory_entry
         (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
@@ -1251,8 +1302,9 @@ theorem AcceptedZiskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProv
   · rcases h_mab with ⟨mab', h_provider⟩
     exact Or.inr ⟨mab', marb, ma, h_provider⟩
   · rcases
-      exists_subdoublewordLoadProviderWitness_of_memAlignLoadProviderRowMatchSpec
+      exists_subdoublewordLoadProviderWitness_of_not_memAlignNarrowLoadLaneForge
         (main := main) (mab := mab) (marb := marb) (r_main := r_main)
+        (h_no_narrow_load_lane_forge entry h_entry)
         (h_generalMemAlignRomValues entry h_entry) h_memAlign with
       ⟨ma', h_provider⟩
     exact Or.inr ⟨mab, marb, ma', h_provider⟩
@@ -1262,8 +1314,8 @@ the legacy subdoubleword provider-witness shape.
 
 The mutable-Mem branch still proves execution-row membership. All MemAlign
 branches now return a `SubdoublewordLoadProviderWitness`; the general branch
-does so only after the caller supplies the explicit ROM/value residue for the
-selected structural provider row. -/
+uses the trace-level narrow-load defect boundary plus the explicit ROM/range
+residue for the selected structural provider row. -/
 theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_of_loadBMemProviderEntry
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
@@ -1287,7 +1339,8 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_of_loadBMemProvi
       ∀ entry,
         ZiskFv.Airs.MemoryBus.matches_memory_entry
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
-        LoadBMemAlignRomValueFacts ziskTrace main r_main entry) :
+        LoadBMemAlignRomValueFacts ziskTrace main r_main entry)
+    (h_no_narrow_load_lane_forge : LoadBNoMemAlignNarrowLoadLaneForge ziskTrace i) :
     ∃ entry : MemoryBusEntry FGL,
       ZiskFv.Airs.MemoryBus.matches_memory_entry
         (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry
@@ -1300,7 +1353,7 @@ theorem BootSegmentReadSoundInputs.mem_or_subdoublewordProvider_of_loadBMemProvi
   obtain ⟨entry, h_entry, h_provider⟩ :=
     ziskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProviderEntry
       h_present i main mab marb ma r_main h_width h_b_src_ind h_active
-      h_selectedMemAlignPins h_generalMemAlignRomValues
+      h_selectedMemAlignPins h_generalMemAlignRomValues h_no_narrow_load_lane_forge
   refine ⟨entry, h_entry, ?_⟩
   rcases h_provider with h_mem | h_provider
   · exact Or.inl (inputs.mem_executionRows_of_memReplayRows h_mem)
@@ -1332,6 +1385,7 @@ theorem AcceptedZiskTrace.memReplayRows_or_memAlignWitness_of_loadBMemProviderEn
         ZiskFv.Airs.MemoryBus.matches_memory_entry
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
         LoadBMemAlignRomValueFacts ziskTrace main r_main entry)
+    (h_no_narrow_load_lane_forge : LoadBNoMemAlignNarrowLoadLaneForge ziskTrace i)
     (h_coreLookup :
       ∀ entry
         (mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
@@ -1350,7 +1404,7 @@ theorem AcceptedZiskTrace.memReplayRows_or_memAlignWitness_of_loadBMemProviderEn
   obtain ⟨entry, h_entry, h_provider⟩ :=
     ziskTrace.memReplayRows_or_subdoublewordProvider_of_loadBMemProviderEntry
       h_present i main mab marb ma r_main h_width h_b_src_ind h_active
-      h_selectedMemAlignPins h_generalMemAlignRomValues
+      h_selectedMemAlignPins h_generalMemAlignRomValues h_no_narrow_load_lane_forge
   refine ⟨entry, h_entry, ?_⟩
   rcases h_provider with h_mem | h_provider
   · exact Or.inl h_mem
@@ -1363,9 +1417,9 @@ theorem AcceptedZiskTrace.memReplayRows_or_memAlignWitness_of_loadBMemProviderEn
 surface.
 
 The mutable-Mem branch still proves execution-row membership. The MemAlign
-branch returns the legacy `MemAlignWitness` bundle once the explicit
-general-MemAlign ROM/value residue and the MemAlignByte/MemAlignReadByte
-core/lookup residue are supplied. -/
+branch returns the legacy `MemAlignWitness` bundle once the trace-level
+narrow-load defect boundary, general-MemAlign ROM/range residue, and
+MemAlignByte/MemAlignReadByte core/lookup residue are supplied. -/
 theorem BootSegmentReadSoundInputs.mem_or_memAlignWitness_of_loadBMemProviderEntry
     {ziskTrace : AcceptedZiskTrace numInstructions}
     {memInit : Std.ExtHashMap Nat (BitVec 8)}
@@ -1390,6 +1444,7 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignWitness_of_loadBMemProviderEnt
         ZiskFv.Airs.MemoryBus.matches_memory_entry
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 entry →
         LoadBMemAlignRomValueFacts ziskTrace main r_main entry)
+    (h_no_narrow_load_lane_forge : LoadBNoMemAlignNarrowLoadLaneForge ziskTrace i)
     (h_coreLookup :
       ∀ entry
         (mab' : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
@@ -1408,7 +1463,7 @@ theorem BootSegmentReadSoundInputs.mem_or_memAlignWitness_of_loadBMemProviderEnt
   obtain ⟨entry, h_entry, h_provider⟩ :=
     ziskTrace.memReplayRows_or_memAlignWitness_of_loadBMemProviderEntry
       h_present i main mab marb ma r_main h_width h_b_src_ind h_active
-      h_selectedMemAlignPins h_generalMemAlignRomValues h_coreLookup
+      h_selectedMemAlignPins h_generalMemAlignRomValues h_no_narrow_load_lane_forge h_coreLookup
   refine ⟨entry, h_entry, ?_⟩
   rcases h_provider with h_mem | h_provider
   · exact Or.inl (inputs.mem_executionRows_of_memReplayRows h_mem)

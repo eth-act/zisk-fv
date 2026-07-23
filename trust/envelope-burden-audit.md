@@ -79,7 +79,7 @@ note below.
 | Boot/profile state | `misa` C-bit facts, `cur_privilege = Machine`, `RISC_V_assumptions`, `ModeRegsFull`, PMA/mstatus/mseccfg values | Named initial-state/profile invariant; not 63 separate assumptions |
 | Aeneas lowering bridge | `env.aeneasBridgeTrust` in `Compliance.lean` | Named bridge premise until generated Aeneas Lean is imported by the main proof |
 | Load memory timeline | `env.memoryTimelineEvidence` for LD/LBU/LHU/LWU/LB/LH/LW routes | Named memory premise until #76 derives it from Mem AIR/replay |
-| Known defects | `Defects.NoKnownDefect env` | Named claim-weakening premise until signed MUL, signed DIV/REM, and FENCE defects retire |
+| Known defects | `Defects.NoKnownDefect env` plus trace-local `RowOutsideDefectRegion` | Named claim-weakening premise until signed MUL, signed DIV/REM, MemAlign narrow-load high-lane, and FENCE defects retire |
 
 The raw `False` binders that still appear in the legacy signed-MUL and
 signed-DIV/REM wrappers are not `OpEnvelope` fields. The global theorem obtains

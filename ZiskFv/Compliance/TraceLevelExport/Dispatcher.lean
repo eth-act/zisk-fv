@@ -527,14 +527,98 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
   | .sw c => SequentialPcDomain c.sw_input.PC
   | .sd c => SequentialPcDomain c.sd_input.PC
   | .ld c => SequentialPcDomain c.ld_input.PC
-  | .lbu c => SequentialPcDomain c.lbu_input.PC
-  | .lhu c => SequentialPcDomain c.lhu_input.PC
-  | .lwu c => SequentialPcDomain c.lwu_input.PC
-  | .lb c => SequentialPcDomain c.lb_input.PC
-  | .lh c => SequentialPcDomain c.lh_input.PC
-  | .lw c => SequentialPcDomain c.lw_input.PC
+  | .lbu c =>
+      SequentialPcDomain c.lbu_input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  | .lhu c =>
+      SequentialPcDomain c.lhu_input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  | .lwu c =>
+      SequentialPcDomain c.lwu_input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  | .lb c =>
+      SequentialPcDomain c.lb_input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  | .lh c =>
+      SequentialPcDomain c.lh_input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  | .lw c =>
+      SequentialPcDomain c.lw_input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .fence c => MainSequentialPcDomain ziskTrace i ∧
       Defects.FenceKnownGood c.fm c.rs c.rd
+
+/-- The LBU arm's trace-local defect boundary is exactly the selected Main
+    load-row's no-forge fact. -/
+theorem no_memAlignNarrowLoadLaneForge_of_lbu_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lbu ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lbu c)) :
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2
+
+/-- The LHU arm's trace-local defect boundary is exactly the selected Main
+    load-row's no-forge fact. -/
+theorem no_memAlignNarrowLoadLaneForge_of_lhu_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lhu ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lhu c)) :
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2
+
+/-- The LWU arm's trace-local defect boundary is exactly the selected Main
+    load-row's no-forge fact. -/
+theorem no_memAlignNarrowLoadLaneForge_of_lwu_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lwu ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lwu c)) :
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2
+
+/-- The LB arm's trace-local defect boundary is exactly the selected Main
+    load-row's no-forge fact. -/
+theorem no_memAlignNarrowLoadLaneForge_of_lb_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lb ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lb c)) :
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2
+
+/-- The LH arm's trace-local defect boundary is exactly the selected Main
+    load-row's no-forge fact. -/
+theorem no_memAlignNarrowLoadLaneForge_of_lh_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lh ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lh c)) :
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2
+
+/-- The LW arm's trace-local defect boundary is exactly the selected Main
+    load-row's no-forge fact. -/
+theorem no_memAlignNarrowLoadLaneForge_of_lw_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lw ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lw c)) :
+    ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2
 
 def StepSound
     (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
@@ -1207,12 +1291,12 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
   | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) memEv hAvoidKnownBugs
   | sd c => exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia) hAvoidKnownBugs
   | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) memEv hAvoidKnownBugs
-  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) memEv hAvoidKnownBugs
-  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) memEv hAvoidKnownBugs
-  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) memEv hAvoidKnownBugs
-  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) memEv hAvoidKnownBugs
-  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) memEv hAvoidKnownBugs
-  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) memEv hAvoidKnownBugs
+  | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) memEv hAvoidKnownBugs.1
+  | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) memEv hAvoidKnownBugs.1
+  | lwu c => exact stepStrong_lwu ziskTrace sailTrace i (toRowData_lwu c rd ia) memEv hAvoidKnownBugs.1
+  | lb c => exact stepStrong_lb ziskTrace sailTrace i (toRowData_lb c rd ia) memEv hAvoidKnownBugs.1
+  | lh c => exact stepStrong_lh ziskTrace sailTrace i (toRowData_lh c rd ia) memEv hAvoidKnownBugs.1
+  | lw c => exact stepStrong_lw ziskTrace sailTrace i (toRowData_lw c rd ia) memEv hAvoidKnownBugs.1
   | fence c =>
       exact stepStrong_fence ziskTrace sailTrace i (toRowData_fence c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
