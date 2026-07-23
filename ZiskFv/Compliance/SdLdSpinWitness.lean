@@ -73,6 +73,50 @@ def sdLdAddiX2ProgramRow : ZiskRomMessage FGL :=
     ind_width := 8, op := ZiskFv.Trusted.OP_ADD, store_offset := 2, jmp_offset1 := 4,
     jmp_offset2 := 4, flags := packFlags addiX0Bits }
 
+def sdLdSdBits : RomFlagBits where
+  a_src_imm := false
+  a_src_mem := false
+  is_precompiled := false
+  b_src_imm := false
+  b_src_mem := false
+  is_external_op := false
+  store_pc := false
+  store_mem := false
+  store_ind := true
+  set_pc := false
+  m32 := false
+  b_src_ind := false
+  a_src_reg := true
+  b_src_reg := true
+  store_reg := false
+
+def sdLdLdBits : RomFlagBits where
+  a_src_imm := false
+  a_src_mem := false
+  is_precompiled := false
+  b_src_imm := false
+  b_src_mem := false
+  is_external_op := false
+  store_pc := false
+  store_mem := false
+  store_ind := false
+  set_pc := false
+  m32 := false
+  b_src_ind := true
+  a_src_reg := true
+  b_src_reg := false
+  store_reg := true
+
+def sdLdSdProgramRow : ZiskRomMessage FGL :=
+  { line := 16, a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 2, b_imm1 := 0,
+    ind_width := 8, op := ZiskFv.Trusted.OP_COPYB, store_offset := 0, jmp_offset1 := 4,
+    jmp_offset2 := 4, flags := packFlags sdLdSdBits }
+
+def sdLdLdProgramRow : ZiskRomMessage FGL :=
+  { line := 20, a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 0, b_imm1 := 0,
+    ind_width := 8, op := ZiskFv.Trusted.OP_COPYB, store_offset := 3, jmp_offset1 := 4,
+    jmp_offset2 := 4, flags := packFlags sdLdLdBits }
+
 /-- The x0 ADDI source form consumed by the ROM/Main binding has both
 immediate lanes fixed by its program message. -/
 def sdLdAddiX1A0FreeCols : MainRomFreeCols :=
