@@ -288,6 +288,11 @@ and the direct-Mem branch exclusions `LoadBDirectMutableMemResidues.no_marb`,
 `no_mab`, and `no_memAlign`. Issue #242 owns replacing these exclusions/residues
 with a through-MemAlign derivation, gated on MemAlignRom extraction (#108) and a
 timeline argument from MemAlign provider rows back to the accepted Mem replay.
+The component-fidelity prerequisite is now intrinsic: generated c29 plus
+c1/c3/.../c15 are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its
+D3 predicate; the existing accepted-trace transition certificates check those
+component-owned relations. The remaining issue is their semantic consumption
+by the through-MemAlign timeline, not an omitted circuit constraint.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
@@ -713,6 +718,18 @@ Active conclusions:
   caller. The D3 premise is the separately documented verifier-checked
   accepted-trace certificate below; no soundness-side `ProverAssumptions` is
   used.
+- **MemAlign register-byte bus-107 route (#242).** This is the same cited
+  lookup/permutation protocol-soundness application, not a new trust kind.
+  `mem_align.pil:113-118` emits one Range Check for each `reg[i]`; the real
+  assumes hints #982/#984/#986/#988/#990/#992/#994/#996 are kernel-linked by
+  `link_MemAlign_38` and the cluster links `link_MemAlign_33` through
+  `link_MemAlign_36` (`constraint = template := by rfl`, at the corresponding
+  `std_sum.pil:590/599/656` occurrences). `MemAlign.component` emits those
+  exact eight negative one-slot bus-107 tuples. Finished balance selects only
+  `MemAlignRangeSlice`, whose static `rangeTable8` lookup supplies exact
+  membership. Consumer guarantees are `True`; no caller promise and no
+  soundness-side `ProverAssumptions` is used. The provider's identical
+  `ProverAssumptions` predicate is completeness-only.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
@@ -761,8 +778,8 @@ trust surface even though they add no axiom.
 | Field (`Compliance/AcceptedZiskTrace.lean`) | PIL source | What it certifies |
 |---|---|---|
 | `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
-| `transitions_hold` (**#100**) | `main.pil:409-410` | the cross-row PC-handshake transition holds on every consecutive Main-row pair (a *polynomial* constraint the single-row per-row `Constraints` dropped) |
-| `cyclic_successor_transitions_hold` (**#242**) | `mem_align.pil:139-143` | the D3 cyclic successor relation holds on every effective MemAlign row, so h998's unmasked `DELTA_PC = pc' - pc` reads the actual successor PC, including the final-row-to-row-zero instance; its bus-133 ROM membership is then derived from finished-channel balance and the static provider |
+| `transitions_hold` (**#100**, extended for **#242**) | `main.pil:409-410`; `mem_align.pil:116-117,142` | component-owned D1 predecessor/current relations hold: Main's PC handshake and MemAlign's gated predecessor `delta_addr` plus eight `down_to_up` register continuities. These are verifier certificates, not caller assumptions. |
+| `cyclic_successor_transitions_hold` (**#242**) | `mem_align.pil:113-118,139-143` | MemAlign's D3 cyclic successor/current relations hold on every effective row: h998's unmasked `DELTA_PC = pc' - pc` and eight `up_to_down` register continuities, including final-row-to-row-zero. Its bus-133 ROM membership is derived from finished balance/static provider. |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
 | Derived `memReplaySegmentRanges` (not an `AcceptedZiskTrace` field) | Mem hints 884/886; `mem.pil:267-268` / `285-286`; linked c24–33 at `std_sum.pil:590/599/656/696`; generated `ValidatedLink` entries | derives selected-table `MemSegmentGeneratedRangeFacts` from `constraints_hold`, `channels_balanced`, and `transitions_hold`: the indexed source bridge identifies the canonical `ProverData` chunks, finished bus-103 balance finds the `SpecifiedRangesSlice` provider, and its static table supplies 16-bit membership. `ProverAssumptions` is completeness-only and is not used. |
 | `mem_replay_source_covers` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table/source correlation for the mutable Mem component | certifies that every mutable-Mem table in the accepted witness is the selected `mem_replay_table`; this is table identity only, not read-value agreement |
@@ -842,7 +859,7 @@ intrinsic cyclic current/successor transition surface. D1 remains inert to
 Clean's existing soundness theorem, so project-side accepted traces explicitly
 carry `transitions_hold`; D2 is consumed by canonical table materialization,
 constraints, interactions, transitions, and projections. D3 is consumed by
-the #242 MemAlign h998/bus-133 derivation: its cyclic relation is carried as
+the #242 MemAlign h998/register-continuity/bus-133 derivation: its cyclic relation is carried as
 the verifier-checked `cyclic_successor_transitions_hold` accepted-trace
 certificate, never by a caller assumption. The structural fixed-domain/no-wrap
 bound and cyclic successor indexing belong to `Air.Flat.Table`, not to a
