@@ -24,13 +24,13 @@ open ZiskFv.AirsClean.FullEnsemble
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 
-/-- Store `42` at Mem word address `0x14000001` on step 3. -/
+/-- Store `42` at Mem word address `0x14000001` on Main step 4. -/
 def sdMemRow : MemRow FGL :=
-  memRowOf true false true true 335544321 3 0 0 0 0 42 0
+  memRowOf true false true true 335544321 4 0 0 0 0 42 0
 
-/-- Load the stored word from the same Mem address on step 6. -/
+/-- Load the stored word from the same Mem address on Main step 5. -/
 def ldMemRow : MemRow FGL :=
-  memRowOf true false false false 335544321 6 0 3 3 0 42 0
+  memRowOf true false false false 335544321 5 0 4 1 0 42 0
 
 /-- The first non-degenerate mutable-Mem timeline: a write followed by a
 same-address read of its non-zero value. -/
@@ -58,7 +58,7 @@ def sdLdMemData : ProverData FGL := fun key width =>
     else if key = MemRawSidecarDataKey.Segment.previousSegmentAddr then #[335544320]
     else if key = MemRawSidecarDataKey.Segment.segmentLastValue0 then #[42]
     else if key = MemRawSidecarDataKey.Segment.segmentLastValue1 then #[0]
-    else if key = MemRawSidecarDataKey.Segment.segmentLastStep then #[6]
+    else if key = MemRawSidecarDataKey.Segment.segmentLastStep then #[5]
     else if key = MemRawSidecarDataKey.Segment.segmentLastAddr then #[335544321]
     else if key = MemRawSidecarDataKey.Segment.distanceBase0 then #[0]
     else if key = MemRawSidecarDataKey.Segment.distanceBase1 then #[0]
@@ -91,14 +91,14 @@ theorem ldMemRow_rangeFacts : dualMemRowRangeFacts ldMemRow := by
 theorem sdMemRow_proverAssumptions :
     componentWithDualMemBus.circuit.ProverAssumptions sdMemRow sdLdMemData
       (ProverHint.empty FGL) := by
-  refine ⟨true, false, true, true, 335544321, 3, 0, 0, 0, 0, 42, 0,
+  refine ⟨true, false, true, true, 335544321, 4, 0, 0, 0, 0, 42, 0,
     (by intro _; rfl), (by intro _; rfl), sdMemRow_rangeFacts, ?_⟩
   rfl
 
 theorem ldMemRow_proverAssumptions :
     componentWithDualMemBus.circuit.ProverAssumptions ldMemRow sdLdMemData
       (ProverHint.empty FGL) := by
-  refine ⟨true, false, false, false, 335544321, 6, 0, 3, 3, 0, 42, 0,
+  refine ⟨true, false, false, false, 335544321, 5, 0, 4, 1, 0, 42, 0,
     (by intro _; rfl), (by intro _; rfl), ldMemRow_rangeFacts, ?_⟩
   rfl
 
@@ -213,7 +213,7 @@ theorem sdLdMemTable_memBusInteractions :
     sdLdMemData, memPrefixColumn]
 
 @[simp] theorem sdLdMemData_segmentLastStep :
-    proverDataScalar sdLdMemData MemRawSidecarDataKey.Segment.segmentLastStep = 6 := by
+    proverDataScalar sdLdMemData MemRawSidecarDataKey.Segment.segmentLastStep = 5 := by
   simp (config := { decide := true }) [proverDataScalar, proverDataColumn,
     sdLdMemData, memPrefixColumn]
 
@@ -292,7 +292,7 @@ private def sdLdMemSegmentColumns : ZiskFv.Airs.Mem.SegmentColumns FGL where
   previous_segment_addr := 335544320
   segment_last_value_0 := 42
   segment_last_value_1 := 0
-  segment_last_step := 6
+  segment_last_step := 5
   segment_last_addr := 335544321
   distance_base_0 := 0
   distance_base_1 := 0
