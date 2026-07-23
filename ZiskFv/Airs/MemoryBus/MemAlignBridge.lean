@@ -26,10 +26,10 @@ provided by the **MemAlign\*** AIR family:
   is the literal `0`.
 * **MemAlignReadByte** (`mem_align_read_byte.pil`) — read-only
   specialization; width=1; `value[1]` literal `0`.
-* **MemAlign** (`mem_align.pil:189`) — widths 1/2/4 (and 8) via the
-  general unaligned multi-row chain; `value[1]` is a witness column
-  whose value-zero claim for sub-doubleword widths is mediated by the
-  MemAlignRom lookup.
+* **MemAlign** (`mem_align.pil:181-189`) — widths 1/2/4 (and 8) via the
+  general unaligned multi-row chain. The selected sub-doubleword value must
+  be zero-padded outside its width; the v0.17.0 circuit does not establish
+  that complete value shape, so the trace-level defect boundary supplies it.
 
 This file consumes an explicit structural provider witness for the
 MemAlign\* row selected by the Clean memory-bus route, then derives
@@ -119,11 +119,11 @@ This is the structural-unpacking replacement for the former
 `memalign_load_perm_sound` and
 `mem_align_rom_subdoubleword_load_value_1_zero` trust-ledger axioms.
 The first two branches are direct MemAlignByte/MemAlignReadByte provider
-rows whose bus tuple already carries a literal high chunk of zero.  Each
-also carries the selected row's range fact, derived by that component's
-in-circuit static lookup.  The general MemAlign branch carries the selected
-provider row plus the ROM-derived low/high value facts needed by the
-zero-padding theorem.
+rows whose bus tuple already carries a literal high chunk of zero. Each also
+carries the selected row's range fact, derived by that component's in-circuit
+static lookup. The general MemAlign branch carries its selected provider row
+and the width-conditioned value shape discharged from the trace-local defect
+boundary.
 
 No protocol fact is hidden behind a top-level axiom here: callers must
 provide the selected provider row and the exact branch facts. -/
@@ -420,10 +420,10 @@ into the `high_bytes_zero_for_width` predicate. -/
     **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
     bound is derived from the MemAlignReadByte AIR's own `core_every_row`
     PIL constraints plus lookup-aware Clean range evidence. The general
-    MemAlign branch's low-value bounds remain carried by the structural
-    provider witness; #242's extracted MemAlignRom table separately derives
-    the source-linked h998 lookup membership and does not replace those lane
-    bounds. -/
+    MemAlign branch's complete width-conditioned value shape is carried by
+    the structural provider witness only after the trace-level #242 defect
+    boundary discharges the exact selected-row fact. The extracted
+    MemAlignRom route separately establishes source-linked h998 membership. -/
 
 /-- **Derived theorem** replacing the old
     `memalign_load_high_bytes_zero` axiom. Given a structural provider

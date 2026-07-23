@@ -530,37 +530,37 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
   | .lbu c =>
       SequentialPcDomain c.lbu_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+          1 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lhu c =>
       SequentialPcDomain c.lhu_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+          2 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lwu c =>
       SequentialPcDomain c.lwu_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+          4 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lb c =>
       SequentialPcDomain c.lb_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+          1 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lh c =>
       SequentialPcDomain c.lh_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+          2 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lw c =>
       SequentialPcDomain c.lw_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+          4 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .fence c => MainSequentialPcDomain ziskTrace i ∧
@@ -574,7 +574,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lbu_rowOutside
     (c : Claim_lbu ziskTrace i)
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lbu c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+      1 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.1
 
 /-- The LHU arm's trace-local defect boundary is exactly the selected Main
@@ -585,7 +585,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lhu_rowOutside
     (c : Claim_lhu ziskTrace i)
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lhu c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+      2 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.1
 
 /-- The LWU arm's trace-local defect boundary is exactly the selected Main
@@ -596,7 +596,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lwu_rowOutside
     (c : Claim_lwu ziskTrace i)
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lwu c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+      4 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.1
 
 /-- The LB arm's trace-local defect boundary is exactly the selected Main
@@ -607,7 +607,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lb_rowOutside
     (c : Claim_lb ziskTrace i)
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lb c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+      1 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.1
 
 /-- The LH arm's trace-local defect boundary is exactly the selected Main
@@ -618,7 +618,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lh_rowOutside
     (c : Claim_lh ziskTrace i)
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lh c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+      2 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.1
 
 /-- The LW arm's trace-local defect boundary is exactly the selected Main
@@ -629,7 +629,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lw_rowOutside
     (c : Claim_lw ziskTrace i)
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lw c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
-      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+      4 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.1
 
 /-- The LBU arm's #1142 boundary excludes exactly a selected general-MemAlign

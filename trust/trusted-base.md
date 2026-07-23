@@ -281,15 +281,14 @@ the witness is the selected source table.
 
 MemAlign scope note (#242): #115's closeout is direct-Mem only. MemAlign-routed
 accesses remain undischarged, named follow-on burdens rather than derived
-read-soundness. The remaining structural residue is
-`MemAlignLoadProviderRomValueFacts` (`MemBusRowBridges.lean`), plus the
-direct-Mem branch exclusions `LoadBDirectMutableMemResidues.no_marb`, `no_mab`,
-and `no_memAlign`. `MemAlignCoreLookupFacts` and the selected-prove branch pin
-are retired: a selected MemAlignByte/ReadByte provider carries its exact
-in-circuit static-lookup byte range directly in the structural witness, and the
-trace-local #1142 exclusion derives the selected prove pins. Issue #242 owns
-replacing the remaining exclusion/residue with a through-MemAlign derivation,
-gated on MemAlignRom extraction (#108) and a timeline argument from MemAlign
+read-soundness. `MemAlignLoadProviderRomValueFacts` and
+`MemAlignCoreLookupFacts` are retired: a selected MemAlignByte/ReadByte
+provider carries its exact in-circuit static-lookup byte range directly in the
+structural witness, while the trace-local narrow-load boundary supplies the
+general provider's complete selected-width value shape. The trace-local #1142
+exclusion derives the selected prove pins. The remaining direct-Mem branch
+exclusions are `LoadBDirectMutableMemResidues.no_marb`, `no_mab`, and
+`no_memAlign`. Issue #242 owns the through-MemAlign timeline argument from
 provider rows back to the accepted Mem replay.
 The component-fidelity prerequisite is now intrinsic: generated c29 plus
 c1/c3/.../c15 are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its
@@ -736,17 +735,20 @@ Active conclusions:
   membership. Consumer guarantees are `True`; no caller promise and no
   soundness-side `ProverAssumptions` is used. The provider's identical
   `ProverAssumptions` predicate is completeness-only.
-- **MemAlign narrow-load high lane (#242).** The through-MemAlign route uses
+- **MemAlign narrow-load value lanes (#242).** The through-MemAlign route uses
   the exact selected general-provider row reconstructed at
-  `mem_align.pil:181-189`, which gives the low lane and byte ranges but does
-  not force the high lane to zero for widths 1, 2, or 4. The trace-local
-  `Defects.MemAlignNarrowLoadLaneForge` therefore records precisely a selected
-  MemAlign row with `value_1 ≠ 0`; `RowOutsideDefectRegion` excludes it only
-  for LBU/LHU/LWU/LB/LH/LW. Its negation derives `value_1 = 0` at the bridge
-  point. This is a claim boundary, not a new trust kind, caller promise, or
-  soundness-side `ProverAssumptions`; its concrete source-shape repro is
-  checked in `trust/consistency/memalign_narrow_load_lane_defect.lean` against
-  the physical ROM tuple at `mem_align_rom.pil:6-313`.
+  `mem_align.pil:181-189`. For widths 1, 2, or 4, its reconstructed two-chunk
+  value must fit the selected width: `value_1 = 0` plus `value_0 < 2^8` or
+  `2^16` for widths 1 or 2. The trace-local
+  `Defects.MemAlignNarrowLoadLaneForge` records exactly the negation of that
+  complete selected-row shape (including the bridge's selected-width equality);
+  `RowOutsideDefectRegion` excludes it only for LBU/LHU/LWU/LB/LH/LW. Its
+  negation derives the complete value shape at the bridge point and deletes
+  `MemAlignLoadProviderRomValueFacts`. This is a claim boundary, not a new
+  trust kind, caller promise, or soundness-side `ProverAssumptions`; the source
+  repro checks both a nonzero high chunk and `value_0 = 256` for width one in
+  `trust/consistency/memalign_narrow_load_lane_defect.lean`, against the
+  physical ROM tuple at `mem_align_rom.pil:6-313`.
 
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).

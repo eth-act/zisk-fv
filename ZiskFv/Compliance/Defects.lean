@@ -200,28 +200,41 @@ def DivRemForgeW (op2 : BitVec 64)
   Sail.BitVec.extractLsb op2 31 0 ≠ 0#32
     ∧ (signedRemainderIntW v r_a).natAbs = (Sail.BitVec.extractLsb op2 31 0).toInt.natAbs
 
-/-- Exact trace-local forge for ZisK v0.17.0's general-MemAlign narrow-load
-    high-lane defect.
+/-- The exact narrow-load value shape used by the legacy provider bridge.
 
-    `mem_align.pil:181-189` reconstructs `value_1` from four byte-range
-    registers but does not constrain it to zero on the selected prove row for
-    a width-1/2/4 load.  The through-MemAlign timeline needs exactly
-    `value_1 = 0` to zero-extend that load.  This predicate is therefore the
-    smallest excluded behavior: a concrete accepted-witness MemAlign row
-    selected by the Main load's memory-bus entry, with its reconstructed high
-    lane nonzero.  It does not exclude LD, an entire MemAlign table, or rows
-    unrelated to the selected Main message.
+    This is the per-chunk form of `value.toNat < 2^(8 * width)`: the row has
+    the expected width, its high 32-bit chunk is zero for every sub-doubleword
+    width, and its low chunk fits the one- or two-byte cases.  Keeping this in
+    the same representation as `SubdoublewordLoadProviderWitness` avoids a
+    lossy 64-bit `FGL` packing while preserving the full zero-extension fact. -/
+def MemAlignNarrowLoadValueFits
+    (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) (expectedWidth : FGL) : Prop :=
+  v.width r = expectedWidth
+    ∧ (expectedWidth = 1 → v.value_1 r = 0 ∧ (v.value_0 r).val < 256)
+    ∧ (expectedWidth = 2 → v.value_1 r = 0 ∧ (v.value_0 r).val < 65536)
+    ∧ (expectedWidth = 4 → v.value_1 r = 0)
+
+/-- Exact trace-local forge for ZisK v0.17.0's general-MemAlign narrow-load
+    value-lane defect.
+
+    `mem_align.pil:167-189` reconstructs both 32-bit chunks from byte-range
+    registers but does not constrain every unused lane to zero on selected
+    width-1/2/4 prove rows.  The through-MemAlign timeline needs the exact
+    width-conditioned zero-extension shape above.  This forge is therefore a
+    concrete accepted-witness MemAlign row selected by the Main load entry
+    whose reconstructed value fails that shape.  It does not exclude LD, an
+    entire MemAlign table, or rows unrelated to the selected Main message.
 
     The row/table quantifiers intentionally live here rather than in a caller
     input record.  `RowOutsideDefectRegion` negates this trace-local predicate
-    on the six narrow-load arms; the bridge lemma below then discharges the
-    one missing high-lane equality. -/
+    only on the six narrow-load arms; the bridge lemma below then discharges
+    the exact width and lane facts the legacy provider witness needs. -/
 def MemAlignNarrowLoadLaneForge
     {length : Nat}
     (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
     (witness : Air.Flat.EnsembleWitness
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble)
-    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+    (expectedWidth : FGL) (entry : Interaction.MemoryBusEntry FGL) : Prop :=
   ∃ providerTable ∈ witness.allTables,
     ∃ providerRow ∈ providerTable.table,
       providerTable.component.Spec (providerTable.environment providerRow)
@@ -231,19 +244,22 @@ def MemAlignNarrowLoadLaneForge
               (Eval.eval (providerTable.environment providerRow)
                 ZiskFv.AirsClean.MemAlign.component.rowInputVar))
             0 entry
-        ∧ (ZiskFv.AirsClean.MemAlign.validOfRow
+        ∧ ¬ MemAlignNarrowLoadValueFits
+            (ZiskFv.AirsClean.MemAlign.validOfRow
               (Eval.eval (providerTable.environment providerRow)
-                ZiskFv.AirsClean.MemAlign.component.rowInputVar)).value_1 0 ≠ 0
+                ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+            0 expectedWidth
 
-/-- Negating the exact trace-local forge yields the only fact missing from the
-    selected general-MemAlign load-provider bridge. -/
-theorem memAlignNarrowLoadLane_zero_of_not_forge
+/-- Negating the exact trace-local forge yields the selected general-MemAlign
+    row's full width-conditioned zero-extension shape. -/
+theorem memAlignNarrowLoadLane_fits_of_not_forge
     {length : Nat}
     {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
     {witness : Air.Flat.EnsembleWitness
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
     {entry : Interaction.MemoryBusEntry FGL}
-    (h_not_forge : ¬ MemAlignNarrowLoadLaneForge program witness entry)
+    {expectedWidth : FGL}
+    (h_not_forge : ¬ MemAlignNarrowLoadLaneForge program witness expectedWidth entry)
     {providerTable : Air.Flat.Table FGL} (h_providerTable : providerTable ∈ witness.allTables)
     {providerRow : Array FGL} (h_providerRow : providerRow ∈ providerTable.table)
     (h_spec : providerTable.component.Spec (providerTable.environment providerRow))
@@ -253,21 +269,19 @@ theorem memAlignNarrowLoadLane_zero_of_not_forge
         (Eval.eval (providerTable.environment providerRow)
           ZiskFv.AirsClean.MemAlign.component.rowInputVar))
       0 entry) :
-    (ZiskFv.AirsClean.MemAlign.validOfRow
-      (Eval.eval (providerTable.environment providerRow)
-        ZiskFv.AirsClean.MemAlign.component.rowInputVar)).value_1 0 = 0 := by
-  by_contra h_nonzero
+    MemAlignNarrowLoadValueFits
+      (ZiskFv.AirsClean.MemAlign.validOfRow
+        (Eval.eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+      0 expectedWidth := by
+  by_contra h_not_fits
   apply h_not_forge
   exact ⟨providerTable, h_providerTable, providerRow, h_providerRow,
-    h_spec, h_component, h_match, h_nonzero⟩
+    h_spec, h_component, h_match, h_not_fits⟩
 
-/-- Envelope-local image of the narrow-load lane forge.  An `OpEnvelope` is
-    built only after its `MemAlignWitness` has supplied a selected provider
-    branch.  The general branch carries the high-lane-zero certificate; this
-    shape records the impossible conjunction of that certificate with the
-    nonzero lane.  The actual exclusion remains `MemAlignNarrowLoadLaneForge`
-    above, which is trace-local and is consumed before the envelope is
-    constructed. -/
+/-- Envelope-local image of the narrow-load value forge.  The trace-local
+    predicate above is the actual soundness boundary; this impossible shape
+    keeps `Blocks` faithful to an already-built provider witness. -/
 def MemAlignNarrowLoadLaneShape
     : OpEnvelope state m r_main → Prop
   | .lbu _ _ _ bus align ..
@@ -276,33 +290,26 @@ def MemAlignNarrowLoadLaneShape
       ∃ r,
         ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
           align.ma r bus.e1
-        ∧ align.ma.width r = m.ind_width r_main
-        ∧ align.ma.value_1 r = 0
-        ∧ (align.ma.width r = 1 → (align.ma.value_0 r).val < 256)
-        ∧ (align.ma.width r = 2 → (align.ma.value_0 r).val < 65536)
-        ∧ align.ma.value_1 r ≠ 0
+        ∧ MemAlignNarrowLoadValueFits align.ma r (m.ind_width r_main)
+        ∧ ¬ MemAlignNarrowLoadValueFits align.ma r (m.ind_width r_main)
   | _ => False
 
-/-- The post-selection envelope form cannot be forged: its general-provider
-    branch already contains the high-lane equality.  This is not the source of
-    the soundness gate; it keeps `Blocks` faithful to the existing
-    `OpEnvelope` API while the dispatcher enforces the raw trace predicate. -/
+/-- The post-selection envelope form cannot be forged: it records an explicit
+    contradiction.  The dispatcher enforces the real trace-local predicate. -/
 @[simp] theorem no_memAlignNarrowLoadLaneShape
     (env : OpEnvelope state m r_main) : ¬ MemAlignNarrowLoadLaneShape env := by
   cases env <;> simp [MemAlignNarrowLoadLaneShape]
-  all_goals
-    intro r _h_prove _h_up_to_down _h_down_to_up _h_wr _h_addr _h_step
-      _h_value_0 _h_value_1 _h_as _h_width h_value_1_zero _h_low_1 _h_low_2
-    exact h_value_1_zero
+  all_goals rintro ⟨_, _, h_fits, h_not_fits⟩; exact h_not_fits h_fits
 
 /-- Anti-vacuity guard for the trace-local carve-out: any selected general
-    provider row whose high lane is zero (the honest narrow-load shape) lies
+    provider row whose reconstructed value fits its selected narrow width lies
     outside the forge region. -/
 theorem honest_memAlign_narrow_load_not_forge
     {length : Nat}
     {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
     {witness : Air.Flat.EnsembleWitness
       (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (expectedWidth : FGL)
     (entry : Interaction.MemoryBusEntry FGL)
     (h_honest : ∀ providerTable providerRow,
       providerTable ∈ witness.allTables →
@@ -310,17 +317,19 @@ theorem honest_memAlign_narrow_load_not_forge
       providerTable.component.Spec (providerTable.environment providerRow) →
       providerTable.component = ZiskFv.AirsClean.MemAlign.component →
       ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_row_matches_load_entry
+      (ZiskFv.AirsClean.MemAlign.validOfRow
+        (Eval.eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+        0 entry →
+      MemAlignNarrowLoadValueFits
         (ZiskFv.AirsClean.MemAlign.validOfRow
           (Eval.eval (providerTable.environment providerRow)
             ZiskFv.AirsClean.MemAlign.component.rowInputVar))
-        0 entry →
-      (ZiskFv.AirsClean.MemAlign.validOfRow
-        (Eval.eval (providerTable.environment providerRow)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar)).value_1 0 = 0) :
-    ¬ MemAlignNarrowLoadLaneForge program witness entry := by
+        0 expectedWidth) :
+    ¬ MemAlignNarrowLoadLaneForge program witness expectedWidth entry := by
   rintro ⟨providerTable, h_providerTable, providerRow, h_providerRow,
-    h_spec, h_component, h_match, h_nonzero⟩
-  exact h_nonzero
+    h_spec, h_component, h_match, h_not_fits⟩
+  exact h_not_fits
     (h_honest providerTable providerRow h_providerTable h_providerRow h_spec
       h_component h_match)
 
