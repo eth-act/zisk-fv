@@ -16,6 +16,7 @@ import ZiskFv.AirsClean.FullEnsemble.Balance.SidecarColumns
 import ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridgeFacts
 import ZiskFv.AirsClean.FullEnsemble.Balance.TimelineEvidence
 import ZiskFv.AirsClean.FullEnsemble.Balance.EmbeddedInTrace
+import ZiskFv.AirsClean.FullEnsemble.Balance.MemAlignSkippableProve
 
 namespace ZiskFv.AirsClean.FullEnsemble
 
@@ -1787,43 +1788,6 @@ def MemAlignLoadProviderRowMatchSpec
               ZiskFv.AirsClean.MemAlign.component.rowInputVar))
           0 entry
 
-/-- Syntactic residue selecting the prove-side branch of a general MemAlign
-provider row matched to an active Main memory interaction.
-
-Balance and row-local MemAlign `Spec` identify a matching general MemAlign row,
-but they do not by themselves select the prove branch rather than the aligned
-read-assumption branches. This predicate records exactly those selector pins;
-the ROM/value package needed to build a full subdoubleword provider witness is
-kept separate. -/
-def ActiveMainMemAlignSelectedProveBranchPins
-    {length : ℕ} {program : Program length}
-    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
-    (mainInteraction : Interaction FGL) : Prop :=
-  ∀ providerInteraction providerTable providerRow,
-    providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw →
-    providerInteraction.msg = mainInteraction.msg →
-    providerInteraction.mult ≠ -1 →
-    providerInteraction.mult ≠ 0 →
-    providerTable ∈ witness.allTables →
-    providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw →
-    providerRow ∈ providerTable.table →
-    providerTable.component.Spec (providerTable.environment providerRow) →
-    providerTable.component = ZiskFv.AirsClean.MemAlign.component →
-    providerInteraction =
-      ((MemBusChannel.emitted
-        (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
-          - ZiskFv.AirsClean.MemAlign.selAssumeExpr
-            ZiskFv.AirsClean.MemAlign.component.rowInputVar)
-        (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
-        (providerTable.environment providerRow) →
-    (eval (providerTable.environment providerRow)
-      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
-    ∧ (eval (providerTable.environment providerRow)
-      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
-    ∧ (eval (providerTable.environment providerRow)
-      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0
-
 /-- A structural MemAlignReadByte load-provider row supplies the corresponding
     branch of the legacy subdoubleword provider witness, once the Main row's
     load width is pinned to one byte.
@@ -2089,8 +2053,8 @@ theorem memAlignByteLoadProviderRowMatchSpec_of_activeMain_branch
     structural load-row predicate consumed by the subdoubleword MemAlign bridge.
 
 The load-side `mem_op = 1` fact pins `wr = 0`. The prove-branch selector facts
-are explicit syntactic premises: they are not consequences of row-local
-MemAlign `Spec` plus balance alone. -/
+are supplied by the trace-local #1142 exclusion, not by a caller premise:
+balance and row-local MemAlign `Spec` alone do not select the prove branch. -/
 theorem memAlignLoadProviderRowMatchSpec_of_activeMain_branch
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -2108,7 +2072,10 @@ theorem memAlignLoadProviderRowMatchSpec_of_activeMain_branch
     (h_branch :
       ActiveMainMemAlignProviderRowMatchSpec program witness mainTable mainRow
         mainInteraction mainMsg multiplicity as)
-    (h_selectedPins : ActiveMainMemAlignSelectedProveBranchPins witness mainInteraction) :
+    (h_not_skippable_prove :
+      ¬ MemAlignSkippableProveForge program witness
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval (mainTable.environment mainRow) mainMsg) multiplicity as)) :
     MemAlignLoadProviderRowMatchSpec program witness
       (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
         (eval (mainTable.environment mainRow) mainMsg) multiplicity as) := by
@@ -2119,9 +2086,9 @@ theorem memAlignLoadProviderRowMatchSpec_of_activeMain_branch
       providerRow, h_providerRow, h_spec, h_component, h_provider_eval, h_entry⟩
   refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_spec, h_component, ?_⟩
   obtain ⟨h_sel_prove, h_sel_up_to_down, h_sel_down_to_up⟩ :=
-    h_selectedPins providerInteraction providerTable providerRow
-      h_provider_mem h_msg h_mult_not_read h_mult_not_zero h_providerTable
-      h_provider_table_mem h_providerRow h_spec h_component h_provider_eval
+    memAlign_selected_prove_pins_of_not_skippable_prove_forge
+      h_not_skippable_prove h_provider_mem h_mult_not_read h_mult_not_zero h_providerTable
+      h_provider_table_mem h_providerRow h_spec h_component h_provider_eval h_entry
   have h_raw :
       (((MemBusChannel.emitted
         (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove

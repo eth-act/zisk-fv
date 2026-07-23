@@ -530,26 +530,38 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
   | .lbu c =>
       SequentialPcDomain c.lbu_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lhu c =>
       SequentialPcDomain c.lhu_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lwu c =>
       SequentialPcDomain c.lwu_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lb c =>
       SequentialPcDomain c.lb_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lh c =>
       SequentialPcDomain c.lh_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .lw c =>
       SequentialPcDomain c.lw_input.PC ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
+          (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
   | .fence c => MainSequentialPcDomain ziskTrace i ∧
       Defects.FenceKnownGood c.fm c.rs c.rd
@@ -563,7 +575,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lbu_rowOutside
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lbu c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
-  h_outside.2
+  h_outside.2.1
 
 /-- The LHU arm's trace-local defect boundary is exactly the selected Main
     load-row's no-forge fact. -/
@@ -574,7 +586,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lhu_rowOutside
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lhu c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
-  h_outside.2
+  h_outside.2.1
 
 /-- The LWU arm's trace-local defect boundary is exactly the selected Main
     load-row's no-forge fact. -/
@@ -585,7 +597,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lwu_rowOutside
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lwu c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
-  h_outside.2
+  h_outside.2.1
 
 /-- The LB arm's trace-local defect boundary is exactly the selected Main
     load-row's no-forge fact. -/
@@ -596,7 +608,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lb_rowOutside
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lb c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
-  h_outside.2
+  h_outside.2.1
 
 /-- The LH arm's trace-local defect boundary is exactly the selected Main
     load-row's no-forge fact. -/
@@ -607,7 +619,7 @@ theorem no_memAlignNarrowLoadLaneForge_of_lh_rowOutside
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lh c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
-  h_outside.2
+  h_outside.2.1
 
 /-- The LW arm's trace-local defect boundary is exactly the selected Main
     load-row's no-forge fact. -/
@@ -618,7 +630,73 @@ theorem no_memAlignNarrowLoadLaneForge_of_lw_rowOutside
     (h_outside : RowOutsideDefectRegion ziskTrace i (.lw c)) :
     ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
-  h_outside.2
+  h_outside.2.1
+
+/-- The LBU arm's #1142 boundary excludes exactly a selected general-MemAlign
+    interaction that lacks the prove-side pins. -/
+theorem no_memAlignSkippableProveForge_of_lbu_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lbu ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lbu c)) :
+    ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2.2
+
+/-- The LHU arm's #1142 boundary excludes exactly a selected general-MemAlign
+    interaction that lacks the prove-side pins. -/
+theorem no_memAlignSkippableProveForge_of_lhu_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lhu ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lhu c)) :
+    ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2.2
+
+/-- The LWU arm's #1142 boundary excludes exactly a selected general-MemAlign
+    interaction that lacks the prove-side pins. -/
+theorem no_memAlignSkippableProveForge_of_lwu_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lwu ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lwu c)) :
+    ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2.2
+
+/-- The LB arm's #1142 boundary excludes exactly a selected general-MemAlign
+    interaction that lacks the prove-side pins. -/
+theorem no_memAlignSkippableProveForge_of_lb_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lb ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lb c)) :
+    ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2.2
+
+/-- The LH arm's #1142 boundary excludes exactly a selected general-MemAlign
+    interaction that lacks the prove-side pins. -/
+theorem no_memAlignSkippableProveForge_of_lh_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lh ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lh c)) :
+    ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2.2
+
+/-- The LW arm's #1142 boundary excludes exactly a selected general-MemAlign
+    interaction that lacks the prove-side pins. -/
+theorem no_memAlignSkippableProveForge_of_lw_rowOutside
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {i : Fin ziskTrace.numInstructions}
+    (c : Claim_lw ziskTrace i)
+    (h_outside : RowOutsideDefectRegion ziskTrace i (.lw c)) :
+    ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
+  h_outside.2.2
 
 def StepSound
     (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :

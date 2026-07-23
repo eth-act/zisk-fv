@@ -88,6 +88,18 @@ values.
 | `claim impact`         | `RowOutsideDefectRegion` negates the trace-local forge exactly on the six narrow-load arms. `memAlignNarrowLoadLane_zero_of_not_forge` then supplies the missing selected-row equality inside the MemAlign bridge; it is not a caller promise and it does not cover `LD`. `Defects.honest_memAlign_narrow_load_not_forge` is the anti-vacuity guard: any honest selected provider population with zero high lane is outside the exception. The checked honest counterpart in the same repro has the identical ROM/D1/D3 shape with `reg_4 = 0`, hence `value_1 = 0`. |
 | `retirement condition` | ZisK constrains `value_1 = 0` for all selected width-1/2/4 load rows, or a complete accepted-witness proof establishes that fact from existing constraints and balance. The local repro must then fail. |
 
+### ZISK-DEFECT-MEMALIGN-SKIPPABLE-PROVE
+
+| Field                  | Value |
+|------------------------|-------|
+| `kind`                 | `circuit-soundness` |
+| `status`               | `open` |
+| `affected`             | The accepted-witness general-MemAlign provider route for the narrow-load arms `LBU`, `LHU`, `LWU`, `LB`, `LH`, and `LW`. `LD` is outside this #242 route. |
+| `condition`            | A non-pull, nonzero general-MemAlign interaction can match the selected Main load entry without satisfying the three prove-side pins `sel_prove = 1`, `sel_up_to_down = 0`, and `sel_down_to_up = 0`. `Defects.MemAlignSkippableProveForge` is exactly that accepted-witness/provider-row shape; it excludes neither an entire table nor an opcode. |
+| `evidence`             | This is the already-known ZisK defect tracked upstream in [#1142](https://github.com/0xPolygonHermez/zisk/pull/1142). The S4 proof reached the exact selector goal after finished memory-bus balance: balance supplies a same-message interaction whose multiplicity is neither `-1` nor `0`, but MemAlign's multiplicity is `sel_prove - (sel_up_to_down + sel_down_to_up)`, so neither balance nor row-local `Spec` proves the three pins. No local repro was added or attempted: the issue is already known upstream. |
+| `claim impact`         | `RowOutsideDefectRegion` negates this trace-local forge on only the six narrow-load arms. The negation is transported through the equality-shaped Main-load entry adapter and `memAlign_selected_prove_pins_of_not_skippable_prove_forge` derives the exact pins used by the general provider bridge, deleting the former `ActiveMainMemAlignSelectedProveBranchPins` caller premise. `Defects.honest_memAlign_selected_prove_not_skippable_forge` is the anti-vacuity guard: an honest selected general-MemAlign provider population with those pins is outside the excluded region. |
+| `retirement condition` | Upstream constrains every selected Main unaligned access to the prove row, or the accepted-witness proof derives the three selector pins from current constraints and finished-channel balance. The trace-local exclusion and its `DefectId` can then be removed. |
+
 ### ZISK-DEFECT-FENCE-INCOMPLETE
 
 | Field                  | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |

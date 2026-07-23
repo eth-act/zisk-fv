@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.OpEnvelope
+import ZiskFv.AirsClean.FullEnsemble.Balance.MemAlignSkippableProve
 
 /-!
 # Known-defect predicates for the global compliance theorem
@@ -26,6 +27,7 @@ inductive DefectId where
   | arithMulSignedWitnessSoundness
   | arithDivDynamicWitnessSoundness
   | memAlignNarrowLoadLaneSoundness
+  | memAlignSkippableProveSoundness
   | fenceIncomplete
   deriving DecidableEq, Repr
 
@@ -322,6 +324,130 @@ theorem honest_memAlign_narrow_load_not_forge
     (h_honest providerTable providerRow h_providerTable h_providerRow h_spec
       h_component h_match)
 
+/-- Exact trace-local forge for the already-known MemAlign skippable-prove
+    defect (upstream #1142).
+
+    The Memory-bus counterpart selected for a Main load can be a general
+    MemAlign interaction, but `mem_align.pil:163-189` does not constrain that
+    interaction to use the prove selector.  This predicate records precisely
+    the case the through-MemAlign bridge cannot admit: a non-pull, nonzero
+    general-MemAlign interaction whose payload matches the Main load entry but
+    whose row does not satisfy the prove-side selector pins.  It is expressed
+    solely over accepted-witness data; no row-data or caller witness is part of
+    the exclusion. -/
+abbrev MemAlignSkippableProveForge
+    {length : Nat}
+    (program : ZiskFv.AirsClean.ZiskInstructionRom.Program length)
+    (witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble)
+    (entry : Interaction.MemoryBusEntry FGL) : Prop :=
+  ZiskFv.AirsClean.FullEnsemble.MemAlignSkippableProveForge
+    program witness entry
+
+/-- The negated skippable-prove forge supplies the exact selector pins that a
+    matched general MemAlign load row needs. -/
+theorem memAlign_selected_prove_pins_of_not_skippable_prove_forge
+    {length : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_not_forge : ¬ MemAlignSkippableProveForge program witness entry)
+    {providerInteraction : Interaction FGL}
+    (h_providerInteraction : providerInteraction ∈
+      witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw)
+    (h_nonpull : providerInteraction.mult ≠ -1)
+    (h_nonzero : providerInteraction.mult ≠ 0)
+    {providerTable : Air.Flat.Table FGL} (h_providerTable : providerTable ∈ witness.allTables)
+    (h_providerTableInteraction : providerInteraction ∈
+      providerTable.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw)
+    {providerRow : Array FGL} (h_providerRow : providerRow ∈ providerTable.table)
+    (h_spec : providerTable.component.Spec (providerTable.environment providerRow))
+    (h_component : providerTable.component = ZiskFv.AirsClean.MemAlign.component)
+    (h_providerEval : providerInteraction =
+      ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+          - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+        (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+        (providerTable.environment providerRow))
+    {multiplicity : FGL}
+    (h_entry : ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (Eval.eval (providerTable.environment providerRow)
+          (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+        multiplicity 2)) :
+    (Eval.eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
+    ∧ (Eval.eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
+    ∧ (Eval.eval (providerTable.environment providerRow)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0 := by
+  by_contra h_pins
+  apply h_not_forge
+  exact ⟨providerInteraction, h_providerInteraction, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerTableInteraction, providerRow,
+    h_providerRow, h_spec, h_component, h_providerEval, multiplicity, h_entry, h_pins⟩
+
+/-- Anti-vacuity guard for the skippable-prove exclusion.  An honest provider
+    population that uses the prove pins for every matched general-MemAlign
+    interaction lies outside this defect region. -/
+theorem honest_memAlign_selected_prove_not_skippable_forge
+    {length : Nat}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (entry : Interaction.MemoryBusEntry FGL)
+    (h_honest : ∀ providerInteraction providerTable providerRow multiplicity,
+      providerInteraction ∈ witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw →
+      providerInteraction.mult ≠ -1 →
+      providerInteraction.mult ≠ 0 →
+      providerTable ∈ witness.allTables →
+      providerInteraction ∈
+        providerTable.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw →
+      providerRow ∈ providerTable.table →
+      providerTable.component.Spec (providerTable.environment providerRow) →
+      providerTable.component = ZiskFv.AirsClean.MemAlign.component →
+      providerInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+          (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+            - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+              ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+          (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow) →
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (Eval.eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+              ZiskFv.AirsClean.MemAlign.component.rowInputVar))
+          multiplicity 2) →
+      (Eval.eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_prove = 1
+      ∧ (Eval.eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_up_to_down = 0
+      ∧ (Eval.eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlign.component.rowInputVar).sel_down_to_up = 0) :
+    ¬ MemAlignSkippableProveForge program witness entry := by
+  rintro ⟨providerInteraction, h_providerInteraction, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerTableInteraction, providerRow,
+    h_providerRow, h_spec, h_component, h_providerEval, multiplicity, h_entry, h_not_pins⟩
+  exact h_not_pins
+    (h_honest providerInteraction providerTable providerRow multiplicity
+      h_providerInteraction h_nonpull h_nonzero h_providerTable
+      h_providerTableInteraction h_providerRow h_spec h_component h_providerEval h_entry)
+
+/-- The generic envelope is built only after the selected provider has already
+    established its prove pins.  The soundness boundary for #1142 is the
+    trace-local predicate above, not an envelope-local surrogate. -/
+def MemAlignSkippableProveShape (_ : OpEnvelope state m r_main) : Prop := False
+
+@[simp] theorem no_memAlignSkippableProveShape
+    (env : OpEnvelope state m r_main) : ¬ MemAlignSkippableProveShape env := by
+  simp [MemAlignSkippableProveShape]
+
 /-- Row-data form of ZisK's currently accepted known-good FENCE subset
     (`fm = 0 ∧ rs1 = x0 ∧ rd = x0`).  Same condition as the `.fence` arm of
     `FenceKnownGoodShape`. -/
@@ -338,6 +464,8 @@ def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
       ArithDivDynamicWitnessShape env
   | .memAlignNarrowLoadLaneSoundness =>
       MemAlignNarrowLoadLaneShape env
+  | .memAlignSkippableProveSoundness =>
+      MemAlignSkippableProveShape env
   | .fenceIncomplete =>
       ¬ FenceKnownGoodShape env
 

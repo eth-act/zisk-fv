@@ -145,6 +145,8 @@ theorem mul_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (mulEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (mulEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulEnvOf]
 
@@ -214,6 +216,8 @@ theorem mulh_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (mulhEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (mulhEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhEnvOf]
 
@@ -233,6 +237,8 @@ theorem mulhsu_noKnownDefect_of_rowData
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhsuEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (mulhsuEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (mulhsuEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, mulhsuEnvOf]
 
@@ -366,6 +372,8 @@ theorem div_noKnownDefect_of_rowData
         Defects.signedRemainderInt, divEnvOf] using d.toInputs.h_not_forge
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (divEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (divEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divEnvOf]
 
@@ -387,6 +395,8 @@ theorem rem_noKnownDefect_of_rowData
       exact d.toInputs.h_not_forge h_eq
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (remEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (remEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remEnvOf]
 
@@ -406,6 +416,8 @@ theorem divw_noKnownDefect_of_rowData
         using d.toInputs.h_not_forge
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (divwEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (divwEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, divwEnvOf]
 
@@ -425,6 +437,8 @@ theorem remw_noKnownDefect_of_rowData
         using d.toInputs.h_not_forge
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (remwEnvOf trace binding i d h_domain)
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape (remwEnvOf trace binding i d h_domain)
   | fenceIncomplete =>
       simp [Defects.Blocks, Defects.FenceKnownGoodShape, remwEnvOf]
 

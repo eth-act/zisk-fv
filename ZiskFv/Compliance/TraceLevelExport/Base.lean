@@ -87,6 +87,8 @@ theorem noKnownDefect_of_shapes
   | arithMulSignedWitnessSoundness => exact h_mul
   | arithDivDynamicWitnessSoundness => exact h_div
   | memAlignNarrowLoadLaneSoundness => exact Defects.no_memAlignNarrowLoadLaneShape env
+  | memAlignSkippableProveSoundness =>
+      exact Defects.no_memAlignSkippableProveShape env
   | fenceIncomplete => exact not_not_intro h_fence
 
 /-- Build a `MainRowProvenance m r` from the FIVE Main-row mode/control pins
