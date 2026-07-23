@@ -279,22 +279,22 @@ completeness-only and is not consumed by this derivation.
 matching structural source-correlation certificate: every mutable-Mem table in
 the witness is the selected source table.
 
-MemAlign scope note (#242): #115's closeout is direct-Mem only. MemAlign-routed
-accesses remain undischarged, named follow-on burdens rather than derived
-read-soundness. `MemAlignLoadProviderRomValueFacts` and
-`MemAlignCoreLookupFacts` are retired: a selected MemAlignByte/ReadByte
-provider carries its exact in-circuit static-lookup byte range directly in the
-structural witness, while the trace-local narrow-load boundary supplies the
-general provider's complete selected-width value shape. The trace-local #1142
-exclusion derives the selected prove pins. The remaining direct-Mem branch
-exclusions are `LoadBDirectMutableMemResidues.no_marb`, `no_mab`, and
-`no_memAlign`. Issue #242 owns the through-MemAlign timeline argument from
-provider rows back to the accepted Mem replay.
-The component-fidelity prerequisite is now intrinsic: generated c29 plus
-c1/c3/.../c15 are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its
-D3 predicate; the existing accepted-trace transition certificates check those
-component-owned relations. The remaining issue is their semantic consumption
-by the through-MemAlign timeline, not an omitted circuit constraint.
+MemAlign provider route (#242): the former provider-side carve-out is closed.
+`MemAlignLoadProviderRomValueFacts` and `MemAlignCoreLookupFacts` are retired:
+a selected MemAlignByte/ReadByte provider carries its exact in-circuit
+static-lookup byte range directly in the structural witness, while the
+trace-local narrow-load boundary supplies the general provider's complete
+selected-width value shape. The trace-local #1142 exclusion derives the
+selected prove pins. Existing `MemAlignWitness` parameters remain consumer
+interfaces, not detached whole-table lookup facts or new caller promises. The
+remaining direct-Mem branch exclusions are
+`LoadBDirectMutableMemResidues.no_marb`, `no_mab`, and `no_memAlign`.
+The component-fidelity route is intrinsic: generated c29 plus c1/c3/.../c15
+are MemAlign's D1 predicate, and c0/c2/.../c14 plus h998 are its D3 predicate;
+the existing accepted-trace transition certificates check those
+component-owned relations. The final provider bridge consumes those accepted
+component facts and the two proof-triggered defect boundaries; it does not add
+a parallel timeline assumption.
 
 ### Trace-coherence floor (`RowTraceCoherence`) — #76 Fold-B load reduction
 
