@@ -2,6 +2,9 @@ import ZiskFv.Compliance.SdLdMemTable
 import ZiskFv.Compliance.AddAddiSpinWitness
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 
+set_option maxRecDepth 10000
+set_option maxHeartbeats 800000
+
 /-!
 # Concrete SD/LD spin witness (#221)
 
@@ -709,6 +712,16 @@ theorem sdLdSlliBinaryExtension_proverAssumptions :
     ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL,
     ZiskFv.AirsClean.BinaryExtension.binaryExtensionStaticRowOf,
     sdLdSlliBinaryExtensionRow]
+
+def sdLdBinaryExtensionTable : Table FGL :=
+  binaryExtensionShiftStaticRowsTable [sdLdSlliBinaryExtensionRow]
+
+theorem sdLdBinaryExtensionTable_constraints : sdLdBinaryExtensionTable.Constraints := by
+  apply binaryExtensionShiftStaticRowsTable_constraints_of_proverAssumptions
+  intro row h_row
+  simp only [List.mem_singleton] at h_row
+  subst row
+  exact sdLdSlliBinaryExtension_proverAssumptions
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions

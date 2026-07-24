@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.RegisterBoundary
 
@@ -812,6 +813,56 @@ theorem binaryAddRowsTable_constraints_of_proverAssumptions
       ZiskFv.AirsClean.BinaryAdd.component row h_localLength (h_assumptions row h_row)
   simpa [binaryAddRowsTable, binaryAddRowArray, Table.table, Environment.fromInput]
     using h_component
+
+def binaryExtensionRowArray
+    (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL) : Array FGL :=
+  (toElements row).toArray
+
+private theorem binaryExtensionShiftStatic_component_rawWidth :
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rawWidth =
+      size ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow := by
+  change ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupCircuit.size =
+    size ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow
+  rw [GeneralFormalCircuit.size_eq]
+  rfl
+
+def binaryExtensionShiftStaticRowsTable
+    (rows : List (ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)) : Table FGL where
+  component := ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+  rawRows := rows.map binaryExtensionRowArray
+  data := emptyData
+  raw_uniform_width := by
+    intro arr h_arr
+    rcases List.mem_map.mp h_arr with ⟨row, _, rfl⟩
+    rw [binaryExtensionShiftStatic_component_rawWidth]
+    simp [binaryExtensionRowArray]
+  fixed_domain := by
+    intro columns h_columns
+    simp [ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent] at h_columns
+
+theorem binaryExtensionShiftStaticRowsTable_constraints_of_proverAssumptions
+    (rows : List (ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL))
+    (h_assumptions :
+      ∀ row ∈ rows,
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.circuit.ProverAssumptions
+          row emptyData (ProverHint.empty FGL)) :
+    (binaryExtensionShiftStaticRowsTable rows).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.circuit.localLength
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInputVar = 0 := by
+    rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ rows.map binaryExtensionRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, h_row, rfl⟩
+  have h_component :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent row h_localLength
+      (h_assumptions row h_row)
+  simpa [binaryExtensionShiftStaticRowsTable, binaryExtensionRowArray, Table.table,
+    Environment.fromInput] using h_component
 
 def binaryRowArray (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Array FGL :=
   (toElements row).toArray
