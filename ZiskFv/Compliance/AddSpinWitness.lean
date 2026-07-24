@@ -890,8 +890,10 @@ theorem addSpinWitness_opBus_balanced :
       rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
       decide)
 
-private def addSpinMainMemBusInteractionsAt (env : Environment FGL) : List (Interaction FGL) :=
-  let rowVar := (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar
+def mainMemBusInteractionsAt
+    (length : ℕ) (program : Program length) (env : Environment FGL) :
+    List (Interaction FGL) :=
+  let rowVar := (componentWithRomMemAndOpBus length program).rowInputVar
   [ ((MemBusChannel.emitted rowVar.rom.a_src_reg (aRegPreMessageExpr rowVar)).toRaw).eval env
   , ((MemBusChannel.emitted (-(rowVar.rom.a_src_mem + rowVar.rom.a_src_reg))
       (aMemMessageExpr rowVar)).toRaw).eval env
@@ -904,12 +906,13 @@ private def addSpinMainMemBusInteractionsAt (env : Environment FGL) : List (Inte
       (-(rowVar.rom.store_mem + rowVar.rom.store_ind + rowVar.rom.store_reg))
       (cMemMessageExpr rowVar)).toRaw).eval env ]
 
-private theorem addSpinMainMemBusInteractionsAt_eq_valueLevel
-    (env : Environment FGL) (row : MainRowWithRom FGL)
-    (h_input : Eval.eval env (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar = row) :
-    addSpinMainMemBusInteractionsAt env = mainValueMemBusInteractions row := by
-  unfold addSpinMainMemBusInteractionsAt
-  let rowVar := (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar
+theorem mainMemBusInteractionsAt_eq_valueLevel
+    (length : ℕ) (program : Program length) (env : Environment FGL)
+    (row : MainRowWithRom FGL)
+    (h_input : Eval.eval env (componentWithRomMemAndOpBus length program).rowInputVar = row) :
+    mainMemBusInteractionsAt length program env = mainValueMemBusInteractions row := by
+  unfold mainMemBusInteractionsAt
+  let rowVar := (componentWithRomMemAndOpBus length program).rowInputVar
   have h_rom : eval env rowVar.rom = row.rom := by
     rw [mainRowWithRom_eval_rom]
     exact congrArg MainRowWithRom.rom h_input
@@ -1037,11 +1040,11 @@ private theorem addSpinMainMemBusInteractionsAt_eq_valueLevel
         mainBMemInteraction row, mainCRegPreInteraction row, mainCMemInteraction row]
   simp [h_aReg, h_aMem, h_bReg, h_bMem, h_cReg, h_cMem]
 
-private theorem addSpinMainMemBusInteractionsAt_eq_component
-    (env : Environment FGL) :
-    (componentWithRomMemAndOpBus 2 addSpinProgram).operations.interactionValuesWith
-        MemBusChannel.toRaw env = addSpinMainMemBusInteractionsAt env := by
-  simp [addSpinMainMemBusInteractionsAt, Operations.interactionValuesWith_eq_map,
+theorem mainMemBusInteractionsAt_eq_component
+    (length : ℕ) (program : Program length) (env : Environment FGL) :
+    (componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        MemBusChannel.toRaw env = mainMemBusInteractionsAt length program env := by
+  simp [mainMemBusInteractionsAt, Operations.interactionValuesWith_eq_map,
     componentWithRomMemAndOpBus_interactionsWith_memBus]
 
 theorem addSpinMainTable_interactionsWith_memBus :
@@ -1058,15 +1061,15 @@ theorem addSpinMainTable_interactionsWith_memBus :
             (mainFixedColumns.materialize 0 (mainRawRow addSpinAddRow))) =
         mainValueMemBusInteractions addSpinAddRow := by
     calc
-      _ = addSpinMainMemBusInteractionsAt
+      _ = mainMemBusInteractionsAt 2 addSpinProgram
           (Environment.fromArray
             (mainFixedColumns.materialize 0 (mainRawRow addSpinAddRow)) emptyData) := by
         simpa [addSpinMainTable, mainRowsTable] using
-          (addSpinMainMemBusInteractionsAt_eq_component
+          (mainMemBusInteractionsAt_eq_component 2 addSpinProgram
             (Environment.fromArray
               (mainFixedColumns.materialize 0 (mainRawRow addSpinAddRow)) emptyData))
       _ = mainValueMemBusInteractions addSpinAddRow :=
-        addSpinMainMemBusInteractionsAt_eq_valueLevel _ addSpinAddRow
+        mainMemBusInteractionsAt_eq_valueLevel 2 addSpinProgram _ addSpinAddRow
           (eval_mainRawRow_materialize 0 emptyData addSpinAddRow (by rfl) (by rfl))
   have h_one :
       addSpinMainTable.component.operations.interactionValuesWith
@@ -1075,15 +1078,15 @@ theorem addSpinMainTable_interactionsWith_memBus :
             (mainFixedColumns.materialize 1 (mainRawRow (addSpinJalRow 1)))) =
         mainValueMemBusInteractions (addSpinJalRow 1) := by
     calc
-      _ = addSpinMainMemBusInteractionsAt
+      _ = mainMemBusInteractionsAt 2 addSpinProgram
           (Environment.fromArray
             (mainFixedColumns.materialize 1 (mainRawRow (addSpinJalRow 1))) emptyData) := by
         simpa [addSpinMainTable, mainRowsTable] using
-          (addSpinMainMemBusInteractionsAt_eq_component
+          (mainMemBusInteractionsAt_eq_component 2 addSpinProgram
             (Environment.fromArray
               (mainFixedColumns.materialize 1 (mainRawRow (addSpinJalRow 1))) emptyData))
       _ = mainValueMemBusInteractions (addSpinJalRow 1) :=
-        addSpinMainMemBusInteractionsAt_eq_valueLevel _ (addSpinJalRow 1)
+        mainMemBusInteractionsAt_eq_valueLevel 2 addSpinProgram _ (addSpinJalRow 1)
           (eval_mainRawRow_materialize 1 emptyData (addSpinJalRow 1) (by rfl) (by rfl))
   have h_two :
       addSpinMainTable.component.operations.interactionValuesWith
@@ -1092,15 +1095,15 @@ theorem addSpinMainTable_interactionsWith_memBus :
             (mainFixedColumns.materialize 2 (mainRawRow (addSpinJalRow 2)))) =
         mainValueMemBusInteractions (addSpinJalRow 2) := by
     calc
-      _ = addSpinMainMemBusInteractionsAt
+      _ = mainMemBusInteractionsAt 2 addSpinProgram
           (Environment.fromArray
             (mainFixedColumns.materialize 2 (mainRawRow (addSpinJalRow 2))) emptyData) := by
         simpa [addSpinMainTable, mainRowsTable] using
-          (addSpinMainMemBusInteractionsAt_eq_component
+          (mainMemBusInteractionsAt_eq_component 2 addSpinProgram
             (Environment.fromArray
               (mainFixedColumns.materialize 2 (mainRawRow (addSpinJalRow 2))) emptyData))
       _ = mainValueMemBusInteractions (addSpinJalRow 2) :=
-        addSpinMainMemBusInteractionsAt_eq_valueLevel _ (addSpinJalRow 2)
+        mainMemBusInteractionsAt_eq_valueLevel 2 addSpinProgram _ (addSpinJalRow 2)
           (eval_mainRawRow_materialize 2 emptyData (addSpinJalRow 2) (by rfl) (by rfl))
   rw [h_zero, h_one, h_two]
   simpa only [List.append_assoc]

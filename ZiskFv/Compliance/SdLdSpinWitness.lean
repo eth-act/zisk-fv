@@ -1434,6 +1434,316 @@ theorem sdLdWitness_rangeChannel_balanced :
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       decide
 
+private theorem sdLdBinaryAddOpBus_row
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :
+    ZiskFv.AirsClean.BinaryAdd.component.operations.interactionValuesWith
+        OpBusChannel.toRaw (Environment.fromInput row sdLdMemData) =
+      [binaryAddOpBusInteraction row] := by
+  have h_input :
+      Eval.eval (Environment.fromInput row sdLdMemData)
+        ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = row :=
+    ProvableType.eval_fromInput_varFromOffset_zero row sdLdMemData
+  have h_msg_eval :
+      Eval.eval (Environment.fromInput row sdLdMemData)
+          (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryAdd.component.rowInputVar) =
+        ZiskFv.AirsClean.BinaryAdd.opBusMessage row := by
+    rw [ZiskFv.AirsClean.BinaryAdd.eval_opBusMessageExpr, h_input]
+  have h_eval :
+      (((OpBusChannel.pushed
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+          ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)).toRaw).eval
+        (Environment.fromInput row sdLdMemData)) =
+      binaryAddOpBusInteraction row := by
+    simp [binaryAddOpBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+    constructor
+    · rfl
+    constructor
+    · rw [toElements_eval_toArray]
+      change (toElements
+          (Eval.eval (Environment.fromInput row sdLdMemData)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar))).toArray =
+        (toElements (ZiskFv.AirsClean.BinaryAdd.opBusMessage row)).toArray
+      rw [h_msg_eval]
+    · rfl
+  rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.BinaryAdd.component_interactionsWith_opBus]
+  simp [h_eval]
+
+private theorem sdLdBinaryAddTable_opBusInteractions :
+    (sdLdTableWithData sdLdBinaryAddTable).interactionsWith OpBusChannel.toRaw =
+      sdLdBinaryAddRows.flatMap (fun row => [binaryAddOpBusInteraction row]) := by
+  rw [Table.interactionsWith]
+  change (sdLdBinaryAddRows.map binaryAddRowArray).flatMap (fun arr =>
+    ZiskFv.AirsClean.BinaryAdd.component.operations.interactionValuesWith
+      OpBusChannel.toRaw (Environment.fromArray arr sdLdMemData)) = _
+  simp_rw [List.flatMap_map]
+  simp [binaryAddRowArray, Environment.fromInput, sdLdBinaryAddOpBus_row]
+
+private theorem sdLdBinaryExtensionTable_opBusInteractions :
+    (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith OpBusChannel.toRaw =
+      [sdLdSlliBinaryExtensionOpBusInteraction] := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun arr =>
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.operations.interactionValuesWith
+      OpBusChannel.toRaw (Environment.fromArray arr sdLdMemData))
+    [binaryExtensionRowArray sdLdSlliBinaryExtensionRow] = _
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  change
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.operations.interactionValuesWith
+      OpBusChannel.toRaw
+      (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData) = _
+  have h_input :
+      Eval.eval (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData)
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInputVar =
+      sdLdSlliBinaryExtensionRow :=
+    ProvableType.eval_fromInput_varFromOffset_zero sdLdSlliBinaryExtensionRow sdLdMemData
+  have h_msg_eval :
+      Eval.eval (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData)
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInputVar) =
+        ZiskFv.AirsClean.BinaryExtension.opBusMessage sdLdSlliBinaryExtensionRow := by
+    rw [ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr, h_input]
+  rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_interactionsWith_opBus]
+  simp only [List.map_cons, List.map_nil]
+  congr 1
+  simp [sdLdSlliBinaryExtensionOpBusInteraction, AbstractInteraction.eval,
+    ChannelInteraction.toRaw]
+  constructor
+  · rfl
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (Eval.eval (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData)
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInputVar))).toArray =
+      (toElements
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          sdLdSlliBinaryExtensionRow)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+private theorem sdLdMainOpBusInteractionsAt
+    (env : Environment FGL) (row : MainRowWithRom FGL)
+    (h_input :
+      Eval.eval env (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = row) :
+    (componentWithRomMemAndOpBus 7 sdLdProgram).operations.interactionValuesWith
+        OpBusChannel.toRaw env = [mainOpBusInteraction row] := by
+  let rowVar := (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar
+  have h_core : Eval.eval env rowVar.core = row.core := by
+    rw [ZiskFv.AirsClean.FullEnsemble.mainRowWithRom_eval_core]
+    exact congrArg MainRowWithRom.core h_input
+  have h_field := ZiskFv.AirsClean.FullEnsemble.mainRow_eval_is_external_op env rowVar.core
+  rw [Operations.interactionValuesWith_eq_map,
+    componentWithRomMemAndOpBus_interactionsWith_opBus]
+  simp only [List.map_cons, List.map_nil]
+  congr 1
+  simp [mainOpBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · change Expression.eval env (-rowVar.core.is_external_op) = -row.core.is_external_op
+    simp [Expression.eval, h_field, h_core]
+  constructor
+  · have h_msg_eval :
+        Eval.eval env (opBusMessageExpr rowVar.core) = opBusMessage row.core := by
+      rw [eval_opBusMessageExpr, h_core]
+    rw [toElements_eval_toArray]
+    change (toElements (Eval.eval env (opBusMessageExpr rowVar.core))).toArray =
+      (toElements (opBusMessage row.core)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+private theorem sdLdMainTable_opBusInteractions :
+    (sdLdTableWithData sdLdMainTable).interactionsWith OpBusChannel.toRaw =
+      sdLdMainRows.map mainOpBusInteraction := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun row =>
+    (componentWithRomMemAndOpBus 7 sdLdProgram).operations.interactionValuesWith
+      OpBusChannel.toRaw (Environment.fromArray row sdLdMemData))
+    (sdLdMainRows.map mainRawRow |>.mapIdx mainFixedColumns.materialize) = _
+  simp only [sdLdMainRows, List.map_cons, List.map_nil, List.mapIdx_cons,
+    List.mapIdx_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  rw [sdLdMainOpBusInteractionsAt _ sdLdAddiX1A0Row
+      (eval_mainRawRow_materialize 0 sdLdMemData sdLdAddiX1A0Row
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ sdLdSlliX1Row
+      (eval_mainRawRow_materialize 1 sdLdMemData sdLdSlliX1Row
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ sdLdAddiX1EightRow
+      (eval_mainRawRow_materialize 2 sdLdMemData sdLdAddiX1EightRow
+        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ sdLdAddiX2Row
+      (eval_mainRawRow_materialize 3 sdLdMemData sdLdAddiX2Row
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ sdLdSdRow
+      (eval_mainRawRow_materialize 4 sdLdMemData sdLdSdRow
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ sdLdLdRow
+      (eval_mainRawRow_materialize 5 sdLdMemData sdLdLdRow
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ (sdLdJalRow 6)
+      (eval_mainRawRow_materialize 6 sdLdMemData (sdLdJalRow 6)
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    sdLdMainOpBusInteractionsAt _ (sdLdJalRow 7)
+      (eval_mainRawRow_materialize 7 sdLdMemData (sdLdJalRow 7)
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious]))]
+  rfl
+
+private theorem sdLdWitness_opBusInteractions :
+    sdLdWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) =
+      [ sdLdSlliBinaryExtensionOpBusInteraction
+      , binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 160)
+      , binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 2684354560 8)
+      , binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 42)
+      , mainOpBusInteraction sdLdAddiX1A0Row
+      , mainOpBusInteraction sdLdSlliX1Row
+      , mainOpBusInteraction sdLdAddiX1EightRow
+      , mainOpBusInteraction sdLdAddiX2Row
+      , mainOpBusInteraction sdLdSdRow
+      , mainOpBusInteraction sdLdLdRow
+      , mainOpBusInteraction (sdLdJalRow 6)
+      , mainOpBusInteraction (sdLdJalRow 7) ] := by
+  have h_boundary :
+      (sdLdTableWithData sdLdBoundaryTable).interactionsWith OpBusChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_opBus_nil rfl
+  have h_mem :
+      (sdLdTableWithData sdLdMemTable).interactionsWith OpBusChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.mem_table_interactionsWith_opBus_nil rfl
+  have h_ranges :
+      sdLdSpecifiedRangesTable.interactionsWith OpBusChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change OpBusChannel.toRaw ∉ [SpecifiedRangesSliceChannel.toRaw]
+    intro h
+    simp only [List.mem_singleton] at h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [SpecifiedRangesSliceChannel, OpBusChannel, Channel.toRaw] at h_name
+  rw [sdLdWitness_tables]
+  simp [sdLdTables, h_boundary, h_mem, h_ranges,
+    sdLdBinaryExtensionTable_opBusInteractions, sdLdBinaryAddTable_opBusInteractions,
+    sdLdBinaryAddRows, sdLdMainTable_opBusInteractions, sdLdMainRows]
+
+theorem sdLdWitness_opBus_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw)) := by
+  rw [sdLdWitness_opBusInteractions]
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([ sdLdSlliBinaryExtensionOpBusInteraction
+      , binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 160)
+      , binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 2684354560 8)
+      , binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 42)
+      , mainOpBusInteraction sdLdAddiX1A0Row
+      , mainOpBusInteraction sdLdSlliX1Row
+      , mainOpBusInteraction sdLdAddiX1EightRow
+      , mainOpBusInteraction sdLdAddiX2Row
+      , mainOpBusInteraction sdLdSdRow
+      , mainOpBusInteraction sdLdLdRow
+      , mainOpBusInteraction (sdLdJalRow 6)
+      , mainOpBusInteraction (sdLdJalRow 7) ].map (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    exact List.mem_map_of_mem h_interaction
+  · intro msg h_msg
+    simp only [List.mem_map] at h_msg
+    rcases h_msg with ⟨interaction, h_interaction, rfl⟩
+    simp at h_interaction
+    rcases h_interaction with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      decide
+
+private theorem sdLdBoundaryMemBus_row
+    (row : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :
+    ZiskFv.AirsClean.RegisterBoundary.component.operations.interactionValuesWith
+        MemBusChannel.toRaw (Environment.fromInput row sdLdMemData) =
+      registerBoundaryMemBusInteractions row := by
+  rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus]
+  simp only [registerBoundaryMemBusInteractions, List.map_cons, List.map_nil]
+  exact congrArg₂ (fun boot reload => [boot, reload])
+    (registerBoundaryBootInteraction_eval_fromInput row sdLdMemData)
+    (registerBoundaryReloadInteraction_eval_fromInput row sdLdMemData)
+
+private theorem sdLdBoundaryTable_memBusInteractions :
+    (sdLdTableWithData sdLdBoundaryTable).interactionsWith MemBusChannel.toRaw =
+      sdLdBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
+  rw [Table.interactionsWith]
+  change (sdLdBoundaryRows.map registerBoundaryRowArray).flatMap (fun arr =>
+    ZiskFv.AirsClean.RegisterBoundary.component.operations.interactionValuesWith
+      MemBusChannel.toRaw (Environment.fromArray arr sdLdMemData)) = _
+  simp_rw [List.flatMap_map]
+  simp [registerBoundaryRowArray, Environment.fromInput, sdLdBoundaryMemBus_row]
+
+private theorem sdLdMemTable_memBusInteractions :
+    (sdLdTableWithData sdLdMemTable).interactionsWith MemBusChannel.toRaw =
+      sdLdMemRows.flatMap (fun row => [memBusInteraction row, memBusDualInteraction row]) := by
+  simpa [sdLdTableWithData, sdLdMemTable] using
+    memRowsTable_interactionsWith_memBus sdLdMemData sdLdMemRows sdLdMemRows_capacity
+
+private theorem sdLdMainMemBus_row
+    (index : ℕ) (row : MainRowWithRom FGL)
+    (h_segment : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+    (h_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+    (componentWithRomMemAndOpBus 7 sdLdProgram).operations.interactionValuesWith
+        MemBusChannel.toRaw
+        (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) sdLdMemData) =
+      AddSpinWitness.mainValueMemBusInteractions row := by
+  rw [AddSpinWitness.mainMemBusInteractionsAt_eq_component,
+    AddSpinWitness.mainMemBusInteractionsAt_eq_valueLevel]
+  exact eval_mainRawRow_materialize index sdLdMemData row h_segment h_step
+
+private theorem sdLdMainTable_memBusInteractions :
+    (sdLdTableWithData sdLdMainTable).interactionsWith MemBusChannel.toRaw =
+      sdLdMainRows.flatMap AddSpinWitness.mainValueMemBusInteractions := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun row =>
+    (componentWithRomMemAndOpBus 7 sdLdProgram).operations.interactionValuesWith
+      MemBusChannel.toRaw (Environment.fromArray row sdLdMemData))
+    (sdLdMainRows.map mainRawRow |>.mapIdx mainFixedColumns.materialize) = _
+  simp only [sdLdMainRows, List.map_cons, List.map_nil, List.mapIdx_cons,
+    List.mapIdx_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  rw [sdLdMainMemBus_row 0 sdLdAddiX1A0Row (by decide) (by decide),
+    sdLdMainMemBus_row 1 sdLdSlliX1Row (by decide) (by decide),
+    sdLdMainMemBus_row 2 sdLdAddiX1EightRow (by decide) (by decide),
+    sdLdMainMemBus_row 3 sdLdAddiX2Row (by decide) (by decide),
+    sdLdMainMemBus_row 4 sdLdSdRow (by decide) (by decide),
+    sdLdMainMemBus_row 5 sdLdLdRow (by decide) (by decide),
+    sdLdMainMemBus_row 6 (sdLdJalRow 6) (by decide) (by decide),
+    sdLdMainMemBus_row 7 (sdLdJalRow 7) (by decide) (by decide)]
+
 theorem sdLdWitness_memAlignRangeChannel_balanced :
     BalancedInteractions
       (sdLdWitness.tables.flatMap

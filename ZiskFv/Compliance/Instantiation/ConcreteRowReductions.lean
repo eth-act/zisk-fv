@@ -1482,17 +1482,17 @@ def registerBoundaryMemBusInteractions (row : RegisterBoundaryRow FGL) : List (I
   [registerBoundaryBootInteraction row, registerBoundaryReloadInteraction row]
 
 theorem registerBoundaryBootInteraction_eval_fromInput
-    (row : RegisterBoundaryRow FGL) :
+    (row : RegisterBoundaryRow FGL) (data : ProverData FGL := emptyData) :
     (((MemBusChannel.emitted (-1)
         (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
           ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
-      (Environment.fromInput row emptyData)) =
+      (Environment.fromInput row data)) =
       registerBoundaryBootInteraction row := by
-  let env := Environment.fromInput row emptyData
+  let env := Environment.fromInput row data
   let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
   have h_input : eval env rowVar = row := by
     dsimp [env, rowVar]
-    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+    exact ProvableType.eval_fromInput_varFromOffset_zero row data
   have h_msg_eval :
       eval env (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr rowVar) = bootMessage row := by
     rw [ZiskFv.AirsClean.RegisterBoundary.eval_bootMessageExpr, h_input]
@@ -1508,17 +1508,17 @@ theorem registerBoundaryBootInteraction_eval_fromInput
   · rfl
 
 theorem registerBoundaryReloadInteraction_eval_fromInput
-    (row : RegisterBoundaryRow FGL) :
+    (row : RegisterBoundaryRow FGL) (data : ProverData FGL := emptyData) :
     (((MemBusChannel.emitted 1
         (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
           ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
-      (Environment.fromInput row emptyData)) =
+      (Environment.fromInput row data)) =
       registerBoundaryReloadInteraction row := by
-  let env := Environment.fromInput row emptyData
+  let env := Environment.fromInput row data
   let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
   have h_input : eval env rowVar = row := by
     dsimp [env, rowVar]
-    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+    exact ProvableType.eval_fromInput_varFromOffset_zero row data
   have h_msg_eval :
       eval env (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr rowVar) =
         reloadMessage row := by
