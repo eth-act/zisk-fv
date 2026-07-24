@@ -15,12 +15,14 @@ program message is paired with its actual Main emitter row.
 
 open Goldilocks
 open Air.Flat
+open ZiskFv.AirsClean.FullEnsemble (fullRv64imEnsemble fullRv64imSoundEnsemble)
 open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.Channels.MemoryBus (MemBusMessage)
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.Compliance.RegisterMemBusBalance
+open ZiskFv.Compliance.SingleAddWitness
 
 namespace ZiskFv.Compliance.SdLdSpinWitness
 
@@ -804,6 +806,67 @@ theorem sdLdAddiX2_opBus_cancel :
     rcases h_msg with ⟨interaction, h_interaction, rfl⟩
     simp at h_interaction
     rcases h_interaction with rfl | rfl <;> decide
+
+def sdLdEnsemble : Ensemble FGL unit :=
+  (fullRv64imEnsemble 7 sdLdProgram).ensemble
+
+theorem sdLdEnsemble_verifier : sdLdEnsemble.verifier = .empty FGL unit :=
+  (fullRv64imSoundEnsemble 7 sdLdProgram).verifier_empty
+
+def sdLdTableWithData (table : Table FGL) : Table FGL where
+  component := table.component
+  rawRows := table.rawRows
+  data := sdLdMemData
+  raw_uniform_width := table.raw_uniform_width
+  fixed_domain := table.fixed_domain
+
+def sdLdTables : List (Table FGL) :=
+  [ sdLdTableWithData sdLdBoundaryTable
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
+  , sdLdTableWithData sdLdMemTable
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable)
+  , sdLdTableWithData sdLdBinaryExtensionTable
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent)
+  , sdLdTableWithData sdLdBinaryAddTable
+  , sdLdTableWithData sdLdMainTable ]
+
+def sdLdWitness : EnsembleWitness sdLdEnsemble where
+  tables := sdLdTables
+  data := sdLdMemData
+  publicInput := ()
+  same_length := by
+    simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
+      sdLdTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
+  same_circuits := by
+    intro i hi
+    have hi' : i < 14 := by
+      simpa [sdLdTables] using hi
+    interval_cases i <;>
+      simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
+        sdLdTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+        sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
+        sdLdMemTable, memRowsTable, sdLdBinaryExtensionTable,
+        binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
+        sdLdMainTable, AddSpinWitness.mainRowsTable]
+  same_data := by
+    intro table h_table
+    simp [sdLdTables, sdLdTableWithData, sdLdBoundaryTable,
+      registerBoundaryRowsTableOf, emptyComponentTable,
+      sdLdMemTable, memRowsTable, sdLdBinaryExtensionTable,
+      binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
+      sdLdMainTable, AddSpinWitness.mainRowsTable] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl <;> rfl
+
+theorem sdLdWitness_tables : sdLdWitness.tables = sdLdTables := rfl
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions
