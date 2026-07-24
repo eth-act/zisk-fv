@@ -10,6 +10,7 @@ program message is paired with its actual Main emitter row.
 -/
 
 open Goldilocks
+open Air.Flat
 open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.Channels.MemoryBus (MemBusMessage)
@@ -123,7 +124,7 @@ def sdLdAddiX1A0FreeCols : MainRomFreeCols :=
   mainRomFreeColsWithRegisterPrevious
     { SingleAddWitness.addX1MainFreeCols with
       a_0 := 0, a_1 := 0, b_0 := 160, b_1 := 0,
-      im_high_degree_2 := 0, segment_l1 := 0, main_step := 0 }
+      im_high_degree_2 := 0, segment_l1 := 1, main_step := 0 }
     addX1RegisterInitial
 
 theorem sdLdAddiX1A0_sourceGuard :
@@ -146,7 +147,8 @@ in the two ADDI rows and deliberately has no boundary lane. -/
 
 @[reducible] def sdLdAddiX1A0RowTemplate : MainRowWithRom FGL :=
   mainRomRowOf sdLdAddiX1A0ProgramRow addiX0Bits
-    (MainRomExecKind.external false 160 0) (sdLdFreeCols 0 0 0 160 0)
+    (MainRomExecKind.external false 160 0)
+    { sdLdFreeCols 0 0 0 160 0 with segment_l1 := 1 }
 
 @[reducible] def sdLdAddiX1A0RowWithLast : MemBusMessage FGL × MainRowWithRom FGL :=
   materializeMainRegisterRow addX1RegisterInitial sdLdAddiX1A0RowTemplate [.store]
@@ -402,6 +404,246 @@ theorem sdLdJalMain_proverAssumptions (step : FGL) :
   · simp [MainRomSourceGuard, AddSpinWitness.addSpinJalBits]
   · simp [MainRomAddressGuard, AddSpinWitness.addSpinJalBits]
   · rfl
+
+private def sdLdProverEnvFromEnvironment (env : Environment FGL) :
+    ProverEnvironment FGL where
+  get := env.get
+  data := env.data
+  hint := ProverHint.empty FGL
+
+private theorem sdLdFlatForAllWitness_of_localLength_zero
+    {env : ProverEnvironment FGL} {offset : Nat} {ops : List (FlatOperation FGL)}
+    (h_len : FlatOperation.localLength ops = 0) :
+    FlatOperation.forAll offset
+      { witness := fun offset _ compute => env.ExtendsVector (compute env) offset }
+      ops := by
+  induction ops generalizing offset with
+  | nil => trivial
+  | cons op ops ih =>
+      cases op with
+      | witness m compute =>
+          simp [FlatOperation.localLength] at h_len
+          have h_m : m = 0 := by omega
+          have h_ops : FlatOperation.localLength ops = 0 := by omega
+          subst m
+          constructor
+          · intro i
+            exact Fin.elim0 i
+          · simpa [Nat.zero_add] using ih (offset := offset) h_ops
+      | assert e =>
+          simp [FlatOperation.localLength] at h_len
+          simpa [FlatOperation.forAll] using ih (offset := offset) h_len
+      | lookup l =>
+          simp [FlatOperation.localLength] at h_len
+          simpa [FlatOperation.forAll] using ih (offset := offset) h_len
+      | interact i =>
+          simp [FlatOperation.localLength] at h_len
+          simpa [FlatOperation.forAll] using ih (offset := offset) h_len
+
+private theorem sdLdUsesLocalWitnesses_of_localLength_zero
+    {env : ProverEnvironment FGL} {offset : Nat} {ops : Operations FGL}
+    (h_len : ops.localLength = 0) :
+    env.UsesLocalWitnesses offset ops := by
+  rw [ProverEnvironment.UsesLocalWitnesses, Operations.forAllFlat]
+  induction ops using Operations.induct generalizing offset with
+  | empty => trivial
+  | witness m compute ops ih =>
+      simp [Operations.localLength] at h_len
+      have h_m : m = 0 := by omega
+      have h_ops : ops.localLength = 0 := by omega
+      subst m
+      constructor
+      · intro i
+        exact Fin.elim0 i
+      · simpa [Nat.zero_add] using ih (offset := offset) h_ops
+  | assert e ops ih =>
+      simp [Operations.localLength] at h_len
+      simpa [Operations.forAll] using ih (offset := offset) h_len
+  | lookup l ops ih =>
+      simp [Operations.localLength] at h_len
+      simpa [Operations.forAll] using ih (offset := offset) h_len
+  | interact i ops ih =>
+      simp [Operations.localLength] at h_len
+      simpa [Operations.forAll] using ih (offset := offset) h_len
+  | subcircuit s ops ih =>
+      simp [Operations.localLength] at h_len
+      have h_s : s.localLength = 0 := by omega
+      have h_ops : ops.localLength = 0 := by omega
+      constructor
+      · apply sdLdFlatForAllWitness_of_localLength_zero
+        rw [← s.localLength_eq]
+        exact h_s
+      · exact ih (offset := s.localLength + offset) h_ops
+
+private theorem sdLdMain_constraintsHold_materialize
+    (index : Nat) (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index)
+    (h_assumptions :
+      (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+        row emptyData (ProverHint.empty FGL)) :
+    (componentWithRomMemAndOpBus 7 sdLdProgram).operations.ConstraintsHold
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData) := by
+  let env := Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData
+  let proverEnv := sdLdProverEnvFromEnvironment env
+  have h_localLength :
+      (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.localLength
+        (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = 0 := by
+    change (mainWithRomMemAndOpBusElaborated 7 sdLdProgram).localLength
+        (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = 0
+    rfl
+  have h_env : proverEnv.UsesLocalWitnesses
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowOffset
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowOperations := by
+    apply sdLdUsesLocalWitnesses_of_localLength_zero
+    change ((componentWithRomMemAndOpBus 7 sdLdProgram).circuit.main
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar).localLength
+        (componentWithRomMemAndOpBus 7 sdLdProgram).rowOffset = 0
+    rw [(componentWithRomMemAndOpBus 7 sdLdProgram).circuit.localLength_eq]
+    exact h_localLength
+  have h_input_verifier : Eval.eval env
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = row := by
+    dsimp [env]
+    exact eval_mainRawRow_materialize index emptyData row h_segment_l1 h_main_step
+  have h_input : Eval.eval proverEnv
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = row := by
+    rw [ProvableType.eval_varFromOffset_prover]
+    rw [← h_input_verifier]
+    rw [ProvableType.eval_varFromOffset]
+    congr
+  have h_assumptions' :
+      (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+        (Eval.eval proverEnv (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar)
+        proverEnv.data proverEnv.hint := by
+    rw [h_input]
+    simpa [proverEnv, sdLdProverEnvFromEnvironment, env] using h_assumptions
+  have h_full :=
+    (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.original_full_completeness
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowOffset proverEnv
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar h_env h_assumptions'
+  have h_row :
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowOperations.ConstraintsHold
+        (proverEnv : Environment FGL) := by
+    simpa [Component.rowOperations, Component.rowInputVar, Component.rowOffset] using h_full.1
+  simpa [proverEnv, sdLdProverEnvFromEnvironment, env] using
+    (Component.constraintsHold_iff (component := componentWithRomMemAndOpBus 7 sdLdProgram)
+      (env := (proverEnv : Environment FGL))).mpr h_row
+
+attribute [local simp] mainFixedColumns_segment_l1_first
+  mainFixedColumns_segment_l1_nonfirst mainFixedColumns_main_step_eq_index
+  mainFixedCapacity
+
+theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
+  change ∀ arr ∈
+      [ mainFixedColumns.materialize 0 (mainRawRow sdLdAddiX1A0Row)
+      , mainFixedColumns.materialize 1 (mainRawRow sdLdSlliX1Row)
+      , mainFixedColumns.materialize 2 (mainRawRow sdLdAddiX1EightRow)
+      , mainFixedColumns.materialize 3 (mainRawRow sdLdAddiX2Row)
+      , mainFixedColumns.materialize 4 (mainRawRow sdLdSdRow)
+      , mainFixedColumns.materialize 5 (mainRawRow sdLdLdRow)
+      , mainFixedColumns.materialize 6 (mainRawRow (sdLdJalRow 6))
+      , mainFixedColumns.materialize 7 (mainRawRow (sdLdJalRow 7)) ],
+      (componentWithRomMemAndOpBus 7 sdLdProgram).operations.ConstraintsHold
+        (Environment.fromArray arr emptyData)
+  intro arr h_arr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at h_arr
+  rcases h_arr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact sdLdMain_constraintsHold_materialize 0 sdLdAddiX1A0Row
+      (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      sdLdAddiX1A0Main_proverAssumptions
+  · exact sdLdMain_constraintsHold_materialize 1 sdLdSlliX1Row
+      (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      sdLdSlliX1Main_proverAssumptions
+  · exact sdLdMain_constraintsHold_materialize 2 sdLdAddiX1EightRow
+      (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+        sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+        sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      sdLdAddiX1EightMain_proverAssumptions
+  · exact sdLdMain_constraintsHold_materialize 3 sdLdAddiX2Row
+      (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      sdLdAddiX2Main_proverAssumptions
+  · exact sdLdMain_constraintsHold_materialize 4 sdLdSdRow
+      (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      sdLdSdMain_proverAssumptions
+  · exact sdLdMain_constraintsHold_materialize 5 sdLdLdRow
+      (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      sdLdLdMain_proverAssumptions
+  · exact sdLdMain_constraintsHold_materialize 6 (sdLdJalRow 6)
+      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (sdLdJalMain_proverAssumptions 6)
+  · exact sdLdMain_constraintsHold_materialize 7 (sdLdJalRow 7)
+      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+        mainRomFreeColsWithRegisterPrevious])
+      (sdLdJalMain_proverAssumptions 7)
+
+@[simp] theorem sdLdMainTable_length : sdLdMainTable.length = 8 := by
+  rfl
+
+@[simp] theorem sdLdMainTable_evalAt (index : Fin sdLdMainTable.length) :
+    Eval.eval (sdLdMainTable.environmentAt index)
+        (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar =
+      sdLdMainRows[index.val]'(by simpa using index.isLt) := by
+  fin_cases index <;>
+    change Eval.eval
+      (Environment.fromArray (mainFixedColumns.materialize _ (mainRawRow _)) emptyData)
+      (varFromOffset MainRowWithRom 0) = _ <;>
+    apply eval_mainRawRow_materialize <;>
+    simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+      sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+      sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate,
+      sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+      sdLdSdRow, sdLdSdRowTemplate, sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow,
+      mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious]
+
+theorem sdLdMainTable_transitions : sdLdMainTable.TransitionConstraints := by
+  rw [Table.TransitionConstraints]
+  intro index
+  change pcHandshakeBetween
+    (Eval.eval (sdLdMainTable.previousEnvironment index)
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar)
+    (Eval.eval (sdLdMainTable.environmentAt index)
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar)
+  fin_cases index
+  · simp [Table.previousEnvironment, sdLdMainRows, pcHandshakeBetween, sdLdAddiX1A0Row,
+      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf,
+      sdLdFreeCols, mainRomFreeColsWithRegisterPrevious]
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_addi_slli
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_slli_addi
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_addi_addi
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_addi_sd
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_sd_ld
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_ld_jal
+  · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_jal_jal
+
+theorem sdLdMainTable_cyclicSuccessorTransitions :
+    sdLdMainTable.CyclicSuccessorTransitionConstraints := by
+  rw [Table.CyclicSuccessorTransitionConstraints]
+  intro index
+  simp [sdLdMainTable, AddSpinWitness.mainRowsTable,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus]
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions
