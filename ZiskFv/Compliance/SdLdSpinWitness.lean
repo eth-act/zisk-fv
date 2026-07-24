@@ -308,6 +308,13 @@ def sdLdBoundaryTable : Air.Flat.Table FGL :=
 def sdLdMainTable : Air.Flat.Table FGL :=
   AddSpinWitness.mainRowsTable 7 sdLdProgram sdLdMainRows sdLdMainRows_fixed_domain
 
+def sdLdMainTableWithData (data : ProverData FGL) : Air.Flat.Table FGL where
+  component := sdLdMainTable.component
+  rawRows := sdLdMainTable.rawRows
+  data := data
+  raw_uniform_width := sdLdMainTable.raw_uniform_width
+  fixed_domain := sdLdMainTable.fixed_domain
+
 theorem sdLdAddiX1A0Main_proverAssumptions :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
       sdLdAddiX1A0Row emptyData (ProverHint.empty FGL) := by
@@ -482,15 +489,15 @@ private theorem sdLdUsesLocalWitnesses_of_localLength_zero
       · exact ih (offset := s.localLength + offset) h_ops
 
 private theorem sdLdMain_constraintsHold_materialize
-    (index : Nat) (row : MainRowWithRom FGL)
+    (data : ProverData FGL) (index : Nat) (row : MainRowWithRom FGL)
     (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
     (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index)
     (h_assumptions :
       (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
-        row emptyData (ProverHint.empty FGL)) :
+        row data (ProverHint.empty FGL)) :
     (componentWithRomMemAndOpBus 7 sdLdProgram).operations.ConstraintsHold
-      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData) := by
-  let env := Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData
+      (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data) := by
+  let env := Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data
   let proverEnv := sdLdProverEnvFromEnvironment env
   have h_localLength :
       (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.localLength
@@ -510,7 +517,7 @@ private theorem sdLdMain_constraintsHold_materialize
   have h_input_verifier : Eval.eval env
       (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = row := by
     dsimp [env]
-    exact eval_mainRawRow_materialize index emptyData row h_segment_l1 h_main_step
+    exact eval_mainRawRow_materialize index data row h_segment_l1 h_main_step
   have h_input : Eval.eval proverEnv
       (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = row := by
     rw [ProvableType.eval_varFromOffset_prover]
@@ -539,7 +546,12 @@ attribute [local simp] mainFixedColumns_segment_l1_first
   mainFixedColumns_segment_l1_nonfirst mainFixedColumns_main_step_eq_index
   mainFixedCapacity
 
-theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
+theorem sdLdMainTableWithData_constraints (data : ProverData FGL)
+    (h_assumptions :
+      ∀ row ∈ sdLdMainRows,
+        (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+          row data (ProverHint.empty FGL)) :
+    (sdLdMainTableWithData data).Constraints := by
   change ∀ arr ∈
       [ mainFixedColumns.materialize 0 (mainRawRow sdLdAddiX1A0Row)
       , mainFixedColumns.materialize 1 (mainRawRow sdLdSlliX1Row)
@@ -550,60 +562,75 @@ theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
       , mainFixedColumns.materialize 6 (mainRawRow (sdLdJalRow 6))
       , mainFixedColumns.materialize 7 (mainRawRow (sdLdJalRow 7)) ],
       (componentWithRomMemAndOpBus 7 sdLdProgram).operations.ConstraintsHold
-        (Environment.fromArray arr emptyData)
+        (Environment.fromArray arr data)
   intro arr h_arr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at h_arr
   rcases h_arr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact sdLdMain_constraintsHold_materialize 0 sdLdAddiX1A0Row
+  · exact sdLdMain_constraintsHold_materialize data 0 sdLdAddiX1A0Row
       (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
         mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
         mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-      sdLdAddiX1A0Main_proverAssumptions
-  · exact sdLdMain_constraintsHold_materialize 1 sdLdSlliX1Row
+      (h_assumptions sdLdAddiX1A0Row (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 1 sdLdSlliX1Row
       (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
         mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
         mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-      sdLdSlliX1Main_proverAssumptions
-  · exact sdLdMain_constraintsHold_materialize 2 sdLdAddiX1EightRow
+      (h_assumptions sdLdSlliX1Row (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 2 sdLdAddiX1EightRow
       (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
         sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
         sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
-      sdLdAddiX1EightMain_proverAssumptions
-  · exact sdLdMain_constraintsHold_materialize 3 sdLdAddiX2Row
+      (h_assumptions sdLdAddiX1EightRow (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 3 sdLdAddiX2Row
       (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
         mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
         mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-      sdLdAddiX2Main_proverAssumptions
-  · exact sdLdMain_constraintsHold_materialize 4 sdLdSdRow
+      (h_assumptions sdLdAddiX2Row (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 4 sdLdSdRow
       (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
-      sdLdSdMain_proverAssumptions
-  · exact sdLdMain_constraintsHold_materialize 5 sdLdLdRow
+      (h_assumptions sdLdSdRow (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 5 sdLdLdRow
       (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
-      sdLdLdMain_proverAssumptions
-  · exact sdLdMain_constraintsHold_materialize 6 (sdLdJalRow 6)
+      (h_assumptions sdLdLdRow (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 6 (sdLdJalRow 6)
       (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
-      (sdLdJalMain_proverAssumptions 6)
-  · exact sdLdMain_constraintsHold_materialize 7 (sdLdJalRow 7)
+      (h_assumptions (sdLdJalRow 6) (by simp [sdLdMainRows]))
+  · exact sdLdMain_constraintsHold_materialize data 7 (sdLdJalRow 7)
       (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
       (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
         mainRomFreeColsWithRegisterPrevious])
-      (sdLdJalMain_proverAssumptions 7)
+      (h_assumptions (sdLdJalRow 7) (by simp [sdLdMainRows]))
+
+theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
+  simpa [sdLdMainTableWithData] using
+    sdLdMainTableWithData_constraints emptyData (by
+      intro row h_row
+      simp [sdLdMainRows] at h_row
+      rcases h_row with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact sdLdAddiX1A0Main_proverAssumptions
+      · exact sdLdSlliX1Main_proverAssumptions
+      · exact sdLdAddiX1EightMain_proverAssumptions
+      · exact sdLdAddiX2Main_proverAssumptions
+      · exact sdLdSdMain_proverAssumptions
+      · exact sdLdLdMain_proverAssumptions
+      · exact sdLdJalMain_proverAssumptions 6
+      · exact sdLdJalMain_proverAssumptions 7)
 
 @[simp] theorem sdLdMainTable_length : sdLdMainTable.length = 8 := by
   rfl
@@ -867,6 +894,123 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
       rfl | rfl | rfl | rfl <;> rfl
 
 theorem sdLdWitness_tables : sdLdWitness.tables = sdLdTables := rfl
+
+private theorem sdLdBinaryAddTableWithData_constraints :
+    (sdLdTableWithData sdLdBinaryAddTable).Constraints := by
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ sdLdBinaryAddRows.map binaryAddRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, h_row, rfl⟩
+  have h_assumptions :
+      ZiskFv.AirsClean.BinaryAdd.component.circuit.ProverAssumptions
+        row sdLdMemData (ProverHint.empty FGL) := by
+    simp [sdLdBinaryAddRows] at h_row
+    rcases h_row with rfl | rfl | rfl
+    · exact ⟨0, 160, by decide, by decide, rfl⟩
+    · exact ⟨2684354560, 8, by decide, by decide, rfl⟩
+    · exact ⟨0, 42, by decide, by decide, rfl⟩
+  have h_component :
+      ZiskFv.AirsClean.BinaryAdd.component.operations.ConstraintsHold
+        (Environment.fromInput row sdLdMemData) := by
+    apply ZiskFv.Compliance.Instantiation.component_constraintsHold_of_proverAssumptions_at_data
+      ZiskFv.AirsClean.BinaryAdd.component (Environment.fromInput row sdLdMemData)
+      row sdLdMemData
+    · rfl
+    · exact ProvableType.eval_fromInput_varFromOffset_zero row sdLdMemData
+    · rfl
+    · exact h_assumptions
+  simpa [sdLdTableWithData, sdLdBinaryAddTable, binaryAddRowsTable,
+    binaryAddRowArray, Table.table, Environment.fromInput] using h_component
+
+private theorem sdLdBinaryExtensionTableWithData_constraints :
+    (sdLdTableWithData sdLdBinaryExtensionTable).Constraints := by
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ [sdLdSlliBinaryExtensionRow].map binaryExtensionRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, h_row, rfl⟩
+  simp only [List.mem_singleton] at h_row
+  subst row
+  have h_assumptions :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.circuit.ProverAssumptions
+        sdLdSlliBinaryExtensionRow sdLdMemData (ProverHint.empty FGL) := by
+    simpa using sdLdSlliBinaryExtension_proverAssumptions
+  have h_component :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.operations.ConstraintsHold
+        (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData) := by
+    apply ZiskFv.Compliance.Instantiation.component_constraintsHold_of_proverAssumptions_at_data
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+      (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData)
+      sdLdSlliBinaryExtensionRow sdLdMemData
+    · rfl
+    · exact ProvableType.eval_fromInput_varFromOffset_zero sdLdSlliBinaryExtensionRow sdLdMemData
+    · rfl
+    · exact h_assumptions
+  simpa [sdLdTableWithData, sdLdBinaryExtensionTable,
+    binaryExtensionShiftStaticRowsTable, binaryExtensionRowArray, Table.table,
+    Environment.fromInput] using h_component
+
+private theorem sdLdEmptyTableWithData_constraints (component : Component FGL) :
+    (sdLdTableWithData (emptyComponentTable component)).Constraints := by
+  rw [Table.Constraints]
+  intro row h_row
+  cases h_fixed : component.fixedColumns <;>
+    simp [sdLdTableWithData, emptyComponentTable, Table.table, h_fixed] at h_row
+
+private theorem sdLdBoundaryTableWithData_constraints :
+    (sdLdTableWithData sdLdBoundaryTable).Constraints := by
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ sdLdBoundaryRows.map registerBoundaryRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, _h_row, rfl⟩
+  have h_component :
+      ZiskFv.AirsClean.RegisterBoundary.component.operations.ConstraintsHold
+        (Environment.fromInput row sdLdMemData) := by
+    apply ZiskFv.Compliance.Instantiation.component_constraintsHold_of_proverAssumptions_at_data
+      ZiskFv.AirsClean.RegisterBoundary.component (Environment.fromInput row sdLdMemData)
+      row sdLdMemData
+    · rfl
+    · exact ProvableType.eval_fromInput_varFromOffset_zero row sdLdMemData
+    · rfl
+    · trivial
+  simpa [sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf,
+    registerBoundaryRowArray, Table.environment, Environment.fromInput] using h_component
+
+theorem sdLdWitness_table_constraints :
+    ∀ table ∈ sdLdWitness.tables, table.Constraints := by
+  intro table h_table
+  rw [sdLdWitness_tables] at h_table
+  simp [sdLdTables] at h_table
+  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl | rfl | rfl
+  · exact sdLdBoundaryTableWithData_constraints
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdEmptyTableWithData_constraints _
+  · simpa [sdLdTableWithData, sdLdMemTable, memRowsTable] using sdLdMemTable_constraints
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdBinaryExtensionTableWithData_constraints
+  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdBinaryAddTableWithData_constraints
+  · simpa [sdLdTableWithData, sdLdMainTableWithData] using
+      sdLdMainTableWithData_constraints sdLdMemData (by
+        intro row h_row
+        simp [sdLdMainRows] at h_row
+        rcases h_row with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        · simpa using sdLdAddiX1A0Main_proverAssumptions
+        · simpa using sdLdSlliX1Main_proverAssumptions
+        · simpa using sdLdAddiX1EightMain_proverAssumptions
+        · simpa using sdLdAddiX2Main_proverAssumptions
+        · simpa using sdLdSdMain_proverAssumptions
+        · simpa using sdLdLdMain_proverAssumptions
+        · simpa using sdLdJalMain_proverAssumptions 6
+        · simpa using sdLdJalMain_proverAssumptions 7)
+
+theorem sdLdWitness_constraints : sdLdWitness.Constraints :=
+  sdLdWitness.constraints_of_tables sdLdEnsemble_verifier sdLdWitness_table_constraints
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions

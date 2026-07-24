@@ -171,7 +171,7 @@ private theorem component_constraintsHold_of_proverAssumptions_at
     (Component.constraintsHold_iff (component := component)
       (env := (proverEnv : Environment FGL))).mpr h_row
 
-private theorem component_constraintsHold_of_proverAssumptions_at_data
+theorem component_constraintsHold_of_proverAssumptions_at_data
     (component : Component FGL) (env : Environment FGL) (row : component.Input FGL)
     (data : ProverData FGL)
     (h_localLength : component.circuit.localLength component.rowInputVar = 0)
