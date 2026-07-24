@@ -300,6 +300,109 @@ def sdLdBoundaryTable : Air.Flat.Table FGL :=
 def sdLdMainTable : Air.Flat.Table FGL :=
   AddSpinWitness.mainRowsTable 7 sdLdProgram sdLdMainRows sdLdMainRows_fixed_domain
 
+theorem sdLdAddiX1A0Main_proverAssumptions :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      sdLdAddiX1A0Row emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨0, by decide⟩, addiX0Bits, MainRomExecKind.external false 160 0,
+    sdLdAddiX1A0FreeCols, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · simp [MainRomExecKind.Coherent, addiX0Bits]
+  · exact sdLdAddiX1A0_sourceGuard
+  · simp [MainRomAddressGuard, addiX0Bits]
+  · rfl
+
+theorem sdLdSlliX1Main_proverAssumptions :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      sdLdSlliX1Row emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨1, by decide⟩, addiX1Bits, MainRomExecKind.external false 2684354560 0,
+    mainRomFreeColsOfRow sdLdSlliX1Row, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · simp [MainRomExecKind.Coherent, addiX1Bits]
+  · norm_num [MainRomSourceGuard, sdLdProgram, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
+      sdLdSlliX1RowTemplate, sdLdSlliX1ProgramRow, addiX1Bits, sdLdFreeCols,
+      mainRomRowOf, mainRomFreeColsOfRow, mainRomFreeColsWithRegisterPrevious,
+      materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
+      ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+  · simp [MainRomAddressGuard, addiX1Bits]
+  · rfl
+
+theorem sdLdAddiX1EightMain_proverAssumptions :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      sdLdAddiX1EightRow emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨2, by decide⟩, addiX1Bits, MainRomExecKind.external false 2684354568 0,
+    mainRomFreeColsOfRow sdLdAddiX1EightRow, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · simp [MainRomExecKind.Coherent, addiX1Bits]
+  · norm_num [MainRomSourceGuard, sdLdProgram, sdLdAddiX1EightRow,
+      sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate,
+      sdLdAddiX1EightProgramRow, addiX1Bits, sdLdFreeCols, mainRomRowOf,
+      mainRomFreeColsOfRow, mainRomFreeColsWithRegisterPrevious,
+      materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
+      sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, sdLdSlliX1ProgramRow,
+      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, sdLdAddiX1A0ProgramRow,
+      addiX0Bits, ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+  · simp [MainRomAddressGuard, addiX1Bits]
+  · rfl
+
+theorem sdLdAddiX2Main_proverAssumptions :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      sdLdAddiX2Row emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨3, by decide⟩, addiX0Bits, MainRomExecKind.external false 42 0,
+    mainRomFreeColsOfRow sdLdAddiX2Row, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · simp [MainRomExecKind.Coherent, addiX0Bits]
+  · norm_num [MainRomSourceGuard, sdLdProgram, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
+      sdLdAddiX2RowTemplate, sdLdAddiX2ProgramRow, addiX0Bits, sdLdFreeCols, mainRomRowOf,
+      mainRomFreeColsOfRow, mainRomFreeColsWithRegisterPrevious,
+      materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
+      ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+  · simp [MainRomAddressGuard, addiX0Bits]
+  · rfl
+
+theorem sdLdSdMain_proverAssumptions :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      sdLdSdRow emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨4, by decide⟩, sdLdSdBits, MainRomExecKind.internalCopyB,
+    mainRomFreeColsOfRow sdLdSdRow, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · simp [MainRomExecKind.Coherent, sdLdProgram, sdLdSdBits, sdLdSdProgramRow]
+  · simp [MainRomSourceGuard, sdLdSdBits]
+  · norm_num [MainRomAddressGuard, sdLdSdBits, sdLdSdRow, sdLdSdRowTemplate,
+      sdLdFreeCols, mainRomFreeColsOfRow, mainRomRowOf, withMainRegisterPrevious,
+      sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate,
+      sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, materializeMainRegisterRow,
+      materializeMainRegisterAccesses, ZiskFv.AirsClean.RegisterBoundary.bootMessage,
+      boundaryRowIdle]
+  · rfl
+
+theorem sdLdLdMain_proverAssumptions :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      sdLdLdRow emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨5, by decide⟩, sdLdLdBits, MainRomExecKind.internalCopyB,
+    mainRomFreeColsOfRow sdLdLdRow, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · simp [MainRomExecKind.Coherent, sdLdProgram, sdLdLdBits, sdLdLdProgramRow]
+  · simp [MainRomSourceGuard, sdLdLdBits]
+  · norm_num [MainRomAddressGuard, sdLdLdBits, sdLdLdRow, sdLdLdRowTemplate,
+      sdLdFreeCols, mainRomFreeColsOfRow, mainRomRowOf, withMainRegisterPrevious,
+      sdLdSdRow, sdLdSdRowTemplate, sdLdAddiX1EightRowWithLast,
+      sdLdAddiX1EightRowTemplate, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+      materializeMainRegisterRow, materializeMainRegisterAccesses,
+      ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+  · rfl
+
+theorem sdLdJalMain_proverAssumptions (step : FGL) :
+    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
+      (sdLdJalRow step) emptyData (ProverHint.empty FGL) := by
+  refine ⟨⟨6, by decide⟩, AddSpinWitness.addSpinJalBits, MainRomExecKind.internalFlag,
+    sdLdFreeCols step 0 0 0 0, ?_, ?_, ?_, ?_, ?_⟩
+  · decide
+  · norm_num [MainRomExecKind.Coherent, sdLdProgram, sdLdJalProgramRow,
+      AddSpinWitness.addSpinJalBits, ZiskFv.Trusted.OP_FLAG]
+  · simp [MainRomSourceGuard, AddSpinWitness.addSpinJalBits]
+  · simp [MainRomAddressGuard, AddSpinWitness.addSpinJalBits]
+  · rfl
+
 def sdLdX1Telescope :=
   registerTelescopingInteractions
     (ZiskFv.AirsClean.RegisterBoundary.bootMessage sdLdBoundaryRowX1)
