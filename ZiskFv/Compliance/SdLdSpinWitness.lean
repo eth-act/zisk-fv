@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.SdLdMemTable
 import ZiskFv.Compliance.AddAddiSpinWitness
+import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 
 /-!
 # Concrete SD/LD spin witness (#221)
@@ -644,6 +645,70 @@ theorem sdLdMainTable_cyclicSuccessorTransitions :
   intro index
   simp [sdLdMainTable, AddSpinWitness.mainRowsTable,
     ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus]
+
+def sdLdBinaryAddRows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :=
+  [ ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 160
+  , ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 2684354560 8
+  , ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 42 ]
+
+def sdLdBinaryAddTable : Table FGL :=
+  binaryAddRowsTable sdLdBinaryAddRows
+
+theorem sdLdBinaryAddTable_constraints : sdLdBinaryAddTable.Constraints := by
+  apply binaryAddRowsTable_constraints_of_proverAssumptions
+  intro row h_row
+  simp [sdLdBinaryAddRows] at h_row
+  rcases h_row with rfl | rfl | rfl
+  · exact ⟨0, 160, by decide, by decide, rfl⟩
+  · exact ⟨2684354560, 8, by decide, by decide, rfl⟩
+  · exact ⟨0, 42, by decide, by decide, rfl⟩
+
+private def sdLdSlliIndex (byteIndex byte : Nat)
+    (h_byteIndex : byteIndex < 8) (h_byte : byte < 256) :
+    ZiskFv.AirsClean.BinaryExtension.BinaryExtensionTableIndex :=
+  ⟨24 * 2048 + byteIndex * 256 + byte, by
+    norm_num [ZiskFv.AirsClean.BinaryExtensionTable.tableSize,
+      ZiskFv.AirsClean.BinaryExtensionTable.shiftBlockSize,
+      ZiskFv.AirsClean.BinaryExtensionTable.sextBlockSize]
+    omega⟩
+
+def sdLdSlliBinaryExtensionRow :
+    ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL :=
+  ZiskFv.AirsClean.BinaryExtension.binaryExtensionStaticRowOf
+    (sdLdSlliIndex 0 160 (by decide) (by decide))
+    (sdLdSlliIndex 1 0 (by decide) (by decide))
+    (sdLdSlliIndex 2 0 (by decide) (by decide))
+    (sdLdSlliIndex 3 0 (by decide) (by decide))
+    (sdLdSlliIndex 4 0 (by decide) (by decide))
+    (sdLdSlliIndex 5 0 (by decide) (by decide))
+    (sdLdSlliIndex 6 0 (by decide) (by decide))
+    (sdLdSlliIndex 7 0 (by decide) (by decide)) 24 0
+
+theorem sdLdSlliBinaryExtension_proverAssumptions :
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupCircuit.ProverAssumptions
+      sdLdSlliBinaryExtensionRow emptyData (ProverHint.empty FGL) := by
+  refine ⟨(sdLdSlliIndex 0 160 (by decide) (by decide)),
+    (sdLdSlliIndex 1 0 (by decide) (by decide)),
+    (sdLdSlliIndex 2 0 (by decide) (by decide)),
+    (sdLdSlliIndex 3 0 (by decide) (by decide)),
+    (sdLdSlliIndex 4 0 (by decide) (by decide)),
+    (sdLdSlliIndex 5 0 (by decide) (by decide)),
+    (sdLdSlliIndex 6 0 (by decide) (by decide)),
+    (sdLdSlliIndex 7 0 (by decide) (by decide)), 24, 0, ?_⟩
+  repeat' apply And.intro
+  all_goals norm_num [sdLdSlliIndex,
+    ZiskFv.AirsClean.BinaryExtension.binaryExtensionTableRow,
+    ZiskFv.AirsClean.BinaryExtensionTable.rowOfIndex,
+    ZiskFv.AirsClean.BinaryExtensionTable.byteIndex,
+    ZiskFv.AirsClean.BinaryExtensionTable.shiftAmount,
+    ZiskFv.AirsClean.BinaryExtensionTable.opOfIndex,
+    ZiskFv.AirsClean.BinaryExtensionTable.blockOfIndex,
+    ZiskFv.AirsClean.BinaryExtensionTable.opOfBlock,
+    ZiskFv.AirsClean.BinaryExtensionTable.shiftBlockSize,
+    ZiskFv.AirsClean.BinaryExtensionTable.sextBlockSize,
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL,
+    ZiskFv.AirsClean.BinaryExtension.binaryExtensionStaticRowOf,
+    sdLdSlliBinaryExtensionRow]
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions
