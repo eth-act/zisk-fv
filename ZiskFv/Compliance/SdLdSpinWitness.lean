@@ -685,7 +685,7 @@ def sdLdSlliBinaryExtensionRow :
     (sdLdSlliIndex 4 0 (by decide) (by decide))
     (sdLdSlliIndex 5 0 (by decide) (by decide))
     (sdLdSlliIndex 6 0 (by decide) (by decide))
-    (sdLdSlliIndex 7 0 (by decide) (by decide)) 24 0
+    (sdLdSlliIndex 7 0 (by decide) (by decide)) 0 0
 
 theorem sdLdSlliBinaryExtension_proverAssumptions :
     ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupCircuit.ProverAssumptions
@@ -697,7 +697,7 @@ theorem sdLdSlliBinaryExtension_proverAssumptions :
     (sdLdSlliIndex 4 0 (by decide) (by decide)),
     (sdLdSlliIndex 5 0 (by decide) (by decide)),
     (sdLdSlliIndex 6 0 (by decide) (by decide)),
-    (sdLdSlliIndex 7 0 (by decide) (by decide)), 24, 0, ?_⟩
+    (sdLdSlliIndex 7 0 (by decide) (by decide)), 0, 0, ?_⟩
   repeat' apply And.intro
   all_goals norm_num [sdLdSlliIndex,
     ZiskFv.AirsClean.BinaryExtension.binaryExtensionTableRow,
@@ -722,6 +722,88 @@ theorem sdLdBinaryExtensionTable_constraints : sdLdBinaryExtensionTable.Constrai
   simp only [List.mem_singleton] at h_row
   subst row
   exact sdLdSlliBinaryExtension_proverAssumptions
+
+theorem sdLdAddiX1A0_opBus_cancel :
+    BalancedInteractions
+      [ binaryAddOpBusInteraction (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 160)
+      , mainOpBusInteraction sdLdAddiX1A0Row ] := by
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([ binaryAddOpBusInteraction (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 160)
+     , mainOpBusInteraction sdLdAddiX1A0Row ].map (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    exact List.mem_map_of_mem h_interaction
+  · intro msg h_msg
+    simp only [List.mem_map] at h_msg
+    rcases h_msg with ⟨interaction, h_interaction, rfl⟩
+    simp at h_interaction
+    rcases h_interaction with rfl | rfl <;> decide
+
+def sdLdSlliBinaryExtensionOpBusInteraction : Interaction FGL where
+  channel := ZiskFv.Channels.OperationBus.OpBusChannel.toRaw
+  mult := 1
+  msg := (toElements
+    (ZiskFv.AirsClean.BinaryExtension.opBusMessage sdLdSlliBinaryExtensionRow)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+theorem sdLdSlliX1_opBus_cancel :
+    BalancedInteractions
+      [ sdLdSlliBinaryExtensionOpBusInteraction
+      , mainOpBusInteraction sdLdSlliX1Row ] := by
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([sdLdSlliBinaryExtensionOpBusInteraction,
+      mainOpBusInteraction sdLdSlliX1Row].map (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    exact List.mem_map_of_mem h_interaction
+  · intro msg h_msg
+    simp only [List.mem_map] at h_msg
+    rcases h_msg with ⟨interaction, h_interaction, rfl⟩
+    simp at h_interaction
+    rcases h_interaction with rfl | rfl <;> decide
+
+theorem sdLdAddiX1Eight_opBus_cancel :
+    BalancedInteractions
+      [ binaryAddOpBusInteraction
+          (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 2684354560 8)
+      , mainOpBusInteraction sdLdAddiX1EightRow ] := by
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([ binaryAddOpBusInteraction
+        (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 2684354560 8)
+     , mainOpBusInteraction sdLdAddiX1EightRow ].map (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    exact List.mem_map_of_mem h_interaction
+  · intro msg h_msg
+    simp only [List.mem_map] at h_msg
+    rcases h_msg with ⟨interaction, h_interaction, rfl⟩
+    simp at h_interaction
+    rcases h_interaction with rfl | rfl <;> decide
+
+theorem sdLdAddiX2_opBus_cancel :
+    BalancedInteractions
+      [ binaryAddOpBusInteraction (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 42)
+      , mainOpBusInteraction sdLdAddiX2Row ] := by
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([ binaryAddOpBusInteraction (ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 42)
+     , mainOpBusInteraction sdLdAddiX2Row ].map (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    exact List.mem_map_of_mem h_interaction
+  · intro msg h_msg
+    simp only [List.mem_map] at h_msg
+    rcases h_msg with ⟨interaction, h_interaction, rfl⟩
+    simp at h_interaction
+    rcases h_interaction with rfl | rfl <;> decide
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions
