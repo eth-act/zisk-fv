@@ -305,15 +305,18 @@ def sdLdBoundaryRows :
 def sdLdBoundaryTable : Air.Flat.Table FGL :=
   registerBoundaryRowsTableOf sdLdBoundaryRows
 
-def sdLdMainTable : Air.Flat.Table FGL :=
+def sdLdMainTableEmptyData : Air.Flat.Table FGL :=
   AddSpinWitness.mainRowsTable 7 sdLdProgram sdLdMainRows sdLdMainRows_fixed_domain
 
 def sdLdMainTableWithData (data : ProverData FGL) : Air.Flat.Table FGL where
-  component := sdLdMainTable.component
-  rawRows := sdLdMainTable.rawRows
+  component := sdLdMainTableEmptyData.component
+  rawRows := sdLdMainTableEmptyData.rawRows
   data := data
-  raw_uniform_width := sdLdMainTable.raw_uniform_width
-  fixed_domain := sdLdMainTable.fixed_domain
+  raw_uniform_width := sdLdMainTableEmptyData.raw_uniform_width
+  fixed_domain := sdLdMainTableEmptyData.fixed_domain
+
+def sdLdMainTable : Air.Flat.Table FGL :=
+  sdLdMainTableWithData sdLdMemData
 
 theorem sdLdAddiX1A0Main_proverAssumptions :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
@@ -618,21 +621,25 @@ theorem sdLdMainTableWithData_constraints (data : ProverData FGL)
       (h_assumptions (sdLdJalRow 7) (by simp [sdLdMainRows]))
 
 theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
-  simpa [sdLdMainTableWithData] using
-    sdLdMainTableWithData_constraints emptyData (by
+  simpa [sdLdMainTable] using
+    sdLdMainTableWithData_constraints sdLdMemData (by
       intro row h_row
       simp [sdLdMainRows] at h_row
       rcases h_row with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact sdLdAddiX1A0Main_proverAssumptions
-      · exact sdLdSlliX1Main_proverAssumptions
-      · exact sdLdAddiX1EightMain_proverAssumptions
-      · exact sdLdAddiX2Main_proverAssumptions
-      · exact sdLdSdMain_proverAssumptions
-      · exact sdLdLdMain_proverAssumptions
-      · exact sdLdJalMain_proverAssumptions 6
-      · exact sdLdJalMain_proverAssumptions 7)
+      · simpa using sdLdAddiX1A0Main_proverAssumptions
+      · simpa using sdLdSlliX1Main_proverAssumptions
+      · simpa using sdLdAddiX1EightMain_proverAssumptions
+      · simpa using sdLdAddiX2Main_proverAssumptions
+      · simpa using sdLdSdMain_proverAssumptions
+      · simpa using sdLdLdMain_proverAssumptions
+      · simpa using sdLdJalMain_proverAssumptions 6
+      · simpa using sdLdJalMain_proverAssumptions 7)
 
 @[simp] theorem sdLdMainTable_length : sdLdMainTable.length = 8 := by
+  rfl
+
+@[simp] theorem sdLdMainTableWithData_length (data : ProverData FGL) :
+    (sdLdMainTableWithData data).length = 8 := by
   rfl
 
 @[simp] theorem sdLdMainTable_evalAt (index : Fin sdLdMainTable.length) :
@@ -641,7 +648,7 @@ theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
       sdLdMainRows[index.val]'(by simpa using index.isLt) := by
   fin_cases index <;>
     change Eval.eval
-      (Environment.fromArray (mainFixedColumns.materialize _ (mainRawRow _)) emptyData)
+      (Environment.fromArray (mainFixedColumns.materialize _ (mainRawRow _)) sdLdMemData)
       (varFromOffset MainRowWithRom 0) = _ <;>
     apply eval_mainRawRow_materialize <;>
     simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
@@ -675,7 +682,8 @@ theorem sdLdMainTable_cyclicSuccessorTransitions :
     sdLdMainTable.CyclicSuccessorTransitionConstraints := by
   rw [Table.CyclicSuccessorTransitionConstraints]
   intro index
-  simp [sdLdMainTable, AddSpinWitness.mainRowsTable,
+  simp [sdLdMainTable, sdLdMainTableWithData, sdLdMainTableEmptyData,
+    AddSpinWitness.mainRowsTable,
     ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus]
 
 def sdLdBinaryAddRows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :=
@@ -870,7 +878,9 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
   same_length := by
     simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
       sdLdTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
-      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
+      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+      sdLdMainTable, sdLdMainTableWithData, sdLdMainTableEmptyData,
+      AddSpinWitness.mainRowsTable]
   same_circuits := by
     intro i hi
     have hi' : i < 14 := by
@@ -882,7 +892,8 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
         sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
         sdLdMemTable, memRowsTable, sdLdBinaryExtensionTable,
         binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
-        sdLdMainTable, AddSpinWitness.mainRowsTable]
+        sdLdMainTable, sdLdMainTableWithData, sdLdMainTableEmptyData,
+        AddSpinWitness.mainRowsTable]
   same_data := by
     intro table h_table
     simp [sdLdTables, sdLdTableWithData, sdLdBoundaryTable,
@@ -995,22 +1006,108 @@ theorem sdLdWitness_table_constraints :
   · exact sdLdBinaryExtensionTableWithData_constraints
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdBinaryAddTableWithData_constraints
-  · simpa [sdLdTableWithData, sdLdMainTableWithData] using
-      sdLdMainTableWithData_constraints sdLdMemData (by
-        intro row h_row
-        simp [sdLdMainRows] at h_row
-        rcases h_row with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-        · simpa using sdLdAddiX1A0Main_proverAssumptions
-        · simpa using sdLdSlliX1Main_proverAssumptions
-        · simpa using sdLdAddiX1EightMain_proverAssumptions
-        · simpa using sdLdAddiX2Main_proverAssumptions
-        · simpa using sdLdSdMain_proverAssumptions
-        · simpa using sdLdLdMain_proverAssumptions
-        · simpa using sdLdJalMain_proverAssumptions 6
-        · simpa using sdLdJalMain_proverAssumptions 7)
+  · simpa [sdLdTableWithData, sdLdMainTable] using sdLdMainTable_constraints
 
 theorem sdLdWitness_constraints : sdLdWitness.Constraints :=
   sdLdWitness.constraints_of_tables sdLdEnsemble_verifier sdLdWitness_table_constraints
+
+private theorem sdLdEmptyTableWithData_transitions (component : Component FGL) :
+    (sdLdTableWithData (emptyComponentTable component)).TransitionConstraints := by
+  rw [Table.TransitionConstraints]
+  intro index
+  have h_length :
+      (sdLdTableWithData (emptyComponentTable component)).length = 0 := by
+    simp [sdLdTableWithData, emptyComponentTable, Table.length, Table.table]
+  exact Fin.elim0 (Fin.cast h_length index)
+
+private theorem sdLdEmptyTableWithData_cyclicSuccessorTransitions (component : Component FGL) :
+    (sdLdTableWithData
+      (emptyComponentTable component)).CyclicSuccessorTransitionConstraints := by
+  rw [Table.CyclicSuccessorTransitionConstraints]
+  intro index
+  have h_length :
+      (sdLdTableWithData (emptyComponentTable component)).length = 0 := by
+    simp [sdLdTableWithData, emptyComponentTable, Table.length, Table.table]
+  exact Fin.elim0 (Fin.cast h_length index)
+
+theorem sdLdWitness_transitions : sdLdWitness.TransitionConstraints := by
+  intro table h_table
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · subst table
+    rw [Table.TransitionConstraints]
+    intro index
+    simp [EnsembleWitness.verifierTable]
+  · rw [sdLdWitness_tables] at h_table
+    simp [sdLdTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf,
+        ZiskFv.AirsClean.RegisterBoundary.component]
+    · exact sdLdEmptyTableWithData_transitions _
+    · exact sdLdEmptyTableWithData_transitions _
+    · exact sdLdEmptyTableWithData_transitions _
+    · exact sdLdEmptyTableWithData_transitions _
+    · exact sdLdEmptyTableWithData_transitions _
+    · simpa [sdLdTableWithData, sdLdMemTable, memRowsTable] using sdLdMemTable_transitions
+    · exact sdLdEmptyTableWithData_transitions _
+    · exact sdLdEmptyTableWithData_transitions _
+    · exact sdLdEmptyTableWithData_transitions _
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdBinaryExtensionTable,
+        binaryExtensionShiftStaticRowsTable,
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent]
+    · exact sdLdEmptyTableWithData_transitions _
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdBinaryAddTable, binaryAddRowsTable,
+        ZiskFv.AirsClean.BinaryAdd.component]
+    · simpa [sdLdTableWithData, sdLdMainTable] using sdLdMainTable_transitions
+
+theorem sdLdWitness_cyclicSuccessorTransitions :
+    sdLdWitness.CyclicSuccessorTransitionConstraints := by
+  intro table h_table
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · subst table
+    rw [Table.CyclicSuccessorTransitionConstraints]
+    intro index
+    simp [EnsembleWitness.verifierTable]
+  · rw [sdLdWitness_tables] at h_table
+    simp [sdLdTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf,
+        ZiskFv.AirsClean.RegisterBoundary.component]
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdMemTable, memRowsTable,
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus]
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdBinaryExtensionTable,
+        binaryExtensionShiftStaticRowsTable,
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent]
+    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, sdLdBinaryAddTable, binaryAddRowsTable,
+        ZiskFv.AirsClean.BinaryAdd.component]
+    · simpa [sdLdTableWithData, sdLdMainTable] using
+        sdLdMainTable_cyclicSuccessorTransitions
 
 def sdLdX1Telescope :=
   registerTelescopingInteractions
