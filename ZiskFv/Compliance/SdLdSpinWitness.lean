@@ -18,7 +18,12 @@ open Air.Flat
 open ZiskFv.AirsClean.FullEnsemble (fullRv64imEnsemble fullRv64imSoundEnsemble)
 open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
-open ZiskFv.Channels.MemoryBus (MemBusMessage)
+open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
+open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
+open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
+open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.SpecifiedRanges
+  (SpecifiedRangeMessage SpecifiedRangesSliceChannel memDistanceMessage)
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.Compliance.RegisterMemBusBalance
@@ -855,6 +860,21 @@ def sdLdTableWithData (table : Table FGL) : Table FGL where
   raw_uniform_width := table.raw_uniform_width
   fixed_domain := table.fixed_domain
 
+def sdLdSpecifiedRangeValues : List FGL :=
+  [0, 0, 0, 0, 65534, 65534, 1023, 1023]
+
+def sdLdSpecifiedRangesTable : Table FGL where
+  component := ZiskFv.AirsClean.SpecifiedRangesSlice.component
+  rawRows := sdLdSpecifiedRangeValues.map (fun value => #[value])
+  data := sdLdMemData
+  raw_uniform_width := by
+    intro raw h_raw
+    rcases List.mem_map.mp h_raw with ⟨value, _h_value, rfl⟩
+    rfl
+  fixed_domain := by
+    intro columns h_columns
+    simp [ZiskFv.AirsClean.SpecifiedRangesSlice.component] at h_columns
+
 def sdLdTables : List (Table FGL) :=
   [ sdLdTableWithData sdLdBoundaryTable
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
@@ -863,7 +883,7 @@ def sdLdTables : List (Table FGL) :=
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
   , sdLdTableWithData sdLdMemTable
-  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+  , sdLdSpecifiedRangesTable
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable)
   , sdLdTableWithData sdLdBinaryExtensionTable
@@ -890,7 +910,7 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
         sdLdTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
         SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
         sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
-        sdLdMemTable, memRowsTable, sdLdBinaryExtensionTable,
+        sdLdMemTable, memRowsTable, sdLdSpecifiedRangesTable, sdLdBinaryExtensionTable,
         binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
         sdLdMainTable, sdLdMainTableWithData, sdLdMainTableEmptyData,
         AddSpinWitness.mainRowsTable]
@@ -898,7 +918,7 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
     intro table h_table
     simp [sdLdTables, sdLdTableWithData, sdLdBoundaryTable,
       registerBoundaryRowsTableOf, emptyComponentTable,
-      sdLdMemTable, memRowsTable, sdLdBinaryExtensionTable,
+      sdLdMemTable, memRowsTable, sdLdSpecifiedRangesTable, sdLdBinaryExtensionTable,
       binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
       sdLdMainTable, AddSpinWitness.mainRowsTable] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -986,6 +1006,35 @@ private theorem sdLdBoundaryTableWithData_constraints :
   simpa [sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf,
     registerBoundaryRowArray, Table.environment, Environment.fromInput] using h_component
 
+private theorem sdLdSpecifiedRangesTable_constraints :
+    sdLdSpecifiedRangesTable.Constraints := by
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ sdLdSpecifiedRangeValues.map (fun value => #[value]) at h_arr
+  rcases List.mem_map.mp h_arr with ⟨value, h_value, rfl⟩
+  have h_assumptions :
+      ZiskFv.AirsClean.SpecifiedRangesSlice.component.circuit.ProverAssumptions
+        value sdLdMemData (ProverHint.empty FGL) := by
+    simp [sdLdSpecifiedRangeValues] at h_value
+    rcases h_value with rfl | rfl | rfl
+    all_goals
+      change ((_: FGL).val < 2 ^ 16)
+      norm_num
+  have h_component :
+      ZiskFv.AirsClean.SpecifiedRangesSlice.component.operations.ConstraintsHold
+        (Environment.fromArray #[value] sdLdMemData) := by
+    apply ZiskFv.Compliance.Instantiation.component_constraintsHold_of_proverAssumptions_at_data
+      ZiskFv.AirsClean.SpecifiedRangesSlice.component
+      (Environment.fromArray #[value] sdLdMemData) value sdLdMemData
+    · rfl
+    · simpa [Environment.fromInput] using
+        (ProvableType.eval_fromInput_varFromOffset_zero (Input := field)
+          value sdLdMemData)
+    · rfl
+    · exact h_assumptions
+  simpa [sdLdSpecifiedRangesTable, Table.table, Table.environment,
+    Environment.fromInput] using h_component
+
 theorem sdLdWitness_table_constraints :
     ∀ table ∈ sdLdWitness.tables, table.Constraints := by
   intro table h_table
@@ -1000,7 +1049,7 @@ theorem sdLdWitness_table_constraints :
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdEmptyTableWithData_constraints _
   · simpa [sdLdTableWithData, sdLdMemTable, memRowsTable] using sdLdMemTable_constraints
-  · exact sdLdEmptyTableWithData_constraints _
+  · exact sdLdSpecifiedRangesTable_constraints
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdBinaryExtensionTableWithData_constraints
@@ -1052,7 +1101,9 @@ theorem sdLdWitness_transitions : sdLdWitness.TransitionConstraints := by
     · exact sdLdEmptyTableWithData_transitions _
     · exact sdLdEmptyTableWithData_transitions _
     · simpa [sdLdTableWithData, sdLdMemTable, memRowsTable] using sdLdMemTable_transitions
-    · exact sdLdEmptyTableWithData_transitions _
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [sdLdSpecifiedRangesTable, ZiskFv.AirsClean.SpecifiedRangesSlice.component]
     · exact sdLdEmptyTableWithData_transitions _
     · exact sdLdEmptyTableWithData_transitions _
     · rw [Table.TransitionConstraints]
@@ -1093,7 +1144,9 @@ theorem sdLdWitness_cyclicSuccessorTransitions :
       intro index
       simp [sdLdTableWithData, sdLdMemTable, memRowsTable,
         ZiskFv.AirsClean.Mem.componentWithDualMemBus]
-    · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [sdLdSpecifiedRangesTable, ZiskFv.AirsClean.SpecifiedRangesSlice.component]
     · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
     · exact sdLdEmptyTableWithData_cyclicSuccessorTransitions _
     · rw [Table.CyclicSuccessorTransitionConstraints]
@@ -1175,5 +1228,242 @@ theorem sdLdLoadMessage_eq_mem :
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle, ldMemRow,
     ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memReadSameAddrOf,
     ZiskFv.AirsClean.Mem.memValueOf]
+
+private def sdLdRangeConsumer (value : FGL) : Interaction FGL where
+  channel := SpecifiedRangesSliceChannel.toRaw
+  mult := -1
+  msg := (toElements (memDistanceMessage value)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+private theorem sdLdEval_memDistanceMessage
+    (env : Environment FGL) (value : Expression FGL) :
+    Eval.eval env (memDistanceMessage value) =
+      memDistanceMessage (Expression.eval env value) := by
+  rw [SpecifiedRangeMessage.mk.injEq]
+  simp only [memDistanceMessage, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field,
+    Expression.eval]
+  repeat constructor
+
+private theorem sdLdMemTable_rangeInteractions :
+    (sdLdTableWithData sdLdMemTable).interactionsWith
+        SpecifiedRangesSliceChannel.toRaw =
+      [ sdLdRangeConsumer 0, sdLdRangeConsumer 0
+      , sdLdRangeConsumer 65534, sdLdRangeConsumer 1023
+      , sdLdRangeConsumer 0, sdLdRangeConsumer 0
+      , sdLdRangeConsumer 65534, sdLdRangeConsumer 1023 ] := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun row =>
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus.operations.interactionValuesWith
+      SpecifiedRangesSliceChannel.toRaw (Environment.fromArray row sdLdMemData))
+    [ ZiskFv.AirsClean.Mem.memFixedColumns.materialize 0
+        (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData sdMemRow)
+    , ZiskFv.AirsClean.Mem.memFixedColumns.materialize 1
+        (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData ldMemRow) ] = _
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  simp_rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_rangeChannel]
+  simp only [List.map_cons, List.map_nil]
+  simp [sdLdRangeConsumer, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    Channel.emitted, emitted]
+  simp_rw [← Vector.toArray_map, ← ProvableType.toElements_eval,
+    sdLdEval_memDistanceMessage]
+  norm_num [ZiskFv.AirsClean.Mem.eval_memDistanceBase0Expr_materialize,
+    ZiskFv.AirsClean.Mem.eval_memDistanceBase1Expr_materialize,
+    ZiskFv.AirsClean.Mem.eval_memDistanceEnd0Expr_materialize,
+    ZiskFv.AirsClean.Mem.eval_memDistanceEnd1Expr_materialize]
+  all_goals simp [Expression.eval]
+
+private theorem sdLdSpecifiedRange_evalRowInput (value : FGL) :
+    Expression.eval (Environment.fromArray #[value] sdLdMemData)
+        ZiskFv.AirsClean.SpecifiedRangesSlice.component.rowInputVar = value := by
+  change (Environment.fromArray #[value] sdLdMemData).get 0 = value
+  rfl
+
+private theorem sdLdSpecifiedRangesTable_rangeInteractions :
+    sdLdSpecifiedRangesTable.interactionsWith SpecifiedRangesSliceChannel.toRaw =
+      sdLdSpecifiedRangeValues.map
+        (fun value => SpecifiedRangesSliceChannel.pushedValue (memDistanceMessage value)) := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun row =>
+    ZiskFv.AirsClean.SpecifiedRangesSlice.component.operations.interactionValuesWith
+      SpecifiedRangesSliceChannel.toRaw (Environment.fromArray row sdLdMemData))
+    (sdLdSpecifiedRangeValues.map fun value => #[value]) = _
+  simp_rw [List.flatMap_map, Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.SpecifiedRangesSlice.component_interactionsWith_rangeChannel]
+  simp [Channel.eval_pushed, sdLdEval_memDistanceMessage,
+    sdLdSpecifiedRange_evalRowInput, sdLdSpecifiedRangeValues]
+
+@[simp] private theorem sdLdEmptyTableWithData_interactions
+    (component : Component FGL) (channel : RawChannel FGL) :
+    (sdLdTableWithData
+      (emptyComponentTable component)).interactionsWith channel = [] := by
+  rw [Table.interactionsWith]
+  have h_empty :
+      (sdLdTableWithData (emptyComponentTable component)).table = [] := by
+    cases h_fixed : component.fixedColumns <;>
+      simp [sdLdTableWithData, emptyComponentTable, Table.table, h_fixed]
+  rw [h_empty]
+  rfl
+
+private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
+    (channel : RawChannel FGL)
+    (h_mem : channel ≠ MemBusChannel.toRaw)
+    (h_op : channel ≠ OpBusChannel.toRaw)
+    (h_range : channel ≠ SpecifiedRangesSliceChannel.toRaw) :
+    sdLdWitness.tables.flatMap (·.interactionsWith channel) = [] := by
+  have h_boundary :
+      (sdLdTableWithData sdLdBoundaryTable).interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [MemBusChannel.toRaw]
+    simpa using h_mem
+  have h_memTable :
+      (sdLdTableWithData sdLdMemTable).interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    simp [circuit_norm, sdLdTableWithData, sdLdMemTable, memRowsTable,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+      ZiskFv.AirsClean.Mem.circuitWithDualMemBus, h_mem, h_range]
+  have h_rangeTable :
+      sdLdSpecifiedRangesTable.interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [SpecifiedRangesSliceChannel.toRaw]
+    simpa using h_range
+  have h_extension :
+      (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [OpBusChannel.toRaw]
+    simpa using h_op
+  have h_binaryAdd :
+      (sdLdTableWithData sdLdBinaryAddTable).interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [OpBusChannel.toRaw]
+    simpa using h_op
+  have h_main :
+      (sdLdTableWithData sdLdMainTable).interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨h_mem, h_op⟩
+  rw [sdLdWitness_tables]
+  simp [sdLdTables, h_boundary, h_memTable, h_rangeTable, h_extension, h_binaryAdd, h_main,
+    emptyComponentTable_interactionsWith]
+
+private theorem sdLdBalancedInteractions_nil :
+    BalancedInteractions ([] : List (Interaction FGL)) := by
+  refine ⟨?_, ?_⟩
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro msg
+    simp [balanceOf]
+
+private theorem sdLdWitness_rangeInteractions :
+    sdLdWitness.tables.flatMap
+        (·.interactionsWith SpecifiedRangesSliceChannel.toRaw) =
+      [ sdLdRangeConsumer 0, sdLdRangeConsumer 0
+      , sdLdRangeConsumer 65534, sdLdRangeConsumer 1023
+      , sdLdRangeConsumer 0, sdLdRangeConsumer 0
+      , sdLdRangeConsumer 65534, sdLdRangeConsumer 1023 ] ++
+        sdLdSpecifiedRangeValues.map
+          (fun value => SpecifiedRangesSliceChannel.pushedValue (memDistanceMessage value)) := by
+  have h_ne_mem : SpecifiedRangesSliceChannel.toRaw ≠ MemBusChannel.toRaw := by
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [SpecifiedRangesSliceChannel, MemBusChannel, Channel.toRaw] at h_name
+  have h_ne_op : SpecifiedRangesSliceChannel.toRaw ≠ OpBusChannel.toRaw := by
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [SpecifiedRangesSliceChannel, OpBusChannel, Channel.toRaw] at h_name
+  have h_boundary :
+      (sdLdTableWithData sdLdBoundaryTable).interactionsWith
+          SpecifiedRangesSliceChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
+    simpa using h_ne_mem
+  have h_extension :
+      (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith
+          SpecifiedRangesSliceChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw]
+    simpa using h_ne_op
+  have h_binaryAdd :
+      (sdLdTableWithData sdLdBinaryAddTable).interactionsWith
+          SpecifiedRangesSliceChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw]
+    simpa using h_ne_op
+  have h_main :
+      (sdLdTableWithData sdLdMainTable).interactionsWith
+          SpecifiedRangesSliceChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change SpecifiedRangesSliceChannel.toRaw ∉
+      [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨h_ne_mem, h_ne_op⟩
+  rw [sdLdWitness_tables]
+  simp [sdLdTables, h_boundary, sdLdMemTable_rangeInteractions,
+    sdLdSpecifiedRangesTable_rangeInteractions, h_extension, h_binaryAdd, h_main]
+
+theorem sdLdWitness_rangeChannel_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap
+        (·.interactionsWith SpecifiedRangesSliceChannel.toRaw)) := by
+  rw [sdLdWitness_rangeInteractions]
+  refine Air.Flat.balancedInteractions_of_present ?_
+    (([ sdLdRangeConsumer 0, sdLdRangeConsumer 0
+      , sdLdRangeConsumer 65534, sdLdRangeConsumer 1023
+      , sdLdRangeConsumer 0, sdLdRangeConsumer 0
+      , sdLdRangeConsumer 65534, sdLdRangeConsumer 1023 ] ++
+        sdLdSpecifiedRangeValues.map
+          (fun value =>
+            SpecifiedRangesSliceChannel.pushedValue (memDistanceMessage value))).map
+      (·.msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    exact List.mem_map_of_mem h_interaction
+  · intro msg h_msg
+    simp only [List.mem_map] at h_msg
+    rcases h_msg with ⟨interaction, h_interaction, rfl⟩
+    simp [sdLdSpecifiedRangeValues] at h_interaction
+    rcases h_interaction with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      decide
+
+theorem sdLdWitness_memAlignRangeChannel_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap
+        (·.interactionsWith MemAlignRangeChannel.toRaw)) := by
+  rw [sdLdTables_interactionsWith_nil_of_ne_protocol]
+  · exact sdLdBalancedInteractions_nil
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemAlignRangeChannel, MemBusChannel, Channel.toRaw] at h_name
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemAlignRangeChannel, OpBusChannel, Channel.toRaw] at h_name
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemAlignRangeChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
+
+theorem sdLdWitness_memAlignRomChannel_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap
+        (·.interactionsWith MemAlignRomChannel.toRaw)) := by
+  rw [sdLdTables_interactionsWith_nil_of_ne_protocol]
+  · exact sdLdBalancedInteractions_nil
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemAlignRomChannel, MemBusChannel, Channel.toRaw] at h_name
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemAlignRomChannel, OpBusChannel, Channel.toRaw] at h_name
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    simp [MemAlignRomChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
 
 end ZiskFv.Compliance.SdLdSpinWitness
