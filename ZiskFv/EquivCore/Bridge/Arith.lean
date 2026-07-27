@@ -187,13 +187,17 @@ structure ArithDivSignedRemainderBoundWitness
   binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
   selected_chain :
     (a.nr r = 0 ∧ a.nb r = 0 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU ∧
       ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
         ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
     ∨ (a.nr r = 1 ∧ a.nb r = 0 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP ∧
       ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary)
     ∨ (a.nr r = 0 ∧ a.nb r = 1 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN ∧
       ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary)
     ∨ (a.nr r = 1 ∧ a.nb r = 1 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_GT ∧
       ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary)
   remainder_bound_match :
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
