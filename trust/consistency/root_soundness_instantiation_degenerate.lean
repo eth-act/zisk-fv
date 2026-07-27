@@ -156,6 +156,7 @@ private def trace : AcceptedZiskTrace 0 where
 private def sail : SailTrace 0 := nofun
 
 private def step : ∀ i : Fin 0, ZiskStep trace i := nofun
+private def decode : ∀ i : Fin 0, ProgramDecode trace i (step i) := nofun
 
 /-- The degenerate boot / cross-segment memory seed: empty boot memory, no rows,
     and every per-instruction obligation vacuous over `Fin 0`.  With the concrete
@@ -177,8 +178,10 @@ private def seed : BootSegmentMemorySeed trace sail step where
     and feeds it through the headline theorem — witnessing that the object
     `root_soundness` quantifies over is inhabited and accepted. -/
 theorem root_soundness_instantiation_degenerate :
-    ∀ i : Fin 0, StepSound trace sail i (step i) :=
-  root_soundness 0 trace sail step nofun nofun seed nofun
+    ∀ i : Fin 0,
+      StepSound trace sail i (step i)
+        (rowDecode_of_programDecode trace i (decode i)) :=
+  root_soundness 0 trace sail step decode nofun seed nofun
 
 #print axioms root_soundness_instantiation_degenerate
 
