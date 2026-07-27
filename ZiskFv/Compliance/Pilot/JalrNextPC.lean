@@ -180,7 +180,7 @@ theorem jalr_c0_val_eq_masked_operand
     scope pin (`h_c1_zero`, `h_no_fgl_wrap`), or decode/ROM pin. -/
 theorem jalr_setpc_nextPC_discharged
     (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin trace.numInstructions)
+    (i : Fin trace.mainTable.table.length)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (operand offset_bv : BitVec 64)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
@@ -212,14 +212,14 @@ theorem jalr_setpc_nextPC_discharged
       ((mainOfTable trace.program trace.mainTable).c_0 i.val).val
         + ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val < GL_prime) :
     (register_type_pc_equiv ▸
-        (BitVec.ofNat 64 ((execRowOf trace i)[1]!.pc).val))
+        (BitVec.ofNat 64 ((execRowAt trace i)[1]!.pc).val))
       = 0xFFFFFFFFFFFFFFFE#64 &&& (operand + offset_bv) := by
   have h_c0 :
       ((mainOfTable trace.program trace.mainTable).c_0 i.val).val
         = (0xFFFFFFFFFFFFFFFE#64 &&& operand).toNat :=
     jalr_c0_val_eq_masked_operand row _ _ operand h_matches h_match_clo h_match_chi
       h_a_mask h_b_operand hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7 h_c1_zero
-  rw [setpc_path_nextPC_discharged trace i h_idx h_set_pc h_flag,
+  rw [setpc_path_nextPC_discharged_at trace i h_idx h_set_pc h_flag,
       ofNat_fgl_pc_plus_offset_eq _ _ (0xFFFFFFFFFFFFFFFE#64 &&& operand) offset_bv
         h_c0 h_offset_bridge h_no_fgl_wrap,
       masked_add_offset_even operand offset_bv h_offset_even]

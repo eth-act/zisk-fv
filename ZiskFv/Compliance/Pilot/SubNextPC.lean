@@ -56,6 +56,18 @@ open ZiskFv.Airs.Main (pc_handshake_with_next_pc pc_handshake_branch pc_handshak
   pc_handshake_setpc)
 open Interaction
 
+/-- Execution-bus row at a physical Main-table index whose successor exists. -/
+@[reducible] noncomputable def execRowAt
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.mainTable.table.length) :
+    List (Interaction.ExecutionBusEntry FGL) :=
+  [ { multiplicity := -1
+    , pc := (mainOfTable trace.program trace.mainTable).pc i.val
+    , timestamp := 1 }
+  , { multiplicity := 1
+    , pc := (mainOfTable trace.program trace.mainTable).pc (i.val + 1)
+    , timestamp := 1 } ]
+
 /-- **Trace-derived execution-bus row.** The two committed execution-bus entries
     for the Main row at trace index `i`: the read entry (`multiplicity = -1`) whose
     `pc` is the *current* committed Main `pc` column `pc i`, and the write/next-PC
@@ -282,6 +294,36 @@ theorem setpc_path_nextPC_discharged
     pc_handshake_setpc (mainOfTable trace.program trace.mainTable) i.val
       ((mainOfTable trace.program trace.mainTable).pc (i.val + 1)) h_set_pc h_flag h_hand
   -- (4) Substitute; the `register_type_pc_equiv ▸ …` cast is defeq-identity.
+  rw [h_pc1, h_step]
+
+/-- Physical-row form of `setpc_path_nextPC_discharged`, used when one
+    architectural instruction occupies multiple Main rows. -/
+theorem setpc_path_nextPC_discharged_at
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.mainTable.table.length)
+    (h_idx : i.val + 1 < trace.mainTable.table.length)
+    (h_set_pc :
+      (mainOfTable trace.program trace.mainTable).set_pc i.val = 1)
+    (h_flag :
+      (mainOfTable trace.program trace.mainTable).flag i.val = 0) :
+    (register_type_pc_equiv ▸
+        (BitVec.ofNat 64
+          ((execRowAt trace i)[1]!.pc).val))
+      = BitVec.ofNat 64
+          (((mainOfTable trace.program trace.mainTable).c_0 i.val
+            + (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val) := by
+  have h_pc1 :
+      (execRowAt trace i)[1]!.pc
+        = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := rfl
+  have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx
+  have h_hand :=
+    ZiskFv.Compliance.AcceptedZiskTrace.mainTransition_to_next_pc trace i.val h_idx h_seg
+  have h_step :
+      (mainOfTable trace.program trace.mainTable).pc (i.val + 1)
+        = (mainOfTable trace.program trace.mainTable).c_0 i.val
+          + (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val :=
+    pc_handshake_setpc (mainOfTable trace.program trace.mainTable) i.val
+      ((mainOfTable trace.program trace.mainTable).pc (i.val + 1)) h_set_pc h_flag h_hand
   rw [h_pc1, h_step]
 
 /-- **Pilot SUB next-PC discharge.** From the accepted trace's transition

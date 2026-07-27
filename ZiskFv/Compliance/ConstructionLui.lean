@@ -61,6 +61,15 @@ open Interaction
 
 set_option maxHeartbeats 2000000
 
+/-- The honest unified Main+ROM row at a physical Main-table index. -/
+@[reducible]
+noncomputable def mainRowWithRomAt
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.mainTable.table.length) :
+    ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
+  ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+    trace.program trace.mainTable i.val
+
 /-- The honest unified Main+ROM row at trace index `i`, drawn from the real Main
     table.  Its `.core` equals `rowAt (mainOfTable …) i`. -/
 @[reducible]
@@ -69,6 +78,15 @@ noncomputable def mainRowWithRomLui
     ZiskFv.AirsClean.Main.MainRowWithRom FGL :=
   ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
     trace.program trace.mainTable i.val
+
+/-- The Main `c` memory-bus emission at a physical Main-table index. -/
+@[reducible]
+noncomputable def eRdAt
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.mainTable.table.length) :
+    Interaction.MemoryBusEntry FGL :=
+  ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+    (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomAt trace i)) 1 1
 
 /-- Construction-chosen rd-write entry: the real Clean Main `c` memory-bus
     emission (rd write) of the honest unified row.  The `StorePcMemoryWitness`
@@ -79,6 +97,26 @@ noncomputable def eRdLui
     Interaction.MemoryBusEntry FGL :=
   ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
     (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomLui trace i)) 1 1
+
+/-- The Main per-row `Spec` at a physical Main-table index. -/
+theorem mainSpec_at_physical
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.mainTable.table.length) :
+    ZiskFv.AirsClean.Main.Spec
+      (ZiskFv.AirsClean.Main.rowAt
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+        i.val) := by
+  let mainRow := trace.mainTable.table.get i
+  have h_mainRow_mem : mainRow ∈ trace.mainTable.table := by simp [mainRow]
+  have h_main_component_spec :
+      trace.mainTable.component.Spec
+        (trace.mainTable.environment (trace.mainTable.table.get i)) := by
+    simpa [mainRow] using
+      trace.spec_holds trace.mainTable trace.mainTable_mem mainRow h_mainRow_mem
+  exact
+    ZiskFv.AirsClean.FullEnsemble.mainSpec_rowAt_mainOfTable_of_component_spec
+      trace.program trace.mainTable i trace.mainTable_component
+      h_main_component_spec
 
 /-- The Main per-row `Spec` at trace index `i`, derived from `trace.spec_holds`.
     (Standalone version of the in-wrapper `h_main_spec` derivation.) -/
