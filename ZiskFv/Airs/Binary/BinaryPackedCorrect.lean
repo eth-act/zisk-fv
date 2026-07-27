@@ -210,6 +210,32 @@ private lemma byte_xor_lt_256 (a b : ℕ) (ha : a < 256) (hb : b < 256) :
     exact Nat.xor_lt_two_pow ha' hb'
   exact this
 
+/-- XOR with an all-ones byte is bytewise complement. -/
+lemma byte_xor_ff_eq_sub (a : ℕ) (ha : a < 256) :
+    a ^^^ 0xFF = 255 - a := by
+  interval_cases a <;> decide
+
+/-- Packing eight complemented bytes and adding one is 64-bit
+    two's-complement negation at the Nat level. -/
+lemma packed8_xor_ff_add_one_eq_sub
+    (a0 a1 a2 a3 a4 a5 a6 a7 : ℕ)
+    (ha0 : a0 < 256) (ha1 : a1 < 256) (ha2 : a2 < 256) (ha3 : a3 < 256)
+    (ha4 : a4 < 256) (ha5 : a5 < 256) (ha6 : a6 < 256) (ha7 : a7 < 256) :
+    (a0 ^^^ 0xFF) + (a1 ^^^ 0xFF) * 256
+        + (a2 ^^^ 0xFF) * 65536 + (a3 ^^^ 0xFF) * 16777216
+        + (a4 ^^^ 0xFF) * 4294967296 + (a5 ^^^ 0xFF) * 1099511627776
+        + (a6 ^^^ 0xFF) * 281474976710656
+        + (a7 ^^^ 0xFF) * 72057594037927936 + 1
+      = 18446744073709551616 -
+        (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216
+          + a4 * 4294967296 + a5 * 1099511627776
+          + a6 * 281474976710656 + a7 * 72057594037927936) := by
+  rw [byte_xor_ff_eq_sub a0 ha0, byte_xor_ff_eq_sub a1 ha1,
+    byte_xor_ff_eq_sub a2 ha2, byte_xor_ff_eq_sub a3 ha3,
+    byte_xor_ff_eq_sub a4 ha4, byte_xor_ff_eq_sub a5 ha5,
+    byte_xor_ff_eq_sub a6 ha6, byte_xor_ff_eq_sub a7 ha7]
+  omega
+
 /-! ## Nat-level byte-sum bitwise distribution lemmas
 
 The Nat-level identity for AND: under per-byte `< 256`, the AND of two
