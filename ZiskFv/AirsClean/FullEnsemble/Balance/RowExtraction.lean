@@ -56,6 +56,24 @@ theorem exists_opBus_row_eval_of_pair_interactionsWith
   · exact Or.inl ⟨row, h_row, h_left⟩
   · exact Or.inr ⟨row, h_row, h_right⟩
 
+/-- The physical ArithMul remainder-bound consumer evaluated at a concrete
+    table row is one of that table's operation-bus interactions. -/
+theorem arithMul_remainderBoundInteraction_mem
+    {table : Table FGL}
+    (h_component : table.component = arithMulProviderComponent)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    ((OpBusChannel.emitted
+      (-(arithMulProviderComponent.rowInputVar.flags.div
+        * (1 - arithMulProviderComponent.rowInputVar.flags.div_by_zero)))
+      (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessageExpr
+        arithMulProviderComponent.rowInputVar)).toRaw).eval
+        (table.environment row)
+      ∈ table.interactionsWith OpBusChannel.toRaw := by
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_component,
+    ZiskFv.AirsClean.ArithMul.componentComplete_interactionsWith_opBus]
+  exact ⟨row, h_row, Or.inr rfl⟩
+
 /-- If a table's memory-bus abstract interactions are a singleton, any
     concrete table-level interaction on that channel is that singleton
     evaluated at some row. -/
