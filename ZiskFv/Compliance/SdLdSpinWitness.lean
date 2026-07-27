@@ -224,7 +224,8 @@ def sdLdMainRows : List (MainRowWithRom FGL) :=
 
 theorem sdLdMain_pc_addi_slli :
     transitionBetween sdLdAddiX1A0Row sdLdSlliX1Row := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1A0Row,
+    sdLdAddiX1A0RowWithLast,
     sdLdAddiX1A0RowTemplate, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
     sdLdSlliX1RowTemplate, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
     addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
@@ -234,7 +235,8 @@ theorem sdLdMain_pc_addi_slli :
 
 theorem sdLdMain_pc_slli_addi :
     transitionBetween sdLdSlliX1Row sdLdAddiX1EightRow := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSlliX1Row,
+    sdLdSlliX1RowWithLast,
     sdLdSlliX1RowTemplate, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
     sdLdAddiX1EightRowTemplate, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
     addiX1Bits, mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
@@ -243,7 +245,8 @@ theorem sdLdMain_pc_slli_addi :
 
 theorem sdLdMain_pc_addi_addi :
     transitionBetween sdLdAddiX1EightRow sdLdAddiX2Row := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1EightRow,
+    sdLdAddiX1EightRowWithLast,
     sdLdAddiX1EightRowTemplate, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
     sdLdAddiX2RowTemplate, sdLdAddiX1EightProgramRow, sdLdAddiX2ProgramRow,
     addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
@@ -253,7 +256,8 @@ theorem sdLdMain_pc_addi_addi :
 
 theorem sdLdMain_pc_addi_sd :
     transitionBetween sdLdAddiX2Row sdLdSdRow := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX2Row,
+    sdLdAddiX2RowWithLast,
     sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate, sdLdAddiX2ProgramRow,
     sdLdSdProgramRow, addiX0Bits, sdLdSdBits, mainRomRowOf, sdLdFreeCols,
     mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
@@ -261,21 +265,24 @@ theorem sdLdMain_pc_addi_sd :
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
 theorem sdLdMain_pc_sd_ld : transitionBetween sdLdSdRow sdLdLdRow := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSdRow, sdLdSdRowTemplate, sdLdLdRow,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSdRow,
+    sdLdSdRowTemplate, sdLdLdRow,
     sdLdLdRowTemplate, sdLdSdProgramRow, sdLdLdProgramRow, sdLdSdBits, sdLdLdBits,
     mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
     materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
 theorem sdLdMain_pc_ld_jal : transitionBetween sdLdLdRow (sdLdJalRow 6) := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdLdRow,
+    sdLdLdRowTemplate, sdLdJalRow,
     sdLdLdProgramRow, sdLdJalProgramRow, sdLdLdBits, AddSpinWitness.addSpinJalBits,
     mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
     materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
 theorem sdLdMain_pc_jal_jal : transitionBetween (sdLdJalRow 6) (sdLdJalRow 7) := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdJalRow, sdLdJalProgramRow, AddSpinWitness.addSpinJalBits,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdJalRow,
+    sdLdJalProgramRow, AddSpinWitness.addSpinJalBits,
     mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
   ring

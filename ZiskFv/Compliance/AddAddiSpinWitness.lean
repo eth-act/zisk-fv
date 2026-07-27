@@ -454,20 +454,19 @@ theorem addAddiSpinWitness_constraints : addAddiSpinWitness.Constraints :=
 
 private theorem addAddiSpinMain_pcHandshake_add_addi :
     transitionBetween addAddiSpinAddRow addAddiSpinAddiRow := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddRow, addAddiSpinAddiRow,
-    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addX1Row,
-    mainRomRowOf]
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddRow,
+    addAddiSpinAddiRow, addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addX1Row, mainRomRowOf]
 
 private theorem addAddiSpinMain_pcHandshake_addi_jal :
     transitionBetween addAddiSpinAddiRow (addAddiSpinJalRow 2) := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddiRow, addAddiSpinAddiProgramRow,
-    addAddiSpinAddiBits, addAddiSpinJalRow,
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddiRow,
+    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addAddiSpinJalRow,
     addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
 
 private theorem addAddiSpinMain_pcHandshake_jal_jal :
     transitionBetween (addAddiSpinJalRow 2) (addAddiSpinJalRow 3) := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
-    addSpinJalBits, mainRomRowOf]
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinJalRow,
+    addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
   ring
 
 @[simp] theorem addAddiSpinMainTable_eval_rowInputVar_zero

@@ -311,12 +311,13 @@ private theorem addSpinMain_constraintsHold_materialize
 
 theorem addSpinMain_pcHandshake_add_jal :
     transitionBetween addSpinAddRow (addSpinJalRow 1) := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinAddRow, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-    addX1Row, mainRomRowOf]
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinAddRow,
+    addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, addX1Row, mainRomRowOf]
 
 theorem addSpinMain_pcHandshake_jal_jal :
     transitionBetween (addSpinJalRow 1) (addSpinJalRow 2) := by
-  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinJalRow,
+    addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
   ring
 
 @[simp] theorem addSpinMainTable_eval_rowInputVar_zero
