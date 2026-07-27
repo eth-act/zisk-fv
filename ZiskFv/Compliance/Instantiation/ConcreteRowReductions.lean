@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.RegisterBoundary
 
@@ -170,7 +171,7 @@ private theorem component_constraintsHold_of_proverAssumptions_at
     (Component.constraintsHold_iff (component := component)
       (env := (proverEnv : Environment FGL))).mpr h_row
 
-private theorem component_constraintsHold_of_proverAssumptions_at_data
+theorem component_constraintsHold_of_proverAssumptions_at_data
     (component : Component FGL) (env : Environment FGL) (row : component.Input FGL)
     (data : ProverData FGL)
     (h_localLength : component.circuit.localLength component.rowInputVar = 0)
@@ -813,6 +814,56 @@ theorem binaryAddRowsTable_constraints_of_proverAssumptions
   simpa [binaryAddRowsTable, binaryAddRowArray, Table.table, Environment.fromInput]
     using h_component
 
+def binaryExtensionRowArray
+    (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL) : Array FGL :=
+  (toElements row).toArray
+
+private theorem binaryExtensionShiftStatic_component_rawWidth :
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rawWidth =
+      size ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow := by
+  change ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupCircuit.size =
+    size ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow
+  rw [GeneralFormalCircuit.size_eq]
+  rfl
+
+def binaryExtensionShiftStaticRowsTable
+    (rows : List (ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)) : Table FGL where
+  component := ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+  rawRows := rows.map binaryExtensionRowArray
+  data := emptyData
+  raw_uniform_width := by
+    intro arr h_arr
+    rcases List.mem_map.mp h_arr with ⟨row, _, rfl⟩
+    rw [binaryExtensionShiftStatic_component_rawWidth]
+    simp [binaryExtensionRowArray]
+  fixed_domain := by
+    intro columns h_columns
+    simp [ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent] at h_columns
+
+theorem binaryExtensionShiftStaticRowsTable_constraints_of_proverAssumptions
+    (rows : List (ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL))
+    (h_assumptions :
+      ∀ row ∈ rows,
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.circuit.ProverAssumptions
+          row emptyData (ProverHint.empty FGL)) :
+    (binaryExtensionShiftStaticRowsTable rows).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.circuit.localLength
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInputVar = 0 := by
+    rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ rows.map binaryExtensionRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, h_row, rfl⟩
+  have h_component :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent row h_localLength
+      (h_assumptions row h_row)
+  simpa [binaryExtensionShiftStaticRowsTable, binaryExtensionRowArray, Table.table,
+    Environment.fromInput] using h_component
+
 def binaryRowArray (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Array FGL :=
   (toElements row).toArray
 
@@ -1431,17 +1482,17 @@ def registerBoundaryMemBusInteractions (row : RegisterBoundaryRow FGL) : List (I
   [registerBoundaryBootInteraction row, registerBoundaryReloadInteraction row]
 
 theorem registerBoundaryBootInteraction_eval_fromInput
-    (row : RegisterBoundaryRow FGL) :
+    (row : RegisterBoundaryRow FGL) (data : ProverData FGL := emptyData) :
     (((MemBusChannel.emitted (-1)
         (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
           ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
-      (Environment.fromInput row emptyData)) =
+      (Environment.fromInput row data)) =
       registerBoundaryBootInteraction row := by
-  let env := Environment.fromInput row emptyData
+  let env := Environment.fromInput row data
   let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
   have h_input : eval env rowVar = row := by
     dsimp [env, rowVar]
-    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+    exact ProvableType.eval_fromInput_varFromOffset_zero row data
   have h_msg_eval :
       eval env (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr rowVar) = bootMessage row := by
     rw [ZiskFv.AirsClean.RegisterBoundary.eval_bootMessageExpr, h_input]
@@ -1457,17 +1508,17 @@ theorem registerBoundaryBootInteraction_eval_fromInput
   · rfl
 
 theorem registerBoundaryReloadInteraction_eval_fromInput
-    (row : RegisterBoundaryRow FGL) :
+    (row : RegisterBoundaryRow FGL) (data : ProverData FGL := emptyData) :
     (((MemBusChannel.emitted 1
         (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr
           ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
-      (Environment.fromInput row emptyData)) =
+      (Environment.fromInput row data)) =
       registerBoundaryReloadInteraction row := by
-  let env := Environment.fromInput row emptyData
+  let env := Environment.fromInput row data
   let rowVar := ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
   have h_input : eval env rowVar = row := by
     dsimp [env, rowVar]
-    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+    exact ProvableType.eval_fromInput_varFromOffset_zero row data
   have h_msg_eval :
       eval env (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr rowVar) =
         reloadMessage row := by

@@ -180,6 +180,7 @@ import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.Compliance.AddSpinRootSoundness
 import ZiskFv.Compliance.AddAddiSpinWitness
 import ZiskFv.Compliance.AddAddiSpinRootSoundness
+import ZiskFv.Compliance.SdLdSpinRootSoundness
 import ZiskFv.Compliance.RangeWiringWitness
 -- In-build per-opcode static decode/row-mode pin discharge from the real
 -- Aeneas-extracted ZisK lowerer (eth-act/zisk-fv#111). Standalone; not yet

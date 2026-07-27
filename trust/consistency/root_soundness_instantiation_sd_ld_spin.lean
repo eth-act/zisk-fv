@@ -1,0 +1,7 @@
+import ZiskFv.Compliance.SdLdSpinRootSoundness
+
+#print axioms ZiskFv.Compliance.SdLdSpinRootSoundness.sdLdRootSoundness
+#print axioms ZiskFv.Compliance.SdLdSpinWitness.sdLdAcceptedTrace
+#print axioms ZiskFv.Compliance.SdLdSpinWitness.sdLdWitness_balancedChannels
+#print axioms ZiskFv.Compliance.SdLdSpinRootSoundness.sdLdSdStepSound
+#print axioms ZiskFv.Compliance.SdLdSpinRootSoundness.sdLdLdStepSound
