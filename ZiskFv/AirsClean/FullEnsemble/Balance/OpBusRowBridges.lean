@@ -20,6 +20,141 @@ open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 
 /-! ## Full-ensemble operation-bus row bridges -/
 
+/-- Resolve any active operation-bus consumer interaction to a concrete
+    provider row carrying its component spec.  The interaction need not come
+    from Main; in particular, ArithMul's remainder-bound consumer uses this
+    bridge. -/
+theorem exists_op_provider_row_msg_eq_spec_of_active_interaction
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {consumerInteraction : Interaction FGL}
+    (h_consumer :
+      consumerInteraction ∈ witness.interactionsWith OpBusChannel.toRaw)
+    (h_active : consumerInteraction.mult = -1) :
+    ∃ providerInteraction ∈ witness.interactionsWith OpBusChannel.toRaw,
+      providerInteraction.msg = consumerInteraction.msg
+        ∧ providerInteraction.mult ≠ -1
+        ∧ providerInteraction.mult ≠ 0
+        ∧ ∃ providerTable ∈ witness.allTables,
+          providerInteraction ∈ providerTable.interactionsWith OpBusChannel.toRaw
+            ∧
+            ((∃ providerRow ∈ providerTable.table,
+                providerTable.component.Spec (providerTable.environment providerRow)
+                  ∧ providerTable.component = arithMulProviderComponent
+                  ∧ providerInteraction =
+                    ((OpBusChannel.pushed
+                      (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                        arithMulProviderComponent.rowInputVar)).toRaw).eval
+                      (providerTable.environment providerRow))
+              ∨ (∃ providerRow ∈ providerTable.table,
+                providerTable.component.Spec (providerTable.environment providerRow)
+                  ∧ providerTable.component = shiftStaticLookupComponent
+                  ∧ providerInteraction =
+                    ((OpBusChannel.pushed
+                      (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                        shiftStaticLookupComponent.rowInputVar)).toRaw).eval
+                      (providerTable.environment providerRow))
+              ∨ (∃ providerRow ∈ providerTable.table,
+                providerTable.component.Spec (providerTable.environment providerRow)
+                  ∧ providerTable.component =
+                    ZiskFv.AirsClean.Binary.staticLookupComponent
+                  ∧ providerInteraction =
+                    ((OpBusChannel.pushed
+                      (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)).toRaw).eval
+                      (providerTable.environment providerRow))
+              ∨ (∃ providerRow ∈ providerTable.table,
+                providerTable.component.Spec (providerTable.environment providerRow)
+                  ∧ providerTable.component = ZiskFv.AirsClean.BinaryAdd.component
+                  ∧ providerInteraction =
+                    ((OpBusChannel.pushed
+                      (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                        ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)).toRaw).eval
+                      (providerTable.environment providerRow))) := by
+  obtain ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerComponent⟩ :=
+    exists_matching_provider_op_component_of_active_main_interaction
+      witness h_constraints h_balanced h_consumer h_active
+  refine ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerInteraction, ?_⟩
+  have h_providerSpecs : providerTable.Spec :=
+    h_specs providerTable h_providerTable
+  rcases h_providerComponent with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · rcases exists_arithMul_row_eval_of_interaction_mem
+        h_arithMul h_providerInteraction with
+      ⟨providerRow, h_providerRow, h_providerEval⟩
+      | ⟨providerRow, h_providerRow, h_providerEval⟩
+    · left
+      exact ⟨providerRow, h_providerRow,
+        h_providerSpecs providerRow h_providerRow, h_arithMul, h_providerEval⟩
+    · rw [h_providerEval] at h_nonpull h_nonzero
+      have h_rowConstraints :=
+        h_constraints providerTable h_providerTable providerRow h_providerRow
+      rw [h_arithMul] at h_rowConstraints
+      have h_rowOperations :=
+        (Component.constraintsHold_iff
+          (component := arithMulProviderComponent)
+          (providerTable.environment providerRow)).mp h_rowConstraints
+      have h_divBlock :=
+        ZiskFv.AirsClean.ArithMul.sharedDivBlockSpec_of_constraints
+          arithMulProviderComponent.rowOffset
+          (providerTable.environment providerRow)
+          arithMulProviderComponent.rowInputVar h_rowOperations
+      have h_div_bool := h_divBlock.1.2.2.2.2.2.2.1
+      have h_div_zero_bool := h_divBlock.1.2.2.2.2.1
+      have h_div :
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div = 0
+            ∨
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div = 1 := by
+        rcases mul_eq_zero.mp h_div_bool with h | h
+        · exact Or.inl h
+        · exact Or.inr (sub_eq_zero.mp h).symm
+      have h_div_zero :
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div_by_zero = 0
+            ∨
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div_by_zero = 1 := by
+        rcases mul_eq_zero.mp h_div_zero_bool with h | h
+        · exact Or.inl h
+        · exact Or.inr (sub_eq_zero.mp h).symm
+      rw [ZiskFv.AirsClean.ArithMul.eval_remainderBoundInteraction_mult]
+        at h_nonpull h_nonzero
+      rcases h_div with h_div | h_div <;>
+        rcases h_div_zero with h_div_zero | h_div_zero
+      · exact False.elim (h_nonzero (by simp [h_div, h_div_zero]))
+      · exact False.elim (h_nonzero (by simp [h_div, h_div_zero]))
+      · exact False.elim (h_nonpull (by simp [h_div, h_div_zero]))
+      · exact False.elim (h_nonzero (by simp [h_div, h_div_zero]))
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_staticBinaryExtension_row_eval_of_interaction_mem
+        h_binExt h_providerInteraction
+    right
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_binExt, h_providerEval⟩
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_staticBinary_row_eval_of_interaction_mem
+        h_binary h_providerInteraction
+    right
+    right
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_binary, h_providerEval⟩
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_binaryAdd_row_eval_of_interaction_mem
+        h_binaryAdd h_providerInteraction
+    right
+    right
+    right
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_binaryAdd, h_providerEval⟩
+
 /-- Spec-carrying full-ensemble operation-bus projection: an active
     unified-Main operation-bus interaction has a balanced same-message
     provider counterpart, and the Binary-family provider branches are
