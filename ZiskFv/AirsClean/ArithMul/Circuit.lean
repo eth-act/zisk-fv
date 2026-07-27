@@ -610,15 +610,19 @@ open ZiskFv.Channels.OperationBus (OpBusChannel)
 @[reducible] def arithMulCompleteElaborated :
     ElaboratedCircuit FGL ArithMulRow unit where
   name := "ArithComplete"
-  main := sharedMainComplete
+  main := sharedMainCompleteWithRemainderBound
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
+    expose OpBusChannel
+      [ OpBusChannel.pushed (primaryOpBusMessageExpr row)
+      , OpBusChannel.emitted (-(row.flags.div * (1 - row.flags.div_by_zero)))
+          (remainderBoundOpBusMessageExpr row) ]
   channelsLawful := by
-    simp only [circuit_norm, sharedMainComplete, mainWithArithTable, main,
-      primaryOpBusMessageExpr, OpBusChannel]
+    simp only [circuit_norm, sharedMainCompleteWithRemainderBound, sharedMainComplete,
+      mainWithArithTable, main, primaryOpBusMessageExpr, remainderBoundOpBusMessageExpr,
+      OpBusChannel]
 
 /-- Shared Arith provider with the complete audited generated local constraints. -/
 def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit :=
@@ -629,15 +633,22 @@ def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit :=
     ProverSpec := fun _ _ _ => True
     soundness := by
       intro offset env input_var input h_input _h_assumptions h_holds
-      have h_base := sharedMainComplete_base_soundness offset env input_var h_holds
+      have h_complete :
+          ConstraintsHold.Soundness env
+            ((sharedMainComplete input_var).operations offset) := by
+        change Operations.forAllNoOffset _
+          (((sharedMainComplete input_var).operations offset) ++ _) at h_holds
+        rw [Operations.forAllNoOffset_append] at h_holds
+        exact h_holds.1
+      have h_base := sharedMainComplete_base_soundness offset env input_var h_complete
       have h_old := circuitWithArithTable.soundness offset env input_var input
         h_input trivial h_base
       exact ⟨h_old.1, by
         unfold Operations.Requirements at h_old ⊢
         simp only [circuitWithArithTable, arithMulWithArithTableElaborated,
-          sharedMainComplete, mainWithArithTable, main, circuit_norm] at h_old ⊢
-        intro _hne
-        exact h_old.2 (by omega)⟩
+          sharedMainCompleteWithRemainderBound, sharedMainComplete,
+          mainWithArithTable, main, circuit_norm] at h_old ⊢
+        exact ⟨h_old.2, fun _ => trivial⟩⟩
     completeness := by
       circuit_proof_start_core
       exact False.elim h_assumptions }
@@ -655,15 +666,23 @@ theorem componentComplete_spec (env : Environment FGL) :
 set_option maxHeartbeats 1000000 in
 theorem componentComplete_interactionsWith_opBus :
     componentComplete.operations.interactionsWith OpBusChannel.toRaw =
-      [((OpBusChannel.pushed
-        (primaryOpBusMessageExpr componentComplete.rowInputVar)).toRaw)] := by
+      [ ((OpBusChannel.pushed
+          (primaryOpBusMessageExpr componentComplete.rowInputVar)).toRaw)
+      , ((OpBusChannel.emitted
+          (-(componentComplete.rowInputVar.flags.div *
+            (1 - componentComplete.rowInputVar.flags.div_by_zero)))
+          (remainderBoundOpBusMessageExpr componentComplete.rowInputVar)).toRaw) ] := by
   apply Component.interactionsWith_of_exposedChannels
   change ⟨OpBusChannel.toRaw,
-      [((OpBusChannel.pushed
-        (primaryOpBusMessageExpr componentComplete.rowInputVar)).toRaw)]⟩ ∈
+      [ ((OpBusChannel.pushed
+          (primaryOpBusMessageExpr componentComplete.rowInputVar)).toRaw)
+      , ((OpBusChannel.emitted
+          (-(componentComplete.rowInputVar.flags.div *
+            (1 - componentComplete.rowInputVar.flags.div_by_zero)))
+          (remainderBoundOpBusMessageExpr componentComplete.rowInputVar)).toRaw) ]⟩ ∈
     componentComplete.exposedChannels
   simp only [componentComplete, circuitComplete, arithMulCompleteElaborated,
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil,
-    primaryOpBusMessageExpr]
+    primaryOpBusMessageExpr, remainderBoundOpBusMessageExpr]
 
 end ZiskFv.AirsClean.ArithMul

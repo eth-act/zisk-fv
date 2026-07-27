@@ -74,6 +74,13 @@ open Goldilocks Circuit
       (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)))
   assertZero (row.flags.m32 * (row.chunks.b_2 + row.chunks.b_3 * 65536))
 
+@[circuit_norm] def sharedMainCompleteWithRemainderBound
+    (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
+  sharedMainComplete row
+  ZiskFv.Channels.OperationBus.OpBusChannel.emit
+    (-(row.flags.div * (1 - row.flags.div_by_zero)))
+    (remainderBoundOpBusMessageExpr row)
+
 /-- Forget the appended local assertions while retaining the lookup-aware base
 provider constraints. -/
 theorem sharedMainComplete_base_soundness
