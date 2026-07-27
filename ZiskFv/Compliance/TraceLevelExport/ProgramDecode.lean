@@ -1239,41 +1239,11 @@ structure ProgramDecode_jalr {numInstructions : Nat}
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions)
     (c : Claim_jalr trace i) where
-  h_idx : i.val + 1 < trace.mainTable.table.length
-  h_flag :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).flag
-      i.val = 0
-  h_a_mask_lo :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0
-      i.val = 4294967294
-  h_a_mask_hi :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1
-      i.val = 4294967295
-  h_c1_zero :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_1
-      i.val = 0
-  h_offset_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val = c.offset_bv.toNat
-  h_offset_even :
-    c.offset_bv &&& 1#64 = 0#64
-  h_no_fgl_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0 i.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-          i.val).val < GL_prime
-  bits : RomFlagBits
-  h_bits_ieo : bits.is_external_op = true
-  h_bits_m32 : bits.m32 = false
-  h_bits_set_pc : bits.set_pc = true
-  h_bits_store_pc : bits.store_pc = true
-  h_bits_store_ind : bits.store_ind = false
-  h_prog : ∀ j : Fin trace.programLength,
-        (trace.program j).line
-            = (mainOfTable trace.program trace.mainTable).pc i.val →
-          (trace.program j).op = ZiskFv.Trusted.OP_AND
-        ∧ (trace.program j).jmp_offset2 = 4
-        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
-        ∧ (trace.program j).flags = packFlags bits
+  /-- JALR is the first decode family whose one architectural instruction may
+      span multiple committed Main rows. Its program/decode evidence therefore
+      carries the fully checked lowering placement rather than projecting the
+      architectural index directly into Main. -/
+  toDecode : Decode_jalr trace i c
 
 /-- Per-row committed-program decode bundle for `sb`: exactly the inputs
     `Decode_sb_of_program` consumes besides `trace`/`i`/`c`. -/
@@ -1752,7 +1722,7 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | lui c => exact RomDecodeBinding.Decode_lui_of_program ziskTrace i c pd.h_idx pd.h_imm_lo_nat pd.h_imm_hi_nat pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | auipc c => exact RomDecodeBinding.Decode_auipc_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | jal c => exact RomDecodeBinding.Decode_jal_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | jalr c => exact RomDecodeBinding.Decode_jalr_of_program ziskTrace i c pd.h_idx pd.h_flag pd.h_a_mask_lo pd.h_a_mask_hi pd.h_c1_zero pd.h_offset_bridge pd.h_offset_even pd.h_no_fgl_wrap pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | jalr _ => exact pd.toDecode
   | sb c => exact RomDecodeBinding.Decode_sb_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | sh c => exact RomDecodeBinding.Decode_sh_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | sw c => exact RomDecodeBinding.Decode_sw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog

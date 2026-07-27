@@ -1013,43 +1013,59 @@ def sdLdOutsideDefectRegion :
   | ⟨6, _⟩ => sdLdJalOutsideDefectRegion
 
 theorem sdLdRootSoundness :
-    ∀ i : Fin 7, StepSound sdLdAcceptedTrace sdLdSailTrace i (sdLdZiskStep i) :=
+    ∀ i : Fin 7, StepSound sdLdAcceptedTrace sdLdSailTrace i
+      (sdLdZiskStep i)
+      (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
   root_soundness 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
     sdLdProgramDecodes sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion
 
 theorem sdLdAddiA0StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index
-      (sdLdZiskStep sdLdAddiA0Index) :=
+      (sdLdZiskStep sdLdAddiA0Index)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdAddiA0Index
+        (sdLdProgramDecodes sdLdAddiA0Index)) :=
   sdLdRootSoundness sdLdAddiA0Index
 
 theorem sdLdSlliStepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdSlliIndex
-      (sdLdZiskStep sdLdSlliIndex) :=
+      (sdLdZiskStep sdLdSlliIndex)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdSlliIndex
+        (sdLdProgramDecodes sdLdSlliIndex)) :=
   sdLdRootSoundness sdLdSlliIndex
 
 theorem sdLdAddiEightStepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiEightIndex
-      (sdLdZiskStep sdLdAddiEightIndex) :=
+      (sdLdZiskStep sdLdAddiEightIndex)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdAddiEightIndex
+        (sdLdProgramDecodes sdLdAddiEightIndex)) :=
   sdLdRootSoundness sdLdAddiEightIndex
 
 theorem sdLdAddiX2StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiX2Index
-      (sdLdZiskStep sdLdAddiX2Index) :=
+      (sdLdZiskStep sdLdAddiX2Index)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdAddiX2Index
+        (sdLdProgramDecodes sdLdAddiX2Index)) :=
   sdLdRootSoundness sdLdAddiX2Index
 
 theorem sdLdSdStepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdSdIndex
-      (sdLdZiskStep sdLdSdIndex) :=
+      (sdLdZiskStep sdLdSdIndex)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdSdIndex
+        (sdLdProgramDecodes sdLdSdIndex)) :=
   sdLdRootSoundness sdLdSdIndex
 
 theorem sdLdLdStepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdLdIndex
-      (sdLdZiskStep sdLdLdIndex) :=
+      (sdLdZiskStep sdLdLdIndex)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdLdIndex
+        (sdLdProgramDecodes sdLdLdIndex)) :=
   sdLdRootSoundness sdLdLdIndex
 
 theorem sdLdJalStepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdJalIndex
-      (sdLdZiskStep sdLdJalIndex) :=
+      (sdLdZiskStep sdLdJalIndex)
+      (rowDecode_of_programDecode sdLdAcceptedTrace sdLdJalIndex
+        (sdLdProgramDecodes sdLdJalIndex)) :=
   sdLdRootSoundness sdLdJalIndex
 
 end ZiskFv.Compliance.SdLdSpinRootSoundness

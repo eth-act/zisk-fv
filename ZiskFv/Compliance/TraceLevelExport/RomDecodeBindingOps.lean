@@ -4186,6 +4186,7 @@ def Decode_jalr_of_program
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions)
     (c : Claim_jalr trace i)
+    (h_offset_aligned : c.offset_bv = BitVec.signExtend 64 c.imm)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
     (h_flag :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).flag
@@ -4223,6 +4224,13 @@ def Decode_jalr_of_program
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_jalr trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  let physical : Fin trace.mainTable.table.length := ⟨i.val, h_lt⟩
+  let rows : JalrLoweringRows trace i c.imm c.offset_bv :=
+    { start := physical
+      finish := physical
+      architectural_start := rfl
+      finish_has_successor := h_idx
+      lowering := Or.inl ⟨rfl, h_offset_aligned⟩ }
   have h_dest := mainLuiDestinationFacts_of_program trace i h_lt bits c.rd h_bits_store_ind
     (fun j hline => by
       obtain ⟨_hpo, _hpj2, hpso, hpf⟩ := h_prog j hline
@@ -4241,7 +4249,8 @@ def Decode_jalr_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_true], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hjmp2.symm.trans hpj2⟩
   exact
-    { h_main_op := key.1
+    { rows := rows
+      h_main_op := key.1
       h_main_active := key.2.1
       h_m32 := key.2.2.1
       h_set_pc := key.2.2.2.1
@@ -4253,7 +4262,7 @@ def Decode_jalr_of_program
       h_a_mask_lo := h_a_mask_lo
       h_a_mask_hi := h_a_mask_hi
       h_c1_zero := h_c1_zero
-      h_jmp2 := key.2.2.2.2.2
+      h_jmp2 := Or.inl ⟨rfl, key.2.2.2.2.2⟩
       h_offset_bridge := h_offset_bridge
       h_offset_even := h_offset_even
       h_no_fgl_wrap := h_no_fgl_wrap }

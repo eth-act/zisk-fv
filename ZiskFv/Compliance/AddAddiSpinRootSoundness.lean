@@ -485,24 +485,33 @@ def addAddiSpinOutsideDefectRegion :
 
 theorem addAddiSpinRootSoundness :
     ∀ i : Fin 3,
-      StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace i (addAddiSpinZiskStep i) :=
+      StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace i
+        (addAddiSpinZiskStep i)
+        (rowDecode_of_programDecode addAddiSpinAcceptedTrace i
+          (addAddiSpinProgramDecodes i)) :=
   root_soundness 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
     addAddiSpinProgramDecodes addAddiSpinInputsAgree addAddiSpinBootSeed
     addAddiSpinOutsideDefectRegion
 
 theorem addAddiSpinAddStepSound :
     StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinAddIndex
-      (addAddiSpinZiskStep addAddiSpinAddIndex) :=
+      (addAddiSpinZiskStep addAddiSpinAddIndex)
+      (rowDecode_of_programDecode addAddiSpinAcceptedTrace addAddiSpinAddIndex
+        (addAddiSpinProgramDecodes addAddiSpinAddIndex)) :=
   addAddiSpinRootSoundness addAddiSpinAddIndex
 
 theorem addAddiSpinAddiStepSound :
     StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinAddiIndex
-      (addAddiSpinZiskStep addAddiSpinAddiIndex) :=
+      (addAddiSpinZiskStep addAddiSpinAddiIndex)
+      (rowDecode_of_programDecode addAddiSpinAcceptedTrace addAddiSpinAddiIndex
+        (addAddiSpinProgramDecodes addAddiSpinAddiIndex)) :=
   addAddiSpinRootSoundness addAddiSpinAddiIndex
 
 theorem addAddiSpinJalStepSound :
     StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinJalIndex
-      (addAddiSpinZiskStep addAddiSpinJalIndex) :=
+      (addAddiSpinZiskStep addAddiSpinJalIndex)
+      (rowDecode_of_programDecode addAddiSpinAcceptedTrace addAddiSpinJalIndex
+        (addAddiSpinProgramDecodes addAddiSpinJalIndex)) :=
   addAddiSpinRootSoundness addAddiSpinJalIndex
 
 end ZiskFv.Compliance.AddAddiSpinRootSoundness

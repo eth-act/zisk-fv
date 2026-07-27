@@ -41,6 +41,7 @@ open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable)
 open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
 open Interaction
+open Air.Flat
 
 -- The M-extension row-computing defs are reducible/semireducible; structure-field
 -- elaboration would otherwise whnf-reduce the full per-row ArithMul/ArithDiv
@@ -698,7 +699,7 @@ theorem no_memAlignSkippableProveForge_of_lw_rowOutside
       (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 :=
   h_outside.2.2
 
-def StepSound
+private def StepSoundWithoutDecode
     (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions) (i : Fin ziskTrace.numInstructions) :
     ZiskStep ziskTrace i → Prop
   | .sub c =>
@@ -1089,11 +1090,13 @@ def StepSound
       = ZiskFv.Channels.state_effect_via_channels
           ⟨Pilot.execRowOf ziskTrace i, [eRdLui ziskTrace i]⟩ (sailTrace i)
   | .jalr c =>
-      (do
-        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.JALR (c.imm, c.rs1, c.rd))) (sailTrace i)
-      = ZiskFv.Channels.state_effect_via_channels
-          ⟨Pilot.execRowOf ziskTrace i, [eRdLui ziskTrace i]⟩ (sailTrace i)
+      ∃ decode : Decode_jalr ziskTrace i c,
+        (do
+          Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+          LeanRV64D.Functions.execute (instruction.JALR (c.imm, c.rs1, c.rd))) (sailTrace i)
+        = ZiskFv.Channels.state_effect_via_channels
+            ⟨Pilot.execRowAt ziskTrace decode.rows.finish,
+              [eRdAt ziskTrace decode.rows.finish]⟩ (sailTrace i)
   | .sb c =>
       execute_instruction (instruction.STORE
           (c.sb_input.imm, regidx.Regidx c.sb_input.r2, regidx.Regidx c.sb_input.r1, 1))
@@ -1186,6 +1189,28 @@ def StepSound
       execute_instruction (instruction.FENCE (c.fm, c.fenceP, c.fenceS, c.rs, c.rd)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf ziskTrace i, []⟩ (sailTrace i)
 
+/-- Per-step soundness indexed by the checked row decode. JALR needs this
+    index because one architectural instruction may occupy an aligned singleton
+    Main row or an unaligned ADD/AND pair. Other families retain their existing
+    identity-row effects until the decode-driven export migration. -/
+def StepSound
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace i zs) : Prop :=
+  match zs, rd with
+  | .jalr c, decode =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.JALR (c.imm, c.rs1, c.rd))) (sailTrace i)
+      = ZiskFv.Channels.state_effect_via_channels
+          ⟨Pilot.execRowAt ziskTrace decode.rows.finish,
+            [eRdAt ziskTrace decode.rows.finish]⟩ (sailTrace i)
+  | other, _ => StepSoundWithoutDecode ziskTrace sailTrace i other
+
 /-- Per-row dispatch to the matching strengthened step theorem.
 
     The `hAvoidKnownBugs` parameter carries the per-row defect-exclusion obligation
@@ -1204,7 +1229,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
     (memEv : MemoryOpEvidenceFor ziskTrace sailTrace i zs)
     (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs) :
-    StepSound ziskTrace sailTrace i zs := by
+    StepSound ziskTrace sailTrace i zs rd := by
   cases zs with
   | sub c =>
       exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia)
@@ -1359,11 +1384,343 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
       exact stepStrong_auipc ziskTrace sailTrace i (toRowData_auipc c rd ia)
         (auipcRangeDomain_of_main ia.h_input_imm ia.h_pc_bridge hAvoidKnownBugs)
   | jal c =>
-      exact stepStrong_jal ziskTrace sailTrace i (toRowData_jal c rd ia)
-        (jalRangeDomain_of_main ia.h_input_imm ia.h_pc_bridge hAvoidKnownBugs)
+      let h_domain :=
+        jalRangeDomain_of_main ia.h_input_imm ia.h_pc_bridge hAvoidKnownBugs
+      let nextPC_val : BitVec 64 :=
+        ia.jal_input.PC + BitVec.signExtend 64 ia.jal_input.imm
+      have h_nextPC_option :
+          (PureSpec.execute_JAL_pure ia.jal_input).nextPC = .some nextPC_val :=
+        PureSpec.execute_JAL_pure_succ_nextPC ia.jal_input ia.h_success
+      have h_offset_bridge :
+          ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val).val =
+            (BitVec.signExtend 64 ia.jal_input.imm).toNat := by
+        simpa [ia.h_input_imm] using rd.h_jmp_offset1_imm
+      have h_no_wrap_fgl :
+          ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val
+            + ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val).val
+              < GL_prime := by
+        rw [ia.h_pc_bridge, h_offset_bridge]
+        exact h_domain.h_no_fgl_wrap
+      have h_spec := mainSpec_at ziskTrace sailTrace i
+      have h_subset := ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt
+        (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val h_spec
+      have h_flag :
+          (mainOfTable ziskTrace.program ziskTrace.mainTable).flag i.val = 1 :=
+        ZiskFv.Airs.Main.flag_eq_one_of_internal_op_zero
+          (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val rd.h_main_active
+          (by simpa [ZiskFv.Trusted.OP_FLAG] using rd.h_main_op)
+          h_subset.2.2.2.2.1
+      have h_nextPC_matches :
+          (register_type_pc_equiv ▸
+              (BitVec.ofNat 64 ((Pilot.execRowOf ziskTrace i)[1]!.pc).val))
+            = nextPC_val := by
+        simpa [nextPC_val] using jal_nextPC_matches_of_physical ziskTrace i
+          ia.jal_input.PC ia.jal_input.imm rd.h_idx rd.h_set_pc h_flag
+          ia.h_pc_bridge h_offset_bridge h_no_wrap_fgl
+      have h_not_throws :
+          (PureSpec.execute_JAL_pure ia.jal_input).throws = false :=
+        PureSpec.execute_JAL_pure_succ_throws ia.jal_input ia.h_success
+      have h_rd_idx :
+          ia.jal_input.rd =
+            Transpiler.wrap_to_regidx (eRdLui ziskTrace i).ptr :=
+        ia.h_input_rd.trans
+          (eRdLui_rd_idx_of_decode (trace := ziskTrace) (i := i)
+            (rd := c.rd) rd.h_store_ind rd.h_store_offset)
+      exact construction_jal_sound_claimed_dead ziskTrace sailTrace i
+        ia.jal_input c.imm c.rd ia.misa_val nextPC_val
+        rd.h_main_op rd.h_main_active rd.h_m32 rd.h_set_pc rd.h_store_pc
+        rd.h_jmp2 ia.h_pc_bridge (Pilot.execRowOf ziskTrace i)
+        (by rfl) (by rfl) (by rfl) h_nextPC_matches
+        ia.h_input_rd ia.h_input_pc ia.h_input_misa ia.h_misa_c ia.h_success
+        h_nextPC_option h_rd_idx
+        ia.h_input_imm h_not_throws h_domain.h_pc_bound
+        h_domain.h_pc_offset_lt_2_32
   | jalr c =>
-      exact stepStrong_jalr ziskTrace sailTrace i (toRowData_jalr c rd ia)
-        (jalrRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+      let h_domain :=
+        jalrRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs
+      set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable with hm
+      set state := sailTrace i with hstate
+      let finish := rd.rows.finish
+      let r := finish.val
+      let e_rd := eRdAt ziskTrace finish
+      -- (a) Main per-row Spec ⇒ the JALR Main constraint subset.
+      have h_spec := mainSpec_at_physical ziskTrace finish
+      have h_add_subset : ZiskFv.Airs.Main.add_subset_holds m r :=
+        ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt m r h_spec
+      obtain ⟨_h_c0, _h_b0, _h_c1, _h_b1, _h_set_flag, _h_clear_flag, h_disjoint,
+          h_flag_bool, h_ext_bool⟩ := h_add_subset
+      -- (a) the handshake is definitional: pick `next_pc` as its RHS.
+      let next_pc : FGL :=
+        m.set_pc r * (m.c_0 r + m.jmp_offset1 r)
+          + (1 - m.set_pc r) * (m.pc r + m.jmp_offset2 r)
+          + m.flag r * (m.jmp_offset1 r - m.jmp_offset2 r)
+      have h_handshake :
+          ZiskFv.Airs.Main.pc_handshake_with_next_pc m r next_pc := rfl
+      have h_jalr_subset :
+          ZiskFv.Airs.Main.flag_boolean m r
+          ∧ ZiskFv.Airs.Main.is_external_op_boolean m r
+          ∧ ZiskFv.Airs.Main.flag_set_pc_disjoint m r
+          ∧ ZiskFv.Airs.Main.pc_handshake_with_next_pc m r next_pc :=
+        ⟨h_flag_bool, h_ext_bool, h_disjoint, h_handshake⟩
+      -- (a) `StorePcMemoryWitness` from the real Clean Main `c` message row.
+      have h_row_core :
+          (mainRowWithRomAt ziskTrace finish).core =
+            ZiskFv.AirsClean.Main.rowAt m r := by
+        have := ZiskFv.AirsClean.FullEnsemble.rowAt_mainOfTable
+          ziskTrace.program ziskTrace.mainTable finish
+        simpa [mainRowWithRomAt, m, r, finish,
+          ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get (idx := finish)] using this.symm
+      let store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r e_rd :=
+        { row := mainRowWithRomAt ziskTrace finish
+          row_eq := h_row_core
+          rd_write_match := ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _ }
+      let pins : ZiskFv.Compliance.MainRowPins m r 1 OP_AND :=
+        ⟨rd.h_main_active, rd.h_main_op⟩
+      -- (b) Binary `OP_AND` provider witnesses for the JALR row (mirrors
+      --     `stepStrong_and`): the static Binary table row backing the masked-AND.
+      obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
+          h_component, h_table_spec, h_match⟩ :=
+        main_request_logic_provided_at
+          ziskTrace finish rd.h_main_active (Or.inl rd.h_main_op)
+      let providerInput :=
+        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (providerTable.environment providerRow)
+      obtain ⟨h_core, h_facts⟩ :=
+        ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+          h_component h_table_spec h_provider_row
+      have h_static :
+          ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
+        ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+          h_component h_table_spec h_provider_row
+      have h_m32_zero : m.m32 r = 0 := rd.h_m32
+      have h_emit :
+          providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
+            (ZiskFv.Airs.Tables.BinaryTable.OP_AND : FGL) := by
+        have h_match_op := h_match
+        simp only [ZiskFv.Airs.OperationBus.matches_entry,
+          ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_op
+        have h_op_match :
+            m.op r = providerInput.chain.b_op + 16 * providerInput.mode.mode32 :=
+          h_match_op.2.1
+        rw [← h_op_match]
+        simpa [ZiskFv.Airs.Tables.BinaryTable.OP_AND, ZiskFv.Trusted.OP_AND] using
+          rd.h_main_op
+      obtain ⟨h_row_m32, h_bop, _⟩ :=
+        ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+          providerInput h_static ZiskFv.Airs.Tables.BinaryTable.OP_AND (by
+            simp [ZiskFv.Airs.Tables.BinaryTable.OP_AND])
+          h_core h_emit
+      have h_out :=
+        ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+          providerInput h_facts
+          ZiskFv.Airs.Tables.BinaryTable.OP_AND h_core h_row_m32 h_bop
+      have h_matches :
+          ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
+            providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
+        allByteMatchesOfStaticOut64_local h_out
+      -- (c) lane projections: `a = mask`, `b = operand` (committed `b`-lane packing),
+      --     and the carry-free `c` lanes (from `flag = 0`).
+      have h_a_mask :
+          ZiskFv.EquivCore.Add.binaryRowA64 providerInput = 0xFFFFFFFFFFFFFFFE#64 := by
+        have h_a_pack : ZiskFv.EquivCore.Add.binaryRowA64 providerInput
+            = BitVec.ofNat 64 ((m.a_0 r).val + (m.a_1 r).val * 4294967296) := by
+          simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+            (ZiskFv.EquivCore.Bridge.Binary.main_a_packing_of_match
+              m providerInput r h_matches h_m32_zero h_match).symm
+        rw [h_a_pack, rd.h_a_mask_lo, rd.h_a_mask_hi]
+        decide
+      have h_b_operand :
+          ZiskFv.EquivCore.Add.binaryRowB64 providerInput
+            = BitVec.ofNat 64 ((m.b_0 r).val + (m.b_1 r).val * 4294967296) := by
+        simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+          (ZiskFv.EquivCore.Bridge.Binary.main_b_packing_of_match
+            m providerInput r h_matches h_m32_zero h_match).symm
+      obtain ⟨h_match_clo, h_match_chi⟩ :=
+        ZiskFv.EquivCore.Bridge.Binary.main_c_lanes_carryfree_of_match
+          m providerInput r h_match rd.h_flag
+      obtain ⟨hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
+        ZiskFv.EquivCore.Bridge.Binary.cByte_ranges_of_all_byte_matches_row
+          providerInput h_matches
+      let nextPC_val : BitVec 64 :=
+        0xFFFFFFFFFFFFFFFE &&&
+          (ia.jalr_input.rs1_val + BitVec.signExtend 64 ia.jalr_input.imm)
+      have h_nextPC_option :
+          (PureSpec.execute_JALR_pure ia.jalr_input).nextPC = .some nextPC_val :=
+        PureSpec.execute_JALR_pure_succ_nextPC ia.jalr_input ia.h_success
+      have h_nextPC_disch :
+          (register_type_pc_equiv ▸
+              (BitVec.ofNat 64 ((Pilot.execRowAt ziskTrace finish)[1]!.pc).val))
+            = nextPC_val := by
+        have hoo :
+            BitVec.ofNat 64 ((m.b_0 r).val + (m.b_1 r).val * 4294967296)
+                + c.offset_bv
+              = ia.jalr_input.rs1_val
+                + BitVec.signExtend 64 ia.jalr_input.imm := by
+          rcases rd.rows.lowering with h_aligned | h_unaligned
+          · obtain ⟨h_start_finish, h_offset⟩ := h_aligned
+            have h_rs1 := ia.h_rs1_start
+            rw [← rd.rows.architectural_start, h_start_finish] at h_rs1
+            rw [h_offset, ia.h_input_imm, h_rs1]
+          · obtain ⟨h_adj, h_offset, h_add_op, h_add_active, h_add_m32,
+                _h_start_flag, _h_start_set_pc, _h_start_jmp2, h_start_a,
+                _h_start_b_reg, h_finish_b_imm, h_finish_b_mem,
+                h_finish_b_ind, h_finish_b_reg⟩ := h_unaligned
+            have h_add := main_add_packed_result_at ziskTrace rd.rows.start
+              h_add_active h_add_op h_add_m32
+            let transitionIndex : Fin ziskTrace.mainTable.length :=
+              ⟨finish.val, by simpa only [Table.length, Table.table_length]
+                using finish.isLt⟩
+            have h_trans := ziskTrace.transitions_hold ziskTrace.mainTable
+              ziskTrace.mainTable_mem transitionIndex
+            rw [ziskTrace.mainTable_component] at h_trans
+            have h_transition :
+                ZiskFv.AirsClean.Main.transitionBetween
+                  ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      ziskTrace.programLength ziskTrace.program).rowInput
+                    (ziskTrace.mainTable.previousEnvironment transitionIndex))
+                  ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      ziskTrace.programLength ziskTrace.program).rowInput
+                    (ziskTrace.mainTable.environmentAt transitionIndex)) :=
+              transitionBetween_of_pcHandshakeTransition
+                ziskTrace.programLength ziskTrace.program transitionIndex.val
+                (ziskTrace.mainTable.previousEnvironment transitionIndex)
+                (ziskTrace.mainTable.environmentAt transitionIndex) h_trans
+            have h_positive : 0 < transitionIndex.val := by
+              dsimp [transitionIndex]
+              omega
+            have h_prev_idx :
+                transitionIndex.val - 1 = rd.rows.start.val := by
+              dsimp [transitionIndex]
+              omega
+            have h_previous :=
+              rowInputPrevious_eq_mainTableRowAtOrZero
+                ziskTrace.program ziskTrace.mainTable transitionIndex h_positive
+            have h_current :=
+              rowInputAt_eq_mainTableRowAtOrZero
+                ziskTrace.program ziskTrace.mainTable transitionIndex
+            rw [h_previous, h_current] at h_transition
+            rw [h_prev_idx] at h_transition
+            have h_between :
+                ZiskFv.AirsClean.Main.transitionBetween
+                  (mainRowWithRomAt ziskTrace rd.rows.start)
+                  (mainRowWithRomAt ziskTrace finish) := by
+              exact h_transition
+            have h_copy := source_c_copy_lanes_of_between
+              (mainRowWithRomAt ziskTrace rd.rows.start)
+              (mainRowWithRomAt ziskTrace finish) h_between
+              (by
+                have h_seg :=
+                  ziskTrace.mainTable_fixed.segment_l1_succ rd.rows.start.val
+                    (by simpa [h_adj] using finish.isLt)
+                rw [h_adj] at h_seg
+                exact h_seg)
+              h_finish_b_imm h_finish_b_mem h_finish_b_ind h_finish_b_reg
+            exact jalr_unaligned_operand_target m i.val rd.rows.start.val r
+              c.offset_bv c.imm ia.jalr_input.imm ia.jalr_input.rs1_val
+              h_offset h_add h_copy h_start_a rd.rows.architectural_start
+              ia.h_rs1_start ia.h_input_imm
+        have h_exec :=
+          ZiskFv.Compliance.Pilot.jalr_setpc_nextPC_discharged
+            ziskTrace finish providerInput
+            (BitVec.ofNat 64 ((m.b_0 r).val + (m.b_1 r).val * 4294967296))
+            c.offset_bv
+            rd.h_idx rd.h_set_pc rd.h_flag
+            h_matches h_match_clo h_match_chi h_a_mask h_b_operand
+            hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+            rd.h_c1_zero rd.h_offset_bridge
+            rd.h_offset_even rd.h_no_fgl_wrap
+        exact jalr_nextPC_matches_of_target
+          (register_type_pc_equiv ▸
+            BitVec.ofNat 64 ((Pilot.execRowAt ziskTrace finish)[1]!.pc).val)
+          (BitVec.ofNat 64 ((m.b_0 r).val + (m.b_1 r).val * 4294967296))
+          c.offset_bv
+          (ia.jalr_input.rs1_val
+            + BitVec.signExtend 64 ia.jalr_input.imm)
+          h_exec hoo
+      let promises : ZiskFv.EquivCore.Promises.JumpPromises
+          state ia.jalr_input.PC ia.jalr_input.rd ia.misa_val
+          (PureSpec.execute_JALR_pure ia.jalr_input).success
+          (PureSpec.execute_JALR_pure ia.jalr_input).nextPC
+          c.rd (Pilot.execRowAt ziskTrace finish) e_rd nextPC_val :=
+        { input_rd_eq := ia.h_input_rd
+          input_pc_eq := ia.h_input_pc
+          input_misa_eq := ia.h_input_misa
+          misa_c_zero := ia.h_misa_c
+          -- exec artifacts: now `rfl` (`Pilot.execRowOf` is a concrete two-entry list).
+          exec_len := by rfl
+          e0_mult := by rfl
+          e1_mult := by rfl
+          nextPC_matches := h_nextPC_disch
+          rd_mult := by rfl
+          rd_as := by rfl
+          success := ia.h_success
+          nextPC_option := h_nextPC_option
+          rd_idx := ia.h_input_rd.trans
+            (eRdAt_rd_idx_of_decode (trace := ziskTrace) (i := finish)
+              (rd := c.rd) rd.h_store_ind rd.h_store_offset) }
+      have h_link_bridge :
+          (m.pc finish.val + m.jmp_offset2 finish.val).val =
+            (ia.jalr_input.PC + 4#64).toNat := by
+        dsimp only [finish]
+        rcases rd.rows.lowering with h_aligned | h_unaligned
+        · obtain ⟨h_start_finish, _⟩ := h_aligned
+          have hsf : rd.rows.start.val = finish.val :=
+            congrArg Fin.val h_start_finish
+          have h_finish_jmp2 : m.jmp_offset2 finish.val = 4 := by
+            rcases rd.h_jmp2 with h | h
+            · exact h.2
+            · rw [hsf] at h
+              omega
+          have h_pc : (m.pc finish.val).val =
+              ia.jalr_input.PC.toNat := by
+            rw [← hsf, rd.rows.architectural_start]
+            simpa [m] using ia.h_pc_bridge
+          exact jalr_link_bridge_scalar (m.pc finish.val)
+            (m.pc finish.val) (m.jmp_offset2 finish.val) ia.jalr_input.PC
+            (by rw [h_finish_jmp2]) h_pc h_domain.h_pc_bound
+        · have h_adj := h_unaligned.1
+          have h_start_flag := h_unaligned.2.2.2.2.2.1
+          have h_start_set_pc := h_unaligned.2.2.2.2.2.2.1
+          have h_start_jmp2 := h_unaligned.2.2.2.2.2.2.2.1
+          have h_finish_jmp2 : m.jmp_offset2 finish.val = 3 := by
+            rcases rd.h_jmp2 with h | h
+            · rw [h.1] at h_adj
+              omega
+            · exact h.2
+          have h_start_pc : (m.pc rd.rows.start.val).val =
+              ia.jalr_input.PC.toNat := by
+            rw [rd.rows.architectural_start]
+            simpa [m] using ia.h_pc_bridge
+          have h_seg := ziskTrace.mainTable_fixed.segment_l1_succ
+            rd.rows.start.val (by simpa [h_adj] using finish.isLt)
+          have h_hand := ziskTrace.mainTransition_to_next_pc rd.rows.start.val
+            (by simpa [h_adj] using finish.isLt) h_seg
+          have h_pc_step := ZiskFv.Airs.Main.pc_handshake_branch m
+            rd.rows.start.val (m.pc (rd.rows.start.val + 1))
+            h_start_set_pc h_hand
+          rw [h_start_flag, h_start_jmp2] at h_pc_step
+          simp only [zero_mul, add_zero] at h_pc_step
+          have h_total :
+              m.pc finish.val + m.jmp_offset2 finish.val =
+                m.pc rd.rows.start.val + 4 := by
+            rw [h_finish_jmp2]
+            have h_finish_pc :
+                m.pc finish.val = m.pc rd.rows.start.val + 1 := by
+              simpa [h_adj] using h_pc_step
+            rw [h_finish_pc]
+            ring
+          exact jalr_link_bridge_scalar (m.pc rd.rows.start.val)
+            (m.pc finish.val) (m.jmp_offset2 finish.val) ia.jalr_input.PC
+            h_total h_start_pc h_domain.h_pc_bound
+      exact ZiskFv.Compliance.equiv_JALR
+        state ia.jalr_input c.imm c.rs1 c.rd
+        ia.misa_val ia.mseccfg (Pilot.execRowAt ziskTrace finish)
+        e_rd nextPC_val m r next_pc store_pc_mem pins rd.h_flag
+        rd.h_m32 rd.h_set_pc rd.h_store_pc h_jalr_subset
+        promises ia.h_input_imm ia.h_input_rs1
+        ia.h_cur_privilege ia.h_mseccfg h_link_bridge
+        h_domain.h_pc_bound h_domain.h_pc_offset_lt_2_32
+
   | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) memEv hAvoidKnownBugs
   | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) memEv hAvoidKnownBugs
   | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) memEv hAvoidKnownBugs

@@ -61,7 +61,9 @@ theorem root_soundness
     (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
-    ∀ i : Fin numInstructions, StepSound ziskTrace sailTrace i (ziskStep i) :=
+    ∀ i : Fin numInstructions,
+      StepSound ziskTrace sailTrace i (ziskStep i)
+        (rowDecode_of_programDecode ziskTrace i (programDecodes i)) :=
   fun i =>
     stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
       (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i)
