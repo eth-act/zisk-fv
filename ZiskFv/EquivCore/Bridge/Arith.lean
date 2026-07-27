@@ -3125,6 +3125,90 @@ lemma div_w_chain_witnesses
 
 end WChainWitnesses
 
+/-! ## Signed DIV remainder-sign derivation -/
+
+/-- The signed remainder and dividend have compatible signs on a signed DIV row.
+
+    The Arith table pins the remainder sign to the dividend sign unless the
+    remainder chunks are all zero.  Indexed Arith-range evidence makes `nr` the
+    actual sign bit of the packed remainder, while chunk ranges keep both packed
+    values below `2^64`.  Thus the two signed integers have the same weak sign,
+    or the remainder is zero. -/
+theorem arith_div_remainder_sign
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_ranges : ArithDivChunkRangesAt v r)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186)
+    (h_np_bool : v.np r = 0 ∨ v.np r = 1)
+    (h_nr_bool : v.nr r = 0 ∨ v.nr r = 1)
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r)
+        ∨ (v.d_0 r).val = 0 ∧ (v.d_1 r).val = 0
+          ∧ (v.d_2 r).val = 0 ∧ (v.d_3 r).val = 0)
+    (r1 : BitVec 64)
+    (h_rs1_value :
+      r1.toInt =
+        (ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.c_0 r).val (v.c_1 r).val (v.c_2 r).val (v.c_3 r).val : ℤ)
+          - (v.np r).val * (2 : ℤ) ^ 64) :
+    0 ≤
+      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r).val (v.d_1 r).val (v.d_2 r).val (v.d_3 r).val : ℤ)
+          - (v.nr r).val * (2 : ℤ) ^ 64) * r1.toInt := by
+  rcases h_ranges with
+    ⟨_ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+  have hpol :=
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_signed_range_polarity_pins
+      v r h_table h_op
+  let C := ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (v.c_0 r).val (v.c_1 r).val (v.c_2 r).val (v.c_3 r).val
+  let D := ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (v.d_0 r).val (v.d_1 r).val (v.d_2 r).val (v.d_3 r).val
+  change r1.toInt = (C : ℤ) - (v.np r).val * (2 : ℤ) ^ 64 at h_rs1_value
+  change 0 ≤ ((D : ℤ) - (v.nr r).val * (2 : ℤ) ^ 64) * r1.toInt
+  have hC : C < 2 ^ 64 :=
+    ZiskFv.PackedBitVec.MulNoWrap.packed4_lt_2_64 hc0 hc1 hc2 hc3
+  have hD : D < 2 ^ 64 :=
+    ZiskFv.PackedBitVec.MulNoWrap.packed4_lt_2_64 hd0 hd1 hd2 hd3
+  have h_nr_msb :
+      (v.nr r).val = if 2 ^ 63 ≤ D then 1 else 0 := by
+    rcases h_nr_bool with hnr | hnr
+    · exact ZiskFv.AirsClean.ArithTableProjections.sign_eq_msb64_of_pos_range_lookup
+        hnr hd0 hd1 hd2 (hpol.2.2.1 hnr) h_indexed.2.2.2.2.2.2.2
+    · exact ZiskFv.AirsClean.ArithTableProjections.sign_eq_msb64_of_neg_range_lookup
+        hnr (hpol.2.2.2 hnr) h_indexed.2.2.2.2.2.2.2
+  rcases h_nr_pin with h_same | h_zero
+  · rcases h_nr_bool with hnr | hnr <;> rcases h_np_bool with hnp | hnp
+    · rw [hnr, h_rs1_value, hnp]
+      simp only [Fin.val_zero, Nat.cast_zero, zero_mul, sub_zero]
+      positivity
+    · rw [hnr, hnp] at h_same
+      norm_num [ZiskFv.PackedBitVec.SignedChunkLift.toIntZ] at h_same
+    · rw [hnr, hnp] at h_same
+      norm_num [ZiskFv.PackedBitVec.SignedChunkLift.toIntZ] at h_same
+    · rw [hnr, h_rs1_value, hnp]
+      simp only [Fin.val_one, Nat.cast_one, one_mul]
+      have hD_nonneg : (0 : ℤ) ≤ D := by positivity
+      have hC_nonneg : (0 : ℤ) ≤ C := by positivity
+      norm_num at hD hC ⊢
+      nlinarith
+  · obtain ⟨hd0z, hd1z, hd2z, hd3z⟩ := h_zero
+    have hDz : D = 0 := by
+      simp [D, hd0z, hd1z, hd2z, hd3z,
+        ZiskFv.PackedBitVec.MulNoWrap.packed4]
+    have hnr : v.nr r = 0 := by
+      rcases h_nr_bool with hnr | hnr
+      · exact hnr
+      · rw [hnr, hDz] at h_nr_msb
+        norm_num at h_nr_msb
+    rw [hDz, hnr]
+    norm_num
+
 /-! ## Non-vacuity probe — the faithful M-ext carry bound accepts real carries
 
 These committed `example`s witness that the carry-range slot the rewired
