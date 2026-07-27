@@ -199,6 +199,34 @@ structure ArithDivSignedRemainderBoundWitness
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
       (opBus_row_Binary binary r_binary)
 
+/-- The matched Binary row for a signed remainder-bound request carries the
+    selected comparison opcode and the asserted final comparison flag. -/
+lemma arith_div_signed_remainder_bound_selector_pins
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r) :
+    w.binary.carry_7 w.r_binary = 1
+      ∧ (a.nr r = 0 → a.nb r = 0 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 6)
+      ∧ (a.nr r = 1 → a.nb r = 0 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 80)
+      ∧ (a.nr r = 0 → a.nb r = 1 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 81)
+      ∧ (a.nr r = 1 → a.nb r = 1 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 8) := by
+  have h_match := w.remainder_bound_match
+  simp only [matches_entry, ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
+    opBus_row_Binary] at h_match
+  obtain ⟨_, h_op, _, _, _, _, _, _, h_flag, _, _, _⟩ := h_match
+  refine ⟨h_flag.symm, ?_, ?_, ?_, ?_⟩
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+
 /-- Project an ArithDiv remainder-bound witness through the matched Binary
     provider row. The conclusion is still expressed in Binary byte lanes;
     later lemmas must identify those lanes with ArithDiv's `d[]` and `b[]`
