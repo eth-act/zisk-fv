@@ -79,7 +79,215 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
-set_option maxHeartbeats 2000000
+set_option maxHeartbeats 32000000
+set_option maxRecDepth 2048
+
+private lemma byte_ranges_of_static_match
+    {op_val : ℕ} {a b c : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_wf op_val a b c) :
+    a.val < 256 ∧ b.val < 256 ∧ c.val < 256 := by
+  obtain ⟨e, h_wf, _, h_a, h_b, h_c⟩ := h
+  rcases h_wf.1 with ⟨ha, hb, hc, _⟩
+  exact ⟨by simpa [h_a] using ha, by simpa [h_b] using hb,
+    by simpa [h_c] using hc⟩
+
+/-- A static Binary ADD row computes the packed 64-bit sum. -/
+private lemma static_binary_add_packed
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (out : ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0
+      ZiskFv.Airs.Tables.BinaryTable.OP_ADD) :
+    BitVec.ofNat 64
+        (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+          + row.aBytes.free_in_a_2.val * 65536 + row.aBytes.free_in_a_3.val * 16777216
+          + row.aBytes.free_in_a_4.val * 4294967296
+          + row.aBytes.free_in_a_5.val * 1099511627776
+          + row.aBytes.free_in_a_6.val * 281474976710656
+          + row.aBytes.free_in_a_7.val * 72057594037927936)
+      +
+      BitVec.ofNat 64
+        (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+          + row.bBytes.free_in_b_2.val * 65536 + row.bBytes.free_in_b_3.val * 16777216
+          + row.bBytes.free_in_b_4.val * 4294967296
+          + row.bBytes.free_in_b_5.val * 1099511627776
+          + row.bBytes.free_in_b_6.val * 281474976710656
+          + row.bBytes.free_in_b_7.val * 72057594037927936)
+      =
+      BitVec.ofNat 64
+        (row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+          + row.cBytes.free_in_c_2.val * 65536 + row.cBytes.free_in_c_3.val * 16777216
+          + row.cBytes.free_in_c_4.val * 4294967296
+          + row.cBytes.free_in_c_5.val * 1099511627776
+          + row.cBytes.free_in_c_6.val * 281474976710656
+          + row.cBytes.free_in_c_7.val * 72057594037927936) := by
+  have h_matches := allByteMatchesOfStaticOut64_local out
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨ha0, hb0, hc0⟩ := byte_ranges_of_static_match h0
+  obtain ⟨ha1, hb1, hc1⟩ := byte_ranges_of_static_match h1
+  obtain ⟨ha2, hb2, hc2⟩ := byte_ranges_of_static_match h2
+  obtain ⟨ha3, hb3, hc3⟩ := byte_ranges_of_static_match h3
+  obtain ⟨ha4, hb4, hc4⟩ := byte_ranges_of_static_match h4
+  obtain ⟨ha5, hb5, hc5⟩ := byte_ranges_of_static_match h5
+  obtain ⟨ha6, hb6, hc6⟩ := byte_ranges_of_static_match h6
+  obtain ⟨ha7, hb7, hc7⟩ := byte_ranges_of_static_match h7
+  exact ZiskFv.Airs.Binary.binary_add_chunks_eq_bv_add_of_wf
+    row.aBytes.free_in_a_0 row.aBytes.free_in_a_1 row.aBytes.free_in_a_2 row.aBytes.free_in_a_3
+    row.aBytes.free_in_a_4 row.aBytes.free_in_a_5 row.aBytes.free_in_a_6 row.aBytes.free_in_a_7
+    row.bBytes.free_in_b_0 row.bBytes.free_in_b_1 row.bBytes.free_in_b_2 row.bBytes.free_in_b_3
+    row.bBytes.free_in_b_4 row.bBytes.free_in_b_5 row.bBytes.free_in_b_6 row.bBytes.free_in_b_7
+    row.cBytes.free_in_c_0 row.cBytes.free_in_c_1 row.cBytes.free_in_c_2 row.cBytes.free_in_c_3
+    row.cBytes.free_in_c_4 row.cBytes.free_in_c_5 row.cBytes.free_in_c_6 row.cBytes.free_in_c_7
+    0 row.chain.carry_0 row.chain.carry_1 row.chain.carry_2
+    row.chain.carry_3 row.chain.carry_4 row.chain.carry_5 row.chain.carry_6
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row row row.chain.carry_0)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row row row.chain.carry_1)
+    (ZiskFv.AirsClean.Binary.lookupFlags012Row row row.chain.carry_2)
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row row row.chain.carry_3)
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row row row.chain.carry_4)
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row row row.chain.carry_5)
+    (ZiskFv.AirsClean.Binary.lookupFlags3456Row row row.chain.carry_6)
+    (ZiskFv.AirsClean.Binary.lookupFlags7Row row)
+    (2 * row.mode.use_first_byte) 0 0 row.mode.mode32 0 0 0 (1 - row.mode.mode32)
+    out.chain_0 out.chain_1 out.chain_2 out.chain_3
+    out.chain_4 out.chain_5 out.chain_6 out.chain_7
+    ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7 hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+    hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
+    out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
+    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
+    out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
+
+/-- Circuit-only ADD semantics from the static Binary provider shape. -/
+theorem main_add_packed_result_of_static_provider
+    (m : Valid_Main FGL FGL)
+    (i : Nat)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_op : m.op i = OP_ADD)
+    (h_m32 : m.m32 i = 0)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_spec : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_match : matches_entry
+      (opBus_row_Main m i)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1)) :
+    BitVec.ofNat 64
+        ((m.c_0 i).val + (m.c_1 i).val * 4294967296)
+      =
+      BitVec.ofNat 64
+        ((m.a_0 i).val + (m.a_1 i).val * 4294967296)
+      +
+      BitVec.ofNat 64
+        ((m.b_0 i).val + (m.b_1 i).val * 4294967296) := by
+  have h_emit : row.chain.b_op + 16 * row.mode.mode32 =
+      (ZiskFv.Airs.Tables.BinaryTable.OP_ADD : FGL) := by
+    have hm := h_match
+    simp only [matches_entry, opBus_row_Main] at hm
+    rw [← hm.2.1]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD, OP_ADD] using h_op
+  obtain ⟨h_row_m32, h_bop, _⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      row h_spec ZiskFv.Airs.Tables.BinaryTable.OP_ADD
+      (by simp [ZiskFv.Airs.Tables.BinaryTable.OP_ADD]) h_core h_emit
+  have out :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+      row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_ADD h_core h_row_m32 h_bop
+  have h_carry_bool :
+      row.chain.carry_7 * (1 - row.chain.carry_7) = 0 := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_core.2.1
+  have h_matches := allByteMatchesOfStaticOut64_local out
+  have ha := ZiskFv.EquivCore.Bridge.Binary.main_a_packing_of_match
+    m row i h_matches h_m32 h_match
+  have hb := ZiskFv.EquivCore.Bridge.Binary.main_b_packing_of_match
+    m row i h_matches h_m32 h_match
+  have hcarry : row.chain.carry_7 = 0 := by
+    exact ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_ADD_of_static_chain
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0 out h_core h_carry_bool
+  have hflag : m.flag i = 0 := by
+    have hm := h_match
+    simp only [matches_entry, opBus_row_Main,
+      ZiskFv.AirsClean.Binary.opBusMessage,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry] at hm
+    exact hm.2.2.2.2.2.2.2.2.1.trans hcarry
+  obtain ⟨hc0, hc1⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.main_c_lanes_carryfree_of_match
+      m row i h_match hflag
+  rcases h_matches with ⟨hm0, hm1, hm2, hm3, hm4, hm5, hm6, hm7⟩
+  obtain ⟨_, _, hc0_lt⟩ := byte_ranges_of_static_match hm0
+  obtain ⟨_, _, hc1_lt⟩ := byte_ranges_of_static_match hm1
+  obtain ⟨_, _, hc2_lt⟩ := byte_ranges_of_static_match hm2
+  obtain ⟨_, _, hc3_lt⟩ := byte_ranges_of_static_match hm3
+  obtain ⟨_, _, hc4_lt⟩ := byte_ranges_of_static_match hm4
+  obtain ⟨_, _, hc5_lt⟩ := byte_ranges_of_static_match hm5
+  obtain ⟨_, _, hc6_lt⟩ := byte_ranges_of_static_match hm6
+  obtain ⟨_, _, hc7_lt⟩ := byte_ranges_of_static_match hm7
+  have hc_lo_lt :
+      row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+        + row.cBytes.free_in_c_2.val * 65536
+        + row.cBytes.free_in_c_3.val * 16777216 < GL_prime := by omega
+  have hc_hi_lt :
+      row.cBytes.free_in_c_4.val + row.cBytes.free_in_c_5.val * 256
+        + row.cBytes.free_in_c_6.val * 65536
+        + row.cBytes.free_in_c_7.val * 16777216 < GL_prime := by omega
+  rw [hc0, hc1, ha, hb]
+  simp only [Fin.val_add, Fin.val_mul]
+  norm_num at ⊢
+  rw [Nat.mod_eq_of_lt hc_lo_lt, Nat.mod_eq_of_lt hc_hi_lt]
+  simpa [Nat.add_assoc, Nat.mul_assoc, Nat.mul_add, Nat.add_mul] using
+    (static_binary_add_packed row out).symm
+
+/-- Circuit-only ADD semantics from the dedicated BinaryAdd provider shape. -/
+theorem main_add_packed_result_of_binaryadd_provider
+    (m : Valid_Main FGL FGL)
+    (i : Nat)
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
+    (h_m32 : m.m32 i = 0)
+    (h_facts : ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts row)
+    (h_match : matches_entry
+      (opBus_row_Main m i)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage row) 1)) :
+    BitVec.ofNat 64
+        ((m.c_0 i).val + (m.c_1 i).val * 4294967296)
+      =
+      BitVec.ofNat 64
+        ((m.a_0 i).val + (m.a_1 i).val * 4294967296)
+      +
+      BitVec.ofNat 64
+        ((m.b_0 i).val + (m.b_1 i).val * 4294967296) := by
+  have hadd :=
+    ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_via_component
+      (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0
+      (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
+      (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
+      (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
+      (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
+  have hm := h_match
+  simp only [matches_entry, opBus_row_Main,
+    ZiskFv.AirsClean.BinaryAdd.opBusMessage,
+    ZiskFv.Channels.OperationBus.OpBusMessage.toEntry] at hm
+  obtain ⟨_, _, ha0, ha1, hb0, hb1, hc0, hc1, _, _, _, _⟩ := hm
+  obtain ⟨_, _, _, _, hc0_lt, hc1_lt, hc2_lt, hc3_lt⟩ := h_facts.2.2
+  have hc_lo_lt :
+      row.c_chunks_1.val * 65536 + row.c_chunks_0.val < GL_prime := by omega
+  have hc_hi_lt :
+      row.c_chunks_3.val * 65536 + row.c_chunks_2.val < GL_prime := by omega
+  rw [h_m32] at ha1 hb1
+  simp only [one_sub_zero_mul] at ha1 hb1
+  rw [hc0, hc1, ha0, ha1, hb0, hb1]
+  simp only [Fin.val_add, Fin.val_mul]
+  norm_num at ⊢
+  rw [Nat.mod_eq_of_lt hc_lo_lt, Nat.mod_eq_of_lt hc_hi_lt]
+  have hc_pack :
+      row.c_chunks_1.val * 65536 + row.c_chunks_0.val
+          + (row.c_chunks_3.val * 65536 + row.c_chunks_2.val) * 4294967296
+        =
+      row.c_chunks_0.val + row.c_chunks_1.val * 65536
+          + row.c_chunks_2.val * 4294967296
+          + row.c_chunks_3.val * 281474976710656 := by omega
+  rw [hc_pack]
+  simpa [ZiskFv.AirsClean.BinaryAdd.validOfRow] using hadd.symm
 
 /-- Sound ADD construction (PR4, approach (a): two-arm provider case-split).
 
