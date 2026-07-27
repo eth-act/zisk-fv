@@ -1028,6 +1028,97 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhsu_active_main_row
         h_component h_spec h_match h_main_op)
     (fun h_match => binaryAdd_provider_branch_ne_arithMulhsuSecondary h_match h_main_op)
 
+/-! ## Signed Arith DIV keep/refute (`OP_DIV = 186`) -/
+
+theorem staticBinary_provider_branch_ne_arithDivPrimary
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Binary.opBusMessageExpr
+              ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_DIV) :
+    False := by
+  let env := providerTable.environment providerRow
+  let row := ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput env
+  have h_componentSpec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_componentSpec
+  have h_provider_op :
+      m.op r_main = row.chain.b_op + 16 * row.mode.mode32 := by
+    have h_op := h_match.2.1
+    simpa [env, row, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr,
+      ZiskFv.AirsClean.Binary.opBusMessage] using h_op
+  exact ZiskFv.AirsClean.Binary.static_table_op_val_ne_arith_div_of_emit
+    row h_componentSpec.1 h_componentSpec.2
+    (by
+      rw [← h_provider_op, h_main_op]
+      norm_num [ZiskFv.Trusted.OP_DIV])
+
+theorem staticBinaryExtension_provider_branch_ne_arithDivPrimary
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_component : providerTable.component = shiftStaticLookupComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+              shiftStaticLookupComponent.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_DIV) :
+    False := by
+  let env := providerTable.environment providerRow
+  have h_componentSpec : shiftStaticLookupComponent.Spec env := by
+    simpa [env, h_component] using h_providerSpec
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_arith_div_of_spec
+      env h_componentSpec
+  have h_provider_op :
+      (m.op r_main).val =
+        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+    have h_op_val := congrArg Fin.val h_match.2.1
+    simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      using h_op_val
+  exact h_ne.1 (by
+    rw [← h_provider_op, h_main_op]
+    norm_num [ZiskFv.Trusted.OP_DIV])
+
+theorem binaryAdd_provider_branch_ne_arithDivPrimary
+    {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
+    {providerTable : Table FGL} {providerRow : Array FGL}
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_DIV) :
+    False := by
+  have h_provider_op : (m.op r_main).val = 10 := by
+    have h_op_val := congrArg Fin.val h_match.2.1
+    simpa [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr,
+      ZiskFv.Channels.OperationBus.OpBusMessage.eval_op] using h_op_val
+  rw [h_main_op] at h_provider_op
+  norm_num [ZiskFv.Trusted.OP_DIV] at h_provider_op
+
 /-! ## Arith DIVU keep/refute (`OP_DIVU = 184`)
 
 Mirror of the MULW keep/refute above, for the unsigned DIVU operation.  The
@@ -1182,7 +1273,8 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
           (mainTable.environment mainRow))
     (h_active : mainInteraction.mult = -1)
     (h_main_op :
-      m.op r_main = ZiskFv.Trusted.OP_DIVU) :
+      m.op r_main = ZiskFv.Trusted.OP_DIVU ∨
+        m.op r_main = ZiskFv.Trusted.OP_DIV) :
     ∃ providerTable ∈ witness.allTables,
       ∃ providerRow ∈ providerTable.table,
         providerTable.component = arithMulProviderComponent
@@ -1257,9 +1349,11 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
       apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
       rw [← h_providerEval, ← h_mainInteraction_eval]
       exact h_msg
-    exact False.elim
+    exact False.elim (h_main_op.elim
       (staticBinaryExtension_provider_branch_ne_arithDivuPrimary
-        h_component h_providerSpec h_match h_main_op)
+        h_component h_providerSpec h_match)
+      (staticBinaryExtension_provider_branch_ne_arithDivPrimary
+        h_component h_providerSpec h_match))
   · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
       h_providerEval⟩ := h_binary
     have h_match :
@@ -1273,9 +1367,11 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
       apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
       rw [← h_providerEval, ← h_mainInteraction_eval]
       exact h_msg
-    exact False.elim
+    exact False.elim (h_main_op.elim
       (staticBinary_provider_branch_ne_arithDivuPrimary
-        h_component h_providerSpec h_match h_main_op)
+        h_component h_providerSpec h_match)
+      (staticBinary_provider_branch_ne_arithDivPrimary
+        h_component h_providerSpec h_match))
   · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
       h_providerEval⟩ := h_binaryAdd
     have h_match :
@@ -1289,8 +1385,9 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
       apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
       rw [← h_providerEval, ← h_mainInteraction_eval]
       exact h_msg
-    exact False.elim
-      (binaryAdd_provider_branch_ne_arithDivuPrimary h_match h_main_op)
+    exact False.elim (h_main_op.elim
+      (binaryAdd_provider_branch_ne_arithDivuPrimary h_match)
+      (binaryAdd_provider_branch_ne_arithDivPrimary h_match))
 
 /-! ## Arith DIVUW keep/refute (`OP_DIVU_W = 188`)
 

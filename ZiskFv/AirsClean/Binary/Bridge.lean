@@ -793,6 +793,40 @@ theorem static_table_op_val_ne_arith_divu_of_emit
       omega
     exact h_ne.2 hoffset
 
+/-- A static Binary row cannot emit signed Arith DIV opcode 186. -/
+theorem static_table_op_val_ne_arith_div_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = ((186 : ℕ) : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_ne_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_arith_div h0
+  have h_ne :
+      row.chain.b_op.val ≠ 186 ∧ row.chain.b_op.val ≠ 170 := by
+    simpa [lookupMessage0Row] using h_ne_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = ((186 : ℕ) : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_val := congrArg Fin.val h_bop
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : (186 : ℕ) < GL_prime)] at h_val
+    exact h_ne.1 h_val
+  · have hoffset : row.chain.b_op.val = 170 := by
+      have h_bop_lt : row.chain.b_op.val < 514 := by
+        have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+        simpa [lookupMessage0Row] using h
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : (186 : ℕ) < GL_prime)] at hv
+      omega
+    exact h_ne.2 hoffset
+
 /-- A row accepted by the static Binary lookup component cannot emit the
     Arith REMU operation-bus opcode `185` (`OP_REMU`). The emitted value is
     `b_op + 16 * mode32`; with `mode32 ∈ {0, 1}` that forces `b_op = 185`

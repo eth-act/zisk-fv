@@ -1134,8 +1134,11 @@ theorem main_request_divu_provided
         i.val = 1)
     (h_main_op :
       ZiskFv.Airs.Main.Valid_Main.op
-        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
-        i.val = ZiskFv.Trusted.OP_DIVU) :
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+          i.val = ZiskFv.Trusted.OP_DIVU
+        ∨ ZiskFv.Airs.Main.Valid_Main.op
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+          i.val = ZiskFv.Trusted.OP_DIV) :
     ∃ providerTable ∈ trace.witness.allTables,
       ∃ providerRow ∈ providerTable.table,
         providerTable.component = ZiskFv.AirsClean.FullEnsemble.arithMulProviderComponent
@@ -1209,6 +1212,32 @@ theorem main_request_divu_provided
         trace.mainTable_mem trace.mainTable_component h_mainRow_mem
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
+
+/-- Signed DIV specialization of the shared Div-family provider selection. -/
+theorem main_request_div_provided
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
+    (h_main_active :
+      ZiskFv.Airs.Main.Valid_Main.is_external_op
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+        i.val = 1)
+    (h_main_op :
+      ZiskFv.Airs.Main.Valid_Main.op
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+        i.val = ZiskFv.Trusted.OP_DIV) :
+    ∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.FullEnsemble.arithMulProviderComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+              i.val)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                  (providerTable.environment providerRow))) 1) :=
+  main_request_divu_provided trace i h_main_active (Or.inr h_main_op)
 
 /-- Layer-A op-bus provider-match wrapper for the Arith DIVUW operation
     (`OP_DIVU_W = 188`, W-mode `m32 = 1`).  Mirrors

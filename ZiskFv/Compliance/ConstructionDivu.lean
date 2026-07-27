@@ -448,7 +448,7 @@ noncomputable def divuArow
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_divu_provided
-    trace i h_main_active h_main_op
+    trace i h_main_active (Or.inl h_main_op)
   componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected DIVU provider row, derived from the
@@ -462,7 +462,7 @@ theorem divuArow_fullSpec_row
     ZiskFv.AirsClean.ArithMul.FullSpec (divuArow trace binding i h_main_active h_main_op) := by
   unfold divuArow
   set H := main_request_divu_provided
-    trace i h_main_active h_main_op with hH
+    trace i h_main_active (Or.inl h_main_op) with hH
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
@@ -484,7 +484,7 @@ theorem divuArow_match_row
           (divuArow trace binding i h_main_active h_main_op)) 1) := by
   unfold divuArow
   set H := main_request_divu_provided
-    trace i h_main_active h_main_op with hH
+    trace i h_main_active (Or.inl h_main_op) with hH
   exact H.choose_spec.2.choose_spec.2.2.2
 
 /-- DIVU mode pins on the balance-selected provider row, DERIVED from its

@@ -690,6 +690,12 @@ theorem static_table_op_val_ne_arith_divu_of_spec_facts
     row.flags.op.val ≠ 184 ∧ row.flags.op.val ≠ 168 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_divu h_specs.1
 
+theorem static_table_op_val_ne_arith_div_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 186 ∧ row.flags.op.val ≠ 170 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_div h_specs.1
+
 theorem static_table_op_val_ne_arith_remu_of_spec_facts
     (row : BinaryExtensionRow FGL)
     (h_specs : StaticBinaryExtensionTableSpecFacts row) :
@@ -866,6 +872,16 @@ theorem shiftStaticLookupComponent_op_val_ne_arith_divu_of_spec
       ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 168 := by
   rw [shiftStaticLookupComponent_spec] at h_spec
   exact static_table_op_val_ne_arith_divu_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+/-- A shift-table row cannot carry signed Arith DIV opcode 186. -/
+theorem shiftStaticLookupComponent_op_val_ne_arith_div_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 186
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 170 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_div_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
 /-- A row accepted by the shift-aware lookup BinaryExtension component cannot
