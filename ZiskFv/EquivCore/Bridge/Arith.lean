@@ -177,24 +177,24 @@ structure ArithDivRemainderBoundWitness
 
 The unsigned witness above is intentionally LTU-only. Signed DIV/REM rows
 select one of four Binary-table comparison operations from `(nr, nb)`:
-`LTU`, `LT_ABS_NP`, `LT_ABS_PN`, or `GT`. This signed witness carries the
-same matched Binary provider row plus proved static-table chain evidence for
-each operation-specific semantic branch. Downstream lemmas case-split on the
-real row signs and consume only the selected branch. -/
+`LTU`, `LT_ABS_NP`, `LT_ABS_PN`, or `GT`. A single Binary row has exactly
+one selected opcode, so this witness carries exactly the corresponding
+static-table chain rather than an impossible conjunction of all four. -/
 structure ArithDivSignedRemainderBoundWitness
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
   binary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL
   r_binary : ℕ
   binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
-  binary_ltu_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
-      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
-  binary_lt_abs_np_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary
-  binary_lt_abs_pn_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary
-  binary_gt_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary
+  selected_chain :
+    (a.nr r = 0 ∧ a.nb r = 0 ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
+        ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
+    ∨ (a.nr r = 1 ∧ a.nb r = 0 ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary)
+    ∨ (a.nr r = 0 ∧ a.nb r = 1 ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary)
+    ∨ (a.nr r = 1 ∧ a.nb r = 1 ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary)
   remainder_bound_match :
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
       (opBus_row_Binary binary r_binary)
