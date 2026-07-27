@@ -79,8 +79,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
-set_option maxHeartbeats 32000000
-set_option maxRecDepth 2048
+set_option maxHeartbeats 2000000
 
 private lemma byte_ranges_of_static_match
     {op_val : ℕ} {a b c : FGL}
