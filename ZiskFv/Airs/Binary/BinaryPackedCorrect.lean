@@ -1509,6 +1509,259 @@ lemma binary_lt_abs_np_chunks_le_of_wf
     (by rw [h_cin7]; exact step6)
   exact step7 h_final
 
+/-- **Weak lift for `LT_ABS_PN`.** Symmetric counterpart of
+    `binary_lt_abs_np_chunks_le_of_wf`, with the second operand transformed. -/
+lemma binary_lt_abs_pn_chunks_le_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf_LT_ABS_PN a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf_LT_ABS_PN a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf_LT_ABS_PN a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf_LT_ABS_PN a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf_LT_ABS_PN a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf_LT_ABS_PN a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf_LT_ABS_PN a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf_LT_ABS_PN a7 b7 c7 cin7 fl7 pi7)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val = 2)
+    (h_pi1 : pi1.val ≠ 2) (h_pi2 : pi2.val ≠ 2) (h_pi3 : pi3.val ≠ 2)
+    (h_pi4 : pi4.val ≠ 2) (h_pi5 : pi5.val ≠ 2) (h_pi6 : pi6.val ≠ 2)
+    (h_pi7 : pi7.val ≠ 2)
+    (h_final : fl7.val % 2 = 1) :
+    a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936
+      ≤ ((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256
+        + (b2.val ^^^ 0xFF) * 65536 + (b3.val ^^^ 0xFF) * 16777216
+        + (b4.val ^^^ 0xFF) * 4294967296 + (b5.val ^^^ 0xFF) * 1099511627776
+        + (b6.val ^^^ 0xFF) * 281474976710656
+        + (b7.val ^^^ 0xFF) * 72057594037927936 := by
+  obtain ⟨_, h0_lt, h0_eq, h0_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_0
+  obtain ⟨_, h1_lt, h1_eq, h1_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_1
+  obtain ⟨_, h2_lt, h2_eq, h2_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_2
+  obtain ⟨_, h3_lt, h3_eq, h3_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_3
+  obtain ⟨_, h4_lt, h4_eq, h4_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_4
+  obtain ⟨_, h5_lt, h5_eq, h5_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_5
+  obtain ⟨_, h6_lt, h6_eq, h6_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_6
+  obtain ⟨_, h7_lt, h7_eq, h7_gt⟩ :=
+    lt_abs_pn_byte_chain_of_wf _ _ _ _ _ _ h_byte_7
+  simp only [h_pi0] at h0_lt h0_eq h0_gt
+  simp only [if_neg h_pi1] at h1_lt h1_eq h1_gt
+  simp only [if_neg h_pi2] at h2_lt h2_eq h2_gt
+  simp only [if_neg h_pi3] at h3_lt h3_eq h3_gt
+  simp only [if_neg h_pi4] at h4_lt h4_eq h4_gt
+  simp only [if_neg h_pi5] at h5_lt h5_eq h5_gt
+  simp only [if_neg h_pi6] at h6_lt h6_eq h6_gt
+  simp only [if_neg h_pi7] at h7_lt h7_eq h7_gt
+  have ha0 := lt_abs_pn_chain_a_byte_lt_256 h_byte_0
+  have ha1 := lt_abs_pn_chain_a_byte_lt_256 h_byte_1
+  have ha2 := lt_abs_pn_chain_a_byte_lt_256 h_byte_2
+  have ha3 := lt_abs_pn_chain_a_byte_lt_256 h_byte_3
+  have ha4 := lt_abs_pn_chain_a_byte_lt_256 h_byte_4
+  have ha5 := lt_abs_pn_chain_a_byte_lt_256 h_byte_5
+  have ha6 := lt_abs_pn_chain_a_byte_lt_256 h_byte_6
+  have step0 := weak_compare_step cin0.val a0.val ((b0.val ^^^ 0xFF) + 1)
+    (fl0.val % 2) 0 0 1 (by norm_num) h0_lt h0_eq h0_gt
+    (by rw [h_cin0]; norm_num)
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  have step1 := weak_compare_step cin1.val a1.val (b1.val ^^^ 0xFF)
+    (fl1.val % 2) a0.val ((b0.val ^^^ 0xFF) + 1) 256 (by omega)
+    h1_lt h1_eq h1_gt (by rw [h_cin1]; exact step0)
+  have step2 := weak_compare_step cin2.val a2.val (b2.val ^^^ 0xFF)
+    (fl2.val % 2) (a0.val + a1.val * 256)
+    (((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256) 65536
+    (by omega) h2_lt h2_eq h2_gt (by rw [h_cin2]; exact step1)
+  have step3 := weak_compare_step cin3.val a3.val (b3.val ^^^ 0xFF)
+    (fl3.val % 2) (a0.val + a1.val * 256 + a2.val * 65536)
+    (((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256
+      + (b2.val ^^^ 0xFF) * 65536) 16777216
+    (by omega) h3_lt h3_eq h3_gt (by rw [h_cin3]; exact step2)
+  have step4 := weak_compare_step cin4.val a4.val (b4.val ^^^ 0xFF)
+    (fl4.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256
+      + (b2.val ^^^ 0xFF) * 65536 + (b3.val ^^^ 0xFF) * 16777216)
+    4294967296 (by omega) h4_lt h4_eq h4_gt
+    (by rw [h_cin4]; exact step3)
+  have step5 := weak_compare_step cin5.val a5.val (b5.val ^^^ 0xFF)
+    (fl5.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296)
+    (((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256
+      + (b2.val ^^^ 0xFF) * 65536 + (b3.val ^^^ 0xFF) * 16777216
+      + (b4.val ^^^ 0xFF) * 4294967296)
+    1099511627776 (by omega) h5_lt h5_eq h5_gt
+    (by rw [h_cin5]; exact step4)
+  have step6 := weak_compare_step cin6.val a6.val (b6.val ^^^ 0xFF)
+    (fl6.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    (((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256
+      + (b2.val ^^^ 0xFF) * 65536 + (b3.val ^^^ 0xFF) * 16777216
+      + (b4.val ^^^ 0xFF) * 4294967296 + (b5.val ^^^ 0xFF) * 1099511627776)
+    281474976710656 (by omega) h6_lt h6_eq h6_gt
+    (by rw [h_cin6]; exact step5)
+  have step7 := weak_compare_step cin7.val a7.val (b7.val ^^^ 0xFF)
+    (fl7.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776
+      + a6.val * 281474976710656)
+    (((b0.val ^^^ 0xFF) + 1) + (b1.val ^^^ 0xFF) * 256
+      + (b2.val ^^^ 0xFF) * 65536 + (b3.val ^^^ 0xFF) * 16777216
+      + (b4.val ^^^ 0xFF) * 4294967296 + (b5.val ^^^ 0xFF) * 1099511627776
+      + (b6.val ^^^ 0xFF) * 281474976710656)
+    72057594037927936 (by omega) h7_lt h7_eq h7_gt
+    (by rw [h_cin7]; exact step6)
+  exact step7 h_final
+
+/-- **Lift for `GT`.** Under the ordinary byte-chain branch (including equal
+    sign bits at the final byte), the final carry is one exactly when the
+    packed first operand is greater than the packed second operand. -/
+lemma binary_gt_chunks_eq_bv_ugt_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf_GT a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf_GT a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf_GT a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf_GT a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf_GT a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf_GT a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf_GT a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf_GT a7 b7 c7 cin7 fl7 pi7)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
+    (h_sign7 : (a7.val &&& 0x80) = (b7.val &&& 0x80)) :
+    (fl7.val % 2 = 1 ↔
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)
+      <
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)) := by
+  obtain ⟨_, h0, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_0
+  obtain ⟨h0_gt, h0_eq, h0_lt⟩ := h0 (Or.inl h_pi0)
+  obtain ⟨_, h1, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_1
+  obtain ⟨h1_gt, h1_eq, h1_lt⟩ := h1 (Or.inl h_pi1)
+  obtain ⟨_, h2, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_2
+  obtain ⟨h2_gt, h2_eq, h2_lt⟩ := h2 (Or.inl h_pi2)
+  obtain ⟨_, h3, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_3
+  obtain ⟨h3_gt, h3_eq, h3_lt⟩ := h3 (Or.inl h_pi3)
+  obtain ⟨_, h4, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_4
+  obtain ⟨h4_gt, h4_eq, h4_lt⟩ := h4 (Or.inl h_pi4)
+  obtain ⟨_, h5, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_5
+  obtain ⟨h5_gt, h5_eq, h5_lt⟩ := h5 (Or.inl h_pi5)
+  obtain ⟨_, h6, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_6
+  obtain ⟨h6_gt, h6_eq, h6_lt⟩ := h6 (Or.inl h_pi6)
+  obtain ⟨_, h7, _⟩ := gt_byte_chain_of_wf _ _ _ _ _ _ h_byte_7
+  obtain ⟨h7_gt, h7_eq, h7_lt⟩ := h7 (Or.inr h_sign7)
+  have ha0 := gt_chain_a_byte_lt_256 h_byte_0
+  have ha1 := gt_chain_a_byte_lt_256 h_byte_1
+  have ha2 := gt_chain_a_byte_lt_256 h_byte_2
+  have ha3 := gt_chain_a_byte_lt_256 h_byte_3
+  have ha4 := gt_chain_a_byte_lt_256 h_byte_4
+  have ha5 := gt_chain_a_byte_lt_256 h_byte_5
+  have ha6 := gt_chain_a_byte_lt_256 h_byte_6
+  have hb0 := gt_chain_b_byte_lt_256 h_byte_0
+  have hb1 := gt_chain_b_byte_lt_256 h_byte_1
+  have hb2 := gt_chain_b_byte_lt_256 h_byte_2
+  have hb3 := gt_chain_b_byte_lt_256 h_byte_3
+  have hb4 := gt_chain_b_byte_lt_256 h_byte_4
+  have hb5 := gt_chain_b_byte_lt_256 h_byte_5
+  have hb6 := gt_chain_b_byte_lt_256 h_byte_6
+  have hf0 : fl0.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf1 : fl1.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf2 : fl2.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf3 : fl3.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf4 : fl4.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf5 : fl5.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf6 : fl6.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf7 : fl7.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have h_init : cin0.val = 1 ↔ (0 : ℕ) < 0 := by rw [h_cin0]; simp
+  have step0 := ltu_step cin0.val b0.val a0.val (fl0.val % 2)
+    0 0 1 (by norm_num) (by norm_num) (by norm_num)
+    (by rw [h_cin0]; norm_num) hf0 h0_gt (fun h => h0_eq h.symm) h0_lt h_init
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  have step1 := ltu_step cin1.val b1.val a1.val (fl1.val % 2)
+    b0.val a0.val 256 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin1]; exact hf0) hf1 h1_gt (fun h => h1_eq h.symm) h1_lt
+    (by rw [h_cin1]; exact step0)
+  have step2 := ltu_step cin2.val b2.val a2.val (fl2.val % 2)
+    (b0.val + b1.val * 256) (a0.val + a1.val * 256) 65536
+    (by norm_num) (by omega) (by omega)
+    (by rw [h_cin2]; exact hf1) hf2 h2_gt (fun h => h2_eq h.symm) h2_lt
+    (by rw [h_cin2]; exact step1)
+  have step3 := ltu_step cin3.val b3.val a3.val (fl3.val % 2)
+    (b0.val + b1.val * 256 + b2.val * 65536)
+    (a0.val + a1.val * 256 + a2.val * 65536)
+    16777216 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin3]; exact hf2) hf3 h3_gt (fun h => h3_eq h.symm) h3_lt
+    (by rw [h_cin3]; exact step2)
+  have step4 := ltu_step cin4.val b4.val a4.val (fl4.val % 2)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    4294967296 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin4]; exact hf3) hf4 h4_gt (fun h => h4_eq h.symm) h4_lt
+    (by rw [h_cin4]; exact step3)
+  have step5 := ltu_step cin5.val b5.val a5.val (fl5.val % 2)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296)
+    1099511627776 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin5]; exact hf4) hf5 h5_gt (fun h => h5_eq h.symm) h5_lt
+    (by rw [h_cin5]; exact step4)
+  have step6 := ltu_step cin6.val b6.val a6.val (fl6.val % 2)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    281474976710656 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin6]; exact hf5) hf6 h6_gt (fun h => h6_eq h.symm) h6_lt
+    (by rw [h_cin6]; exact step5)
+  have step7 := ltu_step cin7.val b7.val a7.val (fl7.val % 2)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776
+      + b6.val * 281474976710656)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776
+      + a6.val * 281474976710656)
+    72057594037927936 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin7]; exact hf6) hf7 h7_gt (fun h => h7_eq h.symm) h7_lt
+    (by rw [h_cin7]; exact step6)
+  exact step7
+
 /-! ### Modular-arithmetic finishers (avoid `omega` on 2^64 constants) -/
 
 /-- SUB closing identity: from `A + N·B = X + Y` with `B ∈ {0,1}`,
