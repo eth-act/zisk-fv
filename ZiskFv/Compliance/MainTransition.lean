@@ -45,7 +45,7 @@ theorem rowInput_eq_mainTableRowAtOrZero
     eval_varFromOffset_valueFromOffset]
 
 /-- The indexed effective-row environment projects to the corresponding Main row. -/
-private theorem rowInputAt_eq_mainTableRowAtOrZero
+theorem rowInputAt_eq_mainTableRowAtOrZero
     {length : ℕ} (program : Program length) (table : Table FGL)
     (index : Fin table.length) :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInput
@@ -59,7 +59,7 @@ private theorem rowInputAt_eq_mainTableRowAtOrZero
   exact rowInput_eq_mainTableRowAtOrZero program table index.val h_index
 
 /-- The saturated predecessor environment projects to the preceding effective Main row. -/
-private theorem rowInputPrevious_eq_mainTableRowAtOrZero
+theorem rowInputPrevious_eq_mainTableRowAtOrZero
     {length : ℕ} (program : Program length) (table : Table FGL)
     (index : Fin table.length) (h_positive : 0 < index.val) :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInput
