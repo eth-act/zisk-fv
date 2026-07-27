@@ -548,6 +548,20 @@ theorem eval_remainderBoundOpBusMessageExpr
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     first | trivial | ring
 
+/-- Boolean sign flags select exactly one of the four physical signed
+    remainder-comparison operations. -/
+theorem remainderBoundOpBusMessage_op_of_signs
+    (row : ArithMulRow FGL)
+    (h_nr : row.flags.nr = 0 ∨ row.flags.nr = 1)
+    (h_nb : row.flags.nb = 0 ∨ row.flags.nb = 1) :
+    (remainderBoundOpBusMessage row).op.val = 6
+      ∨ (remainderBoundOpBusMessage row).op.val = 80
+      ∨ (remainderBoundOpBusMessage row).op.val = 81
+      ∨ (remainderBoundOpBusMessage row).op.val = 8 := by
+  rcases h_nr with h_nr | h_nr <;>
+    rcases h_nb with h_nb | h_nb <;>
+    simp [remainderBoundOpBusMessage, h_nr, h_nb]
+
 /-- Evaluation of the physical remainder-bound interaction's multiplicity.
     Keeping this projection in the row bridge avoids unfolding the full muxed
     comparison message in balance proofs. -/
