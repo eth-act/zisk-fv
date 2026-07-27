@@ -1336,6 +1336,39 @@ private lemma ltu_step
       have : Bprev + b_byte * W < Aprev + a_byte * W := by omega
       omega
 
+/-- Weak comparison step used by the signed absolute-value byte chains.
+
+Unlike `ltu_step`, the already-processed transformed prefix may equal the
+current radix weight. This is the one-unit overflow produced by
+`(~lowByte) + 1` when the low byte is zero. Consequently the conclusion is
+only a forward weak inequality; this deliberately preserves the documented
+`LT_ABS` equality false-positive. -/
+lemma weak_compare_step
+    (cin a_byte b_byte cout Aprev Bprev W : ℕ)
+    (hPa : Aprev ≤ W)
+    (h_chain_lt : a_byte < b_byte → cout = 1)
+    (h_chain_eq : a_byte = b_byte → cout = cin)
+    (h_chain_gt : a_byte > b_byte → cout = 0)
+    (h_cin : cin = 1 → Aprev ≤ Bprev) :
+    cout = 1 → Aprev + a_byte * W ≤ Bprev + b_byte * W := by
+  intro h_cout
+  rcases lt_trichotomy a_byte b_byte with hab | hab | hab
+  · have h_succ : a_byte + 1 ≤ b_byte := hab
+    have h_weight :
+        a_byte * W + W ≤ b_byte * W := by
+      calc
+        a_byte * W + W = (a_byte + 1) * W := by ring
+        _ ≤ b_byte * W := Nat.mul_le_mul_right W h_succ
+    omega
+  · have h_cin_one : cin = 1 := by
+      rw [h_chain_eq hab] at h_cout
+      exact h_cout
+    have h_prefix := h_cin h_cin_one
+    subst b_byte
+    omega
+  · have h_zero := h_chain_gt hab
+    omega
+
 /-! ### Modular-arithmetic finishers (avoid `omega` on 2^64 constants) -/
 
 /-- SUB closing identity: from `A + N·B = X + Y` with `B ∈ {0,1}`,
