@@ -2291,8 +2291,8 @@ lemma byte_chain_discharge_64_of_static_row
       · simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
 
-/-- Row-native static-provider route for the signed `GT` byte chain. -/
 set_option maxHeartbeats 1000000 in
+/-- Row-native static-provider route for the signed `GT` byte chain. -/
 lemma byte_chain_gt_discharge_64_of_static_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
@@ -2305,20 +2305,60 @@ lemma byte_chain_gt_discharge_64_of_static_row
   have h_out := byte_chain_discharge_64_of_static_row row
     (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
     ZiskFv.Airs.Tables.BinaryTable.OP_GT h_core h_mode32_zero h_b_op
+  have h_b_op_or_sext :
+      row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_GT := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow] using
+      b_op_or_sext_val_eq_of_mode32_zero
+        (ZiskFv.AirsClean.Binary.validOfRow row) 0
+        ZiskFv.Airs.Tables.BinaryTable.OP_GT h_core h_mode32_zero h_b_op
   rcases h_static with ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6, hs7⟩
   rcases h_special with ⟨hq0, hq1, hq2, hq3, hq4, hq5, hq6, hq7⟩
+  have hr0 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs0
+  have hr1 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs1
+  have hr2 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs2
+  have hr3 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs3
+  have hr4 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs4
+  have hr5 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs5
+  have hr6 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs6
+  have hr7 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs7
   rcases h_out with ⟨ho0, ho1, ho2, ho3, ho4, ho5, ho6, ho7,
-    _, _, _, _, _, _, _, _, hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+    c0_lt, c1_lt, c2_lt, c3_lt, c4_lt, c5_lt, c6_lt, c7_lt,
+    hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
     hp0, hp1, hp2, hp3, hp4, hp5, hp6, hp7⟩
-  constructor <;>
-    simp_all [ZiskFv.Airs.Binary.consumer_byte_match_chain_wf,
-      ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_GT,
-      ZiskFv.AirsClean.Binary.validOfRow, ZiskFv.AirsClean.Binary.rowAt,
+  have hcarry0 : row.chain.carry_0.val < 2 := by
+    rw [hc1]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry1 : row.chain.carry_1.val < 2 := by
+    rw [hc2]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry2 : row.chain.carry_2.val < 2 := by
+    rw [hc3]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry3 : row.chain.carry_3.val < 2 := by
+    rw [hc4]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry4 : row.chain.carry_4.val < 2 := by
+    rw [hc5]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry5 : row.chain.carry_5.val < 2 := by
+    rw [hc6]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry6 : row.chain.carry_6.val < 2 := by
+    rw [hc7]; exact Nat.mod_lt _ (by norm_num)
+  refine {
+    chain_0 := ⟨_, ?_, hq0, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_1 := ⟨_, ?_, hq1, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_2 := ⟨_, ?_, hq2, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_3 := ⟨_, ?_, hq3, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_4 := ⟨_, ?_, hq4, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_5 := ⟨_, ?_, hq5, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_6 := ⟨_, ?_, hq6, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_7 := ⟨_, ?_, hq7, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    cin0_eq := hc0, cin1_eq := hc1, cin2_eq := hc2, cin3_eq := hc3,
+    cin4_eq := hc4, cin5_eq := hc5, cin6_eq := hc6, cin7_eq := hc7,
+    pi0_ne := hp0, pi1_ne := hp1, pi2_ne := hp2, pi3_ne := hp3,
+    pi4_ne := hp4, pi5_ne := hp5, pi6_ne := hp6, pi7_eq := hp7
+  } <;> simp_all [
+      ZiskFv.AirsClean.Binary.rowAt,
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions]
 
-/-- Row-native static-provider route for the signed `LT_ABS_NP` byte chain. -/
 set_option maxHeartbeats 1000000 in
+/-- Row-native static-provider route for the signed `LT_ABS_NP` byte chain. -/
 lemma byte_chain_lt_abs_np_discharge_64_of_static_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
@@ -2331,20 +2371,60 @@ lemma byte_chain_lt_abs_np_discharge_64_of_static_row
   have h_out := byte_chain_discharge_64_of_static_row row
     (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
     ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP h_core h_mode32_zero h_b_op
+  have h_b_op_or_sext :
+      row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow] using
+      b_op_or_sext_val_eq_of_mode32_zero
+        (ZiskFv.AirsClean.Binary.validOfRow row) 0
+        ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP h_core h_mode32_zero h_b_op
   rcases h_static with ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6, hs7⟩
   rcases h_special with ⟨hq0, hq1, hq2, hq3, hq4, hq5, hq6, hq7⟩
+  have hr0 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs0
+  have hr1 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs1
+  have hr2 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs2
+  have hr3 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs3
+  have hr4 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs4
+  have hr5 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs5
+  have hr6 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs6
+  have hr7 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs7
   rcases h_out with ⟨ho0, ho1, ho2, ho3, ho4, ho5, ho6, ho7,
-    _, _, _, _, _, _, _, _, hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+    c0_lt, c1_lt, c2_lt, c3_lt, c4_lt, c5_lt, c6_lt, c7_lt,
+    hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
     hp0, hp1, hp2, hp3, hp4, hp5, hp6, hp7⟩
-  constructor <;>
-    simp_all [ZiskFv.Airs.Binary.consumer_byte_match_chain_wf,
-      ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_LT_ABS_NP,
+  have hcarry0 : row.chain.carry_0.val < 2 := by
+    rw [hc1]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry1 : row.chain.carry_1.val < 2 := by
+    rw [hc2]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry2 : row.chain.carry_2.val < 2 := by
+    rw [hc3]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry3 : row.chain.carry_3.val < 2 := by
+    rw [hc4]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry4 : row.chain.carry_4.val < 2 := by
+    rw [hc5]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry5 : row.chain.carry_5.val < 2 := by
+    rw [hc6]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry6 : row.chain.carry_6.val < 2 := by
+    rw [hc7]; exact Nat.mod_lt _ (by norm_num)
+  refine {
+    chain_0 := ⟨_, ?_, hq0, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_1 := ⟨_, ?_, hq1, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_2 := ⟨_, ?_, hq2, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_3 := ⟨_, ?_, hq3, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_4 := ⟨_, ?_, hq4, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_5 := ⟨_, ?_, hq5, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_6 := ⟨_, ?_, hq6, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_7 := ⟨_, ?_, hq7, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    cin0_eq := hc0, cin1_eq := hc1, cin2_eq := hc2, cin3_eq := hc3,
+    cin4_eq := hc4, cin5_eq := hc5, cin6_eq := hc6, cin7_eq := hc7,
+    pi0_ne := hp0, pi1_ne := hp1, pi2_ne := hp2, pi3_ne := hp3,
+    pi4_ne := hp4, pi5_ne := hp5, pi6_ne := hp6, pi7_eq := hp7
+  } <;> simp_all [
       ZiskFv.AirsClean.Binary.rowAt,
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions]
 
-/-- Row-native static-provider route for the signed `LT_ABS_PN` byte chain. -/
 set_option maxHeartbeats 1000000 in
+/-- Row-native static-provider route for the signed `LT_ABS_PN` byte chain. -/
 lemma byte_chain_lt_abs_pn_discharge_64_of_static_row
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
@@ -2357,14 +2437,54 @@ lemma byte_chain_lt_abs_pn_discharge_64_of_static_row
   have h_out := byte_chain_discharge_64_of_static_row row
     (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
     ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN h_core h_mode32_zero h_b_op
+  have h_b_op_or_sext :
+      row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN := by
+    simpa [ZiskFv.AirsClean.Binary.validOfRow] using
+      b_op_or_sext_val_eq_of_mode32_zero
+        (ZiskFv.AirsClean.Binary.validOfRow row) 0
+        ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN h_core h_mode32_zero h_b_op
   rcases h_static with ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6, hs7⟩
   rcases h_special with ⟨hq0, hq1, hq2, hq3, hq4, hq5, hq6, hq7⟩
+  have hr0 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs0
+  have hr1 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs1
+  have hr2 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs2
+  have hr3 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs3
+  have hr4 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs4
+  have hr5 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs5
+  have hr6 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs6
+  have hr7 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions hs7
   rcases h_out with ⟨ho0, ho1, ho2, ho3, ho4, ho5, ho6, ho7,
-    _, _, _, _, _, _, _, _, hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+    c0_lt, c1_lt, c2_lt, c3_lt, c4_lt, c5_lt, c6_lt, c7_lt,
+    hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
     hp0, hp1, hp2, hp3, hp4, hp5, hp6, hp7⟩
-  constructor <;>
-    simp_all [ZiskFv.Airs.Binary.consumer_byte_match_chain_wf,
-      ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_LT_ABS_PN,
+  have hcarry0 : row.chain.carry_0.val < 2 := by
+    rw [hc1]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry1 : row.chain.carry_1.val < 2 := by
+    rw [hc2]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry2 : row.chain.carry_2.val < 2 := by
+    rw [hc3]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry3 : row.chain.carry_3.val < 2 := by
+    rw [hc4]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry4 : row.chain.carry_4.val < 2 := by
+    rw [hc5]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry5 : row.chain.carry_5.val < 2 := by
+    rw [hc6]; exact Nat.mod_lt _ (by norm_num)
+  have hcarry6 : row.chain.carry_6.val < 2 := by
+    rw [hc7]; exact Nat.mod_lt _ (by norm_num)
+  refine {
+    chain_0 := ⟨_, ?_, hq0, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_1 := ⟨_, ?_, hq1, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_2 := ⟨_, ?_, hq2, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_3 := ⟨_, ?_, hq3, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_4 := ⟨_, ?_, hq4, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_5 := ⟨_, ?_, hq5, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_6 := ⟨_, ?_, hq6, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    chain_7 := ⟨_, ?_, hq7, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    cin0_eq := hc0, cin1_eq := hc1, cin2_eq := hc2, cin3_eq := hc3,
+    cin4_eq := hc4, cin5_eq := hc5, cin6_eq := hc6, cin7_eq := hc7,
+    pi0_ne := hp0, pi1_ne := hp1, pi2_ne := hp2, pi3_ne := hp3,
+    pi4_ne := hp4, pi5_ne := hp5, pi6_ne := hp6, pi7_eq := hp7
+  } <;> simp_all [
       ZiskFv.AirsClean.Binary.rowAt,
       ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions]
