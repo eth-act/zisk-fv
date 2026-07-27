@@ -642,6 +642,14 @@ theorem static_table_op_val_ne_compare_of_spec_facts
     row.flags.op.val ≠ 6 ∧ row.flags.op.val ≠ 7 := by
   exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_compare h_specs.1
 
+theorem static_table_op_val_ne_arith_div_remainder_bound_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 6 ∧ row.flags.op.val ≠ 80
+      ∧ row.flags.op.val ≠ 81 ∧ row.flags.op.val ≠ 8 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_div_remainder_bound
+    h_specs.1
+
 theorem static_table_op_val_ne_eq_of_spec_facts
     (row : BinaryExtensionRow FGL)
     (h_specs : StaticBinaryExtensionTableSpecFacts row) :
