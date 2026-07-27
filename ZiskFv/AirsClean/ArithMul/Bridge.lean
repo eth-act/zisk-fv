@@ -57,7 +57,8 @@ def constVar (row : ArithMulRow FGL) : Var ArithMulRow FGL where
       carry_2 := .const row.carries.carry_2, carry_3 := .const row.carries.carry_3,
       carry_4 := .const row.carries.carry_4, carry_5 := .const row.carries.carry_5,
       carry_6 := .const row.carries.carry_6, fab := .const row.carries.fab,
-      na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa }
+      na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa,
+      inv_sum_all_bs := .const row.carries.inv_sum_all_bs }
 
 /-- The lookup-aware Clean circuit sources ArithTable membership from its
     `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
@@ -279,7 +280,8 @@ def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
   carries := {
     carry_0 := v.cy_0 r, carry_1 := v.cy_1 r, carry_2 := v.cy_2 r
     carry_3 := v.cy_3 r, carry_4 := v.cy_4 r, carry_5 := v.cy_5 r
-    carry_6 := v.cy_6 r, fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
+    carry_6 := v.cy_6 r, fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r,
+    inv_sum_all_bs := (v.b_0 r + v.b_1 r + v.b_2 r + v.b_3 r)⁻¹
   }
 
 /-- Lookup-aware Clean witness for the sixteen `bits(16)` chunk lookups in

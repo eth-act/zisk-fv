@@ -178,7 +178,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_int
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -216,7 +216,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_mulw_active_main_row_int
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -646,7 +646,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -684,7 +684,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhu_active_main_row_
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -818,7 +818,7 @@ private theorem exists_arithMul_provider_row_matches_secondary_of_active_main_ro
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -856,7 +856,7 @@ private theorem exists_arithMul_provider_row_matches_secondary_of_active_main_ro
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -958,7 +958,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulh_active_main_row_i
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   exact exists_arithMul_provider_row_matches_secondary_of_active_main_row_interaction
     m r_main witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
@@ -1015,7 +1015,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhsu_active_main_row
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   exact exists_arithMul_provider_row_matches_secondary_of_active_main_row_interaction
     m r_main witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
@@ -1031,7 +1031,7 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhsu_active_main_row
 /-! ## Arith DIVU keep/refute (`OP_DIVU = 184`)
 
 Mirror of the MULW keep/refute above, for the unsigned DIVU operation.  The
-provider is still the shared ArithMul `componentWithArithTable` (the ArithDiv
+provider is still the shared ArithMul `componentComplete` (the ArithDiv
 component carries no op-bus interactions in the ensemble — see
 `arithDiv_table_interactionsWith_opBus_nil`).  The keep theorem produces the
 SAME muxed `primaryOpBusMessage` match; the DIVU-mode bridge in
@@ -1191,7 +1191,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -1229,7 +1229,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -1295,7 +1295,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divu_active_main_row_int
 /-! ## Arith DIVUW keep/refute (`OP_DIVU_W = 188`)
 
 Mirror of the DIVU keep/refute above, for the unsigned W-mode DIVUW operation
-(`m32 = 1`).  The provider is still the shared ArithMul `componentWithArithTable`
+(`m32 = 1`).  The provider is still the shared ArithMul `componentComplete`
 (the ArithDiv component carries no op-bus in the ensemble).  The keep theorem
 produces the SAME muxed `primaryOpBusMessage` match; the DIVU-mode op-bus bridge
 reduces that muxed message — at `div = 1`, `main_div = 1`, `main_mul = 0` (all
@@ -1454,7 +1454,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_in
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -1492,7 +1492,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_in
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -1558,7 +1558,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_divuw_active_main_row_in
 /-! ## Arith REMU keep/refute (`OP_REMU = 185`)
 
 Mirror of the DIVU keep/refute above, for the unsigned REMU operation.  The
-provider is still the shared ArithMul `componentWithArithTable` (the ArithDiv
+provider is still the shared ArithMul `componentComplete` (the ArithDiv
 component carries no op-bus interactions in the ensemble).  The keep theorem
 produces the SAME muxed `primaryOpBusMessage` match; the REMU-mode bridge in
 `ConstructionRemu.lean` reduces that muxed message — at `div = 1`,
@@ -1718,7 +1718,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_int
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -1756,7 +1756,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_int
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :
@@ -1822,7 +1822,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remu_active_main_row_int
 /-! ## Arith REMUW keep/refute (`OP_REMU_W = 189`, W-mode)
 
 Mirror of the REMU keep/refute above, for the W-mode (`m32 = 1`) unsigned REMUW
-operation.  The provider is still the shared ArithMul `componentWithArithTable`
+operation.  The provider is still the shared ArithMul `componentComplete`
 (the ArithDiv component carries no op-bus interactions in the ensemble).  The
 keep theorem produces the SAME muxed `primaryOpBusMessage` match; the REMU-mode
 secondary bridge in `ConstructionRemu.lean` reduces that muxed message — at
@@ -1983,7 +1983,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_in
             (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
             (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
               (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-                (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                   (providerTable.environment providerRow))) 1) := by
   have h_main_entry :
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -2021,7 +2021,7 @@ theorem exists_arithMul_provider_row_matches_primary_of_remuw_active_main_row_in
           (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
             (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
-              (ZiskFv.AirsClean.ArithMul.componentWithArithTable.rowInput
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
                 (providerTable.environment providerRow))) 1) := by
       rw [ZiskFv.AirsClean.ArithMul.eval_primaryOpBusMessageExpr] at h_match
       have h_row_eq :

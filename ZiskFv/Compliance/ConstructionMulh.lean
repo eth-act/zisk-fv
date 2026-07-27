@@ -5,7 +5,7 @@ import ZiskFv.Compliance.Wrappers.MulH
 # Balance-derived MULH construction
 
 The selected Arith provider is obtained from finished operation-bus balance.
-Its lookup-aware `componentWithArithTable.Spec = FullSpec` supplies the shared
+Its lookup-aware `componentComplete.Spec = FullSpec` supplies the shared
 Arith-table membership, 16-bit chunks, signed carries, carry chain, and c46.
 The only remaining binders are Sail/exec artifacts, the operand correlation,
 and the pre-existing signed-witness forge exclusion.
@@ -18,7 +18,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 /-- The balance-selected Arith-Mul provider row for a MULH Main request. -/
 noncomputable def mulhArow
@@ -30,7 +30,7 @@ noncomputable def mulhArow
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULH) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_mulh_provided trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- The provider component's static lookups yield `FullSpec` for the selected
     MULH row. -/

@@ -116,10 +116,10 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by
           intro channel h
           simp [circuit_norm] at h)
-    |>.addTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
-        (by simp [ZiskFv.AirsClean.ArithMul.componentWithArithTable,
-          ZiskFv.AirsClean.ArithMul.circuitWithArithTable,
-          ZiskFv.AirsClean.ArithMul.arithMulWithArithTableElaborated])
+    |>.addTable ZiskFv.AirsClean.ArithMul.componentComplete
+        (by simp [ZiskFv.AirsClean.ArithMul.componentComplete,
+          ZiskFv.AirsClean.ArithMul.circuitComplete,
+          ZiskFv.AirsClean.ArithMul.arithMulCompleteElaborated])
         (by
           intro channel h
           simp [circuit_norm] at h)

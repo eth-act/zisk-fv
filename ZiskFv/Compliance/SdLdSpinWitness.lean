@@ -893,7 +893,7 @@ def sdLdTables : List (Table FGL) :=
   , sdLdTableWithData sdLdMemTable
   , sdLdSpecifiedRangesTable
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
-  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable)
+  , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
   , sdLdTableWithData sdLdBinaryExtensionTable
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent)
   , sdLdTableWithData sdLdBinaryAddTable
