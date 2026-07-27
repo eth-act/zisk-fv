@@ -175,4 +175,179 @@ private theorem sdLdMainPc (i : Fin 7) :
     sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
     sdLdAddiX2ProgramRow, sdLdSdProgramRow, sdLdLdProgramRow, sdLdJalProgramRow]
 
+set_option maxHeartbeats 800000 in
+private theorem sdLdProgramIndex_eq (i j : Fin 7)
+    (hline : (sdLdProgram j).line =
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+        sdLdAcceptedTrace.mainTable).pc i.val) :
+    j = i := by
+  rw [sdLdMainPc] at hline
+  apply Fin.ext
+  have hval := congrArg (fun value : FGL => value.val) hline
+  fin_cases i <;> fin_cases j <;>
+    norm_num [sdLdProgram, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
+      sdLdAddiX1EightProgramRow, sdLdAddiX2ProgramRow, sdLdSdProgramRow,
+      sdLdLdProgramRow, sdLdJalProgramRow] at hval <;> omega
+
+def sdLdAddiA0ProgramDecode :
+    ProgramDecode_addi sdLdAcceptedTrace sdLdAddiA0Index sdLdAddiA0Claim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    norm_num [sdLdAddiA0Index, sdLdTableWithData]
+  bits := addiX0Bits
+  h_bits_ieo := rfl
+  h_bits_m32 := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_bits_b_src_imm := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨0, by decide⟩ := sdLdProgramIndex_eq sdLdAddiA0Index j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdAddiX1A0ProgramRow,
+      sdLdAddiA0Claim, x1, Transpiler.ind, regidx_to_fin, packFlags, addiX0Bits,
+      ZiskFv.AirsClean.boolF]
+    all_goals decide
+
+def sdLdSlliProgramDecode :
+    ProgramDecode_slli sdLdAcceptedTrace sdLdSlliIndex sdLdSlliClaim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    change 1 + 1 < (sdLdTableWithData sdLdMainTable).table.length
+    norm_num [sdLdTableWithData, sdLdMainTable, sdLdMainTableWithData,
+      sdLdMainTableEmptyData, AddSpinWitness.mainRowsTable, sdLdMainRows]
+  h_b_lo_t := by
+    rw [sdLdAcceptedTrace_mainTable_eq,
+      ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
+    change
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdProgram
+        (sdLdTableWithData sdLdMainTable) sdLdSlliIndex.val).core.b_0 = _
+    rw [congrArg (fun row => row.core.b_0) (sdLdMainRowAt sdLdSlliIndex)]
+    norm_num [sdLdSlliIndex, sdLdMainRows, sdLdSlliClaim, sdLdSlliX1Row,
+      sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, mainRomRowOf, shamt_b_lo]
+    decide
+  bits := addiX1Bits
+  h_bits_ieo := rfl
+  h_bits_m32 := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨1, by decide⟩ := sdLdProgramIndex_eq sdLdSlliIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdSlliX1ProgramRow,
+      sdLdSlliClaim, x1, Transpiler.ind, regidx_to_fin, packFlags, addiX1Bits,
+      ZiskFv.AirsClean.boolF]
+    all_goals decide
+
+def sdLdAddiEightProgramDecode :
+    ProgramDecode_addi sdLdAcceptedTrace sdLdAddiEightIndex sdLdAddiEightClaim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    norm_num [sdLdAddiEightIndex, sdLdTableWithData]
+  bits := addiX1Bits
+  h_bits_ieo := rfl
+  h_bits_m32 := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_bits_b_src_imm := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨2, by decide⟩ := sdLdProgramIndex_eq sdLdAddiEightIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdAddiX1EightProgramRow,
+      sdLdAddiEightClaim, x1, Transpiler.ind, regidx_to_fin, packFlags, addiX1Bits,
+      ZiskFv.AirsClean.boolF]
+    all_goals decide
+
+def sdLdAddiX2ProgramDecode :
+    ProgramDecode_addi sdLdAcceptedTrace sdLdAddiX2Index sdLdAddiX2Claim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    norm_num [sdLdAddiX2Index, sdLdTableWithData]
+  bits := addiX0Bits
+  h_bits_ieo := rfl
+  h_bits_m32 := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_bits_b_src_imm := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨3, by decide⟩ := sdLdProgramIndex_eq sdLdAddiX2Index j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdAddiX2ProgramRow,
+      sdLdAddiX2Claim, x2, Transpiler.ind, regidx_to_fin, packFlags, addiX0Bits,
+      ZiskFv.AirsClean.boolF]
+    all_goals decide
+
+def sdLdSdProgramDecode :
+    ProgramDecode_sd sdLdAcceptedTrace sdLdSdIndex sdLdSdClaim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    norm_num [sdLdSdIndex, sdLdTableWithData]
+  bits := sdLdSdBits
+  h_bits_ieo := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨4, by decide⟩ := sdLdProgramIndex_eq sdLdSdIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdSdProgramRow, sdLdSdClaim,
+      sdLdSdInput, packFlags, sdLdSdBits, ZiskFv.AirsClean.boolF]
+    all_goals decide
+
+def sdLdLdProgramDecode :
+    ProgramDecode_ld sdLdAcceptedTrace sdLdLdIndex sdLdLdClaim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    norm_num [sdLdLdIndex, sdLdTableWithData]
+  bits := sdLdLdBits
+  h_bits_ieo := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_bits_store_reg := rfl
+  h_bits_b_src_ind := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨5, by decide⟩ := sdLdProgramIndex_eq sdLdLdIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdLdProgramRow, sdLdLdClaim,
+      sdLdLdInput, Transpiler.ind, Transpiler.regidxOfBitVec5, packFlags,
+      sdLdLdBits, ZiskFv.AirsClean.boolF]
+    all_goals decide
+
+def sdLdJalProgramDecode :
+    ProgramDecode_jal sdLdAcceptedTrace sdLdJalIndex sdLdJalClaim where
+  h_idx := by
+    rw [sdLdAcceptedTrace_mainTable_eq]
+    norm_num [sdLdJalIndex, sdLdTableWithData]
+  bits := AddSpinWitness.addSpinJalBits
+  h_bits_ieo := rfl
+  h_bits_m32 := rfl
+  h_bits_set_pc := rfl
+  h_bits_store_pc := rfl
+  h_bits_store_ind := rfl
+  h_prog := by
+    intro j hline
+    have hj : j = ⟨6, by decide⟩ := sdLdProgramIndex_eq sdLdJalIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdJalProgramRow, sdLdJalClaim,
+      x0, Transpiler.ind, regidx_to_fin, packFlags, AddSpinWitness.addSpinJalBits,
+      ZiskFv.AirsClean.boolF]
+    all_goals decide
+
 end ZiskFv.Compliance.SdLdSpinRootSoundness
