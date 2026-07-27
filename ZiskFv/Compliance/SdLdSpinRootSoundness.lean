@@ -664,7 +664,16 @@ def sdLdLdInputs :
   h_opcode_assumptions := by
     unfold PureSpec.ld_state_assumptions
     simp [sdLdLdClaim, sdLdLdInput, sdLdSailTrace, sdLdLdIndex, sdLdState, sdLdRegs,
-      sdLdStoredMem, x1, x2, x3, regidx_to_fin, reg_of_fin,
+      sdLdStoredMem, sdLdInitialMem, sdLdAcceptedReplayRows, sdMemRow,
+      ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.memRowOf,
+      ZiskFv.AirsClean.Mem.memValueOf,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry,
+      ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows,
+      ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfEntry,
+      ZiskFv.ZiskCircuit.MemTrace.zeroedMemoryEntryOfEntry,
+      ZiskFv.Channels.MemoryBusBytes.byteAt,
+      x1, x2, x3, regidx_to_fin, reg_of_fin,
       LeanRV64D.Functions.rX_bits, LeanRV64D.Functions.rX,
       Std.ExtDHashMap.get?_insert, Std.ExtDHashMap.get?_insert_self,
       Std.ExtHashMap.getElem_insert, Std.ExtHashMap.getElem_insert_self]
@@ -892,5 +901,124 @@ noncomputable def sdLdBootSeed :
       simp [MemoryOpPlacement, sdLdZiskStep, sdLdMemoryRowsOf,
         sdLdSdIndex, sdLdLdIndex]
     all_goals aesop
+
+private def sdLdSequentialOutsideDefectRegion
+    (i : Fin 7) (h_pc : sdLdMainPc i < GL_prime - 4) :
+    RowOutsideDefectRegion sdLdAcceptedTrace i (sdLdZiskStep i) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  exact h_pc
+
+def sdLdAddiA0OutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdAddiA0Index
+      (sdLdZiskStep sdLdAddiA0Index) :=
+  sdLdSequentialOutsideDefectRegion sdLdAddiA0Index (by
+    rw [sdLdMainPc]
+    norm_num [sdLdAddiA0Index])
+
+def sdLdSlliOutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdSlliIndex
+      (sdLdZiskStep sdLdSlliIndex) :=
+  sdLdSequentialOutsideDefectRegion sdLdSlliIndex (by
+    rw [sdLdMainPc]
+    norm_num [sdLdSlliIndex])
+
+def sdLdAddiEightOutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdAddiEightIndex
+      (sdLdZiskStep sdLdAddiEightIndex) :=
+  sdLdSequentialOutsideDefectRegion sdLdAddiEightIndex (by
+    rw [sdLdMainPc]
+    norm_num [sdLdAddiEightIndex])
+
+def sdLdAddiX2OutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdAddiX2Index
+      (sdLdZiskStep sdLdAddiX2Index) :=
+  sdLdSequentialOutsideDefectRegion sdLdAddiX2Index (by
+    rw [sdLdMainPc]
+    norm_num [sdLdAddiX2Index])
+
+def sdLdSdOutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdSdIndex
+      (sdLdZiskStep sdLdSdIndex) :=
+  sdLdSequentialOutsideDefectRegion sdLdSdIndex (by
+    rw [sdLdMainPc]
+    norm_num [sdLdSdIndex])
+
+def sdLdLdOutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdLdIndex
+      (sdLdZiskStep sdLdLdIndex) :=
+  sdLdSequentialOutsideDefectRegion sdLdLdIndex (by
+    rw [sdLdMainPc]
+    norm_num [sdLdLdIndex])
+
+def sdLdJalOutsideDefectRegion :
+    RowOutsideDefectRegion sdLdAcceptedTrace sdLdJalIndex
+      (sdLdZiskStep sdLdJalIndex) where
+  h_no_fgl_wrap := by
+    unfold mainPcVal
+    rw [sdLdMainPc]
+    change 24 + (BitVec.signExtend 64 (0#21)).toNat < GL_prime
+    simp
+  h_pc_bound := by
+    unfold MainSequentialPcDomain mainPcVal
+    rw [sdLdMainPc]
+    change 24 < GL_prime - 4
+    norm_num
+  h_pc_offset_lt_2_32 := by
+    intro pc hpc
+    unfold mainPcVal at hpc
+    rw [sdLdMainPc] at hpc
+    rw [BitVec.toNat_add]
+    rw [← hpc]
+    norm_num
+
+def sdLdOutsideDefectRegion :
+    ∀ i : Fin 7, RowOutsideDefectRegion sdLdAcceptedTrace i (sdLdZiskStep i)
+  | ⟨0, _⟩ => sdLdAddiA0OutsideDefectRegion
+  | ⟨1, _⟩ => sdLdSlliOutsideDefectRegion
+  | ⟨2, _⟩ => sdLdAddiEightOutsideDefectRegion
+  | ⟨3, _⟩ => sdLdAddiX2OutsideDefectRegion
+  | ⟨4, _⟩ => sdLdSdOutsideDefectRegion
+  | ⟨5, _⟩ => sdLdLdOutsideDefectRegion
+  | ⟨6, _⟩ => sdLdJalOutsideDefectRegion
+
+theorem sdLdRootSoundness :
+    ∀ i : Fin 7, StepSound sdLdAcceptedTrace sdLdSailTrace i (sdLdZiskStep i) :=
+  root_soundness 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
+    sdLdProgramDecodes sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion
+
+theorem sdLdAddiA0StepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index
+      (sdLdZiskStep sdLdAddiA0Index) :=
+  sdLdRootSoundness sdLdAddiA0Index
+
+theorem sdLdSlliStepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdSlliIndex
+      (sdLdZiskStep sdLdSlliIndex) :=
+  sdLdRootSoundness sdLdSlliIndex
+
+theorem sdLdAddiEightStepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiEightIndex
+      (sdLdZiskStep sdLdAddiEightIndex) :=
+  sdLdRootSoundness sdLdAddiEightIndex
+
+theorem sdLdAddiX2StepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiX2Index
+      (sdLdZiskStep sdLdAddiX2Index) :=
+  sdLdRootSoundness sdLdAddiX2Index
+
+theorem sdLdSdStepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdSdIndex
+      (sdLdZiskStep sdLdSdIndex) :=
+  sdLdRootSoundness sdLdSdIndex
+
+theorem sdLdLdStepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdLdIndex
+      (sdLdZiskStep sdLdLdIndex) :=
+  sdLdRootSoundness sdLdLdIndex
+
+theorem sdLdJalStepSound :
+    StepSound sdLdAcceptedTrace sdLdSailTrace sdLdJalIndex
+      (sdLdZiskStep sdLdJalIndex) :=
+  sdLdRootSoundness sdLdJalIndex
 
 end ZiskFv.Compliance.SdLdSpinRootSoundness
