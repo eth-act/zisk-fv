@@ -17,6 +17,7 @@ open ZiskFv.Compliance.Instantiation
 open ZiskFv.Compliance.RegisterMemBusBalance
 open ZiskFv.Compliance.RomDecodeBinding
 open ZiskFv.Compliance.SdLdSpinWitness
+open ZiskFv.AirsClean.Main
 open ZiskFv.ZiskCircuit.MemTrace
 open ZiskFv.Trusted
 
@@ -109,7 +110,15 @@ def sdLdRegs (pc x1Value x2Value x3Value : BitVec 64) :
   regs4.insert (reg_of_fin (regidx_to_fin x3)) x3Value
 
 def sdLdStoredMem : Std.ExtHashMap Nat (BitVec 8) :=
-  ({} : Std.ExtHashMap Nat (BitVec 8)).insert 2684354568 (42#8)
+  (((((((({} : Std.ExtHashMap Nat (BitVec 8))
+    |>.insert 2684354568 (42#8))
+    |>.insert 2684354569 (0#8))
+    |>.insert 2684354570 (0#8))
+    |>.insert 2684354571 (0#8))
+    |>.insert 2684354572 (0#8))
+    |>.insert 2684354573 (0#8))
+    |>.insert 2684354574 (0#8))
+    |>.insert 2684354575 (0#8)
 
 def sdLdState (pc x1Value x2Value x3Value : BitVec 64)
     (mem : Std.ExtHashMap Nat (BitVec 8)) :
@@ -126,5 +135,44 @@ def sdLdSailTrace : SailTrace 7
   | ⟨4, _⟩ => sdLdState (16#64) (2684354568#64) (42#64) (0#64) {}
   | ⟨5, _⟩ => sdLdState (20#64) (2684354568#64) (42#64) (0#64) sdLdStoredMem
   | ⟨6, _⟩ => sdLdState (24#64) (2684354568#64) (42#64) (42#64) sdLdStoredMem
+
+private theorem sdLdAcceptedTrace_program :
+    sdLdAcceptedTrace.program = sdLdProgram := rfl
+
+private theorem sdLdMainRowAt (i : Fin 7) :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdProgram
+        (sdLdTableWithData sdLdMainTable) i.val =
+      sdLdMainRows[i.val]'(by
+        simpa [sdLdMainRows] using
+          Nat.lt_trans i.isLt (by decide : 7 < 8)) := by
+  unfold ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+  rw [dif_pos (by change i.val < 8; omega)]
+  change Eval.eval (sdLdMainTable.environmentAt ⟨i.val, by
+      rw [sdLdMainTable_length]
+      omega⟩)
+      (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = _
+  simpa [sdLdMainRows] using sdLdMainTable_evalAt ⟨i.val, by
+    rw [sdLdMainTable_length]
+    omega⟩
+
+private theorem sdLdMainPc (i : Fin 7) :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+        sdLdAcceptedTrace.mainTable).pc i.val = (4 * i.val : Nat) := by
+  rw [sdLdAcceptedTrace_mainTable_eq]
+  change (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdProgram
+      (sdLdTableWithData sdLdMainTable)).pc i.val = _
+  rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_pc]
+  change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdProgram
+    (sdLdTableWithData sdLdMainTable) i.val).core.pc = _
+  rw [congrArg (fun row => row.core.pc) (sdLdMainRowAt i)]
+  fin_cases i <;>
+    simp [sdLdMainRows, sdLdAddiX1A0Row,
+    sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, sdLdSlliX1Row,
+    sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, sdLdAddiX1EightRow,
+    sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate, sdLdAddiX2Row,
+    sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate,
+    sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow, mainRomRowOf,
+    sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
+    sdLdAddiX2ProgramRow, sdLdSdProgramRow, sdLdLdProgramRow, sdLdJalProgramRow]
 
 end ZiskFv.Compliance.SdLdSpinRootSoundness
