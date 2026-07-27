@@ -1194,6 +1194,30 @@ theorem div_rem_signed_mode_pin
         have hval := congrArg Fin.val hop <;>
         norm_num at hval
 
+set_option maxHeartbeats 800000 in
+theorem div_signed_range_polarity_pins
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186) :
+    (v.nb r = 0 → RangeTables.ArithRangePosId (v.range_ab r + 17))
+      ∧ (v.nb r = 1 → RangeTables.ArithRangeNegId (v.range_ab r + 17))
+      ∧ (v.nr r = 0 → RangeTables.ArithRangePosId (v.range_cd r + 17))
+      ∧ (v.nr r = 1 → RangeTables.ArithRangeNegId (v.range_cd r + 17)) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, _hna, hnb, _hnp, hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, hrange_ab,
+      hrange_cd⟩
+    have hval := congrArg Fin.val (hop.symm.trans h_op)
+    norm_num at hval
+  all_goals
+    simp [hnb, hnr, hrange_ab, hrange_cd, RangeTables.ArithRangePosId,
+      RangeTables.ArithRangeNegId]
+
 theorem div_rem_unsigned_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
