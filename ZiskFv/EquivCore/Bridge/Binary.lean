@@ -2259,6 +2259,7 @@ lemma byte_chain_discharge_64_of_static_row
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h4
       · simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+
     | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
           pos_ind := 0, op := v.b_op_or_sext 0,
           a_byte := v.free_in_a_5 0, b_byte := v.free_in_b_5 0,
@@ -2289,6 +2290,84 @@ lemma byte_chain_discharge_64_of_static_row
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7
       · simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
           ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+
+/-- Row-native static-provider route for the signed `GT` byte chain. -/
+set_option maxHeartbeats 1000000 in
+lemma byte_chain_gt_discharge_64_of_static_row
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_special : ZiskFv.AirsClean.Binary.StaticBinaryTableGtFacts row)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_mode32_zero : row.mode.mode32 = 0)
+    (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_GT) :
+    BinaryChainGtStaticOut64 (ZiskFv.AirsClean.Binary.validOfRow row) 0 := by
+  have h_out := byte_chain_discharge_64_of_static_row row
+    (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
+    ZiskFv.Airs.Tables.BinaryTable.OP_GT h_core h_mode32_zero h_b_op
+  rcases h_static with ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6, hs7⟩
+  rcases h_special with ⟨hq0, hq1, hq2, hq3, hq4, hq5, hq6, hq7⟩
+  rcases h_out with ⟨ho0, ho1, ho2, ho3, ho4, ho5, ho6, ho7,
+    _, _, _, _, _, _, _, _, hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+    hp0, hp1, hp2, hp3, hp4, hp5, hp6, hp7⟩
+  constructor <;>
+    simp_all [ZiskFv.Airs.Binary.consumer_byte_match_chain_wf,
+      ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_GT,
+      ZiskFv.AirsClean.Binary.validOfRow, ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions]
+
+/-- Row-native static-provider route for the signed `LT_ABS_NP` byte chain. -/
+set_option maxHeartbeats 1000000 in
+lemma byte_chain_lt_abs_np_discharge_64_of_static_row
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_special : ZiskFv.AirsClean.Binary.StaticBinaryTableLtAbsNpFacts row)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_mode32_zero : row.mode.mode32 = 0)
+    (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP) :
+    BinaryChainLtAbsNpStaticOut64 (ZiskFv.AirsClean.Binary.validOfRow row) 0 := by
+  have h_out := byte_chain_discharge_64_of_static_row row
+    (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
+    ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP h_core h_mode32_zero h_b_op
+  rcases h_static with ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6, hs7⟩
+  rcases h_special with ⟨hq0, hq1, hq2, hq3, hq4, hq5, hq6, hq7⟩
+  rcases h_out with ⟨ho0, ho1, ho2, ho3, ho4, ho5, ho6, ho7,
+    _, _, _, _, _, _, _, _, hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+    hp0, hp1, hp2, hp3, hp4, hp5, hp6, hp7⟩
+  constructor <;>
+    simp_all [ZiskFv.Airs.Binary.consumer_byte_match_chain_wf,
+      ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_LT_ABS_NP,
+      ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions]
+
+/-- Row-native static-provider route for the signed `LT_ABS_PN` byte chain. -/
+set_option maxHeartbeats 1000000 in
+lemma byte_chain_lt_abs_pn_discharge_64_of_static_row
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_special : ZiskFv.AirsClean.Binary.StaticBinaryTableLtAbsPnFacts row)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_mode32_zero : row.mode.mode32 = 0)
+    (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN) :
+    BinaryChainLtAbsPnStaticOut64 (ZiskFv.AirsClean.Binary.validOfRow row) 0 := by
+  have h_out := byte_chain_discharge_64_of_static_row row
+    (ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts row h_static)
+    ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN h_core h_mode32_zero h_b_op
+  rcases h_static with ⟨hs0, hs1, hs2, hs3, hs4, hs5, hs6, hs7⟩
+  rcases h_special with ⟨hq0, hq1, hq2, hq3, hq4, hq5, hq6, hq7⟩
+  rcases h_out with ⟨ho0, ho1, ho2, ho3, ho4, ho5, ho6, ho7,
+    _, _, _, _, _, _, _, _, hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+    hp0, hp1, hp2, hp3, hp4, hp5, hp6, hp7⟩
+  constructor <;>
+    simp_all [ZiskFv.Airs.Binary.consumer_byte_match_chain_wf,
+      ZiskFv.Airs.Binary.consumer_byte_match_chain_wf_LT_ABS_PN,
+      ZiskFv.AirsClean.Binary.rowAt,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions]
 
 lemma chain7_carry_flag_of_static_row_out
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
