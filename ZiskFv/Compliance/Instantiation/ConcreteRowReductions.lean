@@ -170,6 +170,40 @@ private theorem component_constraintsHold_of_proverAssumptions_at
     (Component.constraintsHold_iff (component := component)
       (env := (proverEnv : Environment FGL))).mpr h_row
 
+private theorem component_constraintsHold_of_proverAssumptions_at_data
+    (component : Component FGL) (env : Environment FGL) (row : component.Input FGL)
+    (data : ProverData FGL)
+    (h_localLength : component.circuit.localLength component.rowInputVar = 0)
+    (h_input : Eval.eval env component.rowInputVar = row)
+    (h_data : env.data = data)
+    (h_assumptions :
+      component.circuit.ProverAssumptions row data (ProverHint.empty FGL)) :
+    component.operations.ConstraintsHold env := by
+  let proverEnv := proverEnvFromEnvironment env
+  have h_env : proverEnv.UsesLocalWitnesses component.rowOffset component.rowOperations := by
+    apply usesLocalWitnesses_of_localLength_zero
+    change ((component.circuit.main component.rowInputVar).localLength component.rowOffset) = 0
+    rw [component.circuit.localLength_eq]
+    exact h_localLength
+  have h_input' : Eval.eval proverEnv component.rowInputVar = row := by
+    rw [ProvableType.eval_varFromOffset_prover]
+    rw [← h_input]
+    rw [ProvableType.eval_varFromOffset]
+    congr
+  have h_assumptions' :
+      component.circuit.ProverAssumptions (Eval.eval proverEnv component.rowInputVar)
+        proverEnv.data proverEnv.hint := by
+    rw [h_input']
+    simpa [proverEnv, proverEnvFromEnvironment, h_data] using h_assumptions
+  have h_full :=
+    component.circuit.original_full_completeness component.rowOffset proverEnv component.rowInputVar
+      h_env h_assumptions'
+  have h_row : component.rowOperations.ConstraintsHold (proverEnv : Environment FGL) := by
+    simpa [Component.rowOperations, Component.rowInputVar, Component.rowOffset] using h_full.1
+  simpa [proverEnv, proverEnvFromEnvironment] using
+    (Component.constraintsHold_iff (component := component)
+      (env := (proverEnv : Environment FGL))).mpr h_row
+
 @[reducible] def mainRowArray (row : MainRowWithRom FGL) : Array FGL :=
   mainRawRow row
 
@@ -962,6 +996,83 @@ def memSingleRowTable (row : ZiskFv.AirsClean.Mem.MemRow FGL) : Table FGL where
     subst columns
     norm_num [ZiskFv.AirsClean.Mem.memFixedColumns, ZiskFv.AirsClean.Mem.memFixedCapacity]
 
+/-- A bounded sequence of concrete Mem rows with the component's canonical
+    prover-data-backed range cells materialized into every raw row. -/
+def memRowsTable
+    (data : ProverData FGL) (rows : List (ZiskFv.AirsClean.Mem.MemRow FGL))
+    (h_capacity : rows.length ≤ ZiskFv.AirsClean.Mem.memFixedCapacity) : Table FGL where
+  component := ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  rawRows := rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data)
+  data := data
+  raw_uniform_width := by
+    intro raw h_raw
+    simp only [List.mem_map] at h_raw
+    obtain ⟨row, _, rfl⟩ := h_raw
+    simp [ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+      ZiskFv.AirsClean.Mem.memRawRowWithProverData]
+  fixed_domain := by
+    intro columns h_columns
+    have h_columns' : columns = ZiskFv.AirsClean.Mem.memFixedColumns := by
+      simpa [ZiskFv.AirsClean.Mem.componentWithDualMemBus] using h_columns.symm
+    subst columns
+    change (rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data)).length ≤
+      ZiskFv.AirsClean.Mem.memFixedCapacity
+    simpa using h_capacity
+
+/-- The named Mem input decoded from a prover-data-materialized raw row is its
+    original thirteen-field witness row. -/
+theorem memRowsTable_rowInput
+    (index : Nat) (data : ProverData FGL) (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInput
+      (Environment.fromArray
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data) = row := by
+  simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using
+    ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize index data row
+
+/-- Row-local Mem constraints for a bounded concrete table follow from each
+    row's honest completeness witness, using the same shared prover data as
+    the table's source-linked range cells. -/
+theorem memRowsTable_constraints_of_proverAssumptions
+    (data : ProverData FGL) (rows : List (ZiskFv.AirsClean.Mem.MemRow FGL))
+    (h_capacity : rows.length ≤ ZiskFv.AirsClean.Mem.memFixedCapacity)
+    (h_assumptions : ∀ index : Fin rows.length,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.ProverAssumptions
+        (rows.get index) data (ProverHint.empty FGL)) :
+    (memRowsTable data rows h_capacity).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.localLength
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar = 0 := by
+    change ZiskFv.AirsClean.Mem.memWithDualMemBusElaborated.localLength
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar = 0
+    rfl
+  rw [Table.Constraints]
+  change ∀ arr ∈ List.mapIdx (fun index raw =>
+      ZiskFv.AirsClean.Mem.memFixedColumns.materialize index raw)
+      (rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data)),
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus.operations.ConstraintsHold
+      (Environment.fromArray arr data)
+  intro arr h_arr
+  obtain ⟨index, h_arr⟩ := List.mem_iff_get.mp h_arr
+  let rowsIndex : Fin rows.length := ⟨index.val, by simpa using index.isLt⟩
+  have h_effective :
+      (List.mapIdx (fun index raw =>
+        ZiskFv.AirsClean.Mem.memFixedColumns.materialize index raw)
+        (rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data))).get index =
+        ZiskFv.AirsClean.Mem.memFixedColumns.materialize rowsIndex.val
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData data (rows.get rowsIndex)) := by
+    simpa [List.mapIdx_eq_ofFn, rowsIndex]
+  rw [h_effective] at h_arr
+  subst arr
+  exact component_constraintsHold_of_proverAssumptions_at_data
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    (Environment.fromArray
+      (ZiskFv.AirsClean.Mem.memFixedColumns.materialize rowsIndex.val
+        (ZiskFv.AirsClean.Mem.memRawRowWithProverData data (rows.get rowsIndex))) data)
+    (rows.get rowsIndex) data h_localLength
+    (ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize rowsIndex.val data
+      (rows.get rowsIndex)) rfl (h_assumptions rowsIndex)
+
 private theorem memSingleRowTable_effectiveRows
     (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
     (memSingleRowTable row).table =
@@ -1000,6 +1111,132 @@ def memBusDualInteraction (row : ZiskFv.AirsClean.Mem.MemRow FGL) : Interaction 
   msg := (toElements (ZiskFv.AirsClean.Mem.memBusDualMessage row)).toArray
   same_size := by simp [Channel.toRaw]
   assumeGuarantees := false
+
+private theorem memComponentMemBusInteraction_eval_at
+    (index : Nat) (data : ProverData FGL) (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    (((MemBusChannel.emitted
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel
+        (ZiskFv.AirsClean.Mem.memBusMessageExpr
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+      (Environment.fromArray
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data)) =
+      memBusInteraction row := by
+  let env := Environment.fromArray
+    (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
+      (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data
+  let rowVar := ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar
+  have h_input : eval env rowVar = row := by
+    dsimp [env, rowVar]
+    exact ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize index data row
+  have h_field := memRow_eval_sel env rowVar
+  have h_msg_eval :
+      eval env (ZiskFv.AirsClean.Mem.memBusMessageExpr rowVar) =
+        ZiskFv.AirsClean.Mem.memBusMessage row := by
+    rw [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr]
+    rw [h_input]
+  simp [memBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · change Expression.eval env rowVar.sel = row.sel
+    rw [h_field, h_input]
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (eval env (ZiskFv.AirsClean.Mem.memBusMessageExpr rowVar))).toArray =
+      (toElements (ZiskFv.AirsClean.Mem.memBusMessage row)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+private theorem memComponentMemBusDualInteraction_eval_at
+    (index : Nat) (data : ProverData FGL) (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    (((MemBusChannel.emitted
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel_dual
+        (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+      (Environment.fromArray
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data)) =
+      memBusDualInteraction row := by
+  let env := Environment.fromArray
+    (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
+      (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data
+  let rowVar := ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar
+  have h_input : eval env rowVar = row := by
+    dsimp [env, rowVar]
+    exact ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize index data row
+  have h_field := memRow_eval_sel_dual env rowVar
+  have h_msg_eval :
+      eval env (ZiskFv.AirsClean.Mem.memBusDualMessageExpr rowVar) =
+        ZiskFv.AirsClean.Mem.memBusDualMessage row := by
+    rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr]
+    rw [h_input]
+  simp [memBusDualInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · change Expression.eval env rowVar.sel_dual = row.sel_dual
+    rw [h_field, h_input]
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (eval env (ZiskFv.AirsClean.Mem.memBusDualMessageExpr rowVar))).toArray =
+      (toElements (ZiskFv.AirsClean.Mem.memBusDualMessage row)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+private theorem memRowsTable_memBus_row
+    (index : Nat) (data : ProverData FGL) (row : ZiskFv.AirsClean.Mem.MemRow FGL) :
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus.operations.interactionValuesWith
+        MemBusChannel.toRaw
+        (Environment.fromArray
+          (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
+            (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data) =
+      [memBusInteraction row, memBusDualInteraction row] := by
+  rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus]
+  simp only [List.map_cons, List.map_nil]
+  exact congrArg₂ (fun primary dual => [primary, dual])
+    (memComponentMemBusInteraction_eval_at index data row)
+    (memComponentMemBusDualInteraction_eval_at index data row)
+
+private theorem memRowsTable_interactionsWith_memBus_go
+    (data : ProverData FGL) :
+    ∀ (offset : Nat) (rows : List (ZiskFv.AirsClean.Mem.MemRow FGL)),
+      (List.mapIdx (fun index raw =>
+        ZiskFv.AirsClean.Mem.memFixedColumns.materialize (offset + index) raw)
+        (rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data))).flatMap (fun arr =>
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.operations.interactionValuesWith
+            MemBusChannel.toRaw (Environment.fromArray arr data)) =
+        rows.flatMap fun row => [memBusInteraction row, memBusDualInteraction row] := by
+  intro offset rows
+  induction rows generalizing offset with
+  | nil => rfl
+  | cons row rows ih =>
+      simp only [List.map_cons, List.mapIdx_cons, List.flatMap_cons]
+      rw [memRowsTable_memBus_row]
+      have h_indexed :
+          (fun index raw => ZiskFv.AirsClean.Mem.memFixedColumns.materialize
+              (offset + (index + 1)) raw) =
+            (fun index raw => ZiskFv.AirsClean.Mem.memFixedColumns.materialize
+              ((offset + 1) + index) raw) := by
+        funext index raw
+        congr 1
+        omega
+      rw [h_indexed]
+      exact congrArg (fun tail => [memBusInteraction row, memBusDualInteraction row] ++ tail)
+        (ih (offset := offset + 1))
+
+theorem memRowsTable_interactionsWith_memBus
+    (data : ProverData FGL) (rows : List (ZiskFv.AirsClean.Mem.MemRow FGL))
+    (h_capacity : rows.length ≤ ZiskFv.AirsClean.Mem.memFixedCapacity) :
+    (memRowsTable data rows h_capacity).interactionsWith MemBusChannel.toRaw =
+      rows.flatMap fun row => [memBusInteraction row, memBusDualInteraction row] := by
+  change
+    (List.mapIdx (fun index raw =>
+      ZiskFv.AirsClean.Mem.memFixedColumns.materialize index raw)
+      (rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data))).flatMap (fun arr =>
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.operations.interactionValuesWith
+          MemBusChannel.toRaw (Environment.fromArray arr data)) =
+      rows.flatMap fun row => [memBusInteraction row, memBusDualInteraction row]
+  simpa using memRowsTable_interactionsWith_memBus_go data 0 rows
 
 theorem memComponentMemBusInteraction_eval
     (row : ZiskFv.AirsClean.Mem.MemRow FGL) :

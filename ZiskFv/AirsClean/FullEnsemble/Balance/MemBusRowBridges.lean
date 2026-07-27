@@ -1789,6 +1789,7 @@ def MemAlignLoadProviderRowMatchSpec
               ZiskFv.AirsClean.MemAlign.component.rowInputVar))
           0 entry
 
+set_option maxHeartbeats 1000000 in
 /-- A structural MemAlignReadByte load-provider row supplies the corresponding
     branch of the legacy subdoubleword provider witness, once the Main row's
     load width is pinned to one byte.
@@ -1796,7 +1797,6 @@ def MemAlignLoadProviderRowMatchSpec
 The selected row's byte range comes directly from the Clean component `Spec`:
 that is the source-faithful static-lookup conclusion carried by the accepted
 table, not a whole-table validator premise. -/
-set_option maxHeartbeats 1000000 in
 theorem exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderRowMatchSpec
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -1816,7 +1816,8 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderR
       (eval (providerTable.environment providerRow)
         ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar) := by
     rw [h_component] at h_spec
-    simpa only [ZiskFv.AirsClean.MemAlignReadByte.component_spec] using h_spec
+    rw [ZiskFv.AirsClean.MemAlignReadByte.component_spec] at h_spec
+    simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using h_spec
   refine ⟨
     ZiskFv.AirsClean.MemAlignReadByte.validOfRow
       (eval (providerTable.environment providerRow)
@@ -1825,13 +1826,13 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderR
   exact
     { provider := Or.inr (Or.inl ⟨0, h_match, h_width, h_row_spec.2⟩) }
 
+set_option maxHeartbeats 1000000 in
 /-- A structural MemAlignByte load-provider row supplies the corresponding
     branch of the legacy subdoubleword provider witness, once the Main row's
     load width is pinned to one byte.
 
 As above, the selected row's range is derived from the table's in-circuit
 static lookup through its Clean component `Spec`. -/
-set_option maxHeartbeats 1000000 in
 theorem exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMatchSpec
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -1851,7 +1852,8 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMa
       (eval (providerTable.environment providerRow)
         ZiskFv.AirsClean.MemAlignByte.component.rowInputVar) := by
     rw [h_component] at h_spec
-    simpa only [ZiskFv.AirsClean.MemAlignByte.component_spec] using h_spec
+    rw [ZiskFv.AirsClean.MemAlignByte.component_spec] at h_spec
+    simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using h_spec
   refine ⟨
     ZiskFv.AirsClean.MemAlignByte.validOfRow
       (eval (providerTable.environment providerRow)

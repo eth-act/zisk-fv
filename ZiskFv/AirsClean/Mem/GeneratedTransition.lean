@@ -184,6 +184,25 @@ theorem eval_memRawRow_materialize
     simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout, memRawRow,
       ProvableType.size]
 
+/-- Materializing a Mem row with its canonical prover-data range cells still
+    decodes the thirteen witness fields as the original row. -/
+theorem eval_memRawRowWithProverData_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
+    Eval.eval
+      (Environment.fromArray (memFixedColumns.materialize index
+        (memRawRowWithProverData data row)) data)
+      (varFromOffset (F := FGL) MemRow 0) = row := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMemRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go, ProvableType.eval_field,
+    ProvableType.varFromOffset_field, Expression.eval, Nat.zero_add]
+  cases row with
+  | mk addr step sel addr_changes step_dual sel_dual value_0 value_1 wr previous_step
+      increment_0 increment_1 read_same_addr =>
+    simp [IndexedFixedColumns.materialize, memFixedColumns, memFixedLayout,
+      memRawRowWithProverData, ProvableType.size]
+
 /-- Decode the 13 raw Mem witness cells from an effective transition environment. -/
 @[reducible]
 def memRowFromEnvironment (env : Environment FGL) : MemRow FGL :=
