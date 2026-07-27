@@ -809,7 +809,43 @@ noncomputable def sdLdMemoryRowsOf : ℕ → List (Interaction.MemoryBusEntry FG
       (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1]
   | _ => []
 
-set_option maxHeartbeats 0 in
+private theorem sdLdMemTable_activeReplayRows :
+    ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable sdLdMemTable =
+      sdLdAcceptedReplayRows := by
+  unfold ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable
+  rw [show sdLdMemTable.table =
+    [ZiskFv.AirsClean.Mem.memFixedColumns.materialize 0
+        (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData sdMemRow),
+      ZiskFv.AirsClean.Mem.memFixedColumns.materialize 1
+        (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData ldMemRow)] by rfl]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have hrow0 : Eval.eval
+      (sdLdMemTable.environment
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize 0
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData sdMemRow)))
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar = sdMemRow := by
+    change Eval.eval
+      (Environment.fromArray
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize 0
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData sdMemRow)) sdLdMemData)
+      (varFromOffset (F := FGL) ZiskFv.AirsClean.Mem.MemRow 0) = sdMemRow
+    exact ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize
+      0 sdLdMemData sdMemRow
+  have hrow1 : Eval.eval
+      (sdLdMemTable.environment
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize 1
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData ldMemRow)))
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar = ldMemRow := by
+    change Eval.eval
+      (Environment.fromArray
+        (ZiskFv.AirsClean.Mem.memFixedColumns.materialize 1
+          (ZiskFv.AirsClean.Mem.memRawRowWithProverData sdLdMemData ldMemRow)) sdLdMemData)
+      (varFromOffset (F := FGL) ZiskFv.AirsClean.Mem.MemRow 0) = ldMemRow
+    exact ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize
+      1 sdLdMemData ldMemRow
+  rw [hrow0, hrow1]
+  rfl
+
 noncomputable def sdLdBootSeed :
     BootSegmentMemorySeed sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep where
   memInit := sdLdInitialMem
@@ -829,27 +865,31 @@ noncomputable def sdLdBootSeed :
         [(busSt sdLdAcceptedTrace sdLdSdIndex
           (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2] by rfl]
       rw [sdLdStoreEntry_eq]
-      simp [sdLdSailTrace, sdLdState, replayMemoryAfterBusRows,
-        replayMemoryAfterBusRow, sdLdStoredMem, sdLdInitialMem,
-        sdLdSdIndex, sdMemRow, ZiskFv.AirsClean.Mem.memBusMessage,
-        ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memValueOf,
-        ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry, writeMemoryOfEntry,
-        ZiskFv.Channels.MemoryBusBytes.byteAt, sdLdAcceptedReplayRows]
+      change sdLdStoredMem =
+        replayMemoryAfterBusRows sdLdInitialMem
+          [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+            (ZiskFv.AirsClean.Mem.memBusMessage sdMemRow) 1 2]
+      simp only [replayMemoryAfterBusRows, List.foldl_cons, List.foldl_nil,
+        replayMemoryAfterBusRow, if_true, replayStoreEvent_storeEventOfEntry]
+      rfl
     · rw [show (⟨5, by omega⟩ : Fin 7) = sdLdLdIndex by rfl]
       rw [show sdLdMemoryRowsOf 5 =
         [(busLd sdLdAcceptedTrace sdLdLdIndex
           (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1] by rfl]
       rw [sdLdLoadEntry_eq]
-      simp [sdLdSailTrace, sdLdState, replayMemoryAfterBusRows,
-        replayMemoryAfterBusRow, sdLdStoredMem, sdLdLdIndex, ldMemRow,
-        ZiskFv.AirsClean.Mem.memBusMessage,
-        ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memValueOf,
-        ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry, writeMemoryOfEntry,
-        ZiskFv.Channels.MemoryBusBytes.byteAt, sdLdAcceptedReplayRows]
-      intro h_bad
-      norm_num at h_bad
+      change sdLdStoredMem =
+        replayMemoryAfterBusRows sdLdStoredMem
+          [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+            (ZiskFv.AirsClean.Mem.memBusMessage ldMemRow) (-1) 2]
+      simp only [replayMemoryAfterBusRows, List.foldl_cons, List.foldl_nil]
+      exact (replayMemoryAfterBusRow_eq_self_of_read _ _ (by rfl) (by rfl)).symm
   readSoundInputs := by
     intro h_present
+    have h_replayRows :
+        sdLdAcceptedTrace.memReplayRows h_present = sdLdAcceptedReplayRows := by
+      change ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable sdLdMemTable =
+        sdLdAcceptedReplayRows
+      exact sdLdMemTable_activeReplayRows
     refine ⟨?_, ?_⟩
     · have h_first :
           (sdLdAcceptedTrace.memReplayBridge h_present).segment.is_first_segment = 1 := by
@@ -861,16 +901,11 @@ noncomputable def sdLdBootSeed :
       unfold ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_segmentSelector_memTableGeneratedRowsBridge
       rw [dif_pos h_first]
       unfold ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge
-      rw [← (sdLdAcceptedTrace.memReplayBridge h_present).rows_eq]
-      simp [sdLdInitialMem, AcceptedZiskTrace.memReplayBridge, sdLdAcceptedTrace,
-        ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows,
-        ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfEntry,
-        ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry,
-        ZiskFv.ZiskCircuit.MemTrace.zeroedMemoryEntryOfEntry,
-        sdLdTableWithData, sdLdMemTable, memRowsTable, sdLdMemRows,
-        sdMemRow, ldMemRow, ZiskFv.AirsClean.Mem.memRowOf,
-        ZiskFv.AirsClean.Mem.memReadSameAddrOf, ZiskFv.AirsClean.Mem.memValueOf,
-        sdLdAcceptedReplayRows]
+      change sdLdInitialMem =
+        ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows
+          (ZiskFv.AirsClean.FullEnsemble.activeMemReplayRowsOfTable sdLdMemTable)
+      rw [sdLdMemTable_activeReplayRows]
+      rfl
     · change MemoryBusRowsReplaySafePermutation _ _
       rw [ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge_rows]
       have h_execution :
@@ -882,12 +917,8 @@ noncomputable def sdLdBootSeed :
             (busLd sdLdAcceptedTrace sdLdLdIndex
               (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1] =
             sdLdAcceptedTrace.memReplayRows h_present
-        rw [sdLdStoreEntry_eq, sdLdLoadEntry_eq]
-        simp [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayTable,
-          AcceptedZiskTrace.memReplayBridge, sdLdAcceptedTrace, sdLdTableWithData,
-          sdLdMemTable, memRowsTable, sdLdMemRows, sdMemRow, ldMemRow,
-          ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memReadSameAddrOf,
-          ZiskFv.AirsClean.Mem.memValueOf]
+        rw [sdLdStoreEntry_eq, sdLdLoadEntry_eq, h_replayRows]
+        rfl
       rw [h_execution]
       exact MemoryBusRowsReplaySafePermutation.refl _
   memPresent_of_executionRows_nonempty := by
@@ -902,53 +933,53 @@ noncomputable def sdLdBootSeed :
         sdLdSdIndex, sdLdLdIndex]
     all_goals aesop
 
-private def sdLdSequentialOutsideDefectRegion
-    (i : Fin 7) (h_pc : sdLdMainPc i < GL_prime - 4) :
-    RowOutsideDefectRegion sdLdAcceptedTrace i (sdLdZiskStep i) := by
-  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
-  exact h_pc
-
 def sdLdAddiA0OutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdAddiA0Index
-      (sdLdZiskStep sdLdAddiA0Index) :=
-  sdLdSequentialOutsideDefectRegion sdLdAddiA0Index (by
-    rw [sdLdMainPc]
-    norm_num [sdLdAddiA0Index])
+      (sdLdZiskStep sdLdAddiA0Index) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  rw [sdLdMainPc]
+  change (0 : Nat) < GL_prime - 4
+  norm_num
 
 def sdLdSlliOutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdSlliIndex
-      (sdLdZiskStep sdLdSlliIndex) :=
-  sdLdSequentialOutsideDefectRegion sdLdSlliIndex (by
-    rw [sdLdMainPc]
-    norm_num [sdLdSlliIndex])
+      (sdLdZiskStep sdLdSlliIndex) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  rw [sdLdMainPc]
+  change (4 : Nat) < GL_prime - 4
+  norm_num
 
 def sdLdAddiEightOutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdAddiEightIndex
-      (sdLdZiskStep sdLdAddiEightIndex) :=
-  sdLdSequentialOutsideDefectRegion sdLdAddiEightIndex (by
-    rw [sdLdMainPc]
-    norm_num [sdLdAddiEightIndex])
+      (sdLdZiskStep sdLdAddiEightIndex) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  rw [sdLdMainPc]
+  change (8 : Nat) < GL_prime - 4
+  norm_num
 
 def sdLdAddiX2OutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdAddiX2Index
-      (sdLdZiskStep sdLdAddiX2Index) :=
-  sdLdSequentialOutsideDefectRegion sdLdAddiX2Index (by
-    rw [sdLdMainPc]
-    norm_num [sdLdAddiX2Index])
+      (sdLdZiskStep sdLdAddiX2Index) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  rw [sdLdMainPc]
+  change (12 : Nat) < GL_prime - 4
+  norm_num
 
 def sdLdSdOutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdSdIndex
-      (sdLdZiskStep sdLdSdIndex) :=
-  sdLdSequentialOutsideDefectRegion sdLdSdIndex (by
-    rw [sdLdMainPc]
-    norm_num [sdLdSdIndex])
+      (sdLdZiskStep sdLdSdIndex) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  rw [sdLdMainPc]
+  change (16 : Nat) < GL_prime - 4
+  norm_num
 
 def sdLdLdOutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdLdIndex
-      (sdLdZiskStep sdLdLdIndex) :=
-  sdLdSequentialOutsideDefectRegion sdLdLdIndex (by
-    rw [sdLdMainPc]
-    norm_num [sdLdLdIndex])
+      (sdLdZiskStep sdLdLdIndex) := by
+  unfold RowOutsideDefectRegion sdLdZiskStep MainSequentialPcDomain mainPcVal
+  rw [sdLdMainPc]
+  change (20 : Nat) < GL_prime - 4
+  norm_num
 
 def sdLdJalOutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdJalIndex
@@ -969,7 +1000,7 @@ def sdLdJalOutsideDefectRegion :
     rw [sdLdMainPc] at hpc
     rw [BitVec.toNat_add]
     rw [← hpc]
-    norm_num
+    norm_num [sdLdJalIndex]
 
 def sdLdOutsideDefectRegion :
     ∀ i : Fin 7, RowOutsideDefectRegion sdLdAcceptedTrace i (sdLdZiskStep i)
