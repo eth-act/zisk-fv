@@ -1841,9 +1841,18 @@ lemma mul_signed_chain_witnesses
     · rw [h]; decide
   -- Derive np ∈ {0,1} from h_np_xor + na, nb ∈ {0,1}, by round-trip.
   have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
-    rcases h_np_bool with h | h
-    · left; rw [h]; decide
-    · right; rw [h]; decide
+    rw [h_np_xor]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    · left; decide
+    · right; decide
+    · right; decide
+    · left; decide
+  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
+    rcases h_np_int_bool with h | h
+    · left; rw [← h_round_trip, h]; norm_cast
+    · right; rw [← h_round_trip, h]; norm_cast
   have h_np_abs : |toIntZ (v.np r_a)| ≤ 1 := by
     rcases h_np_int_bool with h | h
     · rw [h]; decide
