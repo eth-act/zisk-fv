@@ -1,0 +1,6 @@
+import ZiskFv.Compliance.JalrSpinRootSoundness
+
+#print axioms ZiskFv.Compliance.JalrSpinRootSoundness.jalrSpinRootSoundness
+#print axioms ZiskFv.Compliance.JalrSpinRootSoundness.jalrStepSound
+#print axioms ZiskFv.Compliance.JalrSpinWitness.jalrAcceptedTrace
+#print axioms ZiskFv.Compliance.JalrSpinWitness.jalrWitness_balancedChannels
