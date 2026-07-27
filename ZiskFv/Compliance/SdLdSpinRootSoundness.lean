@@ -138,16 +138,19 @@ def sdLdRegs (pc x1Value x2Value x3Value : BitVec 64) :
   let regs9 := regs8.insert (reg_of_fin (regidx_to_fin x2)) x2Value
   regs9.insert (reg_of_fin (regidx_to_fin x3)) x3Value
 
+def sdLdAcceptedReplayRows : List (Interaction.MemoryBusEntry FGL) :=
+  [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Mem.memBusMessage sdMemRow) 1 2,
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Mem.memBusMessage ldMemRow) (-1) 2]
+
+def sdLdInitialMem : Std.ExtHashMap Nat (BitVec 8) :=
+  ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows sdLdAcceptedReplayRows
+
 def sdLdStoredMem : Std.ExtHashMap Nat (BitVec 8) :=
-  (((((((({} : Std.ExtHashMap Nat (BitVec 8))
-    |>.insert 2684354568 (42#8))
-    |>.insert 2684354569 (0#8))
-    |>.insert 2684354570 (0#8))
-    |>.insert 2684354571 (0#8))
-    |>.insert 2684354572 (0#8))
-    |>.insert 2684354573 (0#8))
-    |>.insert 2684354574 (0#8))
-    |>.insert 2684354575 (0#8)
+  ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry sdLdInitialMem
+    (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (ZiskFv.AirsClean.Mem.memBusMessage sdMemRow) 1 2)
 
 def sdLdState (pc x1Value x2Value x3Value : BitVec 64)
     (mem : Std.ExtHashMap Nat (BitVec 8)) :
@@ -157,11 +160,11 @@ def sdLdState (pc x1Value x2Value x3Value : BitVec 64)
     mem := mem }
 
 def sdLdSailTrace : SailTrace 7
-  | ⟨0, _⟩ => sdLdState (0#64) (0#64) (0#64) (0#64) {}
-  | ⟨1, _⟩ => sdLdState (4#64) (160#64) (0#64) (0#64) {}
-  | ⟨2, _⟩ => sdLdState (8#64) (2684354560#64) (0#64) (0#64) {}
-  | ⟨3, _⟩ => sdLdState (12#64) (2684354568#64) (0#64) (0#64) {}
-  | ⟨4, _⟩ => sdLdState (16#64) (2684354568#64) (42#64) (0#64) {}
+  | ⟨0, _⟩ => sdLdState (0#64) (0#64) (0#64) (0#64) sdLdInitialMem
+  | ⟨1, _⟩ => sdLdState (4#64) (160#64) (0#64) (0#64) sdLdInitialMem
+  | ⟨2, _⟩ => sdLdState (8#64) (2684354560#64) (0#64) (0#64) sdLdInitialMem
+  | ⟨3, _⟩ => sdLdState (12#64) (2684354568#64) (0#64) (0#64) sdLdInitialMem
+  | ⟨4, _⟩ => sdLdState (16#64) (2684354568#64) (42#64) (0#64) sdLdInitialMem
   | ⟨5, _⟩ => sdLdState (20#64) (2684354568#64) (42#64) (0#64) sdLdStoredMem
   | ⟨6, _⟩ => sdLdState (24#64) (2684354568#64) (42#64) (42#64) sdLdStoredMem
 
@@ -767,5 +770,127 @@ def sdLdInputsAgree :
   | ⟨4, _⟩ => sdLdSdInputs
   | ⟨5, _⟩ => sdLdLdInputs
   | ⟨6, _⟩ => sdLdJalInputs
+
+private theorem sdLdStoreEntry_eq :
+    (busSt sdLdAcceptedTrace sdLdSdIndex
+      (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2 =
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage sdMemRow) 1 2 := by
+  change ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (cMemMessage (mainRowWithRomSt sdLdAcceptedTrace sdLdSdIndex)) 1 2 = _
+  rw [show mainRowWithRomSt sdLdAcceptedTrace sdLdSdIndex = sdLdSdRow by
+    exact sdLdAcceptedMainRowAt sdLdSdIndex]
+  rw [sdLdStoreMessage_eq_mem]
+
+private theorem sdLdLoadEntry_eq :
+    (busLd sdLdAcceptedTrace sdLdLdIndex
+      (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1 =
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage ldMemRow) (-1) 2 := by
+  change ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+      (bMemMessage (mainRowWithRomLd sdLdAcceptedTrace sdLdLdIndex)) (-1) 2 = _
+  rw [show mainRowWithRomLd sdLdAcceptedTrace sdLdLdIndex = sdLdLdRow by
+    exact sdLdAcceptedMainRowAt sdLdLdIndex]
+  rw [sdLdLoadMessage_eq_mem]
+
+noncomputable def sdLdMemoryRowsOf : ℕ → List (Interaction.MemoryBusEntry FGL)
+  | 4 => [(busSt sdLdAcceptedTrace sdLdSdIndex
+      (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2]
+  | 5 => [(busLd sdLdAcceptedTrace sdLdLdIndex
+      (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1]
+  | _ => []
+
+set_option maxHeartbeats 0 in
+noncomputable def sdLdBootSeed :
+    BootSegmentMemorySeed sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep where
+  memInit := sdLdInitialMem
+  rowsOf := sdLdMemoryRowsOf
+  boot := by intro _; rfl
+  step := by
+    intro j h
+    change j + 1 < 7 at h
+    have hj : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl
+    · simp [sdLdSailTrace, sdLdState, sdLdMemoryRowsOf, replayMemoryAfterBusRows]
+    · simp [sdLdSailTrace, sdLdState, sdLdMemoryRowsOf, replayMemoryAfterBusRows]
+    · simp [sdLdSailTrace, sdLdState, sdLdMemoryRowsOf, replayMemoryAfterBusRows]
+    · simp [sdLdSailTrace, sdLdState, sdLdMemoryRowsOf, replayMemoryAfterBusRows]
+    · rw [show (⟨4, by omega⟩ : Fin 7) = sdLdSdIndex by rfl]
+      rw [show sdLdMemoryRowsOf 4 =
+        [(busSt sdLdAcceptedTrace sdLdSdIndex
+          (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2] by rfl]
+      rw [sdLdStoreEntry_eq]
+      simp [sdLdSailTrace, sdLdState, replayMemoryAfterBusRows,
+        replayMemoryAfterBusRow, sdLdStoredMem, sdLdInitialMem,
+        sdLdSdIndex, sdMemRow, ZiskFv.AirsClean.Mem.memBusMessage,
+        ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memValueOf,
+        ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry, writeMemoryOfEntry,
+        ZiskFv.Channels.MemoryBusBytes.byteAt, sdLdAcceptedReplayRows]
+    · rw [show (⟨5, by omega⟩ : Fin 7) = sdLdLdIndex by rfl]
+      rw [show sdLdMemoryRowsOf 5 =
+        [(busLd sdLdAcceptedTrace sdLdLdIndex
+          (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1] by rfl]
+      rw [sdLdLoadEntry_eq]
+      simp [sdLdSailTrace, sdLdState, replayMemoryAfterBusRows,
+        replayMemoryAfterBusRow, sdLdStoredMem, sdLdLdIndex, ldMemRow,
+        ZiskFv.AirsClean.Mem.memBusMessage,
+        ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memValueOf,
+        ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry, writeMemoryOfEntry,
+        ZiskFv.Channels.MemoryBusBytes.byteAt, sdLdAcceptedReplayRows]
+      intro h_bad
+      norm_num at h_bad
+  readSoundInputs := by
+    intro h_present
+    refine ⟨?_, ?_⟩
+    · have h_first :
+          (sdLdAcceptedTrace.memReplayBridge h_present).segment.is_first_segment = 1 := by
+        change ZiskFv.AirsClean.Mem.proverDataScalar sdLdMemData
+          ZiskFv.AirsClean.Mem.MemRawSidecarDataKey.Segment.isFirstSegment = 1
+        exact sdLdMemData_isFirstSegment
+      unfold ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
+      unfold ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts
+      unfold ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_segmentSelector_memTableGeneratedRowsBridge
+      rw [dif_pos h_first]
+      unfold ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge
+      rw [← (sdLdAcceptedTrace.memReplayBridge h_present).rows_eq]
+      simp [sdLdInitialMem, AcceptedZiskTrace.memReplayBridge, sdLdAcceptedTrace,
+        ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows,
+        ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfEntry,
+        ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry,
+        ZiskFv.ZiskCircuit.MemTrace.zeroedMemoryEntryOfEntry,
+        sdLdTableWithData, sdLdMemTable, memRowsTable, sdLdMemRows,
+        sdMemRow, ldMemRow, ZiskFv.AirsClean.Mem.memRowOf,
+        ZiskFv.AirsClean.Mem.memReadSameAddrOf, ZiskFv.AirsClean.Mem.memValueOf,
+        sdLdAcceptedReplayRows]
+    · change MemoryBusRowsReplaySafePermutation _ _
+      rw [ZiskFv.AirsClean.FullEnsemble.acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge_rows]
+      have h_execution :
+          (List.range sdLdAcceptedTrace.numInstructions).flatMap sdLdMemoryRowsOf =
+            sdLdAcceptedTrace.memReplayRows h_present := by
+        change
+          [(busSt sdLdAcceptedTrace sdLdSdIndex
+              (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2,
+            (busLd sdLdAcceptedTrace sdLdLdIndex
+              (Pilot.execRowOf sdLdAcceptedTrace sdLdLdIndex)).e1] =
+            sdLdAcceptedTrace.memReplayRows h_present
+        rw [sdLdStoreEntry_eq, sdLdLoadEntry_eq]
+        simp [AcceptedZiskTrace.memReplayRows, AcceptedZiskTrace.memReplayTable,
+          AcceptedZiskTrace.memReplayBridge, sdLdAcceptedTrace, sdLdTableWithData,
+          sdLdMemTable, memRowsTable, sdLdMemRows, sdMemRow, ldMemRow,
+          ZiskFv.AirsClean.Mem.memRowOf, ZiskFv.AirsClean.Mem.memReadSameAddrOf,
+          ZiskFv.AirsClean.Mem.memValueOf]
+      rw [h_execution]
+      exact MemoryBusRowsReplaySafePermutation.refl _
+  memPresent_of_executionRows_nonempty := by
+    intro _
+    refine ⟨sdLdTableWithData sdLdMemTable, ?_, rfl, ?_⟩
+    · simp [sdLdAcceptedTrace, Air.Flat.EnsembleWitness.allTables, sdLdWitness, sdLdTables]
+    · norm_num [sdLdTableWithData, sdLdMemTable, memRowsTable, sdLdMemRows]
+  placement := by
+    intro i
+    fin_cases i <;>
+      simp [MemoryOpPlacement, sdLdZiskStep, sdLdMemoryRowsOf,
+        sdLdSdIndex, sdLdLdIndex]
+    all_goals aesop
 
 end ZiskFv.Compliance.SdLdSpinRootSoundness
