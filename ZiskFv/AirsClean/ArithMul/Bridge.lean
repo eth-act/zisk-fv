@@ -560,7 +560,7 @@ theorem remainderBoundOpBusMessage_op_of_signs
       ∨ (remainderBoundOpBusMessage row).op.val = 8 := by
   rcases h_nr with h_nr | h_nr <;>
     rcases h_nb with h_nb | h_nb <;>
-    simp [remainderBoundOpBusMessage, h_nr, h_nb]
+    simp [h_nr, h_nb]
 
 /-- Evaluation of the physical remainder-bound interaction's multiplicity.
     Keeping this projection in the row bridge avoids unfolding the full muxed
@@ -577,6 +577,18 @@ theorem eval_remainderBoundInteraction_mult
     ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
     ProvableType.eval_field, Expression.eval]
   ring
+
+/-- On a live nonzero-divisor DIV row, the physical remainder comparison is
+    an active operation-bus consumer. -/
+theorem eval_remainderBoundInteraction_mult_neg_one
+    (env : Environment FGL) (row : Var ArithMulRow FGL)
+    (h_div : (eval env row).flags.div = 1)
+    (h_div_by_zero : (eval env row).flags.div_by_zero = 0) :
+    (((OpBusChannel.emitted
+        (-(row.flags.div * (1 - row.flags.div_by_zero)))
+        (remainderBoundOpBusMessageExpr row)).toRaw).eval env).mult = -1 := by
+  rw [eval_remainderBoundInteraction_mult, h_div, h_div_by_zero]
+  norm_num
 
 /-- Op-only projection of `eval_primaryOpBusMessageExpr`, used to avoid
     unfolding the entire operation-bus message in downstream provider
