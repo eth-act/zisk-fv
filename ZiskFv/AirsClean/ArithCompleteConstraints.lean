@@ -93,4 +93,75 @@ theorem sharedMainComplete_base_soundness
     hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3,
     hcy0, hcy1, hcy2, hcy3, hcy4, hcy5, hcy6⟩
 
+set_option maxHeartbeats 1600000 in
+/-- Project exactly the appended generated Div block from the live completed
+constraint list. -/
+theorem sharedDivBlockSpec_of_constraints
+    (offset : ℕ) (env : Environment FGL) (row : Var ArithMulRow FGL)
+    (h : Operations.ConstraintsHold env
+      ((sharedMainComplete row).operations offset)) :
+    SharedDivBlockSpec (eval env row) := by
+  simp only [sharedMainComplete, mainWithArithTable, main, circuit_norm] at h
+  cases row with
+  | mk chunks flags carries =>
+    cases chunks with
+    | mk a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 d0 d1 d2 d3 =>
+    cases flags with
+    | mk na nb nr np sext m32 div div0 overflow mainDiv mainMul signed
+        rangeAB rangeCD op busRes multiplicity =>
+    cases carries with
+    | mk cy0 cy1 cy2 cy3 cy4 cy5 cy6 fab nafb nbfa inv =>
+    simp only [SharedDivBlockSpec, DivModeSpec, DivBoundarySpec, DivInverseSumSpec,
+      DivScopeSpec, DivWModeSpec, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+      ProvableStruct.fromComponents, ProvableStruct.components, ProvableStruct.toComponents,
+      ProvableStruct.eval.go, ProvableType.eval_field] at *
+    refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+      ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+      ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ⟨?_, ?_⟩⟩
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (mainDiv * (mainDiv - 1)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (mainMul * (mainMul - 1)) (by simp)
+    · simpa [Expression.eval] using h.1 (mainMul * mainDiv) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (signed * (1 - signed)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (div0 * (1 - div0)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (overflow * (1 - overflow)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (div * (1 - div)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (m32 * (1 - m32)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (na * (1 - na)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (nb * (1 - nb)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (nr * (1 - nr)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (np * (1 - np)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (sext * (1 - sext)) (by simp)
+    · simpa [Expression.eval] using h.1 (div0 * b0) (by simp)
+    · simpa [Expression.eval] using h.1 (div0 * b1) (by simp)
+    · simpa [Expression.eval] using h.1 (div0 * b2) (by simp)
+    · simpa [Expression.eval] using h.1 (div0 * b3) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (div0 * (a0 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (div0 * (a1 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (div0 * (a2 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (div0 * (a3 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (overflow * (b0 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (overflow * (b1 - 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (overflow * (b2 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (overflow * (b3 - (1 - m32) * 65535)) (by simp)
+    · simpa [Expression.eval] using h.1 (overflow * c0) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (overflow * (c1 - m32 * 32768)) (by simp)
+    · simpa [Expression.eval] using h.1 (overflow * c2) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (overflow * (c3 - (1 - m32) * 32768)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 ((div - div0) * (1 - inv * (((b0 + b1) + b2) + b3))) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (div0 * (1 - div)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (overflow * (1 - div)) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using h.1 (overflow * (1 - signed)) (by simp)
+    · simpa [Expression.eval] using h.1 (overflow * div0) (by simp)
+    · simpa [Expression.eval] using h.1 (div0 * overflow) (by simp)
+    · simpa [Expression.eval, sub_eq_add_neg] using
+        h.1 (m32 * (div * (c2 + c3 * 65536) + (1 - div) * (a2 + a3 * 65536))) (by simp)
+    · simpa [Expression.eval] using h.1 (m32 * (b2 + b3 * 65536)) (by simp)
+
 end ZiskFv.AirsClean.ArithMul
