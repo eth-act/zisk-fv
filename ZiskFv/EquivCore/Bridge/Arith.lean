@@ -203,6 +203,13 @@ structure ArithDivSignedRemainderBoundWitness
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
       (opBus_row_Binary binary r_binary)
 
+private lemma fgl_boolean_cases_arith {x : FGL}
+    (h : x * (1 - x) = 0) : x = 0 ∨ x = 1 := by
+  rcases mul_eq_zero.mp h with hx | hx
+  · exact Or.inl hx
+  · right
+    linear_combination -hx
+
 /-- The matched Binary row for a signed remainder-bound request carries the
     selected comparison opcode and the asserted final comparison flag. -/
 lemma arith_div_signed_remainder_bound_selector_pins
@@ -230,6 +237,45 @@ lemma arith_div_signed_remainder_bound_selector_pins
     simpa [h_nr, h_nb] using h_op.symm
   · intro h_nr h_nb
     simpa [h_nr, h_nb] using h_op.symm
+
+private lemma arith_div_signed_remainder_bound_mode32_zero
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r) :
+    w.binary.mode32 w.r_binary = 0 := by
+  have h_selector := arith_div_signed_remainder_bound_selector_pins w
+  obtain ⟨_, h00, h10, h01, h11⟩ := h_selector
+  have hm_bool := w.binary_core.1
+  have hm : w.binary.mode32 w.r_binary = 0 ∨ w.binary.mode32 w.r_binary = 1 := by
+    apply fgl_boolean_cases_arith
+    simpa [ZiskFv.Airs.Binary.boolean_mode32] using hm_bool
+  rcases hm with hm | hm
+  · exact hm
+  exfalso
+  rcases w.selected_chain with h | h | h | h
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h00 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_LTU : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LTU] at hs
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h10 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP] at hs
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h01 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN] at hs
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h11 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_GT : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_GT] at hs
 
 /-- Project an ArithDiv remainder-bound witness through the matched Binary
     provider row. The conclusion is still expressed in Binary byte lanes;
