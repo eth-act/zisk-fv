@@ -290,6 +290,29 @@ theorem spec_op_val_ne_compare {t : BinaryExtensionTableMessage FGL}
         OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- BinaryExtensionTable rows cannot provide any of ArithDiv's four
+    remainder-bound comparison operations (`LTU`, `LT_ABS_NP`,
+    `LT_ABS_PN`, or `GT`). -/
+theorem spec_op_val_ne_arith_div_remainder_bound
+    {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 6 ∧ t.op.val ≠ 80 ∧ t.op.val ≠ 81 ∧ t.op.val ≠ 8 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 6
+    ∧ (opOfIndex i.val : FGL).val ≠ 80
+    ∧ (opOfIndex i.val : FGL).val ≠ 81
+    ∧ (opOfIndex i.val : FGL).val ≠ 8
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;>
+    norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+      OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- BinaryExtensionTable rows cover shift and sign-extension opcodes only;
     they cannot be the Binary-table ADD/SUB opcodes `10` or `11`. -/
 theorem spec_op_val_ne_add_sub {t : BinaryExtensionTableMessage FGL}
