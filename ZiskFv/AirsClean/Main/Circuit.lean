@@ -712,6 +712,28 @@ def pcHandshakeBetween (prev curr : MainRowWithRom FGL) : Prop :=
         + (1 - prev.core.set_pc) * (prev.core.pc + prev.core.jmp_offset2)
         + prev.core.flag * (prev.core.jmp_offset1 - prev.core.jmp_offset2))) = 0
 
+/-- The non-segment specialization of Main's two source-C copy equations
+    (`main.pil:386`, extracted as `constraint_4_every_row` and
+    `constraint_10_every_row`).  The physical constraint selects a public
+    segment input at a segment boundary; Clean's transition interface has no
+    public-input surface, so the intrinsic transition states exactly the
+    within-segment equation and gates it by `SEGMENT_L1`. -/
+def sourceCCopyBetween (prev curr : MainRowWithRom FGL) : Prop :=
+  (1 - curr.core.segment_l1) *
+      (1 - curr.rom.b_src_mem - curr.rom.b_src_imm -
+        curr.rom.b_src_ind - curr.rom.b_src_reg) *
+      (curr.core.b_0 - prev.core.c_0) = 0
+  ∧
+  (1 - curr.core.segment_l1) *
+      (1 - curr.rom.b_src_mem - curr.rom.b_src_imm -
+        curr.rom.b_src_ind - curr.rom.b_src_reg) *
+      (curr.core.b_1 - prev.core.c_1) = 0
+
+/-- Main's intrinsic two-row constraints currently represented by the Clean
+    component: the PC handshake and the non-segment source-C copy. -/
+def transitionBetween (prev curr : MainRowWithRom FGL) : Prop :=
+  pcHandshakeBetween prev curr ∧ sourceCCopyBetween prev curr
+
 /-- ZisK instantiates both the Main witness and fixed traces over this physical
     domain (`zisk/pil/src/pil_helpers/traces.rs:273-282`). -/
 def mainFixedCapacity : Nat := 4194304
@@ -918,7 +940,7 @@ theorem eval_mainRawRow_materialize
     zero Clean saturates the predecessor to the current row, and the materialized
     `SEGMENT_L1 = 1` gate makes the equation vacuous as in the PIL. -/
 def pcHandshakeTransition (_index : Nat) (prev curr : Environment FGL) : Prop :=
-  pcHandshakeBetween
+  transitionBetween
     (Eval.eval prev (varFromOffset (F := FGL) MainRowWithRom 0))
     (Eval.eval curr (varFromOffset (F := FGL) MainRowWithRom 0))
 

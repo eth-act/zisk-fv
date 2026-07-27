@@ -216,15 +216,15 @@ def sdLdJalProgramRow : ZiskRomMessage FGL :=
 
 def sdLdJalRow (step : FGL) : MainRowWithRom FGL :=
   mainRomRowOf sdLdJalProgramRow AddSpinWitness.addSpinJalBits MainRomExecKind.internalFlag
-    (sdLdFreeCols step 0 0 0 0)
+    (sdLdFreeCols step 0 0 (if step = 6 then 42 else 0) 0)
 
 def sdLdMainRows : List (MainRowWithRom FGL) :=
   [ sdLdAddiX1A0Row, sdLdSlliX1Row, sdLdAddiX1EightRow, sdLdAddiX2Row
   , sdLdSdRow, sdLdLdRow, sdLdJalRow 6, sdLdJalRow 7 ]
 
 theorem sdLdMain_pc_addi_slli :
-    pcHandshakeBetween sdLdAddiX1A0Row sdLdSlliX1Row := by
-  simp [pcHandshakeBetween, sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast,
+    transitionBetween sdLdAddiX1A0Row sdLdSlliX1Row := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast,
     sdLdAddiX1A0RowTemplate, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
     sdLdSlliX1RowTemplate, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
     addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
@@ -233,8 +233,8 @@ theorem sdLdMain_pc_addi_slli :
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
 theorem sdLdMain_pc_slli_addi :
-    pcHandshakeBetween sdLdSlliX1Row sdLdAddiX1EightRow := by
-  simp [pcHandshakeBetween, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
+    transitionBetween sdLdSlliX1Row sdLdAddiX1EightRow := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
     sdLdSlliX1RowTemplate, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
     sdLdAddiX1EightRowTemplate, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
     addiX1Bits, mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
@@ -242,8 +242,8 @@ theorem sdLdMain_pc_slli_addi :
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
 theorem sdLdMain_pc_addi_addi :
-    pcHandshakeBetween sdLdAddiX1EightRow sdLdAddiX2Row := by
-  simp [pcHandshakeBetween, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+    transitionBetween sdLdAddiX1EightRow sdLdAddiX2Row := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
     sdLdAddiX1EightRowTemplate, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
     sdLdAddiX2RowTemplate, sdLdAddiX1EightProgramRow, sdLdAddiX2ProgramRow,
     addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
@@ -252,30 +252,30 @@ theorem sdLdMain_pc_addi_addi :
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
 theorem sdLdMain_pc_addi_sd :
-    pcHandshakeBetween sdLdAddiX2Row sdLdSdRow := by
-  simp [pcHandshakeBetween, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
+    transitionBetween sdLdAddiX2Row sdLdSdRow := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
     sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate, sdLdAddiX2ProgramRow,
     sdLdSdProgramRow, addiX0Bits, sdLdSdBits, mainRomRowOf, sdLdFreeCols,
     mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
     materializeMainRegisterAccesses, withMainRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
-theorem sdLdMain_pc_sd_ld : pcHandshakeBetween sdLdSdRow sdLdLdRow := by
-  simp [pcHandshakeBetween, sdLdSdRow, sdLdSdRowTemplate, sdLdLdRow,
+theorem sdLdMain_pc_sd_ld : transitionBetween sdLdSdRow sdLdLdRow := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSdRow, sdLdSdRowTemplate, sdLdLdRow,
     sdLdLdRowTemplate, sdLdSdProgramRow, sdLdLdProgramRow, sdLdSdBits, sdLdLdBits,
     mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
     materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
-theorem sdLdMain_pc_ld_jal : pcHandshakeBetween sdLdLdRow (sdLdJalRow 6) := by
-  simp [pcHandshakeBetween, sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow,
+theorem sdLdMain_pc_ld_jal : transitionBetween sdLdLdRow (sdLdJalRow 6) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow,
     sdLdLdProgramRow, sdLdJalProgramRow, sdLdLdBits, AddSpinWitness.addSpinJalBits,
     mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
     materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
 
-theorem sdLdMain_pc_jal_jal : pcHandshakeBetween (sdLdJalRow 6) (sdLdJalRow 7) := by
-  simp [pcHandshakeBetween, sdLdJalRow, sdLdJalProgramRow, AddSpinWitness.addSpinJalBits,
+theorem sdLdMain_pc_jal_jal : transitionBetween (sdLdJalRow 6) (sdLdJalRow 7) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdJalRow, sdLdJalProgramRow, AddSpinWitness.addSpinJalBits,
     mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
     ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
   ring
@@ -418,7 +418,7 @@ theorem sdLdJalMain_proverAssumptions (step : FGL) :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus 7 sdLdProgram).circuit.ProverAssumptions
       (sdLdJalRow step) emptyData (ProverHint.empty FGL) := by
   refine ⟨⟨6, by decide⟩, AddSpinWitness.addSpinJalBits, MainRomExecKind.internalFlag,
-    sdLdFreeCols step 0 0 0 0, ?_, ?_, ?_, ?_, ?_⟩
+    sdLdFreeCols step 0 0 (if step = 6 then 42 else 0) 0, ?_, ?_, ?_, ?_, ?_⟩
   · decide
   · norm_num [MainRomExecKind.Coherent, sdLdProgram, sdLdJalProgramRow,
       AddSpinWitness.addSpinJalBits, ZiskFv.Trusted.OP_FLAG]
@@ -666,13 +666,14 @@ theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
 theorem sdLdMainTable_transitions : sdLdMainTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
   intro index
-  change pcHandshakeBetween
+  change transitionBetween
     (Eval.eval (sdLdMainTable.previousEnvironment index)
       (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar)
     (Eval.eval (sdLdMainTable.environmentAt index)
       (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar)
   fin_cases index
-  · simp [Table.previousEnvironment, sdLdMainRows, pcHandshakeBetween, sdLdAddiX1A0Row,
+  · simp [Table.previousEnvironment, sdLdMainRows, transitionBetween, sourceCCopyBetween,
+      pcHandshakeBetween, sdLdAddiX1A0Row,
       sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf,
       sdLdFreeCols, mainRomFreeColsWithRegisterPrevious]
   · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_addi_slli
