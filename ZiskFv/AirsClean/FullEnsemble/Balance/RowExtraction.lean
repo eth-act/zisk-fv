@@ -35,6 +35,27 @@ theorem exists_opBus_row_eval_of_singleton_interactionsWith
     h_singleton] at h_mem
   exact h_mem
 
+/-- If a table's operation-bus abstract interactions are exactly two entries,
+    any concrete table-level interaction is one of those entries evaluated at
+    some row. -/
+theorem exists_opBus_row_eval_of_pair_interactionsWith
+    {table : Table FGL} {left right : AbstractInteraction FGL}
+    (h_pair :
+      table.component.operations.interactionsWith OpBusChannel.toRaw =
+        [left, right])
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    (∃ row ∈ table.table,
+      interaction = left.eval (table.environment row))
+    ∨ (∃ row ∈ table.table,
+      interaction = right.eval (table.environment row)) := by
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_pair] at h_mem
+  obtain ⟨row, h_row, h_eval⟩ := h_mem
+  rcases h_eval with h_left | h_right
+  · exact Or.inl ⟨row, h_row, h_left⟩
+  · exact Or.inr ⟨row, h_row, h_right⟩
+
 /-- If a table's memory-bus abstract interactions are a singleton, any
     concrete table-level interaction on that channel is that singleton
     evaluated at some row. -/
@@ -294,20 +315,30 @@ theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
       ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_interactionsWith_opBus
   · exact h_mem
 
-/-- Row extraction for an ArithMul operation-bus provider interaction in the
-    full ensemble. -/
+/-- Row extraction for either polarity of a completed Arith operation-bus
+    interaction in the full ensemble. The first branch is the primary result
+    provider; the second is the conditional remainder-bound consumer. -/
 theorem exists_arithMul_row_eval_of_interaction_mem
     {table : Table FGL}
     (h_component : table.component = arithMulProviderComponent)
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
-    ∃ row ∈ table.table,
+    (∃ row ∈ table.table,
       interaction =
         ((OpBusChannel.pushed
           (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
             arithMulProviderComponent.rowInputVar)).toRaw).eval
-          (table.environment row) := by
-  apply exists_opBus_row_eval_of_singleton_interactionsWith
+          (table.environment row))
+    ∨
+    (∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.emitted
+          (-(arithMulProviderComponent.rowInputVar.flags.div *
+            (1 - arithMulProviderComponent.rowInputVar.flags.div_by_zero)))
+          (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessageExpr
+            arithMulProviderComponent.rowInputVar)).toRaw).eval
+          (table.environment row)) := by
+  apply exists_opBus_row_eval_of_pair_interactionsWith
   · simpa [h_component] using
       ZiskFv.AirsClean.ArithMul.componentComplete_interactionsWith_opBus
   · exact h_mem

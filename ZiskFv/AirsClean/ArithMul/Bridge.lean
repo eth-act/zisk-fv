@@ -534,6 +534,22 @@ theorem eval_primaryOpBusMessageExpr
   -- lanes therefore need `ring`, not `rfl` (the other lanes are `True`/defeq).
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | trivial | ring
 
+/-- Evaluation of the physical remainder-bound interaction's multiplicity.
+    Keeping this projection in the row bridge avoids unfolding the full muxed
+    comparison message in balance proofs. -/
+theorem eval_remainderBoundInteraction_mult
+    (env : Environment FGL) (row : Var ArithMulRow FGL) :
+    (((OpBusChannel.emitted
+        (-(row.flags.div * (1 - row.flags.div_by_zero)))
+        (remainderBoundOpBusMessageExpr row)).toRaw).eval env).mult =
+      -((eval env row).flags.div * (1 - (eval env row).flags.div_by_zero)) := by
+  simp only [OpBusChannel, Channel.emitted, emitted_mult, AbstractInteraction.eval,
+    ChannelInteraction.toRaw_mult,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  ring
+
 /-- Op-only projection of `eval_primaryOpBusMessageExpr`, used to avoid
     unfolding the entire operation-bus message in downstream provider
     branch exclusions. -/

@@ -110,12 +110,54 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
   have h_providerSpecs : providerTable.Spec :=
     h_specs providerTable h_providerTable
   rcases h_providerComponent with h_arithMul | h_binExt | h_binary | h_binaryAdd
-  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
-      exists_arithMul_row_eval_of_interaction_mem
-        h_arithMul h_providerInteraction
-    left
-    exact ⟨providerRow, h_providerRow,
-      h_providerSpecs providerRow h_providerRow, h_arithMul, h_providerEval⟩
+  · rcases exists_arithMul_row_eval_of_interaction_mem
+        h_arithMul h_providerInteraction with
+      ⟨providerRow, h_providerRow, h_providerEval⟩
+      | ⟨providerRow, h_providerRow, h_providerEval⟩
+    · left
+      exact ⟨providerRow, h_providerRow,
+        h_providerSpecs providerRow h_providerRow, h_arithMul, h_providerEval⟩
+    · have h_rowConstraints :=
+        h_constraints providerTable h_providerTable providerRow h_providerRow
+      rw [h_arithMul] at h_rowConstraints
+      have h_rowOperations :=
+        (Component.constraintsHold_iff
+          (component := arithMulProviderComponent)
+          (providerTable.environment providerRow)).mp h_rowConstraints
+      have h_divBlock :=
+        ZiskFv.AirsClean.ArithMul.sharedDivBlockSpec_of_constraints
+          arithMulProviderComponent.rowOffset
+          (providerTable.environment providerRow)
+          arithMulProviderComponent.rowInputVar h_rowOperations
+      have h_div_bool := h_divBlock.1.2.2.2.2.2.2.1
+      have h_div_zero_bool := h_divBlock.1.2.2.2.2.1
+      have h_div :
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div = 0
+            ∨
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div = 1 := by
+        rcases mul_eq_zero.mp h_div_bool with h | h
+        · exact Or.inl h
+        · exact Or.inr (sub_eq_zero.mp h).symm
+      have h_div_zero :
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div_by_zero = 0
+            ∨
+          (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar).flags.div_by_zero = 1 := by
+        rcases mul_eq_zero.mp h_div_zero_bool with h | h
+        · exact Or.inl h
+        · exact Or.inr (sub_eq_zero.mp h).symm
+      rw [h_providerEval] at h_nonpull h_nonzero
+      rw [ZiskFv.AirsClean.ArithMul.eval_remainderBoundInteraction_mult]
+        at h_nonpull h_nonzero
+      rcases h_div with h_div | h_div <;>
+        rcases h_div_zero with h_div_zero | h_div_zero
+      · exact False.elim (h_nonzero (by simp [h_div, h_div_zero]))
+      · exact False.elim (h_nonzero (by simp [h_div, h_div_zero]))
+      · exact False.elim (h_nonpull (by simp [h_div, h_div_zero]))
+      · exact False.elim (h_nonzero (by simp [h_div, h_div_zero]))
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_staticBinaryExtension_row_eval_of_interaction_mem
         h_binExt h_providerInteraction
