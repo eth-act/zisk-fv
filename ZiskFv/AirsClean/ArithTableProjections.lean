@@ -1173,13 +1173,14 @@ end Mul
 
 namespace Div
 
-/-- Faithful signed-DIV product-sign classification on ordinary rows.
+/- Faithful signed-DIV product-sign classification on ordinary rows.
 
     The static table pins `np` to `na XOR nb` except in the two rows where the
     quotient may be zero. This conclusion records only the two exceptional flag
     triples. Proving that the quotient chunks are actually zero requires the
     dynamic carry-chain and remainder-bound evidence; it is deliberately not
     claimed here. -/
+set_option maxHeartbeats 800000 in
 theorem div_np_xor_or_exception_sign_shapes
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -1190,16 +1191,15 @@ theorem div_np_xor_or_exception_sign_shapes
     v.np r = v.na r + v.nb r - 2 * v.na r * v.nb r
       ∨ (v.na r = 0 ∧ v.nb r = 0 ∧ v.np r = 1)
       ∨ (v.na r = 0 ∧ v.nb r = 1 ∧ v.np r = 0) := by
-  set_option maxHeartbeats 800000 in
-    rcases h_table with ⟨i, hrow⟩
-    fin_cases i <;>
-      simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
-        ZiskFv.AirsClean.ArithTable.rows] at hrow h_op
-    all_goals
-      rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, _hnr, _hsext,
-        hdbz, hoverflow, _hmain_mul, _hmain_div, _hsigned,
-        _hrange_ab, _hrange_cd⟩
-      simp_all
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, _hnr, _hsext,
+      hdbz, hoverflow, _hmain_mul, _hmain_div, _hsigned,
+      _hrange_ab, _hrange_cd⟩
+    simp_all
 
 theorem div_rem_signed_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
