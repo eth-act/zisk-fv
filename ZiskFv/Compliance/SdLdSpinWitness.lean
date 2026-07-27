@@ -2318,4 +2318,104 @@ theorem sdLdWitness_balancedChannels : sdLdWitness.BalancedChannels := by
   · exact sdLdWitness_memAlignRomChannel_balanced
   · exact sdLdWitness_rangeChannel_balanced
 
+private theorem not_sdLd_main_component_of_name_ne
+    {component : Component FGL}
+    (h_name : component.circuit.name ≠
+      (componentWithRomMemAndOpBus 7 sdLdProgram).circuit.name)
+    (h_component : component = componentWithRomMemAndOpBus 7 sdLdProgram) : False :=
+  h_name (congrArg (fun c : Component FGL => c.circuit.name) h_component)
+
+private theorem not_sdLd_main_component_of_width_ne
+    {component : Component FGL}
+    (h_width : component.width ≠ (componentWithRomMemAndOpBus 7 sdLdProgram).width)
+    (h_component : component = componentWithRomMemAndOpBus 7 sdLdProgram) : False :=
+  h_width (congrArg Component.width h_component)
+
+private theorem not_sdLd_mutable_mem_component_of_name_ne
+    {component : Component FGL}
+    (h_name : component.circuit.name ≠
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.name)
+    (h_component : component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) : False :=
+  h_name (congrArg (fun c : Component FGL => c.circuit.name) h_component)
+
+private theorem sdLdWitness_main_component_cases
+    {table : Table FGL}
+    (h_table : table ∈ sdLdWitness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus 7 sdLdProgram) :
+    table = sdLdTableWithData sdLdMainTable := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · subst table
+    exfalso
+    exact not_sdLd_main_component_of_width_ne (by decide) h_component
+  · rw [sdLdWitness_tables] at h_table
+    simp [sdLdTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl
+    all_goals first
+      | rfl
+      | exfalso
+        exact not_sdLd_main_component_of_name_ne (by decide) h_component
+
+private theorem sdLdWitness_mem_component_cases
+    {table : Table FGL}
+    (h_table : table ∈ sdLdWitness.allTables)
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    table = sdLdTableWithData sdLdMemTable := by
+  rw [EnsembleWitness.allTables, List.mem_cons] at h_table
+  rcases h_table with h_verifier | h_table
+  · subst table
+    exfalso
+    rw [EnsembleWitness.verifierTable_component] at h_component
+    have h_verifier_nil :=
+      ZiskFv.AirsClean.FullEnsemble.verifierTable_interactionsWith_memBus_nil
+        7 sdLdProgram
+    change Operations.interactionsWith MemBusChannel.toRaw
+      sdLdEnsemble.verifierTable.operations = [] at h_verifier_nil
+    rw [h_component,
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
+    exact absurd h_verifier_nil (by simp)
+  · rw [sdLdWitness_tables] at h_table
+    simp [sdLdTables] at h_table
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl
+    all_goals first
+      | rfl
+      | exfalso
+        exact not_sdLd_mutable_mem_component_of_name_ne (by decide) h_component
+
+theorem sdLdWitness_main_height :
+    ∀ table ∈ sdLdWitness.allTables,
+      table.component = componentWithRomMemAndOpBus 7 sdLdProgram →
+        ∀ i : Fin 7, i.val < table.table.length := by
+  intro table h_table h_component i
+  have h_main := sdLdWitness_main_component_cases h_table h_component
+  subst table
+  fin_cases i <;>
+    norm_num [sdLdTableWithData, sdLdMainTable, sdLdMainTableWithData,
+      sdLdMainTableEmptyData, AddSpinWitness.mainRowsTable, sdLdMainRows]
+
+def sdLdAcceptedTrace : AcceptedZiskTrace 7 where
+  programLength := 7
+  program := sdLdProgram
+  witness := sdLdWitness
+  constraints_hold := sdLdWitness_constraints
+  channels_balanced := sdLdWitness_balancedChannels
+  mem_replay_table := fun _ =>
+    ⟨sdLdTableWithData sdLdMemTable, by
+      simp [EnsembleWitness.allTables, sdLdWitness_tables, sdLdTables],
+      rfl,
+      by norm_num [sdLdTableWithData, sdLdMemTable, memRowsTable, sdLdMemRows]⟩
+  mem_replay_source_covers := fun _ table h_table h_component =>
+    sdLdWitness_mem_component_cases h_table h_component
+  transitions_hold := sdLdWitness_transitions
+  cyclic_successor_transitions_hold := sdLdWitness_cyclicSuccessorTransitions
+  main_height := sdLdWitness_main_height
+
+theorem sdLdAcceptedTrace_mainTable_eq :
+    sdLdAcceptedTrace.mainTable = sdLdTableWithData sdLdMainTable := by
+  exact sdLdWitness_main_component_cases
+    (by simpa [sdLdAcceptedTrace] using sdLdAcceptedTrace.mainTable_mem)
+    (by simpa [sdLdAcceptedTrace] using sdLdAcceptedTrace.mainTable_component)
+
 end ZiskFv.Compliance.SdLdSpinWitness
