@@ -1841,18 +1841,9 @@ lemma mul_signed_chain_witnesses
     · rw [h]; decide
   -- Derive np ∈ {0,1} from h_np_xor + na, nb ∈ {0,1}, by round-trip.
   have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
-    rw [h_np_xor]
-    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
-    all_goals (rw [h_na, h_nb])
-    · left; decide
-    · right; decide
-    · right; decide
-    · left; decide
-  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
-    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
-    rcases h_np_int_bool with h | h
-    · left; rw [← h_round_trip, h]; norm_cast
-    · right; rw [← h_round_trip, h]; norm_cast
+    rcases h_np_bool with h | h
+    · left; rw [h]; decide
+    · right; rw [h]; decide
   have h_np_abs : |toIntZ (v.np r_a)| ≤ 1 := by
     rcases h_np_int_bool with h | h
     · rw [h]; decide
@@ -1981,7 +1972,7 @@ lemma mul_signed_chain_witnesses
     The signed carry bounds are supplied by the constructible Clean
     `SignedCarryRangeLookupWitness` path and exposed here as
     `ArithDivSignedCarryRangesAt`; no legacy range axiom is used. -/
-lemma div_signed_chain_witnesses
+lemma div_signed_chain_witnesses_raw
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
     (h_chunk_ranges : ArithDivChunkRangesAt v r_a)
@@ -1990,11 +1981,9 @@ lemma div_signed_chain_witnesses
     (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
-      toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    :
     let A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
               + toIntZ (v.a_2 r_a) * (65536 * 65536)
               + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
@@ -2007,7 +1996,8 @@ lemma div_signed_chain_witnesses
     let D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
               + toIntZ (v.d_2 r_a) * (65536 * 65536)
               + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
-    (1 - 2 * toIntZ (v.np r_a)) * A * B
+    (1 - 2 * toIntZ (v.na r_a) - 2 * toIntZ (v.nb r_a)
+        + 4 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) * A * B
         + (1 - 2 * toIntZ (v.nr r_a)) * D
         + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
             + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
@@ -2119,13 +2109,9 @@ lemma div_signed_chain_witnesses
     · rw [h]; decide
     · rw [h]; decide
   have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
-    rw [h_np_xor]
-    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
-    all_goals (rw [h_na, h_nb])
-    · left; decide
-    · right; decide
-    · right; decide
-    · left; decide
+    rcases h_np_bool with h | h
+    · left; rw [h]; decide
+    · right; rw [h]; decide
   have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
     have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
     rcases h_np_int_bool with h | h
@@ -2230,8 +2216,6 @@ lemma div_signed_chain_witnesses
   have h_fab_int := fgl_fab_pin_int fab (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_fab
   have h_nafb_int := fgl_na_fb_pin_int na_fb (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nafb
   have h_nbfa_int := fgl_nb_fa_pin_int nb_fa (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nbfa
-  have h_fab_eq_γ : toIntZ fab = 1 - 2 * toIntZ (v.np r_a) := by
-    rw [h_fab_int]; linarith [h_np_xor]
   rw [h_γ_int, h_δ_int] at hZ31 hZ32 hZ33 hZ34
   have h_agg := div_signed_packed_of_chunks_int
     (toIntZ (v.a_0 r_a)) (toIntZ (v.a_1 r_a)) (toIntZ (v.a_2 r_a)) (toIntZ (v.a_3 r_a))
@@ -2248,9 +2232,67 @@ lemma div_signed_chain_witnesses
     (toIntZ fab) (toIntZ na_fb) (toIntZ nb_fa)
     (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a)) (toIntZ (v.nr r_a))
     hZ31 hZ32 hZ33 hZ34 hZ35 hZ36 hZ37 hZ38
-  rw [h_fab_eq_γ, h_nafb_int, h_nbfa_int] at h_agg
+  rw [h_fab_int, h_nafb_int, h_nbfa_int] at h_agg
   show _ = _
   linear_combination h_agg
+
+/-- Normalize the raw signed-DIV chain when the product sign is the XOR of the
+    quotient and divisor signs. -/
+lemma div_signed_chain_witnesses
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_chunk_ranges : ArithDivChunkRangesAt v r_a)
+    (h_carry_ranges : ArithDivSignedCarryRangesAt v r_a)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 1)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    let A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+              + toIntZ (v.a_2 r_a) * (65536 * 65536)
+              + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
+    let B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+              + toIntZ (v.b_2 r_a) * (65536 * 65536)
+              + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536)
+    let C := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+              + toIntZ (v.c_2 r_a) * (65536 * 65536)
+              + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536)
+    let D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+              + toIntZ (v.d_2 r_a) * (65536 * 65536)
+              + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
+    (1 - 2 * toIntZ (v.np r_a)) * A * B
+        + (1 - 2 * toIntZ (v.nr r_a)) * D
+        + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
+            + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
+        + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2^64
+        + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2^128
+      = (1 - 2 * toIntZ (v.np r_a)) * C := by
+  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+    have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
+      rw [h_np_xor]
+      rcases h_na_bool with hna | hna <;> rcases h_nb_bool with hnb | hnb
+      all_goals (rw [hna, hnb])
+      · left; decide
+      · right; decide
+      · right; decide
+      · left; decide
+    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
+    rcases h_np_int_bool with h | h
+    · left; rw [← h_round_trip, h]; norm_cast
+    · right; rw [← h_round_trip, h]; norm_cast
+  have h_raw := div_signed_chain_witnesses_raw v r_a h_chain h_chunk_ranges
+    h_carry_ranges h_sext h_m32 h_div h_na_bool h_nb_bool h_np_bool h_nr_bool
+  have h_coeff :
+      1 - 2 * toIntZ (v.np r_a)
+        = 1 - 2 * toIntZ (v.na r_a) - 2 * toIntZ (v.nb r_a)
+            + 4 * toIntZ (v.na r_a) * toIntZ (v.nb r_a) := by
+    linarith [h_np_xor]
+  rw [← h_coeff] at h_raw
+  exact h_raw
 
 end SignedChainWitnesses
 
