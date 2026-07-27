@@ -40,46 +40,54 @@ is, by construction, the `StaticTable.Contains` predicate). A
 consumer would read structured column facts off `Spec` by
 enumerating the 74 literal rows.
 
-## Status — mechanism plus lookup row; `arith_table_op_*` retirement still gated
+## Status — the `arith_table_op_*` axioms are gone (eth-act/zisk-fv#281)
 
 This module is the proven `StaticTable` mechanism for the Arith ROM
-(plan D-ROM). The ArithMul/ArithDiv Clean row views now expose the full
-15-column tuple and provide lookup-aware circuit entry points, but the
-lookup membership is not yet sourced from the global theorem / ensemble.
-This file therefore still retires **zero** axioms by itself. Two findings
-govern the remaining `arith_table_op_*` retirement:
+(plan D-ROM). The ArithMul/ArithDiv Clean row views expose the full
+15-column tuple and provide lookup-aware circuit entry points.
 
-1. **Missing lookup-soundness premise (D-STOP).** The 19
-   `arith_table_op_*` axioms of `Airs/Arith/Ranges.lean` each bundle
-   *two* facts: (a) the AIR row's 15-tuple is a member of this ROM
-   (the `arith_table_assumes` channel-balance / lookup-soundness
-   fact — `arith.pil:286-287`), and (b) every ROM row with a given
-   `op` has certain column values. This `StaticTable` + `contains_iff`
-   delivers only **(b)**, the data half. Half **(a)** can come only
-   from a *new* shared lookup-soundness axiom (the established
-   `bin_table_consumer_wf` pattern — `Airs/Tables/BinaryTable.lean`)
-   or from the global Clean AIR/ensemble statement proving the lookup
-   emitted by the lookup-aware ArithMul/ArithDiv entry points. Retiring
-   the `arith_table_op_*` axioms before that would add a new promise
-   hypothesis, which is forbidden by the anti-laundering policy.
+Earlier revisions of this docstring described a live set of 19
+`arith_table_op_*` trust-ledger assumptions in `Airs/Arith/Ranges.lean`
+and two findings gating their retirement. **That state is retired.**
+No `arith_table_op_*` declaration survives anywhere under `ZiskFv/`,
+and the project carries **zero** project-level trust assumptions
+repo-wide (V1 gate check "shrinkage floor"). The surviving mentions of
+those names are prose in comments, kept as historical pointers.
 
-2. **Several `arith_table_op_*` axioms over-claim (faithfulness bug).**
-   Static ROM membership supports faithful column projections, but not
-   every bundled conclusion in `Airs/Arith/Ranges.lean`. Formal
-   counterexamples live in `AirsClean/ArithTableProjections.lean`:
-   MULH/MULHSU `np = na XOR nb` is not a static ROM-column fact, and
-   W-mode `sext = 0` is refuted by concrete ROM rows for MULW, DIVUW,
-   and DIVW. The projection lemmas therefore expose only the true
-   ROM-data subsets; consumers of over-strong facts must be repaired
-   using dynamic constraints or sign-agnostic arithmetic before the old
-   axioms can be deleted.
+What replaced them is worth knowing before consuming this table:
+
+1. **Membership comes from the ensemble, not from a bundled premise.**
+   Faithful column projections need ROM membership *and* the data half.
+   This `StaticTable` plus `contains_iff` supplies the data half; the
+   membership half is supplied by the live lookup emitted by the
+   lookup-aware ArithMul/ArithDiv entry points (`arith.pil:286-287`),
+   on the same recognizer/static-provider route used for
+   `BinaryTableSlice` and `SpecifiedRangesSlice`.
+
+2. **Some column facts are genuinely refuted by the ROM data, and
+   `AirsClean/ArithTableProjections.lean` proves it.** That module
+   carries five *negative* results — `mulh_np_xor_not_static`,
+   `mulhsu_np_xor_not_static`, `mulw_sext_zero_not_static`,
+   `divuw_sext_zero_not_static`, `divw_sext_zero_not_static` — showing
+   that MULH/MULHSU `np = na XOR nb` and W-mode `sext = 0` are **not**
+   static ROM-column facts. They are counterexamples, not claims: they
+   exist so nobody re-derives an over-strong projection from this
+   table. Its positive lemmas expose only the true ROM-data subsets.
+   Anything needing the refuted shapes must get it from dynamic
+   constraints or sign-agnostic arithmetic instead.
 
 ## Trust note
 
-No axioms. The 74-row enumeration is extracted data; the
-`StaticTable` and its `contains_iff` are pure definitional /
-structural content. This module retires nothing and is not on the
-global theorem's dependency graph.
+The 74-row enumeration is extracted data; the `StaticTable` and its
+`contains_iff` are pure definitional / structural content. This module
+introduces no trust of its own.
+
+It is, however, **no longer off the dependency graph** — an earlier
+version of this note said it was. `ZiskFv.AirsClean.ArithTable` is
+imported by `AirsClean/Arith{Mul,Div}/{Spec,Constraints}.lean`, and
+`ArithTableProjections` is imported across `AirsClean/FullEnsemble/
+Balance/`, so both are inside the live ensemble's import closure.
+Treat changes here as proof-bearing.
 -/
 
 namespace ZiskFv.AirsClean.ArithTable
