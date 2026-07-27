@@ -1705,7 +1705,7 @@ private theorem sdLdBoundaryTable_memBusInteractions :
     ZiskFv.AirsClean.RegisterBoundary.component.operations.interactionValuesWith
       MemBusChannel.toRaw (Environment.fromArray arr sdLdMemData)) = _
   simp_rw [List.flatMap_map]
-  simp [registerBoundaryRowArray, Environment.fromInput, sdLdBoundaryMemBus_row]
+  simp [registerBoundaryRowArray, sdLdBoundaryMemBus_row]
 
 private theorem sdLdMemTable_memBusInteractions :
     (sdLdTableWithData sdLdMemTable).interactionsWith MemBusChannel.toRaw =
@@ -1744,6 +1744,535 @@ private theorem sdLdMainTable_memBusInteractions :
     sdLdMainMemBus_row 6 (sdLdJalRow 6) (by decide) (by decide),
     sdLdMainMemBus_row 7 (sdLdJalRow 7) (by decide) (by decide)]
 
+private def sdLdMemBusInteractions : List (Interaction FGL) :=
+  sdLdBoundaryRows.flatMap registerBoundaryMemBusInteractions ++
+    sdLdMemRows.flatMap (fun row => [memBusInteraction row, memBusDualInteraction row]) ++
+    sdLdMainRows.flatMap AddSpinWitness.mainValueMemBusInteractions
+
+private theorem sdLdWitness_memBusInteractions :
+    sdLdWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw) =
+      sdLdMemBusInteractions := by
+  have h_ranges :
+      sdLdSpecifiedRangesTable.interactionsWith MemBusChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.specifiedRangesSlice_table_interactionsWith_memBus_nil rfl
+  have h_extension :
+      (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith MemBusChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.staticBinaryExtension_table_interactionsWith_memBus_nil rfl
+  have h_add :
+      (sdLdTableWithData sdLdBinaryAddTable).interactionsWith MemBusChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil rfl
+  rw [sdLdWitness_tables]
+  simp [sdLdTables, sdLdBoundaryTable_memBusInteractions,
+    sdLdMemTable_memBusInteractions, sdLdMainTable_memBusInteractions, h_ranges,
+    h_extension, h_add, sdLdMemBusInteractions]
+
+private def sdLdStoreMemBusPair : List (Interaction FGL) :=
+  [RegisterMemBusBalance.emittedPulledValue (cMemMessage sdLdSdRow),
+    memBusInteraction sdMemRow]
+
+private def sdLdLoadMemBusPair : List (Interaction FGL) :=
+  [RegisterMemBusBalance.emittedPulledValue (bMemMessage sdLdLdRow),
+    memBusInteraction ldMemRow]
+
+private def sdLdIdleBoundaryMessages : List (MemBusMessage FGL) :=
+  (List.range 28).map fun i =>
+    ZiskFv.AirsClean.RegisterBoundary.bootMessage
+      (boundaryRowIdle ((i + 4 : Nat) : FGL))
+
+private def sdLdIdleBoundaryInteractions : List (Interaction FGL) :=
+  (List.range 28).flatMap fun i =>
+    registerBoundaryMemBusInteractions
+      (boundaryRowIdle ((i + 4 : Nat) : FGL))
+
+private theorem sdLdIdleBoundaryInteractions_eq_paired :
+    sdLdIdleBoundaryInteractions =
+      RegisterMemBusBalance.pairedInteractions sdLdIdleBoundaryMessages := by
+  unfold sdLdIdleBoundaryInteractions sdLdIdleBoundaryMessages
+  generalize List.range 28 = indices
+  induction indices with
+  | nil => rfl
+  | cons i rest ih =>
+      simp only [List.map_cons, List.flatMap_cons,
+        RegisterMemBusBalance.pairedInteractions]
+      have h_head :
+          registerBoundaryMemBusInteractions
+              (boundaryRowIdle ((i + 4 : Nat) : FGL)) =
+            RegisterMemBusBalance.pairedInteraction
+              (ZiskFv.AirsClean.RegisterBoundary.bootMessage
+                (boundaryRowIdle ((i + 4 : Nat) : FGL))) := by
+        simp [registerBoundaryMemBusInteractions, registerBoundaryBootInteraction,
+          registerBoundaryReloadInteraction, RegisterMemBusBalance.pairedInteraction,
+          boundaryRowIdle, RegisterMemBusBalance.emittedPulledValue, Channel.pushedValue]
+      rw [h_head]
+      exact congrArg
+        (RegisterMemBusBalance.pairedInteraction
+          (ZiskFv.AirsClean.RegisterBoundary.bootMessage
+            (boundaryRowIdle ((i + 4 : Nat) : FGL))) ++ ·)
+        ih
+
+private theorem sdLdIdleBoundaryInteractions_balanced :
+    BalancedInteractions sdLdIdleBoundaryInteractions := by
+  rw [sdLdIdleBoundaryInteractions_eq_paired]
+  apply RegisterMemBusBalance.pairedInteractions_balanced
+  left
+  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+  decide
+
+private def sdLdMemBusCore : List (Interaction FGL) :=
+  sdLdX1Telescope ++ sdLdX2Telescope ++ sdLdX3Telescope ++
+    sdLdIdleBoundaryInteractions ++ sdLdStoreMemBusPair ++ sdLdLoadMemBusPair
+
+private def sdLdMemBusZeroResidual : List (Interaction FGL) :=
+  sdLdMemBusInteractions.filter (·.mult = 0)
+
+private theorem sdLdStoreMemBusPair_balanced :
+    BalancedInteractions sdLdStoreMemBusPair := by
+  rw [sdLdStoreMemBusPair, sdLdStoreMessage_eq_mem]
+  exact RegisterMemBusBalance.pairedInteraction_balanced
+    (ZiskFv.AirsClean.Mem.memBusMessage sdMemRow)
+
+private theorem sdLdLoadMemBusPair_balanced :
+    BalancedInteractions sdLdLoadMemBusPair := by
+  rw [sdLdLoadMemBusPair, sdLdLoadMessage_eq_mem]
+  exact RegisterMemBusBalance.pairedInteraction_balanced
+    (ZiskFv.AirsClean.Mem.memBusMessage ldMemRow)
+
+private theorem sdLdMemBusZeroResidual_balanced :
+    BalancedInteractions sdLdMemBusZeroResidual := by
+  apply RegisterMemBusBalance.zeroInteractions_balanced
+  · intro interaction h_interaction
+    exact of_decide_eq_true (List.mem_filter.mp h_interaction |>.2)
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+
+private theorem sdLdMemBusCore_balanced : BalancedInteractions sdLdMemBusCore := by
+  unfold sdLdMemBusCore
+  have h12 := RegisterMemBusBalance.balancedInteractions_append_of_balanced
+    sdLdX1Telescope_balanced sdLdX2Telescope_balanced (by
+      left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide)
+  have h123 := RegisterMemBusBalance.balancedInteractions_append_of_balanced
+    h12 sdLdX3Telescope_balanced (by
+      left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide)
+  have h123i := RegisterMemBusBalance.balancedInteractions_append_of_balanced
+    h123 sdLdIdleBoundaryInteractions_balanced (by
+      left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide)
+  have h123is := RegisterMemBusBalance.balancedInteractions_append_of_balanced
+    h123i sdLdStoreMemBusPair_balanced (by
+      left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide)
+  exact RegisterMemBusBalance.balancedInteractions_append_of_balanced
+    h123is sdLdLoadMemBusPair_balanced (by
+      left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide)
+
+private theorem perm_filter_ne_zero_append_filter_eq_zero
+    (interactions : List (Interaction FGL)) :
+    List.Perm interactions
+      (interactions.filter (·.mult ≠ 0) ++ interactions.filter (·.mult = 0)) := by
+  induction interactions with
+  | nil => simp
+  | cons interaction rest ih =>
+      by_cases h_zero : interaction.mult = 0
+      · have h_swap : List.Perm
+            ([interaction] ++ rest.filter (·.mult ≠ 0))
+            (rest.filter (·.mult ≠ 0) ++ [interaction]) :=
+          List.perm_append_comm
+        have h_reorder := List.Perm.append h_swap
+          (List.Perm.refl (rest.filter (·.mult = 0)))
+        exact (List.Perm.cons interaction ih).trans <| by
+          simpa [h_zero, List.append_assoc] using h_reorder
+      · simpa [h_zero] using List.Perm.cons interaction ih
+
+private theorem sdLdPermMiddle₄ {α : Type} (a : α)
+    (first second third fourth rest : List α) :
+    List.Perm (first ++ (second ++ (third ++ (fourth ++ a :: rest))))
+      (a :: first ++ (second ++ (third ++ (fourth ++ rest)))) := by
+  simpa only [List.append_assoc] using
+    (List.perm_middle (a := a) (l₁ := first ++ second ++ third ++ fourth) (l₂ := rest))
+
+private theorem sdLdMemBusStructuralPerm {α : Type} (idle : List α)
+    (a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 : α)
+    (a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 : α) :
+    List.Perm
+      ([a1, a2, a3, a4, a5, a6] ++ idle ++
+        [a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+          a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30])
+      ([a1, a2, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+          a21, a22, a26, a27, a3, a4, a19, a20, a23, a24, a5, a6, a29, a30] ++
+        idle ++ [a25, a7, a28, a8]) := by
+  simp only [List.append_assoc]
+  refine (List.perm_middle (l₁ := [])
+    (l₂ := [a2, a3, a4, a5, a6] ++ idle ++
+      [a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+        a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30])).trans
+    (List.Perm.cons a1 ?_)
+  refine (List.perm_middle (l₁ := [])
+    (l₂ := [a3, a4, a5, a6] ++ idle ++
+      [a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+        a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30])).trans
+    (List.Perm.cons a2 ?_)
+  refine (sdLdPermMiddle₄ a9 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20,
+      a21, a22, a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a9 ?_)
+  refine (sdLdPermMiddle₄ a10 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a11, a12, a13, a14, a15, a16, a17, a18, a19, a20,
+      a21, a22, a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a10 ?_)
+  refine (sdLdPermMiddle₄ a11 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a12, a13, a14, a15, a16, a17, a18, a19, a20, a21,
+      a22, a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a11 ?_)
+  refine (sdLdPermMiddle₄ a12 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
+      a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a12 ?_)
+  refine (sdLdPermMiddle₄ a13 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a14, a15, a16, a17, a18, a19, a20, a21, a22, a23,
+      a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a13 ?_)
+  refine (sdLdPermMiddle₄ a14 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
+      a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a14 ?_)
+  refine (sdLdPermMiddle₄ a15 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a16, a17, a18, a19, a20, a21, a22, a23, a24, a25,
+      a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a15 ?_)
+  refine (sdLdPermMiddle₄ a16 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a17, a18, a19, a20, a21, a22, a23, a24, a25, a26,
+      a27, a28, a29, a30]).trans
+    (List.Perm.cons a16 ?_)
+  refine (sdLdPermMiddle₄ a17 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a18, a19, a20, a21, a22, a23, a24, a25, a26, a27,
+      a28, a29, a30]).trans
+    (List.Perm.cons a17 ?_)
+  refine (sdLdPermMiddle₄ a18 [] [a3, a4, a5, a6] idle [a7, a8]
+    [a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a18 ?_)
+  refine (sdLdPermMiddle₄ a21 [] [a3, a4, a5, a6] idle [a7, a8, a19, a20]
+    [a22, a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a21 ?_)
+  refine (sdLdPermMiddle₄ a22 [] [a3, a4, a5, a6] idle [a7, a8, a19, a20]
+    [a23, a24, a25, a26, a27, a28, a29, a30]).trans
+    (List.Perm.cons a22 ?_)
+  refine (sdLdPermMiddle₄ a26 [] [a3, a4, a5, a6] idle
+    [a7, a8, a19, a20, a23, a24, a25] [a27, a28, a29, a30]).trans
+    (List.Perm.cons a26 ?_)
+  refine (sdLdPermMiddle₄ a27 [] [a3, a4, a5, a6] idle
+    [a7, a8, a19, a20, a23, a24, a25] [a28, a29, a30]).trans
+    (List.Perm.cons a27 ?_)
+  refine (List.perm_middle (l₁ := [])
+    (l₂ := [a4, a5, a6] ++ idle ++
+      [a7, a8, a19, a20, a23, a24, a25, a28, a29, a30])).trans
+    (List.Perm.cons a3 ?_)
+  refine (List.perm_middle (l₁ := [])
+    (l₂ := [a5, a6] ++ idle ++
+      [a7, a8, a19, a20, a23, a24, a25, a28, a29, a30])).trans
+    (List.Perm.cons a4 ?_)
+  refine (sdLdPermMiddle₄ a19 [] [a5, a6] idle [a7, a8]
+    [a20, a23, a24, a25, a28, a29, a30]).trans
+    (List.Perm.cons a19 ?_)
+  refine (sdLdPermMiddle₄ a20 [] [a5, a6] idle [a7, a8]
+    [a23, a24, a25, a28, a29, a30]).trans
+    (List.Perm.cons a20 ?_)
+  refine (sdLdPermMiddle₄ a23 [] [a5, a6] idle [a7, a8]
+    [a24, a25, a28, a29, a30]).trans
+    (List.Perm.cons a23 ?_)
+  refine (sdLdPermMiddle₄ a24 [] [a5, a6] idle [a7, a8]
+    [a25, a28, a29, a30]).trans
+    (List.Perm.cons a24 ?_)
+  refine (List.perm_middle (l₁ := [])
+    (l₂ := [a6] ++ idle ++ [a7, a8, a25, a28, a29, a30])).trans
+    (List.Perm.cons a5 ?_)
+  refine (List.perm_middle (l₁ := [])
+    (l₂ := idle ++ [a7, a8, a25, a28, a29, a30])).trans
+    (List.Perm.cons a6 ?_)
+  refine (sdLdPermMiddle₄ a29 [] [] idle [a7, a8, a25, a28] [a30]).trans
+    (List.Perm.cons a29 ?_)
+  refine (sdLdPermMiddle₄ a30 [] [] idle [a7, a8, a25, a28] []).trans
+    (List.Perm.cons a30 ?_)
+  simpa only [List.nil_append] using List.Perm.append (List.Perm.refl idle) <|
+    (List.perm_middle (l₁ := [a7, a8]) (l₂ := [a28])).trans <|
+      List.Perm.cons a25 <| List.Perm.cons a7 <|
+        List.perm_middle (a := a28) (l₁ := [a8]) (l₂ := [])
+
+private def sdLdMemBusNonzeroChronological : List (Interaction FGL) :=
+  [ registerBoundaryBootInteraction sdLdBoundaryRowX1
+  , registerBoundaryReloadInteraction sdLdBoundaryRowX1
+  , registerBoundaryBootInteraction sdLdBoundaryRowX2
+  , registerBoundaryReloadInteraction sdLdBoundaryRowX2
+  , registerBoundaryBootInteraction sdLdBoundaryRowX3
+  , registerBoundaryReloadInteraction sdLdBoundaryRowX3 ] ++
+  sdLdIdleBoundaryInteractions ++
+  [ memBusInteraction sdMemRow
+  , memBusInteraction ldMemRow
+  , mainCRegPreInteraction sdLdAddiX1A0Row
+  , mainCMemInteraction sdLdAddiX1A0Row
+  , mainARegPreInteraction sdLdSlliX1Row
+  , mainAMemInteraction sdLdSlliX1Row
+  , mainCRegPreInteraction sdLdSlliX1Row
+  , mainCMemInteraction sdLdSlliX1Row
+  , mainARegPreInteraction sdLdAddiX1EightRow
+  , mainAMemInteraction sdLdAddiX1EightRow
+  , mainCRegPreInteraction sdLdAddiX1EightRow
+  , mainCMemInteraction sdLdAddiX1EightRow
+  , mainCRegPreInteraction sdLdAddiX2Row
+  , mainCMemInteraction sdLdAddiX2Row
+  , mainARegPreInteraction sdLdSdRow
+  , mainAMemInteraction sdLdSdRow
+  , mainBRegPreInteraction sdLdSdRow
+  , mainBMemInteraction sdLdSdRow
+  , mainCMemInteraction sdLdSdRow
+  , mainARegPreInteraction sdLdLdRow
+  , mainAMemInteraction sdLdLdRow
+  , mainBMemInteraction sdLdLdRow
+  , mainCRegPreInteraction sdLdLdRow
+  , mainCMemInteraction sdLdLdRow ]
+
+private theorem sdLdMemBusNonzero_filter :
+    sdLdMemBusInteractions.filter (·.mult ≠ 0) = sdLdMemBusNonzeroChronological := by
+  have h_idle :
+      sdLdIdleBoundaryInteractions.filter (fun interaction => !decide (interaction.mult = 0)) =
+        sdLdIdleBoundaryInteractions := by
+    unfold sdLdIdleBoundaryInteractions
+    generalize List.range 28 = indices
+    induction indices with
+    | nil => rfl
+    | cons i rest ih =>
+        simp only [List.flatMap_cons, List.filter_append]
+        rw [ih]
+        simp [registerBoundaryMemBusInteractions, registerBoundaryBootInteraction,
+          registerBoundaryReloadInteraction, RegisterMemBusBalance.emittedPulledValue,
+          Channel.pushedValue]
+  have h_boundary :
+      (sdLdBoundaryRows.flatMap registerBoundaryMemBusInteractions).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [ registerBoundaryBootInteraction sdLdBoundaryRowX1
+        , registerBoundaryReloadInteraction sdLdBoundaryRowX1
+        , registerBoundaryBootInteraction sdLdBoundaryRowX2
+        , registerBoundaryReloadInteraction sdLdBoundaryRowX2
+        , registerBoundaryBootInteraction sdLdBoundaryRowX3
+        , registerBoundaryReloadInteraction sdLdBoundaryRowX3 ] ++
+          sdLdIdleBoundaryInteractions := by
+    simp only [sdLdBoundaryRows, List.flatMap_append, List.flatMap_cons,
+      List.flatMap_nil, List.append_nil, List.filter_append]
+    rw [show
+      List.flatMap registerBoundaryMemBusInteractions
+          (List.map (fun i => boundaryRowIdle ((i + 4 : Nat) : FGL)) (List.range 28)) =
+        sdLdIdleBoundaryInteractions by
+          simp only [sdLdIdleBoundaryInteractions, List.flatMap_map]]
+    rw [h_idle]
+    simp [registerBoundaryMemBusInteractions, registerBoundaryBootInteraction,
+      registerBoundaryReloadInteraction]
+  have h_mem :
+      (sdLdMemRows.flatMap
+          (fun row => [memBusInteraction row, memBusDualInteraction row])).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [memBusInteraction sdMemRow, memBusInteraction ldMemRow] := by
+    simp [sdLdMemRows, memBusInteraction, memBusDualInteraction, sdMemRow, ldMemRow,
+      ZiskFv.AirsClean.Mem.memRowOf]
+  have h_addi_a0 :
+      (AddSpinWitness.mainValueMemBusInteractions sdLdAddiX1A0Row).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [mainCRegPreInteraction sdLdAddiX1A0Row,
+          mainCMemInteraction sdLdAddiX1A0Row] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdAddiX1A0Row,
+      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf,
+      addiX0Bits, mainARegPreInteraction, mainAMemInteraction,
+      mainBRegPreInteraction, mainBMemInteraction, mainCRegPreInteraction,
+      mainCMemInteraction]
+  have h_slli :
+      (AddSpinWitness.mainValueMemBusInteractions sdLdSlliX1Row).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [ mainARegPreInteraction sdLdSlliX1Row
+        , mainAMemInteraction sdLdSlliX1Row
+        , mainCRegPreInteraction sdLdSlliX1Row
+        , mainCMemInteraction sdLdSlliX1Row ] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdSlliX1Row,
+      sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, mainRomRowOf, addiX1Bits,
+      mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
+      mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction]
+  have h_addi_eight :
+      (AddSpinWitness.mainValueMemBusInteractions sdLdAddiX1EightRow).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [ mainARegPreInteraction sdLdAddiX1EightRow
+        , mainAMemInteraction sdLdAddiX1EightRow
+        , mainCRegPreInteraction sdLdAddiX1EightRow
+        , mainCMemInteraction sdLdAddiX1EightRow ] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdAddiX1EightRow,
+      sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate, mainRomRowOf,
+      addiX1Bits, mainARegPreInteraction, mainAMemInteraction,
+      mainBRegPreInteraction, mainBMemInteraction, mainCRegPreInteraction,
+      mainCMemInteraction]
+  have h_addi_x2 :
+      (AddSpinWitness.mainValueMemBusInteractions sdLdAddiX2Row).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [mainCRegPreInteraction sdLdAddiX2Row, mainCMemInteraction sdLdAddiX2Row] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdAddiX2Row,
+      sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, mainRomRowOf, addiX0Bits,
+      mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
+      mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction]
+  have h_sd :
+      (AddSpinWitness.mainValueMemBusInteractions sdLdSdRow).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [ mainARegPreInteraction sdLdSdRow
+        , mainAMemInteraction sdLdSdRow
+        , mainBRegPreInteraction sdLdSdRow
+        , mainBMemInteraction sdLdSdRow
+        , mainCMemInteraction sdLdSdRow ] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdSdRow,
+      sdLdSdRowTemplate, mainRomRowOf, sdLdSdBits, mainARegPreInteraction,
+      mainAMemInteraction, mainBRegPreInteraction, mainBMemInteraction,
+      mainCRegPreInteraction, mainCMemInteraction]
+  have h_ld :
+      (AddSpinWitness.mainValueMemBusInteractions sdLdLdRow).filter
+          (fun interaction => !decide (interaction.mult = 0)) =
+        [ mainARegPreInteraction sdLdLdRow
+        , mainAMemInteraction sdLdLdRow
+        , mainBMemInteraction sdLdLdRow
+        , mainCRegPreInteraction sdLdLdRow
+        , mainCMemInteraction sdLdLdRow ] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdLdRow,
+      sdLdLdRowTemplate, mainRomRowOf, sdLdLdBits, mainARegPreInteraction,
+      mainAMemInteraction, mainBRegPreInteraction, mainBMemInteraction,
+      mainCRegPreInteraction, mainCMemInteraction]
+  have h_jal (step : FGL) :
+      (AddSpinWitness.mainValueMemBusInteractions (sdLdJalRow step)).filter
+          (fun interaction => !decide (interaction.mult = 0)) = [] := by
+    simp [AddSpinWitness.mainValueMemBusInteractions, sdLdJalRow, mainRomRowOf,
+      AddSpinWitness.addSpinJalBits, mainARegPreInteraction, mainAMemInteraction,
+      mainBRegPreInteraction, mainBMemInteraction, mainCRegPreInteraction,
+      mainCMemInteraction]
+  simp only [sdLdMemBusInteractions, List.filter_append, h_boundary, h_mem,
+    sdLdMainRows, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+    h_addi_a0, h_slli, h_addi_eight, h_addi_x2, h_sd, h_ld, h_jal]
+  rfl
+
+private theorem sdLdMemBusNonzeroChronological_perm_core :
+    List.Perm sdLdMemBusNonzeroChronological sdLdMemBusCore := by
+  change List.Perm
+    ([ registerBoundaryBootInteraction sdLdBoundaryRowX1
+     , registerBoundaryReloadInteraction sdLdBoundaryRowX1
+     , registerBoundaryBootInteraction sdLdBoundaryRowX2
+     , registerBoundaryReloadInteraction sdLdBoundaryRowX2
+     , registerBoundaryBootInteraction sdLdBoundaryRowX3
+     , registerBoundaryReloadInteraction sdLdBoundaryRowX3 ] ++
+      sdLdIdleBoundaryInteractions ++
+      [ memBusInteraction sdMemRow
+      , memBusInteraction ldMemRow
+      , mainCRegPreInteraction sdLdAddiX1A0Row
+      , mainCMemInteraction sdLdAddiX1A0Row
+      , mainARegPreInteraction sdLdSlliX1Row
+      , mainAMemInteraction sdLdSlliX1Row
+      , mainCRegPreInteraction sdLdSlliX1Row
+      , mainCMemInteraction sdLdSlliX1Row
+      , mainARegPreInteraction sdLdAddiX1EightRow
+      , mainAMemInteraction sdLdAddiX1EightRow
+      , mainCRegPreInteraction sdLdAddiX1EightRow
+      , mainCMemInteraction sdLdAddiX1EightRow
+      , mainCRegPreInteraction sdLdAddiX2Row
+      , mainCMemInteraction sdLdAddiX2Row
+      , mainARegPreInteraction sdLdSdRow
+      , mainAMemInteraction sdLdSdRow
+      , mainBRegPreInteraction sdLdSdRow
+      , mainBMemInteraction sdLdSdRow
+      , mainCMemInteraction sdLdSdRow
+      , mainARegPreInteraction sdLdLdRow
+      , mainAMemInteraction sdLdLdRow
+      , mainBMemInteraction sdLdLdRow
+      , mainCRegPreInteraction sdLdLdRow
+      , mainCMemInteraction sdLdLdRow ])
+    ([ registerBoundaryBootInteraction sdLdBoundaryRowX1
+     , registerBoundaryReloadInteraction sdLdBoundaryRowX1
+     , mainCRegPreInteraction sdLdAddiX1A0Row
+     , mainCMemInteraction sdLdAddiX1A0Row
+     , mainARegPreInteraction sdLdSlliX1Row
+     , mainAMemInteraction sdLdSlliX1Row
+     , mainCRegPreInteraction sdLdSlliX1Row
+     , mainCMemInteraction sdLdSlliX1Row
+     , mainARegPreInteraction sdLdAddiX1EightRow
+     , mainAMemInteraction sdLdAddiX1EightRow
+     , mainCRegPreInteraction sdLdAddiX1EightRow
+     , mainCMemInteraction sdLdAddiX1EightRow
+     , mainARegPreInteraction sdLdSdRow
+     , mainAMemInteraction sdLdSdRow
+     , mainARegPreInteraction sdLdLdRow
+     , mainAMemInteraction sdLdLdRow
+     , registerBoundaryBootInteraction sdLdBoundaryRowX2
+     , registerBoundaryReloadInteraction sdLdBoundaryRowX2
+     , mainCRegPreInteraction sdLdAddiX2Row
+     , mainCMemInteraction sdLdAddiX2Row
+     , mainBRegPreInteraction sdLdSdRow
+     , mainBMemInteraction sdLdSdRow
+     , registerBoundaryBootInteraction sdLdBoundaryRowX3
+     , registerBoundaryReloadInteraction sdLdBoundaryRowX3
+     , mainCRegPreInteraction sdLdLdRow
+     , mainCMemInteraction sdLdLdRow ] ++
+      sdLdIdleBoundaryInteractions ++
+      [ mainCMemInteraction sdLdSdRow
+      , memBusInteraction sdMemRow
+      , mainBMemInteraction sdLdLdRow
+      , memBusInteraction ldMemRow ])
+  exact sdLdMemBusStructuralPerm sdLdIdleBoundaryInteractions
+      (registerBoundaryBootInteraction sdLdBoundaryRowX1)
+      (registerBoundaryReloadInteraction sdLdBoundaryRowX1)
+      (registerBoundaryBootInteraction sdLdBoundaryRowX2)
+      (registerBoundaryReloadInteraction sdLdBoundaryRowX2)
+      (registerBoundaryBootInteraction sdLdBoundaryRowX3)
+      (registerBoundaryReloadInteraction sdLdBoundaryRowX3)
+      (memBusInteraction sdMemRow)
+      (memBusInteraction ldMemRow)
+      (mainCRegPreInteraction sdLdAddiX1A0Row)
+      (mainCMemInteraction sdLdAddiX1A0Row)
+      (mainARegPreInteraction sdLdSlliX1Row)
+      (mainAMemInteraction sdLdSlliX1Row)
+      (mainCRegPreInteraction sdLdSlliX1Row)
+      (mainCMemInteraction sdLdSlliX1Row)
+      (mainARegPreInteraction sdLdAddiX1EightRow)
+      (mainAMemInteraction sdLdAddiX1EightRow)
+      (mainCRegPreInteraction sdLdAddiX1EightRow)
+      (mainCMemInteraction sdLdAddiX1EightRow)
+      (mainCRegPreInteraction sdLdAddiX2Row)
+      (mainCMemInteraction sdLdAddiX2Row)
+      (mainARegPreInteraction sdLdSdRow)
+      (mainAMemInteraction sdLdSdRow)
+      (mainBRegPreInteraction sdLdSdRow)
+      (mainBMemInteraction sdLdSdRow)
+      (mainCMemInteraction sdLdSdRow)
+      (mainARegPreInteraction sdLdLdRow)
+      (mainAMemInteraction sdLdLdRow)
+      (mainBMemInteraction sdLdLdRow)
+      (mainCRegPreInteraction sdLdLdRow)
+      (mainCMemInteraction sdLdLdRow)
+
+private theorem sdLdMemBusNonzero_perm_core :
+    List.Perm (sdLdMemBusInteractions.filter (·.mult ≠ 0)) sdLdMemBusCore := by
+  rw [sdLdMemBusNonzero_filter]
+  exact sdLdMemBusNonzeroChronological_perm_core
+
+theorem sdLdWitness_memBusChannel_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw)) := by
+  rw [sdLdWitness_memBusInteractions]
+  apply balancedInteractions_of_perm
+    (RegisterMemBusBalance.balancedInteractions_append_of_balanced
+      sdLdMemBusCore_balanced sdLdMemBusZeroResidual_balanced (by
+        left
+        rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+        decide))
+  exact ((perm_filter_ne_zero_append_filter_eq_zero sdLdMemBusInteractions).trans <|
+    List.Perm.append sdLdMemBusNonzero_perm_core List.Perm.rfl).symm
+
 theorem sdLdWitness_memAlignRangeChannel_balanced :
     BalancedInteractions
       (sdLdWitness.tables.flatMap
@@ -1775,5 +2304,18 @@ theorem sdLdWitness_memAlignRomChannel_balanced :
   · intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     simp [MemAlignRomChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
+
+theorem sdLdWitness_balancedChannels : sdLdWitness.BalancedChannels := by
+  refine sdLdWitness.balancedChannels_of_tables sdLdEnsemble_verifier ?_
+  intro channel h_channel
+  simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
+    SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
+    SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
+  rcases h_channel with rfl | rfl | rfl | rfl | rfl
+  · exact sdLdWitness_memAlignRangeChannel_balanced
+  · exact sdLdWitness_memBusChannel_balanced
+  · exact sdLdWitness_opBus_balanced
+  · exact sdLdWitness_memAlignRomChannel_balanced
+  · exact sdLdWitness_rangeChannel_balanced
 
 end ZiskFv.Compliance.SdLdSpinWitness
