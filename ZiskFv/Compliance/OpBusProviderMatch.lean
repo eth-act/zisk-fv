@@ -1239,6 +1239,196 @@ theorem main_request_div_provided
                   (providerTable.environment providerRow))) 1) :=
   main_request_divu_provided trace i h_main_active (Or.inr h_main_op)
 
+private theorem arithMul_div_pin_of_op_186
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 186) :
+    row.flags.div = 1 := by
+  rcases h_table with ⟨i, hi⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hi h_op ⊢
+  all_goals
+    rcases hi with ⟨hop, _hm32, hdiv, _hna, _hnb, _hnp, _hnr, _hsext,
+      _hdiv0, _hoverflow, _hmainMul, _hmainDiv, _hsigned, _hrangeAB, _hrangeCD⟩
+    first
+    | exact hdiv
+    | rw [h_op] at hop
+      have hv := congrArg Fin.val hop
+      norm_num at hv
+
+private theorem arithMul_remainder_sign_cases_of_constraints
+    (env : Environment FGL)
+    (h_constraints :
+      ZiskFv.AirsClean.ArithMul.componentComplete.operations.ConstraintsHold env) :
+    let row := ZiskFv.AirsClean.ArithMul.componentComplete.rowInput env
+    (row.flags.nr = 0 ∨ row.flags.nr = 1)
+      ∧ (row.flags.nb = 0 ∨ row.flags.nb = 1) := by
+  have h_operations :=
+    (Air.Flat.Component.constraintsHold_iff
+      (component := ZiskFv.AirsClean.ArithMul.componentComplete) env).mp h_constraints
+  have h_divBlock :=
+    ZiskFv.AirsClean.ArithMul.sharedDivBlockSpec_of_constraints
+      ZiskFv.AirsClean.ArithMul.componentComplete.rowOffset env
+      ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar h_operations
+  have h_row_eval :
+      eval env ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar =
+        ZiskFv.AirsClean.ArithMul.componentComplete.rowInput env := by
+    simpa using
+      (eval_varFromOffset_valueFromOffset
+        ZiskFv.AirsClean.ArithMul.componentComplete.Input 0 env)
+  rw [h_row_eval] at h_divBlock
+  rcases h_divBlock.1 with
+    ⟨_, _, _, _, _, _, _, _, _, h_nb_bool, h_nr_bool, _, _⟩
+  constructor
+  · rcases mul_eq_zero.mp h_nr_bool with h | h
+    · exact Or.inl h
+    · exact Or.inr (sub_eq_zero.mp h).symm
+  · rcases mul_eq_zero.mp h_nb_bool with h | h
+    · exact Or.inl h
+    · exact Or.inr (sub_eq_zero.mp h).symm
+
+private theorem staticBinary_remainder_provider_of_active
+    {length : ℕ}
+    {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    (witness :
+      Air.Flat.EnsembleWitness
+        (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (env : Environment FGL)
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    {consumerInteraction : Interaction FGL}
+    (h_consumer :
+      consumerInteraction ∈ witness.interactionsWith
+        ZiskFv.Channels.OperationBus.OpBusChannel.toRaw)
+    (h_active : consumerInteraction.mult = -1)
+    (h_consumerEval :
+      consumerInteraction =
+        ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar.flags.div *
+            (1 -
+              ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar.flags.div_by_zero)))
+          (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessageExpr
+            ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar)).toRaw).eval env)
+    (h_row_eval :
+      eval env ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar = row)
+    (h_op :
+      (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage row).op.val = 6
+        ∨ (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage row).op.val = 80
+        ∨ (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage row).op.val = 81
+        ∨ (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage row).op.val = 8) :
+    ∃ binaryTable ∈ witness.allTables,
+      ∃ binaryRow ∈ binaryTable.table,
+        binaryTable.component.Spec (binaryTable.environment binaryRow)
+          ∧ binaryTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage row) 1)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (eval (binaryTable.environment binaryRow)
+                (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                  ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+  have h_eval_msg :
+      eval env (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessageExpr
+        ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar) =
+        ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage row := by
+    rw [ZiskFv.AirsClean.ArithMul.eval_remainderBoundOpBusMessageExpr, h_row_eval]
+  have h_eval_op := h_op
+  rw [← h_eval_msg] at h_eval_op
+  have h_result :=
+    ZiskFv.AirsClean.FullEnsemble.exists_staticBinary_provider_of_active_remainder_bound_interaction
+      witness h_constraints h_balanced h_specs h_consumer h_active h_consumerEval h_eval_op
+  rw [h_eval_msg] at h_result
+  exact h_result
+
+set_option maxHeartbeats 1000000 in
+/-- The live signed-DIV Arith row's remainder-bound request is served by a
+    concrete static Binary row. -/
+theorem signedDiv_remainder_bound_provider
+    (trace : AcceptedZiskTrace numInstructions)
+    {providerTable : Air.Flat.Table FGL}
+    (h_providerTable : providerTable ∈ trace.witness.allTables)
+    {providerRow : Array FGL} (h_providerRow : providerRow ∈ providerTable.table)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.FullEnsemble.arithMulProviderComponent)
+    (h_providerSpec :
+      providerTable.component.Spec (providerTable.environment providerRow))
+    (h_op :
+      (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+        (providerTable.environment providerRow)).flags.op = 186)
+    (h_div_by_zero :
+      (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+        (providerTable.environment providerRow)).flags.div_by_zero = 0) :
+    ∃ binaryTable ∈ trace.witness.allTables,
+      ∃ binaryRow ∈ binaryTable.table,
+        binaryTable.component.Spec (binaryTable.environment binaryRow)
+          ∧ binaryTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                  (providerTable.environment providerRow))) 1)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (eval (binaryTable.environment binaryRow)
+                (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                  ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1) := by
+  let env := providerTable.environment providerRow
+  let row := ZiskFv.AirsClean.ArithMul.componentComplete.rowInput env
+  have h_full : ZiskFv.AirsClean.ArithMul.FullSpec row := by
+    simpa [env, row] using
+      ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
+        h_component h_providerSpec
+  have h_rowConstraints :=
+    trace.constraints_hold providerTable h_providerTable providerRow h_providerRow
+  rw [h_component] at h_rowConstraints
+  have h_row_eval :
+      eval env ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar = row := by
+    simpa [row] using
+      (eval_varFromOffset_valueFromOffset
+        ZiskFv.AirsClean.ArithMul.componentComplete.Input 0 env)
+  obtain ⟨h_nr, h_nb⟩ :=
+    arithMul_remainder_sign_cases_of_constraints env h_rowConstraints
+  have h_div : row.flags.div = 1 :=
+    arithMul_div_pin_of_op_186 row h_full.2.1 h_op
+  let consumerInteraction :=
+    ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
+      (-(ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar.flags.div *
+        (1 - ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar.flags.div_by_zero)))
+      (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessageExpr
+        ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar)).toRaw).eval env
+  have h_consumerLocal :
+      consumerInteraction ∈
+        providerTable.interactionsWith
+          ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
+    exact ZiskFv.AirsClean.FullEnsemble.arithMul_remainderBoundInteraction_mem
+      h_component h_providerRow
+  have h_consumer :
+      consumerInteraction ∈
+        trace.witness.interactionsWith
+          ZiskFv.Channels.OperationBus.OpBusChannel.toRaw := by
+    exact Air.Flat.EnsembleWitness.mem_interactionsWith.mpr
+      ⟨providerTable, h_providerTable, h_consumerLocal⟩
+  have h_active : consumerInteraction.mult = -1 := by
+    dsimp [consumerInteraction]
+    apply ZiskFv.AirsClean.ArithMul.eval_remainderBoundInteraction_mult_neg_one
+    · simpa [h_row_eval] using h_div
+    · simpa [h_row_eval, env, row] using h_div_by_zero
+  have h_consumerEval :
+      consumerInteraction =
+        ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar.flags.div *
+            (1 -
+              ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar.flags.div_by_zero)))
+          (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessageExpr
+            ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar)).toRaw).eval env := rfl
+  have h_remainder_op :=
+    ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage_op_of_signs row h_nr h_nb
+  exact staticBinary_remainder_provider_of_active
+    trace.witness trace.constraints_hold trace.channels_balanced trace.spec_holds
+    env row h_consumer h_active h_consumerEval h_row_eval h_remainder_op
+
 /-- Layer-A op-bus provider-match wrapper for the Arith DIVUW operation
     (`OP_DIVU_W = 188`, W-mode `m32 = 1`).  Mirrors
     `main_request_divu_provided`, but
