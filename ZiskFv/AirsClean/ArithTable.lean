@@ -50,19 +50,26 @@ Earlier revisions of this docstring described a live set of 19
 `arith_table_op_*` trust-ledger assumptions in `Airs/Arith/Ranges.lean`
 and two findings gating their retirement. **That state is retired.**
 No `arith_table_op_*` declaration survives anywhere under `ZiskFv/`,
-and the project carries **zero** project-level trust assumptions
-repo-wide (V1 gate check "shrinkage floor"). The surviving mentions of
-those names are prose in comments, kept as historical pointers.
+and the project carries **zero** source Lean trust declarations /
+project axioms (V1 gate check "shrinkage floor"). This does not erase
+the separately documented extraction, protocol-soundness, or root-theorem
+premises. The surviving mentions of those names are prose in comments,
+kept as historical pointers.
 
 What replaced them is worth knowing before consuming this table:
 
-1. **Membership comes from the ensemble, not from a bundled premise.**
+1. **Membership comes from the selected ensemble provider, not from a
+   bundled premise.**
    Faithful column projections need ROM membership *and* the data half.
-   This `StaticTable` plus `contains_iff` supplies the data half; the
-   membership half is supplied by the live lookup emitted by the
-   lookup-aware ArithMul/ArithDiv entry points (`arith.pil:286-287`),
-   on the same recognizer/static-provider route used for
-   `BinaryTableSlice` and `SpecifiedRangesSlice`.
+   The full ensemble selects the shared ArithMul
+   `componentWithArithTable` provider through operation-bus balance.
+   That component's in-component `Table.fromStatic` lookup supplies ROM
+   membership in its `FullSpec`, while this table's `contains_iff`
+   supplies the data projection (`arith.pil:286-287`). The standalone
+   ArithDiv lookup-aware entry points use the same local lookup mechanism,
+   but the full ensemble contains the plain `ArithDiv.component`; this is
+   therefore distinct from the channel-balanced static-provider routes
+   used for `BinaryTableSlice` and `SpecifiedRangesSlice`.
 
 2. **Some column facts are genuinely refuted by the ROM data, and
    `AirsClean/ArithTableProjections.lean` proves it.** That module
