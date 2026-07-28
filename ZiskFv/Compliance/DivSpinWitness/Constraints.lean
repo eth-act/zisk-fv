@@ -27,8 +27,9 @@ attribute [local simp] mainFixedColumns_segment_l1_first
   mainFixedCapacity
 
 theorem divSpinMain_pcHandshake_addi_x1_x2 :
-    pcHandshakeBetween divSpinAddiX1Row divSpinAddiX2Row := by
-  simp [pcHandshakeBetween, divSpinAddiX1Row, divSpinAddiX2Row,
+    transitionBetween divSpinAddiX1Row divSpinAddiX2Row := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
+    divSpinAddiX1Row, divSpinAddiX2Row,
     divSpinAddiX1RowWithLast, divSpinAddiX2RowWithLast,
     divSpinAddiX1RowTemplate, divSpinAddiX2RowTemplate,
     divSpinAddiX1ProgramRow, divSpinAddiX2ProgramRow, divSpinAddiBits,
@@ -39,8 +40,9 @@ theorem divSpinMain_pcHandshake_addi_x1_x2 :
     ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinMain_pcHandshake_addi_x2_div :
-    pcHandshakeBetween divSpinAddiX2Row divSpinDivRow := by
-  simp [pcHandshakeBetween, divSpinAddiX2Row, divSpinAddiX2RowWithLast,
+    transitionBetween divSpinAddiX2Row divSpinDivRow := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
+    divSpinAddiX2Row, divSpinAddiX2RowWithLast,
     divSpinAddiX2RowTemplate, divSpinDivRow, divSpinDivRowTemplate,
     divSpinAddiX2ProgramRow, divSpinDivProgramRow, divSpinAddiBits,
     divSpinDivBits, divSpinAddiFree, divSpinAddiBits,
@@ -50,16 +52,18 @@ theorem divSpinMain_pcHandshake_addi_x2_div :
     ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinMain_pcHandshake_div_jal :
-    pcHandshakeBetween divSpinDivRow (divSpinJalRow 3) := by
-  simp [pcHandshakeBetween, divSpinDivRow, divSpinJalRow,
+    transitionBetween divSpinDivRow (divSpinJalRow 3) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
+    divSpinDivRow, divSpinJalRow,
     divSpinJalProgramRow, divSpinDivProgramRow, divSpinDivBits,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalProgramRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalBits, mainRomRowOf]
 
 theorem divSpinMain_pcHandshake_jal_jal :
-    pcHandshakeBetween (divSpinJalRow 3) (divSpinJalRow 4) := by
-  simp [pcHandshakeBetween, divSpinJalRow, divSpinJalProgramRow,
+    transitionBetween (divSpinJalRow 3) (divSpinJalRow 4) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
+    divSpinJalRow, divSpinJalProgramRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalProgramRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalBits,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols, mainRomRowOf]
@@ -132,7 +136,8 @@ theorem divSpinJalMain_proverAssumptions (step : FGL) :
       (divSpinJalRow step) emptyData (ProverHint.empty FGL) := by
   refine ⟨⟨3, by decide⟩, ZiskFv.Compliance.AddSpinWitness.addSpinJalBits,
     MainRomExecKind.internalFlag,
-    ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols step,
+    { ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols step with
+      b_0 := if step = 3 then 3 else 0 },
     ?_, ?_, ?_, ?_, ?_⟩
   · decide
   · norm_num [MainRomExecKind.Coherent, divSpinProgram, divSpinJalProgramRow,
@@ -215,7 +220,7 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
   rw [Table.TransitionConstraints]
   intro index
   fin_cases index
-  · change pcHandshakeBetween _
+  · change transitionBetween _
       (Eval.eval
         (Environment.fromArray
           (mainFixedColumns.materialize 0 (mainRawRow divSpinAddiX1Row)) emptyData)
@@ -226,11 +231,11 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
       (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf,
         divSpinAddiFree])]
     simp [Table.previousEnvironment, divSpinMainTable, mainRowsTable,
-      divSpinMainRows, pcHandshakeBetween,
+      divSpinMainRows, transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
       divSpinAddiX1Row, divSpinAddiX1RowWithLast, divSpinAddiX1RowTemplate,
       divSpinAddiBits, ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
       mainRomRowOf, divSpinAddiFree, divSpinRegisterInitial]
-  · change pcHandshakeBetween
+  · change transitionBetween
       (Eval.eval
         (Environment.fromArray
           (mainFixedColumns.materialize 0 (mainRawRow divSpinAddiX1Row)) emptyData)
@@ -250,7 +255,7 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
         (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf,
           divSpinAddiFree])]
     exact divSpinMain_pcHandshake_addi_x1_x2
-  · change pcHandshakeBetween
+  · change transitionBetween
       (Eval.eval
         (Environment.fromArray
           (mainFixedColumns.materialize 1 (mainRawRow divSpinAddiX2Row)) emptyData)
@@ -268,7 +273,7 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
         (by simp [divSpinDivRow, divSpinDivRowTemplate, mainRomRowOf])
         (by simp [divSpinDivRow, divSpinDivRowTemplate, mainRomRowOf])]
     exact divSpinMain_pcHandshake_addi_x2_div
-  · change pcHandshakeBetween
+  · change transitionBetween
       (Eval.eval
         (Environment.fromArray
           (mainFixedColumns.materialize 2 (mainRawRow divSpinDivRow)) emptyData)
@@ -284,7 +289,7 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
         (by simp [divSpinJalRow, mainRomRowOf])
         (by simp [divSpinJalRow, mainRomRowOf])]
     exact divSpinMain_pcHandshake_div_jal
-  · change pcHandshakeBetween
+  · change transitionBetween
       (Eval.eval
         (Environment.fromArray
           (mainFixedColumns.materialize 3 (mainRawRow (divSpinJalRow 3))) emptyData)
