@@ -77,10 +77,10 @@ through to the `Valid_Mem` column functions rather than ignoring it.
   out of `segment_every_row`, so a drift in either fails to typecheck there.
 * It does **not** certify the column layout itself: the four lane maps are
   handwritten from the extractor header. A *compensating* pair of slips (mirror
-  and map wrong in the same direction) would still be `rfl`. Arith closes this
-  with `trust/scripts/check-arith-column-map.py` against
-  `trust/generated/arith-stage1-columns.txt`; there is no Mem analogue yet, so
-  this is an open hole, not a covered one. `extractedMemRowCircuit_pinned` and
+  and map wrong in the same direction) would still be `rfl`. A column-map gate
+  of the kind proposed for Arith on the unmerged `arith-mirror-weld` branch
+  would close this; there is no Mem analogue, so this is an open hole, not a
+  covered one. `extractedMemRowCircuit_pinned` and
   `extractedMemTraceCircuit_pinned` below are what such a gate would need to
   hook onto.
 * It does **not** rest on the `0` answers the lane maps give outside the
@@ -90,19 +90,34 @@ through to the `Valid_Mem` column functions rather than ignoring it.
 ## Mutation evidence
 
 Fourteen mutations were run against this module and reverted; the exact errors
-are recorded at the declarations they break. The one that matters most is not a
-mutation of this module at all:
+are recorded at the declarations they break.
 
-> Changing generated constraint 28's `(1 - is_last_segment)` to
-> `(1 - is_first_segment)` in **both** `ZiskFv/Airs/Mem.lean`'s
-> `permutation_every_row` **and** `ZiskFv/AirsClean/Mem/Constraints.lean`'s
-> `permutationGeneratedConstraintAssertions` — a transcription slip that is
-> self-consistent across two of the three hand-written mirrors — leaves the whole
-> tree building up to and including `ZiskFv/AirsClean/Mem/Bridge.lean`, whose
-> two-directional theorems weld those two mirrors *to each other* and therefore
-> cannot see it. The only thing in the build that rejects it is `permutation_weld`
-> below: `error: Type mismatch / Iff.rfl has type ?m.55 ↔ ?m.55 but is expected to
-> have type permutation_every_row seg perm v r ↔ …`.
+**A correction, because the first version of this section was wrong.** It
+claimed that a self-consistent slip across two hand-written mirrors (generated
+constraint 28's `(1 - is_last_segment)` -> `(1 - is_first_segment)` in both
+`ZiskFv/Airs/Mem.lean` and `ZiskFv/AirsClean/Mem/Constraints.lean`) is caught by
+`permutation_weld` below and by nothing else in the build. **That is false.**
+
+Adversarial review reproduced the mutation and found
+`Extraction.MemGeneratedConstraintBridge` rejects it too, at `:266` and `:515`,
+with this module absent from that target's import closure. That bridge is
+auto-generated, binds `Extraction.Mem.constraint_0..33` to the ProverData-backed
+source, and is a **`defaultTargets` entry in `lakefile.toml`** — so it has been
+gating those mirrors all along.
+
+The wrong conclusion came from measuring with the targeted
+`lake build ZiskFv.AirsClean.MemMirrorWeld` (8203 jobs), which excludes that
+bridge (job 8986 of 9119 in the default build). "Not in my target's import
+closure" was reported as "provably cannot see it". Any mutation conclusion drawn
+from a targeted build carries the same risk; measure against the default build.
+
+**Honest increment of this module**, given that: the `segment_weld` and
+`permutation_weld` families largely duplicate the pre-existing generated bridge.
+What is genuinely new is Part A — `spec_weld` and
+`extracted_of_componentWithDualMemBus_constraints`, over the `Spec`/`main` mirror
+that the generated bridge does not cover — plus `∀`-generality over the single
+`proverData` instantiation the bridge is stated at, and the lane-restriction and
+instance-pinning results.
 
 The other thirteen mutate this module's four lane maps, its weld statements, its
 `Extraction.Circuit` instances and its lane restriction; all thirteen break the
