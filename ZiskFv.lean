@@ -133,6 +133,11 @@ import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.BinaryFamily.Balance
+-- Kernel-checked weld of the Binary/BinaryAdd constraint mirrors to the
+-- generated extraction. Leaf module: imported only here, so the generated
+-- files' `@[simp]` constraint unfoldings stay out of every other module's
+-- simp set.
+import ZiskFv.AirsClean.BinaryMirrorWeld
 import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.AirsClean.FullEnsemble.Balance
 import ZiskFv.ZiskCircuit.MemTimeline.Construction
