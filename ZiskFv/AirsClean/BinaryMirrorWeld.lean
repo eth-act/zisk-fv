@@ -101,24 +101,58 @@ arbitrary circuit* `c : C F ExtF`, and every weld is universally quantified over
   `BinaryAdd` has no such gap: its four constraints read all ten of its stage-1
   columns, so its whole stage-1 map is pinned by the welds.
 
-## Evidence that this catches what it claims to catch
+The route to closing that last gap is already half-built and is worth recording
+rather than rediscovering. `Extraction.LookupWiring` — generated, and already in
+the Lake graph — decomposes each of Binary's interaction constraints into named
+slots: `hint_Binary_7_0` … `hint_Binary_11_0` carry `Expr.witness 1 <column> 0`
+per slot, and the generated `example : constraint_Binary_7 = template_Binary_7 :=
+by rfl` next to them already certifies that the decomposition is faithful to the
+constraint. `hint_Binary_7_0`'s seven slots line up one for one with
+`lookupMessage1Row` (`ZiskFv/AirsClean/Binary/Circuit.lean:227`), and the
+`5000`-bus tuple inside `constraint_10` lines up with `opBusMessage`
+(`ZiskFv/AirsClean/Binary/Bridge.lean:1142`). A slot-list weld between those two
+sides would pin columns `1`–`31`. The obstacle, found and not solved here: those
+slots are `Expr`, whose `constant` constructor carries a `String`, so evaluating
+a slot to a field element produces `((n : ℕ) : F)` where the mirror has an
+`OfNat` literal — not definitionally equal, so such a weld would not be
+`rfl`-level and would need care to stay honest.
+
+## Evidence — measured, including where these welds are *not* the only guard
 
 The failure mode this module exists for is a *self-consistent* slip: the mirror
-stack agreeing with itself and disagreeing with the pilout. That was reproduced.
-Rewriting the `512` of `binary.pil:111` to `511` at all seven handwritten sites
-that carry it — `ZiskFv/Airs/Binary/Binary.lean`,
-`ZiskFv/AirsClean/Binary/{Spec,Constraints,Soundness,Circuit,Bridge}.lean` (twice
-in `Circuit.lean`) — leaves the *entire rest of the build green*, including the
-component's own soundness and completeness proofs, and fails only here, at
-`b_op_or_sext_def_weld` and `core_every_row_weld`. Mutating a single site
-instead fails inside `Binary/Bridge.lean`, i.e. the existing proofs already pin
-the mirror to itself; what they cannot pin is the mirror to the extraction.
+stack agreeing with itself while disagreeing with the pilout. Two were injected
+and the whole `lake build` run to completion under each.
+
+* `512` → `511` (the `binary.pil:111` coefficient) at all seven code sites that
+  carry it — `ZiskFv/Airs/Binary/Binary.lean` and
+  `ZiskFv/AirsClean/Binary/{Spec,Constraints,Soundness,Circuit,Bridge}.lean`,
+  twice in `Circuit.lean`. Two modules fail: this one, at
+  `b_op_or_sext_def_weld` and `core_every_row_weld`, and — 3000 lines
+  downstream — `ZiskFv/EquivCore/Bridge/Binary.lean` with `unsolved goals`.
+  So this constant was *already* pinned, by a distant semantic consumer.
+* `mode32 * c_is_signed` → `c_is_signed * mode32` (semantically inert, the shape
+  of drift a comment cannot see) across the same stack. That one never reaches
+  this module: `ZiskFv/AirsClean/Binary/Circuit.lean`'s own soundness and
+  completeness proofs fail first.
+
+The honest reading is that the Binary mirror is more shape-sensitive than it
+looks, and this module is not what stops a coefficient typo from shipping. What
+it adds is threefold, and none of it is covered by the above: it reports at the
+source, naming the generated constraint, instead of as an `unsolved goals` in an
+unrelated file; it is an `Iff`, so it also rules out a mirror asserting *more* or
+*less* than the AIR, which nothing downstream checks; and it is the only thing
+in the tree that points at `build/extraction/` at all — every other Binary proof
+pins the mirror to itself and to the Sail semantics, so a *regenerated pilout*
+with a renumbered column or a changed coefficient would pass them all. That last
+case is the one reproduced by mutating `validOfCircuit`'s column map, which
+nothing else in the build reads: `mode32` 33 → 34 fails five welds here and
+nowhere else.
 
 Two caveats on the error messages a future slip will produce. The v1 welds are
 stated over an abstract field, so nothing is ever numerically reduced and a slip
 reports as a clean `Type mismatch`. `spec_weld` and `constraints_at_weld` are at
 `FGL = Fin 18446744069414584321`, where `Iff.rfl` tries to evaluate numerals and
-a slip surfaces as `maximum recursion depth has been reached` instead — a
+a slip can surface as `maximum recursion depth has been reached` instead — a
 failure, but an uninformative one; read the v1 weld's message.
 
 ## Trust note
