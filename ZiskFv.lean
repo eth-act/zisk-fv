@@ -31,6 +31,8 @@ import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 -- Wide-PC no-wrap toolkit (PC values can exceed GL_prime).
 import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 import ZiskFv.ZiskCircuit.Add
+import ZiskFv.ZiskCircuit.MulH
+import ZiskFv.ZiskCircuit.MulHSU
 import ZiskFv.Equivalence.Add
 import ZiskFv.Equivalence.Beq
 import ZiskFv.Equivalence.Bne
@@ -140,6 +142,7 @@ import ZiskFv.Compliance.RowProvenance
 import ZiskFv.Compliance.AcceptedZiskTrace
 import ZiskFv.Compliance.AcceptedZiskTrace.Spec
 import ZiskFv.Compliance.AcceptedZiskTrace.MemTable
+import ZiskFv.Compliance.AcceptedZiskTrace.MemAlignRom
 import ZiskFv.Compliance.AcceptedZiskTrace.MemSegmentRanges
 import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
 import ZiskFv.Compliance.AcceptedZiskTrace.MemAlignRanges
@@ -202,3 +205,8 @@ import ZiskFv.Completeness.Aspirational
 import ZiskFv.Completeness.Rv64im.SailDecode
 import ZiskFv.Completeness.Rv64im.SailDecode.ZiskClassifyMatch
 import ZiskFv.Completeness
+-- Checked defect reproductions. Imported so `lake build` actually compiles them:
+-- a regression that is not in the build graph is a regression that never runs, and
+-- `trust/defects.md` cites this one as evidence for
+-- `ZISK-DEFECT-ARITH-DIV-QUOTIENT-SIGN-SOUNDNESS`.
+import ZiskFv.Regression.SignedDivOrdinaryCounterexample

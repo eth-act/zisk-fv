@@ -90,7 +90,7 @@ def divSpinDivProgramDecode :
         ZiskFv.AirsClean.Main.cMemMessage,
         ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
         AbstractInteraction.eval, ChannelInteraction.toRaw, Channel.emitted,
-        Expression.eval, mainConstVar]
+        Expression.eval]
   bounds := by
     constructor <;>
       norm_num [busSub, Pilot.execRowOf, divSpinAcceptedTrace_mainTable_eq,

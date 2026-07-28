@@ -135,9 +135,7 @@ theorem divSpinJalMain_proverAssumptions (step : FGL) :
     (componentWithRomMemAndOpBus 4 divSpinProgram).circuit.ProverAssumptions
       (divSpinJalRow step) emptyData (ProverHint.empty FGL) := by
   refine ⟨⟨3, by decide⟩, ZiskFv.Compliance.AddSpinWitness.addSpinJalBits,
-    MainRomExecKind.internalFlag,
-    { ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols step with
-      b_0 := if step = 3 then 3 else 0 },
+    MainRomExecKind.internalFlag, divSpinJalFreeCols step,
     ?_, ?_, ?_, ?_, ?_⟩
   · decide
   · norm_num [MainRomExecKind.Coherent, divSpinProgram, divSpinJalProgramRow,
