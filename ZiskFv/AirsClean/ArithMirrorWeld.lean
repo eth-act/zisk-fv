@@ -599,10 +599,19 @@ def probeOfRow (row : ArithMulRow FGL) : ArithProbe FGL FGL where
 
 /-- The bridge from `extractedArithRowCircuit`, at which every weld above is
     stated, into the free circuit. Composed with
-    `fOnlyConstraints_readOnlyModeledLanes` it gives: none of the four welded
-    constraints can observe a stubbed lane, so the `0` defaults in `mainValue`
-    and the `preprocessed`/`challenge`/`exposed` stubs cannot be what makes a
-    weld true. -/
+    `fOnlyConstraints_readOnlyModeledLanes` it gives: a welded constraint cannot
+    observe a stubbed lane, so the `0` defaults in `mainValue` and the
+    `preprocessed`/`challenge`/`exposed` stubs cannot be what makes a weld true.
+
+    Scope, stated exactly: this bridge is instantiated at four representative
+    constraints (15, 25, 36, 39), one per shape. The lane-restriction result it
+    composes with, `fOnlyConstraints_readOnlyModeledLanes`, is proved for ALL 49
+    F-only constraints — that is where the generality lives. Extending the
+    bridge to the other 45 is mechanical instantiation, not new content.
+
+    The `column < 44` bound is sound but NOT tight: the F-only set is measured to
+    read at most column 40, so columns 41-43 are unconstrained by this probe.
+    Tightening it would strengthen the statement; nothing depends on it today. -/
 theorem weldedConstraints_probeBridge (row : ArithMulRow FGL) (r : ℕ) :
     (Arith.extraction.constraint_15_every_row (extractedArithRow row) r
         ↔ Arith.extraction.constraint_15_every_row (probeOfRow row) r)
