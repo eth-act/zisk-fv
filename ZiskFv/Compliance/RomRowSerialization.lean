@@ -40,6 +40,7 @@ not addressed by anything in this file).  Those are Phase-0 step S3 and issue #6
 Kernel-sound: no `axiom` / `sorry` / `native_decide` / `bv_decide`.
 -/
 import ProductionM2
+import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.Helpers
 import ZiskFv.Compliance.SdLdSpinWitness
 
 open Aeneas Aeneas.Std Result zisk_core
@@ -293,7 +294,35 @@ theorem romFlagsNat_cast_eq_packFlags (e : ZiskInstExtract) :
   push_cast
   ring
 
-/-! ## 4. The ROM row: `rom.rs:238-259` -/
+/-! ## 4. The ROM row: `rom.rs:238-259`
+
+`rom.rs` reads a `zisk_inst::ZiskInst`; the transcription below is written over
+the extraction's `ZiskInstExtract`, because that is what
+`extract_transpile_rv64im_raw` returns.  That substitution is only legitimate if
+`ZiskInstExtract.from_inst` copies every field `rom.rs:211-259` touches
+unchanged, so it is proven rather than assumed. -/
+
+/-- `ZiskInstExtract.from_inst` (`ProductionM2.lean:1333`) preserves all eighteen
+    `ZiskInst` fields the ROM emitter reads.  (It differs from `ZiskInst` only in
+    replacing `op_type` by its discriminant `op_type_id`, which `rom.rs` never
+    reads.)  So `romRowOf` over the extract record is the same function of the
+    lowered instruction as `compute_trace_rom` is over `ZiskInst`. -/
+theorem from_inst_preserves_rom_fields {i : zisk_inst.ZiskInst} {e : ZiskInstExtract}
+    (h : zisk_core.aeneas_extract.ZiskInstExtract.from_inst i = ok e) :
+    e.paddr = i.paddr ∧ e.jmp_offset1 = i.jmp_offset1 ∧ e.jmp_offset2 = i.jmp_offset2
+      ∧ e.store_offset = i.store_offset ∧ e.a_offset_imm0 = i.a_offset_imm0
+      ∧ e.b_offset_imm0 = i.b_offset_imm0 ∧ e.a_src = i.a_src
+      ∧ e.a_use_sp_imm1 = i.a_use_sp_imm1 ∧ e.b_src = i.b_src
+      ∧ e.b_use_sp_imm1 = i.b_use_sp_imm1 ∧ e.ind_width = i.ind_width
+      ∧ e.op = i.op ∧ e.store = i.store ∧ e.store_pc = i.store_pc
+      ∧ e.set_pc = i.set_pc ∧ e.is_precompiled = i.is_precompiled
+      ∧ e.is_external_op = i.is_external_op ∧ e.m32 = i.m32 := by
+  simp only [zisk_core.aeneas_extract.ZiskInstExtract.from_inst] at h
+  obtain ⟨u, hu, hok⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  simp only [Result.ok.injEq] at hok
+  subst hok
+  refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl,
+    rfl, rfl, rfl⟩
 
 /-- Transcription of the opcode remap at `rom.rs:246-255`.  The three `Fcall`
     variants are out of RV64IM scope, but the branch is transcribed rather than
