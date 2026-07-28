@@ -1126,17 +1126,43 @@ proofs are a two-line composition of the two existing results.
 What this does and does NOT close.
 
   * CLOSED.  "The lowerer might fail, so the pins could be vacuous" is no longer
-    a possibility for any of the 63 opcodes: the witness is exhibited.
+    a possibility for any of the 63 opcodes: the witness is exhibited, through
+    the real production entry point.
+
   * NOT CLOSED, and stated as premises rather than hidden: the register-field
-    bounds (`rs1, rs2, rd < 32`).  §1-§8 prove them for each LEAF decoder
+    bounds `rs1, rs2, rd < 32`.  §1-§8 prove them for each LEAF decoder
     (`decode_r_bounds`, `decode_i_bounds`, `decode_s_bounds`, `decode_b_bounds`,
-    `decode_u_bounds`, `decode_j_bounds`), but nothing here connects those to
-    `decode_32_core`, so a caller starting from a raw 32-bit word must still
-    supply them.  Closing that connection is what would make totality of
-    `extract_transpile_rv64im_raw` premise-free.
-  * NOT CLOSED: `rom_address = 0` for JALR (the transpile call site's value).
-  * NOT CLOSED: anything about WHAT the lowered row means — that is the raw-word
-    join (#61 Phase 0), which this module is deliberately independent of. -/
+    `decode_u_bounds`, `decode_j_bounds`), but nothing connects those to
+    `decode_32_core`, so a caller starting from a raw 32-bit word must supply
+    them.
+
+  * NOT CLOSED: `rom_address = 0` for JALR — the value the transpile call site
+    passes (`ProductionM2.lean:3657`), needed for the two-row arm's
+    `rom_address + 1`.
+
+  * NOT CLOSED: anything about WHAT the lowered row means.  That is the raw-word
+    join (#61 Phase 0); this module is deliberately independent of it.
+
+A premise-free `∃ e, extract_transpile_rv64im_raw raw = ok e` does NOT follow
+from §11 alone, and it is worth recording exactly why, so the gap is not
+mis-scoped as "just connect the decoder bounds":
+
+  1. a bound on `decode_32_core`'s `rd`/`rs1`/`rs2` (the leaf lemmas exist; the
+     ~120-arm dispatch over them does not), plus the unset-field defaults from
+     `DecodedRv64im.new` (`ProductionM2.lean:254-268`);
+  2. totality of the three degenerate builders §11 never reaches, because for
+     ADD/OR/ADDI/ADDIW the dispatcher routes AWAY from the op builder exactly
+     when §11's routing hypotheses fail: `copyb` (rs1 = 0 or rs2 = 0, or ADDI
+     with imm = 0), `hint` (ADDI with rd = 0 and rs1 or rs2 nonzero), and
+     `create_precompiled_op_typed` (the DMA-CSR path, ruled out here by
+     `input_precompile = none`).  `nop`, the fourth such target, is the one
+     already covered — `nop_ok` in §8, used by `fence_dispatch_total`;
+  3. a case analysis over `lowering_opcode` (`ProductionM2.lean:1144`) tying the
+     decoded `RiscvOpcode` to the `Rv64imSingleRowOpcode` each §11 lemma is
+     indexed by.
+
+Item 2 is the substantive one: those arms are lowering behaviour this module has
+no lemma about at all, not a missing plumbing step. -/
 
 
 /-! ### 12.1 Register / M ops. -/
@@ -1145,7 +1171,8 @@ theorem sub_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sub hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sub hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 11#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1156,7 +1183,8 @@ theorem and_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.And hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.And hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 14#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1167,7 +1195,8 @@ theorem xor_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Xor hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Xor hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 16#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1178,7 +1207,8 @@ theorem slt_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slt hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slt hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 7#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1189,7 +1219,8 @@ theorem sltu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sltu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sltu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 6#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1200,7 +1231,8 @@ theorem sll_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sll hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sll hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 33#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1211,7 +1243,8 @@ theorem srl_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srl hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srl hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 34#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1222,7 +1255,8 @@ theorem sra_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sra hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sra hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 35#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1233,7 +1267,8 @@ theorem addw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Addw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Addw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 26#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1244,7 +1279,8 @@ theorem subw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Subw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Subw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 27#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1255,7 +1291,8 @@ theorem sllw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sllw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sllw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 36#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1266,7 +1303,8 @@ theorem srlw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srlw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srlw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 37#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1277,7 +1315,8 @@ theorem sraw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sraw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sraw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 38#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1288,7 +1327,8 @@ theorem mul_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mul hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mul hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 180#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1299,7 +1339,8 @@ theorem mulh_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulh hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulh hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 181#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1310,7 +1351,8 @@ theorem mulhsu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulhsu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulhsu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 179#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1321,7 +1363,8 @@ theorem mulhu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulhu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulhu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 177#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1332,7 +1375,8 @@ theorem mulw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Mulw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 182#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1343,7 +1387,8 @@ theorem div_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Div hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Div hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 186#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1354,7 +1399,8 @@ theorem divu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Divu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Divu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 184#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1365,7 +1411,8 @@ theorem divw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Divw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Divw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 190#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1376,7 +1423,8 @@ theorem divuw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Divuw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Divuw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 188#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1387,7 +1435,8 @@ theorem rem_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Rem hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Rem hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 187#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1398,7 +1447,8 @@ theorem remu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Remu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Remu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 185#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1409,7 +1459,8 @@ theorem remw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Remw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Remw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 191#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1420,7 +1471,8 @@ theorem remuw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Remuw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Remuw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 189#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1433,7 +1485,8 @@ theorem beq_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Beq hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Beq hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 9#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1444,7 +1497,8 @@ theorem bne_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bne hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bne hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 9#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1455,7 +1509,8 @@ theorem blt_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Blt hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Blt hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 7#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1466,7 +1521,8 @@ theorem bge_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bge hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bge hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 7#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1477,7 +1533,8 @@ theorem bltu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bltu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bltu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 6#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1488,7 +1545,8 @@ theorem bgeu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bgeu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Bgeu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 6#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1501,7 +1559,8 @@ theorem slli_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slli hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slli hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 33#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1512,7 +1571,8 @@ theorem srli_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srli hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srli hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 34#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1523,7 +1583,8 @@ theorem srai_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srai hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srai hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 35#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1534,7 +1595,8 @@ theorem slti_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slti hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slti hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 7#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1545,7 +1607,8 @@ theorem sltiu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sltiu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sltiu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 6#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1556,7 +1619,8 @@ theorem andi_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Andi hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Andi hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 14#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1567,7 +1631,8 @@ theorem slliw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slliw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Slliw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 36#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1578,7 +1643,8 @@ theorem srliw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srliw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Srliw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 37#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1589,7 +1655,8 @@ theorem sraiw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sraiw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sraiw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 38#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1602,7 +1669,8 @@ theorem xori_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (hrs1 : ri.rs1 ≠ 0#u32) (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Xori hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Xori hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 16#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1613,7 +1681,8 @@ theorem ori_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (hrs1 : ri.rs1 ≠ 0#u32) (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Ori hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Ori hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 15#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1626,7 +1695,8 @@ theorem lb_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lb hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lb hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 39#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1637,7 +1707,8 @@ theorem lh_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lh hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lh hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 40#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1648,7 +1719,8 @@ theorem lw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 41#u8 ∧ zib.i.is_external_op = true ∧ zib.i.m32 = true ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1659,7 +1731,8 @@ theorem lbu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lbu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lbu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1670,7 +1743,8 @@ theorem lhu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lhu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lhu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1681,7 +1755,8 @@ theorem lwu_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lwu hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Lwu hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1692,7 +1767,8 @@ theorem ld_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h3 : ri.rd.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Ld hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Ld hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1705,7 +1781,8 @@ theorem sb_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sb hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sb hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1716,7 +1793,8 @@ theorem sh_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sh hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sh hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1727,7 +1805,8 @@ theorem sw_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sw hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sw hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
@@ -1738,7 +1817,8 @@ theorem sd_dispatch_static_pins_unconditional
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (ri : riscv2zisk_single_row.Rv64imLoweringInput) (hni : Bool)
     (h1 : ri.rs1.val < 32) (h2 : ri.rs2.val < 32) :
-    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sd hni = ok ctx ∧
+    ∃ ctx, riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        self ri riscv2zisk_single_row.Rv64imSingleRowOpcode.Sd hni = ok ctx ∧
       ∃ zib, ctx.extract_inst = some zib ∧
         zib.i.op = 1#u8 ∧ zib.i.is_external_op = false ∧ zib.i.m32 = false ∧
         zib.i.set_pc = false ∧ zib.i.store_pc = false := by
