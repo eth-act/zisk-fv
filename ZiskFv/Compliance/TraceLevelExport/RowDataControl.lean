@@ -642,7 +642,8 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
   -- carries h_set_pc above): the next row exists. The taken-offset pin is
   -- committed-program decode (`h_jmp_offset1_imm`); the target no-wrap bound
   -- still lives in Inputs because it references `jal_input.PC`. `flag = 1` is DERIVED in
-  -- `stepStrong_jal` from the OP_FLAG decode pins + `internal_op0_sets_flag`.
+  -- the dispatcher's `jal` arm from the OP_FLAG decode pins via
+  -- `flag_eq_one_of_internal_op_zero`.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
@@ -661,21 +662,9 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_input_imm : jal_input.imm = c.imm
 
-/-- Per-op residual bundle for the `jal` archetype: the 3-way `Claim`/`Decode`/`Inputs`
-    split is the single declaration site for every field; `RowData_jal` bundles them. -/
-structure RowData_jal
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  toClaim : Claim_jal trace i
-  toDecode : Decode_jal trace i toClaim
-  toInputs : Inputs_jal trace binding i toClaim
-
-def toRowData_jal {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
-    {i : Fin trace.numInstructions}
-    (c : Claim_jal trace i) (dec : Decode_jal trace i c)
-    (ia : Inputs_jal trace binding i c) : RowData_jal trace binding i where
-  toClaim := c
-  toDecode := dec
-  toInputs := ia
+-- `jal` and `jalr` have no `RowData_<op>` bundle: their dispatch arms consume
+-- the `Claim`/`Decode`/`Inputs` triple directly (the `jalr` conclusion is stated
+-- at the decode-selected lowering row, which a `RowData` bundle cannot index).
 
 /-- Physical Main-row placement for one architectural JALR.
 
@@ -824,21 +813,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   -- #100: JALR link-PC range/domain facts live in `RowOutsideDefectRegion`
   -- as `JalrRangeDomain`.
 
-/-- Per-op residual bundle for the `jalr` archetype: the 3-way `Claim`/`Decode`/`Inputs`
-    split is the single declaration site for every field; `RowData_jalr` bundles them. -/
-structure RowData_jalr
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  toClaim : Claim_jalr trace i
-  toDecode : Decode_jalr trace i toClaim
-  toInputs : Inputs_jalr trace binding i toClaim
-
-def toRowData_jalr {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
-    {i : Fin trace.numInstructions}
-    (c : Claim_jalr trace i) (dec : Decode_jalr trace i c)
-    (ia : Inputs_jalr trace binding i c) : RowData_jalr trace binding i where
-  toClaim := c
-  toDecode := dec
-  toInputs := ia
 
 structure Claim_fence (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   fm : BitVec 4

@@ -307,59 +307,6 @@ theorem jalr_link_bridge_of_decode
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h_val_lt64] at h_toNat
   exact h_toNat
 
-/-- JALR link-value bridge for the unaligned physical ADD/AND lowering. -/
-theorem jalr_link_bridge_unaligned
-    {numInstructions : Nat}
-    {trace : AcceptedZiskTrace numInstructions}
-    (start finish : Fin trace.mainTable.table.length)
-    {pc : BitVec 64}
-    (h_adj : start.val + 1 = finish.val)
-    (h_start_flag :
-      (mainOfTable trace.program trace.mainTable).flag start.val = 0)
-    (h_start_set_pc :
-      (mainOfTable trace.program trace.mainTable).set_pc start.val = 0)
-    (h_start_jmp2 :
-      (mainOfTable trace.program trace.mainTable).jmp_offset2 start.val = 1)
-    (h_finish_jmp2 :
-      (mainOfTable trace.program trace.mainTable).jmp_offset2 finish.val = 3)
-    (h_pc_bridge :
-      ((mainOfTable trace.program trace.mainTable).pc start.val).val = pc.toNat)
-    (h_pc_bound : pc.toNat < GL_prime - 4) :
-    ((mainOfTable trace.program trace.mainTable).pc finish.val
-        + (mainOfTable trace.program trace.mainTable).jmp_offset2 finish.val).val
-      = (pc + 4#64).toNat := by
-  have h_seg := trace.mainTable_fixed.segment_l1_succ
-    start.val (by simpa [h_adj] using finish.isLt)
-  have h_hand := trace.mainTransition_to_next_pc start.val
-    (by simpa [h_adj] using finish.isLt) h_seg
-  have h_pc_step := ZiskFv.Airs.Main.pc_handshake_branch
-    (mainOfTable trace.program trace.mainTable) start.val
-    ((mainOfTable trace.program trace.mainTable).pc (start.val + 1))
-    h_start_set_pc h_hand
-  rw [h_start_flag, h_start_jmp2] at h_pc_step
-  simp only [zero_mul, add_zero] at h_pc_step
-  have h_finish_pc :
-      (mainOfTable trace.program trace.mainTable).pc finish.val =
-        (mainOfTable trace.program trace.mainTable).pc start.val + 1 := by
-    simpa [h_adj] using h_pc_step
-  rw [h_finish_jmp2, h_finish_pc]
-  have h_bv_eq := Pilot.ofNat_fgl_pc_plus_4_eq
-    ((mainOfTable trace.program trace.mainTable).pc start.val)
-    pc h_pc_bridge h_pc_bound
-  have h_toNat := congrArg BitVec.toNat h_bv_eq
-  have h_gl_lt64 : GL_prime < 2 ^ 64 :=
-    ZiskFv.PackedBitVec.WidePCNoWrap.GL_prime_lt_pow_64
-  have h_field :
-      (mainOfTable trace.program trace.mainTable).pc start.val + 1 + 3 =
-        (mainOfTable trace.program trace.mainTable).pc start.val + 4 := by ring
-  rw [h_field]
-  have h_val_lt64 :
-      ((((mainOfTable trace.program trace.mainTable).pc start.val
-        + 4 : FGL)).val) < 2 ^ 64 :=
-    Nat.lt_trans (Fin.isLt _) h_gl_lt64
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h_val_lt64] at h_toNat
-  exact h_toNat
-
 theorem jalr_link_bridge_scalar
     (base finishPC finishOffset : FGL) (pc : BitVec 64)
     (h_total : finishPC + finishOffset = base + 4)

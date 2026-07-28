@@ -1089,6 +1089,10 @@ private def StepSoundWithoutDecode
       execute_instruction (instruction.JAL (c.imm, c.rd)) (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨Pilot.execRowOf ziskTrace i, [eRdLui ziskTrace i]⟩ (sailTrace i)
+  -- UNREACHABLE, and kept only so this match stays exhaustive: the public
+  -- `StepSound` matches `.jalr` against its own decode-indexed arm before ever
+  -- falling through to here. That arm supersedes this weaker existential form
+  -- (it fixes the lowering row from the caller's decode instead of positing one).
   | .jalr c =>
       ∃ decode : Decode_jalr ziskTrace i c,
         (do

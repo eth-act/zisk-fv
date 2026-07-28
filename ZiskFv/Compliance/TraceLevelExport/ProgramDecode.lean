@@ -1233,8 +1233,15 @@ structure ProgramDecode_jal {numInstructions : Nat}
         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits
 
-/-- Per-row committed-program decode bundle for `jalr`: exactly the inputs
-    `Decode_jalr_of_program` consumes besides `trace`/`i`/`c`. -/
+/-- Per-row committed-program decode bundle for `jalr`.
+
+    Unlike every other family, this does NOT yet reduce to committed-ROM
+    evidence: it passes the checked `Decode_jalr` through unchanged. The aligned
+    lowering can already be rebuilt from the program by
+    `Decode_jalr_of_program`, but the unaligned ADD/AND lowering has no such
+    constructor, so no uniform `h_prog` bundle covers both arms. Restoring
+    program-level evidence for both arms is tracked separately; until then the
+    lowering placement is a per-instantiation obligation. -/
 structure ProgramDecode_jalr {numInstructions : Nat}
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions)
