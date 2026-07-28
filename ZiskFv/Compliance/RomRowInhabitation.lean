@@ -39,7 +39,7 @@ What the layout map still does NOT pin: that entry `k` sits where the *binary*
 places word `k`.  That is the meaning of the caller's address map, not a theorem
 here, and it stays a named residual (design note §6).
 
-## Result of the spike (read this before reusing anything below)
+## What was established (read this before reusing anything below)
 
 * INHABITED, against rows already committed in `SdLdSpinWitness.lean`:
   the LD row `sdLdLdProgramRow` (the one with `b_src_ind := true`, which
