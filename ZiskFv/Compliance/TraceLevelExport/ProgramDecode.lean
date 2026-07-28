@@ -1360,7 +1360,15 @@ structure ProgramDecode_jalr_unaligned {numInstructions : Nat}
     lines (one `OP_AND` line, versus an `OP_ADD` line followed by its `OP_AND`
     successor). Both arms are ROM-backed — `rowDecode_of_programDecode` derives
     `Decode_jalr` from either via `Decode_jalr_of_program` /
-    `Decode_jalr_unaligned_of_program`. -/
+    `Decode_jalr_unaligned_of_program`.
+
+    Non-vacuity status, so it is not mistaken for more than it is: only the
+    `.unaligned` arm has a concrete instantiating witness
+    (`Compliance/JalrSpinWitness.lean`, whose `imm = 2` is genuinely misaligned).
+    The `.aligned` arm has none — and never has: before #280 no witness
+    instantiated a JALR step at all, and #280's was the first, so this is a
+    standing gap rather than one introduced here. An aligned JALR spin witness
+    would close it. -/
 inductive ProgramDecode_jalr {numInstructions : Nat}
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions)
