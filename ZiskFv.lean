@@ -230,3 +230,10 @@ import ZiskFv.AirsClean.MainMirrorWeld
 -- with ZiskFv dependents would add them to the default simp set for every
 -- downstream module.
 import ZiskFv.AirsClean.MemAlignMirrorWeld
+-- `rfl`-level weld of the three `mem_align_byte.pil` constraint mirrors to the
+-- generated `Extraction.MemAlign{,Read,Write}Byte.constraint_N_every_row`
+-- predicates. This is the only ZiskFv module that may import those three
+-- generated files: each marks all of its constraint definitions `@[simp]`, so
+-- importing one from anywhere with ZiskFv dependents would add them to the
+-- default simp set for every downstream module.
+import ZiskFv.AirsClean.MemAlignByteMirrorWeld
