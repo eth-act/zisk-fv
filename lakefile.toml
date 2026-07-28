@@ -24,17 +24,17 @@ path = "build/sail-lean"
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
 # `nix run .#populate` — never committed. The narrow, source-linked
 # `LookupWiring` and `MemGeneratedConstraintBridge` modules are compiled in
-# the main Lake graph; `Extraction.Arith` joins them because
-# `ZiskFv/AirsClean/ArithMirrorWeld.lean` pins the handwritten Arith constraint
-# mirror to it definitionally (eth-act/zisk-fv#296). The remaining generated AIR
-# files stay direct-tested until a Clean-Components-aware emitter supports them.
+# the main Lake graph; `Extraction.Arith` and `Extraction.Main` join them because
+# their `ZiskFv/AirsClean/*MirrorWeld.lean` modules pin the handwritten constraint
+# mirrors to them definitionally. The remaining generated AIR files stay
+# direct-tested until a Clean-Components-aware emitter supports them.
 [[lean_lib]]
 name = "Extraction"
 srcDir = "build/extraction"
 roots = ["Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge", "Extraction.MemAlignRom"]
 globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifact",
   "Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge", "Extraction.MemAlignRom",
-  "Extraction.Arith"]
+  "Extraction.Arith", "Extraction.Main"]
 
 # Clean DSL (Verified-zkEVM/clean) source tree. Populated by
 # `nix run .#populate` from the pinned `clean-src` flake input.
