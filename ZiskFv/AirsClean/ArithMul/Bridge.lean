@@ -57,7 +57,8 @@ def constVar (row : ArithMulRow FGL) : Var ArithMulRow FGL where
       carry_2 := .const row.carries.carry_2, carry_3 := .const row.carries.carry_3,
       carry_4 := .const row.carries.carry_4, carry_5 := .const row.carries.carry_5,
       carry_6 := .const row.carries.carry_6, fab := .const row.carries.fab,
-      na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa }
+      na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa,
+      inv_sum_all_bs := .const row.carries.inv_sum_all_bs }
 
 /-- The lookup-aware Clean circuit sources ArithTable membership from its
     `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
@@ -279,7 +280,8 @@ def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
   carries := {
     carry_0 := v.cy_0 r, carry_1 := v.cy_1 r, carry_2 := v.cy_2 r
     carry_3 := v.cy_3 r, carry_4 := v.cy_4 r, carry_5 := v.cy_5 r
-    carry_6 := v.cy_6 r, fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
+    carry_6 := v.cy_6 r, fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r,
+    inv_sum_all_bs := (v.b_0 r + v.b_1 r + v.b_2 r + v.b_3 r)⁻¹
   }
 
 /-- Lookup-aware Clean witness for the sixteen `bits(16)` chunk lookups in
@@ -531,6 +533,62 @@ theorem eval_primaryOpBusMessageExpr
   -- `eval` normalizes `1 - x` to `1 + -1 * x`; the `a_lo`/`a_hi`/`c_lo` mux
   -- lanes therefore need `ring`, not `rfl` (the other lanes are `True`/defeq).
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | trivial | ring
+
+/-- Evaluation of the physical remainder-bound request agrees with its
+    concrete-row message. -/
+theorem eval_remainderBoundOpBusMessageExpr
+    (env : Environment FGL) (row : Var ArithMulRow FGL) :
+    eval env (remainderBoundOpBusMessageExpr row) =
+      remainderBoundOpBusMessage (eval env row) := by
+  rw [remainderBoundOpBusMessage, OpBusMessage.mk.injEq]
+  simp only [remainderBoundOpBusMessageExpr, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    first | trivial | ring
+
+/-- Boolean sign flags select exactly one of the four physical signed
+    remainder-comparison operations. -/
+theorem remainderBoundOpBusMessage_op_of_signs
+    (row : ArithMulRow FGL)
+    (h_nr : row.flags.nr = 0 ∨ row.flags.nr = 1)
+    (h_nb : row.flags.nb = 0 ∨ row.flags.nb = 1) :
+    (remainderBoundOpBusMessage row).op.val = 6
+      ∨ (remainderBoundOpBusMessage row).op.val = 80
+      ∨ (remainderBoundOpBusMessage row).op.val = 81
+      ∨ (remainderBoundOpBusMessage row).op.val = 8 := by
+  rcases h_nr with h_nr | h_nr <;>
+    rcases h_nb with h_nb | h_nb <;>
+    simp [h_nr, h_nb]
+
+/-- Evaluation of the physical remainder-bound interaction's multiplicity.
+    Keeping this projection in the row bridge avoids unfolding the full muxed
+    comparison message in balance proofs. -/
+theorem eval_remainderBoundInteraction_mult
+    (env : Environment FGL) (row : Var ArithMulRow FGL) :
+    (((OpBusChannel.emitted
+        (-(row.flags.div * (1 - row.flags.div_by_zero)))
+        (remainderBoundOpBusMessageExpr row)).toRaw).eval env).mult =
+      -((eval env row).flags.div * (1 - (eval env row).flags.div_by_zero)) := by
+  simp only [OpBusChannel, Channel.emitted, emitted_mult, AbstractInteraction.eval,
+    ChannelInteraction.toRaw_mult,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  ring
+
+/-- On a live nonzero-divisor DIV row, the physical remainder comparison is
+    an active operation-bus consumer. -/
+theorem eval_remainderBoundInteraction_mult_neg_one
+    (env : Environment FGL) (row : Var ArithMulRow FGL)
+    (h_div : (eval env row).flags.div = 1)
+    (h_div_by_zero : (eval env row).flags.div_by_zero = 0) :
+    (((OpBusChannel.emitted
+        (-(row.flags.div * (1 - row.flags.div_by_zero)))
+        (remainderBoundOpBusMessageExpr row)).toRaw).eval env).mult = -1 := by
+  rw [eval_remainderBoundInteraction_mult, h_div, h_div_by_zero]
+  norm_num
 
 /-- Op-only projection of `eval_primaryOpBusMessageExpr`, used to avoid
     unfolding the entire operation-bus message in downstream provider

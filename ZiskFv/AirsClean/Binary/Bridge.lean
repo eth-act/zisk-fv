@@ -517,6 +517,91 @@ theorem static_table_logic_mode_pins_of_emit
     have h_bop_zero : row.chain.b_op.val = 0 := by omega
     exact False.elim (h_bop_ne_zero h_bop_zero)
 
+/-- Exact static Binary membership pins the physical 64-bit row for each
+    remainder-bound comparison opcode. -/
+theorem static_table_remainder_bound_mode_pins_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (op_val : ℕ)
+    (h_op :
+      op_val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU
+        ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP
+        ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN
+        ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_GT)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
+    row.mode.mode32 = 0 ∧ row.chain.b_op.val = op_val := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_bop_lt : row.chain.b_op.val < 514 := by
+    have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+    simpa [lookupMessage0Row] using h
+  have h_bop_ne_64_65 :
+      row.chain.b_op.val ≠ 64 ∧ row.chain.b_op.val ≠ 65 := by
+    rcases h0 with ⟨i, hi⟩
+    have hop := congrArg (fun t => t.op.val) hi
+    have hop' : row.chain.b_op.val =
+        ZiskFv.AirsClean.BinaryTable.opOfIndex i.val % GL_prime := by
+      simpa [lookupMessage0Row, ZiskFv.AirsClean.BinaryTable.rowOfIndex] using hop
+    rw [hop']
+    have h_block_lt :
+        ZiskFv.AirsClean.BinaryTable.blockOfIndex i.val < 19 :=
+      ZiskFv.AirsClean.BinaryTable.blockOfIndex_lt_19 i
+    unfold ZiskFv.AirsClean.BinaryTable.opOfIndex
+    generalize h_block :
+      ZiskFv.AirsClean.BinaryTable.blockOfIndex i.val = block
+    have h_block_lt' : block < 19 := by
+      rw [← h_block]
+      exact h_block_lt
+    interval_cases block <;>
+      norm_num [ZiskFv.AirsClean.BinaryTable.opOfBlock,
+        ZiskFv.Airs.Tables.BinaryTable.OP_AND, ZiskFv.Airs.Tables.BinaryTable.OP_OR,
+        ZiskFv.Airs.Tables.BinaryTable.OP_XOR, ZiskFv.Airs.Tables.BinaryTable.OP_LTU,
+        ZiskFv.Airs.Tables.BinaryTable.OP_LT, ZiskFv.Airs.Tables.BinaryTable.OP_GT,
+        ZiskFv.Airs.Tables.BinaryTable.OP_EQ, ZiskFv.Airs.Tables.BinaryTable.OP_ADD,
+        ZiskFv.Airs.Tables.BinaryTable.OP_SUB, ZiskFv.Airs.Tables.BinaryTable.OP_LEU,
+        ZiskFv.Airs.Tables.BinaryTable.OP_LE, ZiskFv.Airs.Tables.BinaryTable.OP_SEXT_00,
+        ZiskFv.Airs.Tables.BinaryTable.OP_SEXT_FF,
+        ZiskFv.AirsClean.BinaryTable.OP_MINU, ZiskFv.AirsClean.BinaryTable.OP_MIN,
+        ZiskFv.AirsClean.BinaryTable.OP_MAXU, ZiskFv.AirsClean.BinaryTable.OP_MAX,
+        ZiskFv.AirsClean.BinaryTable.OP_LT_ABS_NP,
+        ZiskFv.AirsClean.BinaryTable.OP_LT_ABS_PN]
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h | h
+    · exact Or.inl h
+    · exact Or.inr (sub_eq_zero.mp h).symm
+  have h_op_lt : op_val < GL_prime := by
+    rcases h_op with h | h | h | h <;>
+      norm_num [h, ZiskFv.Airs.Tables.BinaryTable.OP_LTU,
+        ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP,
+        ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN,
+        ZiskFv.Airs.Tables.BinaryTable.OP_GT]
+  rcases h_mode with h_zero | h_one
+  · refine ⟨h_zero, ?_⟩
+    have hb : row.chain.b_op = (op_val : FGL) := by
+      simpa [h_zero] using h_emit
+    have hv := congrArg Fin.val hb
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt h_op_lt] at hv
+    exact hv
+  · exfalso
+    have hv := congrArg Fin.val h_emit
+    rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+    norm_num at hv
+    have hsmall : row.chain.b_op.val + 16 < GL_prime := by omega
+    rw [Nat.mod_eq_of_lt hsmall] at hv
+    rw [Nat.mod_eq_of_lt h_op_lt] at hv
+    rcases h_op with h | h | h | h
+    · rw [h] at hv
+      norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LTU] at hv
+      omega
+    · simp [h, ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP] at hv
+      exact h_bop_ne_64_65.1 (by omega)
+    · simp [h, ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN] at hv
+      exact h_bop_ne_64_65.2 (by omega)
+    · rw [h] at hv
+      norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_GT] at hv
+      omega
+
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- A static Binary provider row cannot emit a BinaryExtension shift opcode.
 
@@ -790,6 +875,40 @@ theorem static_table_op_val_ne_arith_divu_of_emit
       have hv := congrArg Fin.val h_emit
       rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
         Nat.mod_eq_of_lt (by omega : (184 : ℕ) < GL_prime)] at hv
+      omega
+    exact h_ne.2 hoffset
+
+/-- A static Binary row cannot emit signed Arith DIV opcode 186. -/
+theorem static_table_op_val_ne_arith_div_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = ((186 : ℕ) : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_ne_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_arith_div h0
+  have h_ne :
+      row.chain.b_op.val ≠ 186 ∧ row.chain.b_op.val ≠ 170 := by
+    simpa [lookupMessage0Row] using h_ne_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = ((186 : ℕ) : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_val := congrArg Fin.val h_bop
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : (186 : ℕ) < GL_prime)] at h_val
+    exact h_ne.1 h_val
+  · have hoffset : row.chain.b_op.val = 170 := by
+      have h_bop_lt : row.chain.b_op.val < 514 := by
+        have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+        simpa [lookupMessage0Row] using h
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : (186 : ℕ) < GL_prime)] at hv
       omega
     exact h_ne.2 hoffset
 

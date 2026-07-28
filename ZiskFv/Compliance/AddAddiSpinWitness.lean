@@ -373,7 +373,7 @@ theorem addAddiSpinEnsemble_tables :
       , ZiskFv.AirsClean.Mem.componentWithDualMemBus
       , ZiskFv.AirsClean.SpecifiedRangesSlice.component
       , ZiskFv.AirsClean.ArithDiv.component
-      , ZiskFv.AirsClean.ArithMul.componentWithArithTable
+      , ZiskFv.AirsClean.ArithMul.componentComplete
       , ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
       , ZiskFv.AirsClean.Binary.staticLookupComponent
       , ZiskFv.AirsClean.BinaryAdd.component
@@ -390,7 +390,7 @@ def addAddiSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
-  , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
+  , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
   , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   , emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent
   , addAddiSpinBinaryAddTable
@@ -441,7 +441,7 @@ theorem addAddiSpinWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
-  · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentWithArithTable
+  · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentComplete
   · exact emptyComponentTable_constraints
       ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Binary.staticLookupComponent
@@ -648,7 +648,7 @@ theorem addAddiSpinWitness_transitions : addAddiSpinWitness.TransitionConstraint
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
-    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_transitions
         ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Binary.staticLookupComponent
@@ -687,7 +687,7 @@ theorem addAddiSpinWitness_cyclicSuccessorTransitions :
         ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_cyclicSuccessorTransitions
-        ZiskFv.AirsClean.ArithMul.componentWithArithTable
+        ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
     · exact emptyComponentTable_cyclicSuccessorTransitions
@@ -791,7 +791,7 @@ private theorem addAddiSpinWitness_mutable_mem_component_tables_empty
     · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
     · exact emptyComponentTable_table ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
-    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_table ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
     · exact emptyComponentTable_table ZiskFv.AirsClean.Binary.staticLookupComponent
     · exfalso
@@ -1409,7 +1409,7 @@ private theorem addAddiSpinTablesMemBusInteractions_eq_active :
     (e₅ := emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
     (e₆ := emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
     (e₇ := emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
-    (e₈ := emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable)
+    (e₈ := emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
     (e₉ := emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
     (e₁₀ := emptyComponentTable ZiskFv.AirsClean.Binary.staticLookupComponent)
     (last₀ := addAddiSpinBinaryAddTable) (last₁ := addAddiSpinMainTable)
@@ -1430,7 +1430,7 @@ private theorem addAddiSpinTablesMemBusInteractions_eq_active :
     (h₇ := emptyComponentTable_interactionsWith
       ZiskFv.AirsClean.ArithDiv.component MemBusChannel.toRaw)
     (h₈ := emptyComponentTable_interactionsWith
-      ZiskFv.AirsClean.ArithMul.componentWithArithTable MemBusChannel.toRaw)
+      ZiskFv.AirsClean.ArithMul.componentComplete MemBusChannel.toRaw)
     (h₉ := emptyComponentTable_interactionsWith
       ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent MemBusChannel.toRaw)
     (h₁₀ := emptyComponentTable_interactionsWith

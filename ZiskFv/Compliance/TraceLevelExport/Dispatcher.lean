@@ -429,14 +429,26 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
           ¬ Defects.SignedMulForge v r_a
   | .div _ =>
       MainSequentialPcDomain ziskTrace i ∧
-        ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
-            (op2 : BitVec 64),
+        ∀ (providerTable : Air.Flat.Table FGL),
+          providerTable ∈ ziskTrace.witness.allTables →
+          ∀ (providerRow : Array FGL), providerRow ∈ providerTable.table →
+          providerTable.component =
+              ZiskFv.AirsClean.FullEnsemble.arithMulProviderComponent →
+          providerTable.component.Spec (providerTable.environment providerRow) →
           ZiskFv.Airs.OperationBus.matches_entry
             (ZiskFv.Airs.OperationBus.opBus_row_Main
               (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val)
-            (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a) →
-          op2.toInt = Defects.signedDivisorInt v r_a →
-          ¬ Defects.DivRemForge op2 v r_a
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
+                (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                  (providerTable.environment providerRow))) 1) →
+          ∀ (op2 : BitVec 64),
+            let v := vOfDivuRow
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                (providerTable.environment providerRow))
+            op2.toInt = Defects.signedDivisorInt v 0 →
+              ¬ Defects.DivRemForge op2 v 0
+                ∧ ¬ Defects.SignedDivQuotientSignForge v 0
   | .rem _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
@@ -1228,6 +1240,29 @@ def StepSound
     from it.  For every other (non-defect) arm the obligation is `True` and is
     ignored — the arm builds its own `NoKnownDefect`. -/
 
+private theorem div_exclusions_of_selected_provider
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) (c : Claim_div ziskTrace i)
+    (rd : Decode_div ziskTrace i c) (ia : Inputs_div ziskTrace sailTrace i c)
+    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i (.div c)) :
+    ¬ Defects.DivRemForge ia.div_input.r2_val
+        (divV ziskTrace sailTrace i rd.h_main_active rd.h_main_op) 0
+      ∧ ¬ Defects.SignedDivQuotientSignForge
+        (divV ziskTrace sailTrace i rd.h_main_active rd.h_main_op) 0 := by
+  have h_divisor :
+      ia.div_input.r2_val.toInt =
+        Defects.signedDivisorInt
+          (divV ziskTrace sailTrace i rd.h_main_active rd.h_main_op) 0 := by
+    simpa only [Defects.signedDivisorInt] using
+      ia.h_rs2_value rd.h_main_active rd.h_main_op
+  apply divV_exclusions_of_provider_rows ziskTrace sailTrace i
+    rd.h_main_active rd.h_main_op ia.div_input.r2_val
+  · intro providerTable h_table providerRow h_row h_component h_spec h_match
+    exact hAvoidKnownBugs.2 providerTable h_table providerRow h_row
+      h_component h_spec h_match ia.div_input.r2_val
+  · exact h_divisor
+
 theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
@@ -1332,10 +1367,12 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
       exact stepStrong_mulhu ziskTrace sailTrace i (toRowData_mulhu c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | div c =>
+      have h_exclusions :=
+        div_exclusions_of_selected_provider ziskTrace sailTrace i c rd ia
+          hAvoidKnownBugs
       exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
-        (hAvoidKnownBugs.2 ia.v ia.r_a ia.div_input.r2_val ia.h_match_primary
-          (by simpa [Defects.signedDivisorInt] using ia.h_rs2_value))
+        h_exclusions.1 h_exclusions.2
   | rem c =>
       exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)

@@ -74,6 +74,48 @@ def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
     extended_arg := 0
     extra_args_0 := 0 }
 
+/-- Physical Arith remainder-bound comparison request (`arith.pil:274-277`). -/
+@[reducible]
+def remainderBoundOpBusMessageExpr (row : Var ArithMulRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := (1 - row.flags.nr) * (1 - row.flags.nb) * 6
+      + row.flags.nr * (1 - row.flags.nb) * 80
+      + (1 - row.flags.nr) * row.flags.nb * 81
+      + row.flags.nr * row.flags.nb * 8
+    a_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
+    a_hi := row.chunks.d_2 + row.chunks.d_3 * 65536
+      + row.flags.m32 * row.flags.nr * 4294967295
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+      + row.flags.m32 * row.flags.nb * 4294967295
+    c_lo := 1
+    c_hi := 0
+    flag := 1
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- Concrete-row view of the physical Arith remainder-bound request. -/
+@[reducible]
+def remainderBoundOpBusMessage (row : ArithMulRow FGL) :
+    OpBusMessage FGL :=
+  { op := (1 - row.flags.nr) * (1 - row.flags.nb) * 6
+      + row.flags.nr * (1 - row.flags.nb) * 80
+      + (1 - row.flags.nr) * row.flags.nb * 81
+      + row.flags.nr * row.flags.nb * 8
+    a_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
+    a_hi := row.chunks.d_2 + row.chunks.d_3 * 65536
+      + row.flags.m32 * row.flags.nr * 4294967295
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+      + row.flags.m32 * row.flags.nb * 4294967295
+    c_lo := 1
+    c_hi := 0
+    flag := 1
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
 /-- Secondary MULH/MULHU/MULHSU op-bus message: high result in `d[]`. -/
 @[reducible]
 def secondaryOpBusMessageExpr (row : Var ArithMulRow FGL) :

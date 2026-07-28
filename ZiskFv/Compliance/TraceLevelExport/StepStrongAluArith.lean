@@ -225,7 +225,7 @@ theorem stepStrong_sub
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `and` step: the channel-balance conclusion (the OLD global
@@ -362,7 +362,7 @@ theorem stepStrong_and
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `or` step: the channel-balance conclusion (the OLD global
@@ -499,7 +499,7 @@ theorem stepStrong_or
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `xor` step: the channel-balance conclusion (the OLD global
@@ -637,7 +637,7 @@ theorem stepStrong_xor
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `slt` step: the channel-balance conclusion (the OLD global
@@ -774,7 +774,7 @@ theorem stepStrong_slt
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 /-- Strengthened `sltu` step: the channel-balance conclusion (the OLD global
@@ -911,7 +911,7 @@ theorem stepStrong_sltu
     exact ⟨h_input_r1_row, h_input_r2_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.1
 
 
@@ -1051,7 +1051,7 @@ theorem stepStrong_andi
     exact ⟨h_input_r1_row, h_input_imm_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `ori` step: channel-balance conclusion via constructed
@@ -1190,7 +1190,7 @@ theorem stepStrong_ori
     exact ⟨h_input_r1_row, h_input_imm_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `xori` step: channel-balance conclusion via constructed
@@ -1327,7 +1327,7 @@ theorem stepStrong_xori
     exact ⟨h_input_r1_row, h_input_imm_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `slti` step: channel-balance conclusion via constructed
@@ -1459,7 +1459,7 @@ theorem stepStrong_slti
     exact ⟨h_m32_zero, h_input_r1_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 /-- Strengthened `sltiu` step: channel-balance conclusion via constructed
@@ -1591,7 +1591,7 @@ theorem stepStrong_sltiu
     exact ⟨h_m32_zero, h_input_r1_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.1
 
 
@@ -1693,7 +1693,7 @@ theorem stepStrong_sll
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `srl` step: channel-balance via constructed `OpEnvelope.srl`
@@ -1793,7 +1793,7 @@ theorem stepStrong_srl
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `sra` step: channel-balance via constructed `OpEnvelope.sra`
@@ -1893,7 +1893,7 @@ theorem stepStrong_sra
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `slli` step: channel-balance via constructed `OpEnvelope.slli`
@@ -1993,7 +1993,7 @@ theorem stepStrong_slli
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `srli` step: channel-balance via constructed `OpEnvelope.srli`
@@ -2093,7 +2093,7 @@ theorem stepStrong_srli
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 /-- Strengthened `srai` step: channel-balance via constructed `OpEnvelope.srai`
@@ -2193,7 +2193,7 @@ theorem stepStrong_srai
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.1
 
 
@@ -2326,7 +2326,7 @@ theorem stepStrong_subw
     exact ⟨h_input_r1_extract, h_input_r2_extract⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
 
 /-- Strengthened `addw` step: channel-balance via constructed `OpEnvelope.addw`
@@ -2457,7 +2457,7 @@ theorem stepStrong_addw
     exact ⟨h_input_r1_extract, h_input_r2_extract⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
 
 /-- Strengthened `addiw` step: channel-balance via constructed `OpEnvelope.addiw`
@@ -2570,7 +2570,7 @@ theorem stepStrong_addiw
   have h_bridge : env.aeneasBridgeTrust := h_input_r1_extract
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 /-! ## Strengthened W-shift arms (SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW, channel-balance form)
@@ -2684,7 +2684,7 @@ theorem stepStrong_sllw
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `srlw` step: channel-balance via constructed `OpEnvelope.srlw`
@@ -2787,7 +2787,7 @@ theorem stepStrong_srlw
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `sraw` step: channel-balance via constructed `OpEnvelope.sraw`
@@ -2891,7 +2891,7 @@ theorem stepStrong_sraw
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `slliw` step: channel-balance via constructed `OpEnvelope.slliw`
@@ -2986,7 +2986,7 @@ theorem stepStrong_slliw
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `srliw` step: channel-balance via constructed `OpEnvelope.srliw`
@@ -3081,7 +3081,7 @@ theorem stepStrong_srliw
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `sraiw` step: channel-balance via constructed `OpEnvelope.sraiw`
@@ -3177,7 +3177,7 @@ theorem stepStrong_sraiw
     exact ⟨h_input_r1_row, h_shift_pin_row⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 
@@ -3317,7 +3317,7 @@ theorem stepStrong_add
       exact ⟨h_input_r1_row, h_input_r2_row⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
-      noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+      noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
@@ -3331,7 +3331,7 @@ theorem stepStrong_add
       exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
-      noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+      noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.1
 
 /-- Strengthened `addi` step: channel-balance via a constructed `OpEnvelope` arm
@@ -3473,7 +3473,7 @@ theorem stepStrong_addi
       exact ⟨h_input_r1_row, h_input_imm_row⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
-      noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+      noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
@@ -3490,7 +3490,7 @@ theorem stepStrong_addi
       exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, h_m32_zero, h_set_pc_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
-      noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+      noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
     exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.1
 
 

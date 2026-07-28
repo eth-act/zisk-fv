@@ -1,0 +1,6 @@
+import ZiskFv.Compliance.DivSpinRootSoundness
+
+#print axioms ZiskFv.Compliance.DivSpinRootSoundness.divSpinRootSoundness
+#print axioms ZiskFv.Compliance.DivSpinWitness.divSpinAcceptedTrace
+#print axioms ZiskFv.Compliance.DivSpinWitness.divSpinWitness_balancedChannels
+#print axioms ZiskFv.Compliance.DivSpinRootSoundness.divSpinDivStepSound

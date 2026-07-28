@@ -93,6 +93,21 @@ private lemma byte_sum_eq_packed4_sig
       = (c₂ + c₃ * 65536) * 4294967296 := by rw [h_hi]
   linarith [h_lo, hh]
 
+private lemma signed_euclidean_of_magnitude_identity
+    (A B C R N na nb np : ℤ)
+    (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
+    (h_np : np = 0 ∨ np = 1)
+    (h_xor : np = na + nb - 2 * na * nb)
+    (h_magnitude :
+      ((1 - 2 * na) * A + na * N) * ((1 - 2 * nb) * B + nb * N) + R
+        = (1 - 2 * np) * C + np * N) :
+    C - np * N = (A - na * N) * (B - nb * N) + (1 - 2 * np) * R := by
+  rcases h_na with hna | hna <;>
+    rcases h_nb with hnb | hnb <;>
+    rcases h_np with hnp | hnp
+  all_goals simp [hna, hnb, hnp] at h_xor h_magnitude ⊢
+  all_goals nlinarith [h_magnitude]
+
 private lemma signed_divisor_chunk_fields_zero_of_toInt_zero
     (r2_val : BitVec 64)
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
@@ -185,6 +200,47 @@ private lemma signed_w_divisor_chunk_fields_zero_of_toInt_zero
   have hb0 : (v.b_0 r_a).val = 0 := by omega
   exact ⟨by apply Fin.ext; simpa using hb0,
     by apply Fin.ext; simpa using hb1⟩
+
+/-- A nonzero signed divisor cannot activate the completed row's
+    `div_by_zero` flag.  This is the converse direction needed by the
+    boundary-aware DIV dispatcher: booleanity supplies the `0/1` split and
+    the boundary equations make the `1` branch incompatible with the
+    operand bridge. -/
+lemma div_by_zero_eq_zero_of_signed_divisor_ne_zero
+    (r2_val : BitVec 64)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_boundary : ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
+    (h_div_by_zero_bool :
+      v.div_by_zero r_a = 0 ∨ v.div_by_zero r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_rs2_value :
+      r2_val.toInt
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+            (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2 : ℤ) ^ 64)
+    (h_r2_ne : r2_val.toInt ≠ 0) :
+    v.div_by_zero r_a = 0 := by
+  rcases h_div_by_zero_bool with h_zero | h_one
+  · exact h_zero
+  · rcases h_boundary with
+      ⟨_, _, _, _, _, hb0_force, hb1_force, hb2_force, hb3_force, _⟩
+    have hb0 : v.b_0 r_a = 0 :=
+      ZiskFv.Airs.ArithDiv.b0_eq_zero_of_div_by_zero hb0_force h_one
+    have hb1 : v.b_1 r_a = 0 :=
+      ZiskFv.Airs.ArithDiv.b1_eq_zero_of_div_by_zero hb1_force h_one
+    have hb2 : v.b_2 r_a = 0 :=
+      ZiskFv.Airs.ArithDiv.b2_eq_zero_of_div_by_zero hb2_force h_one
+    have hb3 : v.b_3 r_a = 0 :=
+      ZiskFv.Airs.ArithDiv.b3_eq_zero_of_div_by_zero hb3_force h_one
+    rcases h_nb_bool with h_nb | h_nb
+    · exfalso
+      apply h_r2_ne
+      rw [h_rs2_value, hb0, hb1, hb2, hb3, h_nb]
+      norm_num [packed4]
+    · exfalso
+      have h_lower := BitVec.le_toInt r2_val
+      rw [h_rs2_value, hb0, hb1, hb2, hb3, h_nb] at h_lower
+      norm_num [packed4] at h_lower
 
 lemma signed_div_overflow_operands_of_boundary
     (r1_val r2_val : BitVec 64)
@@ -1346,13 +1402,220 @@ operating on unsigned Nat division of the low 32 bits.
 
 /-! ## DIV chunked discharge (signed 64-bit; nonzero-divisor case) -/
 
+/-- **`h_rd_val` discharge for the signed 64-bit overflow row.**
+
+    The Arith table deliberately uses `na = nb = np = 1` on the
+    `INT64_MIN / -1` row, so this case cannot pass through the ordinary
+    quotient-sign classification.  The boundary equations identify the two
+    operands, the strict remainder comparison forces a zero remainder, and
+    the raw signed carry identity then pins the quotient magnitude to `2^63`.
+    This derives the architectural overflow result without excluding the
+    legitimate overflow row as a quotient-sign defect. -/
+lemma h_rd_val_mdrs_div_overflow_chunked
+    (r1_val r2_val : BitVec 64)
+    (e : Interaction.MemoryBusEntry FGL)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    (h_boundary : ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a)
+    (h_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+    (h_carry_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
+    (h_na : v.na r_a = 1) (h_nb : v.nb r_a = 1)
+    (h_np : v.np r_a = 1) (h_nr : v.nr r_a = 0)
+    (h_byte_lo :
+      (byteAt e 0).val + (byteAt e 1).val * 256
+          + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
+    (h_byte_hi :
+      (byteAt e 4).val + (byteAt e 5).val * 256
+          + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+        = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
+    (h_rs1_value :
+      r1_val.toInt
+        = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+            (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2 : ℤ) ^ 64)
+    (h_rs2_value :
+      r2_val.toInt
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+            (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2 : ℤ) ^ 64)
+    (h_overflow : v.div_overflow r_a = 1)
+    (h_r_abs :
+      ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+          (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+        - (v.nr r_a).val * (2 : ℤ) ^ 64).natAbs < r2_val.toInt.natAbs) :
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8),
+                ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8),
+                ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
+      = (execute_DIV_REM_pure r1_val r2_val .DRS).1 := by
+  have h_chunk_ranges_arg := h_chunk_ranges
+  obtain ⟨h_a0, h_a1, h_a2, h_a3,
+          h_b0, h_b1, h_b2, h_b3,
+          h_c0, h_c1, h_c2, h_c3,
+          h_d0, h_d1, h_d2, h_d3⟩ :=
+    h_chunk_ranges
+  set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
+  set B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+            + toIntZ (v.b_2 r_a) * (65536 * 65536)
+            + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536)
+  set C := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+            + toIntZ (v.c_2 r_a) * (65536 * 65536)
+            + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536)
+  set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+            + toIntZ (v.d_2 r_a) * (65536 * 65536)
+            + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
+  have h_AB_bounds :=
+    fgl_signed_C_D_chunk_packing_nonneg h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
+  have ⟨h_A_lb, h_A_ub⟩ := h_AB_bounds.1
+  have h_CD_bounds :=
+    fgl_signed_C_D_chunk_packing_nonneg h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+  have ⟨h_D_lb, _h_D_ub⟩ := h_CD_bounds.2
+  have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val :=
+    toIntZ_eq_val_of_lt h_a0 (by decide)
+  have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val :=
+    toIntZ_eq_val_of_lt h_a1 (by decide)
+  have h_a2_val : toIntZ (v.a_2 r_a) = (v.a_2 r_a).val :=
+    toIntZ_eq_val_of_lt h_a2 (by decide)
+  have h_a3_val : toIntZ (v.a_3 r_a) = (v.a_3 r_a).val :=
+    toIntZ_eq_val_of_lt h_a3 (by decide)
+  have h_b0_val : toIntZ (v.b_0 r_a) = (v.b_0 r_a).val :=
+    toIntZ_eq_val_of_lt h_b0 (by decide)
+  have h_b1_val : toIntZ (v.b_1 r_a) = (v.b_1 r_a).val :=
+    toIntZ_eq_val_of_lt h_b1 (by decide)
+  have h_b2_val : toIntZ (v.b_2 r_a) = (v.b_2 r_a).val :=
+    toIntZ_eq_val_of_lt h_b2 (by decide)
+  have h_b3_val : toIntZ (v.b_3 r_a) = (v.b_3 r_a).val :=
+    toIntZ_eq_val_of_lt h_b3 (by decide)
+  have h_c0_val : toIntZ (v.c_0 r_a) = (v.c_0 r_a).val :=
+    toIntZ_eq_val_of_lt h_c0 (by decide)
+  have h_c1_val : toIntZ (v.c_1 r_a) = (v.c_1 r_a).val :=
+    toIntZ_eq_val_of_lt h_c1 (by decide)
+  have h_c2_val : toIntZ (v.c_2 r_a) = (v.c_2 r_a).val :=
+    toIntZ_eq_val_of_lt h_c2 (by decide)
+  have h_c3_val : toIntZ (v.c_3 r_a) = (v.c_3 r_a).val :=
+    toIntZ_eq_val_of_lt h_c3 (by decide)
+  have h_d0_val : toIntZ (v.d_0 r_a) = (v.d_0 r_a).val :=
+    toIntZ_eq_val_of_lt h_d0 (by decide)
+  have h_d1_val : toIntZ (v.d_1 r_a) = (v.d_1 r_a).val :=
+    toIntZ_eq_val_of_lt h_d1 (by decide)
+  have h_d2_val : toIntZ (v.d_2 r_a) = (v.d_2 r_a).val :=
+    toIntZ_eq_val_of_lt h_d2 (by decide)
+  have h_d3_val : toIntZ (v.d_3 r_a) = (v.d_3 r_a).val :=
+    toIntZ_eq_val_of_lt h_d3 (by decide)
+  have h_A_eq :
+      A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := by
+    simp only [A, h_a0_val, h_a1_val, h_a2_val, h_a3_val]
+    unfold packed4
+    push_cast
+    ring
+  have h_B_eq :
+      B = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) := by
+    simp only [B, h_b0_val, h_b1_val, h_b2_val, h_b3_val]
+    unfold packed4
+    push_cast
+    ring
+  have h_C_eq :
+      C = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+        (v.c_2 r_a).val (v.c_3 r_a).val : ℤ) := by
+    simp only [C, h_c0_val, h_c1_val, h_c2_val, h_c3_val]
+    unfold packed4
+    push_cast
+    ring
+  have h_D_eq :
+      D = (packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+        (v.d_2 r_a).val (v.d_3 r_a).val : ℤ) := by
+    simp only [D, h_d0_val, h_d1_val, h_d2_val, h_d3_val]
+    unfold packed4
+    push_cast
+    ring
+  have h_operands :=
+    signed_div_overflow_operands_of_boundary r1_val r2_val v r_a
+      h_boundary h_m32 (Or.inr h_np) (Or.inr h_nb)
+      h_rs1_value h_rs2_value h_overflow
+  have h_np_z : toIntZ (v.np r_a) = 1 := by rw [h_np]; decide
+  have h_nb_z : toIntZ (v.nb r_a) = 1 := by rw [h_nb]; decide
+  have h_na_z : toIntZ (v.na r_a) = 1 := by rw [h_na]; decide
+  have h_nr_z : toIntZ (v.nr r_a) = 0 := by rw [h_nr]; decide
+  have h_B : B = (2 : ℤ) ^ 64 - 1 := by
+    have h := h_rs2_value
+    rw [h_operands.2, h_nb] at h
+    rw [h_B_eq]
+    norm_num at h ⊢
+    omega
+  have h_C : C = (2 : ℤ) ^ 63 := by
+    have h := h_rs1_value
+    rw [h_operands.1, h_np] at h
+    rw [h_C_eq]
+    norm_num at h ⊢
+    omega
+  have h_D : D = 0 := by
+    have h_abs : D.natAbs < 1 := by
+      simpa [h_D_eq, h_nr, h_operands.2] using h_r_abs
+    have h_nonneg : 0 ≤ D := h_D_lb
+    omega
+  have h_raw :=
+    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses_raw
+      v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
+      (Or.inr h_na) (Or.inr h_nb) (Or.inr h_np) (Or.inl h_nr)
+  dsimp only at h_raw
+  change
+    (1 - 2 * toIntZ (v.na r_a) - 2 * toIntZ (v.nb r_a)
+        + 4 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) * A * B
+      + (1 - 2 * toIntZ (v.nr r_a)) * D
+      + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
+          + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2 ^ 64
+      + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2 ^ 64
+      + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2 ^ 128
+        = (1 - 2 * toIntZ (v.np r_a)) * C at h_raw
+  have h_A : A = (2 : ℤ) ^ 63 := by
+    rw [h_na_z, h_nb_z, h_np_z, h_nr_z, h_B, h_C, h_D] at h_raw
+    norm_num at h_raw ⊢
+    linear_combination -h_raw
+  have h_A_toNat :
+      A.toNat = packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val := by
+    rw [h_A_eq]
+    exact Int.toNat_natCast _
+  have h_byte_eq_packed :
+      (byteAt e 0).val + (byteAt e 1).val * 256
+          + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656
+        + (byteAt e 7).val * 72057594037927936
+      = packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+          (v.a_2 r_a).val (v.a_3 r_a).val :=
+    byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3)
+    (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
+    h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [h_byte_eq_packed, ← h_A_toNat, h_A]
+  simp [execute_DIV_REM_pure, execute_DIV_REM_pure_int,
+    h_operands.1, h_operands.2]
+
+set_option maxHeartbeats 2400000 in
 /-- **`h_rd_val` discharge for DIV — signed 64-bit nonzero-divisor form.**
 
-    This composes the ArithDiv signed carry-chain identity, sign-witness
-    pins, operand packing bridges, and signed Euclidean uniqueness to derive
-    the quotient written by the circuit. Divisor-zero is discharged separately
-    by the opcode wrapper; `INT64_MIN / -1` is handled by the pure BV bridge. -/
-lemma h_rd_val_mdrs_div_chunked
+    This derives the quotient from the raw carry identity, quotient-sign
+    exclusion, operand packing bridges, and the strict remainder-magnitude
+    bound. The physical remainder sign is deliberately irrelevant: the proof
+    constructs a canonical remainder with the dividend's sign before applying
+    signed Euclidean uniqueness. Divisor-zero is discharged separately by the
+    opcode wrapper; `INT64_MIN / -1` is handled by the pure BV bridge. -/
+lemma h_rd_val_mdrs_div_quotient_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
@@ -1369,18 +1632,20 @@ lemma h_rd_val_mdrs_div_chunked
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
+    (h_sign_cases :
       toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_nr_pin :
-      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
-        ∨ (toIntZ (v.a_0 r_a)
-            + toIntZ (v.a_1 r_a) * 65536
-            + toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
-          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+          = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+              - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 0
+            ∧ toIntZ (v.np r_a) = 1)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 1
+            ∧ toIntZ (v.np r_a) = 0))
+    (h_not_sign_forge :
+      ¬ (packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+              (v.a_2 r_a).val (v.a_3 r_a).val ≠ 0
+          ∧ toIntZ (v.np r_a)
+            ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+                - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)))
     (h_byte_lo :
       (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
@@ -1401,11 +1666,7 @@ lemma h_rd_val_mdrs_div_chunked
     (h_r_abs :
       ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
           (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-        - (v.nr r_a).val * (2:ℤ)^64).natAbs < r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
-            (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * r1_val.toInt) :
+        - (v.nr r_a).val * (2:ℤ)^64).natAbs < r2_val.toInt.natAbs) :
     U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
                 ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = (execute_DIV_REM_pure r1_val r2_val .DRS).1 := by
@@ -1415,10 +1676,6 @@ lemma h_rd_val_mdrs_div_chunked
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     h_chunk_ranges
-  have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses
-      v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
-      h_na_bool h_nb_bool h_nr_bool h_np_xor
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
             + toIntZ (v.a_2 r_a) * (65536 * 65536)
             + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
@@ -1482,13 +1739,17 @@ lemma h_rd_val_mdrs_div_chunked
   have h_nr_int_bool : toIntZ (v.nr r_a) = 0 ∨ toIntZ (v.nr r_a) = 1 := by
     rcases h_nr_bool with h | h <;> rw [h] <;> first | left; decide | right; decide
   have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
-    rw [h_np_xor]
-    rcases h_na_bool with hna | hna <;> rcases h_nb_bool with hnb | hnb
-    all_goals (rw [hna, hnb])
-    · left; decide
-    · right; decide
-    · right; decide
-    · left; decide
+    rcases h_sign_cases with h_np_xor | h_exception
+    · rw [h_np_xor]
+      rcases h_na_bool with hna | hna <;> rcases h_nb_bool with hnb | hnb
+      all_goals (rw [hna, hnb])
+      · left; decide
+      · right; decide
+      · right; decide
+      · left; decide
+    · rcases h_exception with ⟨_, _, hnp⟩ | ⟨_, _, hnp⟩
+      · exact Or.inr hnp
+      · exact Or.inl hnp
   have h_np_val : ((v.np r_a).val : ℤ) = toIntZ (v.np r_a) := by
     rcases h_np_int_bool with h | h
     · have h_cast : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
@@ -1511,34 +1772,164 @@ lemma h_rd_val_mdrs_div_chunked
     rw [h_rs1_value, h_C_eq, h_np_val]
   have h_r2_int : r2_val.toInt = B - toIntZ (v.nb r_a) * 2^64 := by
     rw [h_rs2_value, h_B_eq, h_nb_val]
-  have h_nr_pin_int : toIntZ (v.nr r_a) = toIntZ (v.np r_a) ∨ D = 0 := by
-    rcases h_nr_pin with h | h
-    · exact Or.inl h
-    · rcases h with ⟨_, hd0, hd1, hd2, hd3⟩
-      right
-      rw [hD_def, h_d0_val, h_d1_val, h_d2_val, h_d3_val, hd0, hd1, hd2, hd3]
+  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a :=
+      toIntZ_cast _
+    rcases h_np_int_bool with h | h
+    · left
+      rw [← h_round_trip, h]
+      norm_cast
+    · right
+      rw [← h_round_trip, h]
+      norm_cast
+  have h_raw :=
+    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses_raw
+      v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
+      h_na_bool h_nb_bool h_np_bool h_nr_bool
+  dsimp only at h_raw
+  change
+    (1 - 2 * toIntZ (v.na r_a) - 2 * toIntZ (v.nb r_a)
+        + 4 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) * A * B
+      + (1 - 2 * toIntZ (v.nr r_a)) * D
+      + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
+          + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2 ^ 64
+      + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2 ^ 64
+      + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2 ^ 128
+        = (1 - 2 * toIntZ (v.np r_a)) * C at h_raw
+  set QA :=
+    (1 - 2 * toIntZ (v.na r_a)) * A + toIntZ (v.na r_a) * 2^64
+  set MB :=
+    (1 - 2 * toIntZ (v.nb r_a)) * B + toIntZ (v.nb r_a) * 2^64
+  set MC :=
+    (1 - 2 * toIntZ (v.np r_a)) * C + toIntZ (v.np r_a) * 2^64
+  set MR :=
+    (1 - 2 * toIntZ (v.nr r_a)) * D + toIntZ (v.nr r_a) * 2^64
+  have h_magnitude : QA * MB + MR = MC := by
+    dsimp [QA, MB, MC, MR]
+    linear_combination h_raw
+  have h_MB_abs : ((r2_val.toInt.natAbs : ℕ) : ℤ) = MB := by
+    rw [h_r2_int]
+    rcases h_nb_int_bool with hnb | hnb
+    · rw [hnb]
+      rw [Int.natAbs_of_nonneg (by simpa using h_B_lb)]
+      simp [MB, hnb]
+    · rw [hnb]
       norm_num
-  have h_euclid :
-      r1_val.toInt =
-        (A - toIntZ (v.na r_a) * 2^64) * r2_val.toInt
-          + (D - toIntZ (v.nr r_a) * 2^64) :=
-    abs_euclidean_to_signed_euclidean_div_rem
-      A B C D (toIntZ (v.na r_a)) (toIntZ (v.nb r_a))
-      (toIntZ (v.np r_a)) (toIntZ (v.nr r_a)) r1_val r2_val
-      h_na_int_bool h_nb_int_bool h_np_int_bool h_nr_int_bool
-      h_np_xor h_nr_pin_int h_A_lb h_A_ub h_B_lb h_B_ub h_C_lb h_C_ub
-      h_D_lb h_D_ub h_r1_int h_r2_int h_chunk_ident
-  have h_r_abs' :
-      (D - toIntZ (v.nr r_a) * 2^64).natAbs < r2_val.toInt.natAbs := by
-    simpa [h_D_eq, h_nr_val] using h_r_abs
-  have h_r_sign' :
-      0 ≤ (D - toIntZ (v.nr r_a) * 2^64) * r1_val.toInt := by
-    simpa [h_D_eq, h_nr_val] using h_r_sign
-  have h_div_bv :=
-    fgl_div_signed_to_bv64 r1_val r2_val
-      (A - toIntZ (v.na r_a) * 2^64)
-      (D - toIntZ (v.nr r_a) * 2^64)
-      h_op2_ne h_euclid h_r_abs' h_r_sign'
+      rw [abs_of_nonpos (by omega)]
+      simp [MB, hnb]
+      ring
+  have h_MC_abs : ((r1_val.toInt.natAbs : ℕ) : ℤ) = MC := by
+    rw [h_r1_int]
+    rcases h_np_int_bool with hnp | hnp
+    · rw [hnp]
+      rw [Int.natAbs_of_nonneg (by simpa using h_C_lb)]
+      simp [MC, hnp]
+    · rw [hnp]
+      norm_num
+      rw [abs_of_nonpos (by omega)]
+      simp [MC, hnp]
+      ring
+  have h_MR_abs :
+      (D - toIntZ (v.nr r_a) * 2^64).natAbs = MR := by
+    rcases h_nr_int_bool with hnr | hnr
+    · rw [hnr]
+      rw [Int.natAbs_of_nonneg (by simpa using h_D_lb)]
+      simp [MR, hnr]
+    · rw [hnr]
+      norm_num
+      rw [abs_of_nonpos (by omega)]
+      simp [MR, hnr]
+      ring
+  have h_MR_lt : MR < MB := by
+    rw [← h_MB_abs, ← h_MR_abs]
+    have h := h_r_abs
+    rw [← h_D_eq, h_nr_val] at h
+    exact_mod_cast h
+  have h_MR_nonneg : 0 ≤ MR := by
+    rw [← h_MR_abs]
+    positivity
+  have h_MB_pos : 0 < MB := by
+    rw [← h_MB_abs]
+    exact_mod_cast Int.natAbs_pos.mpr h_op2_ne
+  have h_div_bv :
+      BitVec.ofInt 64 (A - toIntZ (v.na r_a) * 2^64)
+        = (execute_DIV_REM_pure r1_val r2_val .DRS).1 := by
+    by_cases h_A_zero : A = 0
+    · have h_MC_small : MC < 2^64 := by
+        rw [← h_MC_abs]
+        have h_lower := BitVec.le_toInt r1_val
+        have h_upper := @BitVec.toInt_lt 64 r1_val
+        omega
+      have h_na_zero : toIntZ (v.na r_a) = 0 := by
+        rcases h_na_int_bool with hna | hna
+        · exact hna
+        · simp [QA, h_A_zero, hna] at h_magnitude
+          omega
+      have h_MC_lt : MC < MB := by
+        have h_MC_eq : MC = MR := by
+          have h := h_magnitude
+          simp [QA, h_A_zero, h_na_zero] at h
+          omega
+        omega
+      have h_r_abs' : r1_val.toInt.natAbs < r2_val.toInt.natAbs := by
+        have h := h_MC_lt
+        rw [← h_MC_abs, ← h_MB_abs] at h
+        exact_mod_cast h
+      have h_zero_bv :=
+        fgl_div_signed_to_bv64 r1_val r2_val 0 r1_val.toInt
+          h_op2_ne (by ring) h_r_abs' (mul_self_nonneg _)
+      rw [h_A_zero, bv64_ofInt_d_minus_np_eq]
+      simpa using h_zero_bv
+    · have h_np_xor :
+          toIntZ (v.np r_a)
+            = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+                - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a) := by
+        by_contra h_ne
+        apply h_not_sign_forge
+        constructor
+        · rw [← h_A_toNat]
+          intro h_toNat_zero
+          apply h_A_zero
+          exact le_antisymm (Int.toNat_eq_zero.mp h_toNat_zero) h_A_lb
+        · exact h_ne
+      set canonicalR := (1 - 2 * toIntZ (v.np r_a)) * MR
+      have h_euclid :
+          r1_val.toInt =
+            (A - toIntZ (v.na r_a) * 2^64) * r2_val.toInt + canonicalR := by
+        rw [h_r1_int, h_r2_int]
+        refine signed_euclidean_of_magnitude_identity
+          A B C MR (2^64) (toIntZ (v.na r_a)) (toIntZ (v.nb r_a))
+            (toIntZ (v.np r_a))
+          h_na_int_bool h_nb_int_bool h_np_int_bool h_np_xor ?_
+        simpa [QA, MB, MC] using h_magnitude
+      have h_canonical_abs : ((canonicalR.natAbs : ℕ) : ℤ) = MR := by
+        rcases h_np_int_bool with hnp | hnp
+        · simpa [canonicalR, hnp] using Int.natAbs_of_nonneg h_MR_nonneg
+        · rw [show canonicalR = -MR by simp [canonicalR, hnp], Int.natAbs_neg]
+          exact Int.natAbs_of_nonneg h_MR_nonneg
+      have h_canonical_bound :
+          canonicalR.natAbs < r2_val.toInt.natAbs := by
+        have h := h_MR_lt
+        rw [← h_canonical_abs, ← h_MB_abs] at h
+        exact_mod_cast h
+      have h_canonical_sign : 0 ≤ canonicalR * r1_val.toInt := by
+        rcases h_np_int_bool with hnp | hnp
+        · rw [h_r1_int, hnp]
+          have h_C_nonneg : 0 ≤ C := h_C_lb
+          have h_R_nonneg : 0 ≤ canonicalR := by simpa [canonicalR, hnp]
+          norm_num
+          exact mul_nonneg h_R_nonneg h_C_nonneg
+        · rw [h_r1_int, hnp]
+          have h_C_nonpos : C - 2^64 ≤ 0 := by omega
+          have h_R_nonpos : canonicalR ≤ 0 := by
+            simp [canonicalR, hnp]
+            exact h_MR_nonneg
+          norm_num
+          exact mul_nonneg_of_nonpos_of_nonpos h_R_nonpos h_C_nonpos
+      exact
+        fgl_div_signed_to_bv64 r1_val r2_val
+          (A - toIntZ (v.na r_a) * 2^64) canonicalR
+          h_op2_ne h_euclid h_canonical_bound h_canonical_sign
   have h_q_mod :
       BitVec.ofInt 64 (A - toIntZ (v.na r_a) * 2^64)
         = BitVec.ofNat 64 A.toNat := by
@@ -1560,6 +1951,83 @@ lemma h_rd_val_mdrs_div_chunked
     have : A < ((2^64 : ℕ) : ℤ) := by exact_mod_cast h_A_ub
     omega
   exact (Nat.mod_eq_of_lt h_A_nat_lt).symm
+
+lemma h_rd_val_mdrs_div_chunked
+    (r1_val r2_val : BitVec 64)
+    (e : Interaction.MemoryBusEntry FGL)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
+    (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    (h_chunk_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivChunkRangesAt v r_a)
+    (h_carry_ranges :
+      ZiskFv.EquivCore.Bridge.Arith.ArithDivSignedCarryRangesAt v r_a)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_sign_cases :
+      toIntZ (v.np r_a)
+          = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+              - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 0
+            ∧ toIntZ (v.np r_a) = 1)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 1
+            ∧ toIntZ (v.np r_a) = 0))
+    (h_not_sign_forge :
+      ¬ (packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+              (v.a_2 r_a).val (v.a_3 r_a).val ≠ 0
+          ∧ toIntZ (v.np r_a)
+            ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+                - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)))
+    (_h_nr_pin :
+      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
+        ∨ (toIntZ (v.a_0 r_a)
+            + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
+          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_byte_lo :
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536
+          + (byteAt e 3).val * 16777216
+        = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
+    (h_byte_hi :
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536
+          + (byteAt e 7).val * 16777216
+        = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
+    (h_rs1_value :
+      r1_val.toInt
+        = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+            (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
+    (h_rs2_value :
+      r2_val.toInt
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+            (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64)
+    (h_op2_ne : r2_val.toInt ≠ 0)
+    (h_r_abs :
+      ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+          (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+        - (v.nr r_a).val * (2:ℤ)^64).natAbs < r2_val.toInt.natAbs)
+    (_h_r_sign :
+      0 ≤ ((packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+            (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+            - (v.nr r_a).val * (2:ℤ)^64) * r1_val.toInt) :
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8),
+                ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8),
+                ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
+      = (execute_DIV_REM_pure r1_val r2_val .DRS).1 :=
+  h_rd_val_mdrs_div_quotient_chunked
+    r1_val r2_val e v r_a h0 h1 h2 h3 h4 h5 h6 h7 h_chain
+    h_chunk_ranges h_carry_ranges h_sext h_m32 h_div h_na_bool h_nb_bool
+    h_nr_bool h_sign_cases h_not_sign_forge h_byte_lo h_byte_hi h_rs1_value
+    h_rs2_value h_op2_ne h_r_abs
 
 /-! ## REM chunked discharge (signed 64-bit; nonzero-divisor case) -/
 

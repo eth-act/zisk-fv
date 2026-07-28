@@ -2214,6 +2214,39 @@ lemma abs_euclidean_to_signed_euclidean_div_rem
       nlinarith [h_chain, _h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
                  h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^64)]
 
+/-- Convert either signed-DIV table exception to the signed Euclidean identity
+when the quotient magnitude is zero.
+
+Unlike `abs_euclidean_to_signed_euclidean_div_rem`, this lemma does not assume
+the quotient-sign XOR equation. The two exceptional flag triples are precisely
+the alternatives admitted by the physical op-186 Arith table. -/
+lemma abs_euclidean_to_signed_euclidean_div_rem_zero_quotient_exception
+    (A B C D : ℤ) (na nb np nr : ℤ)
+    (r1 r2 : BitVec 64)
+    (h_nr_bool : nr = 0 ∨ nr = 1)
+    (h_A : A = 0)
+    (h_exception :
+      (na = 0 ∧ nb = 0 ∧ np = 1) ∨
+        (na = 0 ∧ nb = 1 ∧ np = 0))
+    (h_nr_pin : nr = np ∨ D = 0)
+    (h_C_ub : C < 2^64)
+    (h_r1 : r1.toInt = C - np * 2^64)
+    (h_r2 : r2.toInt = B - nb * 2^64)
+    (h_chain :
+      (1 - 2*na - 2*nb + 4*na*nb)*A*B + (1 - 2*nr)*D
+        + (nb*(1-2*na)*A + na*(1-2*nb)*B)*2^64
+        + (nr - np)*2^64 + na*nb*2^128
+      = (1 - 2*np)*C) :
+    r1.toInt = (A - na*2^64) * r2.toInt + (D - nr*2^64) := by
+  rw [h_r1, h_r2]
+  subst A
+  rcases h_exception with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
+    rcases h_nr_bool with rfl | rfl <;>
+    rcases h_nr_pin with hpin | hD
+  all_goals try norm_num at hpin
+  all_goals try subst D
+  all_goals norm_num at h_chain ⊢ <;> nlinarith
+
 /-! ## Part 9.W — Abs-Euclidean → signed-Euclidean linker (DIVW / REMW)
 
 W-mode variant of Part 9's `abs_euclidean_to_signed_euclidean_div_rem`.

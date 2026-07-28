@@ -15,7 +15,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 noncomputable def mulhsuArow
     (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions)
@@ -26,7 +26,7 @@ noncomputable def mulhsuArow
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULSUH) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_mulhsu_provided trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 theorem mulhsuArow_fullSpec_row
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)

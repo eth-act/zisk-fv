@@ -25,8 +25,8 @@ import ZiskFv.Compliance.SharedBundles
 > The remaining caller obligations are the structural-unpacking signed residual
 > binders documented in `trust/structural-unpacking-exceptions.txt`
 > (`equiv_DIV` entry): chunk/carry ranges, the signed operand bridges
-> (`h_rs1_value`/`h_rs2_value`), the remainder-sign pin (`h_nr_pin`), and the
-> magnitude + sign witnesses (`h_r_abs`, `h_r_sign`).  `h_r_abs` is the STRICT
+> (`h_rs1_value`/`h_rs2_value`) and the conditional remainder-magnitude
+> witness.  The strict remainder bound
 > signed remainder bound `|r| < |op2|`; the canonical `Equivalence.Div.equiv_DIV`
 > derives it from the in-model WEAK bound plus the narrowed `|r| = |op2|` defect
 > exclusion (`NoKnownDefect`).  See `trust/defects.md`
@@ -84,10 +84,9 @@ open ZiskFv.EquivCore.Promises
       `matches_entry` op-slot equality (op-bus permutation).
     * `h_sext`, `h_m32`, `h_div` — from
       row-native `ArithTableSpec` plus finite-table projections.
-    * `h_nr_pin` — from
-      `arith_table_op_div_rem_signed_d_sign_pin` (existing).
-    * `h_r_abs`, `h_r_sign` — from `arith_div_remainder_bound`
-      () composed with `h_rs1_value`/`h_rs2_value`.
+    * the strict remainder bound — from the selected physical row's weak
+      bound, restricted to the nonzero-divisor branch, plus the known-defect
+      exclusion.
 
     After  closure the wrapper carries 35 binders / 22
     hypotheses (vs. 37/24 pre- and 43/32 on `equiv_DIV`); both
@@ -126,18 +125,15 @@ lemma equiv_DIV_of_table
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
-      toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_nr_pin :
-      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
-        ∨ (toIntZ (v.a_0 r_a)
-            + toIntZ (v.a_1 r_a) * 65536
-            + toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
-          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_sign_cases : ZiskFv.Compliance.ArithDivSignWitness v r_a)
+    (h_not_sign_forge :
+      ¬ (v.div_overflow r_a = 0
+        ∧ ZiskFv.PackedBitVec.MulNoWrap.packed4
+              (v.a_0 r_a).val (v.a_1 r_a).val
+              (v.a_2 r_a).val (v.a_3 r_a).val ≠ 0
+          ∧ toIntZ (v.np r_a)
+            ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+                - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)))
     -- SIGNED operand bridges (sign-range residual form): `r.toInt = packed4 - sign·2^64`.
     (h_rs1_value :
       div_input.r1_val.toInt
@@ -156,10 +152,6 @@ lemma equiv_DIV_of_table
         ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
           - (v.nr r_a).val * (2:ℤ)^64).natAbs < div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -223,9 +215,9 @@ lemma equiv_DIV_of_table
     promises
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
     v r_a h_chain h_boundary arith_chunk_ranges arith_carry_ranges
-    h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_na_bool h_nb_bool h_nr_bool h_sign_cases h_not_sign_forge
     h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-    h_r_abs_of_ne h_r_sign
+    h_r_abs_of_ne
 
 /-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
 lemma equiv_DIV
@@ -259,14 +251,6 @@ lemma equiv_DIV
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_nr_pin :
-      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
-        ∨ (toIntZ (v.a_0 r_a)
-            + toIntZ (v.a_1 r_a) * 65536
-            + toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
-          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
     (h_rs1_value :
       div_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -282,10 +266,6 @@ lemma equiv_DIV
         ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
           - (v.nr r_a).val * (2:ℤ)^64).natAbs < div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -294,8 +274,16 @@ lemma equiv_DIV
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary
     promises arith_mem bounds h_row_constraints h_boundary arith_table
-    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
-    h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
+    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool
+    ⟨(fun _ _ => Or.inl h_np_xor),
+      ZiskFv.AirsClean.ArithTableProjections.Div.div_overflow_sign_pins
+        v r_a arith_table.spec
+        (by
+          have h_op_eq := arith_div_primary_op_eq h_match_primary
+          rw [h_op_eq, pins.2]
+          simp [OP_DIV])⟩
+    (by rintro ⟨_, _, h_wrong⟩; exact h_wrong h_np_xor)
+    h_rs1_value h_rs2_value h_r_abs_of_ne
 
 
 end ZiskFv.Compliance

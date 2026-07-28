@@ -19,14 +19,14 @@ Unsigned RV64M DIVU (`OP_DIVU = 184`), mirroring the MULW / MULHU
 constructions.  The Arith provider witnesses (ArithTable membership, chunk
 ranges, signed-carry ranges, c46, carry-chain) are **DERIVED FROM BALANCE**
 via the SHARED ArithMul provider component's lookup-aware
-`componentWithArithTable.Spec = FullSpec`, not carried as caller binders.
+`componentComplete.Spec = FullSpec`, not carried as caller binders.
 
 ## Why the shared ArithMul provider (not ArithDiv)
 
 `ArithDiv.component` carries NO operation-bus interactions in the full
 ensemble (`arithDiv_table_interactionsWith_opBus_nil`): its
 `circuit.channels = []`.  The DIVU Main op-bus emission is therefore balanced
-by the SHARED ArithMul provider (`componentWithArithTable`), whose `FullSpec`
+by the SHARED ArithMul provider (`componentComplete`), whose `FullSpec`
 covers div rows too (the carry chain is mode-shared via the `div` flag).  The
 muxed primary op-bus message, at the DIVU mode pins (`div = 1`,
 `main_div = 1`, `main_mul = 0`), reduces to the div quotient-lane message
@@ -73,7 +73,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
@@ -130,7 +130,7 @@ def vOfDivuRow (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL) :
   signed := fun _ => arow.flags.signed
   div_by_zero := fun _ => arow.flags.div_by_zero
   div_overflow := fun _ => arow.flags.div_overflow
-  inv_sum_all_bs := fun _ => 0
+  inv_sum_all_bs := fun _ => arow.carries.inv_sum_all_bs
   op := fun _ => arow.flags.op
   bus_res1 := fun _ => arow.flags.bus_res1
   multiplicity := fun _ => 1
@@ -239,6 +239,21 @@ theorem match_opBus_row_ArithDiv_vOfDivuRow
     matches_entry x (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv (vOfDivuRow arow) 0) := by
   rw [← primaryOpBusMessage_toEntry_eq_opBus_row_ArithDiv arow h_div h_main_div h_main_mul]
   exact h
+
+/-- The concrete Clean remainder-bound message is exactly the legacy
+    ArithDiv remainder-bound entry on the same physical row. -/
+theorem remainderBoundOpBusMessage_toEntry_eq_opBus_row_ArithDiv
+    (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_div : arow.flags.div = 1)
+    (h_div_by_zero : arow.flags.div_by_zero = 0) :
+    ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.ArithMul.remainderBoundOpBusMessage arow) 1 =
+      ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound
+        (vOfDivuRow arow) 0 := by
+  simp only [ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+    ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
+    h_div, h_div_by_zero]
+  congr 1
 
 /-! ## Phase 2 — balance-derived div-Euclidean chunk equations + loose carry bounds -/
 
@@ -436,7 +451,7 @@ private lemma divu_carry_bounds_claimed_dead
 
 /-- The balance-selected Arith-Mul provider row at trace index `i` for a DIVU
     operation, as a concrete `ArithMulRow`.  It is the
-    `componentWithArithTable.rowInput` of the provider row chosen by the DIVU
+    `componentComplete.rowInput` of the provider row chosen by the DIVU
     keep-arithMul balance wrapper
     `main_request_divu_provided`.
     Mirrors `mulwArow`. -/
@@ -448,11 +463,102 @@ noncomputable def divuArow
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU) :
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_divu_provided
-    trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+    trace i h_main_active (Or.inl h_main_op)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
+
+/-- The balance-selected shared Arith provider row for a signed DIV request. -/
+noncomputable def divArow
+    (trace : AcceptedZiskTrace numInstructions) (_binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
+  let h := main_request_div_provided trace i h_main_active h_main_op
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
+
+/-- `FullSpec` of the balance-selected signed DIV provider row. -/
+theorem divArow_fullSpec_row
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    ZiskFv.AirsClean.ArithMul.FullSpec
+      (divArow trace binding i h_main_active h_main_op) := by
+  unfold divArow
+  set H := main_request_div_provided trace i h_main_active h_main_op with hH
+  obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
+  obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
+  exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
+    h_component (h_spec h_rest.choose h_pr_mem)
+
+/-- The signed DIV provider row's primary operation-bus match. -/
+theorem divArow_match_row
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    matches_entry
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
+          (divArow trace binding i h_main_active h_main_op)) 1) := by
+  unfold divArow
+  set H := main_request_div_provided trace i h_main_active h_main_op with hH
+  exact H.choose_spec.2.choose_spec.2.2.2
+
+/-- Common signed-DIV mode pins at the selected provider row. -/
+theorem divArow_mode_pins
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    (divArow trace binding i h_main_active h_main_op).flags.sext = 0
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.m32 = 0
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.div = 1
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.main_div = 1
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.main_mul = 0
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.signed = 1 := by
+  have h_table := (divArow_fullSpec_row trace binding i h_main_active h_main_op).2.1
+  have h_op :
+      (divArow trace binding i h_main_active h_main_op).flags.op = 186 := by
+    have h_match := divArow_match_row trace binding i h_main_active h_main_op
+    have h_op_match := h_match.2.1
+    rw [ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_op,
+      show (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val).op
+        = (mainOfTable trace.program trace.mainTable).op i.val from rfl,
+      h_main_op] at h_op_match
+    simpa [ZiskFv.Trusted.OP_DIV] using h_op_match.symm
+  exact ZiskFv.AirsClean.ArithTableProjections.Mul.div_mode_pins_of_row
+    (divArow trace binding i h_main_active h_main_op) h_table h_op
+
+/-- The selected signed-DIV provider row viewed through the legacy ArithDiv
+    primary message. -/
+theorem divArow_match
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    matches_entry
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+        (vOfDivuRow (divArow trace binding i h_main_active h_main_op)) 0) := by
+  obtain ⟨_, _, h_div, h_main_div, h_main_mul, _⟩ :=
+    divArow_mode_pins trace binding i h_main_active h_main_op
+  exact match_opBus_row_ArithDiv_vOfDivuRow h_div h_main_div h_main_mul
+    (divArow_match_row trace binding i h_main_active h_main_op)
 
 /-- `FullSpec` of the balance-selected DIVU provider row, derived from the
-    provider component's proven soundness (`componentWithArithTable.Spec`). -/
+    provider component's proven soundness (`componentComplete.Spec`). -/
 theorem divuArow_fullSpec_row
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
@@ -462,7 +568,7 @@ theorem divuArow_fullSpec_row
     ZiskFv.AirsClean.ArithMul.FullSpec (divuArow trace binding i h_main_active h_main_op) := by
   unfold divuArow
   set H := main_request_divu_provided
-    trace i h_main_active h_main_op with hH
+    trace i h_main_active (Or.inl h_main_op) with hH
   obtain ⟨_h_pt_mem, h_rest⟩ := H.choose_spec
   obtain ⟨h_pr_mem, h_component, h_spec, _h_match⟩ := h_rest.choose_spec
   exact ZiskFv.AirsClean.FullEnsemble.arithMul_fullSpec_of_component_spec
@@ -484,7 +590,7 @@ theorem divuArow_match_row
           (divuArow trace binding i h_main_active h_main_op)) 1) := by
   unfold divuArow
   set H := main_request_divu_provided
-    trace i h_main_active h_main_op with hH
+    trace i h_main_active (Or.inl h_main_op) with hH
   exact H.choose_spec.2.choose_spec.2.2.2
 
 /-- DIVU mode pins on the balance-selected provider row, DERIVED from its
@@ -544,7 +650,7 @@ open ZiskFv.EquivCore.Promises in
 /-- **F4 extraction bridge for `equiv_DIVU`.**  Mirror of
     `equiv_MULHU_of_fullSpec`: the four lookup-aware Arith witness records are
     replaced by the single `FullSpec arow` hypothesis (the SHARED ArithMul
-    provider's `componentWithArithTable.Spec`), with the ArithDiv-view facts
+    provider's `componentComplete.Spec`), with the ArithDiv-view facts
     read off the same row through `vOfDivuRow arow`.
 
     Like MULHU, DIVU's `equiv_DIVU` demands the *unsigned* carry bound
@@ -727,7 +833,7 @@ lemma equiv_DIVU_of_fullSpec_claimed_dead
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.channels_balanced` / `trace.spec_holds` via the SHARED ArithMul provider's
-    lookup-aware `componentWithArithTable.Spec = FullSpec`, NOT supplied as
+    lookup-aware `componentComplete.Spec = FullSpec`, NOT supplied as
     binders.
 
     The ONE non-balance-derived residual is `remainder_bound`

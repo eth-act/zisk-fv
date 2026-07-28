@@ -307,6 +307,29 @@ theorem divu_mode_pins_of_row
       have hval := congrArg Fin.val hop
       norm_num at hval
 
+/-- Mode pins common to every signed 64-bit DIV Arith-table row. The sign
+    selectors vary across the table and are deliberately not projected here. -/
+theorem div_mode_pins_of_row
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_op : row.flags.op = 186) :
+    row.flags.sext = 0 ∧ row.flags.m32 = 0 ∧ row.flags.div = 1
+      ∧ row.flags.main_div = 1 ∧ row.flags.main_mul = 0
+      ∧ row.flags.signed = 1 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, hm32, hdiv, _hna, _hnb, _hnp, _hnr, hsext,
+      _hdiv_by_zero, _hdiv_overflow, hmain_mul, hmain_div, hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact ⟨hsext, hm32, hdiv, hmain_div, hmain_mul, hsigned⟩
+    | rw [h_op] at hop
+      have hval := congrArg Fin.val hop
+      norm_num at hval
+
 /-- Bare-`ArithMulRow` REMU secondary mode pins (mirrors `divu_mode_pins_of_row`
     but for `OP_REMU = 185`).  Reads the full unsigned-REMU mode flags off the
     balance-selected provider `ArithMulRow` (the REMU provider is the SHARED
@@ -1150,6 +1173,52 @@ end Mul
 
 namespace Div
 
+/- Faithful signed-DIV product-sign classification on ordinary rows.
+
+    The static table pins `np` to `na XOR nb` except in the two rows where the
+    quotient may be zero. This conclusion records only the two exceptional flag
+    triples. Proving that the quotient chunks are actually zero requires the
+    dynamic carry-chain and remainder-bound evidence; it is deliberately not
+    claimed here. -/
+set_option maxHeartbeats 800000 in
+theorem div_np_xor_or_exception_sign_shapes
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186)
+    (h_div_by_zero : v.div_by_zero r = 0)
+    (h_div_overflow : v.div_overflow r = 0) :
+    v.np r = v.na r + v.nb r - 2 * v.na r * v.nb r
+      ∨ (v.na r = 0 ∧ v.nb r = 0 ∧ v.np r = 1)
+      ∨ (v.na r = 0 ∧ v.nb r = 1 ∧ v.np r = 0) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, _hnr, _hsext,
+      hdbz, hoverflow, _hmain_mul, _hmain_div, _hsigned,
+      _hrange_ab, _hrange_cd⟩
+    simp_all
+
+set_option maxHeartbeats 800000 in
+theorem div_overflow_sign_pins
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186)
+    (h_div_overflow : v.div_overflow r = 1) :
+    v.na r = 1 ∧ v.nb r = 1 ∧ v.np r = 1 ∧ v.nr r = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op h_div_overflow ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, hnr, _hsext,
+      _hdbz, hoverflow, _hmain_mul, _hmain_div, _hsigned,
+      _hrange_ab, _hrange_cd⟩
+    simp_all
+
 theorem div_rem_signed_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -1170,6 +1239,30 @@ theorem div_rem_signed_mode_pin
         rw [h_op] at hop <;>
         have hval := congrArg Fin.val hop <;>
         norm_num at hval
+
+set_option maxHeartbeats 800000 in
+theorem div_signed_range_polarity_pins
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186) :
+    (v.nb r = 0 → RangeTables.ArithRangePosId (v.range_ab r + 17))
+      ∧ (v.nb r = 1 → RangeTables.ArithRangeNegId (v.range_ab r + 17))
+      ∧ (v.nr r = 0 → RangeTables.ArithRangePosId (v.range_cd r + 17))
+      ∧ (v.nr r = 1 → RangeTables.ArithRangeNegId (v.range_cd r + 17)) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, _hna, hnb, _hnp, hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, hrange_ab,
+      hrange_cd⟩
+    have hval := congrArg Fin.val (hop.symm.trans h_op)
+    norm_num at hval
+  all_goals
+    simp [hnb, hnr, hrange_ab, hrange_cd, RangeTables.ArithRangePosId,
+      RangeTables.ArithRangeNegId]
 
 theorem div_rem_unsigned_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)

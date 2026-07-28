@@ -181,7 +181,7 @@ lemma equiv_MULW_of_table
     hypothesis.
 
     `FullSpec` is exactly what the lookup-aware ArithMul provider's
-    `componentWithArithTable.Spec` yields (`componentWithArithTable_spec`), so a
+    `componentComplete.Spec` yields (`componentComplete_spec`), so a
     P4 construction can hand the provider's balance-derived `Spec` here directly
     instead of re-packaging it as four caller witnesses. Its five conjuncts map
     1:1 onto what the body needs:

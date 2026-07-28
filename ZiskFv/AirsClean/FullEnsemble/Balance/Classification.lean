@@ -22,7 +22,7 @@ open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
 /-- The lookup-aware ArithMul provider component used by the full ensemble. -/
 @[reducible]
 def arithMulProviderComponent : Component FGL :=
-  ZiskFv.AirsClean.ArithMul.componentWithArithTable
+  ZiskFv.AirsClean.ArithMul.componentComplete
 
 /-- Concrete component classification for the row-coherent full Clean
     ensemble. Components appear newest-first after the empty verifier table,
@@ -419,7 +419,7 @@ theorem arithMul_table_interactionsWith_memBus_nil
       MemBusChannel.toRaw ∉
         arithMulProviderComponent.circuit.channels := by
     rw [arithMulProviderComponent,
-      ZiskFv.AirsClean.ArithMul.componentWithArithTable_channels]
+      ZiskFv.AirsClean.ArithMul.componentComplete_channels]
     simp only [List.mem_singleton]
     intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
@@ -618,7 +618,7 @@ theorem arithMul_table_interactionsWith_memAlignRom_nil
     table.interactionsWith MemAlignRomChannel.toRaw = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component, arithMulProviderComponent,
-    ZiskFv.AirsClean.ArithMul.componentWithArithTable_channels]
+    ZiskFv.AirsClean.ArithMul.componentComplete_channels]
   simp only [List.mem_singleton]
   exact memAlignRomChannel_ne_opBus
 

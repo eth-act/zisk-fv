@@ -12,6 +12,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 -- chain-witness lemmas below route `div_carry_chain_holds` through
 -- `AirsClean/ArithDiv/circuit`'s proven `soundness`.
 import ZiskFv.AirsClean.ArithDiv.Bridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.EquivCore.Promises.ArithHelpers
 
@@ -177,27 +178,710 @@ structure ArithDivRemainderBoundWitness
 
 The unsigned witness above is intentionally LTU-only. Signed DIV/REM rows
 select one of four Binary-table comparison operations from `(nr, nb)`:
-`LTU`, `LT_ABS_NP`, `LT_ABS_PN`, or `GT`. This signed witness carries the
-same matched Binary provider row plus proved static-table chain evidence for
-each operation-specific semantic branch. Downstream lemmas case-split on the
-real row signs and consume only the selected branch. -/
+`LTU`, `LT_ABS_NP`, `LT_ABS_PN`, or `GT`. A single Binary row has exactly
+one selected opcode, so this witness carries exactly the corresponding
+static-table chain rather than an impossible conjunction of all four. -/
 structure ArithDivSignedRemainderBoundWitness
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
   binary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL
   r_binary : ℕ
   binary_core : ZiskFv.Airs.Binary.core_every_row binary r_binary
-  binary_ltu_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
-      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
-  binary_lt_abs_np_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary
-  binary_lt_abs_pn_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary
-  binary_gt_chain :
-    ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary
+  selected_chain :
+    (a.nr r = 0 ∧ a.nb r = 0 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64 binary r_binary
+        ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
+    ∨ (a.nr r = 1 ∧ a.nb r = 0 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64 binary r_binary)
+    ∨ (a.nr r = 0 ∧ a.nb r = 1 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64 binary r_binary)
+    ∨ (a.nr r = 1 ∧ a.nb r = 1 ∧
+      (binary.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_GT ∧
+      ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64 binary r_binary)
   remainder_bound_match :
     matches_entry (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound a r)
       (opBus_row_Binary binary r_binary)
+
+private lemma fgl_boolean_cases_arith {x : FGL}
+    (h : x * (1 - x) = 0) : x = 0 ∨ x = 1 := by
+  rcases mul_eq_zero.mp h with hx | hx
+  · exact Or.inl hx
+  · right
+    linear_combination -hx
+
+/-- The matched Binary row for a signed remainder-bound request carries the
+    selected comparison opcode and the asserted final comparison flag. -/
+lemma arith_div_signed_remainder_bound_selector_pins
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r) :
+    w.binary.carry_7 w.r_binary = 1
+      ∧ (a.nr r = 0 → a.nb r = 0 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 6)
+      ∧ (a.nr r = 1 → a.nb r = 0 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 80)
+      ∧ (a.nr r = 0 → a.nb r = 1 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 81)
+      ∧ (a.nr r = 1 → a.nb r = 1 →
+          w.binary.b_op w.r_binary + 16 * w.binary.mode32 w.r_binary = 8) := by
+  have h_match := w.remainder_bound_match
+  simp only [matches_entry, ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
+    opBus_row_Binary] at h_match
+  obtain ⟨_, h_op, _, _, _, _, _, _, h_flag, _, _, _⟩ := h_match
+  refine ⟨h_flag.symm, ?_, ?_, ?_, ?_⟩
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+  · intro h_nr h_nb
+    simpa [h_nr, h_nb] using h_op.symm
+
+private lemma arith_div_signed_remainder_bound_mode32_zero
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r) :
+    w.binary.mode32 w.r_binary = 0 := by
+  have h_selector := arith_div_signed_remainder_bound_selector_pins w
+  obtain ⟨_, h00, h10, h01, h11⟩ := h_selector
+  have hm_bool := w.binary_core.1
+  have hm : w.binary.mode32 w.r_binary = 0 ∨ w.binary.mode32 w.r_binary = 1 := by
+    apply fgl_boolean_cases_arith
+    simpa [ZiskFv.Airs.Binary.boolean_mode32] using hm_bool
+  rcases hm with hm | hm
+  · exact hm
+  exfalso
+  rcases w.selected_chain with h | h | h | h
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h00 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_LTU : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LTU] at hs
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h10 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_NP] at hs
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h01 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LT_ABS_PN] at hs
+  · obtain ⟨hnr, hnb, hop, _⟩ := h
+    have hs := congrArg Fin.val (h11 hnr hnb)
+    have hop' : w.binary.b_op w.r_binary =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_GT : FGL) := Fin.ext hop
+    rw [hm, hop'] at hs
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_GT] at hs
+
+private structure BinaryInputByteRanges
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) : Prop where
+  a0 : (v.free_in_a_0 r).val < 256
+  a1 : (v.free_in_a_1 r).val < 256
+  a2 : (v.free_in_a_2 r).val < 256
+  a3 : (v.free_in_a_3 r).val < 256
+  a4 : (v.free_in_a_4 r).val < 256
+  a5 : (v.free_in_a_5 r).val < 256
+  a6 : (v.free_in_a_6 r).val < 256
+  a7 : (v.free_in_a_7 r).val < 256
+  b0 : (v.free_in_b_0 r).val < 256
+  b1 : (v.free_in_b_1 r).val < 256
+  b2 : (v.free_in_b_2 r).val < 256
+  b3 : (v.free_in_b_3 r).val < 256
+  b4 : (v.free_in_b_4 r).val < 256
+  b5 : (v.free_in_b_5 r).val < 256
+  b6 : (v.free_in_b_6 r).val < 256
+  b7 : (v.free_in_b_7 r).val < 256
+
+private lemma arith_div_signed_remainder_bound_lane_packs
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r)
+    (h_ranges :
+      (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+      ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+      ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+      ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+      ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+      ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+      ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+      ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536)
+    (h_m32 : a.m32 r = 0)
+    (br : BinaryInputByteRanges w.binary w.r_binary) :
+    ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val
+      = (w.binary.free_in_a_0 w.r_binary).val
+          + (w.binary.free_in_a_1 w.r_binary).val * 256
+          + (w.binary.free_in_a_2 w.r_binary).val * 65536
+          + (w.binary.free_in_a_3 w.r_binary).val * 16777216
+          + (w.binary.free_in_a_4 w.r_binary).val * 4294967296
+          + (w.binary.free_in_a_5 w.r_binary).val * 1099511627776
+          + (w.binary.free_in_a_6 w.r_binary).val * 281474976710656
+          + (w.binary.free_in_a_7 w.r_binary).val * 72057594037927936
+    ∧ ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val
+      = (w.binary.free_in_b_0 w.r_binary).val
+          + (w.binary.free_in_b_1 w.r_binary).val * 256
+          + (w.binary.free_in_b_2 w.r_binary).val * 65536
+          + (w.binary.free_in_b_3 w.r_binary).val * 16777216
+          + (w.binary.free_in_b_4 w.r_binary).val * 4294967296
+          + (w.binary.free_in_b_5 w.r_binary).val * 1099511627776
+          + (w.binary.free_in_b_6 w.r_binary).val * 281474976710656
+          + (w.binary.free_in_b_7 w.r_binary).val * 72057594037927936 := by
+  obtain ⟨_, _, _, _, hb0, hb1, hb2, hb3, _, _, _, _, hd0, hd1, hd2, hd3⟩ :=
+    h_ranges
+  have h_lane_eqs := w.remainder_bound_match
+  simp only [matches_entry, ZiskFv.Airs.ArithDiv.opBus_row_ArithDivRemainderBound,
+    opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _, _⟩ := h_lane_eqs
+  have h_a_hi' := h_a_hi
+  have h_b_hi' := h_b_hi
+  simp [h_m32] at h_a_hi' h_b_hi'
+  have h_d_lo_val := congrArg Fin.val h_a_lo
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.d_0 r) (a.d_1 r) hd0 hd1,
+    binary_bytes_lo_val_eq w.binary w.r_binary br.a0 br.a1 br.a2 br.a3] at h_d_lo_val
+  have h_d_hi_val := congrArg Fin.val h_a_hi'
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.d_2 r) (a.d_3 r) hd2 hd3,
+    binary_bytes_hi_val_eq w.binary w.r_binary br.a4 br.a5 br.a6 br.a7] at h_d_hi_val
+  have h_b_lo_val := congrArg Fin.val h_b_lo
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.b_0 r) (a.b_1 r) hb0 hb1,
+    binary_b_bytes_lo_val_eq w.binary w.r_binary br.b0 br.b1 br.b2 br.b3] at h_b_lo_val
+  have h_b_hi_val := congrArg Fin.val h_b_hi'
+  rw [ZiskFv.EquivCore.Promises.arith_h_pair_lift (a.b_2 r) (a.b_3 r) hb2 hb3,
+    binary_b_bytes_hi_val_eq w.binary w.r_binary br.b4 br.b5 br.b6 br.b7] at h_b_hi_val
+  constructor <;> unfold ZiskFv.PackedBitVec.MulNoWrap.packed4 <;> nlinarith
+
+private lemma arith_div_signed_remainder_bound_nn
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r)
+    (h_ranges :
+      (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+      ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+      ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+      ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+      ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+      ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+      ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+      ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536)
+    (h_m32 : a.m32 r = 0) (h_nr : a.nr r = 0) (h_nb : a.nb r = 0)
+    (chain : ZiskFv.EquivCore.Bridge.Binary.BinaryChainStaticOut64
+      w.binary w.r_binary ZiskFv.Airs.Tables.BinaryTable.OP_LTU) :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val : ℤ)
+        - (a.nr r).val * (2 : ℤ)^64).natAbs
+      ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val : ℤ)
+        - (a.nb r).val * (2 : ℤ)^64).natAbs := by
+  let br : BinaryInputByteRanges w.binary w.r_binary :=
+    ⟨ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_0,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_1,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_2,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_3,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_4,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_5,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_6,
+     ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 chain.chain_7,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_0,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_1,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_2,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_3,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_4,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_5,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_6,
+     ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 chain.chain_7⟩
+  have hpacks :=
+    arith_div_signed_remainder_bound_lane_packs w h_ranges h_m32 br
+  have hflag := (arith_div_signed_remainder_bound_selector_pins w).1
+  have hlt := ZiskFv.EquivCore.Bridge.Binary.static_ltu_chain_carry7_one_implies_lt
+    w.binary w.r_binary w.binary_core chain hflag
+  obtain ⟨ha, hb⟩ := hpacks
+  rw [ha, hb]
+  simp [h_nr, h_nb]
+  omega
+
+private lemma natAbs_sub_pow64_le_natAbs_of_sub_le
+    (A B : ℕ) (hA : A < 18446744073709551616)
+    (h : 18446744073709551616 - A ≤ B) :
+    ((A : ℤ) - 2 ^ 64).natAbs ≤ (B : ℤ).natAbs := by
+  have hneg : (A : ℤ) - 2 ^ 64 =
+      -(↑(18446744073709551616 - A) : ℤ) := by
+    norm_num
+    omega
+  rw [hneg, Int.natAbs_neg]
+  norm_num
+  omega
+
+private lemma natAbs_le_natAbs_sub_pow64_of_le_sub
+    (A B : ℕ) (hB : B < 18446744073709551616)
+    (h : A ≤ 18446744073709551616 - B) :
+    (A : ℤ).natAbs ≤ ((B : ℤ) - 2 ^ 64).natAbs := by
+  have hneg : (B : ℤ) - 2 ^ 64 =
+      -(↑(18446744073709551616 - B) : ℤ) := by
+    norm_num
+    omega
+  rw [hneg, Int.natAbs_neg]
+  norm_num
+  omega
+
+private lemma natAbs_sub_pow64_le_natAbs_sub_pow64_of_ge
+    (A B : ℕ) (hA : A < 18446744073709551616)
+    (hB : B < 18446744073709551616) (h : B ≤ A) :
+    ((A : ℤ) - 2 ^ 64).natAbs ≤ ((B : ℤ) - 2 ^ 64).natAbs := by
+  have hnegA : (A : ℤ) - 2 ^ 64 =
+      -(↑(18446744073709551616 - A) : ℤ) := by norm_num; omega
+  have hnegB : (B : ℤ) - 2 ^ 64 =
+      -(↑(18446744073709551616 - B) : ℤ) := by norm_num; omega
+  rw [hnegA, hnegB, Int.natAbs_neg, Int.natAbs_neg]
+  norm_num
+  omega
+
+private lemma byte_and_0x80_eq_of_ge_128
+    (x : ℕ) (hx : x < 256) (h : 128 ≤ x) :
+    x &&& 0x80 = 0x80 := by
+  interval_cases x <;> decide
+
+private lemma arith_div_signed_remainder_bound_np
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r)
+    (h_ranges :
+      (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+      ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+      ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+      ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+      ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+      ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+      ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+      ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536)
+    (h_m32 : a.m32 r = 0) (h_nr : a.nr r = 1) (h_nb : a.nb r = 0)
+    (chain : ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsNpStaticOut64
+      w.binary w.r_binary) :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val : ℤ)
+        - (a.nr r).val * (2 : ℤ)^64).natAbs
+      ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val : ℤ)
+        - (a.nb r).val * (2 : ℤ)^64).natAbs := by
+  let br : BinaryInputByteRanges w.binary w.r_binary :=
+    ⟨ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_0,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_1,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_2,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_3,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_4,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_5,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_6,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_a_byte_lt_256 chain.chain_7,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_0,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_1,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_2,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_3,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_4,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_5,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_6,
+     ZiskFv.Airs.Binary.lt_abs_np_chain_b_byte_lt_256 chain.chain_7⟩
+  obtain ⟨ha, hb⟩ :=
+    arith_div_signed_remainder_bound_lane_packs w h_ranges h_m32 br
+  have hflag : (ZiskFv.AirsClean.Binary.lookupFlags7Row
+      (ZiskFv.AirsClean.Binary.rowAt w.binary w.r_binary)).val % 2 = 1 := by
+    have hmod := ZiskFv.EquivCore.Bridge.Binary.lookup_flags7_mod_two_eq_carry
+      (ZiskFv.AirsClean.Binary.rowAt w.binary w.r_binary)
+      (by simpa [ZiskFv.AirsClean.Binary.validOfRow,
+        ZiskFv.AirsClean.Binary.rowAt] using w.binary_core)
+    have hcarry := congrArg Fin.val
+      (arith_div_signed_remainder_bound_selector_pins w).1
+    exact hmod.trans (by rw [hcarry]; norm_num)
+  have hm_bin := arith_div_signed_remainder_bound_mode32_zero w
+  have hu : w.binary.use_first_byte w.r_binary = 0
+      ∨ w.binary.use_first_byte w.r_binary = 1 := by
+    apply fgl_boolean_cases_arith
+    simpa [ZiskFv.Airs.Binary.boolean_use_first_byte] using w.binary_core.2.2.2.1
+  have hcmp :
+      18446744073709551616 -
+          ((w.binary.free_in_a_0 w.r_binary).val
+            + (w.binary.free_in_a_1 w.r_binary).val * 256
+            + (w.binary.free_in_a_2 w.r_binary).val * 65536
+            + (w.binary.free_in_a_3 w.r_binary).val * 16777216
+            + (w.binary.free_in_a_4 w.r_binary).val * 4294967296
+            + (w.binary.free_in_a_5 w.r_binary).val * 1099511627776
+            + (w.binary.free_in_a_6 w.r_binary).val * 281474976710656
+            + (w.binary.free_in_a_7 w.r_binary).val * 72057594037927936)
+        ≤ (w.binary.free_in_b_0 w.r_binary).val
+            + (w.binary.free_in_b_1 w.r_binary).val * 256
+            + (w.binary.free_in_b_2 w.r_binary).val * 65536
+            + (w.binary.free_in_b_3 w.r_binary).val * 16777216
+            + (w.binary.free_in_b_4 w.r_binary).val * 4294967296
+            + (w.binary.free_in_b_5 w.r_binary).val * 1099511627776
+            + (w.binary.free_in_b_6 w.r_binary).val * 281474976710656
+            + (w.binary.free_in_b_7 w.r_binary).val * 72057594037927936 := by
+    rcases hu with hu | hu
+    · have hlt0 := ZiskFv.Airs.Binary.binary_lt_abs_np_pos0_zero_chunks_lt_of_wf
+        (h0 := chain.chain_0) (h1 := chain.chain_1) (h2 := chain.chain_2)
+        (h3 := chain.chain_3) (h4 := chain.chain_4) (h5 := chain.chain_5)
+        (h6 := chain.chain_6) (h7 := chain.chain_7)
+        (hcin0 := chain.cin0_eq) (hcin1 := chain.cin1_eq)
+        (hcin2 := chain.cin2_eq) (hcin3 := chain.cin3_eq)
+        (hcin4 := chain.cin4_eq) (hcin5 := chain.cin5_eq)
+        (hcin6 := chain.cin6_eq) (hcin7 := chain.cin7_eq)
+        (hpi0 := by rw [hu]; norm_num) (hpi1 := by norm_num) (hpi2 := by norm_num)
+        (hpi3 := by rw [hm_bin]; norm_num) (hpi4 := by norm_num) (hpi5 := by norm_num)
+        (hpi6 := by norm_num) (hpi7 := by rw [hm_bin]; norm_num)
+      have hlt := hlt0 hflag
+      have heq := ZiskFv.Airs.Binary.packed8_xor_ff_add_one_eq_sub
+        _ _ _ _ _ _ _ _ br.a0 br.a1 br.a2 br.a3 br.a4 br.a5 br.a6 br.a7
+      omega
+    · have hle := ZiskFv.Airs.Binary.binary_lt_abs_np_chunks_le_of_wf
+        (h_byte_0 := chain.chain_0) (h_byte_1 := chain.chain_1)
+        (h_byte_2 := chain.chain_2) (h_byte_3 := chain.chain_3)
+        (h_byte_4 := chain.chain_4) (h_byte_5 := chain.chain_5)
+        (h_byte_6 := chain.chain_6) (h_byte_7 := chain.chain_7)
+        (h_cin0 := chain.cin0_eq) (h_cin1 := chain.cin1_eq)
+        (h_cin2 := chain.cin2_eq) (h_cin3 := chain.cin3_eq)
+        (h_cin4 := chain.cin4_eq) (h_cin5 := chain.cin5_eq)
+        (h_cin6 := chain.cin6_eq) (h_cin7 := chain.cin7_eq)
+        (h_pi0 := by rw [hu]; norm_num) (h_pi1 := by norm_num) (h_pi2 := by norm_num)
+        (h_pi3 := by rw [hm_bin]; norm_num) (h_pi4 := by norm_num) (h_pi5 := by norm_num)
+        (h_pi6 := by norm_num) (h_pi7 := by rw [hm_bin]; norm_num)
+        (h_final := hflag)
+      have heq := ZiskFv.Airs.Binary.packed8_xor_ff_add_one_eq_sub
+        _ _ _ _ _ _ _ _ br.a0 br.a1 br.a2 br.a3 br.a4 br.a5 br.a6 br.a7
+      omega
+  have ha_lt :
+      (w.binary.free_in_a_0 w.r_binary).val
+          + (w.binary.free_in_a_1 w.r_binary).val * 256
+          + (w.binary.free_in_a_2 w.r_binary).val * 65536
+          + (w.binary.free_in_a_3 w.r_binary).val * 16777216
+          + (w.binary.free_in_a_4 w.r_binary).val * 4294967296
+          + (w.binary.free_in_a_5 w.r_binary).val * 1099511627776
+          + (w.binary.free_in_a_6 w.r_binary).val * 281474976710656
+          + (w.binary.free_in_a_7 w.r_binary).val * 72057594037927936
+        < 18446744073709551616 := by
+    have ha0 := br.a0
+    have ha1 := br.a1
+    have ha2 := br.a2
+    have ha3 := br.a3
+    have ha4 := br.a4
+    have ha5 := br.a5
+    have ha6 := br.a6
+    have ha7 := br.a7
+    omega
+  rw [ha, hb]
+  simpa [h_nr, h_nb] using
+    natAbs_sub_pow64_le_natAbs_of_sub_le _ _ ha_lt hcmp
+private lemma arith_div_signed_remainder_bound_pn
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r)
+    (h_ranges :
+      (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+      ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+      ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+      ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+      ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+      ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+      ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+      ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536)
+    (h_m32 : a.m32 r = 0) (h_nr : a.nr r = 0) (h_nb : a.nb r = 1)
+    (chain : ZiskFv.EquivCore.Bridge.Binary.BinaryChainLtAbsPnStaticOut64
+      w.binary w.r_binary) :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val : ℤ)
+        - (a.nr r).val * (2 : ℤ)^64).natAbs
+      ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val : ℤ)
+        - (a.nb r).val * (2 : ℤ)^64).natAbs := by
+  let br : BinaryInputByteRanges w.binary w.r_binary :=
+    ⟨ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_0,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_1,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_2,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_3,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_4,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_5,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_6,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_a_byte_lt_256 chain.chain_7,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_0,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_1,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_2,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_3,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_4,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_5,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_6,
+     ZiskFv.Airs.Binary.lt_abs_pn_chain_b_byte_lt_256 chain.chain_7⟩
+  obtain ⟨ha, hb⟩ :=
+    arith_div_signed_remainder_bound_lane_packs w h_ranges h_m32 br
+  have hflag : (ZiskFv.AirsClean.Binary.lookupFlags7Row
+      (ZiskFv.AirsClean.Binary.rowAt w.binary w.r_binary)).val % 2 = 1 := by
+    have hmod := ZiskFv.EquivCore.Bridge.Binary.lookup_flags7_mod_two_eq_carry
+      (ZiskFv.AirsClean.Binary.rowAt w.binary w.r_binary)
+      (by simpa [ZiskFv.AirsClean.Binary.validOfRow,
+        ZiskFv.AirsClean.Binary.rowAt] using w.binary_core)
+    have hcarry := congrArg Fin.val
+      (arith_div_signed_remainder_bound_selector_pins w).1
+    exact hmod.trans (by rw [hcarry]; norm_num)
+  have hm_bin := arith_div_signed_remainder_bound_mode32_zero w
+  have hu : w.binary.use_first_byte w.r_binary = 0
+      ∨ w.binary.use_first_byte w.r_binary = 1 := by
+    apply fgl_boolean_cases_arith
+    simpa [ZiskFv.Airs.Binary.boolean_use_first_byte] using w.binary_core.2.2.2.1
+  have hcmp :
+      (w.binary.free_in_a_0 w.r_binary).val
+            + (w.binary.free_in_a_1 w.r_binary).val * 256
+            + (w.binary.free_in_a_2 w.r_binary).val * 65536
+            + (w.binary.free_in_a_3 w.r_binary).val * 16777216
+            + (w.binary.free_in_a_4 w.r_binary).val * 4294967296
+            + (w.binary.free_in_a_5 w.r_binary).val * 1099511627776
+            + (w.binary.free_in_a_6 w.r_binary).val * 281474976710656
+            + (w.binary.free_in_a_7 w.r_binary).val * 72057594037927936
+        ≤ 18446744073709551616 -
+          ((w.binary.free_in_b_0 w.r_binary).val
+            + (w.binary.free_in_b_1 w.r_binary).val * 256
+            + (w.binary.free_in_b_2 w.r_binary).val * 65536
+            + (w.binary.free_in_b_3 w.r_binary).val * 16777216
+            + (w.binary.free_in_b_4 w.r_binary).val * 4294967296
+            + (w.binary.free_in_b_5 w.r_binary).val * 1099511627776
+            + (w.binary.free_in_b_6 w.r_binary).val * 281474976710656
+            + (w.binary.free_in_b_7 w.r_binary).val * 72057594037927936) := by
+    rcases hu with hu | hu
+    · have hlt0 := ZiskFv.Airs.Binary.binary_lt_abs_pn_pos0_zero_chunks_lt_of_wf
+        (h0 := chain.chain_0) (h1 := chain.chain_1) (h2 := chain.chain_2)
+        (h3 := chain.chain_3) (h4 := chain.chain_4) (h5 := chain.chain_5)
+        (h6 := chain.chain_6) (h7 := chain.chain_7)
+        (hcin0 := chain.cin0_eq) (hcin1 := chain.cin1_eq)
+        (hcin2 := chain.cin2_eq) (hcin3 := chain.cin3_eq)
+        (hcin4 := chain.cin4_eq) (hcin5 := chain.cin5_eq)
+        (hcin6 := chain.cin6_eq) (hcin7 := chain.cin7_eq)
+        (hpi0 := by rw [hu]; norm_num) (hpi1 := by norm_num) (hpi2 := by norm_num)
+        (hpi3 := by rw [hm_bin]; norm_num) (hpi4 := by norm_num) (hpi5 := by norm_num)
+        (hpi6 := by norm_num) (hpi7 := by rw [hm_bin]; norm_num)
+      have hlt := hlt0 hflag
+      have heq := ZiskFv.Airs.Binary.packed8_xor_ff_add_one_eq_sub
+        _ _ _ _ _ _ _ _ br.b0 br.b1 br.b2 br.b3 br.b4 br.b5 br.b6 br.b7
+      omega
+    · have hle := ZiskFv.Airs.Binary.binary_lt_abs_pn_chunks_le_of_wf
+        (h_byte_0 := chain.chain_0) (h_byte_1 := chain.chain_1)
+        (h_byte_2 := chain.chain_2) (h_byte_3 := chain.chain_3)
+        (h_byte_4 := chain.chain_4) (h_byte_5 := chain.chain_5)
+        (h_byte_6 := chain.chain_6) (h_byte_7 := chain.chain_7)
+        (h_cin0 := chain.cin0_eq) (h_cin1 := chain.cin1_eq)
+        (h_cin2 := chain.cin2_eq) (h_cin3 := chain.cin3_eq)
+        (h_cin4 := chain.cin4_eq) (h_cin5 := chain.cin5_eq)
+        (h_cin6 := chain.cin6_eq) (h_cin7 := chain.cin7_eq)
+        (h_pi0 := by rw [hu]; norm_num) (h_pi1 := by norm_num) (h_pi2 := by norm_num)
+        (h_pi3 := by rw [hm_bin]; norm_num) (h_pi4 := by norm_num) (h_pi5 := by norm_num)
+        (h_pi6 := by norm_num) (h_pi7 := by rw [hm_bin]; norm_num)
+        (h_final := hflag)
+      have heq := ZiskFv.Airs.Binary.packed8_xor_ff_add_one_eq_sub
+        _ _ _ _ _ _ _ _ br.b0 br.b1 br.b2 br.b3 br.b4 br.b5 br.b6 br.b7
+      omega
+  have hb_lt :
+      (w.binary.free_in_b_0 w.r_binary).val
+          + (w.binary.free_in_b_1 w.r_binary).val * 256
+          + (w.binary.free_in_b_2 w.r_binary).val * 65536
+          + (w.binary.free_in_b_3 w.r_binary).val * 16777216
+          + (w.binary.free_in_b_4 w.r_binary).val * 4294967296
+          + (w.binary.free_in_b_5 w.r_binary).val * 1099511627776
+          + (w.binary.free_in_b_6 w.r_binary).val * 281474976710656
+          + (w.binary.free_in_b_7 w.r_binary).val * 72057594037927936
+        < 18446744073709551616 := by
+    have hb0 := br.b0
+    have hb1 := br.b1
+    have hb2 := br.b2
+    have hb3 := br.b3
+    have hb4 := br.b4
+    have hb5 := br.b5
+    have hb6 := br.b6
+    have hb7 := br.b7
+    omega
+  rw [ha, hb]
+  simpa [h_nr, h_nb] using
+    natAbs_le_natAbs_sub_pow64_of_le_sub _ _ hb_lt hcmp
+
+private lemma arith_div_signed_remainder_bound_nn_neg
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r)
+    (h_ranges :
+      (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+      ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+      ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+      ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+      ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+      ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+      ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+      ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536)
+    (h_m32 : a.m32 r = 0) (h_nr : a.nr r = 1) (h_nb : a.nb r = 1)
+    (h_d_neg : 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+      (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val)
+    (h_b_neg : 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+      (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val)
+    (chain : ZiskFv.EquivCore.Bridge.Binary.BinaryChainGtStaticOut64
+      w.binary w.r_binary) :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val : ℤ)
+        - (a.nr r).val * (2 : ℤ)^64).natAbs
+      ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val : ℤ)
+        - (a.nb r).val * (2 : ℤ)^64).natAbs := by
+  let br : BinaryInputByteRanges w.binary w.r_binary :=
+    ⟨ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_0,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_1,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_2,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_3,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_4,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_5,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_6,
+     ZiskFv.Airs.Binary.gt_chain_a_byte_lt_256 chain.chain_7,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_0,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_1,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_2,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_3,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_4,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_5,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_6,
+     ZiskFv.Airs.Binary.gt_chain_b_byte_lt_256 chain.chain_7⟩
+  obtain ⟨ha, hb⟩ :=
+    arith_div_signed_remainder_bound_lane_packs w h_ranges h_m32 br
+  have hflag : (ZiskFv.AirsClean.Binary.lookupFlags7Row
+      (ZiskFv.AirsClean.Binary.rowAt w.binary w.r_binary)).val % 2 = 1 := by
+    have hmod := ZiskFv.EquivCore.Bridge.Binary.lookup_flags7_mod_two_eq_carry
+      (ZiskFv.AirsClean.Binary.rowAt w.binary w.r_binary)
+      (by simpa [ZiskFv.AirsClean.Binary.validOfRow,
+        ZiskFv.AirsClean.Binary.rowAt] using w.binary_core)
+    have hcarry := congrArg Fin.val
+      (arith_div_signed_remainder_bound_selector_pins w).1
+    exact hmod.trans (by rw [hcarry]; norm_num)
+  have ha7_ge : 128 ≤ (w.binary.free_in_a_7 w.r_binary).val := by
+    rw [ha] at h_d_neg
+    have ha0 := br.a0; have ha1 := br.a1; have ha2 := br.a2; have ha3 := br.a3
+    have ha4 := br.a4; have ha5 := br.a5; have ha6 := br.a6
+    omega
+  have hb7_ge : 128 ≤ (w.binary.free_in_b_7 w.r_binary).val := by
+    rw [hb] at h_b_neg
+    have hb0 := br.b0; have hb1 := br.b1; have hb2 := br.b2; have hb3 := br.b3
+    have hb4 := br.b4; have hb5 := br.b5; have hb6 := br.b6
+    omega
+  have hsign :
+      (w.binary.free_in_a_7 w.r_binary).val &&& 0x80 =
+        (w.binary.free_in_b_7 w.r_binary).val &&& 0x80 := by
+    rw [byte_and_0x80_eq_of_ge_128 _ br.a7 ha7_ge,
+      byte_and_0x80_eq_of_ge_128 _ br.b7 hb7_ge]
+  have hgt := (ZiskFv.Airs.Binary.binary_gt_chunks_eq_bv_ugt_of_wf
+    (h_byte_0 := chain.chain_0) (h_byte_1 := chain.chain_1)
+    (h_byte_2 := chain.chain_2) (h_byte_3 := chain.chain_3)
+    (h_byte_4 := chain.chain_4) (h_byte_5 := chain.chain_5)
+    (h_byte_6 := chain.chain_6) (h_byte_7 := chain.chain_7)
+    (h_cin0 := chain.cin0_eq) (h_cin1 := chain.cin1_eq)
+    (h_cin2 := chain.cin2_eq) (h_cin3 := chain.cin3_eq)
+    (h_cin4 := chain.cin4_eq) (h_cin5 := chain.cin5_eq)
+    (h_cin6 := chain.cin6_eq) (h_cin7 := chain.cin7_eq)
+    (h_pi0 := chain.pi0_ne) (h_pi1 := chain.pi1_ne) (h_pi2 := chain.pi2_ne)
+    (h_pi3 := chain.pi3_ne) (h_pi4 := chain.pi4_ne)
+    (h_pi5 := chain.pi5_ne) (h_pi6 := chain.pi6_ne) (h_sign7 := hsign)).mp hflag
+  have ha_lt :
+      (w.binary.free_in_a_0 w.r_binary).val
+          + (w.binary.free_in_a_1 w.r_binary).val * 256
+          + (w.binary.free_in_a_2 w.r_binary).val * 65536
+          + (w.binary.free_in_a_3 w.r_binary).val * 16777216
+          + (w.binary.free_in_a_4 w.r_binary).val * 4294967296
+          + (w.binary.free_in_a_5 w.r_binary).val * 1099511627776
+          + (w.binary.free_in_a_6 w.r_binary).val * 281474976710656
+          + (w.binary.free_in_a_7 w.r_binary).val * 72057594037927936
+        < 18446744073709551616 := by
+    have ha0 := br.a0; have ha1 := br.a1; have ha2 := br.a2; have ha3 := br.a3
+    have ha4 := br.a4; have ha5 := br.a5; have ha6 := br.a6; have ha7 := br.a7
+    omega
+  have hb_lt :
+      (w.binary.free_in_b_0 w.r_binary).val
+          + (w.binary.free_in_b_1 w.r_binary).val * 256
+          + (w.binary.free_in_b_2 w.r_binary).val * 65536
+          + (w.binary.free_in_b_3 w.r_binary).val * 16777216
+          + (w.binary.free_in_b_4 w.r_binary).val * 4294967296
+          + (w.binary.free_in_b_5 w.r_binary).val * 1099511627776
+          + (w.binary.free_in_b_6 w.r_binary).val * 281474976710656
+          + (w.binary.free_in_b_7 w.r_binary).val * 72057594037927936
+        < 18446744073709551616 := by
+    have hb0 := br.b0; have hb1 := br.b1; have hb2 := br.b2; have hb3 := br.b3
+    have hb4 := br.b4; have hb5 := br.b5; have hb6 := br.b6; have hb7 := br.b7
+    omega
+  rw [ha, hb]
+  simpa [h_nr, h_nb] using
+    natAbs_sub_pow64_le_natAbs_sub_pow64_of_ge _ _ ha_lt hb_lt (Nat.le_of_lt hgt)
+
+/-- Signed non-W ArithDiv remainder bound obtained from the one physical
+    comparison chain selected by `(nr, nb)`. The result is deliberately weak:
+    `LT_ABS_NP` and `LT_ABS_PN` retain the documented equality false-positive. -/
+lemma arith_div_remainder_bound_signed
+    {a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivSignedRemainderBoundWitness a r)
+    (h_ranges :
+      (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+      ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+      ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+      ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+      ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+      ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+      ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+      ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt a r))
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt a r))
+    (h_op : a.op r = 186) :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val : ℤ)
+        - (a.nr r).val * (2 : ℤ)^64).natAbs
+      ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val : ℤ)
+        - (a.nb r).val * (2 : ℤ)^64).natAbs := by
+  have h_m32 :=
+    (ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_mode_pin
+      a r h_table (Or.inl h_op)).2.1
+  have hpol :=
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_signed_range_polarity_pins
+      a r h_table h_op
+  have h_indexed_copy := h_indexed
+  rcases h_ranges with
+    ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+  rcases h_indexed with
+    ⟨ha1_lookup, hb1_lookup, hc1_lookup, hd1_lookup,
+      ha3_lookup, hb3_lookup, hc3_lookup, hd3_lookup⟩
+  rcases w.selected_chain with h | h | h | h
+  · exact arith_div_signed_remainder_bound_nn w
+      ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+        hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+      h_m32 h.1 h.2.1 h.2.2.2
+  · exact arith_div_signed_remainder_bound_np w
+      ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+        hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+      h_m32 h.1 h.2.1 h.2.2.2
+  · exact arith_div_signed_remainder_bound_pn w
+      ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+        hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+      h_m32 h.1 h.2.1 h.2.2.2
+  · obtain ⟨h_nr, h_nb, _, chain⟩ := h
+    have h_d_sign :=
+      ZiskFv.AirsClean.ArithTableProjections.sign_eq_msb64_of_neg_range_lookup
+        (c₀ := a.d_0 r) (c₁ := a.d_1 r) (c₂ := a.d_2 r) (c₃ := a.d_3 r)
+        h_nr (hpol.2.2.2 h_nr) hd3_lookup
+    have h_b_sign :=
+      ZiskFv.AirsClean.ArithTableProjections.Div.nb_eq_msb64_of_neg_indexed
+        a r h_indexed_copy h_nb (hpol.2.1 h_nb)
+    have h_d_neg : 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (a.d_0 r).val (a.d_1 r).val (a.d_2 r).val (a.d_3 r).val := by
+      rw [h_nr] at h_d_sign
+      split at h_d_sign
+      · assumption
+      · norm_num at h_d_sign
+    have h_b_neg : 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (a.b_0 r).val (a.b_1 r).val (a.b_2 r).val (a.b_3 r).val := by
+      rw [h_nb] at h_b_sign
+      split at h_b_sign
+      · assumption
+      · norm_num at h_b_sign
+    exact arith_div_signed_remainder_bound_nn_neg w
+      ⟨ha0, ha1, ha2, ha3, hb0, hb1, hb2, hb3,
+        hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+      h_m32 h_nr h_nb h_d_neg h_b_neg chain
 
 /-- Project an ArithDiv remainder-bound witness through the matched Binary
     provider row. The conclusion is still expressed in Binary byte lanes;
@@ -1297,7 +1981,7 @@ lemma mul_signed_chain_witnesses
     The signed carry bounds are supplied by the constructible Clean
     `SignedCarryRangeLookupWitness` path and exposed here as
     `ArithDivSignedCarryRangesAt`; no legacy range axiom is used. -/
-lemma div_signed_chain_witnesses
+lemma div_signed_chain_witnesses_raw
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
     (h_chunk_ranges : ArithDivChunkRangesAt v r_a)
@@ -1306,11 +1990,9 @@ lemma div_signed_chain_witnesses
     (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
-      toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    :
     let A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
               + toIntZ (v.a_2 r_a) * (65536 * 65536)
               + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
@@ -1323,7 +2005,8 @@ lemma div_signed_chain_witnesses
     let D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
               + toIntZ (v.d_2 r_a) * (65536 * 65536)
               + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
-    (1 - 2 * toIntZ (v.np r_a)) * A * B
+    (1 - 2 * toIntZ (v.na r_a) - 2 * toIntZ (v.nb r_a)
+        + 4 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) * A * B
         + (1 - 2 * toIntZ (v.nr r_a)) * D
         + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
             + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
@@ -1435,13 +2118,9 @@ lemma div_signed_chain_witnesses
     · rw [h]; decide
     · rw [h]; decide
   have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
-    rw [h_np_xor]
-    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
-    all_goals (rw [h_na, h_nb])
-    · left; decide
-    · right; decide
-    · right; decide
-    · left; decide
+    rcases h_np_bool with h | h
+    · left; rw [h]; decide
+    · right; rw [h]; decide
   have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
     have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
     rcases h_np_int_bool with h | h
@@ -1546,8 +2225,6 @@ lemma div_signed_chain_witnesses
   have h_fab_int := fgl_fab_pin_int fab (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_fab
   have h_nafb_int := fgl_na_fb_pin_int na_fb (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nafb
   have h_nbfa_int := fgl_nb_fa_pin_int nb_fa (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nbfa
-  have h_fab_eq_γ : toIntZ fab = 1 - 2 * toIntZ (v.np r_a) := by
-    rw [h_fab_int]; linarith [h_np_xor]
   rw [h_γ_int, h_δ_int] at hZ31 hZ32 hZ33 hZ34
   have h_agg := div_signed_packed_of_chunks_int
     (toIntZ (v.a_0 r_a)) (toIntZ (v.a_1 r_a)) (toIntZ (v.a_2 r_a)) (toIntZ (v.a_3 r_a))
@@ -1564,9 +2241,67 @@ lemma div_signed_chain_witnesses
     (toIntZ fab) (toIntZ na_fb) (toIntZ nb_fa)
     (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a)) (toIntZ (v.nr r_a))
     hZ31 hZ32 hZ33 hZ34 hZ35 hZ36 hZ37 hZ38
-  rw [h_fab_eq_γ, h_nafb_int, h_nbfa_int] at h_agg
+  rw [h_fab_int, h_nafb_int, h_nbfa_int] at h_agg
   show _ = _
   linear_combination h_agg
+
+/-- Normalize the raw signed-DIV chain when the product sign is the XOR of the
+    quotient and divisor signs. -/
+lemma div_signed_chain_witnesses
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_chunk_ranges : ArithDivChunkRangesAt v r_a)
+    (h_carry_ranges : ArithDivSignedCarryRangesAt v r_a)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 1)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    let A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+              + toIntZ (v.a_2 r_a) * (65536 * 65536)
+              + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
+    let B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+              + toIntZ (v.b_2 r_a) * (65536 * 65536)
+              + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536)
+    let C := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+              + toIntZ (v.c_2 r_a) * (65536 * 65536)
+              + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536)
+    let D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+              + toIntZ (v.d_2 r_a) * (65536 * 65536)
+              + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
+    (1 - 2 * toIntZ (v.np r_a)) * A * B
+        + (1 - 2 * toIntZ (v.nr r_a)) * D
+        + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
+            + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
+        + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2^64
+        + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2^128
+      = (1 - 2 * toIntZ (v.np r_a)) * C := by
+  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+    have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
+      rw [h_np_xor]
+      rcases h_na_bool with hna | hna <;> rcases h_nb_bool with hnb | hnb
+      all_goals (rw [hna, hnb])
+      · left; decide
+      · right; decide
+      · right; decide
+      · left; decide
+    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
+    rcases h_np_int_bool with h | h
+    · left; rw [← h_round_trip, h]; norm_cast
+    · right; rw [← h_round_trip, h]; norm_cast
+  have h_raw := div_signed_chain_witnesses_raw v r_a h_chain h_chunk_ranges
+    h_carry_ranges h_sext h_m32 h_div h_na_bool h_nb_bool h_np_bool h_nr_bool
+  have h_coeff :
+      1 - 2 * toIntZ (v.np r_a)
+        = 1 - 2 * toIntZ (v.na r_a) - 2 * toIntZ (v.nb r_a)
+            + 4 * toIntZ (v.na r_a) * toIntZ (v.nb r_a) := by
+    linarith [h_np_xor]
+  rw [← h_coeff] at h_raw
+  exact h_raw
 
 end SignedChainWitnesses
 
@@ -2440,6 +3175,90 @@ lemma div_w_chain_witnesses
   linear_combination h_agg
 
 end WChainWitnesses
+
+/-! ## Signed DIV remainder-sign derivation -/
+
+/-- The signed remainder and dividend have compatible signs on a signed DIV row.
+
+    The Arith table pins the remainder sign to the dividend sign unless the
+    remainder chunks are all zero.  Indexed Arith-range evidence makes `nr` the
+    actual sign bit of the packed remainder, while chunk ranges keep both packed
+    values below `2^64`.  Thus the two signed integers have the same weak sign,
+    or the remainder is zero. -/
+theorem arith_div_remainder_sign
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_ranges : ArithDivChunkRangesAt v r)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_indexed : ZiskFv.AirsClean.ArithDiv.IndexedRangeSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186)
+    (h_np_bool : v.np r = 0 ∨ v.np r = 1)
+    (h_nr_bool : v.nr r = 0 ∨ v.nr r = 1)
+    (h_nr_pin :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r)
+        ∨ (v.d_0 r).val = 0 ∧ (v.d_1 r).val = 0
+          ∧ (v.d_2 r).val = 0 ∧ (v.d_3 r).val = 0)
+    (r1 : BitVec 64)
+    (h_rs1_value :
+      r1.toInt =
+        (ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.c_0 r).val (v.c_1 r).val (v.c_2 r).val (v.c_3 r).val : ℤ)
+          - (v.np r).val * (2 : ℤ) ^ 64) :
+    0 ≤
+      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r).val (v.d_1 r).val (v.d_2 r).val (v.d_3 r).val : ℤ)
+          - (v.nr r).val * (2 : ℤ) ^ 64) * r1.toInt := by
+  rcases h_ranges with
+    ⟨_ha0, _ha1, _ha2, _ha3, _hb0, _hb1, _hb2, _hb3,
+      hc0, hc1, hc2, hc3, hd0, hd1, hd2, hd3⟩
+  have hpol :=
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_signed_range_polarity_pins
+      v r h_table h_op
+  let C := ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (v.c_0 r).val (v.c_1 r).val (v.c_2 r).val (v.c_3 r).val
+  let D := ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (v.d_0 r).val (v.d_1 r).val (v.d_2 r).val (v.d_3 r).val
+  change r1.toInt = (C : ℤ) - (v.np r).val * (2 : ℤ) ^ 64 at h_rs1_value
+  change 0 ≤ ((D : ℤ) - (v.nr r).val * (2 : ℤ) ^ 64) * r1.toInt
+  have hC : C < 2 ^ 64 :=
+    ZiskFv.PackedBitVec.MulNoWrap.packed4_lt_2_64 hc0 hc1 hc2 hc3
+  have hD : D < 2 ^ 64 :=
+    ZiskFv.PackedBitVec.MulNoWrap.packed4_lt_2_64 hd0 hd1 hd2 hd3
+  have h_nr_msb :
+      (v.nr r).val = if 2 ^ 63 ≤ D then 1 else 0 := by
+    rcases h_nr_bool with hnr | hnr
+    · exact ZiskFv.AirsClean.ArithTableProjections.sign_eq_msb64_of_pos_range_lookup
+        hnr hd0 hd1 hd2 (hpol.2.2.1 hnr) h_indexed.2.2.2.2.2.2.2
+    · exact ZiskFv.AirsClean.ArithTableProjections.sign_eq_msb64_of_neg_range_lookup
+        hnr (hpol.2.2.2 hnr) h_indexed.2.2.2.2.2.2.2
+  rcases h_nr_pin with h_same | h_zero
+  · rcases h_nr_bool with hnr | hnr <;> rcases h_np_bool with hnp | hnp
+    · rw [hnr, h_rs1_value, hnp]
+      simp only [Fin.val_zero, Nat.cast_zero, zero_mul, sub_zero]
+      positivity
+    · rw [hnr, hnp] at h_same
+      norm_num [ZiskFv.PackedBitVec.SignedChunkLift.toIntZ] at h_same
+    · rw [hnr, hnp] at h_same
+      norm_num [ZiskFv.PackedBitVec.SignedChunkLift.toIntZ] at h_same
+    · rw [hnr, h_rs1_value, hnp]
+      simp only [Fin.val_one, Nat.cast_one, one_mul]
+      have hD_nonneg : (0 : ℤ) ≤ D := by positivity
+      have hC_nonneg : (0 : ℤ) ≤ C := by positivity
+      norm_num at hD hC ⊢
+      nlinarith
+  · obtain ⟨hd0z, hd1z, hd2z, hd3z⟩ := h_zero
+    have hDz : D = 0 := by
+      simp [D, hd0z, hd1z, hd2z, hd3z,
+        ZiskFv.PackedBitVec.MulNoWrap.packed4]
+    have hnr : v.nr r = 0 := by
+      rcases h_nr_bool with hnr | hnr
+      · exact hnr
+      · rw [hnr, hDz] at h_nr_msb
+        norm_num at h_nr_msb
+    rw [hDz, hnr]
+    norm_num
 
 /-! ## Non-vacuity probe — the faithful M-ext carry bound accepts real carries
 

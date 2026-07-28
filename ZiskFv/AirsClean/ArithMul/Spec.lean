@@ -235,4 +235,59 @@ def FullSpec (row : ArithMulRow FGL) : Prop :=
   Spec row ∧ ArithTableSpec row ∧ C46Spec row ∧ ChunkRangeSpec row ∧ CarryRangeSpec row
     ∧ IndexedRangeSpec row
 
+@[reducible] def DivModeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.main_div * (row.flags.main_div - 1) = 0
+  ∧ row.flags.main_mul * (row.flags.main_mul - 1) = 0
+  ∧ row.flags.main_mul * row.flags.main_div = 0
+  ∧ row.flags.signed * (1 - row.flags.signed) = 0
+  ∧ row.flags.div_by_zero * (1 - row.flags.div_by_zero) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.div_overflow) = 0
+  ∧ row.flags.div * (1 - row.flags.div) = 0
+  ∧ row.flags.m32 * (1 - row.flags.m32) = 0
+  ∧ row.flags.na * (1 - row.flags.na) = 0
+  ∧ row.flags.nb * (1 - row.flags.nb) = 0
+  ∧ row.flags.nr * (1 - row.flags.nr) = 0
+  ∧ row.flags.np * (1 - row.flags.np) = 0
+  ∧ row.flags.sext * (1 - row.flags.sext) = 0
+
+@[reducible] def DivBoundarySpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.div_by_zero * row.chunks.b_0 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_1 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_2 = 0
+  ∧ row.flags.div_by_zero * row.chunks.b_3 = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_0 - 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_1 - 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_2 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_by_zero * (row.chunks.a_3 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_0 - 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_1 - 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_2 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * (row.chunks.b_3 - (1 - row.flags.m32) * 65535) = 0
+  ∧ row.flags.div_overflow * row.chunks.c_0 = 0
+  ∧ row.flags.div_overflow * (row.chunks.c_1 - row.flags.m32 * 32768) = 0
+  ∧ row.flags.div_overflow * row.chunks.c_2 = 0
+  ∧ row.flags.div_overflow * (row.chunks.c_3 - (1 - row.flags.m32) * 32768) = 0
+
+@[reducible] def DivInverseSumSpec (row : ArithMulRow FGL) : Prop :=
+  (row.flags.div - row.flags.div_by_zero) *
+    (1 - row.carries.inv_sum_all_bs *
+      (((row.chunks.b_0 + row.chunks.b_1) + row.chunks.b_2) + row.chunks.b_3)) = 0
+
+@[reducible] def DivScopeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.div_by_zero * (1 - row.flags.div) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.div) = 0
+  ∧ row.flags.div_overflow * (1 - row.flags.signed) = 0
+  ∧ row.flags.div_overflow * row.flags.div_by_zero = 0
+  ∧ row.flags.div_by_zero * row.flags.div_overflow = 0
+
+@[reducible] def DivWModeSpec (row : ArithMulRow FGL) : Prop :=
+  row.flags.m32 *
+    (row.flags.div * (row.chunks.c_2 + row.chunks.c_3 * 65536) +
+      (1 - row.flags.div) * (row.chunks.a_2 + row.chunks.a_3 * 65536)) = 0
+  ∧ row.flags.m32 * (row.chunks.b_2 + row.chunks.b_3 * 65536) = 0
+
+@[reducible] def SharedDivBlockSpec (row : ArithMulRow FGL) : Prop :=
+  DivModeSpec row ∧ DivBoundarySpec row ∧ DivInverseSumSpec row ∧ DivScopeSpec row
+    ∧ DivWModeSpec row
+
 end ZiskFv.AirsClean.ArithMul

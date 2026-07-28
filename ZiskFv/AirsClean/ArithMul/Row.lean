@@ -73,6 +73,9 @@ structure ArithMulCarries (F : Type) where
   fab : F
   na_fb : F
   nb_fa : F
+  /-- Arith AIR stage-1 column 38, used by generated
+      `Extraction.Arith.constraint_25_every_row` (`arith/pil/arith.pil:92`). -/
+  inv_sum_all_bs : F
 deriving ProvableStruct
 
 structure ArithMulRow (F : Type) where

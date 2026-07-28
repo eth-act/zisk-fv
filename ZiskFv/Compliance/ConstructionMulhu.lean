@@ -17,7 +17,7 @@ Unsigned high-half RV64M MULHU (`OP_MULUH = 177`), mirroring the MULW
 construction (`ConstructionMulw.lean`).  The Arith provider witnesses
 (ArithTable membership, chunk ranges, signed-carry ranges, c46, carry-chain)
 are **DERIVED FROM BALANCE** via the provider component's lookup-aware
-`componentWithArithTable.Spec = FullSpec`, not carried as caller binders.
+`componentComplete.Spec = FullSpec`, not carried as caller binders.
 
 ## The carry-range subtlety (vs MULW)
 
@@ -50,7 +50,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.AirsClean.FullEnsemble
-open ZiskFv.AirsClean.ArithMul (componentWithArithTable primaryOpBusMessage rowAt)
+open ZiskFv.AirsClean.ArithMul (componentComplete primaryOpBusMessage rowAt)
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
@@ -463,7 +463,7 @@ open ZiskFv.EquivCore.Promises in
 /-- **F4 extraction bridge for `equiv_MULHU`.**  Mirror of
     `equiv_MULW_of_fullSpec`: the four lookup-aware Arith witness records are
     replaced by the single `FullSpec (rowAt v r_a)` hypothesis, which is exactly
-    what the lookup-aware ArithMul provider's `componentWithArithTable.Spec`
+    what the lookup-aware ArithMul provider's `componentComplete.Spec`
     yields.  A P4 construction hands the balance-derived `FullSpec` here directly.
 
     Unlike MULW (which routes through `EquivCore.MulW.equiv_MULW`), MULHU's
@@ -613,7 +613,7 @@ lemma equiv_MULHU_of_fullSpec_claimed_dead
 
 /-- The balance-selected Arith-Mul provider row at trace index `i` for a MULHU
     operation, as a concrete `ArithMulRow`.  It is the
-    `componentWithArithTable.rowInput` of the provider row chosen by the MULHU
+    `componentComplete.rowInput` of the provider row chosen by the MULHU
     keep-arithMul balance wrapper
     `main_request_mulhu_provided`.
     Mirrors `mulwArow`. -/
@@ -626,10 +626,10 @@ noncomputable def mulhuArow
     ZiskFv.AirsClean.ArithMul.ArithMulRow FGL :=
   let h := main_request_mulhu_provided
     trace i h_main_active h_main_op
-  componentWithArithTable.rowInput (h.choose.environment h.choose_spec.2.choose)
+  componentComplete.rowInput (h.choose.environment h.choose_spec.2.choose)
 
 /-- `FullSpec` of the balance-selected MULHU provider row, derived from the
-    provider component's proven soundness (`componentWithArithTable.Spec`). -/
+    provider component's proven soundness (`componentComplete.Spec`). -/
 theorem mulhuArow_fullSpec_row
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (h_main_active :
@@ -747,7 +747,7 @@ theorem mulhuArow_match
     The Arith provider witnesses (ArithTable membership, chunk ranges, signed
     carry ranges, c46, carry-chain) are DERIVED inside the body from
     `trace.channels_balanced` / `trace.spec_holds` via the provider's lookup-aware
-    `componentWithArithTable.Spec = FullSpec`, NOT supplied as binders. -/
+    `componentComplete.Spec = FullSpec`, NOT supplied as binders. -/
 theorem construction_mulhu_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)

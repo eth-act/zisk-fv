@@ -12,6 +12,7 @@ import ZiskFv.Compliance.ConstructionAuipc
 import ZiskFv.Compliance.ConstructionMulw
 import ZiskFv.Compliance.ConstructionMulhu
 import ZiskFv.Compliance.ConstructionDivu
+import ZiskFv.Compliance.ConstructionDiv
 import ZiskFv.Compliance.ConstructionDivuw
 import ZiskFv.Compliance.ConstructionRemu
 import ZiskFv.Compliance.ConstructionRemuw
@@ -1093,13 +1094,6 @@ structure Decode_div (trace : AcceptedZiskTrace numInstructions)
 structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_div trace i) : Type where
   div_input : PureSpec.DivInput
-  v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
-  r_a : ℕ
-  h_match_primary :
-    ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main
-        (mainOfTable trace.program trace.mainTable) i.val)
-      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a)
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `divEnvOf`.
   promises : RTypePromisesNoNextPC
       (binding i) div_input.r1_val div_input.r2_val div_input.rd div_input.PC
@@ -1107,54 +1101,32 @@ structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       (busSub trace i (Pilot.execRowOf trace i)).e0
       (busSub trace i (Pilot.execRowOf trace i)).e1
       (busSub trace i (Pilot.execRowOf trace i)).e2
-  h_row_constraints :
-    ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-  h_boundary :
-    ZiskFv.Airs.ArithDiv.div_boundary_constraints v r_a
-  arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a
-  arith_chunk_ranges : ZiskFv.Compliance.ArithDivChunkRangeWitness v r_a
-  arith_carry_ranges : ZiskFv.Compliance.ArithDivSignedCarryRangeWitness v r_a
-  h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1
-  h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1
-  h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1
-  h_np_xor :
-    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
-      = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
-          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
-          - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
-              * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
-  h_nr_pin :
-    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
-        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
-      ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_0 r_a)
-          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_1 r_a) * 65536
-          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_2 r_a) * (65536 * 65536)
-          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_3 r_a)
-              * (65536 * 65536 * 65536)) * 0 = 0
-        ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-        ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
   h_rs1_value :
-    div_input.r1_val.toInt
-      = (ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
-          - (v.np r_a).val * (2:ℤ)^64
+    ∀ (h_main_active :
+        (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (h_main_op :
+        (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV),
+      div_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            ((divV trace binding i h_main_active h_main_op).c_0 0).val
+            ((divV trace binding i h_main_active h_main_op).c_1 0).val
+            ((divV trace binding i h_main_active h_main_op).c_2 0).val
+            ((divV trace binding i h_main_active h_main_op).c_3 0).val : ℤ)
+            - ((divV trace binding i h_main_active h_main_op).np 0).val
+                * (2 : ℤ) ^ 64
   h_rs2_value :
-    div_input.r2_val.toInt
-      = (ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
-          - (v.nb r_a).val * (2:ℤ)^64
-  h_r_le :
-    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-        (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-      - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs
-  h_r_sign :
-    0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-          - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt
-  h_not_forge :
-    ¬ (div_input.r2_val.toInt ≠ 0
-        ∧ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
-          = div_input.r2_val.toInt.natAbs)
+    ∀ (h_main_active :
+        (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+      (h_main_op :
+        (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV),
+      div_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            ((divV trace binding i h_main_active h_main_op).b_0 0).val
+            ((divV trace binding i h_main_active h_main_op).b_1 0).val
+            ((divV trace binding i h_main_active h_main_op).b_2 0).val
+            ((divV trace binding i h_main_active h_main_op).b_3 0).val : ℤ)
+            - ((divV trace binding i h_main_active h_main_op).nb 0).val
+                * (2 : ℤ) ^ 64
   -- #100 next-PC transition inputs (consumed by `divEnvOf`); see `Inputs_mul`.
   -- These are next-PC plumbing only and leave the DivRemForge value gate untouched.
   h_pc_bridge :

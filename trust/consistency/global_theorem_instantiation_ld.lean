@@ -461,6 +461,7 @@ private theorem ldNoKnownDefect :
     simp [ZiskFv.Compliance.Defects.Blocks,
       ZiskFv.Compliance.Defects.MaliciousSignedMulWitnessShape,
       ZiskFv.Compliance.Defects.ArithDivDynamicWitnessShape,
+      ZiskFv.Compliance.Defects.ArithDivQuotientSignShape,
       ZiskFv.Compliance.Defects.FenceKnownGoodShape, ldEnv] at h_block
 
 theorem global_theorem_instantiation_ld :

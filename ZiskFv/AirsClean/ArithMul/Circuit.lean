@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithMul.Constraints
+import ZiskFv.AirsClean.ArithCompleteConstraints
 import ZiskFv.AirsClean.ArithMul.Soundness
 import ZiskFv.Airs.Arith.CarryChainCompleteness
 import Clean.Air.FlatComponent
@@ -158,7 +159,8 @@ def arithMulRowOf (a b : ℕ) (free : ArithMulFreeCols) : ArithMulRow FGL :=
           (arithMulE3 a b) (arithMulE4 a b) (arithMulE5 a b) (arithMulE6 a b)
         fab := 1
         na_fb := 0
-        nb_fa := 0 } }
+        nb_fa := 0
+        inv_sum_all_bs := 0 } }
 
 set_option maxHeartbeats 4000000 in
 /-- ArithMul as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
@@ -213,7 +215,7 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
         h_div_overflow h_main_div h_main_mul h_signed h_range_ab h_range_cd h_op h_bus_res1
         h_multiplicity
       injection h_carries with h_carry_0 h_carry_1 h_carry_2 h_carry_3 h_carry_4
-        h_carry_5 h_carry_6 h_fab h_na_fb h_nb_fa
+        h_carry_5 h_carry_6 h_fab h_na_fb h_nb_fa h_inv_sum_all_bs
       subst_vars
       simp only [h_a_0, h_a_1, h_a_2, h_a_3, h_b_0, h_b_1, h_b_2, h_b_3,
         h_c_0, h_c_1, h_c_2, h_c_3, h_d_0, h_d_1, h_d_2, h_d_3, h_na, h_nb,
@@ -345,7 +347,7 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
         · -- CarryRangeSpec: seven signed-carry range lookups (arith.pil:17,280).
           obtain ⟨_, _, h_carries⟩ := h_input
           obtain ⟨h_icy0, h_icy1, h_icy2, h_icy3, h_icy4, h_icy5, h_icy6,
-                  _h_fab, _h_na_fb, _h_nb_fa⟩ := h_carries
+                  _h_fab, _h_na_fb, _h_nb_fa, _h_inv_sum_all_bs⟩ := h_carries
           exact ⟨by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
                     Table.toRaw, signedCarryRangeTable, h_icy0] using h_cy0,
                  by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
@@ -589,11 +591,103 @@ theorem spec_via_component (row : ArithMulRow FGL)
           carry_2 := .const row.carries.carry_2, carry_3 := .const row.carries.carry_3,
           carry_4 := .const row.carries.carry_4, carry_5 := .const row.carries.carry_5,
           carry_6 := .const row.carries.carry_6, fab := .const row.carries.fab,
-          na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa } }
+          na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa,
+          inv_sum_all_bs := .const row.carries.inv_sum_all_bs } }
     row ?_ ?_).1
   · simp [circuit_norm]
   · simp only [circuit_norm]
     exact ⟨h_c6, h_c7, h_c8, h_c31, h_c32, h_c33, h_c34, h_c35,
       h_c36, h_c37, h_c38⟩
+
+end ZiskFv.AirsClean.ArithMul
+
+namespace ZiskFv.AirsClean.ArithMul
+
+open Goldilocks
+open Air.Flat
+open ZiskFv.Channels.OperationBus (OpBusChannel)
+
+@[reducible] def arithMulCompleteElaborated :
+    ElaboratedCircuit FGL ArithMulRow unit where
+  name := "ArithComplete"
+  main := sharedMainCompleteWithRemainderBound
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel
+      [ OpBusChannel.pushed (primaryOpBusMessageExpr row)
+      , OpBusChannel.emitted (-(row.flags.div * (1 - row.flags.div_by_zero)))
+          (remainderBoundOpBusMessageExpr row) ]
+  channelsLawful := by
+    simp only [circuit_norm, sharedMainCompleteWithRemainderBound, sharedMainComplete,
+      mainWithArithTable, main, primaryOpBusMessageExpr, remainderBoundOpBusMessageExpr,
+      OpBusChannel]
+
+/-- Shared Arith provider with the complete audited generated local constraints. -/
+def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit :=
+  { arithMulCompleteElaborated with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => FullSpec row ∧ SharedDivBlockSpec row
+    ProverAssumptions := fun _ _ _ => False
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      intro offset env input_var input h_input _h_assumptions h_holds
+      have h_complete :
+          ConstraintsHold.Soundness env
+            ((sharedMainComplete input_var).operations offset) := by
+        change Operations.forAllNoOffset _
+          (((sharedMainComplete input_var).operations offset) ++ _) at h_holds
+        rw [Operations.forAllNoOffset_append] at h_holds
+        exact h_holds.1
+      have h_base := sharedMainComplete_base_soundness offset env input_var h_complete
+      have h_div := sharedDivBlockSpec_of_soundness offset env input_var h_complete
+      have h_div_input : SharedDivBlockSpec input := by
+        simpa [h_input] using h_div
+      have h_old := circuitWithArithTable.soundness offset env input_var input
+        h_input trivial h_base
+      exact ⟨⟨h_old.1, h_div_input⟩, by
+        unfold Operations.Requirements at h_old ⊢
+        simp only [circuitWithArithTable, arithMulWithArithTableElaborated,
+          sharedMainCompleteWithRemainderBound, sharedMainComplete,
+          mainWithArithTable, main, circuit_norm] at h_old ⊢
+        exact ⟨h_old.2, fun _ => trivial⟩⟩
+    completeness := by
+      circuit_proof_start_core
+      exact False.elim h_assumptions }
+
+def componentComplete : Air.Flat.Component FGL := { circuit := circuitComplete }
+
+theorem componentComplete_channels :
+    componentComplete.circuit.channels = [OpBusChannel.toRaw] := by
+  rfl
+
+theorem componentComplete_spec (env : Environment FGL) :
+    componentComplete.Spec env =
+      (FullSpec (componentComplete.rowInput env)
+        ∧ SharedDivBlockSpec (componentComplete.rowInput env)) := by
+  rfl
+
+set_option maxHeartbeats 1000000 in
+theorem componentComplete_interactionsWith_opBus :
+    componentComplete.operations.interactionsWith OpBusChannel.toRaw =
+      [ ((OpBusChannel.pushed
+          (primaryOpBusMessageExpr componentComplete.rowInputVar)).toRaw)
+      , ((OpBusChannel.emitted
+          (-(componentComplete.rowInputVar.flags.div *
+            (1 - componentComplete.rowInputVar.flags.div_by_zero)))
+          (remainderBoundOpBusMessageExpr componentComplete.rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [ ((OpBusChannel.pushed
+          (primaryOpBusMessageExpr componentComplete.rowInputVar)).toRaw)
+      , ((OpBusChannel.emitted
+          (-(componentComplete.rowInputVar.flags.div *
+            (1 - componentComplete.rowInputVar.flags.div_by_zero)))
+          (remainderBoundOpBusMessageExpr componentComplete.rowInputVar)).toRaw) ]⟩ ∈
+    componentComplete.exposedChannels
+  simp only [componentComplete, circuitComplete, arithMulCompleteElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil,
+    primaryOpBusMessageExpr, remainderBoundOpBusMessageExpr]
 
 end ZiskFv.AirsClean.ArithMul
