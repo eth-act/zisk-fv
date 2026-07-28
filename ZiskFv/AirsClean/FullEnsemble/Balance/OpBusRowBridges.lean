@@ -91,18 +91,23 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_interaction
       exact ⟨providerRow, h_providerRow,
         h_providerSpecs providerRow h_providerRow, h_arithMul, h_providerEval⟩
     · rw [h_providerEval] at h_nonpull h_nonzero
-      have h_rowConstraints :=
-        h_constraints providerTable h_providerTable providerRow h_providerRow
-      rw [h_arithMul] at h_rowConstraints
-      have h_rowOperations :=
-        (Component.constraintsHold_iff
-          (component := arithMulProviderComponent)
-          (providerTable.environment providerRow)).mp h_rowConstraints
-      have h_divBlock :=
-        ZiskFv.AirsClean.ArithMul.sharedDivBlockSpec_of_constraints
-          arithMulProviderComponent.rowOffset
-          (providerTable.environment providerRow)
-          arithMulProviderComponent.rowInputVar h_rowOperations
+      have h_divBlock' :=
+        arithMul_sharedDivBlockSpec_of_component_spec h_arithMul
+          (h_providerSpecs providerRow h_providerRow)
+      have h_row_eq :
+          eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar =
+            arithMulProviderComponent.rowInput
+              (providerTable.environment providerRow) := by
+        simpa only [Component.rowInput, Component.rowInputVar] using
+          (eval_varFromOffset_valueFromOffset arithMulProviderComponent.Input 0
+            (providerTable.environment providerRow))
+      have h_divBlock :
+          ZiskFv.AirsClean.ArithMul.SharedDivBlockSpec
+            (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar) := by
+        rw [h_row_eq]
+        exact h_divBlock'
       have h_div_bool := h_divBlock.1.2.2.2.2.2.2.1
       have h_div_zero_bool := h_divBlock.1.2.2.2.2.1
       have h_div :
@@ -382,18 +387,24 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
     · left
       exact ⟨providerRow, h_providerRow,
         h_providerSpecs providerRow h_providerRow, h_arithMul, h_providerEval⟩
-    · have h_rowConstraints :=
-        h_constraints providerTable h_providerTable providerRow h_providerRow
-      rw [h_arithMul] at h_rowConstraints
-      have h_rowOperations :=
-        (Component.constraintsHold_iff
-          (component := arithMulProviderComponent)
-          (providerTable.environment providerRow)).mp h_rowConstraints
-      have h_divBlock :=
-        ZiskFv.AirsClean.ArithMul.sharedDivBlockSpec_of_constraints
-          arithMulProviderComponent.rowOffset
-          (providerTable.environment providerRow)
-          arithMulProviderComponent.rowInputVar h_rowOperations
+    ·
+      have h_divBlock' :=
+        arithMul_sharedDivBlockSpec_of_component_spec h_arithMul
+          (h_providerSpecs providerRow h_providerRow)
+      have h_row_eq :
+          eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar =
+            arithMulProviderComponent.rowInput
+              (providerTable.environment providerRow) := by
+        simpa only [Component.rowInput, Component.rowInputVar] using
+          (eval_varFromOffset_valueFromOffset arithMulProviderComponent.Input 0
+            (providerTable.environment providerRow))
+      have h_divBlock :
+          ZiskFv.AirsClean.ArithMul.SharedDivBlockSpec
+            (eval (providerTable.environment providerRow)
+              arithMulProviderComponent.rowInputVar) := by
+        rw [h_row_eq]
+        exact h_divBlock'
       have h_div_bool := h_divBlock.1.2.2.2.2.2.2.1
       have h_div_zero_bool := h_divBlock.1.2.2.2.2.1
       have h_div :

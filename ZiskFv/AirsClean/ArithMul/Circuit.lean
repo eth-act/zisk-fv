@@ -628,7 +628,7 @@ open ZiskFv.Channels.OperationBus (OpBusChannel)
 def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit :=
   { arithMulCompleteElaborated with
     Assumptions := fun _ _ => True
-    Spec := fun row _ _ => FullSpec row
+    Spec := fun row _ _ => FullSpec row ∧ SharedDivBlockSpec row
     ProverAssumptions := fun _ _ _ => False
     ProverSpec := fun _ _ _ => True
     soundness := by
@@ -641,9 +641,12 @@ def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit :=
         rw [Operations.forAllNoOffset_append] at h_holds
         exact h_holds.1
       have h_base := sharedMainComplete_base_soundness offset env input_var h_complete
+      have h_div := sharedDivBlockSpec_of_soundness offset env input_var h_complete
+      have h_div_input : SharedDivBlockSpec input := by
+        simpa [h_input] using h_div
       have h_old := circuitWithArithTable.soundness offset env input_var input
         h_input trivial h_base
-      exact ⟨h_old.1, by
+      exact ⟨⟨h_old.1, h_div_input⟩, by
         unfold Operations.Requirements at h_old ⊢
         simp only [circuitWithArithTable, arithMulWithArithTableElaborated,
           sharedMainCompleteWithRemainderBound, sharedMainComplete,
@@ -660,7 +663,9 @@ theorem componentComplete_channels :
   rfl
 
 theorem componentComplete_spec (env : Environment FGL) :
-    componentComplete.Spec env = FullSpec (componentComplete.rowInput env) := by
+    componentComplete.Spec env =
+      (FullSpec (componentComplete.rowInput env)
+        ∧ SharedDivBlockSpec (componentComplete.rowInput env)) := by
   rfl
 
 set_option maxHeartbeats 1000000 in

@@ -512,6 +512,51 @@ theorem divArow_match_row
   set H := main_request_div_provided trace i h_main_active h_main_op with hH
   exact H.choose_spec.2.choose_spec.2.2.2
 
+/-- Common signed-DIV mode pins at the selected provider row. -/
+theorem divArow_mode_pins
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    (divArow trace binding i h_main_active h_main_op).flags.sext = 0
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.m32 = 0
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.div = 1
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.main_div = 1
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.main_mul = 0
+      ∧ (divArow trace binding i h_main_active h_main_op).flags.signed = 1 := by
+  have h_table := (divArow_fullSpec_row trace binding i h_main_active h_main_op).2.1
+  have h_op :
+      (divArow trace binding i h_main_active h_main_op).flags.op = 186 := by
+    have h_match := divArow_match_row trace binding i h_main_active h_main_op
+    have h_op_match := h_match.2.1
+    rw [ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_op,
+      show (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val).op
+        = (mainOfTable trace.program trace.mainTable).op i.val from rfl,
+      h_main_op] at h_op_match
+    simpa [ZiskFv.Trusted.OP_DIV] using h_op_match.symm
+  exact ZiskFv.AirsClean.ArithTableProjections.Mul.div_mode_pins_of_row
+    (divArow trace binding i h_main_active h_main_op) h_table h_op
+
+/-- The selected signed-DIV provider row viewed through the legacy ArithDiv
+    primary message. -/
+theorem divArow_match
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    matches_entry
+      (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
+      (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+        (vOfDivuRow (divArow trace binding i h_main_active h_main_op)) 0) := by
+  obtain ⟨_, _, h_div, h_main_div, h_main_mul, _⟩ :=
+    divArow_mode_pins trace binding i h_main_active h_main_op
+  exact match_opBus_row_ArithDiv_vOfDivuRow h_div h_main_div h_main_mul
+    (divArow_match_row trace binding i h_main_active h_main_op)
+
 /-- `FullSpec` of the balance-selected DIVU provider row, derived from the
     provider component's proven soundness (`componentComplete.Spec`). -/
 theorem divuArow_fullSpec_row

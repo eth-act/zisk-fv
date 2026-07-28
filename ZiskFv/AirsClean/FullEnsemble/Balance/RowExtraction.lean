@@ -372,7 +372,19 @@ theorem arithMul_fullSpec_of_component_spec
         (table.environment row)) := by
   rw [h_component] at h_spec
   simpa [arithMulProviderComponent,
-    ZiskFv.AirsClean.ArithMul.componentComplete_spec] using h_spec
+    ZiskFv.AirsClean.ArithMul.componentComplete_spec] using h_spec.1
+
+/-- Project the completed DIV block from the same physical Arith component
+    specification. -/
+theorem arithMul_sharedDivBlockSpec_of_component_spec
+    {table : Table FGL} {row : Array FGL}
+    (h_component : table.component = arithMulProviderComponent)
+    (h_spec : table.component.Spec (table.environment row)) :
+    ZiskFv.AirsClean.ArithMul.SharedDivBlockSpec
+      (arithMulProviderComponent.rowInput (table.environment row)) := by
+  rw [h_component] at h_spec
+  simpa [arithMulProviderComponent,
+    ZiskFv.AirsClean.ArithMul.componentComplete_spec] using h_spec.2
 
 /-- A lookup-aware ArithMul provider branch can only match Main rows whose
     operation-bus opcode lies in the Arith ROM opcode range. -/

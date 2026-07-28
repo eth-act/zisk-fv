@@ -13,6 +13,8 @@ namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks Circuit
 
+attribute [local simp] Operations.shallowConstraints
+
 @[circuit_norm] def sharedMainComplete (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   mainWithArithTable row
   -- `constraint_0_every_row`--`constraint_5_every_row`;
@@ -103,10 +105,12 @@ theorem sharedMainComplete_base_soundness
 set_option maxHeartbeats 1600000 in
 /-- Project exactly the appended generated Div block from the live completed
 constraint list. -/
-theorem sharedDivBlockSpec_of_constraints
+private theorem sharedDivBlockSpec_of_shallow_constraints
     (offset : ℕ) (env : Environment FGL) (row : Var ArithMulRow FGL)
-    (h : Operations.ConstraintsHold env
-      ((sharedMainComplete row).operations offset)) :
+    (P : Prop)
+    (h :
+      (∀ e ∈ ((sharedMainComplete row).operations offset).shallowConstraints,
+        env e = 0) ∧ P) :
     SharedDivBlockSpec (eval env row) := by
   simp only [sharedMainComplete, mainWithArithTable, main, circuit_norm] at h
   cases row with
@@ -170,5 +174,48 @@ theorem sharedDivBlockSpec_of_constraints
     · simpa [Expression.eval, sub_eq_add_neg] using
         h.1 (m32 * (div * (c2 + c3 * 65536) + (1 - div) * (a2 + a3 * 65536))) (by simp)
     · simpa [Expression.eval] using h.1 (m32 * (b2 + b3 * 65536)) (by simp)
+
+private theorem shallowConstraints_subset_constraints
+    (ops : Operations FGL) :
+    ∀ e ∈ ops.shallowConstraints, e ∈ ops.constraints := by
+  induction ops with
+  | nil => simp [Operations.shallowConstraints]
+  | cons op ops ih =>
+      intro e he
+      cases op with
+      | assert a =>
+          simp only [Operations.shallowConstraints, List.mem_cons] at he
+          simp only [Operations.constraints, List.mem_cons]
+          rcases he with rfl | he
+          · exact Or.inl rfl
+          · exact Or.inr (ih e he)
+      | witness _ _ | lookup _ | interact _ =>
+          exact ih e he
+      | subcircuit _ =>
+          simp only [Operations.constraints, List.mem_append]
+          exact Or.inr (ih e he)
+
+/-- Soundness-form projection used while proving the completed component's
+    public `Spec`. -/
+theorem sharedDivBlockSpec_of_soundness
+    (offset : ℕ) (env : Environment FGL) (row : Var ArithMulRow FGL)
+    (h : ConstraintsHold.Soundness env
+      ((sharedMainComplete row).operations offset)) :
+    SharedDivBlockSpec (eval env row) := by
+  have h_shallow :=
+    (constraintsHold_soundness_iff_forall_mem.mp h).1
+  exact sharedDivBlockSpec_of_shallow_constraints offset env row True
+    ⟨h_shallow, trivial⟩
+
+/-- Flat-constraints compatibility projection. -/
+theorem sharedDivBlockSpec_of_constraints
+    (offset : ℕ) (env : Environment FGL) (row : Var ArithMulRow FGL)
+    (h : Operations.ConstraintsHold env
+      ((sharedMainComplete row).operations offset)) :
+    SharedDivBlockSpec (eval env row) := by
+  apply sharedDivBlockSpec_of_shallow_constraints offset env row True
+  refine ⟨?_, trivial⟩
+  intro e he
+  exact h.1 e (shallowConstraints_subset_constraints _ e he)
 
 end ZiskFv.AirsClean.ArithMul
