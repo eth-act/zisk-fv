@@ -282,17 +282,27 @@ def divSpinDivRow : MainRowWithRom FGL :=
 def divSpinJalProgramRow : ZiskRomMessage FGL :=
   { ZiskFv.Compliance.AddSpinWitness.addSpinJalProgramRow with line := 12 }
 
-/-- The spin JAL row. It sets none of `b_src_mem/imm/ind/reg`, so Main's source-C
-copy (`main.pil:386`, carried on `Component.transition` since #280) forces its
-`b` lanes to equal the PREDECESSOR row's `c` lanes. At `step = 3` the
-predecessor is the DIV row, whose `c` is the quotient `6 / 2 = 3`; every later
-spin row follows a JAL, whose own `c` is `0`. Same shape as
-`SdLdSpinWitness.sdLdJalRow`, which copies its predecessor LD's result. -/
+/-- Free columns for the spin JAL row.
+
+    The row sets none of `b_src_mem/imm/ind/reg`, so Main's source-C copy
+    (`main.pil:386`, carried on `Component.transition` since #280) forces its
+    `b` lanes to equal the PREDECESSOR row's `c` lanes. At `step = 3` the
+    predecessor is the DIV row, whose `c` is the quotient `6 / 2 = 3`; every
+    later spin row follows a JAL, whose own `c` is `0`. Same shape as
+    `SdLdSpinWitness.sdLdJalRow`, which copies its predecessor LD's result.
+
+    Declared here rather than record-updating `AddSpinWitness.addSpinJalFreeCols`
+    at each use site, so the `b_0` choice has one home and DivSpin does not
+    depend on AddSpin's free-column choices. -/
+@[reducible]
+def divSpinJalFreeCols (step : FGL) : MainRomFreeCols :=
+  { ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols step with
+    b_0 := if step = 3 then 3 else 0 }
+
 def divSpinJalRow (step : FGL) : MainRowWithRom FGL :=
   mainRomRowOf divSpinJalProgramRow
     ZiskFv.Compliance.AddSpinWitness.addSpinJalBits MainRomExecKind.internalFlag
-    { ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols step with
-      b_0 := if step = 3 then 3 else 0 }
+    (divSpinJalFreeCols step)
 
 def divSpinProgram : Program 4
   | ⟨0, _⟩ => divSpinAddiX1ProgramRow
