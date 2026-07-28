@@ -29,6 +29,19 @@ equal:
 dropped `SRC_IMM` gate, or a sign error fails that proof instead of passing
 silently.
 
+The strength of that claim depends entirely on the two forms being *different
+expressions*, so this is stated precisely rather than assumed.  An earlier draft
+wrote five slots (`line`, `a_imm1`, `b_imm1`, `ind_width`, `op`) identically in
+both, or via a shared helper; on those the equality was `rfl` and the
+cross-check had NO power — a misreading of `rom.rs` transcribed into both forms
+would have proved anyway.  Adversarial review caught it: dropping the Fcall
+remap from the shared `romOpField` left the agreement theorem still provable.
+`romRowSpec` now spells the `SRC_IMM` gate multiplicatively and the Fcall remap
+inline, so those slots are genuinely cross-checked; the mutation that previously
+survived is now rejected by this theorem.  `line` and `ind_width` remain
+identical plain casts with no branch structure to disagree about, so nothing is
+claimed for them.
+
 WHAT THE AGREEMENT THEOREM DOES *NOT* SAY.  It is a statement about
 serialization only.  It does not say that any committed `trace.program` is the
 image of a raw program, it does not run the Aeneas-extracted lowerer, and it
@@ -356,16 +369,33 @@ def romRowOf (e : ZiskInstExtract) : ZiskRomMessage FGL where
   flags := ((romFlagsNat e : ℕ) : FGL)                             -- rom.rs:259
 
 /-- The field-shaped form of the same row.  Signed slots are the ring image of
-    the slot's signed value; `flags` is the in-tree `packFlags`.  Written
-    without reference to the `if`-branches and bit positions of `romRowOf`. -/
+    the slot's signed value; `flags` is the in-tree `packFlags`.
+
+    Every slot with branch structure is written in a DIFFERENT shape from
+    `romRowOf` — signed slots via `BitVec.toInt` rather than the `if v >= 0`
+    split, the `SRC_IMM` gates multiplicatively rather than as an `if`, and the
+    Fcall remap inline rather than through the shared `romOpField`.  That is
+    load-bearing, not stylistic: a slot written identically in both forms makes
+    its half of `romRowOf_eq_romRowSpec` hold by `rfl`, which cross-checks
+    nothing.  `line` and `ind_width` are plain casts with no branch structure,
+    so they are identical and nothing is claimed for them. -/
 def romRowSpec (e : ZiskInstExtract) : ZiskRomMessage FGL where
   line := ((e.paddr.val : ℕ) : FGL)
   a_offset_imm0 := ((e.a_offset_imm0.bv.toInt : ℤ) : FGL)
-  a_imm1 := if e.a_src = zisk_inst.SRC_IMM then ((e.a_use_sp_imm1.val : ℕ) : FGL) else 0
+  -- Gate written multiplicatively, NOT as `romRowOf`'s `if`: the two forms must
+  -- be different expressions or this slot of the agreement is `rfl` and the
+  -- cross-check has no power over a dropped gate.
+  a_imm1 := (if e.a_src = zisk_inst.SRC_IMM then 1 else 0) * ((e.a_use_sp_imm1.val : ℕ) : FGL)
   b_offset_imm0 := ((e.b_offset_imm0.bv.toInt : ℤ) : FGL)
-  b_imm1 := if e.b_src = zisk_inst.SRC_IMM then ((e.b_use_sp_imm1.val : ℕ) : FGL) else 0
+  b_imm1 := (if e.b_src = zisk_inst.SRC_IMM then 1 else 0) * ((e.b_use_sp_imm1.val : ℕ) : FGL)
   ind_width := ((e.ind_width.val : ℕ) : FGL)
-  op := romOpField e.op
+  -- Remap spelled out here rather than sharing `romOpField`, for the same
+  -- reason: a shared helper cross-checks nothing.
+  op :=
+    if e.op = CODE_FCALL ∨ e.op = CODE_FCALL_GET ∨ e.op = CODE_FCALL_PARAM then
+      ((CODE_COPYB.val : ℕ) : FGL)
+    else
+      ((e.op.val : ℕ) : FGL)
   store_offset := ((e.store_offset.val : ℤ) : FGL)
   jmp_offset1 := ((e.jmp_offset1.val : ℤ) : FGL)
   jmp_offset2 := ((e.jmp_offset2.val : ℤ) : FGL)
@@ -382,9 +412,10 @@ def romRowSpec (e : ZiskInstExtract) : ZiskRomMessage FGL where
     word, nothing about the ROM layout, and nothing about the extracted lowerer
     (which does not appear in the statement). -/
 theorem romRowOf_eq_romRowSpec (e : ZiskInstExtract) : romRowOf e = romRowSpec e := by
-  simp only [romRowOf, romRowSpec,
+  simp only [romRowOf, romRowSpec, romOpField,
     romSignedField_eq_intCast, romFlagsNat_cast_eq_packFlags,
     Aeneas.Std.IScalar.val]
+  split_ifs <;> simp
 
 /-! ## 5. The three defects of the June serialization, confirmed against source
 
