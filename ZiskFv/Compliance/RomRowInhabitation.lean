@@ -48,11 +48,21 @@ here, and it stays a named residual (design note §6).
   `rom.rs:226-236`, where June's second defect lived.  Its committed counterpart
   is written here (`ldNegEightProgramRow`); no negative-offset load exists
   elsewhere in the tree.
-* NOT INHABITED: the four ADDI/SLLI rows and the JAL row of the SAME witness.
-  See §6.  This is a property of the hand-built witness, not of the ROM emitter:
-  those rows were written to satisfy the AIR, and they differ from what ZisK's
-  transpiler emits for the corresponding instructions.  `ProgramBinding` is
-  therefore FALSE for `sdLdProgram` as it stands.
+* NOT INHABITED: the other five rows of the SAME witness (three ADDI, one SLLI,
+  one JAL).  §8 PROVES this for the SLLI row `sdLdSlliX1ProgramRow`: ten slots
+  agree with the lowering of `slli x1, x1, 24` and `ind_width` does not (committed
+  `8`, lowered `0`).  For the three ADDI rows and the JAL row the same `ind_width`
+  divergence was observed by EVALUATING the extracted lowerer (`#eval`), and for
+  the two `addi rd, x0, imm` rows the `op` and `is_external_op` slots diverge as
+  well (ZisK emits `CopyB`/internal, the rows commit to `OP_ADD`/external); those
+  four rows are NOT proved here, and this file makes no Lean claim about them.
+
+  This is a property of the hand-built witness, not of the ROM emitter: those
+  rows were written to satisfy the AIR, and `ind_width` is unconstrained for
+  non-load/store ops, so the author was free to pick `8`.  Consequence: a
+  `ProgramBinding`-style premise quantified over ALL entries of `sdLdProgram` is
+  false, so that witness cannot be used to show such a premise non-vacuous —
+  only its SD and LD rows can.
 -/
 import ZiskFv.Compliance.RomRowSerialization
 import ZiskFv.Compliance.AeneasBridgeTrust.Decode.Leaves
@@ -709,5 +719,227 @@ theorem sdLdSdProgramRow_inhabited :
       | rw [if_neg hb]
       | (rw [romSignedField_eq_intCast]; decide)
       | decide
+
+/-! ## 8. The five rows of the SAME witness that are NOT inhabited
+
+The four ADDI/SLLI rows and the JAL row of `sdLdProgram` are *not* ROM images.
+This section proves it for the SLLI row, which is the cleanest case: ten of the
+eleven slots agree with the lowering of `slli x1, x1, 24`, and `ind_width` does
+not — the committed row says `8`, the lowering says `0`.
+
+Why `0`.  `ZiskInstBuilder.ind_width` has exactly two call sites in the whole
+extracted lowerer, `store_op_with_reg_offset` (`ProductionM2.lean:2675`) and
+`load_op_with_reg_offset` (`:2752`); every other arm leaves the field at the
+`ZiskInst` default, which is `0#u64` (`:2135`).  The two-call-site claim is a
+grep over `trust/aeneas/ProductionM2.lean` and is NOT proved here; what IS proved
+here is `zisk_default_ind_width` and the full SLLI arm below, which is the
+instance that matters for this witness.
+
+The ADDI rows diverge more widely still: for `addi rd, x0, imm` ZisK's
+`immediate_op_or_x0_copyb_typed` (`ProductionM2.lean:2578-2581`) emits `CopyB`
+(op 1, `Internal`, `is_external_op = false`), while `sdLdAddiX1A0ProgramRow` /
+`sdLdAddiX2ProgramRow` commit to `OP_ADD` with `is_external_op = true`.  Both
+rows are legitimate ZisK rows with the same semantics; only the second is what
+the transpiler produces.  That divergence is recorded here in prose and left
+unproved — the SLLI case already settles the question this section exists to
+answer.
+
+**Consequence.**  A `ProgramBinding`-style premise quantified over all entries of
+`sdLdProgram` is FALSE.  The SD/LD spin witness is a constraint-satisfying AIR
+witness, not a transpiled program image, so it cannot be used to demonstrate
+non-vacuity of such a premise; only its SD and LD rows can. -/
+
+/-- The `ZiskInst` default `ind_width` (`ProductionM2.lean:2135`). -/
+theorem zisk_default_ind_width :
+    (do let z ← ZiskInstBuilder.new 0#u64; ok z.i.ind_width) = ok 0#u64 := rfl
+
+/-- The `ZiskInst` `immediate_op_typed … Sll 4` builds. -/
+def sllInstAt (a aoff boff : Std.U64) (soff : Std.I64) : zisk_inst.ZiskInst where
+  paddr := a
+  store_pc := false
+  store_use_sp := false
+  store := zisk_inst.STORE_REG
+  store_offset := soff
+  set_pc := false
+  is_precompiled := false
+  ind_width := 0#u64
+  «end» := false
+  a_src := zisk_inst.SRC_REG
+  a_use_sp_imm1 := 0#u64
+  a_offset_imm0 := aoff
+  b_src := zisk_inst.SRC_IMM
+  b_use_sp_imm1 := 0#u64
+  b_offset_imm0 := boff
+  jmp_offset1 := 4#i64
+  jmp_offset2 := 4#i64
+  is_external_op := true
+  op := 33#u8
+  op_type := zisk_inst.ZiskOperationType.BinaryE
+  m32 := false
+  input_size := 0#u64
+  sorted_pc_list_index := 0#usize
+
+def sllExtractAt (a aoff boff : Std.U64) (soff : Std.I64) : ZiskInstExtract where
+  paddr := a
+  store_pc := false
+  store_use_sp := false
+  store := zisk_inst.STORE_REG
+  store_offset := soff
+  set_pc := false
+  is_precompiled := false
+  ind_width := 0#u64
+  «end» := false
+  a_src := zisk_inst.SRC_REG
+  a_use_sp_imm1 := 0#u64
+  a_offset_imm0 := aoff
+  b_src := zisk_inst.SRC_IMM
+  b_use_sp_imm1 := 0#u64
+  b_offset_imm0 := boff
+  jmp_offset1 := 4#i64
+  jmp_offset2 := 4#i64
+  is_external_op := true
+  op := 33#u8
+  op_type_id := 4#u32
+  m32 := false
+  input_size := 0#u64
+  sorted_pc_list_index := 0#usize
+
+theorem sllExtractAt_paddr (a b aoff boff : Std.U64) (soff : Std.I64) :
+    { sllExtractAt a aoff boff soff with paddr := b } = sllExtractAt b aoff boff soff := rfl
+
+/-- `slli x1, x1, 24`. -/
+def rawSlliX1X1TwentyFour : BitVec 32 := BitVec.ofNat 32 0x01809093
+
+def slliX1X1TwentyFourDecode : aeneas_extract.Rv64imDecodeExtract where
+  supported := true
+  opcode_id := 35#u32
+  format_id := 1#u32
+  funct3 := 1#u32
+  funct7 := 0#u32
+  rd := 1#u32
+  rs1 := 1#u32
+  rs2 := 0#u32
+  imm := 24#i32
+  pred := 0#u32
+  succ := 0#u32
+
+set_option maxHeartbeats 2000000 in
+theorem slli_lowering_ctx (a : Std.U64) :
+    riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input emptyCtx
+        { rom_address := a, rd := 1#u32, rs1 := 1#u32, rs2 := 0#u32, imm := 24#i32 }
+        riscv2zisk_single_row.Rv64imSingleRowOpcode.Slli false
+      = ok { emptyCtx with
+              extract_inst := some { i := sllInstAt a 1#u64 24#u64 1#i64 } } := by
+  simp only [riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input,
+    riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed,
+    ZiskInstBuilder.new_for_rv64im_lowering, ZiskInstBuilder.new,
+    ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    ZiskInstBuilder.src_b_imm,
+    ZiskInstBuilder.op_zisk, ZiskInstBuilder.set_runtime_op_fields,
+    ZiskInstBuilder.j, ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    src_a_reg_in_main _ (UScalar.cast UScalarTy.U64 (1#u32))
+      (by decide) (by decide) (by decide),
+    store_reg_in_main _ (UScalar.hcast IScalarTy.I64 (1#u32))
+      (by decide) (by decide) (by decide),
+    lift, Bind.bind, bind_ok]
+  rfl
+
+set_option maxHeartbeats 2000000 in
+theorem slliX1X1TwentyFour_unfold :
+    aeneas_extract.extract_transpile_rv64im_raw (toU32 rawSlliX1X1TwentyFour)
+      = (do
+      let ctx ←
+        riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input emptyCtx
+          { rom_address := 0#u64, rd := 1#u32, rs1 := 1#u32, rs2 := 0#u32, imm := 24#i32 }
+          riscv2zisk_single_row.Rv64imSingleRowOpcode.Slli false
+      let zib ← core.option.Option.unwrap ctx.extract_inst
+      let row ← aeneas_extract.ZiskInstExtract.from_inst zib.i
+      ok { accepted := true, decode := slliX1X1TwentyFourDecode, row := row }) := by
+  with_unfolding_all rfl
+
+set_option maxHeartbeats 2000000 in
+theorem slliX1X1TwentyFour_transpile :
+    aeneas_extract.extract_transpile_rv64im_raw (toU32 rawSlliX1X1TwentyFour)
+      = ok { accepted := true, decode := slliX1X1TwentyFourDecode,
+             row := sllExtractAt 0#u64 1#u64 24#u64 1#i64 } := by
+  rw [slliX1X1TwentyFour_unfold, slli_lowering_ctx 0#u64]
+  rfl
+
+theorem romMessageOfRawAt_slliX1X1TwentyFour (addr : Std.U64) :
+    romMessageOfRawAt addr rawSlliX1X1TwentyFour
+      = ok (romRowOf (sllExtractAt addr 1#u64 24#u64 1#i64)) := by
+  simp only [romMessageOfRawAt, slliX1X1TwentyFour_transpile, sllExtractAt_paddr,
+    Bind.bind, bind_ok]
+
+set_option maxHeartbeats 2000000 in
+/-- **Ten of the eleven slots of the committed SLLI row are the lowering's.**
+    Stated slot by slot so the single disagreement is unmistakable and so a
+    future change that breaks one of the agreeing slots fails here. -/
+theorem slli_row_agrees_except_ind_width :
+    (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).line
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.line
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).a_offset_imm0
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.a_offset_imm0
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).a_imm1
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.a_imm1
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).b_offset_imm0
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.b_offset_imm0
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).b_imm1
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.b_imm1
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).op
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.op
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).store_offset
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.store_offset
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).jmp_offset1
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.jmp_offset1
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).jmp_offset2
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.jmp_offset2
+    ∧ (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).flags
+        = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.flags := by
+  have ha : ¬ ((sllExtractAt 4#u64 1#u64 24#u64 1#i64).a_src = zisk_inst.SRC_IMM) := by
+    simp only [sllExtractAt, zisk_inst.SRC_REG, zisk_inst.SRC_IMM]; decide
+  have hb : (sllExtractAt 4#u64 1#u64 24#u64 1#i64).b_src = zisk_inst.SRC_IMM := rfl
+  have hbits : romFlagBitsOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)
+      = ZiskFv.Compliance.SdLdSpinWitness.addiX1Bits := by
+    simp only [romFlagBitsOf, sllExtractAt, ZiskFv.Compliance.SdLdSpinWitness.addiX1Bits,
+      zisk_inst.SRC_REG, zisk_inst.SRC_IMM, zisk_inst.SRC_MEM, zisk_inst.SRC_IND,
+      zisk_inst.STORE_REG, zisk_inst.STORE_MEM, zisk_inst.STORE_IND]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [romRowOf, ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow] <;>
+    first
+      | rw [romFlagsNat_cast_eq_packFlags, hbits]
+      | rw [if_neg ha]
+      | (rw [if_pos hb]; decide)
+      | (rw [romSignedField_eq_intCast]; decide)
+      | decide
+
+/-- **…and the eleventh slot disagrees.**  The committed row carries
+    `ind_width = 8`; the lowering of `slli x1, x1, 24` carries `0`. -/
+theorem slli_row_ind_width_disagrees :
+    (romRowOf (sllExtractAt 4#u64 1#u64 24#u64 1#i64)).ind_width
+      ≠ ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.ind_width := by
+  simp only [romRowOf, sllExtractAt, ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow]
+  decide
+
+/-- **The committed SLLI row is NOT the ROM image of the word it claims to
+    execute, at any ROM address.**  Together with §5-§7 this is the honest state
+    of the SD/LD spin witness: its load and store rows are transpiler output, its
+    ALU rows are not. -/
+theorem sdLdSlliX1ProgramRow_not_inhabited_by_its_word (addr : Std.U64) :
+    romMessageOfRawAt addr rawSlliX1X1TwentyFour
+      ≠ ok ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow := by
+  rw [romMessageOfRawAt_slliX1X1TwentyFour]
+  intro h
+  have h' : romRowOf (sllExtractAt addr 1#u64 24#u64 1#i64)
+      = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow := by
+    injection h
+  have : (romRowOf (sllExtractAt addr 1#u64 24#u64 1#i64)).ind_width
+      = ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow.ind_width := by rw [h']
+  simp only [romRowOf, sllExtractAt,
+    ZiskFv.Compliance.SdLdSpinWitness.sdLdSlliX1ProgramRow] at this
+  exact absurd this (by decide)
 
 end ZiskFv.Compliance.RomRowInhabitation
