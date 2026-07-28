@@ -453,21 +453,20 @@ theorem addAddiSpinWitness_constraints : addAddiSpinWitness.Constraints :=
     addAddiSpinWitness_table_constraints
 
 private theorem addAddiSpinMain_pcHandshake_add_addi :
-    pcHandshakeBetween addAddiSpinAddRow addAddiSpinAddiRow := by
-  simp [pcHandshakeBetween, addAddiSpinAddRow, addAddiSpinAddiRow,
-    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addX1Row,
-    mainRomRowOf]
+    transitionBetween addAddiSpinAddRow addAddiSpinAddiRow := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddRow,
+    addAddiSpinAddiRow, addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addX1Row, mainRomRowOf]
 
 private theorem addAddiSpinMain_pcHandshake_addi_jal :
-    pcHandshakeBetween addAddiSpinAddiRow (addAddiSpinJalRow 2) := by
-  simp [pcHandshakeBetween, addAddiSpinAddiRow, addAddiSpinAddiProgramRow,
-    addAddiSpinAddiBits, addAddiSpinJalRow,
+    transitionBetween addAddiSpinAddiRow (addAddiSpinJalRow 2) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddiRow,
+    addAddiSpinAddiProgramRow, addAddiSpinAddiBits, addAddiSpinJalRow,
     addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
 
 private theorem addAddiSpinMain_pcHandshake_jal_jal :
-    pcHandshakeBetween (addAddiSpinJalRow 2) (addAddiSpinJalRow 3) := by
-  simp [pcHandshakeBetween, addAddiSpinJalRow, addSpinJalRow, addSpinJalProgramRow,
-    addSpinJalBits, mainRomRowOf]
+    transitionBetween (addAddiSpinJalRow 2) (addAddiSpinJalRow 3) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinJalRow,
+    addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
   ring
 
 @[simp] theorem addAddiSpinMainTable_eval_rowInputVar_zero
@@ -565,7 +564,7 @@ theorem addAddiSpinMainTable_transitions : addAddiSpinMainTable.TransitionConstr
         simp⟩ :=
       Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addAddiSpinMainTable.previousEnvironment
           ⟨0, by simp⟩)
@@ -576,12 +575,12 @@ theorem addAddiSpinMainTable_transitions : addAddiSpinMainTable.TransitionConstr
         (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar)
     simp only [Table.previousEnvironment]
     rw [addAddiSpinMainTable_evalAt_zero]
-    simp [pcHandshakeBetween, addAddiSpinAddRow, addX1Row]
+    simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addAddiSpinAddRow, addX1Row]
   · have h_index : index = ⟨1, by
         simp⟩ :=
       Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addAddiSpinMainTable.previousEnvironment
           ⟨1, by simp⟩)
@@ -597,7 +596,7 @@ theorem addAddiSpinMainTable_transitions : addAddiSpinMainTable.TransitionConstr
         simp⟩ :=
       Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addAddiSpinMainTable.previousEnvironment
           ⟨2, by simp⟩)
@@ -613,7 +612,7 @@ theorem addAddiSpinMainTable_transitions : addAddiSpinMainTable.TransitionConstr
         simp⟩ :=
       Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addAddiSpinMainTable.previousEnvironment
           ⟨3, by simp⟩)

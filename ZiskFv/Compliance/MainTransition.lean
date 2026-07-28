@@ -45,7 +45,7 @@ theorem rowInput_eq_mainTableRowAtOrZero
     eval_varFromOffset_valueFromOffset]
 
 /-- The indexed effective-row environment projects to the corresponding Main row. -/
-private theorem rowInputAt_eq_mainTableRowAtOrZero
+theorem rowInputAt_eq_mainTableRowAtOrZero
     {length : ℕ} (program : Program length) (table : Table FGL)
     (index : Fin table.length) :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInput
@@ -59,7 +59,7 @@ private theorem rowInputAt_eq_mainTableRowAtOrZero
   exact rowInput_eq_mainTableRowAtOrZero program table index.val h_index
 
 /-- The saturated predecessor environment projects to the preceding effective Main row. -/
-private theorem rowInputPrevious_eq_mainTableRowAtOrZero
+theorem rowInputPrevious_eq_mainTableRowAtOrZero
     {length : ℕ} (program : Program length) (table : Table FGL)
     (index : Fin table.length) (h_positive : 0 < index.val) :
     (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInput
@@ -101,6 +101,7 @@ theorem AcceptedZiskTrace.mainTransition_to_next_pc
   change ZiskFv.AirsClean.Main.pcHandshakeTransition transitionIndex.val
     (trace.mainTable.previousEnvironment transitionIndex)
     (trace.mainTable.environmentAt transitionIndex) at h_trans
+  have h_trans_pc := h_trans.1
   have h_transition : ZiskFv.AirsClean.Main.pcHandshakeBetween
       ((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
           trace.programLength trace.program).rowInput
@@ -109,7 +110,7 @@ theorem AcceptedZiskTrace.mainTransition_to_next_pc
           trace.programLength trace.program).rowInput
         (trace.mainTable.environmentAt transitionIndex)) := by
     simpa only [ZiskFv.AirsClean.Main.pcHandshakeTransition, Air.Flat.Component.rowInput,
-      Air.Flat.Component.rowInputVar, eval_varFromOffset_valueFromOffset] using h_trans
+      Air.Flat.Component.rowInputVar, eval_varFromOffset_valueFromOffset] using h_trans_pc
   have h_previous := rowInputPrevious_eq_mainTableRowAtOrZero trace.program trace.mainTable
     transitionIndex (by simp [transitionIndex])
   have h_current := rowInputAt_eq_mainTableRowAtOrZero trace.program trace.mainTable

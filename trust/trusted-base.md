@@ -799,7 +799,7 @@ trust surface even though they add no axiom.
 | Field (`Compliance/AcceptedZiskTrace.lean`) | PIL source | What it certifies |
 |---|---|---|
 | `main_height` (pre-existing) | — | the physical Main table has a row for every executed-step index; it may also carry padding rows |
-| `transitions_hold` (**#100**, extended for **#242**) | `main.pil:409-410`; `mem_align.pil:116-117,142` | component-owned D1 predecessor/current relations hold: Main's PC handshake and MemAlign's gated predecessor `delta_addr` plus eight `down_to_up` register continuities. These are verifier certificates, not caller assumptions. |
+| `transitions_hold` (**#100**, extended for **#242** and **#280**) | `main.pil:409-410`, `main.pil:386`; `mem_align.pil:116-117,142` | component-owned D1 predecessor/current relations hold: Main's PC handshake, Main's non-segment source-C copy (a row that sets none of `b_src_mem/imm/ind/reg` reads its `b[0]`/`b[1]` lanes from the predecessor row's `c[0]`/`c[1]`), and MemAlign's gated predecessor `delta_addr` plus eight `down_to_up` register continuities. These are verifier certificates, not caller assumptions. |
 | `cyclic_successor_transitions_hold` (**#242**) | `mem_align.pil:113-118,139-143` | MemAlign's D3 cyclic successor/current relations hold on every effective row: h998's unmasked `DELTA_PC = pc' - pc` and eight `up_to_down` register continuities, including final-row-to-row-zero. Its bus-133 ROM membership is derived from finished balance/static provider. |
 | `mem_replay_table` (**#115**, guarded by `MutableMemPresent witness`) | Full-ensemble table selection for the mutable Mem component | selects the concrete mutable-Mem table, proves witness membership and component identity, and proves the table is nonempty |
 | Derived `memReplaySegmentRanges` (not an `AcceptedZiskTrace` field) | Mem hints 884/886; `mem.pil:267-268` / `285-286`; linked c24–33 at `std_sum.pil:590/599/656/696`; generated `ValidatedLink` entries | derives selected-table `MemSegmentGeneratedRangeFacts` from `constraints_hold`, `channels_balanced`, and `transitions_hold`: the indexed source bridge identifies the canonical `ProverData` chunks, finished bus-103 balance finds the `SpecifiedRangesSlice` provider, and its static table supplies 16-bit membership. `ProverAssumptions` is completeness-only and is not used. |
@@ -850,6 +850,37 @@ per-op flag/target/cast content **proven** (0 new `ZiskFv.*` axioms). The Clean
 consumes it — see `docs/clean-fork-divergences.md` D1); the obligation lives
 entirely at the `AcceptedZiskTrace` layer, which is why it is in `main_height`'s
 class rather than `constraints_hold`'s.
+
+**#280 extension of the same certificate (JALR source-C) — a REDUCTION.**
+`transitions_hold` now also carries Main's non-segment source-C copy
+(`main.pil:386`, extracted as `constraint_4_every_row` /
+`constraint_10_every_row`): `Main.transitionBetween` is
+`pcHandshakeBetween ∧ sourceCCopyBetween`, and `sourceCCopyBetween` states
+exactly the `(1 - SEGMENT_L1)`-gated *within-segment* equation. Clean's
+transition interface has no public-input surface, so the segment-boundary case
+(`SEGMENT_L1 = 1`, where the PIL selects the public `segment_previous_c` input)
+is deliberately **not** modeled, and neither is the a-lane copy
+(`main.pil:385`). The modeled relation is therefore *implied by* the PIL
+constraint and never stronger than it.
+
+This extension **reduces** caller trust rather than shifting it. The unaligned
+JALR lowering (an `OP_ADD` row followed by the terminal `OP_AND` row) now reads
+its ADD result out of the predecessor row through this certificate, which
+retires the per-op premise `Inputs_jalr.h_operand_offset` — the cross-world sum
+identity `b + offset_bv = rs1_val + signExtend imm`, which in the unaligned case
+silently assumed the whole ADD computation — in favour of the narrower register
+agreement `h_rs1_start : b = rs1_val`, the same input-agreement class every other
+opcode already carries. The remaining lowering facts (`OP_ADD` pins, the
+adjacency `start + 1 = finish`, the terminal row's `b_src_*` selectors) are
+sailTrace-free decode/placement evidence in `JalrLoweringRows`, not new
+cross-world promises.
+
+Consequently `root_soundness`'s conclusion is now indexed by the checked decode
+(`StepSound … zs (rowDecode_of_programDecode …)`): for JALR the state effect is
+stated at the lowering's terminal row `decode.rows.finish` instead of at the
+architectural index `i`. No binder is added — `programDecodes` was already a
+`root_soundness` binder — and `JalrLoweringRows.architectural_start` pins
+`start.val = i.val`; every other family still reads its effect at `i`.
 
 **Within-segment boundary (explicit).** `mainTransition_to_next_pc`
 (`Compliance/MainTransition.lean`) requires `i + 1 < mainTable.table.length` — a

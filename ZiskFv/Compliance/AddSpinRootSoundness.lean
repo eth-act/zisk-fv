@@ -362,13 +362,17 @@ def addSpinOutsideDefectRegion :
   | ⟨1, _⟩ => addSpinJalOutsideDefectRegion
 
 theorem addSpinRootSoundness :
-    ∀ i : Fin 2, StepSound addSpinAcceptedTrace addSpinSailTrace i (addSpinZiskStep i) :=
+    ∀ i : Fin 2, StepSound addSpinAcceptedTrace addSpinSailTrace i
+      (addSpinZiskStep i)
+      (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
   root_soundness 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
     addSpinProgramDecodes addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion
 
 theorem addSpinAddStepSound :
     StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
-      (addSpinZiskStep addSpinAddIndex) :=
+      (addSpinZiskStep addSpinAddIndex)
+      (rowDecode_of_programDecode addSpinAcceptedTrace addSpinAddIndex
+        (addSpinProgramDecodes addSpinAddIndex)) :=
   addSpinRootSoundness addSpinAddIndex
 
 def addPaddedAddIndex : Fin 1 := ⟨0, by decide⟩
@@ -585,13 +589,17 @@ def addPaddedOutsideDefectRegion :
   | ⟨0, _⟩ => addPaddedAddOutsideDefectRegion
 
 theorem addPaddedRootSoundness :
-    ∀ i : Fin 1, StepSound addPaddedAcceptedTrace addPaddedSailTrace i (addPaddedZiskStep i) :=
+    ∀ i : Fin 1, StepSound addPaddedAcceptedTrace addPaddedSailTrace i
+      (addPaddedZiskStep i)
+      (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
   root_soundness 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
     addPaddedProgramDecodes addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion
 
 theorem addPaddedAddStepSound :
     StepSound addPaddedAcceptedTrace addPaddedSailTrace addPaddedAddIndex
-      (addPaddedZiskStep addPaddedAddIndex) :=
+      (addPaddedZiskStep addPaddedAddIndex)
+      (rowDecode_of_programDecode addPaddedAcceptedTrace addPaddedAddIndex
+        (addPaddedProgramDecodes addPaddedAddIndex)) :=
   addPaddedRootSoundness addPaddedAddIndex
 
 end ZiskFv.Compliance.AddSpinRootSoundness

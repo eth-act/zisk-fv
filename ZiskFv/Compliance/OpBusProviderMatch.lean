@@ -19,9 +19,9 @@ namespace ZiskFv.Compliance
 
 open ZiskFv.AirsClean.FullEnsemble
 
-theorem main_request_logic_provided
+theorem main_request_logic_provided_at
     (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin numInstructions)
+    (i : Fin trace.mainTable.table.length)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -48,10 +48,7 @@ theorem main_request_logic_provided
               (ZiskFv.AirsClean.Binary.opBusMessage
                 (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
                   (providerTable.environment providerRow))) 1) := by
-  have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    trace.mainTable_index i
-  let mainIdx : Fin trace.mainTable.table.length :=
-    ⟨i.val, h_mainIdx_lt⟩
+  let mainIdx : Fin trace.mainTable.table.length := i
   let mainRow := trace.mainTable.table.get mainIdx
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
@@ -109,6 +106,38 @@ theorem main_request_logic_provided
         trace.mainTable_mem trace.mainTable_component h_mainRow_mem
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
+
+theorem main_request_logic_provided
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
+    (h_main_active :
+      ZiskFv.Airs.Main.Valid_Main.is_external_op
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+        i.val = 1)
+    (h_main_op :
+      ZiskFv.Airs.Main.Valid_Main.op
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+          i.val = ZiskFv.Trusted.OP_AND
+        ∨ ZiskFv.Airs.Main.Valid_Main.op
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+          i.val = ZiskFv.Trusted.OP_OR
+        ∨ ZiskFv.Airs.Main.Valid_Main.op
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+          i.val = ZiskFv.Trusted.OP_XOR) :
+    ∃ providerTable ∈ trace.witness.allTables,
+      ∃ providerRow ∈ providerTable.table,
+        providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+          ∧ providerTable.Spec
+          ∧ ZiskFv.Airs.OperationBus.matches_entry
+            (ZiskFv.Airs.OperationBus.opBus_row_Main
+              (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+              i.val)
+            (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+              (ZiskFv.AirsClean.Binary.opBusMessage
+                (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                  (providerTable.environment providerRow))) 1) :=
+  main_request_logic_provided_at trace
+    ⟨i.val, trace.mainTable_index i⟩ h_main_active h_main_op
 
 theorem main_request_sub_provided
     (trace : AcceptedZiskTrace numInstructions)
@@ -195,9 +224,9 @@ theorem main_request_sub_provided
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op
 
-theorem main_request_add_provided
+theorem main_request_add_provided_at
     (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin numInstructions)
+    (i : Fin trace.mainTable.table.length)
     (h_main_active :
       ZiskFv.Airs.Main.Valid_Main.is_external_op
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
@@ -235,10 +264,7 @@ theorem main_request_add_provided
                 (ZiskFv.AirsClean.BinaryAdd.opBusMessage
                   (ZiskFv.AirsClean.BinaryAdd.component.rowInput
                     (providerTable.environment providerRow))) 1))) := by
-  have h_mainIdx_lt : i.val < trace.mainTable.table.length :=
-    trace.mainTable_index i
-  let mainIdx : Fin trace.mainTable.table.length :=
-    ⟨i.val, h_mainIdx_lt⟩
+  let mainIdx : Fin trace.mainTable.table.length := i
   let mainRow := trace.mainTable.table.get mainIdx
   let mainInteraction :=
     ((ZiskFv.Channels.OperationBus.OpBusChannel.emitted
@@ -317,6 +343,49 @@ theorem main_request_add_provided
         trace.mainTable_mem trace.mainTable_component h_mainRow_mem
         h_main_row h_main_active h_mainInteraction_mem
         h_mainInteraction_eval h_active h_main_op⟩
+
+theorem main_request_add_provided
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin numInstructions)
+    (h_main_active :
+      ZiskFv.Airs.Main.Valid_Main.is_external_op
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+        i.val = 1)
+    (h_main_op :
+      ZiskFv.Airs.Main.Valid_Main.op
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+        i.val = ZiskFv.Trusted.OP_ADD) :
+    ZiskFv.Airs.Main.add_subset_holds
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+      i.val
+    ∧
+      ((∃ providerTable ∈ trace.witness.allTables,
+        ∃ providerRow ∈ providerTable.table,
+          providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+            ∧ providerTable.Spec
+            ∧ ZiskFv.Airs.OperationBus.matches_entry
+              (ZiskFv.Airs.OperationBus.opBus_row_Main
+                (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+                i.val)
+              (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                (ZiskFv.AirsClean.Binary.opBusMessage
+                  (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+                    (providerTable.environment providerRow))) 1))
+      ∨
+      (∃ providerTable ∈ trace.witness.allTables,
+        ∃ providerRow ∈ providerTable.table,
+          providerTable.component = ZiskFv.AirsClean.BinaryAdd.component
+            ∧ providerTable.Spec
+            ∧ ZiskFv.Airs.OperationBus.matches_entry
+              (ZiskFv.Airs.OperationBus.opBus_row_Main
+                (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
+                i.val)
+              (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                (ZiskFv.AirsClean.BinaryAdd.opBusMessage
+                  (ZiskFv.AirsClean.BinaryAdd.component.rowInput
+                    (providerTable.environment providerRow))) 1))) :=
+  main_request_add_provided_at trace
+    ⟨i.val, trace.mainTable_index i⟩ h_main_active h_main_op
 
 theorem main_request_compare_provided
     (trace : AcceptedZiskTrace numInstructions)

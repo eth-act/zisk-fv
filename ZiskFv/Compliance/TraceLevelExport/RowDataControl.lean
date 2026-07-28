@@ -642,7 +642,8 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
   -- carries h_set_pc above): the next row exists. The taken-offset pin is
   -- committed-program decode (`h_jmp_offset1_imm`); the target no-wrap bound
   -- still lives in Inputs because it references `jal_input.PC`. `flag = 1` is DERIVED in
-  -- `stepStrong_jal` from the OP_FLAG decode pins + `internal_op0_sets_flag`.
+  -- the dispatcher's `jal` arm from the OP_FLAG decode pins via
+  -- `flag_eq_one_of_internal_op_zero`.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
 structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
@@ -661,21 +662,46 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_input_imm : jal_input.imm = c.imm
 
-/-- Per-op residual bundle for the `jal` archetype: the 3-way `Claim`/`Decode`/`Inputs`
-    split is the single declaration site for every field; `RowData_jal` bundles them. -/
-structure RowData_jal
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  toClaim : Claim_jal trace i
-  toDecode : Decode_jal trace i toClaim
-  toInputs : Inputs_jal trace binding i toClaim
+-- `jal` and `jalr` have no `RowData_<op>` bundle: their dispatch arms consume
+-- the `Claim`/`Decode`/`Inputs` triple directly (the `jalr` conclusion is stated
+-- at the decode-selected lowering row, which a `RowData` bundle cannot index).
 
-def toRowData_jal {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
-    {i : Fin trace.numInstructions}
-    (c : Claim_jal trace i) (dec : Decode_jal trace i c)
-    (ia : Inputs_jal trace binding i c) : RowData_jal trace binding i where
-  toClaim := c
-  toDecode := dec
-  toInputs := ia
+/-- Physical Main-row placement for one architectural JALR.
+
+The aligned lowering occupies one Main row. The unaligned lowering occupies an
+`OP_ADD` row followed immediately by the terminal `OP_AND` row. These indices
+are decode/placement evidence about committed rows; they are not an
+accepted-trace certificate or an architectural-to-physical map. -/
+structure JalrLoweringRows
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (imm : BitVec 12)
+    (offset_bv : BitVec 64) where
+  start : Fin trace.mainTable.table.length
+  finish : Fin trace.mainTable.table.length
+  architectural_start : start.val = i.val
+  finish_has_successor : finish.val + 1 < trace.mainTable.table.length
+  lowering :
+    (start = finish
+      ∧ offset_bv = BitVec.signExtend 64 imm)
+    ∨
+    (start.val + 1 = finish.val
+      ∧ offset_bv = 0#64
+      ∧ (mainOfTable trace.program trace.mainTable).op start.val = ZiskFv.Trusted.OP_ADD
+      ∧ (mainOfTable trace.program trace.mainTable).is_external_op start.val = 1
+      ∧ (mainOfTable trace.program trace.mainTable).m32 start.val = 0
+      ∧ (mainOfTable trace.program trace.mainTable).flag start.val = 0
+      ∧ (mainOfTable trace.program trace.mainTable).set_pc start.val = 0
+      ∧ (mainOfTable trace.program trace.mainTable).jmp_offset2 start.val = 1
+      ∧ BitVec.ofNat 64
+          (((mainOfTable trace.program trace.mainTable).a_0 start.val).val
+            + ((mainOfTable trace.program trace.mainTable).a_1 start.val).val * 4294967296)
+          = BitVec.signExtend 64 imm
+      ∧ (mainRowWithRomAt trace start).rom.b_src_reg = 1
+      ∧ (mainRowWithRomAt trace finish).rom.b_src_imm = 0
+      ∧ (mainRowWithRomAt trace finish).rom.b_src_mem = 0
+      ∧ (mainRowWithRomAt trace finish).rom.b_src_ind = 0
+      ∧ (mainRowWithRomAt trace finish).rom.b_src_reg = 0)
 
 structure Claim_jalr (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   imm : BitVec 12
@@ -687,84 +713,88 @@ structure Claim_jalr (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
 
 structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
+  rows : JalrLoweringRows trace i c.imm c.offset_bv
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
-      i.val = ZiskFv.Trusted.OP_AND
+      rows.finish.val = ZiskFv.Trusted.OP_AND
   h_main_active :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).is_external_op
-      i.val = 1
+      rows.finish.val = 1
   h_flag :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).flag
-      i.val = 0
+      rows.finish.val = 0
   h_m32 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).m32
-      i.val = 0
+      rows.finish.val = 0
   h_set_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
-      i.val = 1
+      rows.finish.val = 1
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
-      i.val = 1
+      rows.finish.val = 1
   h_store_ind :
-    (mainRowWithRomLui trace i).rom.store_ind = 0
+    (mainRowWithRomAt trace rows.finish).rom.store_ind = 0
   h_store_offset :
-    (mainRowWithRomLui trace i).rom.store_offset =
+    (mainRowWithRomAt trace rows.finish).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
   -- #100 next-PC transition inputs (replace the exec artifacts; the next-PC
   -- residual is now DERIVED via `jalr_setpc_nextPC_discharged`). All are
   -- same-world circuit / decode / ROM pins (no Sail-binding dependency).
   --   * `h_idx`: the next Main row exists (cross-row boundary marker).
-  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_idx : rows.finish.val + 1 < trace.mainTable.table.length
   --   * mask `a`-lane pins (`JALR_MASK = 0xFFFFFFFFFFFFFFFE` loaded into `a`,
   --     `riscv2zisk_context.rs::jalr` `src_a("imm", JALR_MASK)`):
   --     `a_0 = 0xFFFFFFFE`, `a_1 = 0xFFFFFFFF`.
   h_a_mask_lo :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0
-      i.val = 4294967294
+      rows.finish.val = 4294967294
   h_a_mask_hi :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1
-      i.val = 4294967295
+      rows.finish.val = 4294967295
   --   * the 32-bit-PC scope pin `c_1 = 0` (JALR analogue of JAL/AUIPC's
   --     `h_pc_offset_lt_2_32`: the AND result's hi lane is dropped by the
   --     set-PC handshake, so the jump must stay inside ZisK's 32-bit PC space).
   h_c1_zero :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_1
-      i.val = 0
+      rows.finish.val = 0
   h_jmp2 :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-      i.val = 4
+    (rows.start = rows.finish
+      ∧ (mainOfTable trace.program trace.mainTable).jmp_offset2 rows.finish.val = 4)
+    ∨
+    (rows.start.val + 1 = rows.finish.val
+      ∧ (mainOfTable trace.program trace.mainTable).jmp_offset2 rows.finish.val = 3)
   --   * the `jmp_offset1` field ↔ `offset_bv` bridge (unsigned-equal offset
   --     contract, same shape AUIPC/JAL use) + the evenness ROM guard
   --     (aligned `imm % 4 == 0` ⇒ `offset_bv` even; trivial for unaligned
   --     `offset_bv = 0`) + the field-level no-FGL-wrap bound.
   h_offset_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val = c.offset_bv.toNat
+        rows.finish.val).val = c.offset_bv.toNat
   h_offset_even : c.offset_bv &&& 1#64 = 0#64
   h_no_fgl_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0 i.val).val
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0
+        rows.finish.val).val
       + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-          i.val).val < GL_prime
+          rows.finish.val).val < GL_prime
 
 structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
   jalr_input : PureSpec.JalrInput
   misa_val : RegisterType Register.misa
   mseccfg : RegisterType Register.mseccfg
-  -- #100: the per-lowering operand identity replacing the cross-world
-  -- `h_nextPC_matches`. The committed Main `b`-lane (`b_0 + b_1 · 2^32`) plus
-  -- `offset_bv` equals Sail's pre-mask target `rs1_val + signExtend 64 imm`:
-  --   * aligned   (`b = rs1`,        `offset_bv = signExtend imm`);
-  --   * unaligned (`b = rs1 + imm`,  `offset_bv = 0`).
-  -- A TRUE, satisfiable fact for a real JALR row in BOTH lowerings (the masking
-  -- itself is handled downstream by `jalr_setpc_nextPC_discharged`).
-  h_operand_offset :
+  /-- Genuine cross-world input agreement at the lowering's source row.
+
+  This says only that the committed register-sourced `b` operand equals Sail's
+  `rs1` value. For an unaligned lowering, the ADD result, source-C copy into the
+  terminal AND row, and zero terminal offset are derived from live circuit,
+  provider, transition, and decode evidence. -/
+  h_rs1_start :
     BitVec.ofNat 64
-        (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val).val
+        (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0
+            i.val).val
           + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1
               i.val).val * 4294967296)
-      + c.offset_bv
-      = jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm
+      = jalr_input.rs1_val
   h_input_rd : jalr_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC
   h_pc_bridge :
@@ -783,21 +813,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   -- #100: JALR link-PC range/domain facts live in `RowOutsideDefectRegion`
   -- as `JalrRangeDomain`.
 
-/-- Per-op residual bundle for the `jalr` archetype: the 3-way `Claim`/`Decode`/`Inputs`
-    split is the single declaration site for every field; `RowData_jalr` bundles them. -/
-structure RowData_jalr
-    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions) where
-  toClaim : Claim_jalr trace i
-  toDecode : Decode_jalr trace i toClaim
-  toInputs : Inputs_jalr trace binding i toClaim
-
-def toRowData_jalr {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
-    {i : Fin trace.numInstructions}
-    (c : Claim_jalr trace i) (dec : Decode_jalr trace i c)
-    (ia : Inputs_jalr trace binding i c) : RowData_jalr trace binding i where
-  toClaim := c
-  toDecode := dec
-  toInputs := ia
 
 structure Claim_fence (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
   fm : BitVec 4

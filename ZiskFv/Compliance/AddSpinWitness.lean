@@ -310,13 +310,14 @@ private theorem addSpinMain_constraintsHold_materialize
       (env := (proverEnv : Environment FGL))).mpr h_row
 
 theorem addSpinMain_pcHandshake_add_jal :
-    pcHandshakeBetween addSpinAddRow (addSpinJalRow 1) := by
-  simp [pcHandshakeBetween, addSpinAddRow, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-    addX1Row, mainRomRowOf]
+    transitionBetween addSpinAddRow (addSpinJalRow 1) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinAddRow,
+    addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, addX1Row, mainRomRowOf]
 
 theorem addSpinMain_pcHandshake_jal_jal :
-    pcHandshakeBetween (addSpinJalRow 1) (addSpinJalRow 2) := by
-  simp [pcHandshakeBetween, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
+    transitionBetween (addSpinJalRow 1) (addSpinJalRow 2) := by
+  simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinJalRow,
+    addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]
   ring
 
 @[simp] theorem addSpinMainTable_eval_rowInputVar_zero
@@ -444,7 +445,7 @@ theorem addSpinMainTable_transitions : addSpinMainTable.TransitionConstraints :=
   · have h_index : index = ⟨0, by
         simp⟩ := Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addSpinMainTable.previousEnvironment
           ⟨0, by simp⟩)
@@ -455,11 +456,11 @@ theorem addSpinMainTable_transitions : addSpinMainTable.TransitionConstraints :=
         (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar)
     simp only [Table.previousEnvironment]
     rw [addSpinMainTable_evalAt_zero]
-    simp [pcHandshakeBetween, addSpinAddRow, addX1Row]
+    simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, addSpinAddRow, addX1Row]
   · have h_index : index = ⟨1, by
         simp⟩ := Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addSpinMainTable.previousEnvironment
           ⟨1, by simp⟩)
@@ -474,7 +475,7 @@ theorem addSpinMainTable_transitions : addSpinMainTable.TransitionConstraints :=
   · have h_index : index = ⟨2, by
         simp⟩ := Fin.ext (by omega)
     subst index
-    change pcHandshakeBetween
+    change transitionBetween
       (Eval.eval
         (addSpinMainTable.previousEnvironment
           ⟨2, by simp⟩)

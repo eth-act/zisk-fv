@@ -254,7 +254,7 @@ private theorem mainSingleRowTable_transitions
   have h_segment_l1_one : row.core.segment_l1 = 1 := by
     rw [h_segment_l1]
     rfl
-  simp [pcHandshakeBetween, h_segment_l1_one]
+  simp [transitionBetween, pcHandshakeBetween, sourceCCopyBetween, h_segment_l1_one]
 
 private theorem addX1MainTable_transitions :
     (mainSingleRowTable 1 addX1Program addX1Row).TransitionConstraints :=
