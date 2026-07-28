@@ -529,7 +529,7 @@ def jalrTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
-  , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentWithArithTable
+  , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
   , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   , jalrBinaryAndTable
   , jalrBinaryAddTable
@@ -587,7 +587,7 @@ theorem jalrWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
-  · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentWithArithTable
+  · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentComplete
   · exact emptyComponentTable_constraints
       ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
   · exact jalrBinaryAndTable_constraints
@@ -622,7 +622,7 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
-    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_transitions
         ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
     · rw [Table.TransitionConstraints]
@@ -667,7 +667,7 @@ theorem jalrWitness_cyclicSuccessorTransitions :
         ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_cyclicSuccessorTransitions
-        ZiskFv.AirsClean.ArithMul.componentWithArithTable
+        ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
     · rw [Table.CyclicSuccessorTransitionConstraints]
@@ -1332,7 +1332,7 @@ private theorem jalrWitness_mutable_mem_component_tables_empty
     · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
     · exact emptyComponentTable_table ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
-    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentWithArithTable
+    · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_table
         ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
     · exfalso
