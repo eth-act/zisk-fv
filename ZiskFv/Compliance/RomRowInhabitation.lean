@@ -329,8 +329,8 @@ it is a hand-built AIR witness from `#221`.
 
 `ldX3ZeroX1_unfold` is the step that runs the extracted decoder: it reduces
 `decode_32_core` on a literal word and reads off `rd = 3`, `rs1 = 1`, `rs2 = 0`,
-`imm = 0`.  The lowering itself does NOT reduce — `Std.Usize`'s width is the
-opaque `System.Platform.numBits` — which is why §1-§3 exist. -/
+`imm = 0`.  The lowering itself does NOT reduce, because `Std.Usize`'s width is
+the (irreducible) `System.Platform.numBits`, which is why §1-§3 exist. -/
 
 /-- `ld x3, 0(x1)`. -/
 def rawLdX3ZeroX1 : BitVec 32 := BitVec.ofNat 32 0x0000B183
