@@ -206,7 +206,11 @@ theorem componentFullSpec :
     ZiskFv.AirsClean.ArithMul.componentComplete.Spec arithEnv := by
   rw [ZiskFv.AirsClean.ArithMul.componentComplete_spec]
   rw [componentRowInput]
-  exact fullSpec
+  -- `componentComplete.Spec` is `FullSpec ∧ SharedDivBlockSpec` (#279 completed the
+  -- Div block). Both conjuncts are needed: the point of this regression is that the
+  -- forged row is accepted by the COMPLETED component, so the quotient-sign defect
+  -- survives the Div-block constraints rather than being ruled out by them.
+  exact ⟨fullSpec, sharedDivBlockSpec⟩
 
 private theorem constraintsHold_append (left right : Operations FGL) :
     Operations.ConstraintsHold arithEnv (left ++ right) ↔
