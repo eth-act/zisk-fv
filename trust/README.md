@@ -49,12 +49,30 @@ when they are not trust policy or trust evidence.
 | `generated/baseline-equiv-axiom-deps.txt`      | `lake exe trust-gate regenerate-deps`                         | Per-canonical-theorem axiom closures.                          |
 | `generated/baseline-arith-table-op-axioms.txt` | hand/refreshed retirement queue                               | Guardrail preventing new opcode-shaped ArithTable trust facts. |
 | `generated/axiom-index.md`                     | `tools/trust-ledger-index.py`                                 | Generated flat index of source trust declarations.             |
+| `generated/weld-columns/<air>.txt`             | `trust/scripts/regenerate-weld-columns.py` via `regenerate.sh` | Extractor stage-1 column layout each weld's column map is pinned against. |
 
 Policy/configuration files remain in `trust/` root: `allowed-axiom-files.txt`,
 `forbidden-param-shapes.txt`, `forbidden-types.txt`,
 `tolerated-completeness-axioms.txt`,
 `theorem-keep-list.txt`, `dead-code-entry-points.txt`,
-`op-envelope-route-constructors.txt`, and `.shrinkage-floor`.
+`op-envelope-route-constructors.txt`, `weld-airs.toml`, and `.shrinkage-floor`.
+
+### Adding a welded AIR
+
+A *weld* module ties a handwritten constraint mirror to the generated
+`Extraction.<Air>.constraint_N_every_row` predicates by `Iff.rfl`, using a
+handwritten index -> row-field column map. `check-all.sh`'s single
+`weld column maps` check pins every such map against the extractor's own column
+header. Adding an AIR is a **data** change:
+
+1. add an `[air.<Name>]` block to [`weld-airs.toml`](weld-airs.toml);
+2. run `trust/scripts/regenerate.sh` (needs `nix run .#populate`) to write
+   `generated/weld-columns/<air>.txt`;
+3. commit both.
+
+The check script is not edited and `check-all.sh` is not renumbered, so parallel
+weld branches do not collide. The full key schema is documented in the header of
+[`scripts/check-weld-column-maps.py`](scripts/check-weld-column-maps.py).
 
 The Clean integration gate enforces the soundness boundary: Clean completeness
 axioms should not exist as source trust, and any future

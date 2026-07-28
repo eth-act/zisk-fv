@@ -56,13 +56,14 @@ the one the mirror asserts.
   mirror asserts neither less nor more than the AIR. `spec_carryChain_weld` is an
   implication only, so it does not forbid `Spec` asserting more than the AIR does.
 * It does **not** certify the column layout itself: `mainValue` is handwritten.
-  That map is pinned separately by `trust/scripts/check-arith-column-map.py`,
-  against the extractor's own column-name header as recorded in
-  `trust/generated/arith-stage1-columns.txt`. Without that gate a *compensating*
-  pair of slips (mirror and map wrong in the same direction) would still be `rfl`.
-  That gate reads `mainValue` and nothing else, so `extractedArithRowCircuit_pinned`
-  below ties the instance the welds actually resolve to the map the gate actually
-  pins; see the section comment there for the hole it closes.
+  That map is pinned separately by `trust/scripts/check-weld-column-maps.py`
+  (Arith's entry in `trust/weld-airs.toml`), against the extractor's own
+  column-name header as recorded in `trust/generated/weld-columns/arith.txt`.
+  Without that gate a *compensating* pair of slips (mirror and map wrong in the
+  same direction) would still be `rfl`. That gate reads `mainValue` and nothing
+  else, so `extractedArithRowCircuit_pinned` below ties the instance the welds
+  actually resolve to the map the gate actually pins; see the section comment
+  there for the hole it closes.
 * It does **not** rest on `mainValue`'s `0` answers outside the modeled lanes,
   nor on the `preprocessed`/`challenge`/`exposed` stubs. That is checked by
   `fOnlyConstraints_readOnlyModeledLanes` and `weldedConstraints_probeBridge`,
@@ -90,8 +91,8 @@ structure ExtractedArithRow (F ExtF : Type) where
 
     This is the *only* handwritten datum the weld introduces; it is checked
     against that same generated header (recorded in
-    `trust/generated/arith-stage1-columns.txt`) by
-    `trust/scripts/check-arith-column-map.py`.
+    `trust/generated/weld-columns/arith.txt`) by
+    `trust/scripts/check-weld-column-maps.py`.
     Stage 2 (`gsum`, `im_*`) is not modeled: the generated constraints that read
     stage-2 columns (`constraint_49..64`) mix in `Extraction.Circuit.challenge`
     and are represented in the Clean component by channel `push`/`lookup`
@@ -625,7 +626,7 @@ theorem weldedConstraints_probeBridge (row : ArithMulRow FGL) (r : ℕ) :
 
 /-! ## The instance is pinned to the pinned column map
 
-`trust/scripts/check-arith-column-map.py` pins the 44 arms of `mainValue` to the
+`trust/scripts/check-weld-column-maps.py` pins the 44 arms of `mainValue` to the
 extractor's stage-1 column layout — and reads nothing but `mainValue`. Rebinding
 `extractedArithRowCircuit`'s `main` field to some other function would leave that
 gate green while every weld above silently spoke about a different column map:
