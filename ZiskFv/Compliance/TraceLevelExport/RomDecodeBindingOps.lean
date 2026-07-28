@@ -86,6 +86,90 @@ theorem mainBOffsetImm0_at_eq_program
   refine ⟨j, ?_, ?_⟩ <;>
     simp only [← hj, romMessage, mainOfTable_pc]
 
+/-! ### Physical-row unpacking
+
+Every family except JALR decodes at the physical row `⟨i.val, _⟩` carrying the
+architectural index `i`, so the wrappers below are stated at `i`. JALR's
+unaligned lowering spans two adjacent physical rows, only the first of which is
+the architectural index, so it needs the same unpacking at an arbitrary
+`Fin trace.mainTable.table.length`. The underlying binding lemmas
+(`mainRomMessage_at_eq_program`, `mainRow_flags_boolean`, `mainSourceSpec_at`)
+are already physical; these `…_at` versions just drop the architectural
+projection, and the architectural wrappers are their instances at
+`⟨i.val, h_lt⟩`. -/
+
+/-- **Flag-column unpacking at a physical Main row.** Given the row's packed
+    `romFlags` equals `packFlags bits`, the four packed flag columns equal
+    `boolF` of their bits. -/
+theorem mainFlagColumns_of_packFlags_at
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (row : Fin trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h : romFlags (mainTableRowAtOrZero trace.program trace.mainTable row.val)
+        = packFlags bits) :
+    (mainOfTable trace.program trace.mainTable).is_external_op row.val
+        = ZiskFv.AirsClean.boolF bits.is_external_op
+  ∧ (mainOfTable trace.program trace.mainTable).m32 row.val
+        = ZiskFv.AirsClean.boolF bits.m32
+  ∧ (mainOfTable trace.program trace.mainTable).set_pc row.val
+        = ZiskFv.AirsClean.boolF bits.set_pc
+  ∧ (mainOfTable trace.program trace.mainTable).store_pc row.val
+        = ZiskFv.AirsClean.boolF bits.store_pc := by
+  obtain ⟨a, b, d, e⟩ := romFlagColumns_of_romFlags_eq_packFlags
+    (mainTableRowAtOrZero trace.program trace.mainTable row.val) bits
+    (mainRow_flags_boolean trace row) h
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simpa only [mainOfTable_is_external_op] using a
+  · simpa only [mainOfTable_m32] using b
+  · simpa only [mainOfTable_set_pc] using d
+  · simpa only [mainOfTable_store_pc] using e
+
+/-- **Memory/register selector unpacking at a physical Main row.** The full
+    six-selector projection of `romMemorySelectorColumns_of_romFlags_eq_packFlags`
+    (the three-selector `mainSelectorColumns_of_packFlags` is the architectural
+    subset used by address placement). -/
+theorem mainMemorySelectorColumns_of_packFlags_at
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (row : Fin trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h : romFlags (mainTableRowAtOrZero trace.program trace.mainTable row.val)
+        = packFlags bits) :
+    (mainRowWithRomAt trace row).rom.b_src_mem = ZiskFv.AirsClean.boolF bits.b_src_mem
+  ∧ (mainRowWithRomAt trace row).rom.store_mem = ZiskFv.AirsClean.boolF bits.store_mem
+  ∧ (mainRowWithRomAt trace row).rom.store_ind = ZiskFv.AirsClean.boolF bits.store_ind
+  ∧ (mainRowWithRomAt trace row).rom.b_src_ind = ZiskFv.AirsClean.boolF bits.b_src_ind
+  ∧ (mainRowWithRomAt trace row).rom.b_src_reg = ZiskFv.AirsClean.boolF bits.b_src_reg
+  ∧ (mainRowWithRomAt trace row).rom.store_reg = ZiskFv.AirsClean.boolF bits.store_reg :=
+  romMemorySelectorColumns_of_romFlags_eq_packFlags
+    (mainTableRowAtOrZero trace.program trace.mainTable row.val) bits
+    (mainRow_flags_boolean trace row) h
+
+/-- **`b`-immediate-source selector unpacking at a physical Main row.** -/
+theorem mainBSourceImmColumn_of_packFlags_at
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (row : Fin trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h : romFlags (mainTableRowAtOrZero trace.program trace.mainTable row.val)
+        = packFlags bits) :
+    (mainRowWithRomAt trace row).rom.b_src_imm
+        = ZiskFv.AirsClean.boolF bits.b_src_imm :=
+  romBSourceImmColumn_of_romFlags_eq_packFlags
+    (mainTableRowAtOrZero trace.program trace.mainTable row.val) bits
+    (mainRow_flags_boolean trace row) h
+
+/-- **`a`-immediate-source selector unpacking at a physical Main row.** -/
+theorem mainASourceImmColumn_of_packFlags_at
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (row : Fin trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h : romFlags (mainTableRowAtOrZero trace.program trace.mainTable row.val)
+        = packFlags bits) :
+    (mainRowWithRomAt trace row).rom.a_src_imm
+        = ZiskFv.AirsClean.boolF bits.a_src_imm :=
+  romASourceImmColumn_of_romFlags_eq_packFlags
+    (mainTableRowAtOrZero trace.program trace.mainTable row.val) bits
+    (mainRow_flags_boolean trace row) h
+
 /-- **Flag-column unpacking at a row.**  Given the row's packed `romFlags` equals
     `packFlags bits`, the four packed flag columns equal `boolF` of their bits.
     Wraps `romFlagColumns_of_romFlags_eq_packFlags` + `mainRow_flags_boolean` and
@@ -104,15 +188,8 @@ theorem mainFlagColumns_of_packFlags
   ∧ (mainOfTable trace.program trace.mainTable).set_pc i.val
         = ZiskFv.AirsClean.boolF bits.set_pc
   ∧ (mainOfTable trace.program trace.mainTable).store_pc i.val
-        = ZiskFv.AirsClean.boolF bits.store_pc := by
-  obtain ⟨a, b, d, e⟩ := romFlagColumns_of_romFlags_eq_packFlags
-    (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
-    (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simpa only [mainOfTable_is_external_op] using a
-  · simpa only [mainOfTable_m32] using b
-  · simpa only [mainOfTable_set_pc] using d
-  · simpa only [mainOfTable_store_pc] using e
+        = ZiskFv.AirsClean.boolF bits.store_pc :=
+  mainFlagColumns_of_packFlags_at trace ⟨i.val, h_lt⟩ bits h
 
 /-- **Selector-column unpacking at a row.** Given the row's packed `romFlags`
     equals `packFlags bits`, the selector columns needed by address-placement
@@ -145,10 +222,8 @@ theorem mainBSourceImmColumn_of_packFlags
     (h : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val)
         = packFlags bits) :
     (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_src_imm
-        = ZiskFv.AirsClean.boolF bits.b_src_imm := by
-  exact romBSourceImmColumn_of_romFlags_eq_packFlags
-    (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
-    (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
+        = ZiskFv.AirsClean.boolF bits.b_src_imm :=
+  mainBSourceImmColumn_of_packFlags_at trace ⟨i.val, h_lt⟩ bits h
 
 /-- The committed program's `b` immediate limbs, transported through the
     Main↔ROM lookup to the concrete row, together with `b_src_imm = 1`. -/
@@ -305,6 +380,35 @@ theorem mainLuiDestinationFacts_of_program
     obtain ⟨hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLui] using hstore.symm.trans hpso
   exact ⟨h_store_ind, h_store_offset⟩
+
+/-- Physical-row twin of `mainLuiDestinationFacts_of_program`: writeback
+    destination selector/offset facts derived from the committed program at an
+    arbitrary Main row, for a lowering whose writeback row is not the
+    architectural index (JALR's unaligned terminal `OP_AND` row). -/
+theorem mainDestinationFacts_of_program_at
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (row : Fin trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (rd : regidx)
+    (h_bits_store_ind : bits.store_ind = false)
+    (h_prog : ∀ j : Fin trace.programLength,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc row.val →
+          (trace.program j).store_offset = Transpiler.ind (regidx_to_fin rd)
+        ∧ (trace.program j).flags = packFlags bits) :
+    (mainRowWithRomAt trace row).rom.store_ind = 0
+  ∧ (mainRowWithRomAt trace row).rom.store_offset
+      = Transpiler.ind (regidx_to_fin rd) := by
+  obtain ⟨j, hline, _hop, _hiw, _hj1, _hj2, hflags⟩ :=
+    mainRomColumns_at_eq_program trace row
+  obtain ⟨_hpso, hpf⟩ := h_prog j hline
+  obtain ⟨_, _, p_store_ind, _, _, _⟩ :=
+    mainMemorySelectorColumns_of_packFlags_at trace row bits (hflags.symm.trans hpf)
+  refine ⟨by simpa [h_bits_store_ind, ZiskFv.AirsClean.boolF_false] using p_store_ind, ?_⟩
+  obtain ⟨j, hline, hstore⟩ := mainStoreOffset_at_eq_program trace row
+  obtain ⟨hpso, _hpf⟩ := h_prog j hline
+  simpa [mainRowWithRomAt] using hstore.symm.trans hpso
 
 
 /-! ## Family: R/I-type ALU -/
@@ -4263,6 +4367,220 @@ def Decode_jalr_of_program
       h_a_mask_hi := h_a_mask_hi
       h_c1_zero := h_c1_zero
       h_jmp2 := Or.inl ⟨rfl, key.2.2.2.2.2⟩
+      h_offset_bridge := h_offset_bridge
+      h_offset_even := h_offset_even
+      h_no_fgl_wrap := h_no_fgl_wrap }
+
+/-- `Decode_jalr` for the UNALIGNED lowering, rebuilt from the committed program
+    via the ROM lookup at BOTH physical rows the lowering occupies.
+
+    `Decode_jalr_of_program` covers the aligned lowering, which folds into the
+    single architectural row. The unaligned lowering emits `OP_ADD` at the
+    architectural row `i.val` (computing `rs1 + imm` on the `a`/`b` lanes) and
+    the terminal `OP_AND` at its physical successor `i.val + 1` (masking bit
+    zero, storing the link PC, and taking the jump). Both rows' ROM-message
+    columns — `op`, `jmp_offset2`, `store_offset`, the packed
+    `is_external_op`/`m32`/`set_pc`/`store_pc` flags, the `b`-lane source
+    selectors, and the ADD row's `a`-lane immediate — are DERIVED here from
+    `trace.program` at each row's OWN committed `pc`, so the two-row placement
+    costs no extra program-level premise beyond the second line's decode.
+
+    Passthrough (identical class to the aligned constructor's): the Main-core
+    columns `flag`, `a_0`/`a_1`, `c_1`, the `jmp_offset1` ↔ `offset_bv` bridge,
+    its evenness and no-wrap bounds, and the row bound. These are not ROM-message
+    slots. -/
+def Decode_jalr_unaligned_of_program
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (c : Claim_jalr trace i)
+    -- the terminal row is the physical successor of the ADD row, and it too has
+    -- a successor (the row the set-PC handshake lands on)
+    (h_idx2 : i.val + 2 < trace.mainTable.table.length)
+    -- claim-level: the unaligned lowering carries a zero terminal offset
+    -- (mirrors the aligned constructor's `h_offset_aligned`)
+    (h_offset_zero : c.offset_bv = 0#64)
+    (h_flag_add :
+    (mainOfTable trace.program trace.mainTable).flag i.val = 0)
+    (h_flag :
+    (mainOfTable trace.program trace.mainTable).flag (i.val + 1) = 0)
+    (h_a_mask_lo :
+    (mainOfTable trace.program trace.mainTable).a_0 (i.val + 1) = 4294967294)
+    (h_a_mask_hi :
+    (mainOfTable trace.program trace.mainTable).a_1 (i.val + 1) = 4294967295)
+    (h_c1_zero :
+    (mainOfTable trace.program trace.mainTable).c_1 (i.val + 1) = 0)
+    (h_offset_bridge :
+    ((mainOfTable trace.program trace.mainTable).jmp_offset1 (i.val + 1)).val
+      = c.offset_bv.toNat)
+    (h_offset_even : c.offset_bv &&& 1#64 = 0#64)
+    (h_no_fgl_wrap :
+    ((mainOfTable trace.program trace.mainTable).c_0 (i.val + 1)).val
+      + ((mainOfTable trace.program trace.mainTable).jmp_offset1 (i.val + 1)).val
+        < GL_prime)
+    (addBits : RomFlagBits)
+    (h_add_ieo : addBits.is_external_op = true)
+    (h_add_m32 : addBits.m32 = false)
+    (h_add_set_pc : addBits.set_pc = false)
+    (h_add_a_src_imm : addBits.a_src_imm = true)
+    (h_add_b_src_reg : addBits.b_src_reg = true)
+    (andBits : RomFlagBits)
+    (h_and_ieo : andBits.is_external_op = true)
+    (h_and_m32 : andBits.m32 = false)
+    (h_and_set_pc : andBits.set_pc = true)
+    (h_and_store_pc : andBits.store_pc = true)
+    (h_and_store_ind : andBits.store_ind = false)
+    (h_and_b_src_imm : andBits.b_src_imm = false)
+    (h_and_b_src_mem : andBits.b_src_mem = false)
+    (h_and_b_src_ind : andBits.b_src_ind = false)
+    (h_and_b_src_reg : andBits.b_src_reg = false)
+    (h_prog_add : ∀ j : Fin trace.programLength,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc i.val →
+          (trace.program j).op = ZiskFv.Trusted.OP_ADD
+        ∧ (trace.program j).jmp_offset2 = 1
+        ∧ BitVec.signExtend 64 c.imm
+            = BitVec.ofNat 64
+                ((trace.program j).a_offset_imm0.val
+                  + (trace.program j).a_imm1.val * 4294967296)
+        ∧ (trace.program j).flags = packFlags addBits)
+    (h_prog_and : ∀ j : Fin trace.programLength,
+        (trace.program j).line
+            = (mainOfTable trace.program trace.mainTable).pc (i.val + 1) →
+          (trace.program j).op = ZiskFv.Trusted.OP_AND
+        ∧ (trace.program j).jmp_offset2 = 3
+        ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
+        ∧ (trace.program j).flags = packFlags andBits) :
+    Decode_jalr trace i c := by
+  have h_lt_start : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  have h_lt_finish : i.val + 1 < trace.mainTable.table.length := by omega
+  -- `Decode_jalr` lives in `Type`, so every `Exists` elimination on the ROM
+  -- binding must be bagged into a Prop-valued `have` before the structure is
+  -- built (large elimination is not available in the goal itself). Same shape
+  -- as the aligned constructor's `have key`, once per committed row.
+  have keyAdd :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_ADD ∧
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 ∧
+      (mainOfTable trace.program trace.mainTable).m32 i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).set_pc i.val = 0 ∧
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 1 ∧
+      (mainRowWithRomAt trace ⟨i.val, h_lt_start⟩).rom.b_src_reg = 1 := by
+    obtain ⟨ja, hlinea, hopa, _, _, hjmp2a, hflagsa⟩ :=
+      mainRomColumns_at_eq_program trace ⟨i.val, h_lt_start⟩
+    obtain ⟨hpoa, hpj2a, _, hpfa⟩ := h_prog_add ja hlinea
+    have hroma := hflagsa.symm.trans hpfa
+    obtain ⟨pa_ieo, pa_m32, pa_set_pc, _⟩ :=
+      mainFlagColumns_of_packFlags_at trace ⟨i.val, h_lt_start⟩ addBits hroma
+    obtain ⟨_, _, _, _, pa_b_src_reg, _⟩ :=
+      mainMemorySelectorColumns_of_packFlags_at trace ⟨i.val, h_lt_start⟩ addBits hroma
+    exact ⟨hopa.symm.trans hpoa,
+      by rw [pa_ieo, h_add_ieo, ZiskFv.AirsClean.boolF_true],
+      by rw [pa_m32, h_add_m32, ZiskFv.AirsClean.boolF_false],
+      by rw [pa_set_pc, h_add_set_pc, ZiskFv.AirsClean.boolF_false],
+      hjmp2a.symm.trans hpj2a,
+      by rw [pa_b_src_reg, h_add_b_src_reg, ZiskFv.AirsClean.boolF_true]⟩
+  -- The ADD row's `a` lane carries the committed immediate: `a_src_imm = 1`
+  -- turns `SourceSpec` into `a_0 = a_offset_imm0`, `a_1 = a_imm1`, and the ROM
+  -- message ties both limbs to the committed program entry.
+  have h_a_lane :
+      BitVec.ofNat 64
+          (((mainOfTable trace.program trace.mainTable).a_0 i.val).val
+            + ((mainOfTable trace.program trace.mainTable).a_1 i.val).val * 4294967296)
+        = BitVec.signExtend 64 c.imm := by
+    obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt_start⟩
+    have hline : (trace.program j).line
+        = (mainOfTable trace.program trace.mainTable).pc i.val := by
+      simp only [← hj, romMessage, mainOfTable_pc]
+    obtain ⟨_, _, h_imm, hpf⟩ := h_prog_add j hline
+    have hrom : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val)
+        = packFlags addBits := by
+      have hflags : (trace.program j).flags
+          = romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val) := by
+        simp only [← hj, romMessage]
+      exact hflags.symm.trans hpf
+    have h_asi :
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_imm = 1 := by
+      simpa only [h_add_a_src_imm, ZiskFv.AirsClean.boolF_true]
+        using mainASourceImmColumn_of_packFlags_at trace ⟨i.val, h_lt_start⟩ addBits hrom
+    obtain ⟨h_a0, h_a1, _, _⟩ := mainSourceSpec_at trace ⟨i.val, h_lt_start⟩
+    rw [h_asi, one_mul] at h_a0 h_a1
+    have e_a0 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.a_0
+        = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_offset_imm0 := by
+      apply sub_eq_zero.mp; simpa [sub_eq_add_neg] using h_a0
+    have e_a1 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.a_1
+        = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_imm1 := by
+      apply sub_eq_zero.mp; simpa [sub_eq_add_neg] using h_a1
+    have h_off : (trace.program j).a_offset_imm0
+        = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_offset_imm0 := by
+      simp only [← hj, romMessage]
+    have h_hi : (trace.program j).a_imm1
+        = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_imm1 := by
+      simp only [← hj, romMessage]
+    rw [h_off, h_hi] at h_imm
+    simpa only [mainOfTable_a_0, mainOfTable_a_1, e_a0, e_a1] using h_imm.symm
+  have keyAnd :
+      (mainOfTable trace.program trace.mainTable).op (i.val + 1) = ZiskFv.Trusted.OP_AND ∧
+      (mainOfTable trace.program trace.mainTable).is_external_op (i.val + 1) = 1 ∧
+      (mainOfTable trace.program trace.mainTable).m32 (i.val + 1) = 0 ∧
+      (mainOfTable trace.program trace.mainTable).set_pc (i.val + 1) = 1 ∧
+      (mainOfTable trace.program trace.mainTable).store_pc (i.val + 1) = 1 ∧
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 (i.val + 1) = 3 ∧
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.b_src_imm = 0 ∧
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.b_src_mem = 0 ∧
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.b_src_ind = 0 ∧
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.b_src_reg = 0 ∧
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.store_ind = 0 ∧
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.store_offset
+        = Transpiler.ind (regidx_to_fin c.rd) := by
+    obtain ⟨jb, hlineb, hopb, _, _, hjmp2b, hflagsb⟩ :=
+      mainRomColumns_at_eq_program trace ⟨i.val + 1, h_lt_finish⟩
+    obtain ⟨hpob, hpj2b, _, hpfb⟩ := h_prog_and jb hlineb
+    have hromb := hflagsb.symm.trans hpfb
+    obtain ⟨pb_ieo, pb_m32, pb_set_pc, pb_store_pc⟩ :=
+      mainFlagColumns_of_packFlags_at trace ⟨i.val + 1, h_lt_finish⟩ andBits hromb
+    obtain ⟨pb_b_mem, _, _, pb_b_ind, pb_b_reg, _⟩ :=
+      mainMemorySelectorColumns_of_packFlags_at trace ⟨i.val + 1, h_lt_finish⟩ andBits hromb
+    have pb_b_imm :=
+      mainBSourceImmColumn_of_packFlags_at trace ⟨i.val + 1, h_lt_finish⟩ andBits hromb
+    have h_dest := mainDestinationFacts_of_program_at trace ⟨i.val + 1, h_lt_finish⟩
+      andBits c.rd h_and_store_ind
+      (fun j hline => by
+        obtain ⟨_, _, hpso, hpf⟩ := h_prog_and j hline
+        exact ⟨hpso, hpf⟩)
+    exact ⟨hopb.symm.trans hpob,
+      by rw [pb_ieo, h_and_ieo, ZiskFv.AirsClean.boolF_true],
+      by rw [pb_m32, h_and_m32, ZiskFv.AirsClean.boolF_false],
+      by rw [pb_set_pc, h_and_set_pc, ZiskFv.AirsClean.boolF_true],
+      by rw [pb_store_pc, h_and_store_pc, ZiskFv.AirsClean.boolF_true],
+      hjmp2b.symm.trans hpj2b,
+      by rw [pb_b_imm, h_and_b_src_imm, ZiskFv.AirsClean.boolF_false],
+      by rw [pb_b_mem, h_and_b_src_mem, ZiskFv.AirsClean.boolF_false],
+      by rw [pb_b_ind, h_and_b_src_ind, ZiskFv.AirsClean.boolF_false],
+      by rw [pb_b_reg, h_and_b_src_reg, ZiskFv.AirsClean.boolF_false],
+      h_dest.1, h_dest.2⟩
+  exact
+    { rows :=
+        { start := ⟨i.val, h_lt_start⟩
+          finish := ⟨i.val + 1, h_lt_finish⟩
+          architectural_start := rfl
+          finish_has_successor := by simpa using h_idx2
+          lowering := Or.inr ⟨rfl, h_offset_zero, keyAdd.1, keyAdd.2.1, keyAdd.2.2.1,
+            h_flag_add, keyAdd.2.2.2.1, keyAdd.2.2.2.2.1, h_a_lane, keyAdd.2.2.2.2.2,
+            keyAnd.2.2.2.2.2.2.1, keyAnd.2.2.2.2.2.2.2.1,
+            keyAnd.2.2.2.2.2.2.2.2.1, keyAnd.2.2.2.2.2.2.2.2.2.1⟩ }
+      h_main_op := keyAnd.1
+      h_main_active := keyAnd.2.1
+      h_flag := h_flag
+      h_m32 := keyAnd.2.2.1
+      h_set_pc := keyAnd.2.2.2.1
+      h_store_pc := keyAnd.2.2.2.2.1
+      h_store_ind := keyAnd.2.2.2.2.2.2.2.2.2.2.1
+      h_store_offset := keyAnd.2.2.2.2.2.2.2.2.2.2.2
+      h_idx := by simpa using h_idx2
+      h_a_mask_lo := h_a_mask_lo
+      h_a_mask_hi := h_a_mask_hi
+      h_c1_zero := h_c1_zero
+      h_jmp2 := Or.inr ⟨rfl, keyAnd.2.2.2.2.2.1⟩
       h_offset_bridge := h_offset_bridge
       h_offset_even := h_offset_even
       h_no_fgl_wrap := h_no_fgl_wrap }
