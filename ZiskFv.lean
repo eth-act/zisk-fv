@@ -201,6 +201,9 @@ import ZiskFv.Compliance.AeneasBridgeTrust.Decode
 -- PIL-mirroring `packFlags` / `BitVec.toInt` readings. Standalone; nothing in
 -- `root_soundness` depends on it yet (the raw-word binding is Phase-0 step S3).
 import ZiskFv.Compliance.RomRowSerialization
+-- eth-act/zisk-fv#61 Phase-0 step S3: inhabitation of that serialization on real
+-- in-tree committed ROM rows, through the production Aeneas-extracted lowerer.
+import ZiskFv.Compliance.RomRowInhabitation
 import ZiskFv.Soundness
 import ZiskFv.Completeness.Rv
 -- Quarantined aspirational route; kept here so it stays built/verified, but the
