@@ -42,8 +42,22 @@ with `trust/scripts/regenerate.sh`.
    under the extractor's own pilout-name -> Lean-identifier rule
    (`tools/pil-extract/src/clean_component.rs::lean_field_name`, `a[0]` ->
    `a_0`);
-5. when the generated file is present, the recorded layout reproduces its header
+5. every arm lies in the body of `def mainValue` itself, and no arm lies anywhere
+   else in the file. What ties this gate to the compiled proof is the Lean
+   theorem `extractedArithRowCircuit_pinned`, which pins the weld's
+   `Extraction.Circuit` instance to *`mainValue`* by name; arms parked in a
+   helper that `mainValue` merely delegates to would be pinned here and unpinned
+   there, which is the same fail-open shape as an unbound `main`;
+6. when the generated file is present, the recorded layout reproduces its header
    exactly.
+
+## What this check does *not* do
+
+It does not check that `mainValue` is the map the weld theorems use -- that is a
+statement about the `Extraction.Circuit` instance, and it is discharged in the
+build by `extractedArithRowCircuit_pinned` in the weld module rather than here.
+Rebinding `instance extractedArithRowCircuit`'s `main` field leaves this gate
+green by construction, so do not read a pass here as covering it.
 """
 
 from __future__ import annotations
@@ -60,6 +74,9 @@ ROW = Path("ZiskFv/AirsClean/ArithMul/Row.lean")
 
 ROW_STRUCT = "ArithMulRow"
 
+# `\b` is not enough: `'` is a Lean identifier character but not a word
+# character, so `\b` would accept `mainValue'` as `mainValue`.
+MAIN_VALUE_RE = re.compile(r"^def mainValue(?![A-Za-z0-9_'])")
 HEADER_RE = re.compile(r"^--\s+stage 1 col (\d+): (.+?)\s*$")
 RECORDED_RE = re.compile(r"^(\d+)\s+(\S+)$")
 ARM_RE = re.compile(
@@ -206,9 +223,33 @@ def row_cells(text: str) -> tuple[dict[str, set[str]], list[str]]:
     return cells, clashes
 
 
-def weld_arms(text: str) -> dict[int, tuple[str, str]]:
+def main_value_body(text: str) -> tuple[list[str], list[str]]:
+    """The lines of `def mainValue`'s body, and every other line of the file.
+
+    A Lean top-level command starts in column 0, so the body runs from the
+    `def mainValue` line to the next non-blank line starting in column 0.
+    Comments are stripped first (line-for-line), so a commented-out arm counts as
+    what it is: not an arm.
+    """
+    lines = strip_comments(text).splitlines()
+    starts = [i for i, line in enumerate(lines) if MAIN_VALUE_RE.match(line)]
+    if len(starts) != 1:
+        raise CheckError(
+            f"{WELD}: expected exactly one top-level `def mainValue`, found {len(starts)}"
+        )
+    start = starts[0]
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        line = lines[index]
+        if line.strip() and not line[:1].isspace():
+            end = index
+            break
+    return lines[start:end], lines[:start] + lines[end:]
+
+
+def weld_arms(lines: list[str]) -> dict[int, tuple[str, str]]:
     arms: dict[int, tuple[str, str]] = {}
-    for line in text.splitlines():
+    for line in lines:
         match = ARM_RE.match(line)
         if match:
             index = int(match.group(1))
@@ -225,15 +266,24 @@ def run() -> list[str]:
     if not recorded:
         raise CheckError(f"{RECORDED} records no columns; refusing to pass vacuously")
 
-    arms = weld_arms(read(root / WELD, "Arith mirror weld"))
+    body, elsewhere = main_value_body(read(root / WELD, "Arith mirror weld"))
+    arms = weld_arms(body)
     if not arms:
         raise CheckError(
-            f"{WELD} has no `| N => c.row.<sub>.<field>` arms; refusing to pass vacuously"
+            f"{WELD}: `def mainValue` has no `| N => c.row.<sub>.<field>` arms; "
+            "refusing to pass vacuously"
         )
 
     cells, clashes = row_cells(read(root / ROW, f"`{ROW_STRUCT}` declaration"))
 
     failures: list[str] = [
+        f"{WELD}: column-map arm outside `def mainValue`: {line.strip()} -- "
+        "the compiled pin `extractedArithRowCircuit_pinned` names `mainValue`, so "
+        "an arm anywhere else is checked here and unchecked there"
+        for line in elsewhere
+        if ARM_RE.match(line)
+    ]
+    failures += [
         f"{ROW}: field-name clash across sub-records -- {clash}; the column map "
         "identifies a cell by field name, so this makes it ambiguous"
         for clash in clashes
@@ -302,7 +352,8 @@ def run() -> list[str]:
     if not failures:
         print(
             f"trust-gate: Arith weld column map pinned -- {len(recorded)} stage-1 columns, "
-            f"each a distinct existing `{ROW_STRUCT}` cell; {source}."
+            f"each a distinct existing `{ROW_STRUCT}` cell, all inside `def mainValue`; "
+            f"{source}."
         )
     return failures
 

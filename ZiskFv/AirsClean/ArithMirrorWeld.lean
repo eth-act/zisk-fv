@@ -45,6 +45,13 @@ the one the mirror asserts.
   against the extractor's own column-name header as recorded in
   `trust/generated/arith-stage1-columns.txt`. Without that gate a *compensating*
   pair of slips (mirror and map wrong in the same direction) would still be `rfl`.
+  That gate reads `mainValue` and nothing else, so `extractedArithRowCircuit_pinned`
+  below ties the instance the welds actually resolve to the map the gate actually
+  pins; see the section comment there for the hole it closes.
+* It does **not** rest on `mainValue`'s `0` answers outside the modeled lanes,
+  nor on the `preprocessed`/`challenge`/`exposed` stubs. That is checked by
+  `fOnlyConstraints_readOnlyModeledLanes` and `weldedConstraints_probeBridge`,
+  not assumed; see "Which lanes a welded constraint is allowed to read".
 
 ## Trust note
 
@@ -263,5 +270,219 @@ theorem extracted_of_sharedMainComplete
   exact ⟨divBoundarySpec_a2_weld _ hspec.2.1,
     divInverseSumSpec_weld _ |>.mp hspec.2.2.1,
     divModeSpec_div_boolean_weld _ hspec.1⟩
+
+/-! ## Which lanes a welded constraint is allowed to read
+
+`mainValue` is total, so it has to answer somewhere it is not modeling: it
+returns `0` for every stage-2 read (`id ≠ 1`) and for every stage-1 column
+`≥ 44`, and, ignoring its `row` and `rotation` arguments, it returns the same
+cell at every trace row and every rotation. `extractedArithRowCircuit` stubs the
+`preprocessed`, `challenge` and `exposed` lanes to `0` outright. Those answers
+are only harmless if no welded constraint can observe them; if one could, the
+weld would be certifying a polynomial the AIR does not assert. This section
+checks that instead of asserting it.
+
+`ArithProbe` is the *free* `Extraction.Circuit`: every lane is an unconstrained
+function field. Instantiating a generated constraint there turns each cell read
+into an application of a variable, so a `rfl`-level identity between a probe
+circuit and its restriction is a statement about which cells the generated body
+mentions — not about their values. -/
+
+/-- The free `Extraction.Circuit` over `FGL`: each lane is a function field. -/
+structure ArithProbe (F ExtF : Type) where
+  mainCell : ℕ → ℕ → ℕ → ℕ → FGL
+  preprocessedCell : ℕ → ℕ → ℕ → FGL
+  challengeCell : ℕ → FGL
+  exposedCell : ℕ → FGL
+
+instance arithProbeCircuit : Extraction.Circuit FGL FGL ArithProbe where
+  main c := c.mainCell
+  preprocessed c := c.preprocessedCell
+  challenge c := c.challengeCell
+  exposed c := c.exposedCell
+
+/-- `c` cut down to the lanes `extractedArithRowCircuit` actually models: stage 1,
+    columns `< 44`, rotation `0`, the single trace row `r`; `0` everywhere else,
+    including all of `preprocessed`, `challenge` and `exposed`. -/
+@[reducible]
+def restrictToModeledLanes (c : ArithProbe FGL FGL) (r : ℕ) : ArithProbe FGL FGL where
+  mainCell := fun id column _row rotation =>
+    if id = 1 ∧ column < 44 ∧ rotation = 0 then c.mainCell id column r rotation else 0
+  preprocessedCell := fun _ _ _ => 0
+  challengeCell := fun _ => 0
+  exposedCell := fun _ => 0
+
+/-- `P c r` is unchanged by zeroing every lane `extractedArithRowCircuit` stubs.
+
+    Unfolded: `P c r` may mention `c.mainCell 1 k r 0` for `k < 44` and nothing
+    else. A read of a stage-2 column, of stage-1 column `≥ 44`, of a rotation
+    other than `0`, of a trace row other than `r`, or of `preprocessed`,
+    `challenge` or `exposed` would leave a free `c.<lane> …` on the left of the
+    `Iff` with no counterpart on the right, and `Iff.rfl` would not typecheck. -/
+@[reducible]
+def ReadsOnlyModeledLanes (P : ArithProbe FGL FGL → ℕ → Prop) : Prop :=
+  ∀ (c : ArithProbe FGL FGL) (r : ℕ), P c r ↔ P (restrictToModeledLanes c r) r
+
+/-- Each of the Arith AIR's 49 F-only constraints reads only the lanes
+    `extractedArithRowCircuit` models.
+
+    The property is not vacuous: `ReadsOnlyModeledLanes` asserted of
+    `constraint_63_every_row` (which reads `challenge` and `preprocessed`) or of
+    `constraint_64_every_row` (which reads `preprocessed` and `exposed`) fails to
+    elaborate, with `Iff.rfl` rejected against the stated `Iff`. Those two are
+    among the 16 generated constraints outside the F-only set
+    (`constraint_49_every_row` … `constraint_64_every_row`), which read stage-2
+    columns (`id := 2`) and the challenge lane; they are represented in the Clean
+    component by channel `push`/`lookup` operations rather than `assertZero`, and
+    nothing in this module welds them. -/
+theorem fOnlyConstraints_readOnlyModeledLanes :
+    ReadsOnlyModeledLanes Arith.extraction.constraint_0_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_1_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_2_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_3_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_4_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_5_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_6_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_7_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_8_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_9_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_10_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_11_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_12_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_13_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_14_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_15_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_16_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_17_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_18_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_19_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_20_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_21_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_22_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_23_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_24_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_25_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_26_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_27_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_28_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_29_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_30_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_31_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_32_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_33_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_34_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_35_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_36_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_37_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_38_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_39_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_40_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_41_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_42_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_43_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_44_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_45_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_46_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_47_every_row
+    ∧
+    ReadsOnlyModeledLanes Arith.extraction.constraint_48_every_row :=
+  ⟨fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl⟩
+
+/-- `extractedArithRow row` re-expressed in the free circuit: `mainValue` in the
+    stage-1 lane, `0` in every stub lane. -/
+@[reducible]
+def probeOfRow (row : ArithMulRow FGL) : ArithProbe FGL FGL where
+  mainCell := mainValue (extractedArithRow row)
+  preprocessedCell := fun _ _ _ => 0
+  challengeCell := fun _ => 0
+  exposedCell := fun _ => 0
+
+/-- The bridge from `extractedArithRowCircuit`, at which every weld above is
+    stated, into the free circuit. Composed with
+    `fOnlyConstraints_readOnlyModeledLanes` it gives: none of the four welded
+    constraints can observe a stubbed lane, so the `0` defaults in `mainValue`
+    and the `preprocessed`/`challenge`/`exposed` stubs cannot be what makes a
+    weld true. -/
+theorem weldedConstraints_probeBridge (row : ArithMulRow FGL) (r : ℕ) :
+    (Arith.extraction.constraint_15_every_row (extractedArithRow row) r
+        ↔ Arith.extraction.constraint_15_every_row (probeOfRow row) r)
+      ∧ (Arith.extraction.constraint_25_every_row (extractedArithRow row) r
+        ↔ Arith.extraction.constraint_25_every_row (probeOfRow row) r)
+      ∧ (Arith.extraction.constraint_36_every_row (extractedArithRow row) r
+        ↔ Arith.extraction.constraint_36_every_row (probeOfRow row) r)
+      ∧ (Arith.extraction.constraint_39_every_row (extractedArithRow row) r
+        ↔ Arith.extraction.constraint_39_every_row (probeOfRow row) r) :=
+  ⟨Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl⟩
+
+/-! ## The instance is pinned to the pinned column map
+
+`trust/scripts/check-arith-column-map.py` pins the 44 arms of `mainValue` to the
+extractor's stage-1 column layout — and reads nothing but `mainValue`. Rebinding
+`extractedArithRowCircuit`'s `main` field to some other function would leave that
+gate green while every weld above silently spoke about a different column map:
+a gate that appears to check something it does not.
+
+`extractedArithRowCircuit_pinned` removes that freedom inside the build. It is
+stated through `inferInstance`, so it fails to compile both if any field of the
+instance drifts and if instance resolution for
+`Extraction.Circuit FGL FGL ExtractedArithRow` starts finding a different
+instance. It is deliberately the last declaration in the module: every weld above
+resolves that class against the instances declared before it, so an instance
+introduced anywhere above — including one shadowing `extractedArithRowCircuit` —
+is also the one this theorem resolves and checks. -/
+theorem extractedArithRowCircuit_pinned :
+    (inferInstance : Extraction.Circuit FGL FGL ExtractedArithRow) =
+      { main := mainValue
+        preprocessed := fun _ _ _ _ => 0
+        challenge := fun _ _ => 0
+        exposed := fun _ _ => 0 } :=
+  rfl
 
 end ZiskFv.AirsClean.ArithMul
