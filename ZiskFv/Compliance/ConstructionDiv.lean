@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.ConstructionDivu
+import ZiskFv.Compliance.Defects
 
 /-!
 # Signed DIV construction facts
@@ -74,19 +75,8 @@ theorem signedDiv_sign_cases_of_row
     (h_op : arow.flags.op = 186)
     (h_div_by_zero : arow.flags.div_by_zero = 0)
     (h_div_overflow : arow.flags.div_overflow = 0) :
-    let v := vOfDivuRow arow
-    ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np 0)
-          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na 0)
-              + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb 0)
-              - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na 0)
-                  * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb 0)
-      ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na 0) = 0
-          ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb 0) = 0
-          ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np 0) = 1)
-      ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na 0) = 0
-          ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb 0) = 1
-          ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np 0) = 0) := by
-  dsimp only
+    ArithDivOrdinarySignCases (vOfDivuRow arow) 0 := by
+  unfold ArithDivOrdinarySignCases
   have h_table :
       ZiskFv.AirsClean.ArithDiv.ArithTableSpec
         (ZiskFv.AirsClean.ArithDiv.rowAt (vOfDivuRow arow) 0) :=
@@ -118,6 +108,111 @@ theorem divArow_sharedDivBlockSpec
       H.choose_spec.2.choose_spec.2.1
       (H.choose_spec.2.choose_spec.2.2.1
         H.choose_spec.2.choose H.choose_spec.2.choose_spec.1)
+
+/-- The canonical legacy ArithDiv view of the balance-selected signed-DIV row. -/
+noncomputable def divV
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL :=
+  vOfDivuRow (divArow trace binding i h_main_active h_main_op)
+
+/-- Transport a trace-local exclusion proved for every physical signed-DIV
+    provider row to the canonical balance-selected `divV`. -/
+theorem divV_exclusions_of_provider_rows
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV)
+    (op2 : BitVec 64)
+    (h_provider :
+      ∀ (providerTable : Air.Flat.Table FGL),
+        providerTable ∈ trace.witness.allTables →
+        ∀ (providerRow : Array FGL), providerRow ∈ providerTable.table →
+        providerTable.component = arithMulProviderComponent →
+        providerTable.component.Spec (providerTable.environment providerRow) →
+        matches_entry
+          (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val)
+          (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                (providerTable.environment providerRow))) 1) →
+        op2.toInt =
+          Defects.signedDivisorInt
+            (vOfDivuRow
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                (providerTable.environment providerRow))) 0 →
+        ¬ Defects.DivRemForge op2
+            (vOfDivuRow
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                (providerTable.environment providerRow))) 0
+          ∧ ¬ Defects.SignedDivQuotientSignForge
+            (vOfDivuRow
+              (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+                (providerTable.environment providerRow))) 0)
+    (h_divisor :
+      op2.toInt = Defects.signedDivisorInt
+        (divV trace binding i h_main_active h_main_op) 0) :
+    ¬ Defects.DivRemForge op2 (divV trace binding i h_main_active h_main_op) 0
+      ∧ ¬ Defects.SignedDivQuotientSignForge
+        (divV trace binding i h_main_active h_main_op) 0 := by
+  unfold divV divArow at h_divisor ⊢
+  let H := main_request_div_provided trace i h_main_active h_main_op
+  exact h_provider H.choose H.choose_spec.1
+    H.choose_spec.2.choose H.choose_spec.2.choose_spec.1
+    H.choose_spec.2.choose_spec.2.1
+    (H.choose_spec.2.choose_spec.2.2.1
+      H.choose_spec.2.choose H.choose_spec.2.choose_spec.1)
+    H.choose_spec.2.choose_spec.2.2.2 h_divisor
+
+theorem divArow_op_eq
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    (divArow trace binding i h_main_active h_main_op).flags.op = 186 := by
+  have h_match := divArow_match_row trace binding i h_main_active h_main_op
+  have h_op_match := h_match.2.1
+  rw [ZiskFv.AirsClean.ArithMul.primaryOpBusMessage_toEntry_op,
+    show (opBus_row_Main (mainOfTable trace.program trace.mainTable) i.val).op
+      = (mainOfTable trace.program trace.mainTable).op i.val from rfl,
+    h_main_op] at h_op_match
+  simpa [ZiskFv.Trusted.OP_DIV] using h_op_match.symm
+
+/-- Complete static-table sign evidence for the selected signed-DIV row. -/
+theorem divArow_sign_witness
+    (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_main_active :
+      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV) :
+    ArithDivSignWitness (divV trace binding i h_main_active h_main_op) 0 := by
+  let arow := divArow trace binding i h_main_active h_main_op
+  have h_full := divArow_fullSpec_row trace binding i h_main_active h_main_op
+  have h_op := divArow_op_eq trace binding i h_main_active h_main_op
+  have h_table :
+      ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+        (ZiskFv.AirsClean.ArithDiv.rowAt (vOfDivuRow arow) 0) :=
+    (arithDiv_fullSpec_of_arithMul_fullSpec arow h_full).2.1
+  refine ⟨?_, ?_⟩
+  · intro h_div_by_zero h_div_overflow
+    exact signedDiv_sign_cases_of_row arow h_full h_op
+      (by simpa [divV, arow, vOfDivuRow] using h_div_by_zero)
+      (by simpa [divV, arow, vOfDivuRow] using h_div_overflow)
+  · intro h_div_overflow
+    exact
+      ZiskFv.AirsClean.ArithTableProjections.Div.div_overflow_sign_pins
+        (vOfDivuRow arow) 0 h_table
+        (by simpa [divV, arow, vOfDivuRow] using h_op)
+        (by simpa [divV, arow, vOfDivuRow] using h_div_overflow)
 
 private theorem signedDiv_selected_remainder_chain
     (arow : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)

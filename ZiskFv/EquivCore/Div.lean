@@ -112,16 +112,6 @@ lemma equiv_DIV
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
-    (h_nr_pin :
-      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
-          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
-        ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_0 r_a)
-            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_1 r_a) * 65536
-            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_3 r_a)
-                * (65536 * 65536 * 65536)) * 0 = 0
-              ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-              ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_byte_lo :
       (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
@@ -144,10 +134,7 @@ lemma equiv_DIV
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
         - (v.nr r_a).val * (2:ℤ)^64).natAbs < div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt) :
+    :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -165,14 +152,14 @@ lemma equiv_DIV
     ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
   have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_chunked
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_quotient_chunked
       div_input.r1_val div_input.r2_val e2 v r_a
       h0 h1 h2 h3 h4 h5 h6 h7
       h_chain h_chunk_ranges h_carry_ranges
       h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool (Or.inl h_np_xor)
-      (by rintro ⟨_, h_wrong⟩; exact h_wrong h_np_xor) h_nr_pin
+      (by rintro ⟨_, h_wrong⟩; exact h_wrong h_np_xor)
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-      h_op2_ne h_r_abs h_r_sign
+      h_op2_ne h_r_abs
   rw [equiv_DIV_sail state div_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
@@ -209,20 +196,10 @@ lemma equiv_DIV_boundary_split
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_sign_cases :
-      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
-          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
-              + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
-              - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
-                  * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
-        ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a) = 0
-            ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) = 0
-            ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) = 1)
-        ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a) = 0
-            ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) = 1
-            ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) = 0))
+    (h_sign_cases : ZiskFv.Compliance.ArithDivSignWitness v r_a)
     (h_not_sign_forge :
-      ¬ (ZiskFv.PackedBitVec.MulNoWrap.packed4
+      ¬ (v.div_overflow r_a = 0
+        ∧ ZiskFv.PackedBitVec.MulNoWrap.packed4
               (v.a_0 r_a).val (v.a_1 r_a).val
               (v.a_2 r_a).val (v.a_3 r_a).val ≠ 0
           ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
@@ -230,16 +207,6 @@ lemma equiv_DIV_boundary_split
                 + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
                 - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                   * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)))
-    (h_nr_pin :
-      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
-          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
-        ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_0 r_a)
-            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_1 r_a) * 65536
-            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.a_3 r_a)
-                * (65536 * 65536 * 65536)) * 0 = 0
-              ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-              ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_byte_lo :
       (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
@@ -262,10 +229,7 @@ lemma equiv_DIV_boundary_split
         ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
           - (v.nr r_a).val * (2:ℤ)^64).natAbs < div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt) :
+    :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -282,6 +246,14 @@ lemma equiv_DIV_boundary_split
   have h_carry_ranges :=
     ZiskFv.EquivCore.Bridge.Arith.arith_div_signed_carry_ranges_at_holds
       v r_a carry_ranges
+  have h_div_by_zero_bool : v.div_by_zero r_a = 0 ∨ v.div_by_zero r_a = 1 := by
+    rcases mul_eq_zero.mp h_boundary.2.2.2.1 with h | h
+    · exact Or.inl h
+    · exact Or.inr (sub_eq_zero.mp h).symm
+  have h_div_overflow_bool : v.div_overflow r_a = 0 ∨ v.div_overflow r_a = 1 := by
+    rcases mul_eq_zero.mp h_boundary.2.2.2.2.1 with h | h
+    · exact Or.inl h
+    · exact Or.inr (sub_eq_zero.mp h).symm
   have h_rd_val :
       U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
                   ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8), ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
@@ -292,15 +264,32 @@ lemma equiv_DIV_boundary_split
           div_input.r1_val div_input.r2_val e2 v r_a
           h0 h1 h2 h3 h4 h5 h6 h7 h_chunk_ranges h_boundary h_m32 h_div
           h_nb_bool h_byte_lo h_byte_hi h_rs2_value h_r2_zero
-    · exact
-        ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_chunked
-          div_input.r1_val div_input.r2_val e2 v r_a
-          h0 h1 h2 h3 h4 h5 h6 h7
-          h_chain h_chunk_ranges h_carry_ranges
-          h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_sign_cases
-          h_not_sign_forge h_nr_pin
-          h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-          h_r2_zero (h_r_abs_of_ne h_r2_zero) h_r_sign
+    · have h_div_by_zero :
+          v.div_by_zero r_a = 0 :=
+        ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.div_by_zero_eq_zero_of_signed_divisor_ne_zero
+            div_input.r2_val v r_a h_boundary h_div_by_zero_bool h_nb_bool
+            h_rs2_value h_r2_zero
+      rcases h_div_overflow_bool with h_overflow | h_overflow
+      · exact
+          ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_quotient_chunked
+            div_input.r1_val div_input.r2_val e2 v r_a
+            h0 h1 h2 h3 h4 h5 h6 h7
+            h_chain h_chunk_ranges h_carry_ranges
+            h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool
+            (h_sign_cases.ordinary h_div_by_zero h_overflow)
+            (by
+              rintro ⟨h_quotient, h_wrong_sign⟩
+              exact h_not_sign_forge ⟨h_overflow, h_quotient, h_wrong_sign⟩)
+            h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+            h_r2_zero (h_r_abs_of_ne h_r2_zero)
+      · obtain ⟨h_na, h_nb, h_np, h_nr⟩ := h_sign_cases.overflow h_overflow
+        exact
+          ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_overflow_chunked
+              div_input.r1_val div_input.r2_val e2 v r_a
+              h0 h1 h2 h3 h4 h5 h6 h7 h_chain h_boundary
+              h_chunk_ranges h_carry_ranges h_sext h_m32 h_div
+              h_na h_nb h_np h_nr h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+              h_overflow (h_r_abs_of_ne h_r2_zero)
   rw [equiv_DIV_sail state div_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

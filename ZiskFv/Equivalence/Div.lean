@@ -52,18 +52,7 @@ theorem equiv_DIV
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
-      toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_nr_pin :
-      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
-        ∨ (toIntZ (v.a_0 r_a)
-            + toIntZ (v.a_1 r_a) * 65536
-            + toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
-          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_sign_cases : ZiskFv.Compliance.ArithDivSignWitness v r_a)
     (h_rs1_value :
       div_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -75,14 +64,11 @@ theorem equiv_DIV
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
     -- WEAK signed remainder bound `|r| ≤ |op2|` (extraction-fidelity residual).
-    (h_r_le :
-      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-        - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (h_r_le_of_nonzero :
+      div_input.r2_val.toInt ≠ 0 →
+        ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt)
+          - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs)
     -- DEFECT EXCLUSION (narrowed to the exact `|r| = |op2|` false-positive shape).
     (h_avoid_known_bugs : ZiskFv.Compliance.Defects.NoKnownDefect
       (ZiskFv.Compliance.OpEnvelope.div
@@ -90,14 +76,14 @@ theorem equiv_DIV
         div_input r1 r2 rd bus v r_a pins h_match_primary promises arith_mem bounds
         h_row_constraints h_boundary arith_table
         arith_chunk_ranges arith_carry_ranges
-        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
-        h_r_le h_r_sign))
+        h_na_bool h_nb_bool h_nr_bool h_sign_cases h_rs1_value h_rs2_value
+        h_r_le_of_nonzero))
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   -- The narrowed defect excludes EXACTLY `|r| = |op2|`; combine with the WEAK
-  -- bound `h_r_le` to recover the STRICT remainder bound required by Sail DIV.
+  -- bound `h_r_le_of_nonzero` to recover the STRICT remainder bound required by Sail DIV.
   have h_not_forge_shape :
       ¬ (div_input.r2_val.toInt ≠ 0
           ∧ (ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
@@ -115,14 +101,15 @@ theorem equiv_DIV
             = div_input.r2_val.toInt.natAbs := by
       intro h_eq
       exact h_not_forge_shape ⟨h_op2_ne, h_eq⟩
-    exact lt_of_le_of_ne h_r_le h_not_forge
+    exact lt_of_le_of_ne (h_r_le_of_nonzero h_op2_ne) h_not_forge
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints h_boundary arith_table
     arith_chunk_ranges arith_carry_ranges
-    h_na_bool h_nb_bool h_nr_bool (Or.inl h_np_xor)
-    (by rintro ⟨_, h_wrong⟩; exact h_wrong h_np_xor)
-    h_nr_pin h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
+    h_na_bool h_nb_bool h_nr_bool h_sign_cases
+    (ZiskFv.Compliance.Defects.no_arith_div_quotient_sign_forge_of_no_known_defect
+      h_avoid_known_bugs)
+    h_rs1_value h_rs2_value h_r_abs_of_ne
 
 
 end ZiskFv.Equivalence.Div

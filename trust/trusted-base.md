@@ -588,10 +588,14 @@ Active conclusions:
   (signedRemainderInt v r_a).natAbs = op2.toInt.natAbs`), not the opcode-wide
   `True` — narrowed to the nonzero-divisor path so the divisor-zero branch is
   discharged separately (see the #114 bullet below). The canonical `equiv_DIV` /
-  `equiv_REM` are real (no `False.elim`); they carry the WEAK signed remainder
-  bound `h_r_le : |r| ≤ |op2|` plus the signed operand bridges / `h_nr_pin` /
-  `h_r_sign` as caller residuals and DERIVE the STRICT `|r| < |op2|` from the
-  narrowed-defect exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
+  `equiv_REM` are real (no `False.elim`). For `DIV`, the accepted-trace route
+  selects the completed physical Arith row and derives its constraints, ranges,
+  sign classification, and conditional WEAK signed remainder bound internally;
+  `h_r_le`, `h_nr_pin`, and `h_r_sign` are no longer caller residuals. The
+  genuine Sail-to-row operand bridges remain. The narrowed-defect exclusion
+  upgrades the derived weak bound to the STRICT `|r| < |op2|` fact used by the
+  quotient proof. The existing `REM` caller surface is unchanged by this work.
+  Anti-vacuity is gate-checked by
   `Defects.honest_{div,rem}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
   per-theorem `collectAxioms` closure is unchanged).
 - Signed W-mode `DIVW` and `REMW` are now **narrowed and non-vacuously proved**
@@ -610,19 +614,22 @@ Active conclusions:
   exclusion (`lt_of_le_of_ne`). Anti-vacuity is gate-checked by
   `Defects.honest_{divw,remw}_witness_not_forge`. 0 `ZiskFv.*` axioms (the
   per-theorem `collectAxioms` closure is unchanged).
-- **Signed remainder-bound residual (DIV/REM only).** The WEAK bound
-  `h_r_le : |r| ≤ |op2|` and the sign-correctness witness `h_r_sign` remain caller
-  hypotheses, NOT axioms. The operand sign bridges are no longer blocked on
+- **Signed remainder-bound residual.** For full-64 `DIV`, the WEAK bound
+  `|r| ≤ |op2|` is now derived from the completed Arith/Binary provider ensemble
+  and the quotient proof is independent of the physical remainder-sign bit;
+  neither `h_r_le` nor `h_r_sign` remains a caller hypothesis. `REM` and the
+  W-mode arms retain their existing residual surfaces. The operand sign bridges are no longer blocked on
   indexed range-table extraction: #169 composes `RangeTables.arithRangeTable`
   into ArithDiv `IndexedRangeSpec` and adds row-local
   `ArithTableProjections.Div.na/nb_eq_msb{64,32}_of_{pos,neg}_indexed` lemmas.
-  The public signed DIV/REM surfaces may still carry bridge-shaped hypotheses
+  The public signed DIV/REM surfaces may still carry genuine cross-world bridge hypotheses
   until #151 wires those row-local indexed facts through provider accessors. The
   real ZisK ArithDiv circuit enforces the weak bound via the
   `LT_ABS_NP`/`LT_ABS_PN` byte-chain comparison (`arith.pil:274`), but the FV
-  model cannot derive it in-model without exposing the `LT_ABS_NP` false positive
-  (`ltAbsNpByteChain_falsePositive_eqAbs256`); the narrowed `|r| = |op2|` defect
-  exclusion upgrades the carried weak bound to the strict bound Sail requires.
+  model's completed provider now exposes the weak comparison consequence for
+  DIV; the `LT_ABS_NP` false positive
+  (`ltAbsNpByteChain_falsePositive_eqAbs256`) remains exactly the narrowed
+  `|r| = |op2|` defect exclusion that upgrades it to the strict bound Sail requires.
   Visible in the canonical/wrapper caller-burden ledgers; details in
   [`defects.md`](defects.md) (`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`).
 - **Divisor-zero / signed-overflow boundary discharge (DIV/DIVW/REM/REMW,
@@ -753,12 +760,14 @@ Active conclusions:
 The active defect boundaries and retirement criteria are in
 [`defects.md`](defects.md).
 
-Trace-level export note (2026-07-23): `RowOutsideDefectRegion` for the strong
+Trace-level export note (updated 2026-07-28): `RowOutsideDefectRegion` for the strong
 trace theorem is now stated over the accepted ZisK trace row, not over
 `SailTrace` or `InputsAgree`. The signed-MUL and signed-DIV/REM defect gates
 range over matching Arith witness rows from the operation bus, with DIV/REM
-divisors reconstructed from witness chunks; the active defect predicates
-themselves are unchanged. The six narrow-load arms additionally negate the
+divisors reconstructed from witness chunks. Signed DIV now also excludes the
+ordinary nonzero-quotient sign-forge predicate
+`SignedDivQuotientSignForge`; its `div_overflow = 0` guard preserves the
+architectural overflow row. The six narrow-load arms additionally negate the
 selected-row `MemAlignNarrowLoadLaneForge`; the forge predicate ranges over
 the accepted witness and the exact Main-selected memory-bus entry.
 

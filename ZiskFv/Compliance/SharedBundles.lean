@@ -15,6 +15,7 @@ import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithDiv.Bridge
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
 # `SharedBundles` — small structural bundles shared across opcode shapes
@@ -30,6 +31,39 @@ is hidden, no premise is reified. Refactor-only.
 -/
 
 namespace ZiskFv.Compliance
+
+/-- The three sign configurations admitted by the signed-DIV static table on
+    an ordinary (nonzero-divisor, non-overflow) row. The latter two are the
+    zero-quotient exceptions in which either sign encoding represents the same
+    architectural result. -/
+def ArithDivOrdinarySignCases
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop :=
+  ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r)
+                * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r)
+    ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r) = 0
+        ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r) = 0
+        ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r) = 1)
+    ∨ (ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r) = 0
+        ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r) = 1
+        ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r) = 0)
+
+/-- Table-derived signed-DIV sign evidence, scoped precisely to ordinary rows. -/
+def ArithDivOrdinarySignWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop :=
+  v.div_by_zero r = 0 → v.div_overflow r = 0 → ArithDivOrdinarySignCases v r
+
+/-- Complete table-derived signed-DIV sign evidence: ordinary rows use the
+    three-way classification, while the architectural overflow row has its
+    dedicated sign pins. -/
+structure ArithDivSignWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop where
+  ordinary : ArithDivOrdinarySignWitness v r
+  overflow :
+    v.div_overflow r = 1 →
+      v.na r = 1 ∧ v.nb r = 1 ∧ v.np r = 1 ∧ v.nr r = 0
 
 open Goldilocks
 open Interaction

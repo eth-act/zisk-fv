@@ -2124,18 +2124,7 @@ inductive OpEnvelope
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
-      toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_nr_pin :
-      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
-        ∨ (toIntZ (v.a_0 r_a)
-            + toIntZ (v.a_1 r_a) * 65536
-            + toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
-          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_sign_cases : ZiskFv.Compliance.ArithDivSignWitness v r_a)
     (h_rs1_value :
       div_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -2149,14 +2138,11 @@ inductive OpEnvelope
     -- WEAK signed remainder bound `|r| ≤ |op2|` (extraction-fidelity residual:
     -- the most the LT_ABS_NP/PN byte chain can soundly witness; the STRICT bound
     -- is recovered by the narrowed `|r| = |op2|` defect exclusion).
-    (h_r_le :
-      ((ZiskFv.PackedBitVec.MulNoWrap.packed4
-          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-        - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (h_r_le_of_nonzero :
+      div_input.r2_val.toInt ≠ 0 →
+        ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
-            - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt) :
+          - (v.nr r_a).val * (2:ℤ)^64).natAbs ≤ div_input.r2_val.toInt.natAbs) :
     OpEnvelope state m r_main
   -- ============================ DIVU ====================================
   | divu

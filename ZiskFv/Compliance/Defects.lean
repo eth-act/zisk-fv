@@ -115,12 +115,16 @@ def divQuotientNat
 
 /-- The signed-DIV quotient-sign defect reproduced by `codygunton/zisk#12`.
 
-The physical AIR permits `np` to disagree with `na XOR nb`.  This is harmless
-when the quotient magnitude is zero, because both signed representations encode
-the same architectural result.  It is unsound for a nonzero quotient. -/
+The physical AIR permits `np` to disagree with `na XOR nb` on ordinary rows.
+This is harmless when the quotient magnitude is zero, because both signed
+representations encode the same architectural result. It is unsound for a
+nonzero quotient. The architectural INT64_MIN / -1 overflow row is excluded
+from this defect shape: its deliberately exceptional sign tuple is handled by
+the boundary constraints. -/
 def SignedDivQuotientSignForge
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : Prop :=
-  divQuotientNat v r_a ≠ 0
+  v.div_overflow r_a = 0
+    ∧ divQuotientNat v r_a ≠ 0
     ∧ toIntZ (v.np r_a)
       ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
           - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)
@@ -549,7 +553,7 @@ theorem honest_signedDiv_quotient_sign_not_forge
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
     ¬ SignedDivQuotientSignForge v r_a := by
-  rintro ⟨_, h_wrong_sign⟩
+  rintro ⟨_, _, h_wrong_sign⟩
   exact h_wrong_sign h_np_xor
 
 /-- **Non-vacuity / constructibility witness for the narrowed MUL exclusion.**
@@ -718,16 +722,7 @@ theorem honest_div_witness_not_forge
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
-      toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    (h_nr_pin :
-      toIntZ (v.nr r_a) = toIntZ (v.np r_a)
-        ∨ (toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
-            + toIntZ (v.a_2 r_a) * (65536 * 65536)
-            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)) * 0 = 0
-          ∧ (v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
-          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+    (h_sign_cases : ZiskFv.Compliance.ArithDivSignWitness v r_a)
     (h_rs1_value :
       div_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -738,17 +733,16 @@ theorem honest_div_witness_not_forge
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
-    (h_r_le :
-      (signedRemainderInt v r_a).natAbs ≤ div_input.r2_val.toInt.natAbs)
-    (h_r_sign :
-      0 ≤ (signedRemainderInt v r_a) * div_input.r1_val.toInt)
+    (h_r_le_of_nonzero :
+      div_input.r2_val.toInt ≠ 0 →
+        (signedRemainderInt v r_a).natAbs ≤ div_input.r2_val.toInt.natAbs)
     (h_honest_strict :
       (signedRemainderInt v r_a).natAbs < div_input.r2_val.toInt.natAbs) :
     ¬ ArithDivDynamicWitnessShape
         (OpEnvelope.div div_input r1 r2 rd bus v r_a pins h_match_primary promises
           arith_mem bounds h_row_constraints h_boundary arith_table
-          arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor
-          h_nr_pin h_rs1_value h_rs2_value h_r_le h_r_sign) := by
+          arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool
+          h_sign_cases h_rs1_value h_rs2_value h_r_le_of_nonzero) := by
   dsimp [ArithDivDynamicWitnessShape, signedRemainderInt]
   rintro ⟨_, h_eq⟩
   exact (Nat.ne_of_lt h_honest_strict) h_eq

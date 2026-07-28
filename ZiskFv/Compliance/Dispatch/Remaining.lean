@@ -527,8 +527,8 @@ theorem zisk_riscv_compliant_program_bus_remaining
         pins h_match_primary
         promises arith_mem bounds
         h_row_constraints h_boundary arith_table arith_chunk_ranges arith_carry_ranges
-        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
-        h_r_le h_r_sign =>
+        h_na_bool h_nb_bool h_nr_bool h_sign_cases h_rs1_value h_rs2_value
+        h_r_le =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
@@ -536,8 +536,8 @@ theorem zisk_riscv_compliant_program_bus_remaining
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints h_boundary arith_table
       arith_chunk_ranges arith_carry_ranges
-      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
-      h_r_le h_r_sign h_known_bugs
+      h_na_bool h_nb_bool h_nr_bool h_sign_cases h_rs1_value h_rs2_value
+      h_r_le h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
         promises arith_mem bounds
@@ -980,8 +980,8 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         pins h_match_primary
         promises arith_mem bounds
         h_row_constraints h_boundary arith_table arith_chunk_ranges arith_carry_ranges
-        h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
-        h_r_le h_r_sign =>
+        h_na_bool h_nb_bool h_nr_bool h_sign_cases h_rs1_value h_rs2_value
+        h_r_le =>
     change (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
@@ -989,8 +989,8 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises arith_mem bounds h_row_constraints h_boundary arith_table
       arith_chunk_ranges arith_carry_ranges
-      h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value
-      h_r_le h_r_sign h_known_bugs
+      h_na_bool h_nb_bool h_nr_bool h_sign_cases h_rs1_value h_rs2_value
+      h_r_le h_known_bugs
   | rem rem_input r1 r2 rd bus v r_a
         pins h_match_secondary
         promises arith_mem bounds

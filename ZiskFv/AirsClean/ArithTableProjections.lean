@@ -1201,6 +1201,24 @@ theorem div_np_xor_or_exception_sign_shapes
       _hrange_ab, _hrange_cd⟩
     simp_all
 
+set_option maxHeartbeats 800000 in
+theorem div_overflow_sign_pins
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r))
+    (h_op : v.op r = 186)
+    (h_div_overflow : v.div_overflow r = 1) :
+    v.na r = 1 ∧ v.nb r = 1 ∧ v.np r = 1 ∧ v.nr r = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithDiv.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op h_div_overflow ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, hnr, _hsext,
+      _hdbz, hoverflow, _hmain_mul, _hmain_div, _hsigned,
+      _hrange_ab, _hrange_cd⟩
+    simp_all
+
 theorem div_rem_signed_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec

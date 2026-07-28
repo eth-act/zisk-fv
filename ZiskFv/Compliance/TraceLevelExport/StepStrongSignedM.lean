@@ -169,7 +169,7 @@ theorem stepStrong_mulhsu
 
 /-- Strengthened `div` step (channel-balance form), via the OpEnvelope route.
 
-    DIV is the signed 64-bit division (op `184`), a former defect-gated op now
+    DIV is the signed 64-bit division (op `186`), a defect-qualified op now
     landed on the OpEnvelope route.  CONSTRUCT `OpEnvelope.div` (= the shared
     `divEnvOf`) from the trace's `RowData_div` and invoke
     `zisk_riscv_compliant_program_bus`, projecting the `exec_eq_remaining` conjunct.
@@ -192,9 +192,11 @@ theorem stepStrong_div
     (d : RowData_div trace binding i)
     (h_domain : SequentialPcDomain d.toInputs.div_input.PC)
     (h_known_remainder :
-      ¬ Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a)
+      ¬ Defects.DivRemForge d.toInputs.div_input.r2_val
+        (divV trace binding i d.toDecode.h_main_active d.toDecode.h_main_op) 0)
     (h_known_sign :
-      ¬ Defects.SignedDivQuotientSignForge d.toInputs.v d.toInputs.r_a) :
+      ¬ Defects.SignedDivQuotientSignForge
+        (divV trace binding i d.toDecode.h_main_active d.toDecode.h_main_op) 0) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
@@ -203,19 +205,7 @@ theorem stepStrong_div
            [ (busSub trace i (Pilot.execRowOf trace i)).e0
            , (busSub trace i (Pilot.execRowOf trace i)).e1
            , (busSub trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
-  set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
-  set state := binding i with hstate
-  let env : OpEnvelope state m i.val := divEnvOf trace binding i d h_domain
-  have h_bridge : env.aeneasBridgeTrust :=
-    ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc,
-      d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
-  have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  -- The threaded `¬ DivRemForge` obligation is (defeq, via
-  -- `divRemForge_iff_divShape`) `¬ ArithDivDynamicWitnessShape env`; the
-  -- signed-MUL and FENCE shapes are vacuous for a `.div` env.
-  have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) h_known_remainder h_known_sign trivial
-  exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
+  exact exists_divEnvOf trace binding i d h_domain h_known_remainder h_known_sign
 
 /-- Strengthened `rem` step (channel-balance form), via the OpEnvelope route.
     Companion of `stepStrong_div` for the signed 64-bit remainder (op `185`,
