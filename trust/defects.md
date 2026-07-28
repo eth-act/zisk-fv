@@ -57,6 +57,18 @@ rows whose primary/secondary operation-bus entry matches the accepted Main row,
 and no longer takes `SailTrace` or `InputsAgree` to state the MUL/MULH/MULHSU
 defect exclusion.
 
+### ZISK-DEFECT-ARITH-DIV-QUOTIENT-SIGN-SOUNDNESS
+
+| Field                  | Value |
+|------------------------|-------|
+| `kind`                 | `circuit-soundness` |
+| `status`               | `open` |
+| `affected`             | Signed 64-bit `DIV` (op 186). This entry is independent of the signed-remainder-bound defect below. |
+| `condition`            | A completed ordinary signed-DIV row can have a nonzero quotient magnitude while `np ≠ na XOR nb`. The exact theorem-side predicate is `Defects.SignedDivQuotientSignForge v r_a := divQuotientNat v r_a ≠ 0 ∧ np ≠ na XOR nb`. A mismatched sign is deliberately allowed when the quotient magnitude is zero, because both signs encode architectural quotient zero. |
+| `evidence`             | [codygunton/zisk#12](https://github.com/codygunton/zisk/pull/12) supplies a full accepted-proof reproduction of `DIV(1, -1) = 1` under the stock key. The local `ZiskFv.Regression.SignedDivOrdinaryCounterexample` independently checks the corresponding completed Lean AIR row, its primary and remainder-bound interactions, `¬ DivRemForge`, and the mismatch between physical quotient `+1` and Sail quotient `-1`. This is distinct from [codygunton/zisk#5](https://github.com/codygunton/zisk/pull/5), which concerns the remainder-magnitude comparison. |
+| `claim impact`         | `DefectId.arithDivQuotientSignSoundness` makes the exclusion visible in `NoKnownDefect`. The trace-level `.div` arm of `RowOutsideDefectRegion` supplies both `¬ DivRemForge` and `¬ SignedDivQuotientSignForge` for the same matching physical ArithDiv row. The signed-DIV semantic path may use the latter only to obtain `np = na XOR nb` when the quotient magnitude is nonzero; the honest zero-quotient case remains covered. |
+| `retirement condition` | Upstream constrains nonzero signed-DIV quotients to `np = na XOR nb`, and both the upstream proof reproduction and the checked local counterexample cease to satisfy the completed constraints. |
+
 ### ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS
 
 | Field                  | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |

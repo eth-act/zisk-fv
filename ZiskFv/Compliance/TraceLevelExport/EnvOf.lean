@@ -143,6 +143,8 @@ theorem mul_noKnownDefect_of_rowData
         using d.toInputs.h_not_forge
   | arithDivDynamicWitnessSoundness =>
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulEnvOf]
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape, mulEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (mulEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -214,6 +216,8 @@ theorem mulh_noKnownDefect_of_rowData
         using d.toInputs.h_not_forge
   | arithDivDynamicWitnessSoundness =>
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhEnvOf]
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape, mulhEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (mulhEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -235,6 +239,8 @@ theorem mulhsu_noKnownDefect_of_rowData
         using d.toInputs.h_not_forge
   | arithDivDynamicWitnessSoundness =>
       simp [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, mulhsuEnvOf]
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape, mulhsuEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (mulhsuEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -370,6 +376,9 @@ theorem div_noKnownDefect_of_rowData
   | arithDivDynamicWitnessSoundness =>
       simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape,
         Defects.signedRemainderInt, divEnvOf] using d.toInputs.h_not_forge
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape,
+        Defects.SignedDivQuotientSignForge, divEnvOf, d.toInputs.h_np_xor]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (divEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -393,6 +402,8 @@ theorem rem_noKnownDefect_of_rowData
         Defects.signedRemainderInt, remEnvOf]
       intro _ h_eq
       exact d.toInputs.h_not_forge h_eq
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape, remEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (remEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -414,6 +425,8 @@ theorem divw_noKnownDefect_of_rowData
   | arithDivDynamicWitnessSoundness =>
       simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, divwEnvOf]
         using d.toInputs.h_not_forge
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape, divwEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (divwEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -435,6 +448,8 @@ theorem remw_noKnownDefect_of_rowData
   | arithDivDynamicWitnessSoundness =>
       simpa [Defects.Blocks, Defects.ArithDivDynamicWitnessShape, remwEnvOf]
         using d.toInputs.h_not_forge
+  | arithDivQuotientSignSoundness =>
+      simp [Defects.Blocks, Defects.ArithDivQuotientSignShape, remwEnvOf]
   | memAlignNarrowLoadLaneSoundness =>
       exact Defects.no_memAlignNarrowLoadLaneShape (remwEnvOf trace binding i d h_domain)
   | memAlignSkippableProveSoundness =>
@@ -479,6 +494,16 @@ theorem divRemForge_iff_divShape
     (h_domain : SequentialPcDomain d.toInputs.div_input.PC) :
     Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a
       ↔ Defects.ArithDivDynamicWitnessShape (divEnvOf trace binding i d h_domain) := Iff.rfl
+
+theorem signedDivQuotientSignForge_iff_divShape
+    (trace : AcceptedZiskTrace numInstructions)
+    (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions)
+    (d : RowData_div trace binding i)
+    (h_domain : SequentialPcDomain d.toInputs.div_input.PC) :
+    Defects.SignedDivQuotientSignForge d.toInputs.v d.toInputs.r_a
+      ↔ Defects.ArithDivQuotientSignShape
+        (divEnvOf trace binding i d h_domain) := Iff.rfl
 
 theorem divRemForge_iff_remShape
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)

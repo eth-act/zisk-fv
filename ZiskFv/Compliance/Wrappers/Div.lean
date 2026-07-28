@@ -126,10 +126,21 @@ lemma equiv_DIV_of_table
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
+    (h_sign_cases :
       toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+          = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+              - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 0
+            ∧ toIntZ (v.np r_a) = 1)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 1
+            ∧ toIntZ (v.np r_a) = 0))
+    (h_not_sign_forge :
+      ¬ (ZiskFv.PackedBitVec.MulNoWrap.packed4
+              (v.a_0 r_a).val (v.a_1 r_a).val
+              (v.a_2 r_a).val (v.a_3 r_a).val ≠ 0
+          ∧ toIntZ (v.np r_a)
+            ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+                - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)))
     (h_nr_pin :
       toIntZ (v.nr r_a) = toIntZ (v.np r_a)
         ∨ (toIntZ (v.a_0 r_a)
@@ -223,7 +234,7 @@ lemma equiv_DIV_of_table
     promises
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
     v r_a h_chain h_boundary arith_chunk_ranges arith_carry_ranges
-    h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_na_bool h_nb_bool h_nr_bool h_sign_cases h_not_sign_forge h_nr_pin
     h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value
     h_r_abs_of_ne h_r_sign
 
@@ -294,7 +305,8 @@ lemma equiv_DIV
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary
     promises arith_mem bounds h_row_constraints h_boundary arith_table
-    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    arith_chunk_ranges arith_carry_ranges h_na_bool h_nb_bool h_nr_bool
+    (Or.inl h_np_xor) (by rintro ⟨_, h_wrong⟩; exact h_wrong h_np_xor) h_nr_pin
     h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
 

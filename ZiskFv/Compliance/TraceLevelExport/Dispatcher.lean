@@ -437,6 +437,7 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
             (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a) →
           op2.toInt = Defects.signedDivisorInt v r_a →
           ¬ Defects.DivRemForge op2 v r_a
+            ∧ ¬ Defects.SignedDivQuotientSignForge v r_a
   | .rem _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ∀ (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
@@ -1335,7 +1336,9 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
       exact stepStrong_div ziskTrace sailTrace i (toRowData_div c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
         (hAvoidKnownBugs.2 ia.v ia.r_a ia.div_input.r2_val ia.h_match_primary
-          (by simpa [Defects.signedDivisorInt] using ia.h_rs2_value))
+          (by simpa [Defects.signedDivisorInt] using ia.h_rs2_value)).1
+        (hAvoidKnownBugs.2 ia.v ia.r_a ia.div_input.r2_val ia.h_match_primary
+          (by simpa [Defects.signedDivisorInt] using ia.h_rs2_value)).2
   | rem c =>
       exact stepStrong_rem ziskTrace sailTrace i (toRowData_rem c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)

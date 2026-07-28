@@ -853,7 +853,7 @@ theorem stepStrong_beq
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `bne` step (channel-balance form), via the OpEnvelope route. -/
@@ -920,7 +920,7 @@ theorem stepStrong_bne
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toDecode.h_jmp_offset1⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `blt` step (channel-balance form), via the OpEnvelope route. -/
@@ -987,7 +987,7 @@ theorem stepStrong_blt
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `bge` step (channel-balance form), via the OpEnvelope route. -/
@@ -1054,7 +1054,7 @@ theorem stepStrong_bge
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toDecode.h_jmp_offset1⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `bltu` step (channel-balance form), via the OpEnvelope route. -/
@@ -1124,7 +1124,7 @@ theorem stepStrong_bltu
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `bgeu` step (channel-balance form), via the OpEnvelope route. -/
@@ -1194,7 +1194,7 @@ theorem stepStrong_bgeu
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op, d.toDecode.h_m32, d.toDecode.h_set_pc, d.toDecode.h_store_pc, d.toDecode.h_jmp_offset1⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.1
 
 /-- Strengthened `lui` step (channel-balance form), via the OpEnvelope route:
@@ -1285,7 +1285,7 @@ theorem stepStrong_lui
     ⟨⟨provenance⟩, row_mode, d.toDecode.h_imm_lo_nat, d.toDecode.h_imm_hi_nat⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
 
 /-- Strengthened `auipc` step (channel-balance form), via the OpEnvelope route:
@@ -1390,7 +1390,7 @@ theorem stepStrong_auipc
     ⟨⟨provenance⟩, row_mode, h_offset_bridge, d.toInputs.h_pc_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
 
 /-! ## Strengthened store arms (SB/SH/SW/SD, channel-balance form) — OpEnvelope route
@@ -1503,7 +1503,7 @@ theorem stepStrong_sb
       h_b0' h_b1' h_store_rmw_ev
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `sh` step (channel-balance form), via the OpEnvelope route. -/
@@ -1586,7 +1586,7 @@ theorem stepStrong_sh
       h_b0' h_b1' h_store_rmw_ev
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `sw` step (channel-balance form), via the OpEnvelope route. -/
@@ -1669,7 +1669,7 @@ theorem stepStrong_sw
       h_b0' h_b1' h_store_rmw_ev
   have h_bridge : env.aeneasBridgeTrust := ⟨d.toDecode.h_main_ind_width, h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `sd` step (channel-balance form), via the OpEnvelope route. -/
@@ -1750,7 +1750,7 @@ theorem stepStrong_sd
       h_b0' h_b1'
   have h_bridge : env.aeneasBridgeTrust := ⟨h_b0', h_b1'⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
-  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) trivial
+  have h_known : Defects.NoKnownDefect env := noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.1
 
 

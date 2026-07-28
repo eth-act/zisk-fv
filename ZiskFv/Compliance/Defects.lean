@@ -26,6 +26,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 inductive DefectId where
   | arithMulSignedWitnessSoundness
   | arithDivDynamicWitnessSoundness
+  | arithDivQuotientSignSoundness
   | memAlignNarrowLoadLaneSoundness
   | memAlignSkippableProveSoundness
   | fenceIncomplete
@@ -106,6 +107,24 @@ def signedDivisorInt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : �
       (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
     - (v.nb r_a).val * (2:ℤ)^64
 
+/-- Unsigned magnitude encoded by the signed-DIV quotient chunks. -/
+def divQuotientNat
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℕ :=
+  ZiskFv.PackedBitVec.MulNoWrap.packed4
+    (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val
+
+/-- The signed-DIV quotient-sign defect reproduced by `codygunton/zisk#12`.
+
+The physical AIR permits `np` to disagree with `na XOR nb`.  This is harmless
+when the quotient magnitude is zero, because both signed representations encode
+the same architectural result.  It is unsound for a nonzero quotient. -/
+def SignedDivQuotientSignForge
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : Prop :=
+  divQuotientNat v r_a ≠ 0
+    ∧ toIntZ (v.np r_a)
+      ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+          - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)
+
 /-- W-mode signed divisor reconstructed from the low 32-bit `b[]` chunks and
     the `nb` sign witness. -/
 def signedDivisorIntW (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) : ℤ :=
@@ -161,6 +180,16 @@ def ArithDivDynamicWitnessShape
       Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
         ∧ (signedRemainderIntW v r_a).natAbs
           = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs
+  | _ => False
+
+/-- Envelope form of the signed-DIV quotient-sign defect.
+
+This is deliberately separate from `ArithDivDynamicWitnessShape`: the latter
+records the independent remainder-bound defect reproduced by
+`codygunton/zisk#5`, while this predicate records `codygunton/zisk#12`. -/
+def ArithDivQuotientSignShape
+    : OpEnvelope state m r_main → Prop
+  | .div _ _ _ _ _ v r_a .. => SignedDivQuotientSignForge v r_a
   | _ => False
 
 /-! ### Row-data forms of the three defect shapes
@@ -471,6 +500,8 @@ def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
       MaliciousSignedMulWitnessShape env
   | .arithDivDynamicWitnessSoundness =>
       ArithDivDynamicWitnessShape env
+  | .arithDivQuotientSignSoundness =>
+      ArithDivQuotientSignShape env
   | .memAlignNarrowLoadLaneSoundness =>
       MemAlignNarrowLoadLaneShape env
   | .memAlignSkippableProveSoundness =>
@@ -501,6 +532,25 @@ theorem no_arith_div_dynamic_witness_of_no_known_defect
     (h_known_bugs : NoKnownDefect env) :
     ¬ ArithDivDynamicWitnessShape env :=
   h_known_bugs .arithDivDynamicWitnessSoundness
+
+theorem no_arith_div_quotient_sign_forge_of_no_known_defect
+    {env : OpEnvelope state m r_main}
+    (h_known_bugs : NoKnownDefect env) :
+    ¬ ArithDivQuotientSignShape env :=
+  h_known_bugs .arithDivQuotientSignSoundness
+
+/-- Anti-vacuity guard for the quotient-sign exclusion. Honest signed-DIV rows
+with the exact quotient-sign equation are outside the excluded region,
+including rows whose quotient magnitude is zero. -/
+theorem honest_signedDiv_quotient_sign_not_forge
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    ¬ SignedDivQuotientSignForge v r_a := by
+  rintro ⟨_, h_wrong_sign⟩
+  exact h_wrong_sign h_np_xor
 
 /-- **Non-vacuity / constructibility witness for the narrowed MUL exclusion.**
 

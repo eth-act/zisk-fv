@@ -1369,10 +1369,20 @@ lemma h_rd_val_mdrs_div_chunked
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
-    (h_np_xor :
+    (h_sign_cases :
       toIntZ (v.np r_a)
-        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
-            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+          = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+              - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 0
+            ∧ toIntZ (v.np r_a) = 1)
+        ∨ (toIntZ (v.na r_a) = 0 ∧ toIntZ (v.nb r_a) = 1
+            ∧ toIntZ (v.np r_a) = 0))
+    (h_not_sign_forge :
+      ¬ (packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+              (v.a_2 r_a).val (v.a_3 r_a).val ≠ 0
+          ∧ toIntZ (v.np r_a)
+            ≠ toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+                - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)))
     (h_nr_pin :
       toIntZ (v.nr r_a) = toIntZ (v.np r_a)
         ∨ (toIntZ (v.a_0 r_a)
@@ -1415,10 +1425,6 @@ lemma h_rd_val_mdrs_div_chunked
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     h_chunk_ranges
-  have h_chunk_ident :=
-    ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses
-      v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
-      h_na_bool h_nb_bool h_nr_bool h_np_xor
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
             + toIntZ (v.a_2 r_a) * (65536 * 65536)
             + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
@@ -1482,13 +1488,17 @@ lemma h_rd_val_mdrs_div_chunked
   have h_nr_int_bool : toIntZ (v.nr r_a) = 0 ∨ toIntZ (v.nr r_a) = 1 := by
     rcases h_nr_bool with h | h <;> rw [h] <;> first | left; decide | right; decide
   have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
-    rw [h_np_xor]
-    rcases h_na_bool with hna | hna <;> rcases h_nb_bool with hnb | hnb
-    all_goals (rw [hna, hnb])
-    · left; decide
-    · right; decide
-    · right; decide
-    · left; decide
+    rcases h_sign_cases with h_np_xor | h_exception
+    · rw [h_np_xor]
+      rcases h_na_bool with hna | hna <;> rcases h_nb_bool with hnb | hnb
+      all_goals (rw [hna, hnb])
+      · left; decide
+      · right; decide
+      · right; decide
+      · left; decide
+    · rcases h_exception with ⟨_, _, hnp⟩ | ⟨_, _, hnp⟩
+      · exact Or.inr hnp
+      · exact Or.inl hnp
   have h_np_val : ((v.np r_a).val : ℤ) = toIntZ (v.np r_a) := by
     rcases h_np_int_bool with h | h
     · have h_cast : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
@@ -1521,13 +1531,52 @@ lemma h_rd_val_mdrs_div_chunked
   have h_euclid :
       r1_val.toInt =
         (A - toIntZ (v.na r_a) * 2^64) * r2_val.toInt
-          + (D - toIntZ (v.nr r_a) * 2^64) :=
-    abs_euclidean_to_signed_euclidean_div_rem
-      A B C D (toIntZ (v.na r_a)) (toIntZ (v.nb r_a))
-      (toIntZ (v.np r_a)) (toIntZ (v.nr r_a)) r1_val r2_val
-      h_na_int_bool h_nb_int_bool h_np_int_bool h_nr_int_bool
-      h_np_xor h_nr_pin_int h_A_lb h_A_ub h_B_lb h_B_ub h_C_lb h_C_ub
-      h_D_lb h_D_ub h_r1_int h_r2_int h_chunk_ident
+          + (D - toIntZ (v.nr r_a) * 2^64) := by
+    rcases h_sign_cases with h_np_xor | h_exception
+    · have h_chunk_ident :=
+        ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses
+          v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
+          h_na_bool h_nb_bool h_nr_bool h_np_xor
+      exact abs_euclidean_to_signed_euclidean_div_rem
+        A B C D (toIntZ (v.na r_a)) (toIntZ (v.nb r_a))
+        (toIntZ (v.np r_a)) (toIntZ (v.nr r_a)) r1_val r2_val
+        h_na_int_bool h_nb_int_bool h_np_int_bool h_nr_int_bool
+        h_np_xor h_nr_pin_int h_A_lb h_A_ub h_B_lb h_B_ub h_C_lb h_C_ub
+        h_D_lb h_D_ub h_r1_int h_r2_int h_chunk_ident
+    · have h_A_zero : A = 0 := by
+        by_contra h_A_ne
+        apply h_not_sign_forge
+        constructor
+        · rw [← h_A_toNat]
+          intro h_toNat_zero
+          apply h_A_ne
+          exact le_antisymm (Int.toNat_eq_zero.mp h_toNat_zero) h_A_lb
+        · rcases h_exception with h_exception | h_exception
+          · rcases h_exception with ⟨hna, hnb, hnp⟩
+            rw [hna, hnb, hnp]
+            norm_num
+          · rcases h_exception with ⟨hna, hnb, hnp⟩
+            rw [hna, hnb, hnp]
+            norm_num
+      have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+        have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a :=
+          toIntZ_cast _
+        rcases h_np_int_bool with h | h
+        · left
+          rw [← h_round_trip, h]
+          norm_cast
+        · right
+          rw [← h_round_trip, h]
+          norm_cast
+      have h_raw :=
+        ZiskFv.EquivCore.Bridge.Arith.div_signed_chain_witnesses_raw
+          v r_a h_chain h_chunk_ranges_arg h_carry_ranges h_sext h_m32 h_div
+          h_na_bool h_nb_bool h_np_bool h_nr_bool
+      exact abs_euclidean_to_signed_euclidean_div_rem_zero_quotient_exception
+        A B C D (toIntZ (v.na r_a)) (toIntZ (v.nb r_a))
+        (toIntZ (v.np r_a)) (toIntZ (v.nr r_a)) r1_val r2_val
+        h_nr_int_bool h_A_zero h_exception h_nr_pin_int h_C_ub h_r1_int
+        h_r2_int h_raw
   have h_r_abs' :
       (D - toIntZ (v.nr r_a) * 2^64).natAbs < r2_val.toInt.natAbs := by
     simpa [h_D_eq, h_nr_val] using h_r_abs

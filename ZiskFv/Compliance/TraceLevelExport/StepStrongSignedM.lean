@@ -93,7 +93,7 @@ theorem stepStrong_mul
   -- `signedMulForge_iff_mulShape`) `¬ MaliciousSignedMulWitnessShape env`; the
   -- DIV/REM and FENCE shapes are vacuous for a `.mul` env.
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env h_known (fun h => h) trivial
+    noKnownDefect_of_shapes env h_known (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `mulh` step (channel-balance form), via the OpEnvelope route.
@@ -132,7 +132,7 @@ theorem stepStrong_mulh
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env h_known (fun h => h) trivial
+    noKnownDefect_of_shapes env h_known (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `mulhsu` step (channel-balance form), via the OpEnvelope route.
@@ -164,7 +164,7 @@ theorem stepStrong_mulhsu
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env h_known (fun h => h) trivial
+    noKnownDefect_of_shapes env h_known (fun h => h) (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `div` step (channel-balance form), via the OpEnvelope route.
@@ -191,7 +191,10 @@ theorem stepStrong_div
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_div trace binding i)
     (h_domain : SequentialPcDomain d.toInputs.div_input.PC)
-    (h_known : ¬ Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a) :
+    (h_known_remainder :
+      ¬ Defects.DivRemForge d.toInputs.div_input.r2_val d.toInputs.v d.toInputs.r_a)
+    (h_known_sign :
+      ¬ Defects.SignedDivQuotientSignForge d.toInputs.v d.toInputs.r_a) :
     (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (d.toClaim.r2, d.toClaim.r1, d.toClaim.rd, false))) (binding i)
@@ -211,7 +214,7 @@ theorem stepStrong_div
   -- `divRemForge_iff_divShape`) `¬ ArithDivDynamicWitnessShape env`; the
   -- signed-MUL and FENCE shapes are vacuous for a `.div` env.
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) h_known trivial
+    noKnownDefect_of_shapes env (fun h => h) h_known_remainder h_known_sign trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `rem` step (channel-balance form), via the OpEnvelope route.
@@ -241,7 +244,7 @@ theorem stepStrong_rem
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) h_known trivial
+    noKnownDefect_of_shapes env (fun h => h) h_known (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `divw` step (channel-balance form), via the OpEnvelope route.
@@ -271,7 +274,7 @@ theorem stepStrong_divw
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) h_known trivial
+    noKnownDefect_of_shapes env (fun h => h) h_known (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `remw` step (channel-balance form), via the OpEnvelope route.
@@ -298,7 +301,7 @@ theorem stepStrong_remw
       d.toDecode.h_jmp_offset1, d.toDecode.h_jmp_offset2⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) h_known trivial
+    noKnownDefect_of_shapes env (fun h => h) h_known (fun h => h) trivial
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.2.2.2.2.2.2.2.2
 
 /-- Strengthened `fence` step (channel-balance form), via the OpEnvelope route.
@@ -331,7 +334,7 @@ theorem stepStrong_fence
   -- `fenceKnownGood_iff_fenceShape`) `FenceKnownGoodShape env`; the signed-MUL
   -- and DIV/REM shapes are vacuous for a `.fence` env.
   have h_known : Defects.NoKnownDefect env :=
-    noKnownDefect_of_shapes env (fun h => h) (fun h => h) h_known
+    noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) h_known
   exact (zisk_riscv_compliant_program_bus env h_bridge h_mem h_known).2.2.2.1
 
 

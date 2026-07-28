@@ -120,7 +120,9 @@ theorem equiv_DIV
   exact ZiskFv.Compliance.equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints h_boundary arith_table
     arith_chunk_ranges arith_carry_ranges
-    h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
+    h_na_bool h_nb_bool h_nr_bool (Or.inl h_np_xor)
+    (by rintro ⟨_, h_wrong⟩; exact h_wrong h_np_xor)
+    h_nr_pin h_rs1_value h_rs2_value h_r_abs_of_ne h_r_sign
 
 
 end ZiskFv.Equivalence.Div

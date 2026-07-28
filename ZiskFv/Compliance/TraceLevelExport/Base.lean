@@ -56,7 +56,7 @@ def SequentialPcDomain (pc : BitVec 64) : Prop :=
 noncomputable def zeroValidBinary : ZiskFv.Airs.Binary.Valid_Binary FGL FGL := by
   constructor <;> exact fun _ => 0
 
-/-- `NoKnownDefect env` is exactly the conjunction of its four per-defect
+/-- `NoKnownDefect env` is exactly the conjunction of its per-defect
     components: the env is outside the signed-MUL forge shape, outside the
     DIV/REM forge shape, outside the MemAlign narrow-load shape, and inside the
     FENCE known-good shape.  This is the
@@ -80,12 +80,14 @@ theorem noKnownDefect_of_shapes
     (env : OpEnvelope state m r)
     (h_mul : ¬ Defects.MaliciousSignedMulWitnessShape env)
     (h_div : ¬ Defects.ArithDivDynamicWitnessShape env)
+    (h_div_sign : ¬ Defects.ArithDivQuotientSignShape env)
     (h_fence : Defects.FenceKnownGoodShape env) :
     Defects.NoKnownDefect env := by
   intro id
   cases id with
   | arithMulSignedWitnessSoundness => exact h_mul
   | arithDivDynamicWitnessSoundness => exact h_div
+  | arithDivQuotientSignSoundness => exact h_div_sign
   | memAlignNarrowLoadLaneSoundness => exact Defects.no_memAlignNarrowLoadLaneShape env
   | memAlignSkippableProveSoundness =>
       exact Defects.no_memAlignSkippableProveShape env
