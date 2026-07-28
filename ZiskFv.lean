@@ -196,6 +196,11 @@ import ZiskFv.Compliance.AeneasBridgeTrust.Extraction
 -- (`zisk_decoder_accepts_supported_shape`) + completeness-obligation discharge
 -- (`real_decoder_accepts_in_shape`), proven in-build off the real Aeneas decoder.
 import ZiskFv.Compliance.AeneasBridgeTrust.Decode
+-- eth-act/zisk-fv#61 Phase-0 step S2: the cited line-by-line transcription of
+-- ZisK's ROM-row emitter (`rom.rs:204-260`) and its agreement with the in-tree
+-- PIL-mirroring `packFlags` / `BitVec.toInt` readings. Standalone; nothing in
+-- `root_soundness` depends on it yet (the raw-word binding is Phase-0 step S3).
+import ZiskFv.Compliance.RomRowSerialization
 import ZiskFv.Soundness
 import ZiskFv.Completeness.Rv
 -- Quarantined aspirational route; kept here so it stays built/verified, but the
