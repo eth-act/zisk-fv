@@ -210,3 +210,9 @@ import ZiskFv.Completeness
 -- `trust/defects.md` cites this one as evidence for
 -- `ZISK-DEFECT-ARITH-DIV-QUOTIENT-SIGN-SOUNDNESS`.
 import ZiskFv.Regression.SignedDivOrdinaryCounterexample
+-- eth-act/zisk-fv#296: `rfl`-level weld of the Arith constraint mirror to the
+-- generated `Extraction.Arith.constraint_N_every_row` predicates. This is the only
+-- ZiskFv module that may import `Extraction.Arith`: that file marks all 65 generated
+-- constraint definitions `@[simp]`, so importing it from anywhere with ZiskFv
+-- dependents would add them to the default simp set for every downstream module.
+import ZiskFv.AirsClean.ArithMirrorWeld

@@ -1,0 +1,62 @@
+# trust/generated/arith-stage1-columns.txt
+#
+# The Arith AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/Arith.lean` and
+# normalised by the extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/ArithMirrorWeld.lean` welds the handwritten Arith
+# constraint mirror to the generated constraints by `Iff.rfl`; that weld's
+# `mainValue` maps a column *index* to an `ArithMulRow` field, and this file
+# is what `trust/scripts/check-arith-column-map.py` checks that map against.
+# Recording it here is what lets the source-only V1 gate check the map on a
+# checkout where the gitignored `build/` tree does not exist; on any populated
+# tree the same check requires this file to reproduce the generated header.
+#
+# Regenerate via `trust/scripts/regenerate.sh` (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 44
+#
+0 carry_0
+1 carry_1
+2 carry_2
+3 carry_3
+4 carry_4
+5 carry_5
+6 carry_6
+7 a_0
+8 a_1
+9 a_2
+10 a_3
+11 b_0
+12 b_1
+13 b_2
+14 b_3
+15 c_0
+16 c_1
+17 c_2
+18 c_3
+19 d_0
+20 d_1
+21 d_2
+22 d_3
+23 na
+24 nb
+25 nr
+26 np
+27 sext
+28 m32
+29 div
+30 fab
+31 na_fb
+32 nb_fa
+33 main_div
+34 main_mul
+35 signed
+36 div_by_zero
+37 div_overflow
+38 inv_sum_all_bs
+39 op
+40 bus_res1
+41 multiplicity
+42 range_ab
+43 range_cd
