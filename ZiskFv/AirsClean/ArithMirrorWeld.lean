@@ -10,11 +10,11 @@ the Arith AIR's local constraints and cites the generated
 are not checked by anything, so a transcription slip in the mirror would be
 invisible to the build.
 
-This module replaces the comment citation with a `rfl`-level identity for a
-representative slice of the constraint set (eth-act/zisk-fv#296): the plain
-boolean `constraint_39`, the `m32`-weighted boundary pin `constraint_15`, the
-nonzero-divisor detector `constraint_25`, and the one member of the F-only
-constraint set that is *not* a verbatim transcription, `constraint_36`.
+This module replaces the comment citation with compiled identities covering all
+49 of the AIR's F-only constraints, `constraint_0_every_row` …
+`constraint_48_every_row` (eth-act/zisk-fv#296). Every one is `rfl`-level except
+`constraint_36`, the single member of the set whose mirror is not term-identical
+to the extraction.
 
 ## How the weld works
 
@@ -31,15 +31,30 @@ the one the mirror asserts.
 ## What the weld does and does not certify
 
 * It certifies, by `Iff.rfl`, that the welded mirror polynomials are the generated
-  polynomials — same columns, same coefficients, same shape. Combined with the
-  already-proved `sharedDivBlockSpec_of_soundness`,
-  `extracted_of_sharedMainComplete` below derives the generated constraints from
-  the live `sharedMainComplete` assertion list, so a drift in either the `Spec`
-  predicate or the `assertZero` expression breaks the build.
-* It covers three of the Arith AIR's 49 F-only constraints (plus `constraint_36`),
-  not all of them. Nothing here forces the mirror to be *complete* with respect to
-  the AIR, nor forbids an assertion the AIR does not make; those are separate
-  obligations.
+  polynomials — same columns, same coefficients, same shape.
+* Coverage is the whole F-only set: the 49 generated constraints
+  `constraint_0_every_row` … `constraint_48_every_row` each appear on the right of
+  a weld below. The other 16 generated constraints read stage-2 columns and the
+  challenge lane and are not `assertZero` constraints of the Clean component at
+  all; they are out of scope here.
+* For 37 of the 49 — `0`–`5`, `9`–`30`, `39`–`45`, `47`–`48` — the tie is to the
+  *live* assertion list, not to transcribed prose: `divModeSpec_weld`,
+  `divBoundarySpec_weld`, `divInverseSumSpec_weld`, `divScopeSpec_weld` and
+  `divWModeSpec_weld` are `Iff`s against the mirror predicates that the
+  already-proved `sharedDivBlockSpec_of_soundness` extracts from
+  `sharedMainComplete`'s own `assertZero`s, and `extracted_of_sharedMainComplete`
+  composes the two. A slip that is self-consistent across the `Spec` predicate,
+  the `assertZero` expression and that projection proof — the exact failure this
+  module exists to catch — breaks the weld and nothing else.
+* For the remaining 12 (`6`–`8`, `31`–`38` via `spec_carryChain_weld`, `46` via
+  `c46Spec_weld`) the weld is against `Spec` and `C46Spec`, the mirror predicates
+  the ArithMul component publishes. This module does **not** re-derive those two
+  from the component's `assertZero` list; that link lives in the component's own
+  soundness proof.
+* The five `Iff` welds pin their mirror predicates exactly — the predicate holds
+  *iff* the corresponding run of generated constraints does — so for those 37 the
+  mirror asserts neither less nor more than the AIR. `spec_carryChain_weld` is an
+  implication only, so it does not forbid `Spec` asserting more than the AIR does.
 * It does **not** certify the column layout itself: `mainValue` is handwritten.
   That map is pinned separately by `trust/scripts/check-arith-column-map.py`,
   against the extractor's own column-name header as recorded in
@@ -145,7 +160,10 @@ def extractedArithRow (row : ArithMulRow FGL) : ExtractedArithRow FGL FGL := ⟨
 /-! ## Welds
 
 Each theorem in this section is `Iff.rfl`: the mirror's polynomial and the
-generated polynomial are the same term after unfolding the column map.
+generated polynomial are the same term after unfolding the column map. Three
+constraints are spelled out longhand first, so the identity is readable as
+source against source; the predicate-level welds that follow cover the whole
+F-only set without restating every polynomial.
 -/
 
 /-- `arith/pil/arith.pil:212 div*(1-div)` — the plain boolean shape.
@@ -195,6 +213,81 @@ theorem divModeSpec_div_boolean_weld (row : ArithMulRow FGL) :
 theorem divBoundarySpec_a2_weld (row : ArithMulRow FGL) :
     DivBoundarySpec row → Arith.extraction.constraint_15_every_row (extractedArithRow row) 0 :=
   fun h => h.2.2.2.2.2.2.1
+
+/-! ### The rest of the shared Div block
+
+`divInverseSumSpec_weld` above welds the mirror's one-conjunct
+`DivInverseSumSpec`. These weld the other four components of
+`SharedDivBlockSpec` wholesale: each `Iff.rfl` says the mirror predicate is,
+conjunct for conjunct and in order, the corresponding run of generated
+constraints. Between them they cover 37 of the AIR's 49 F-only constraints —
+`0`–`5`, `9`–`30`, `39`–`45`, `47`–`48` — and `sharedDivBlockSpec_of_soundness`
+already derives all of `SharedDivBlockSpec` from the live `sharedMainComplete`
+assertion list, so these are welds of asserted constraints, not of transcribed
+prose. The remaining 12 (`6`–`8`, `31`–`38`, `46`) are asserted through `main`
+and are welded below. -/
+
+/-- `arith/pil/arith.pil:50-55,212-218` — the thirteen mode/sign boolean pins. -/
+theorem divModeSpec_weld (row : ArithMulRow FGL) :
+    DivModeSpec row ↔
+      Arith.extraction.constraint_0_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_1_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_2_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_3_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_4_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_5_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_39_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_40_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_41_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_42_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_43_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_44_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_45_every_row (extractedArithRow row) 0 :=
+  Iff.rfl
+
+/-- `arith/pil/arith.pil:64,69-72,75-78,81-84` — the sixteen div-by-zero and
+    div-overflow chunk boundary pins. -/
+theorem divBoundarySpec_weld (row : ArithMulRow FGL) :
+    DivBoundarySpec row ↔
+      Arith.extraction.constraint_9_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_10_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_11_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_12_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_13_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_14_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_15_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_16_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_17_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_18_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_19_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_20_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_21_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_22_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_23_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_24_every_row (extractedArithRow row) 0 :=
+  Iff.rfl
+
+/-- `arith/pil/arith.pil:95,98-99,101-102` — the five flag-scoping products. -/
+theorem divScopeSpec_weld (row : ArithMulRow FGL) :
+    DivScopeSpec row ↔
+      Arith.extraction.constraint_26_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_27_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_28_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_29_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_30_every_row (extractedArithRow row) 0 :=
+  Iff.rfl
+
+/-- `arith/pil/arith.pil:264-265` — the two `m32` (W-mode) high-half pins. -/
+theorem divWModeSpec_weld (row : ArithMulRow FGL) :
+    DivWModeSpec row ↔
+      Arith.extraction.constraint_47_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_48_every_row (extractedArithRow row) 0 :=
+  Iff.rfl
+
+/-- `arith/pil/arith.pil:262` — the `bus_res1` output mux. -/
+theorem c46Spec_weld (row : ArithMulRow FGL) :
+    C46Spec row ↔ Arith.extraction.constraint_46_every_row (extractedArithRow row) 0 :=
+  Iff.rfl
 
 /-! ### The one constraint that is not a verbatim transcription
 
@@ -252,6 +345,32 @@ theorem constraint_36_of_spec (row : ArithMulRow FGL) :
       + row.carries.carry_4
       - row.carries.carry_5 * 65536 = 0)
 
+/-! ### The carry chain, welded
+
+`Spec` (`ZiskFv/AirsClean/ArithMul/Spec.lean`) is the mirror of the eleven
+constraints the ArithMul component asserts through `main`: the three sign-product
+definitions `6`-`8` and the eight-limb carry chain `31`-`38`. Ten of the eleven
+are `rfl`-level — each conjunct below is a bare projection out of `Spec`, so it
+typechecks only because the mirror conjunct and the generated polynomial are the
+same term. The eleventh is `constraint_36`, handled just above. -/
+theorem spec_carryChain_weld (row : ArithMulRow FGL) :
+    Spec row →
+      Arith.extraction.constraint_6_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_7_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_8_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_31_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_32_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_33_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_34_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_35_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_36_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_37_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_38_every_row (extractedArithRow row) 0 :=
+  fun h => ⟨
+    h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
+    h.2.2.2.2.2.2.2.1, constraint_36_of_spec row h, h.2.2.2.2.2.2.2.2.2.1,
+    h.2.2.2.2.2.2.2.2.2.2⟩
+
 /-! ### From the live assertion list
 
 `sharedDivBlockSpec_of_soundness` (`ZiskFv/AirsClean/ArithCompleteConstraints.lean`)
@@ -263,13 +382,47 @@ from the mirror circuit's own assertions, which is what makes a drift in the
 theorem extracted_of_sharedMainComplete
     (offset : ℕ) (env : Environment FGL) (row : Var ArithMulRow FGL)
     (h : ConstraintsHold.Soundness env ((sharedMainComplete row).operations offset)) :
-    Arith.extraction.constraint_15_every_row (extractedArithRow (eval env row)) 0
-      ∧ Arith.extraction.constraint_25_every_row (extractedArithRow (eval env row)) 0
-      ∧ Arith.extraction.constraint_39_every_row (extractedArithRow (eval env row)) 0 := by
+    (Arith.extraction.constraint_0_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_1_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_2_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_3_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_4_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_5_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_39_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_40_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_41_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_42_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_43_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_44_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_45_every_row (extractedArithRow (eval env row)) 0)
+      ∧ (Arith.extraction.constraint_9_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_10_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_11_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_12_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_13_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_14_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_15_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_16_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_17_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_18_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_19_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_20_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_21_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_22_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_23_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_24_every_row (extractedArithRow (eval env row)) 0)
+      ∧ (Arith.extraction.constraint_25_every_row (extractedArithRow (eval env row)) 0)
+      ∧ (Arith.extraction.constraint_26_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_27_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_28_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_29_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_30_every_row (extractedArithRow (eval env row)) 0)
+      ∧ (Arith.extraction.constraint_47_every_row (extractedArithRow (eval env row)) 0
+       ∧ Arith.extraction.constraint_48_every_row (extractedArithRow (eval env row)) 0) := by
   have hspec := sharedDivBlockSpec_of_soundness offset env row h
-  exact ⟨divBoundarySpec_a2_weld _ hspec.2.1,
-    divInverseSumSpec_weld _ |>.mp hspec.2.2.1,
-    divModeSpec_div_boolean_weld _ hspec.1⟩
+  exact ⟨(divModeSpec_weld _).mp hspec.1, (divBoundarySpec_weld _).mp hspec.2.1,
+    (divInverseSumSpec_weld _).mp hspec.2.2.1, (divScopeSpec_weld _).mp hspec.2.2.2.1,
+    (divWModeSpec_weld _).mp hspec.2.2.2.2⟩
 
 /-! ## Which lanes a welded constraint is allowed to read
 
