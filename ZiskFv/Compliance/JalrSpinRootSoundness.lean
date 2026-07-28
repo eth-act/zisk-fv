@@ -179,130 +179,6 @@ private theorem mainAt_finish :
 @[simp] private theorem jalrAcceptedTrace_numInstructions :
     jalrAcceptedTrace.numInstructions = 2 := rfl
 
-def loweringRows : JalrLoweringRows jalrAcceptedTrace jalrIndex (2#12) (0#64) where
-  start := startMainIndex
-  finish := finishMainIndex
-  architectural_start := rfl
-  finish_has_successor := by
-    simp [jalrAcceptedTrace_mainTable_eq, jalrMainTable,
-      ZiskFv.Compliance.AddSpinWitness.mainRowsTable, jalrMainRows]
-  lowering := by
-    right
-    simp [jalrClaim, jalrIndex, mainAt_start, mainAt_finish,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable,
-      jalrAddProgramRow, jalrAddBits,
-      jalrAndProgramRow, jalrAndBits,
-      jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
-      jalrAndRow, jalrAndRowWithLast, jalrAndRowTemplate,
-      jalrFreeCols, jalrRegisterInitial, ZiskFv.AirsClean.Main.mainRomRowOf]
-
-def jalrDecode : Decode_jalr jalrAcceptedTrace jalrIndex jalrClaim where
-  rows := loweringRows
-  h_main_op := by
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_main_active := by
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_flag := by
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_m32 := by
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_set_pc := by
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_store_pc := by
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_store_ind := by
-    simp [loweringRows, mainAt_finish, jalrAndProgramRow, jalrAndBits,
-      jalrAndRow, jalrAndRowWithLast,
-      jalrAndRowTemplate, ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_store_offset := by
-    simp [loweringRows, mainAt_finish, jalrClaim, x2, jalrAndProgramRow,
-      jalrAndBits, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf, Transpiler.ind, regidx_to_fin]
-  h_idx := loweringRows.finish_has_successor
-  h_a_mask_lo := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
-    change (ZiskFv.Compliance.mainRowWithRomAt jalrAcceptedTrace
-      finishMainIndex).core.a_0 = _
-    rw [mainAt_finish]
-    rfl
-  h_a_mask_hi := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
-    change (ZiskFv.Compliance.mainRowWithRomAt jalrAcceptedTrace
-      finishMainIndex).core.a_1 = _
-    rw [mainAt_finish]
-    rfl
-  h_c1_zero := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_c_1]
-    change (ZiskFv.Compliance.mainRowWithRomAt jalrAcceptedTrace
-      finishMainIndex).core.c_1 = _
-    rw [mainAt_finish]
-    rfl
-  h_jmp2 := by
-    right
-    simp [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_offset_bridge := by
-    simp [loweringRows, mainAt_finish, jalrClaim,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-  h_offset_even := by simp [jalrClaim]
-  h_no_fgl_wrap := by
-    norm_num [loweringRows, mainAt_finish,
-      jalrAndProgramRow, jalrAndBits,
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-      jalrAndRowWithLast, jalrAndRowTemplate,
-      ZiskFv.AirsClean.Main.mainRomRowOf]
-
-def jalrProgramDecode :
-    ProgramDecode_jalr jalrAcceptedTrace jalrIndex jalrClaim where
-  toDecode := jalrDecode
-
--- The setup decode and both input-agreement bundles follow the established
--- concrete ADDI/JALR constructors; they are stated separately so compilation
--- checks every remaining field rather than hiding it behind a helper.
-
-def setupInput : PureSpec.AddiInput where
-  r1_val := 0#64
-  imm := 2#12
-  rd := regidx_to_fin x1
-  PC := 0#64
-
-def jalrInput : PureSpec.JalrInput where
-  imm := 2#12
-  rs1_val := 2#64
-  rd := regidx_to_fin x2
-  PC := 4#64
-
 private theorem setupMainPc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable jalrAcceptedTrace.program
       jalrAcceptedTrace.mainTable).pc 0 = 0 := by
@@ -322,6 +198,138 @@ private theorem jalrMainPc :
   rw [mainRawAt_start]
   simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
     jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf]
+
+private theorem jalrAndMainPc :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable jalrAcceptedTrace.program
+      jalrAcceptedTrace.mainTable).pc 2 = 5 := by
+  change
+    (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+      jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 2).core.pc = 5
+  rw [mainRawAt_finish]
+  simp [jalrAndRow, jalrAndRowTemplate,
+    jalrAndProgramRow, jalrAndBits, ZiskFv.AirsClean.Main.mainRomRowOf]
+
+/-- Committed-program decode evidence for the unaligned JALR lowering.
+
+Both committed lines are supplied — the `OP_ADD` at `pc 4` (the architectural
+row) and its `OP_AND` successor at `pc 5` — and `rowDecode_of_programDecode`
+DERIVES `Decode_jalr` from them via `Decode_jalr_unaligned_of_program`. The
+concrete `Decode_jalr` is no longer built by hand here: only the Main-core pins
+that are not ROM-message slots (`flag`, the `a`-lane mask, `c_1`, the
+`jmp_offset1` bridge and its bounds) remain stated against the witness rows. -/
+def jalrProgramDecode :
+    ProgramDecode_jalr jalrAcceptedTrace jalrIndex jalrClaim :=
+  .unaligned
+    { h_offset_zero := rfl
+      h_idx2 := by
+        simp [jalrIndex, jalrAcceptedTrace_mainTable_eq, jalrMainTable,
+          ZiskFv.Compliance.AddSpinWitness.mainRowsTable, jalrMainRows]
+      h_flag_add := by
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 1).core.flag = 0
+        rw [mainRawAt_start]
+        rfl
+      h_flag := by
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 2).core.flag = 0
+        rw [mainRawAt_finish]
+        rfl
+      h_a_mask_lo := by
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 2).core.a_0
+            = 4294967294
+        rw [mainRawAt_finish]
+        rfl
+      h_a_mask_hi := by
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 2).core.a_1
+            = 4294967295
+        rw [mainRawAt_finish]
+        rfl
+      h_c1_zero := by
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 2).core.c_1 = 0
+        rw [mainRawAt_finish]
+        rfl
+      h_offset_bridge := by
+        simp [jalrIndex, jalrClaim, jalrAndProgramRow, jalrAndBits,
+          ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
+          jalrAndRowTemplate, ZiskFv.AirsClean.Main.mainRomRowOf]
+      h_offset_even := by simp [jalrClaim]
+      h_no_fgl_wrap := by
+        norm_num [jalrIndex, jalrAndProgramRow, jalrAndBits,
+          ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
+          jalrAndRowWithLast, jalrAndRowTemplate,
+          ZiskFv.AirsClean.Main.mainRomRowOf]
+      addBits := jalrAddBits
+      h_add_ieo := rfl
+      h_add_m32 := rfl
+      h_add_set_pc := rfl
+      h_add_a_src_imm := rfl
+      h_add_b_src_reg := rfl
+      andBits := jalrAndBits
+      h_and_ieo := rfl
+      h_and_m32 := rfl
+      h_and_set_pc := rfl
+      h_and_store_pc := rfl
+      h_and_store_ind := rfl
+      h_and_b_src_imm := rfl
+      h_and_b_src_mem := rfl
+      h_and_b_src_ind := rfl
+      h_and_b_src_reg := rfl
+      h_prog_add := by
+        intro j hline
+        have hpc : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+            jalrAcceptedTrace.program jalrAcceptedTrace.mainTable).pc
+              jalrIndex.val = 4 := jalrMainPc
+        rw [hpc] at hline
+        fin_cases j
+        · exfalso
+          have hfalse : (0 : FGL) = 4 := by
+            simpa [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow] using hline
+          have := congrArg Fin.val hfalse
+          norm_num at this
+        · simp [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow, jalrClaim]
+        · exfalso
+          have hfalse : (5 : FGL) = 4 := by
+            simpa [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] using hline
+          have := congrArg Fin.val hfalse
+          norm_num at this
+      h_prog_and := by
+        intro j hline
+        have hpc : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+            jalrAcceptedTrace.program jalrAcceptedTrace.mainTable).pc
+              (jalrIndex.val + 1) = 5 := jalrAndMainPc
+        rw [hpc] at hline
+        fin_cases j
+        · exfalso
+          have hfalse : (0 : FGL) = 5 := by
+            simpa [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow] using hline
+          have := congrArg Fin.val hfalse
+          norm_num at this
+        · exfalso
+          have hfalse : (4 : FGL) = 5 := by
+            simpa [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] using hline
+          have := congrArg Fin.val hfalse
+          norm_num at this
+        · simp [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow, jalrClaim,
+            x2, Transpiler.ind, regidx_to_fin] }
+
+-- The setup decode and both input-agreement bundles follow the established
+-- concrete ADDI/JALR constructors; they are stated separately so compilation
+-- checks every remaining field rather than hiding it behind a helper.
+
+def setupInput : PureSpec.AddiInput where
+  r1_val := 0#64
+  imm := 2#12
+  rd := regidx_to_fin x1
+  PC := 0#64
+
+def jalrInput : PureSpec.JalrInput where
+  imm := 2#12
+  rs1_val := 2#64
+  rd := regidx_to_fin x2
+  PC := 4#64
 
 def setupProgramDecode :
     ProgramDecode_addi jalrAcceptedTrace setupIndex setupClaim where
