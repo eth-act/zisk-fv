@@ -276,6 +276,15 @@ theorem auipc_negative_rom_target_mismatch :
       (BitVec.signExtend 64 ((524288#20) ++ (0#12))).toNat := by
   decide
 
+/-- Representative backward-branch counterexample to all six current branch
+    committed-program interfaces.  The aligned immediate `4096#13` denotes
+    `-4096`; production embeds that signed offset in FGL, while the interfaces
+    ask for its unsigned 64-bit value. -/
+theorem branch_negative_rom_target_mismatch :
+    ((((BitVec.signExtend 64 (4096#13)).toInt : Int) : FGL).val) ≠
+      (BitVec.signExtend 64 (4096#13)).toNat := by
+  decide
+
 private theorem rawJType_rd (imm rd : Nat) (hrd : rd < 32) :
     ((ZiskFv.Completeness.Rv64imShapes.rawJType imm rd) &&& 3968#32) >>> 7 = BitVec.ofNat 32 rd := by
   rw [and3968_shr7]
@@ -1163,6 +1172,7 @@ section AxiomAudit
 #print axioms transpile_lui
 #print axioms transpile_auipc
 #print axioms auipc_negative_rom_target_mismatch
+#print axioms branch_negative_rom_target_mismatch
 #print axioms transpile_jal
 #print axioms transpile_jalr
 #print axioms jalr_decode_fields_of_binding
