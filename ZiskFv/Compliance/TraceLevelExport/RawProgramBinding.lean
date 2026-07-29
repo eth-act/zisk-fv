@@ -141,6 +141,19 @@ noncomputable def romMessagesOfRaw (line : FGL) (raw : BitVec 32) :
         (romRowOf line ext.last_row, none)
   | _ => (romMessageOfRaw line raw, none)
 
+/-- A successfully lowered non-JALR word has exactly one physical row, namely
+    the existing terminal-row projection. -/
+theorem romMessagesOfRaw_fst_of_non_jalr (line : FGL) (raw : BitVec 32)
+    (ext : aeneas_extract.Rv64imTranspileExtract)
+    (hok : aeneas_extract.extract_transpile_rv64im_raw
+      (ZiskFv.Compliance.Decode.toU32 raw) = .ok ext)
+    (hnon : (ZiskFv.Compliance.Decode.toU32 raw &&& 127#u32) ≠ 103#u32) :
+    (romMessagesOfRaw line raw).1 = romMessageOfRaw line raw := by
+  unfold romMessagesOfRaw romMessageOfRaw
+  rw [aeneas_extract.extract_transpile_rv64im_rows_raw, hok]
+  simp only [lift, Bind.bind, bind_ok, hnon, if_false]
+  norm_num [UScalar.val]
+
 /-- Op-agnostic ROM-image binding (a verifier-attached certificate, NOT an axiom):
     the committed ROM holds exactly the serialized lowering of the raw program. -/
 def ProgramBinding {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
