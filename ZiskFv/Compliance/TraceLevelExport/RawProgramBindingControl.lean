@@ -285,6 +285,15 @@ theorem branch_negative_rom_target_mismatch :
       (BitVec.signExtend 64 (4096#13)).toNat := by
   decide
 
+/-- Representative backward-JAL counterexample to the current committed-program
+    interface.  The aligned immediate `1048576#21` denotes `-1048576`;
+    production embeds that signed offset in FGL, while `ProgramDecode_jal`
+    asks for its unsigned 64-bit value. -/
+theorem jal_negative_rom_target_mismatch :
+    ((((BitVec.signExtend 64 (1048576#21)).toInt : Int) : FGL).val) ≠
+      (BitVec.signExtend 64 (1048576#21)).toNat := by
+  decide
+
 private theorem rawJType_rd (imm rd : Nat) (hrd : rd < 32) :
     ((ZiskFv.Completeness.Rv64imShapes.rawJType imm rd) &&& 3968#32) >>> 7 = BitVec.ofNat 32 rd := by
   rw [and3968_shr7]
@@ -1173,6 +1182,7 @@ section AxiomAudit
 #print axioms transpile_auipc
 #print axioms auipc_negative_rom_target_mismatch
 #print axioms branch_negative_rom_target_mismatch
+#print axioms jal_negative_rom_target_mismatch
 #print axioms transpile_jal
 #print axioms transpile_jalr
 #print axioms jalr_decode_fields_of_binding
