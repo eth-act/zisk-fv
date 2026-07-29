@@ -762,6 +762,71 @@ theorem fence_decode_fields_of_binding
       (by simp [romOpcode, OP_FLAG]) hok hop hj1 hj2 hbind
   exact ⟨ho, hjo1, hjo2, ext, hok, hieo, hm32, hsetpc, hstorepc, hf⟩
 
+/-! ## Current `ProgramDecode` retarget: FENCE. -/
+
+/-- Raw-program evidence for one supported FENCE step.  Only the claim-side
+    defect witnesses and the Main-row bound remain caller supplied; all
+    committed-ROM fields are recovered from the raw word. -/
+structure RawProgramDecode_fence {n : Nat}
+    (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_fence trace i)
+    (rawProgram : Fin trace.programLength → BitVec 32) where
+  h_idx : i.val + 1 < trace.mainTable.table.length
+  h_fm_zero : c.fm = 0#4
+  h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rs
+  h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rd
+  hLine : ∀ j : Fin trace.programLength,
+    (trace.program j).line =
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+      rawProgram j =
+        ZiskFv.Completeness.Rv64imShapes.rawSupportedFence c.fenceP.toNat c.fenceS.toNat
+
+/-- Rebuild the current committed-program FENCE bundle from the raw program and
+    the op-agnostic production-lowering certificate. -/
+noncomputable def ProgramDecode_fence_from_rawProgram {n : Nat}
+    (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_fence trace i)
+    (addr : Fin trace.programLength → FGL)
+    (rawProgram : Fin trace.programLength → BitVec 32)
+    (hbind : ProgramBinding trace addr rawProgram)
+    (rawDecode : RawProgramDecode_fence trace i c rawProgram) :
+    ZiskFv.Compliance.RomDecodeBinding.ProgramDecode_fence trace i c := by
+  let pred := c.fenceP.toNat
+  let succ := c.fenceS.toNat
+  have hp : pred < 16 := by
+    simpa only [pred] using
+      (Aeneas.SimpScalar.BitVec.toNat_lt_two_pow c.fenceP 4 (by omega))
+  have hs : succ < 16 := by
+    simpa only [succ] using
+      (Aeneas.SimpScalar.BitVec.toNat_lt_two_pow c.fenceS 4 (by omega))
+  let ext := (transpile_fence pred succ hp hs).choose
+  obtain ⟨hok, hop, hieo, _hm32, hsetpc, _hstorepc, hj1, hj2⟩ :=
+    (transpile_fence pred succ hp hs).choose_spec
+  refine
+    { h_idx := rawDecode.h_idx
+      h_fm_zero := rawDecode.h_fm_zero
+      h_rs_x0 := rawDecode.h_rs_x0
+      h_rd_x0 := rawDecode.h_rd_x0
+      bits := romFlagBitsOfExtract ext.row
+      h_bits_ieo := ?_
+      h_bits_set_pc := ?_
+      h_prog := ?_ }
+  · simpa only [ext, romFlagBitsOfExtract] using hieo
+  · simpa only [ext, romFlagBitsOfExtract] using hsetpc
+  · intro j hline
+    have hbk : trace.program j =
+        romMessageOfRaw (addr j)
+          (ZiskFv.Completeness.Rv64imShapes.rawSupportedFence pred succ) := by
+      exact (hbind.2 j).trans
+        (congrArg (romMessageOfRaw (addr j)) (rawDecode.hLine j hline))
+    obtain ⟨ho, hjo1, hjo2, ext', hok', _hieo', _hm32', _hsetpc',
+        _hstorepc', hf⟩ :=
+      fence_decode_fields_of_binding pred succ hp hs
+        (addr j) (trace.program j) hbk
+    have hext : ext' = ext := Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
+    subst ext'
+    exact ⟨ho, hjo1, hjo2, hf⟩
+
 section AxiomAudit
 #print axioms transpile_lui
 #print axioms transpile_auipc
@@ -770,6 +835,7 @@ section AxiomAudit
 #print axioms jalr_decode_fields_of_binding
 #print axioms transpile_fence
 #print axioms fence_decode_fields_of_binding
+#print axioms ProgramDecode_fence_from_rawProgram
 #print axioms transpile_beq
 #print axioms beq_decode_fields_of_binding
 end AxiomAudit
