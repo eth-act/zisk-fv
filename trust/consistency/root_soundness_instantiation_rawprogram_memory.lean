@@ -1,0 +1,5 @@
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingMemoryNonvacuity
+
+#print axioms ZiskFv.Compliance.RawProgramBinding.memoryProgramBinding
+#print axioms ZiskFv.Compliance.RawProgramBinding.memorySdRow_eq_romMessageOfRaw
+#print axioms ZiskFv.Compliance.RawProgramBinding.memoryLdNegativeRow_eq_romMessageOfRaw
