@@ -309,7 +309,7 @@ def addX1RowTemplate : MainRowWithRom FGL :=
   { core :=
       { a_0 := 0, a_1 := 0, b_0 := 0, b_1 := 0, c_0 := 0, c_1 := 0,
         flag := 0, pc := 0, is_external_op := 1, op := ZiskFv.Trusted.OP_ADD, m32 := 0,
-        ind_width := 8, set_pc := 0, jmp_offset1 := 4, jmp_offset2 := 4,
+        ind_width := 0, set_pc := 0, jmp_offset1 := 4, jmp_offset2 := 4,
         store_pc := 0, im_high_degree_2 := 0, segment_l1 := 1 }
     rom :=
       { a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 1, b_imm1 := 0,
@@ -335,7 +335,7 @@ def addX1Row : MainRowWithRom FGL := addX1RowWithLast.2
 /-- The ROM row matching `addX1Row`'s decoded selector pins. -/
 def addX1ProgramRow : ZiskRomMessage FGL :=
   { line := 0, a_offset_imm0 := 1, a_imm1 := 0, b_offset_imm0 := 1, b_imm1 := 0,
-    ind_width := 8, op := ZiskFv.Trusted.OP_ADD, store_offset := 1, jmp_offset1 := 4,
+    ind_width := 0, op := ZiskFv.Trusted.OP_ADD, store_offset := 1, jmp_offset1 := 4,
     jmp_offset2 := 4, flags := 57409 }
 
 /-- A one-instruction concrete program for the `add x1,x1,x1` witness. -/
