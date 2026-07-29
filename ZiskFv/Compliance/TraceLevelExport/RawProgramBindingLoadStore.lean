@@ -55,6 +55,9 @@ set_option linter.unusedSimpArgs false
 
 /-! ## Generic load / store decode-field bridge (adds `ind_width` to the register one). -/
 
+private theorem loadstore_hcast4 :
+    (UScalar.hcast IScalarTy.I64 4#u64 : Std.I64).val = (4 : Int) := by decide
+
 /-- The committed message's load/store decode fields (incl. `ind_width`), from its
     raw word binding.  Extends `register_decode_fields_of_binding` with the access
     width that the load/store ROM lookup reads. -/
@@ -72,13 +75,17 @@ theorem loadstore_decode_fields_of_binding
     (hbind : msg = romMessageOfRaw line raw) :
     msg.op = opF ∧ msg.jmp_offset1 = 4 ∧ msg.jmp_offset2 = 4 ∧ msg.ind_width = wF
       ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-  obtain ⟨ho, hjo1, hjo2, hf⟩ :=
-    register_decode_fields_of_binding line msg raw opc opF ext hopF hok hop hj1 hj2 hbind
-  refine ⟨ho, hjo1, hjo2, ?_, hf⟩
   have hmsg : msg = serializeExtract line ext.row := by
     rw [hbind, romMessageOfRaw, hok]
     exact romRowOf_eq_serializeExtract line ext.row
-  rw [hmsg]; show (ext.row.ind_width.val : FGL) = wF; rw [hiw]; exact hwF
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [hmsg]; show romOpcode ext.row.op = opF; rw [hop, hopF]
+  · rw [hmsg]; show (ext.row.jmp_offset1.val : FGL) = 4
+    rw [hj1]; norm_num [loadstore_hcast4]
+  · rw [hmsg]; show (ext.row.jmp_offset2.val : FGL) = 4
+    rw [hj2]; norm_num [loadstore_hcast4]
+  · rw [hmsg]; show (ext.row.ind_width.val : FGL) = wF; rw [hiw]; exact hwF
+  · rw [hmsg]; rfl
 
 /-! ## Generic load-family transpile reduction (I-type word, `decode_i … false`). -/
 
@@ -332,10 +339,17 @@ theorem sd_decode_fields_of_binding (rs1 rs2 imm : Nat) (hrs1 : rs1 < 32) (hrs2 
           ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
           ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
   obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, _, hj1, hj2⟩ := transpile_sd rs1 rs2 imm hrs1 hrs2
-  obtain ⟨ho, hjo1, hjo2, hf⟩ :=
-    register_decode_fields_of_binding line msg _ 1#u8 OP_COPYB ext
-      (by simp [romOpcode, OP_COPYB]) hok hop hj1 hj2 hbind
-  exact ⟨ho, hjo1, hjo2, ext, hok, hieo, hm32, hsetpc, hstorepc, hf⟩
+  have hmsg : msg = serializeExtract line ext.row := by
+    rw [hbind, romMessageOfRaw, hok]
+    exact romRowOf_eq_serializeExtract line ext.row
+  refine ⟨?_, ?_, ?_, ext, hok, hieo, hm32, hsetpc, hstorepc, ?_⟩
+  · rw [hmsg]; show romOpcode ext.row.op = OP_COPYB
+    rw [hop]; simp [romOpcode, OP_COPYB]
+  · rw [hmsg]; show (ext.row.jmp_offset1.val : FGL) = 4
+    rw [hj1]; norm_num [loadstore_hcast4]
+  · rw [hmsg]; show (ext.row.jmp_offset2.val : FGL) = 4
+    rw [hj2]; norm_num [loadstore_hcast4]
+  · rw [hmsg]; rfl
 
 /-! ## SIGNEXTEND loads (LB/LH/LW, issue #159 block 3).  These lower to the
     `BinaryE`/`SignExtend*` op (external, `is_external_op = true`), so their ROM
