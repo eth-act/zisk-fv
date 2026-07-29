@@ -158,6 +158,150 @@ private theorem signext_mask12 (v : BitVec 32) :
       simpa using hzbit
     exact signExtend12_of_not_sign v hsign
 
+private theorem mask21_toInt_bounds (v : BitVec 32) :
+    0 ≤ (v &&& 2097151#32).toInt ∧ (v &&& 2097151#32).toInt ≤ 2097151 := by
+  have h : (v &&& 2097151#32).toNat ≤ 2097151 := by
+    rw [BitVec.toNat_and]
+    exact le_trans Nat.and_le_right (by norm_num)
+  rw [BitVec.toInt]
+  rw [if_pos (by
+    have h' : v.toNat &&& 2097151 ≤ 2097151 := Nat.and_le_right
+    norm_num
+    omega)]
+  omega
+
+private theorem signExtend21_of_sign (v : BitVec 32)
+    (h : (v &&& 2097151#32)[20] = true) :
+    (v &&& 2097151#32) - 2097152#32 =
+      BitVec.signExtend 32 (v.truncate 21) := by
+  apply BitVec.eq_of_toInt_eq
+  rw [BitVec.toInt_sub, BitVec.toInt_signExtend_of_le (by omega)]
+  have hn : (v &&& 2097151#32).toNat ≤ 2097151 := by
+    rw [BitVec.toNat_and]
+    exact le_trans Nat.and_le_right (by norm_num)
+  have hlo : 1048576 ≤ (v &&& 2097151#32).toNat := by
+    by_contra hnlt
+    have ht := Nat.testBit_lt_two_pow
+      (show (v &&& 2097151#32).toNat < 2 ^ 20 by omega)
+    have hb : (v &&& 2097151#32).toNat.testBit 20 = true := by
+      change (v &&& 2097151#32)[20] = true
+      exact h
+    rw [ht] at hb
+    contradiction
+  have htrunc : (v.truncate 21).toNat = (v &&& 2097151#32).toNat := by
+    rw [BitVec.toNat_setWidth, BitVec.toNat_and]
+    calc
+      v.toNat % 2 ^ 21 = v.toNat &&& (2 ^ 21 - 1) :=
+        (Nat.and_two_pow_sub_one_eq_mod v.toNat 21).symm
+      _ = v.toNat &&& 2097151 := by norm_num
+  have htruncInt : (v.truncate 21).toInt =
+      (v &&& 2097151#32).toNat - 2097152 := by
+    rw [BitVec.toInt, htrunc]
+    rw [if_neg (by omega)]
+    norm_num
+  have hxInt : (v &&& 2097151#32).toInt = (v &&& 2097151#32).toNat := by
+    rw [BitVec.toInt, if_pos (by
+      have hn' : v.toNat &&& 2097151 ≤ 2097151 := Nat.and_le_right
+      norm_num
+      omega)]
+  have hmax : (2097152#32).toInt = 2097152 := by decide
+  rw [htruncInt, hxInt, hmax]
+  norm_num [Int.bmod]
+  have hn' : v.toNat &&& 2097151 ≤ 2097151 := Nat.and_le_right
+  have hlo' : 1048576 ≤ v.toNat &&& 2097151 := by
+    simpa [BitVec.toNat_and] using hlo
+  have hmod : ((v.toNat &&& 2097151 : Nat) - 2097152 : Int) % 4294967296 =
+      (v.toNat &&& 2097151 : Nat) - 2097152 + 4294967296 := by
+    rw [Int.emod_eq_add_self_emod]
+    apply Int.emod_eq_of_lt <;> omega
+  rw [hmod, if_neg (by omega)]
+  omega
+
+private theorem signExtend21_of_not_sign (v : BitVec 32)
+    (h : (v &&& 2097151#32)[20] = false) :
+    v &&& 2097151#32 = BitVec.signExtend 32 (v.truncate 21) := by
+  symm
+  apply BitVec.eq_of_getLsbD_eq
+  intro i
+  by_cases hi : i < 32
+  · interval_cases i <;>
+      simp [BitVec.getElem_signExtend,
+        BitVec.getElem_setWidth, BitVec.msb_setWidth] at h ⊢ <;> assumption
+  · simp [BitVec.getLsbD_signExtend, hi]
+
+private theorem signext_mask21 (v : BitVec 32) :
+    signext ⟨v &&& 2097151#32⟩ 21#u32
+      ⦃ r => r.bv = BitVec.signExtend 32 (v.truncate 21) ⦄ := by
+  rw [signext]
+  step*
+  all_goals
+    have hi : i = 20#u32 := UScalar.eq_imp _ _ (by simpa using i_post1)
+    subst i
+    have hs : sign_bit = 1048576#u32 :=
+      UScalar.eq_imp _ _ (by
+        norm_num [sign_bit_post1, U32.size_eq, Nat.shiftLeft_eq])
+    subst sign_bit
+    have hm0 : max_value = 2097152#u32 :=
+      UScalar.eq_imp _ _ (by
+        norm_num [max_value_post1, U32.size_eq, Nat.shiftLeft_eq])
+    subst max_value
+    have hs_bv : (1048576#u32).bv = 1048576#32 := rfl
+    have hm_bv : (2097152#u32).bv = 2097152#32 := rfl
+    rw [hs_bv, hm_bv] at *
+    clear i_post1 i_post2 sign_bit_post1 sign_bit_post2 max_value_post1 max_value_post2
+  · clear i1_post1 i1_post2
+    rw [i2_post, i3_post]
+    change I32.min ≤ (v &&& 2097151#32).toInt - (2097152#32).toInt
+    have hv := (mask21_toInt_bounds v).1
+    have hmax : (2097152#32).toInt = 2097152 := by decide
+    rw [hmax]
+    have hmin : I32.min = -2147483648 := by
+      norm_num [I32.min, I32.numBits_eq]
+    rw [hmin]
+    omega
+  · clear i1_post1 i1_post2
+    rw [i2_post, i3_post]
+    change (v &&& 2097151#32).toInt - (2097152#32).toInt ≤ I32.max
+    have hv := (mask21_toInt_bounds v).2
+    have hmaxv : (2097152#32).toInt = 2097152 := by decide
+    rw [hmaxv]
+    have hmax : I32.max = 2147483647 := by
+      norm_num [I32.max, I32.numBits_eq]
+    rw [hmax]
+    omega
+  · calc
+      r.bv = i2.bv - i3.bv := r_post2
+      _ = (v &&& 2097151#32) - 2097152#32 := by rw [i2_post, i3_post]; rfl
+      _ = BitVec.signExtend 32 (v.truncate 21) := by
+        apply signExtend21_of_sign
+        have hi1 := i1_post2
+        change i1.bv = 1048576#32 &&& (v &&& 2097151#32) at hi1
+        have hne : (i1 != 0#u32) = true := by assumption
+        simp at hne
+        change i1.bv.toNat ≠ 0 at hne
+        by_contra hb
+        have hz : 1048576#32 &&& (v &&& 2097151#32) = 0#32 := by
+          apply BitVec.eq_of_getLsbD_eq
+          intro k
+          by_cases hk : k < 32
+          · interval_cases k <;> simp_all
+          · simp [BitVec.getLsbD, hk]
+        rw [hi1, hz] at hne
+        exact hne rfl
+  · change v &&& 2097151#32 = BitVec.signExtend 32 (v.truncate 21)
+    have hi1 := i1_post2
+    change i1.bv = 1048576#32 &&& (v &&& 2097151#32) at hi1
+    have hne : ¬(i1 != 0#u32) = true := by assumption
+    simp at hne
+    change i1.bv.toNat = 0 at hne
+    have hi1zero : i1.bv = 0#32 := BitVec.eq_of_toNat_eq hne
+    rw [hi1] at hi1zero
+    have hzbit := congrArg (fun x : BitVec 32 => x[20]) hi1zero
+    have hsign : (v &&& 2097151#32)[20] = false := by simpa using hzbit
+    exact signExtend21_of_not_sign v hsign
+
+#print axioms signext_mask21
+
 private theorem rawIType_imm_bits
     (imm rs1 funct3 rd opcode : Nat)
     (hrs1 : rs1 < 32) (hfunct3 : funct3 < 8)
