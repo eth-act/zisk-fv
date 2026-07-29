@@ -185,6 +185,7 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingCopyb
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingImmediate
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingLoadStore
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingMext
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingControl
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingNonvacuity
 import ZiskFv.Compliance
 import ZiskFv.Compliance.EnsembleWitnessBuilder
