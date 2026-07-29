@@ -174,6 +174,12 @@ import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBindingOps
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBinding
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingRegister
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingCopyb
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingImmediate
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingLoadStore
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingMext
 import ZiskFv.Compliance
 import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.Compliance.RegisterMemBusBalance
