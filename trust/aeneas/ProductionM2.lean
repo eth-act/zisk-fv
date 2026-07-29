@@ -3727,9 +3727,8 @@ def aeneas_extract.extract_transpile_rv64im_rows_raw
   let terminal ← aeneas_extract.extract_transpile_rv64im_raw raw1
   if terminal.accepted
   then
-    let i ←
-      aeneas_extract.opcode_id aeneas_extract.rv64im_decode.RiscvOpcode.Jalr
-    if terminal.decode.opcode_id = i
+    let i ← lift (raw1 &&& 127#u32)
+    if i = 103#u32
     then
       let i1 ← terminal.decode.imm % 4#i32
       if i1 != 0#i32
