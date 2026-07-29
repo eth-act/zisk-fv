@@ -358,29 +358,30 @@ surface with `lake env lean -R build/extraction ...`.
 
 ## Limitations (deliberate; expand as phases demand)
 
-The extractor renders these operand kinds: `Constant`, `WitnessCol`,
-`Expression` (recursive). All others are unsupported and produce a comment
-stub in place of `constraint_N`:
+`render_operand` renders these operand kinds: `Constant`, `WitnessCol`,
+`FixedCol`, `Challenge`, `AirValue`, `AirGroupValue`, and `Expression`
+(recursive). These four remain unsupported and produce a comment stub in place
+of `constraint_N`: `PeriodicCol`, `ProofValue`, `PublicValue`, `CustomCol`. No
+constraint in the ten extracted AIRs reaches one, so the current tree contains
+zero stubs — the round-trip gate checks that, and requires any stub it does find
+to correspond to a constraint the pilout shows is genuinely unrepresentable.
 
-- `FixedCol` — needed for the row-indicator / final-state constraints on
-  `BinaryAdd` (constraints 6, 8).
-- `Challenge`, `AirValue` — used by the permutation / operation-bus argument
-  (constraints 4, 5, 7).
-- `PeriodicCol`, `ProofValue`, `AirGroupValue`, `PublicValue`, `CustomCol`.
+`AirValue` and `AirGroupValue` share the single `Extraction.Circuit.exposed`
+accessor, so their index spaces overlap in the per-AIR files. See the round-trip
+gate section above for the measured extent (8 of 10 AIRs, index 0, 54
+constraints) and for why the `LookupWiring` rendering, which keeps the two
+kinds apart, is the one the maintained links import.
 
-Constraint kinds: only `everyRow`, `firstRow`, `lastRow`, `everyFrame` are
-handled uniformly (they all produce the same emission — rowness is not yet
-tracked in the Lean output). `everyFrame`'s `offsetMin`/`offsetMax` are
-ignored.
+Constraint kinds: `constraint_kind_suffix` encodes the pilout row domain in the
+definition name (`every_row` / `first_row` / `last_row` /
+`every_frame_<min>_<max>`), so `everyFrame`'s offsets reach the Lean name. All
+4095 constraints in the current pilout are `everyRow`, so the other three
+suffixes are unexercised, and for them the row restriction lives only in the
+name — nothing downstream reads it yet.
 
-Constraints that hit an unsupported operand are silently skipped with a
-warning on stderr, and the extracted Lean file contains a one-line comment
-recording the skip reason. The boolean target constraint (`constraint_0` for
-`BinaryAdd`) does not touch any of these, which is why Phase 0 ships.
-
-Phase 1 must add `FixedCol`, `Challenge`, `AirValue` to render the Main AIR,
-and will need to distinguish `firstRow` / `lastRow` / `everyFrame` from
-`everyRow` at the Lean level.
+Constraints that hit an unsupported operand are skipped with a warning on
+stderr, and the extracted Lean file contains a one-line comment recording the
+skip reason.
 
 ## Reproducibility check
 
