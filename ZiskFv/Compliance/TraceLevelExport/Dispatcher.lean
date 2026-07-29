@@ -314,23 +314,30 @@ def MainSequentialPcDomain (ziskTrace : AcceptedZiskTrace numInstructions)
   mainPcVal ziskTrace i < GL_prime - 4
 
 def MainBranchRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
-    (i : Fin ziskTrace.numInstructions) (takenOffset : FGL) : Prop :=
-  mainPcVal ziskTrace i + takenOffset.val < GL_prime ∧
+    (i : Fin ziskTrace.numInstructions) (takenOffset : BitVec 64) : Prop :=
+  0 ≤ (mainPcVal ziskTrace i : Int) + takenOffset.toInt ∧
+    (mainPcVal ziskTrace i : Int) + takenOffset.toInt < GL_prime ∧
     MainSequentialPcDomain ziskTrace i
 
 structure MainAuipcRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) (imm : BitVec 20) : Prop where
   h_pc_bound : MainSequentialPcDomain ziskTrace i
-  h_no_wrap :
-    mainPcVal ziskTrace i + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat
-      < GL_prime
+  h_target_nonneg :
+    0 ≤ (mainPcVal ziskTrace i : Int)
+      + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toInt
+  h_target_lt :
+    (mainPcVal ziskTrace i : Int)
+      + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toInt < GL_prime
   h_pc_offset_lt_2_32 :
     ∀ pc : BitVec 64, mainPcVal ziskTrace i = pc.toNat →
       (pc + BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat < 4294967296
 
 structure MainJalRangeDomain (ziskTrace : AcceptedZiskTrace numInstructions)
     (i : Fin ziskTrace.numInstructions) (imm : BitVec 21) : Prop where
-  h_no_fgl_wrap : mainPcVal ziskTrace i + (BitVec.signExtend 64 imm).toNat < GL_prime
+  h_target_nonneg :
+    0 ≤ (mainPcVal ziskTrace i : Int) + (BitVec.signExtend 64 imm).toInt
+  h_target_lt :
+    (mainPcVal ziskTrace i : Int) + (BitVec.signExtend 64 imm).toInt < GL_prime
   h_pc_bound : MainSequentialPcDomain ziskTrace i
   h_pc_offset_lt_2_32 :
     ∀ pc : BitVec 64, mainPcVal ziskTrace i = pc.toNat →
@@ -355,13 +362,14 @@ theorem sequentialPcDomain_of_main
 
 theorem branchRangeDomain_of_main
     {ziskTrace : AcceptedZiskTrace numInstructions}
-    {i : Fin ziskTrace.numInstructions} {pc : BitVec 64} {takenOffset : FGL}
+    {i : Fin ziskTrace.numInstructions} {pc takenOffset : BitVec 64}
     (h_bridge : mainPcVal ziskTrace i = pc.toNat)
     (h_domain : MainBranchRangeDomain ziskTrace i takenOffset) :
     BranchRangeDomain ziskTrace i pc takenOffset := by
-  constructor
-  · simpa [BranchRangeDomain, MainBranchRangeDomain, mainPcVal] using h_domain.1
-  · simpa [SequentialPcDomain] using sequentialPcDomain_of_main h_bridge h_domain.2
+  unfold BranchRangeDomain
+  unfold MainBranchRangeDomain MainSequentialPcDomain at h_domain
+  rw [h_bridge] at h_domain
+  exact h_domain
 
 theorem auipcRangeDomain_of_main
     {ziskTrace : AcceptedZiskTrace numInstructions}
@@ -372,9 +380,12 @@ theorem auipcRangeDomain_of_main
     (h_domain : MainAuipcRangeDomain ziskTrace i imm) :
     AuipcRangeDomain auipc_input where
   h_pc_bound := sequentialPcDomain_of_main h_bridge h_domain.h_pc_bound
-  h_no_wrap := by
+  h_target_nonneg := by
     rw [h_input_imm, ← h_bridge]
-    exact h_domain.h_no_wrap
+    exact h_domain.h_target_nonneg
+  h_target_lt := by
+    rw [h_input_imm, ← h_bridge]
+    exact h_domain.h_target_lt
   h_pc_offset_lt_2_32 := by
     simpa [h_input_imm] using h_domain.h_pc_offset_lt_2_32 auipc_input.PC h_bridge
 
@@ -386,9 +397,12 @@ theorem jalRangeDomain_of_main
     (h_bridge : mainPcVal ziskTrace i = jal_input.PC.toNat)
     (h_domain : MainJalRangeDomain ziskTrace i imm) :
     JalRangeDomain jal_input where
-  h_no_fgl_wrap := by
+  h_target_nonneg := by
     rw [h_input_imm, ← h_bridge]
-    exact h_domain.h_no_fgl_wrap
+    exact h_domain.h_target_nonneg
+  h_target_lt := by
+    rw [h_input_imm, ← h_bridge]
+    exact h_domain.h_target_lt
   h_pc_bound := sequentialPcDomain_of_main h_bridge h_domain.h_pc_bound
   h_pc_offset_lt_2_32 := h_domain.h_pc_offset_lt_2_32 jal_input.PC h_bridge
 
@@ -513,24 +527,24 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
   | .slliw c => SequentialPcDomain c.slliw_input.PC
   | .srliw c => SequentialPcDomain c.srliw_input.PC
   | .sraiw c => SequentialPcDomain c.sraiw_input.PC
-  | .beq _ =>
+  | .beq c =>
       MainBranchRangeDomain ziskTrace i
-        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
-  | .bne _ =>
+        (BitVec.signExtend 64 c.imm)
+  | .bne c =>
       MainBranchRangeDomain ziskTrace i
-        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
-  | .blt _ =>
+        (BitVec.signExtend 64 c.imm)
+  | .blt c =>
       MainBranchRangeDomain ziskTrace i
-        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
-  | .bge _ =>
+        (BitVec.signExtend 64 c.imm)
+  | .bge c =>
       MainBranchRangeDomain ziskTrace i
-        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
-  | .bltu _ =>
+        (BitVec.signExtend 64 c.imm)
+  | .bltu c =>
       MainBranchRangeDomain ziskTrace i
-        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val)
-  | .bgeu _ =>
+        (BitVec.signExtend 64 c.imm)
+  | .bgeu c =>
       MainBranchRangeDomain ziskTrace i
-        ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset2 i.val)
+        (BitVec.signExtend 64 c.imm)
   | .auipc c => MainAuipcRangeDomain ziskTrace i c.imm
   | .jal c => MainJalRangeDomain ziskTrace i c.imm
   | .jalr _ => MainJalrRangeDomain ziskTrace i
@@ -1402,22 +1416,46 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | beq c =>
       exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia)
-        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by
+          change BranchRangeDomain ziskTrace i ia.beq_input.PC
+            (BitVec.signExtend 64 ia.beq_input.imm)
+          simpa [ia.h_input_imm] using
+            branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | bne c =>
       exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia)
-        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by
+          change BranchRangeDomain ziskTrace i ia.bne_input.PC
+            (BitVec.signExtend 64 ia.bne_input.imm)
+          simpa [ia.h_input_imm] using
+            branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | blt c =>
       exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia)
-        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by
+          change BranchRangeDomain ziskTrace i ia.blt_input.PC
+            (BitVec.signExtend 64 ia.blt_input.imm)
+          simpa [ia.h_input_imm] using
+            branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | bge c =>
       exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia)
-        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by
+          change BranchRangeDomain ziskTrace i ia.bge_input.PC
+            (BitVec.signExtend 64 ia.bge_input.imm)
+          simpa [ia.h_input_imm] using
+            branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | bltu c =>
       exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia)
-        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by
+          change BranchRangeDomain ziskTrace i ia.bltu_input.PC
+            (BitVec.signExtend 64 ia.bltu_input.imm)
+          simpa [ia.h_input_imm] using
+            branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | bgeu c =>
       exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia)
-        (branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by
+          change BranchRangeDomain ziskTrace i ia.bgeu_input.PC
+            (BitVec.signExtend 64 ia.bgeu_input.imm)
+          simpa [ia.h_input_imm] using
+            branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | lui c =>
       exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
@@ -1433,15 +1471,9 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           (PureSpec.execute_JAL_pure ia.jal_input).nextPC = .some nextPC_val :=
         PureSpec.execute_JAL_pure_succ_nextPC ia.jal_input ia.h_success
       have h_offset_bridge :
-          ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val).val =
-            (BitVec.signExtend 64 ia.jal_input.imm).toNat := by
+          (mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val =
+            ((BitVec.signExtend 64 ia.jal_input.imm).toInt : FGL) := by
         simpa [ia.h_input_imm] using rd.h_jmp_offset1_imm
-      have h_no_wrap_fgl :
-          ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val
-            + ((mainOfTable ziskTrace.program ziskTrace.mainTable).jmp_offset1 i.val).val
-              < GL_prime := by
-        rw [ia.h_pc_bridge, h_offset_bridge]
-        exact h_domain.h_no_fgl_wrap
       have h_spec := mainSpec_at ziskTrace sailTrace i
       have h_subset := ZiskFv.AirsClean.Main.add_subset_holds_of_spec_rowAt
         (mainOfTable ziskTrace.program ziskTrace.mainTable) i.val h_spec
@@ -1457,7 +1489,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             = nextPC_val := by
         simpa [nextPC_val] using jal_nextPC_matches_of_physical ziskTrace i
           ia.jal_input.PC ia.jal_input.imm rd.h_idx rd.h_set_pc h_flag
-          ia.h_pc_bridge h_offset_bridge h_no_wrap_fgl
+          ia.h_pc_bridge h_offset_bridge h_domain.h_target_nonneg h_domain.h_target_lt
       have h_not_throws :
           (PureSpec.execute_JAL_pure ia.jal_input).throws = false :=
         PureSpec.execute_JAL_pure_succ_throws ia.jal_input ia.h_success

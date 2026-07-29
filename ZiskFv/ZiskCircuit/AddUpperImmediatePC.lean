@@ -120,8 +120,9 @@ lemma auipc_store_value_lo_bv
     (h_circuit : auipc_archetype_circuit_holds m r_main next_pc)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e)
     (h_pc_bridge : (m.pc r_main).val = PC.toNat)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val = offset_bv.toNat)
-    (h_no_wrap : PC.toNat + offset_bv.toNat < GL_prime)
+    (h_offset_bridge : m.jmp_offset2 r_main = (offset_bv.toInt : FGL))
+    (h_target_nonneg : 0 ≤ (PC.toNat : Int) + offset_bv.toInt)
+    (h_target_lt : (PC.toNat : Int) + offset_bv.toInt < GL_prime)
     (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val
                     < 4294967296) :
     (memory_entry_lo e).val = (PC + offset_bv).toNat % 4294967296 := by
@@ -131,14 +132,11 @@ lemma auipc_store_value_lo_bv
   rw [h_sv] at h_lane_lo
   -- `h_lane_lo : memory_entry_lo e = m.pc r_main + m.jmp_offset2 r_main`
   rw [h_lane_lo]
-  -- Apply S2's strict-form lo lemma with the AUIPC offset.
-  have h_no_wrap_fgl :
-      (m.pc r_main).val + (m.jmp_offset2 r_main).val < GL_prime := by
-    rw [h_pc_bridge, h_offset_bridge]
-    exact h_no_wrap
-  exact fgl_pc_plus_offset_val_eq_lo_strict
-    (m.pc r_main) (m.jmp_offset2 r_main) PC offset_bv
-    h_pc_bridge h_offset_bridge h_no_wrap_fgl h_lo_bound
+  have hval := fgl_pc_plus_signed_offset_val
+    (m.pc r_main) PC offset_bv h_pc_bridge h_target_nonneg h_target_lt
+  rw [h_offset_bridge] at h_lo_bound
+  rw [hval] at h_lo_bound
+  rw [h_offset_bridge, hval, Nat.mod_eq_of_lt h_lo_bound]
 
 /-- **AUIPC rd-write hi half (BitVec form).** Under AUIPC's
     `store_pc = 1` mode, the PIL `(1 - store_pc) * c_1` collapses to

@@ -50,9 +50,10 @@ agreement. Keeping them separate from `Inputs_auipc` leaves the input record foc
 value agreement while preserving the same AUIPC range obligations at the theorem boundary. -/
 structure AuipcRangeDomain (auipc_input : PureSpec.AuipcInput) : Prop where
   h_pc_bound : auipc_input.PC.toNat < GL_prime - 4
-  h_no_wrap : auipc_input.PC.toNat
-    + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-      < GL_prime
+  h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+    + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt
+  h_target_lt : (auipc_input.PC.toNat : Int)
+    + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime
   h_pc_offset_lt_2_32 :
     (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
       < 4294967296

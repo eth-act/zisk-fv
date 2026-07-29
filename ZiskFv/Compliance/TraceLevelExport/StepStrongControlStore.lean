@@ -456,17 +456,18 @@ theorem jal_nextPC_matches_of_physical
     (h_pc_bridge :
       ((mainOfTable trace.program trace.mainTable).pc i.val).val = pc.toNat)
     (h_offset_bridge :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val =
-        (BitVec.signExtend 64 imm).toNat)
-    (h_no_wrap :
-      ((mainOfTable trace.program trace.mainTable).pc i.val).val
-        + ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val < GL_prime) :
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val =
+        ((BitVec.signExtend 64 imm).toInt : FGL))
+    (h_target_nonneg : 0 ≤ (pc.toNat : Int) + (BitVec.signExtend 64 imm).toInt)
+    (h_target_lt : (pc.toNat : Int) + (BitVec.signExtend 64 imm).toInt < GL_prime) :
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
       = pc + BitVec.signExtend 64 imm := by
   rw [Pilot.flag_path_nextPC_discharged trace i h_idx h_set_pc h_flag]
-  exact Pilot.ofNat_fgl_pc_plus_offset_eq _ _ pc (BitVec.signExtend 64 imm)
-    h_pc_bridge h_offset_bridge h_no_wrap
+  rw [h_offset_bridge]
+  rw [ZiskFv.PackedBitVec.WidePCNoWrap.fgl_pc_plus_signed_offset_val
+    _ pc (BitVec.signExtend 64 imm) h_pc_bridge h_target_nonneg h_target_lt]
+  simpa using BitVec.ofNat_toNat 64 (pc + BitVec.signExtend 64 imm)
 
 /-! ## Strengthened control-flow + U-type arms (branches, JAL/JALR, LUI/AUIPC)
 
@@ -795,7 +796,7 @@ theorem stepStrong_beq
     (d : RowData_beq trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.beq_input.PC
-        ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val)) :
+        (BitVec.signExtend 64 d.toInputs.beq_input.imm)) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BEQ)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -830,14 +831,14 @@ theorem stepStrong_beq
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
-            (m.jmp_offset1 i.val).val =
-              (BitVec.signExtend 64 d.toInputs.beq_input.imm).toNat := by
+            m.jmp_offset1 i.val =
+              ((BitVec.signExtend 64 d.toInputs.beq_input.imm).toInt : FGL) := by
           simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
         have h_cast := Pilot.branch_nextPC_flag1_taken trace i
           (d.toInputs.beq_input.r1_val == d.toInputs.beq_input.r2_val)
           d.toInputs.beq_input.PC (BitVec.signExtend 64 d.toInputs.beq_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
-          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2
+          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2.1 h_domain.2.2
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
           = (PureSpec.execute_BEQ_pure d.toInputs.beq_input).nextPC
@@ -862,7 +863,7 @@ theorem stepStrong_bne
     (d : RowData_bne trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bne_input.PC
-        ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val)) :
+        (BitVec.signExtend 64 d.toInputs.bne_input.imm)) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BNE)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -897,14 +898,14 @@ theorem stepStrong_bne
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
-            (m.jmp_offset2 i.val).val =
-              (BitVec.signExtend 64 d.toInputs.bne_input.imm).toNat := by
+            m.jmp_offset2 i.val =
+              ((BitVec.signExtend 64 d.toInputs.bne_input.imm).toInt : FGL) := by
           simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
         have h_cast := Pilot.branch_nextPC_flag0_taken trace i
           (d.toInputs.bne_input.r1_val == d.toInputs.bne_input.r2_val)
           d.toInputs.bne_input.PC (BitVec.signExtend 64 d.toInputs.bne_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
-          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2
+          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2.1 h_domain.2.2
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
           = (PureSpec.execute_BNE_pure d.toInputs.bne_input).nextPC
@@ -929,7 +930,7 @@ theorem stepStrong_blt
     (d : RowData_blt trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.blt_input.PC
-        ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val)) :
+        (BitVec.signExtend 64 d.toInputs.blt_input.imm)) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BLT)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -964,14 +965,14 @@ theorem stepStrong_blt
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
-            (m.jmp_offset1 i.val).val =
-              (BitVec.signExtend 64 d.toInputs.blt_input.imm).toNat := by
+            m.jmp_offset1 i.val =
+              ((BitVec.signExtend 64 d.toInputs.blt_input.imm).toInt : FGL) := by
           simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
         have h_cast := Pilot.branch_nextPC_flag1_taken trace i
           (BitVec.slt d.toInputs.blt_input.r1_val d.toInputs.blt_input.r2_val)
           d.toInputs.blt_input.PC (BitVec.signExtend 64 d.toInputs.blt_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
-          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2
+          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2.1 h_domain.2.2
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
           = (PureSpec.execute_BLT_pure d.toInputs.blt_input).nextPC
@@ -996,7 +997,7 @@ theorem stepStrong_bge
     (d : RowData_bge trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bge_input.PC
-        ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val)) :
+        (BitVec.signExtend 64 d.toInputs.bge_input.imm)) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BGE)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -1031,14 +1032,14 @@ theorem stepStrong_bge
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
-            (m.jmp_offset2 i.val).val =
-              (BitVec.signExtend 64 d.toInputs.bge_input.imm).toNat := by
+            m.jmp_offset2 i.val =
+              ((BitVec.signExtend 64 d.toInputs.bge_input.imm).toInt : FGL) := by
           simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
         have h_cast := Pilot.branch_nextPC_flag0_taken trace i
           (BitVec.slt d.toInputs.bge_input.r1_val d.toInputs.bge_input.r2_val)
           d.toInputs.bge_input.PC (BitVec.signExtend 64 d.toInputs.bge_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
-          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2
+          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2.1 h_domain.2.2
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
           = (PureSpec.execute_BGE_pure d.toInputs.bge_input).nextPC
@@ -1063,7 +1064,7 @@ theorem stepStrong_bltu
     (d : RowData_bltu trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bltu_input.PC
-        ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val)) :
+        (BitVec.signExtend 64 d.toInputs.bltu_input.imm)) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BLTU)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -1101,14 +1102,14 @@ theorem stepStrong_bltu
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
-            (m.jmp_offset1 i.val).val =
-              (BitVec.signExtend 64 d.toInputs.bltu_input.imm).toNat := by
+            m.jmp_offset1 i.val =
+              ((BitVec.signExtend 64 d.toInputs.bltu_input.imm).toInt : FGL) := by
           simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset1_imm
         have h_cast := Pilot.branch_nextPC_flag1_taken trace i
           (BitVec.ult d.toInputs.bltu_input.r1_val d.toInputs.bltu_input.r2_val)
           d.toInputs.bltu_input.PC (BitVec.signExtend 64 d.toInputs.bltu_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset2
-          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2
+          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2.1 h_domain.2.2
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
           = (PureSpec.execute_BLTU_pure d.toInputs.bltu_input).nextPC
@@ -1133,7 +1134,7 @@ theorem stepStrong_bgeu
     (d : RowData_bgeu trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bgeu_input.PC
-        ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val)) :
+        (BitVec.signExtend 64 d.toInputs.bgeu_input.imm)) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BGEU)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -1171,14 +1172,14 @@ theorem stepStrong_bgeu
             d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
-            (m.jmp_offset2 i.val).val =
-              (BitVec.signExtend 64 d.toInputs.bgeu_input.imm).toNat := by
+            m.jmp_offset2 i.val =
+              ((BitVec.signExtend 64 d.toInputs.bgeu_input.imm).toInt : FGL) := by
           simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
         have h_cast := Pilot.branch_nextPC_flag0_taken trace i
           (BitVec.ult d.toInputs.bgeu_input.r1_val d.toInputs.bgeu_input.r2_val)
           d.toInputs.bgeu_input.PC (BitVec.signExtend 64 d.toInputs.bgeu_input.imm)
           d.toDecode.h_idx d.toDecode.h_set_pc h_flag d.toDecode.h_jmp_offset1
-          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2
+          h_off_bridge d.toInputs.h_pc_bridge h_domain.1 h_domain.2.1 h_domain.2.2
         show (register_type_pc_equiv ▸
             (BitVec.ofNat 64 ((Pilot.execRowOf trace i)[1]!.pc).val))
           = (PureSpec.execute_BGEU_pure d.toInputs.bgeu_input).nextPC
@@ -1342,8 +1343,9 @@ theorem stepStrong_auipc
   let row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance :=
     { op_eq := rfl, internal_eq := rfl, m32_eq := rfl, set_pc_eq := rfl, store_pc_eq := rfl }
   have h_offset_bridge :
-      (m.jmp_offset2 i.val).val =
-        (BitVec.signExtend 64 (d.toInputs.auipc_input.imm ++ (0 : BitVec 12))).toNat := by
+      m.jmp_offset2 i.val =
+        ((BitVec.signExtend 64
+          (d.toInputs.auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL) := by
     simpa [hm, d.toInputs.h_input_imm] using d.toDecode.h_jmp_offset2_imm
   have h_row_core :
       (mainRowWithRomLui trace i).core =
@@ -1385,7 +1387,7 @@ theorem stepStrong_auipc
     OpEnvelope.auipc d.toInputs.auipc_input d.toClaim.imm d.toClaim.rd (Pilot.execRowOf trace i) e_rd
       (PureSpec.execute_AUIPC_pure d.toInputs.auipc_input).nextPC next_pc store_pc_mem
       provenance row_mode h_auipc_subset h_offset_bridge d.toInputs.h_pc_bridge promises
-      h_domain.h_no_wrap h_domain.h_pc_offset_lt_2_32
+      h_domain.h_target_nonneg h_domain.h_target_lt h_domain.h_pc_offset_lt_2_32
   have h_bridge : env.aeneasBridgeTrust :=
     ⟨⟨provenance⟩, row_mode, h_offset_bridge, d.toInputs.h_pc_bridge⟩
   have h_mem : env.memoryTimelineConstructionEvidence := by trivial

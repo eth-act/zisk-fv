@@ -461,16 +461,17 @@ lemma h_rd_val_jut_auipc
     -- CIRCUIT-CONSTRAINT
     (h_circuit : auipc_archetype_circuit_holds m r_main next_pc)
     -- TRANSPILE-BRIDGE: jmp_offset2 lifts to (sext (imm ++ 0#12)).toNat
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = PC.toNat)
     -- LANE-MATCH (lo + hi)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e2)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e2)
     -- RANGE: no-wrap PC+offset bound + lo-half FGL bound + 32-bit bound
-    (h_no_wrap :
-      PC.toNat + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg :
+      0 ≤ (PC.toNat : Int) + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt :
+      (PC.toNat : Int) + (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 :
       (PC + BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat < 4294967296)
@@ -488,7 +489,7 @@ lemma h_rd_val_jut_auipc
   set offset_bv : BitVec 64 := BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) with h_offset_def
   have h_lo_val : (memory_entry_lo e2).val = (PC + offset_bv).toNat % 4294967296 :=
     auipc_store_value_lo_bv m r_main next_pc PC offset_bv e2
-      h_circuit h_lane_lo h_pc_bridge h_offset_bridge h_no_wrap h_lo_bound
+      h_circuit h_lane_lo h_pc_bridge h_offset_bridge h_target_nonneg h_target_lt h_lo_bound
   have h_hi_val : (memory_entry_hi e2).val = (PC + offset_bv).toNat / 4294967296 :=
     auipc_store_value_hi_bv m r_main next_pc PC offset_bv e2
       h_circuit h_lane_hi h_pc_offset_lt_2_32

@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.Pilot.SubNextPC
+import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 
 /-!
 # Branch next-PC discharge mechanism (#100 / #101, conditional branches)
@@ -37,6 +38,7 @@ namespace ZiskFv.Compliance.Pilot
 
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable)
 open ZiskFv.Airs.Main (pc_handshake_branch)
+open ZiskFv.PackedBitVec.WidePCNoWrap
 open Interaction
 
 /-- **General BRANCH-PATH next-PC discharge (#100/#101).** For a branch
@@ -112,14 +114,12 @@ theorem branch_nextPC_flag1_taken
     (h_jmp2 :
       (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4)
     (h_off_bridge :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val
-        = offset_bv.toNat)
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val
+        = (offset_bv.toInt : FGL))
     (h_pc_bridge :
       ((mainOfTable trace.program trace.mainTable).pc i.val).val = PC.toNat)
-    (h_no_wrap :
-      ((mainOfTable trace.program trace.mainTable).pc i.val).val
-        + ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (PC.toNat : Int) + offset_bv.toInt)
+    (h_target_lt : (PC.toNat : Int) + offset_bv.toInt < GL_prime)
     (h_pc_bound : PC.toNat < 18446744069414584321 - 4) :
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64 ((execRowOf trace i)[1]!.pc).val))
@@ -131,7 +131,10 @@ theorem branch_nextPC_flag1_taken
   | true =>
     simp only [reduceIte]
     rw [show (pc + 4 + (1 : FGL) * (j1 - 4)) = pc + j1 from by ring]
-    exact ofNat_fgl_pc_plus_offset_eq pc j1 PC offset_bv h_pc_bridge h_off_bridge h_no_wrap
+    rw [h_off_bridge]
+    rw [fgl_pc_plus_signed_offset_val
+      pc PC offset_bv h_pc_bridge h_target_nonneg h_target_lt]
+    simpa using BitVec.ofNat_toNat 64 (PC + offset_bv)
   | false =>
     simp only [Bool.false_eq_true, if_false]
     rw [show (pc + 4 + (0 : FGL) * (j1 - 4)) = pc + 4 from by ring]
@@ -157,14 +160,12 @@ theorem branch_nextPC_flag0_taken
     (h_jmp1 :
       (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4)
     (h_off_bridge :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val
-        = offset_bv.toNat)
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val
+        = (offset_bv.toInt : FGL))
     (h_pc_bridge :
       ((mainOfTable trace.program trace.mainTable).pc i.val).val = PC.toNat)
-    (h_no_wrap :
-      ((mainOfTable trace.program trace.mainTable).pc i.val).val
-        + ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (PC.toNat : Int) + offset_bv.toInt)
+    (h_target_lt : (PC.toNat : Int) + offset_bv.toInt < GL_prime)
     (h_pc_bound : PC.toNat < 18446744069414584321 - 4) :
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64 ((execRowOf trace i)[1]!.pc).val))
@@ -180,6 +181,9 @@ theorem branch_nextPC_flag0_taken
   | false =>
     simp only [Bool.false_eq_true, if_false]
     rw [show (pc + j2 + (0 : FGL) * (4 - j2)) = pc + j2 from by ring]
-    exact ofNat_fgl_pc_plus_offset_eq pc j2 PC offset_bv h_pc_bridge h_off_bridge h_no_wrap
+    rw [h_off_bridge]
+    rw [fgl_pc_plus_signed_offset_val
+      pc PC offset_bv h_pc_bridge h_target_nonneg h_target_lt]
+    simpa using BitVec.ofNat_toNat 64 (PC + offset_bv)
 
 end ZiskFv.Compliance.Pilot
