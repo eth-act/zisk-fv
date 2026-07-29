@@ -265,6 +265,47 @@ private theorem and_shr_field (x : BitVec 32) (k w : Nat) (hk : k + w ≤ 32) :
       ZiskFv.Compliance.Decode.tbf (Nat.sub_lt (Nat.two_pow_pos w) (by omega)) hi]
     simp
 
+private theorem rawIType_rd_bits (imm rs1 funct3 rd opcode : Nat)
+    (hrd : rd < 32) (hopcode : opcode < 128) :
+    ((rawIType imm rs1 funct3 rd opcode &&& 3968#32) >>> 7) = BitVec.ofNat 32 rd := by
+  rw [show (3968 : Nat) = (2 ^ 5 - 1) <<< 7 by decide,
+    and_shr_field _ 7 5 (by norm_num)]
+  simp only [rawIType, rawOfNat32]
+  refine ZiskFv.Compliance.Decode.ofNat32_shift_mask_eq _ 7 5 rd hrd (by norm_num) ?_
+  intro i hi
+  simp only [Nat.testBit_or, Nat.testBit_shiftLeft]
+  have e20 : ¬(20 ≤ 7 + i) := by omega
+  have e15 : ¬(15 ≤ 7 + i) := by omega
+  have e12 : ¬(12 ≤ 7 + i) := by omega
+  have e7 : 7 ≤ 7 + i := by omega
+  have hop' : opcode.testBit (7 + i) = false :=
+    ZiskFv.Compliance.Decode.tbf (show opcode < 2 ^ 7 by omega) (by omega)
+  simp [e20, e15, e12, e7, hop', show 7 + i - 7 = i by omega]
+
+private theorem rawIType_rs1_bits (imm rs1 funct3 rd opcode : Nat)
+    (hrs1 : rs1 < 32) (hfunct3 : funct3 < 8)
+    (hrd : rd < 32) (hopcode : opcode < 128) :
+    ((rawIType imm rs1 funct3 rd opcode &&& 1015808#32) >>> 15) =
+      BitVec.ofNat 32 rs1 := by
+  rw [show (1015808 : Nat) = (2 ^ 5 - 1) <<< 15 by decide,
+    and_shr_field _ 15 5 (by norm_num)]
+  simp only [rawIType, rawOfNat32]
+  refine ZiskFv.Compliance.Decode.ofNat32_shift_mask_eq _ 15 5 rs1 hrs1 (by norm_num) ?_
+  intro i hi
+  simp only [Nat.testBit_or, Nat.testBit_shiftLeft]
+  have e20 : ¬(20 ≤ 15 + i) := by omega
+  have e15 : 15 ≤ 15 + i := by omega
+  have e12 : 12 ≤ 15 + i := by omega
+  have e7 : 7 ≤ 15 + i := by omega
+  have hf3' : funct3.testBit (15 + i - 12) = false :=
+    ZiskFv.Compliance.Decode.tbf (show funct3 < 2 ^ 3 by omega) (by omega)
+  have hrd' : rd.testBit (15 + i - 7) = false :=
+    ZiskFv.Compliance.Decode.tbf (show rd < 2 ^ 5 by omega) (by omega)
+  have hop' : opcode.testBit (15 + i) = false :=
+    ZiskFv.Compliance.Decode.tbf (show opcode < 2 ^ 7 by omega) (by omega)
+  simp [e20, e15, e12, e7, hf3', hrd', hop',
+    show 15 + i - 15 = i by omega]
+
 private theorem rawSType_rs1_bits (imm rs2 rs1 funct3 : Nat)
     (hrs1 : rs1 < 32) (hfunct3 : funct3 < 8) :
     ((rawSType imm rs2 rs1 funct3 &&& 1015808#32) >>> 15) = BitVec.ofNat 32 rs1 := by
@@ -486,3 +527,51 @@ theorem decode_s_rawSType_fields
       BitVec.signExtend 64 (BitVec.ofNat 12 imm)
     rw [hs, signExtend64_signExtend32, hcombined,
       rawSType_imm_bits imm rs2 rs1 funct3 hrs2 hrs1 hfunct3]
+
+/-- `decode_i ... false` recovers both register fields and the signed 12-bit
+    immediate from an honestly bounded symbolic I-type instruction word. -/
+theorem decode_i_rawIType_fields
+    (imm rs1 funct3 rd opcode : Nat)
+    (hrs1 : rs1 < 32) (hfunct3 : funct3 < 8)
+    (hrd : rd < 32) (hopcode : opcode < 128)
+    (rop : RiscvOpcode) (d : DecodedRv64im)
+    (hd : decode_i (toU32 (rawIType imm rs1 funct3 rd opcode))
+      rop false = ok d) :
+    d.rd.bv = BitVec.ofNat 32 rd ∧
+      d.rs1.bv = BitVec.ofNat 32 rs1 ∧
+      (IScalar.hcast UScalarTy.U64 d.imm).bv =
+        BitVec.signExtend 64 (BitVec.ofNat 12 imm) := by
+  have hdimm := decode_i_rawIType_imm imm rs1 funct3 rd opcode
+    hrs1 hfunct3 hrd hopcode rop d hd
+  simp only [decode_i, DecodedRv64im.new, lift, bind_ok, Bind.bind] at hd
+  obtain ⟨_i1, _, hd⟩ := bind_eq_ok_imp hd
+  obtain ⟨i3, hi3, hd⟩ := bind_eq_ok_imp hd
+  obtain ⟨i5, hi5, hd⟩ := bind_eq_ok_imp hd
+  obtain ⟨_i7, _, hd⟩ := bind_eq_ok_imp hd
+  obtain ⟨i8, _hi8, hd⟩ := bind_eq_ok_imp hd
+  rw [if_neg (by decide), Result.ok.injEq] at hd
+  rw [← hd]
+  have hi3bv : i3.bv =
+      (toU32 (rawIType imm rs1 funct3 rd opcode) &&& 3968#u32).bv >>> 7 := by
+    rw [show ((toU32 (rawIType imm rs1 funct3 rd opcode) &&& 3968#u32) >>> 7#i32 :
+      Result Std.U32) =
+        ok ⟨(toU32 (rawIType imm rs1 funct3 rd opcode) &&& 3968#u32).bv >>> 7⟩ from rfl,
+      Result.ok.injEq] at hi3
+    exact (congrArg UScalar.bv hi3).symm
+  have hi5bv : i5.bv =
+      (toU32 (rawIType imm rs1 funct3 rd opcode) &&& 1015808#u32).bv >>> 15 := by
+    rw [show ((toU32 (rawIType imm rs1 funct3 rd opcode) &&& 1015808#u32) >>> 15#i32 :
+      Result Std.U32) =
+        ok ⟨(toU32 (rawIType imm rs1 funct3 rd opcode) &&& 1015808#u32).bv >>> 15⟩ from rfl,
+      Result.ok.injEq] at hi5
+    exact (congrArg UScalar.bv hi5).symm
+  refine ⟨?_, ?_, ?_⟩
+  · change i3.bv = BitVec.ofNat 32 rd
+    rw [hi3bv]
+    exact rawIType_rd_bits imm rs1 funct3 rd opcode hrd hopcode
+  · change i5.bv = BitVec.ofNat 32 rs1
+    rw [hi5bv]
+    exact rawIType_rs1_bits imm rs1 funct3 rd opcode hrs1 hfunct3 hrd hopcode
+  · change BitVec.signExtend 64 i8.bv =
+      BitVec.signExtend 64 (BitVec.ofNat 12 imm)
+    rw [show i8.bv = d.imm.bv by rw [← hd], hdimm, signExtend64_signExtend32]
