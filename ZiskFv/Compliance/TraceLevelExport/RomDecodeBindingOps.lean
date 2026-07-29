@@ -2941,7 +2941,7 @@ def Decode_ld_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (8 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.ld_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.ld_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.ld_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_ld trace i c := by
@@ -2986,7 +2986,7 @@ def Decode_ld_of_program
     simpa [mainRowWithRomLd] using hstore.symm.trans hpso
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.ld_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.ld_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3029,7 +3029,7 @@ def Decode_lbu_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (1 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.lbu_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.lbu_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lbu_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lbu trace i c := by
@@ -3059,7 +3059,7 @@ def Decode_lbu_of_program
         exact hpf)
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.lbu_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.lbu_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3102,7 +3102,7 @@ def Decode_lhu_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (2 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.lhu_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.lhu_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lhu_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lhu trace i c := by
@@ -3132,7 +3132,7 @@ def Decode_lhu_of_program
         exact hpf)
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.lhu_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.lhu_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3175,7 +3175,7 @@ def Decode_lwu_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (4 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.lwu_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.lwu_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lwu_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lwu trace i c := by
@@ -3205,7 +3205,7 @@ def Decode_lwu_of_program
         exact hpf)
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.lwu_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.lwu_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3264,7 +3264,7 @@ def Decode_lb_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (1 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.lb_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.lb_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lb_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lb trace i c := by
@@ -3294,7 +3294,7 @@ def Decode_lb_of_program
         exact hpf)
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.lb_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.lb_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3359,7 +3359,7 @@ def Decode_lh_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (2 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.lh_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.lh_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lh_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lh trace i c := by
@@ -3389,7 +3389,7 @@ def Decode_lh_of_program
         exact hpf)
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.lh_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.lh_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3454,7 +3454,7 @@ def Decode_lw_of_program
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = (4 : FGL)
         ∧ (trace.program j).b_offset_imm0 =
-            ((BitVec.signExtend 64 c.lw_input.imm).toNat : FGL)
+            ((BitVec.signExtend 64 c.lw_input.imm).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lw_input.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_lw trace i c := by
@@ -3484,7 +3484,7 @@ def Decode_lw_of_program
         exact hpf)
   have h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 c.lw_input.imm).toNat : FGL) := by
+        ((BitVec.signExtend 64 c.lw_input.imm).toInt : FGL) := by
     obtain ⟨j, hline, hboff⟩ := mainBOffsetImm0_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, hpbo, _hpso, _hpf⟩ := h_prog j hline
     simpa [mainRowWithRomLd] using hboff.symm.trans hpbo
@@ -3855,8 +3855,8 @@ def Decode_auipc_of_program
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
         ∧ (trace.program j).jmp_offset1 = 4
-        ∧ ((trace.program j).jmp_offset2).val =
-          (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat
+        ∧ (trace.program j).jmp_offset2 =
+          ((BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toInt : FGL)
         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_auipc trace i c := by
@@ -3879,8 +3879,8 @@ def Decode_auipc_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hj1.symm.trans hpj0⟩
   have h_jmp_offset2_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val =
-        (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val =
+        ((BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, _, hj2, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, hpj2_imm, _hpso, _hpf⟩ := h_prog j hline
@@ -3918,7 +3918,7 @@ def Decode_beq_of_program
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_EQ
-        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset1 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_beq trace i c := by
@@ -3937,8 +3937,8 @@ def Decode_beq_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj2.symm.trans hpj0⟩
   have h_jmp_offset1_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, hj1, _, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, hpj1_imm, _hpj0, _hpf⟩ := h_prog j hline
@@ -3972,7 +3972,7 @@ def Decode_bne_of_program
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_EQ
         ∧ (trace.program j).jmp_offset1 = 4
-        ∧ ((trace.program j).jmp_offset2).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset2 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_bne trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -3990,8 +3990,8 @@ def Decode_bne_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0⟩
   have h_jmp_offset2_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, _, hj2, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, hpj2_imm, _hpf⟩ := h_prog j hline
@@ -4024,7 +4024,7 @@ def Decode_blt_of_program
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
-        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset1 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_blt trace i c := by
@@ -4043,8 +4043,8 @@ def Decode_blt_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj2.symm.trans hpj0⟩
   have h_jmp_offset1_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, hj1, _, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, hpj1_imm, _hpj0, _hpf⟩ := h_prog j hline
@@ -4078,7 +4078,7 @@ def Decode_bge_of_program
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LT
         ∧ (trace.program j).jmp_offset1 = 4
-        ∧ ((trace.program j).jmp_offset2).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset2 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_bge trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -4096,8 +4096,8 @@ def Decode_bge_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0⟩
   have h_jmp_offset2_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, _, hj2, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, hpj2_imm, _hpf⟩ := h_prog j hline
@@ -4130,7 +4130,7 @@ def Decode_bltu_of_program
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
-        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset1 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_bltu trace i c := by
@@ -4149,8 +4149,8 @@ def Decode_bltu_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj2.symm.trans hpj0⟩
   have h_jmp_offset1_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, hj1, _, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, hpj1_imm, _hpj0, _hpf⟩ := h_prog j hline
@@ -4184,7 +4184,7 @@ def Decode_bgeu_of_program
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_LTU
         ∧ (trace.program j).jmp_offset1 = 4
-        ∧ ((trace.program j).jmp_offset2).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset2 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits) :
     Decode_bgeu trace i c := by
   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
@@ -4202,8 +4202,8 @@ def Decode_bgeu_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false], hj1.symm.trans hpj0⟩
   have h_jmp_offset2_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset2 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, _, hj2, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, hpj2_imm, _hpf⟩ := h_prog j hline
@@ -4240,7 +4240,7 @@ def Decode_jal_of_program
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).op = ZiskFv.Trusted.OP_FLAG
-        ∧ ((trace.program j).jmp_offset1).val = (BitVec.signExtend 64 c.imm).toNat
+        ∧ (trace.program j).jmp_offset1 = ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
         ∧ (trace.program j).flags = packFlags bits) :
@@ -4264,8 +4264,8 @@ def Decode_jal_of_program
       mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     exact ⟨hop.symm.trans hpo, by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_false], by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false], by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false], by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_true], hj2.symm.trans hpj0⟩
   have h_jmp_offset1_imm :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val =
-        (BitVec.signExtend 64 c.imm).toNat := by
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val =
+        ((BitVec.signExtend 64 c.imm).toInt : FGL) := by
     obtain ⟨j, hline, _hop, _, hj1, _, _hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, hpj1_imm, _hpj0, _hpso, _hpf⟩ := h_prog j hline
