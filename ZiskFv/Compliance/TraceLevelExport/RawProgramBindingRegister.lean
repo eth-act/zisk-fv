@@ -76,7 +76,7 @@ private theorem and3968_ushift7 (x : BitVec 32) :
     simp [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_and,
       BitVec.getLsbD_ofNat, hi, hi7]
 
-private theorem store_reg_raw_index_pins
+theorem store_reg_raw_index_pins
     (self z : zisk_inst_builder.ZiskInstBuilder) (rd : Std.U32)
     (hrd : rd.val < 32)
     (hzero : self.i.store_offset = 0#i64) (hstore : self.i.store = 0#u64)
@@ -102,7 +102,7 @@ private theorem store_reg_raw_index_pins
        · simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
     | (exfalso; scalar_tac)
 
-private theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)
     (h : zisk_inst_builder.ZiskInstBuilder.src_a_reg self reg usp = ok z) :
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
@@ -138,7 +138,7 @@ private theorem src_b_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
 
-private theorem op_zisk_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem op_zisk_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (op : zisk_ops.ZiskOp)
     (h : zisk_inst_builder.ZiskInstBuilder.op_zisk self op = ok z) :
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
@@ -159,7 +159,7 @@ private theorem op_zisk_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
   subst h4
   exact ⟨rfl, rfl⟩
 
-private theorem j_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem j_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (j1 j2 : Std.I64)
     (h : zisk_inst_builder.ZiskInstBuilder.j self j1 j2 = ok z) :
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
@@ -168,7 +168,7 @@ private theorem j_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
   subst h
   exact ⟨rfl, rfl⟩
 
-private theorem create_register_op_typed_store_pins
+theorem create_register_op_typed_store_pins
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
     (inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
