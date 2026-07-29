@@ -959,8 +959,18 @@ structure aeneas_extract.Rv64imTranspileExtract where
   decode : aeneas_extract.Rv64imDecodeExtract
   row : aeneas_extract.ZiskInstExtract
 
+/-- [zisk_core::aeneas_extract::Rv64imTranspileRowsExtract]
+    Source: 'core/src/aeneas_extract.rs', lines 64:0-70:1
+    Visibility: public -/
+structure aeneas_extract.Rv64imTranspileRowsExtract where
+  accepted : Bool
+  decode : aeneas_extract.Rv64imDecodeExtract
+  row_count : Std.U32
+  first_row : aeneas_extract.ZiskInstExtract
+  last_row : aeneas_extract.ZiskInstExtract
+
 /-- [zisk_core::aeneas_extract::opcode_id]:
-    Source: 'core/src/aeneas_extract.rs', lines 63:0-131:1 -/
+    Source: 'core/src/aeneas_extract.rs', lines 72:0-140:1 -/
 def aeneas_extract.opcode_id
   (opcode : aeneas_extract.rv64im_decode.RiscvOpcode) : Result Std.U32 := do
   match opcode with
@@ -1031,7 +1041,7 @@ def aeneas_extract.opcode_id
   | aeneas_extract.rv64im_decode.RiscvOpcode.Unsupported => ok 1001#u32
 
 /-- [zisk_core::aeneas_extract::format_id]:
-    Source: 'core/src/aeneas_extract.rs', lines 133:0-145:1 -/
+    Source: 'core/src/aeneas_extract.rs', lines 142:0-154:1 -/
 def aeneas_extract.format_id
   (format : aeneas_extract.rv64im_decode.RiscvFormat) : Result Std.U32 := do
   match format with
@@ -1046,7 +1056,7 @@ def aeneas_extract.format_id
   | aeneas_extract.rv64im_decode.RiscvFormat.Unsupported => ok 1001#u32
 
 /-- [zisk_core::aeneas_extract::decode_extract_from_decoded]:
-    Source: 'core/src/aeneas_extract.rs', lines 147:0-161:1 -/
+    Source: 'core/src/aeneas_extract.rs', lines 156:0-170:1 -/
 def aeneas_extract.decode_extract_from_decoded
   (decoded : aeneas_extract.rv64im_decode.DecodedRv64im) :
   Result aeneas_extract.Rv64imDecodeExtract
@@ -1140,7 +1150,7 @@ inductive riscv2zisk_single_row.Rv64imSingleRowOpcode where
 | Sd : riscv2zisk_single_row.Rv64imSingleRowOpcode
 
 /-- [zisk_core::aeneas_extract::lowering_opcode]:
-    Source: 'core/src/aeneas_extract.rs', lines 163:0-230:1 -/
+    Source: 'core/src/aeneas_extract.rs', lines 172:0-239:1 -/
 def aeneas_extract.lowering_opcode
   (opcode : aeneas_extract.rv64im_decode.RiscvOpcode) :
   Result (Option riscv2zisk_single_row.Rv64imSingleRowOpcode)
@@ -1328,7 +1338,7 @@ structure zisk_inst.ZiskInst where
   sorted_pc_list_index : Std.Usize
 
 /-- [zisk_core::aeneas_extract::{zisk_core::aeneas_extract::ZiskInstExtract}::from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 233:4-259:5
+    Source: 'core/src/aeneas_extract.rs', lines 242:4-268:5
     Visibility: public -/
 def aeneas_extract.ZiskInstExtract.from_inst
   (i : zisk_inst.ZiskInst) : Result aeneas_extract.ZiskInstExtract := do
@@ -2177,10 +2187,11 @@ def zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering
   zisk_inst_builder.ZiskInstBuilder.new i.rom_address
 
 /-- [zisk_core::riscv2zisk_context::Riscv2ZiskContext]
-    Source: 'core/src/riscv2zisk_context.rs', lines 82:0-97:1
+    Source: 'core/src/riscv2zisk_context.rs', lines 84:0-101:1
     Visibility: public -/
 structure riscv2zisk_context.Riscv2ZiskContext where
   extract_inst : Option zisk_inst_builder.ZiskInstBuilder
+  extract_first_inst : Option aeneas_extract.ZiskInstExtract
   extract_marker : core.marker.PhantomData Unit
   input_precompile : Option Std.U32
   output_precompile : Option Std.U32
@@ -2188,7 +2199,7 @@ structure riscv2zisk_context.Riscv2ZiskContext where
   output_precompile_reg : Option Std.U32
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::insert_inst]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 106:4-108:5 -/
+    Source: 'core/src/riscv2zisk_context.rs', lines 110:4-112:5 -/
 def riscv2zisk_context.Riscv2ZiskContext.insert_inst
   (self : riscv2zisk_context.Riscv2ZiskContext) (_rom_address : Std.U64)
   (zib : zisk_inst_builder.ZiskInstBuilder) :
@@ -2197,7 +2208,7 @@ def riscv2zisk_context.Riscv2ZiskContext.insert_inst
   ok { self with extract_inst := (some zib), extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::jal]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1418:4-1440:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1450:4-1472:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.jal
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2340,13 +2351,13 @@ def zisk_inst_builder.ZiskInstBuilder.src_b_reg
             }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::jalr::JALR_MASK]
-    Source: 'core/src/riscv2zisk_context.rs', lines 1346:8-1346:50 -/
+    Source: 'core/src/riscv2zisk_context.rs', lines 1350:8-1350:50 -/
 @[global_simps, irreducible]
 def riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK : Std.U64 :=
   18446744073709551614#u64
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::jalr]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1315:4-1413:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1319:4-1445:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.jalr
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2385,9 +2396,42 @@ def riscv2zisk_context.Riscv2ZiskContext.jalr
       zisk_inst_builder.ZiskInstBuilder.op_zisk zib2 zisk_ops.ZiskOp.Add
     let zib4 ← zisk_inst_builder.ZiskInstBuilder.j zib3 1#i64 1#i64
     let zib5 ← zisk_inst_builder.ZiskInstBuilder.build zib4
+    let i4 := read_discriminant zib5.i.op_type
+    let i5 ← lift (UScalar.cast .U32 i4)
     let self1 ←
       riscv2zisk_context.Riscv2ZiskContext.insert_inst
-        { self with extract_marker := () } i.rom_address zib5
+        {
+          self
+            with
+            extract_first_inst :=
+              (some
+                {
+                  paddr := zib5.i.paddr,
+                  store_pc := zib5.i.store_pc,
+                  store_use_sp := zib5.i.store_use_sp,
+                  store := zib5.i.store,
+                  store_offset := zib5.i.store_offset,
+                  set_pc := zib5.i.set_pc,
+                  is_precompiled := zib5.i.is_precompiled,
+                  ind_width := zib5.i.ind_width,
+                  «end» := zib5.i.«end»,
+                  a_src := zib5.i.a_src,
+                  a_use_sp_imm1 := zib5.i.a_use_sp_imm1,
+                  a_offset_imm0 := zib5.i.a_offset_imm0,
+                  b_src := zib5.i.b_src,
+                  b_use_sp_imm1 := zib5.i.b_use_sp_imm1,
+                  b_offset_imm0 := zib5.i.b_offset_imm0,
+                  jmp_offset1 := zib5.i.jmp_offset1,
+                  jmp_offset2 := zib5.i.jmp_offset2,
+                  is_external_op := zib5.i.is_external_op,
+                  op := zib5.i.op,
+                  op_type_id := i5,
+                  m32 := zib5.i.m32,
+                  input_size := zib5.i.input_size,
+                  sorted_pc_list_index := zib5.i.sorted_pc_list_index
+                }),
+            extract_marker := ()
+        } i.rom_address zib5
     let rom_address ← i.rom_address + 1#u64
     let zib6 ← zisk_inst_builder.ZiskInstBuilder.new rom_address
     let zib7 ←
@@ -2396,12 +2440,12 @@ def riscv2zisk_context.Riscv2ZiskContext.jalr
     let zib8 ← zisk_inst_builder.ZiskInstBuilder.src_b_lastc zib7
     let zib9 ←
       zisk_inst_builder.ZiskInstBuilder.op_zisk zib8 zisk_ops.ZiskOp.And
-    let i4 ← lift (UScalar.hcast .I64 i.rd)
-    let zib10 ← zisk_inst_builder.ZiskInstBuilder.store_pc_reg zib9 i4 false
+    let i6 ← lift (UScalar.hcast .I64 i.rd)
+    let zib10 ← zisk_inst_builder.ZiskInstBuilder.store_pc_reg zib9 i6 false
     let zib11 ← zisk_inst_builder.ZiskInstBuilder.set_pc zib10
-    let i5 ← lift (UScalar.hcast .I64 inst_size)
-    let i6 ← i5 - 1#i64
-    let zib12 ← zisk_inst_builder.ZiskInstBuilder.j zib11 0#i64 i6
+    let i7 ← lift (UScalar.hcast .I64 inst_size)
+    let i8 ← i7 - 1#i64
+    let zib12 ← zisk_inst_builder.ZiskInstBuilder.j zib11 0#i64 i8
     let zib13 ← zisk_inst_builder.ZiskInstBuilder.build zib12
     let self2 ←
       riscv2zisk_context.Riscv2ZiskContext.insert_inst
@@ -2409,7 +2453,7 @@ def riscv2zisk_context.Riscv2ZiskContext.jalr
     ok { self2 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::lui]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1288:4-1310:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1292:4-1314:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.lui
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2434,7 +2478,7 @@ def riscv2zisk_context.Riscv2ZiskContext.lui
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::auipc]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1176:4-1196:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1180:4-1200:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.auipc
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2457,7 +2501,7 @@ def riscv2zisk_context.Riscv2ZiskContext.auipc
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::copyb]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1155:4-1171:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1159:4-1175:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.copyb
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2562,7 +2606,7 @@ def zisk_inst_builder.ZiskInstBuilder.src_a_reg
             }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::immediate_op_or_x0_copyb_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1125:4-1153:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1129:4-1157:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2591,7 +2635,7 @@ def riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::immediate_op_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1076:4-1089:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1080:4-1093:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.immediate_op_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2657,7 +2701,7 @@ def zisk_inst_builder.ZiskInstBuilder.store_ind
     }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::store_op_with_reg_offset]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1028:4-1049:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1032:4-1053:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2685,7 +2729,7 @@ def riscv2zisk_context.Riscv2ZiskContext.store_op_with_reg_offset
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::store_op_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 1024:4-1026:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 1028:4-1030:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.store_op_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2738,7 +2782,7 @@ def zisk_inst_builder.ZiskInstBuilder.src_b_ind
       }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::load_op_with_reg_offset]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 969:4-990:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 973:4-994:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2766,7 +2810,7 @@ def riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::load_op_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 965:4-967:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 969:4-971:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.load_op_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2780,7 +2824,7 @@ def riscv2zisk_context.Riscv2ZiskContext.load_op_typed
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::nop]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 896:4-916:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 900:4-920:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.nop
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2802,7 +2846,7 @@ def riscv2zisk_context.Riscv2ZiskContext.nop
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::hint]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 880:4-892:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 884:4-896:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.hint
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2826,7 +2870,7 @@ def riscv2zisk_context.Riscv2ZiskContext.hint
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::create_branch_op_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 854:4-876:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 858:4-880:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2859,7 +2903,7 @@ def riscv2zisk_context.Riscv2ZiskContext.create_branch_op_typed
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::create_precompiled_op_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 730:4-760:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 734:4-764:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.create_precompiled_op_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -2884,7 +2928,7 @@ def riscv2zisk_context.Riscv2ZiskContext.create_precompiled_op_typed
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::riscv2zisk_context::{zisk_core::riscv2zisk_context::Riscv2ZiskContext<0>}::create_register_op_typed]:
-    Source: 'core/src/riscv2zisk_context.rs', lines 680:4-698:5
+    Source: 'core/src/riscv2zisk_context.rs', lines 684:4-702:5
     Visibility: public -/
 def riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed
   (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -3495,7 +3539,7 @@ def riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
   ok { self1 with extract_marker := () }
 
 /-- [zisk_core::aeneas_extract::extract_lui_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 308:0-312:1
+    Source: 'core/src/aeneas_extract.rs', lines 318:0-322:1
     Visibility: public -/
 def aeneas_extract.extract_lui_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3507,6 +3551,7 @@ def aeneas_extract.extract_lui_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3517,7 +3562,7 @@ def aeneas_extract.extract_lui_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_auipc_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 314:0-318:1
+    Source: 'core/src/aeneas_extract.rs', lines 324:0-328:1
     Visibility: public -/
 def aeneas_extract.extract_auipc_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3529,6 +3574,7 @@ def aeneas_extract.extract_auipc_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3539,7 +3585,7 @@ def aeneas_extract.extract_auipc_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_jal_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 320:0-324:1
+    Source: 'core/src/aeneas_extract.rs', lines 330:0-334:1
     Visibility: public -/
 def aeneas_extract.extract_jal_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3551,6 +3597,7 @@ def aeneas_extract.extract_jal_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3561,7 +3608,7 @@ def aeneas_extract.extract_jal_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_jalr_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 326:0-330:1
+    Source: 'core/src/aeneas_extract.rs', lines 336:0-340:1
     Visibility: public -/
 def aeneas_extract.extract_jalr_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3573,6 +3620,7 @@ def aeneas_extract.extract_jalr_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3583,7 +3631,7 @@ def aeneas_extract.extract_jalr_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_fence_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 332:0-336:1
+    Source: 'core/src/aeneas_extract.rs', lines 342:0-346:1
     Visibility: public -/
 def aeneas_extract.extract_fence_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3595,6 +3643,7 @@ def aeneas_extract.extract_fence_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3605,7 +3654,7 @@ def aeneas_extract.extract_fence_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_fence_accepts_raw_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 338:0-341:1
+    Source: 'core/src/aeneas_extract.rs', lines 348:0-351:1
     Visibility: public -/
 def aeneas_extract.extract_fence_accepts_raw_inst
   (raw1 : Std.U32) : Result Bool := do
@@ -3614,7 +3663,7 @@ def aeneas_extract.extract_fence_accepts_raw_inst
     fence.kind aeneas_extract.fence_decode.FenceDecodeKind.Fence
 
 /-- [zisk_core::aeneas_extract::extract_decode_rv64im_raw]:
-    Source: 'core/src/aeneas_extract.rs', lines 343:0-345:1
+    Source: 'core/src/aeneas_extract.rs', lines 353:0-355:1
     Visibility: public -/
 def aeneas_extract.extract_decode_rv64im_raw
   (raw1 : Std.U32) : Result aeneas_extract.Rv64imDecodeExtract := do
@@ -3622,7 +3671,7 @@ def aeneas_extract.extract_decode_rv64im_raw
   aeneas_extract.decode_extract_from_decoded dri
 
 /-- [zisk_core::aeneas_extract::extract_rv64im_opcode_supported]:
-    Source: 'core/src/aeneas_extract.rs', lines 347:0-349:1
+    Source: 'core/src/aeneas_extract.rs', lines 357:0-359:1
     Visibility: public -/
 def aeneas_extract.extract_rv64im_opcode_supported
   (raw1 : Std.U32) : Result Bool := do
@@ -3640,7 +3689,7 @@ def riscv2zisk_single_row.Rv64imLoweringInput.new
   ok { rom_address, rd, rs1, rs2, imm }
 
 /-- [zisk_core::aeneas_extract::extract_transpile_rv64im_raw]:
-    Source: 'core/src/aeneas_extract.rs', lines 351:0-365:1
+    Source: 'core/src/aeneas_extract.rs', lines 361:0-375:1
     Visibility: public -/
 def aeneas_extract.extract_transpile_rv64im_raw
   (raw1 : Std.U32) : Result aeneas_extract.Rv64imTranspileExtract := do
@@ -3659,6 +3708,7 @@ def aeneas_extract.extract_transpile_rv64im_raw
       riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
         {
           extract_inst := none,
+          extract_first_inst := none,
           extract_marker := (),
           input_precompile := none,
           output_precompile := none,
@@ -3669,8 +3719,56 @@ def aeneas_extract.extract_transpile_rv64im_raw
     let row ← aeneas_extract.ZiskInstExtract.from_inst zib.i
     ok { accepted := true, decode, row }
 
+/-- [zisk_core::aeneas_extract::extract_transpile_rv64im_rows_raw]:
+    Source: 'core/src/aeneas_extract.rs', lines 377:0-410:1
+    Visibility: public -/
+def aeneas_extract.extract_transpile_rv64im_rows_raw
+  (raw1 : Std.U32) : Result aeneas_extract.Rv64imTranspileRowsExtract := do
+  let decoded ← aeneas_extract.rv64im_decode.decode_32_core raw1
+  let decode ← aeneas_extract.decode_extract_from_decoded decoded
+  let o ← aeneas_extract.lowering_opcode decoded.opcode
+  match o with
+  | none =>
+    let zie ← aeneas_extract.ZiskInstExtract.Insts.CoreDefaultDefault.default
+    ok
+      {
+        accepted := false,
+        decode,
+        row_count := 0#u32,
+        first_row := zie,
+        last_row := zie
+      }
+  | some opcode =>
+    let input ←
+      riscv2zisk_single_row.Rv64imLoweringInput.new 0#u64 decoded.rd
+        decoded.rs1 decoded.rs2 decoded.imm
+    let ctx ←
+      riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        {
+          extract_inst := none,
+          extract_first_inst := none,
+          extract_marker := (),
+          input_precompile := none,
+          output_precompile := none,
+          input_precompile_reg := none,
+          output_precompile_reg := none
+        } input opcode false
+    let zib ← core.option.Option.unwrap ctx.extract_inst
+    let last_row ← aeneas_extract.ZiskInstExtract.from_inst zib.i
+    let b := core.option.Option.is_some ctx.extract_first_inst
+    let row_count ← if b
+                      then ok 2#u32
+                      else ok 1#u32
+    match ctx.extract_first_inst with
+    | none =>
+      ok
+        { accepted := true, decode, row_count, first_row := last_row, last_row
+        }
+    | some first =>
+      ok { accepted := true, decode, row_count, first_row := first, last_row }
+
 /-- [zisk_core::aeneas_extract::extract_transpile_rv64im_accepted_raw]:
-    Source: 'core/src/aeneas_extract.rs', lines 367:0-370:1
+    Source: 'core/src/aeneas_extract.rs', lines 412:0-415:1
     Visibility: public -/
 def aeneas_extract.extract_transpile_rv64im_accepted_raw
   (raw1 : Std.U32) : Result Bool := do
@@ -3679,14 +3777,14 @@ def aeneas_extract.extract_transpile_rv64im_accepted_raw
   ok (core.option.Option.is_some o)
 
 /-- [zisk_core::aeneas_extract::extract_transpile_rv64im_materializes_raw]:
-    Source: 'core/src/aeneas_extract.rs', lines 372:0-374:1
+    Source: 'core/src/aeneas_extract.rs', lines 417:0-419:1
     Visibility: public -/
 def aeneas_extract.extract_transpile_rv64im_materializes_raw
   (raw1 : Std.U32) : Result Bool := do
   aeneas_extract.extract_transpile_rv64im_accepted_raw raw1
 
 /-- [zisk_core::aeneas_extract::extract_add_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_add_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3698,6 +3796,7 @@ def aeneas_extract.extract_add_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3708,7 +3807,7 @@ def aeneas_extract.extract_add_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_addw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_addw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3720,6 +3819,7 @@ def aeneas_extract.extract_addw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3730,7 +3830,7 @@ def aeneas_extract.extract_addw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_and_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_and_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3742,6 +3842,7 @@ def aeneas_extract.extract_and_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3752,7 +3853,7 @@ def aeneas_extract.extract_and_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_div_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_div_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3764,6 +3865,7 @@ def aeneas_extract.extract_div_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3774,7 +3876,7 @@ def aeneas_extract.extract_div_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_divu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_divu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3786,6 +3888,7 @@ def aeneas_extract.extract_divu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3796,7 +3899,7 @@ def aeneas_extract.extract_divu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_divuw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_divuw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3808,6 +3911,7 @@ def aeneas_extract.extract_divuw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3818,7 +3922,7 @@ def aeneas_extract.extract_divuw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_divw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_divw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3830,6 +3934,7 @@ def aeneas_extract.extract_divw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3840,7 +3945,7 @@ def aeneas_extract.extract_divw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_mul_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_mul_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3852,6 +3957,7 @@ def aeneas_extract.extract_mul_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3862,7 +3968,7 @@ def aeneas_extract.extract_mul_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_mulh_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_mulh_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3874,6 +3980,7 @@ def aeneas_extract.extract_mulh_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3884,7 +3991,7 @@ def aeneas_extract.extract_mulh_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_mulhsu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_mulhsu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3896,6 +4003,7 @@ def aeneas_extract.extract_mulhsu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3906,7 +4014,7 @@ def aeneas_extract.extract_mulhsu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_mulhu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_mulhu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3918,6 +4026,7 @@ def aeneas_extract.extract_mulhu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3928,7 +4037,7 @@ def aeneas_extract.extract_mulhu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_mulw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_mulw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3940,6 +4049,7 @@ def aeneas_extract.extract_mulw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3950,7 +4060,7 @@ def aeneas_extract.extract_mulw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_or_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_or_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3962,6 +4072,7 @@ def aeneas_extract.extract_or_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3972,7 +4083,7 @@ def aeneas_extract.extract_or_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_rem_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_rem_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -3984,6 +4095,7 @@ def aeneas_extract.extract_rem_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -3994,7 +4106,7 @@ def aeneas_extract.extract_rem_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_remu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_remu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4006,6 +4118,7 @@ def aeneas_extract.extract_remu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4016,7 +4129,7 @@ def aeneas_extract.extract_remu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_remuw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_remuw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4028,6 +4141,7 @@ def aeneas_extract.extract_remuw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4038,7 +4152,7 @@ def aeneas_extract.extract_remuw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_remw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_remw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4050,6 +4164,7 @@ def aeneas_extract.extract_remw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4060,7 +4175,7 @@ def aeneas_extract.extract_remw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sll_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_sll_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4072,6 +4187,7 @@ def aeneas_extract.extract_sll_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4082,7 +4198,7 @@ def aeneas_extract.extract_sll_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sllw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_sllw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4094,6 +4210,7 @@ def aeneas_extract.extract_sllw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4104,7 +4221,7 @@ def aeneas_extract.extract_sllw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_slt_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_slt_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4116,6 +4233,7 @@ def aeneas_extract.extract_slt_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4126,7 +4244,7 @@ def aeneas_extract.extract_slt_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sltu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_sltu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4138,6 +4256,7 @@ def aeneas_extract.extract_sltu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4148,7 +4267,7 @@ def aeneas_extract.extract_sltu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sra_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_sra_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4160,6 +4279,7 @@ def aeneas_extract.extract_sra_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4170,7 +4290,7 @@ def aeneas_extract.extract_sra_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sraw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_sraw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4182,6 +4302,7 @@ def aeneas_extract.extract_sraw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4192,7 +4313,7 @@ def aeneas_extract.extract_sraw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_srl_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_srl_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4204,6 +4325,7 @@ def aeneas_extract.extract_srl_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4214,7 +4336,7 @@ def aeneas_extract.extract_srl_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_srlw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_srlw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4226,6 +4348,7 @@ def aeneas_extract.extract_srlw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4236,7 +4359,7 @@ def aeneas_extract.extract_srlw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sub_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_sub_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4248,6 +4371,7 @@ def aeneas_extract.extract_sub_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4258,7 +4382,7 @@ def aeneas_extract.extract_sub_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_subw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_subw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4270,6 +4394,7 @@ def aeneas_extract.extract_subw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4280,7 +4405,7 @@ def aeneas_extract.extract_subw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_xor_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 378:8-382:9
+    Source: 'core/src/aeneas_extract.rs', lines 423:8-427:9
     Visibility: public -/
 def aeneas_extract.extract_xor_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4292,6 +4417,7 @@ def aeneas_extract.extract_xor_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4302,7 +4428,7 @@ def aeneas_extract.extract_xor_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_addiw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_addiw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4314,6 +4440,7 @@ def aeneas_extract.extract_addiw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4324,7 +4451,7 @@ def aeneas_extract.extract_addiw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_andi_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_andi_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4336,6 +4463,7 @@ def aeneas_extract.extract_andi_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4346,7 +4474,7 @@ def aeneas_extract.extract_andi_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_slli_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_slli_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4358,6 +4486,7 @@ def aeneas_extract.extract_slli_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4368,7 +4497,7 @@ def aeneas_extract.extract_slli_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_slliw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_slliw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4380,6 +4509,7 @@ def aeneas_extract.extract_slliw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4390,7 +4520,7 @@ def aeneas_extract.extract_slliw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_slti_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_slti_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4402,6 +4532,7 @@ def aeneas_extract.extract_slti_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4412,7 +4543,7 @@ def aeneas_extract.extract_slti_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sltiu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_sltiu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4424,6 +4555,7 @@ def aeneas_extract.extract_sltiu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4434,7 +4566,7 @@ def aeneas_extract.extract_sltiu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_srai_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_srai_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4446,6 +4578,7 @@ def aeneas_extract.extract_srai_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4456,7 +4589,7 @@ def aeneas_extract.extract_srai_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sraiw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_sraiw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4468,6 +4601,7 @@ def aeneas_extract.extract_sraiw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4478,7 +4612,7 @@ def aeneas_extract.extract_sraiw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_srli_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_srli_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4490,6 +4624,7 @@ def aeneas_extract.extract_srli_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4500,7 +4635,7 @@ def aeneas_extract.extract_srli_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_srliw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 388:8-392:9
+    Source: 'core/src/aeneas_extract.rs', lines 433:8-437:9
     Visibility: public -/
 def aeneas_extract.extract_srliw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4512,6 +4647,7 @@ def aeneas_extract.extract_srliw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4522,7 +4658,7 @@ def aeneas_extract.extract_srliw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_addi_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 398:8-402:9
+    Source: 'core/src/aeneas_extract.rs', lines 443:8-447:9
     Visibility: public -/
 def aeneas_extract.extract_addi_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4534,6 +4670,7 @@ def aeneas_extract.extract_addi_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4544,7 +4681,7 @@ def aeneas_extract.extract_addi_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_ori_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 398:8-402:9
+    Source: 'core/src/aeneas_extract.rs', lines 443:8-447:9
     Visibility: public -/
 def aeneas_extract.extract_ori_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4556,6 +4693,7 @@ def aeneas_extract.extract_ori_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4566,7 +4704,7 @@ def aeneas_extract.extract_ori_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_xori_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 398:8-402:9
+    Source: 'core/src/aeneas_extract.rs', lines 443:8-447:9
     Visibility: public -/
 def aeneas_extract.extract_xori_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4578,6 +4716,7 @@ def aeneas_extract.extract_xori_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4588,7 +4727,7 @@ def aeneas_extract.extract_xori_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_beq_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 408:8-412:9
+    Source: 'core/src/aeneas_extract.rs', lines 453:8-457:9
     Visibility: public -/
 def aeneas_extract.extract_beq_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4600,6 +4739,7 @@ def aeneas_extract.extract_beq_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4610,7 +4750,7 @@ def aeneas_extract.extract_beq_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_bge_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 408:8-412:9
+    Source: 'core/src/aeneas_extract.rs', lines 453:8-457:9
     Visibility: public -/
 def aeneas_extract.extract_bge_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4622,6 +4762,7 @@ def aeneas_extract.extract_bge_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4632,7 +4773,7 @@ def aeneas_extract.extract_bge_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_bgeu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 408:8-412:9
+    Source: 'core/src/aeneas_extract.rs', lines 453:8-457:9
     Visibility: public -/
 def aeneas_extract.extract_bgeu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4644,6 +4785,7 @@ def aeneas_extract.extract_bgeu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4654,7 +4796,7 @@ def aeneas_extract.extract_bgeu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_blt_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 408:8-412:9
+    Source: 'core/src/aeneas_extract.rs', lines 453:8-457:9
     Visibility: public -/
 def aeneas_extract.extract_blt_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4666,6 +4808,7 @@ def aeneas_extract.extract_blt_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4676,7 +4819,7 @@ def aeneas_extract.extract_blt_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_bltu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 408:8-412:9
+    Source: 'core/src/aeneas_extract.rs', lines 453:8-457:9
     Visibility: public -/
 def aeneas_extract.extract_bltu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4688,6 +4831,7 @@ def aeneas_extract.extract_bltu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4698,7 +4842,7 @@ def aeneas_extract.extract_bltu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_bne_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 408:8-412:9
+    Source: 'core/src/aeneas_extract.rs', lines 453:8-457:9
     Visibility: public -/
 def aeneas_extract.extract_bne_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4710,6 +4854,7 @@ def aeneas_extract.extract_bne_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4720,7 +4865,7 @@ def aeneas_extract.extract_bne_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_lb_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_lb_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4732,6 +4877,7 @@ def aeneas_extract.extract_lb_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4742,7 +4888,7 @@ def aeneas_extract.extract_lb_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_lbu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_lbu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4754,6 +4900,7 @@ def aeneas_extract.extract_lbu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4764,7 +4911,7 @@ def aeneas_extract.extract_lbu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_ld_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_ld_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4776,6 +4923,7 @@ def aeneas_extract.extract_ld_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4786,7 +4934,7 @@ def aeneas_extract.extract_ld_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_lh_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_lh_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4798,6 +4946,7 @@ def aeneas_extract.extract_lh_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4808,7 +4957,7 @@ def aeneas_extract.extract_lh_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_lhu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_lhu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4820,6 +4969,7 @@ def aeneas_extract.extract_lhu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4830,7 +4980,7 @@ def aeneas_extract.extract_lhu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_lw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_lw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4842,6 +4992,7 @@ def aeneas_extract.extract_lw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4852,7 +5003,7 @@ def aeneas_extract.extract_lw_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_lwu_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 418:8-422:9
+    Source: 'core/src/aeneas_extract.rs', lines 463:8-467:9
     Visibility: public -/
 def aeneas_extract.extract_lwu_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4864,6 +5015,7 @@ def aeneas_extract.extract_lwu_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4874,7 +5026,7 @@ def aeneas_extract.extract_lwu_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sb_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 428:8-432:9
+    Source: 'core/src/aeneas_extract.rs', lines 473:8-477:9
     Visibility: public -/
 def aeneas_extract.extract_sb_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4886,6 +5038,7 @@ def aeneas_extract.extract_sb_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4896,7 +5049,7 @@ def aeneas_extract.extract_sb_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sd_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 428:8-432:9
+    Source: 'core/src/aeneas_extract.rs', lines 473:8-477:9
     Visibility: public -/
 def aeneas_extract.extract_sd_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4908,6 +5061,7 @@ def aeneas_extract.extract_sd_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4918,7 +5072,7 @@ def aeneas_extract.extract_sd_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sh_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 428:8-432:9
+    Source: 'core/src/aeneas_extract.rs', lines 473:8-477:9
     Visibility: public -/
 def aeneas_extract.extract_sh_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4930,6 +5084,7 @@ def aeneas_extract.extract_sh_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,
@@ -4940,7 +5095,7 @@ def aeneas_extract.extract_sh_from_inst
   aeneas_extract.ZiskInstExtract.from_inst zib.i
 
 /-- [zisk_core::aeneas_extract::extract_sw_from_inst]:
-    Source: 'core/src/aeneas_extract.rs', lines 428:8-432:9
+    Source: 'core/src/aeneas_extract.rs', lines 473:8-477:9
     Visibility: public -/
 def aeneas_extract.extract_sw_from_inst
   (i : riscv.riscv_inst.RiscvInstruction) :
@@ -4952,6 +5107,7 @@ def aeneas_extract.extract_sw_from_inst
     riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row
       {
         extract_inst := none,
+        extract_first_inst := none,
         extract_marker := (),
         input_precompile := none,
         output_precompile := none,

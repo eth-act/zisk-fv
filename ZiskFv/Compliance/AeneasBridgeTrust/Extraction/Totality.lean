@@ -782,7 +782,7 @@ theorem jalr_ok (self : riscv2zisk_context.Riscv2ZiskContext)
 
 /-- The default lowering context the transpile pipeline threads into the dispatcher. -/
 def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
-  { extract_inst := none, extract_marker := (), input_precompile := none,
+  { extract_inst := none, extract_first_inst := none, extract_marker := (), input_precompile := none,
     output_precompile := none, input_precompile_reg := none, output_precompile_reg := none }
 
 /-! ## 9. Index-width totality — DISCHARGES the `hw` premise of §6.

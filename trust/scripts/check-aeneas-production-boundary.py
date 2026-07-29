@@ -88,6 +88,7 @@ non_start_extract_fns = sorted(
         "extract_decode_rv64im_raw",
         "extract_rv64im_opcode_supported",
         "extract_transpile_rv64im_raw",
+        "extract_transpile_rv64im_rows_raw",
         "extract_transpile_rv64im_accepted_raw",
         "extract_transpile_rv64im_materializes_raw",
     }

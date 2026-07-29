@@ -127,6 +127,20 @@ noncomputable def romMessageOfRaw (line : FGL) (raw : BitVec 32) : ZiskRomMessag
            b_imm1 := 0, ind_width := 0, op := 0, store_offset := 0,
            jmp_offset1 := 0, jmp_offset2 := 0, flags := 0 }
 
+/-- The complete production lowering of one raw word. Most words have one row;
+    an unaligned JALR has its intermediate ADD row followed by its terminal AND
+    row. The existing `romMessageOfRaw` remains the terminal-row projection. -/
+noncomputable def romMessagesOfRaw (line : FGL) (raw : BitVec 32) :
+    ZiskRomMessage FGL × Option (ZiskRomMessage FGL) :=
+  match zisk_core.aeneas_extract.extract_transpile_rv64im_rows_raw
+      (ZiskFv.Compliance.Decode.toU32 raw) with
+  | .ok ext =>
+      if ext.row_count = 2#u32 then
+        (romRowOf line ext.first_row, some (romRowOf (line + 1) ext.last_row))
+      else
+        (romRowOf line ext.last_row, none)
+  | _ => (romMessageOfRaw line raw, none)
+
 /-- Op-agnostic ROM-image binding (a verifier-attached certificate, NOT an axiom):
     the committed ROM holds exactly the serialized lowering of the raw program. -/
 def ProgramBinding {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
@@ -135,5 +149,167 @@ def ProgramBinding {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
   (∀ k k' : Fin trace.programLength, k < k' → (addr k).val < (addr k').val) ∧
   ∀ k : Fin trace.programLength, trace.program k = romMessageOfRaw (addr k) (rawProgram k)
 
+/-- Additive program-image binding for production lowerings with one or two rows.
+    `start` embeds architectural raw-word indices into physical ROM indices.
+    The separation condition prevents a two-row lowering from overlapping the
+    next word. Existing one-word/one-row clients keep using `ProgramBinding`. -/
+def ProgramRowsBinding {n rawLength : Nat}
+    (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (start : Fin rawLength → Fin trace.programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32) : Prop :=
+  (∀ k k' : Fin rawLength, k < k' →
+      (start k).val < (start k').val ∧ (addr k).val < (addr k').val) ∧
+  (∀ k : Fin rawLength, (addr k).val % 4 = 0) ∧
+  (∀ k : Fin rawLength, (addr k).val + 1 < GL_prime) ∧
+  (∀ k k' : Fin rawLength, k < k' →
+      match (romMessagesOfRaw (addr k) (rawProgram k)).2 with
+      | none => (start k).val + 1 ≤ (start k').val
+      | some _ => (start k).val + 2 ≤ (start k').val) ∧
+  (∀ k : Fin rawLength,
+      let rows := romMessagesOfRaw (addr k) (rawProgram k)
+      trace.program (start k) = rows.1 ∧
+        match rows.2 with
+        | none => True
+        | some row =>
+            ∃ h : (start k).val + 1 < trace.programLength,
+              trace.program ⟨(start k).val + 1, h⟩ = row) ∧
+  ∀ j : Fin trace.programLength,
+    ∃ k : Fin rawLength,
+      j = start k ∨
+        ∃ row : ZiskRomMessage FGL,
+          (romMessagesOfRaw (addr k) (rawProgram k)).2 = some row ∧
+            j.val = (start k).val + 1
+
+/-- Faithful architectural lookup at the first physical row of a lowered word.
+    Unlike a physical-indexed raw array, this never duplicates an instruction
+    word to account for expansion rows. -/
+def RawAtProgramStart {programLength rawLength : Nat}
+    (start : Fin rawLength → Fin programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32)
+    (j : Fin programLength) (line : FGL) (raw : BitVec 32) : Prop :=
+  ∃ k : Fin rawLength, start k = j ∧ addr k = line ∧ rawProgram k = raw
+
+theorem romMessagesOfRaw_first_line (line : FGL) (raw : BitVec 32) :
+    (romMessagesOfRaw line raw).1.line = line := by
+  unfold romMessagesOfRaw
+  split
+  · split <;> rfl
+  · unfold romMessageOfRaw
+    split <;> rfl
+
+theorem romMessagesOfRaw_second_line {line : FGL} {raw : BitVec 32}
+    {row : ZiskRomMessage FGL}
+    (hsecond : (romMessagesOfRaw line raw).2 = some row) :
+    row.line = line + 1 := by
+  unfold romMessagesOfRaw at hsecond
+  split at hsecond
+  · split at hsecond
+    · simp only [Option.some.injEq] at hsecond
+      rw [← hsecond]
+      rfl
+    · simp at hsecond
+  · simp at hsecond
+
+/-- Reuse bridge for the existing one-row opcode proofs: architectural lookup
+    plus `ProgramRowsBinding` gives the same primary-row equality those proofs
+    previously obtained from a physical-indexed `ProgramBinding`. -/
+theorem primary_row_of_programRowsBinding {n rawLength : Nat}
+    {trace : ZiskFv.Compliance.AcceptedZiskTrace n}
+    {start : Fin rawLength → Fin trace.programLength}
+    {addr : Fin rawLength → FGL}
+    {rawProgram : Fin rawLength → BitVec 32}
+    {j : Fin trace.programLength} {line : FGL} {raw : BitVec 32}
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (hlookup : RawAtProgramStart start addr rawProgram j line raw) :
+    trace.program j = (romMessagesOfRaw line raw).1 := by
+  obtain ⟨_, _, _, _, hrows, _⟩ := hbind
+  obtain ⟨k, rfl, rfl, rfl⟩ := hlookup
+  exact (hrows k).1
+
+/-- Expansion bridge: when the lowering exposes a second row, the committed
+    physical successor is exactly that row. This is the JALR ADD-to-AND join. -/
+theorem successor_row_of_programRowsBinding {n rawLength : Nat}
+    {trace : ZiskFv.Compliance.AcceptedZiskTrace n}
+    {start : Fin rawLength → Fin trace.programLength}
+    {addr : Fin rawLength → FGL}
+    {rawProgram : Fin rawLength → BitVec 32}
+    {j : Fin trace.programLength} {line : FGL} {raw : BitVec 32}
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (hlookup : RawAtProgramStart start addr rawProgram j line raw)
+    {row : ZiskRomMessage FGL}
+    (hsecond : (romMessagesOfRaw line raw).2 = some row) :
+    ∃ h : j.val + 1 < trace.programLength,
+      trace.program ⟨j.val + 1, h⟩ = row := by
+  obtain ⟨_, _, _, _, hrows, _⟩ := hbind
+  obtain ⟨k, rfl, rfl, rfl⟩ := hlookup
+  simpa [hsecond] using (hrows k).2
+
+/-- Exact physical-row coverage: every committed row is either an
+    architectural word's primary lowering row or that word's present expansion
+    successor. In particular there are no unbound gap rows. -/
+theorem physical_row_of_programRowsBinding {n rawLength : Nat}
+    {trace : ZiskFv.Compliance.AcceptedZiskTrace n}
+    {start : Fin rawLength → Fin trace.programLength}
+    {addr : Fin rawLength → FGL}
+    {rawProgram : Fin rawLength → BitVec 32}
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (j : Fin trace.programLength) :
+    ∃ k : Fin rawLength,
+      (j = start k ∧
+        trace.program j = (romMessagesOfRaw (addr k) (rawProgram k)).1) ∨
+      ∃ row : ZiskRomMessage FGL,
+        (romMessagesOfRaw (addr k) (rawProgram k)).2 = some row ∧
+          j.val = (start k).val + 1 ∧ trace.program j = row := by
+  obtain ⟨_, _, _, _, hrows, hcover⟩ := hbind
+  obtain ⟨k, hj | ⟨row, hsecond, hj⟩⟩ := hcover j
+  · exact ⟨k, Or.inl ⟨hj, hj ▸ (hrows k).1⟩⟩
+  · obtain ⟨hnext, hrow⟩ := by
+      simpa [hsecond] using (hrows k).2
+    have hfin : j = ⟨(start k).val + 1, hnext⟩ := Fin.ext hj
+    exact ⟨k, Or.inr ⟨row, hsecond, hj, hfin ▸ hrow⟩⟩
+
+/-- Legacy one-row adapter. Exact physical coverage, four-byte architectural
+    alignment, and successor no-wrap imply that any row whose committed line
+    is an architectural address is that word's primary row, never an expansion
+    successor. -/
+theorem primary_row_at_architectural_line {n rawLength : Nat}
+    {trace : ZiskFv.Compliance.AcceptedZiskTrace n}
+    {start : Fin rawLength → Fin trace.programLength}
+    {addr : Fin rawLength → FGL}
+    {rawProgram : Fin rawLength → BitVec 32}
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (j : Fin trace.programLength) (k₀ : Fin rawLength)
+    (hline : (trace.program j).line = addr k₀) :
+    j = start k₀ ∧
+      trace.program j = (romMessagesOfRaw (addr k₀) (rawProgram k₀)).1 := by
+  have hbind' := hbind
+  obtain ⟨horder, halign, hnowrap, _, _, _⟩ := hbind
+  obtain ⟨k, ⟨hj, hrow⟩ | ⟨row, hsecond, _, hrow⟩⟩ :=
+    physical_row_of_programRowsBinding hbind' j
+  · have ha : addr k = addr k₀ := by
+      have := hline
+      rw [hrow, romMessagesOfRaw_first_line] at this
+      exact this
+    have hk : k = k₀ := by
+      by_contra hne
+      rcases lt_or_gt_of_ne hne with hlt | hgt
+      · have := (horder k k₀ hlt).2
+        rw [ha] at this
+        omega
+      · have := (horder k₀ k hgt).2
+        rw [ha] at this
+        omega
+    subst k
+    exact ⟨hj, hrow⟩
+  · have hrowline := romMessagesOfRaw_second_line hsecond
+    have heq : addr k + 1 = addr k₀ := by
+      rw [← hrowline, ← hline, hrow]
+    have heqv := congrArg Fin.val heq
+    simp [Fin.add_def, Nat.mod_eq_of_lt (hnowrap k)] at heqv
+    have hkmod := halign k
+    have hk₀mod := halign k₀
+    omega
 
 end ZiskFv.Compliance.RawProgramBinding
