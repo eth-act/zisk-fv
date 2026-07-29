@@ -103,7 +103,7 @@ theorem load_addr_arith_of_decode
     {r1_val : BitVec 64}
     (h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 imm).toNat : FGL))
+        ((BitVec.signExtend 64 imm).toInt : FGL))
     (h_a0_value : (mainRowWithRomLd trace i).core.a_0 = lane_lo r1_val)
     (h_addr_bound :
       r1_val.toNat + (BitVec.signExtend 64 imm).toNat < ZiskPhysicalAddressSpaceSize) :
@@ -117,7 +117,11 @@ theorem load_addr_arith_of_decode
   have h_r1_lt_gl : r1_val.toNat < GL_prime := by omega
   have h_imm_lt_gl : (BitVec.signExtend 64 imm).toNat < GL_prime := by omega
   have h_sum_lt_gl : r1_val.toNat + (BitVec.signExtend 64 imm).toNat < GL_prime := by omega
+  have h_imm_toInt :
+      (BitVec.signExtend 64 imm).toInt = (BitVec.signExtend 64 imm).toNat := by
+    rw [BitVec.toInt, if_pos (by omega)]
   rw [h_b_offset_imm0, h_a0_value]
+  rw [h_imm_toInt]
   change ((((BitVec.signExtend 64 imm).toNat : FGL) + lane_lo r1_val : FGL).val) =
     r1_val.toNat + (BitVec.signExtend 64 imm).toNat
   rw [Fin.val_add, Fin.val_natCast]
@@ -142,7 +146,7 @@ theorem load_addr1_of_decode
     (h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1)
     (h_b_offset_imm0 :
       (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-        ((BitVec.signExtend 64 imm).toNat : FGL))
+        ((BitVec.signExtend 64 imm).toInt : FGL))
     (h_a0_value : (mainRowWithRomLd trace i).core.a_0 = lane_lo r1_val)
     (h_addr_bound :
       r1_val.toNat + (BitVec.signExtend 64 imm).toNat < ZiskPhysicalAddressSpaceSize) :

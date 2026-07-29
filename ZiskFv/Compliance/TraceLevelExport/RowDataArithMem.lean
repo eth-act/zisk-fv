@@ -651,8 +651,8 @@ structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
       Transpiler.ind (regidx_to_fin c.rd)
   h_jmp_offset2_imm :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toNat
+        i.val)
+      = ((BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts; AUIPC already
   -- carries h_set_pc above): the next row exists, plus the AUIPC FLAG-row jmp
   -- pin `jmp_offset1 = 4` and committed-program `jmp_offset2 = signExtend imm`
@@ -2347,7 +2347,7 @@ structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.ld_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.ld_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.ld_input.imm).toInt : FGL)
 
 structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type where
@@ -2426,7 +2426,7 @@ structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lbu_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lbu_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.lbu_input.imm).toInt : FGL)
 
 structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type where
@@ -2508,7 +2508,7 @@ structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lhu_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lhu_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.lhu_input.imm).toInt : FGL)
 
 structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type where
@@ -2590,7 +2590,7 @@ structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lwu_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lwu_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.lwu_input.imm).toInt : FGL)
 
 structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type where
@@ -2683,7 +2683,7 @@ structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lb_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lb_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.lb_input.imm).toInt : FGL)
 
 structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
@@ -2773,7 +2773,7 @@ structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lh_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lh_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.lh_input.imm).toInt : FGL)
 
 structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
@@ -2863,7 +2863,7 @@ structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lw_input.rd)
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lw_input.imm).toNat : FGL)
+      ((BitVec.signExtend 64 c.lw_input.imm).toInt : FGL)
 
 structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
