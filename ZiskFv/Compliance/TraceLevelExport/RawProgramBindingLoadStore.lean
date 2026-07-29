@@ -1,4 +1,4 @@
-import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingRegister
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingImmediate
 
 /-!
 # Raw-program decode bridge — load / store family (issue #159, BLOCK 3)
@@ -52,6 +52,135 @@ open aeneas_extract (extract_transpile_rv64im_raw)
 
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
+
+theorem src_b_ind_full_pins (self z : zisk_inst_builder.ZiskInstBuilder)
+    (off : Std.U64) (usp : Bool)
+    (h : self.src_b_ind off usp = ok z) :
+    z.i.b_src = zisk_inst.SRC_IND ∧ z.i.b_offset_imm0 = off
+      ∧ z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_ind,
+    zisk_inst.SRC_IND, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  split_ifs at h <;>
+    (rw [Result.ok.injEq] at h; subst h
+     exact ⟨by simp [zisk_inst.SRC_IND], rfl, rfl, rfl⟩)
+
+theorem ind_width_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
+    (w : Std.U64) (h : self.ind_width w = ok z) :
+    z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.ind_width] at h
+  split at h <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+    | simp at h
+
+theorem store_reg_i64_index_pins (self z : zisk_inst_builder.ZiskInstBuilder)
+    (rd : Std.I64) (hrd0 : 0 ≤ rd.val) (hrd : rd.val < 32)
+    (hzero : self.i.store_offset = 0#i64) (hstore : self.i.store = 0#u64)
+    (h : self.store_reg rd false false = ok z) :
+    z.i.store_offset.val = rd.val ∧ z.i.store ≠ zisk_inst.STORE_IND := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  have e1 := ZiskFv.Compliance.Extraction.cast_one_i64
+  have e31 := ZiskFv.Compliance.Extraction.cast_31_i64
+  split_ifs at h <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h
+       constructor
+       · scalar_tac
+       · simp [hstore, zisk_inst.STORE_IND])
+    | (rw [Result.ok.injEq] at h; subst h
+       constructor
+       · scalar_tac
+       · simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
+    | (exfalso; scalar_tac)
+
+theorem load_op_typed_full_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (w inst_size wval : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (hrd : i.rd.val < 32)
+    (hiw : ∀ (s z : zisk_inst_builder.ZiskInstBuilder),
+      s.ind_width w = ok z → z.i.ind_width = wval)
+    (h : self.load_op_typed i op w inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib
+      ∧ zib.i.ind_width = wval
+      ∧ zib.i.b_src = zisk_inst.SRC_IND
+      ∧ zib.i.b_offset_imm0 = IScalar.hcast UScalarTy.U64 i.imm
+      ∧ zib.i.store_offset.val = i.rd.val
+      ∧ zib.i.store ≠ zisk_inst.STORE_IND
+      ∧ zib.i.jmp_offset1 = UScalar.hcast IScalarTy.I64 inst_size
+      ∧ zib.i.jmp_offset2 = UScalar.hcast IScalarTy.I64 inst_size := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    Bind.bind, bind_ok] at h
+  obtain ⟨s1, hs1, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h
+  subst h
+  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    lift, Bind.bind, bind_ok] at hs1
+  obtain ⟨z0, h0, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z1, h1, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z2, h2, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z3, h3, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z4, h4, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨iadd, hadd, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z5, h5, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z6, h6, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z7, h7, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨s2, h8, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  rw [Result.ok.injEq] at hs1
+  subst hs1
+  have hbase : z4.i.store_offset = 0#i64 ∧ z4.i.store = 0#u64 := by
+    simp only [zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+      zisk_inst_builder.ZiskInstBuilder.new,
+      zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+      zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+      bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h0
+    rw [Result.ok.injEq] at h0
+    subst z0
+    obtain ⟨ha0, ha1⟩ := src_a_reg_pres_store _ _ _ _ h1
+    obtain ⟨hw0, hw1⟩ := ind_width_pres_store _ _ _ h2
+    obtain ⟨_, _, hb0, hb1⟩ := src_b_ind_full_pins _ _ _ _ h3
+    obtain ⟨ho0, ho1⟩ := op_zisk_pres_store _ _ _ h4
+    exact ⟨ho0.trans (hb0.trans (hw0.trans ha0)),
+      ho1.trans (hb1.trans (hw1.trans ha1))⟩
+  obtain ⟨iadd', hiadd', hiaddval⟩ :=
+    ZiskFv.Compliance.Extraction.iscalar_add_zero_ok
+      (UScalar.hcast IScalarTy.I64 i.rd)
+  rw [hadd] at hiadd'
+  injection hiadd' with hiadd'
+  obtain ⟨hso, hst⟩ := store_reg_i64_index_pins z4 z5 iadd
+    (by rw [hiadd', hiaddval,
+      ZiskFv.Compliance.Extraction.hcast_u32_i64_val]; omega)
+    (by rw [hiadd', hiaddval,
+      ZiskFv.Compliance.Extraction.hcast_u32_i64_val]; exact_mod_cast hrd)
+    hbase.1 hbase.2 h5
+  obtain ⟨hjs, hjst⟩ := j_pres_store _ _ _ _ h6
+  obtain ⟨hbs, hbo, _, _⟩ := src_b_ind_full_pins z2 z3 _ _ h3
+  obtain ⟨hos, _, hol⟩ := op_zisk_pres_b z3 z4 op h4
+  obtain ⟨hss, _, hsl⟩ := store_reg_pres_b z4 z5 _ _ _ h5
+  obtain ⟨hjsb, _, hjlb⟩ := j_pres_b z5 z6 _ _ h6
+  obtain ⟨hj1, hj2⟩ := ZiskFv.Compliance.Extraction.j_jmp _ _ _ _ h6
+  have hiw2 := hiw _ _ h2
+  have hiw3 := (ZiskFv.Compliance.Extraction.src_b_ind_set _ _ _ _ h3).2
+  have hiw4 := (ZiskFv.Compliance.Extraction.op_zisk_pres_data _ _ _ h4).1
+  have hiw5 := (ZiskFv.Compliance.Extraction.store_reg_pres_data _ _ _ _ _ h5).1
+  have hiw6 := (ZiskFv.Compliance.Extraction.j_pres_data _ _ _ _ h6).1
+  have hz := ZiskFv.Compliance.Extraction.build_eq _ _ h7
+  refine ⟨z7, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h8,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hz, hiw6, hiw5, hiw4, hiw3, hiw2]
+  · rw [hz, hjsb, hss, hos, hbs]
+  · rw [hz, hjlb, hsl, hol, hbo]
+  · rw [hz, hjs, hso, hiadd', hiaddval,
+      ZiskFv.Compliance.Extraction.hcast_u32_i64_val]
+  · rw [hz]
+    exact fun hh => hst (hjst.symm.trans hh)
+  · rw [hz, hj1]
+  · rw [hz, hj2]
+
+#print axioms load_op_typed_full_pins
 
 /-! ## Generic load / store decode-field bridge (adds `ind_width` to the register one). -/
 
