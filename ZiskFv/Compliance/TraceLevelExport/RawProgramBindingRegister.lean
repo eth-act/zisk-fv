@@ -506,10 +506,104 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n : Nat}
     change (regidx_to_fin c.rd).val % GL_prime = (regidx_to_fin c.rd).val
     exact Nat.mod_eq_of_lt (lt_trans (regidx_to_fin c.rd).isLt (by norm_num))
 
+/-! ## Remaining unconditional register-family `ProgramDecode` bundles. -/
+
+local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term : command => do
+  let s := nm.getId.toString
+  let rawName := Lean.mkIdent (Lean.Name.mkSimple ("RawProgramDecode_" ++ s))
+  let ctorName := Lean.mkIdent (Lean.Name.mkSimple ("ProgramDecode_" ++ s ++ "_from_rawProgram"))
+  let transpileName := Lean.mkIdent (Lean.Name.mkSimple ("transpile_" ++ s))
+  let fieldsName := Lean.mkIdent (Lean.Name.mkSimple (s ++ "_decode_fields_of_binding"))
+  let claimName := Lean.mkIdent ((`ZiskFv.Compliance).str ("Claim_" ++ s))
+  let programName :=
+    Lean.mkIdent ((`ZiskFv.Compliance.RomDecodeBinding).str ("ProgramDecode_" ++ s))
+  let t1 ← `(structure $rawName {n : Nat}
+      (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+      (i : Fin trace.numInstructions) (c : $claimName trace i)
+      (rawProgram : Fin trace.programLength → BitVec 32) where
+    h_idx : i.val + 1 < trace.mainTable.table.length
+    hLine : ∀ j : Fin trace.programLength,
+      (trace.program j).line =
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+        rawProgram j =
+          ZiskFv.Completeness.Rv64imShapes.rawRType $f7
+            (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val $f3
+            (regidx_to_fin c.rd).val $opw)
+  let t2 ← `(noncomputable def $ctorName {n : Nat}
+      (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+      (i : Fin trace.numInstructions) (c : $claimName trace i)
+      (addr : Fin trace.programLength → FGL)
+      (rawProgram : Fin trace.programLength → BitVec 32)
+      (hbind : ProgramBinding trace addr rawProgram)
+      (rawDecode : $rawName trace i c rawProgram) :
+      $programName trace i c := by
+    let rd := (regidx_to_fin c.rd).val
+    let rs1 := (regidx_to_fin c.r1).val
+    let rs2 := (regidx_to_fin c.r2).val
+    let ext := ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
+      (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
+    obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
+        hstoreOffset, hstoreInd⟩ :=
+      ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
+        (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
+    refine
+      { h_idx := rawDecode.h_idx
+        bits := romFlagBitsOfExtract ext.row
+        h_bits_ieo := ?_
+        h_bits_m32 := ?_
+        h_bits_set_pc := ?_
+        h_bits_store_pc := ?_
+        h_bits_store_ind := ?_
+        h_prog := ?_ }
+    · simpa only [ext, romFlagBitsOfExtract] using hieo
+    · simpa only [ext, romFlagBitsOfExtract] using hm32
+    · simpa only [ext, romFlagBitsOfExtract] using hsetpc
+    · simpa only [ext, romFlagBitsOfExtract] using hstorepc
+    · simp only [romFlagBitsOfExtract]
+      exact decide_eq_false hstoreInd
+    · intro j hline
+      have hbk : trace.program j =
+          romMessageOfRaw (addr j)
+            (ZiskFv.Completeness.Rv64imShapes.rawRType $f7 rs2 rs1 $f3 rd $opw) := by
+        exact (hbind.2 j).trans
+          (congrArg (romMessageOfRaw (addr j)) (rawDecode.hLine j hline))
+      obtain ⟨ho, hjo1, hjo2, hso, ext', hok', hieo', hm32', hsetpc',
+          hstorepc', hstoreInd', hf⟩ :=
+        $fieldsName rd rs1 rs2 (regidx_to_fin c.rd).isLt
+          (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt
+          (addr j) (trace.program j) hbk
+      have hext : ext' = ext :=
+        Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
+      subst ext'
+      refine ⟨ho, hjo1, hjo2, ?_, hf⟩
+      rw [hso]
+      simp only [rd, Transpiler.ind]
+      apply Fin.ext
+      change (regidx_to_fin c.rd).val % GL_prime = (regidx_to_fin c.rd).val
+      exact Nat.mod_eq_of_lt (lt_trans (regidx_to_fin c.rd).isLt (by norm_num)))
+  return ⟨Lean.mkNullNode #[t1, t2]⟩
+
+reg_program_decode and, 0, 7, 0x33
+reg_program_decode xor, 0, 4, 0x33
+reg_program_decode slt, 0, 2, 0x33
+reg_program_decode sltu, 0, 3, 0x33
+reg_program_decode sll, 0, 1, 0x33
+reg_program_decode srl, 0, 5, 0x33
+reg_program_decode sra, 32, 5, 0x33
+reg_program_decode addw, 0, 0, 0x3b
+reg_program_decode subw, 32, 0, 0x3b
+reg_program_decode sllw, 0, 1, 0x3b
+reg_program_decode srlw, 0, 5, 0x3b
+reg_program_decode sraw, 32, 5, 0x3b
+reg_program_decode mulw, 1, 0, 0x3b
+
 section AxiomAudit
 #print axioms transpile_sub
 #print axioms sub_decode_fields_of_binding
 #print axioms ProgramDecode_sub_from_rawProgram
+#print axioms ProgramDecode_and_from_rawProgram
+#print axioms ProgramDecode_sraw_from_rawProgram
+#print axioms ProgramDecode_mulw_from_rawProgram
 end AxiomAudit
 
 end ZiskFv.Compliance.RawProgramBinding
