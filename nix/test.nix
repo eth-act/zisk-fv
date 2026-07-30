@@ -131,7 +131,7 @@ writeShellApplication {
     }
 
     # 1. Tool unit tests.
-    run "1/9 cargo test" bash -c '
+    run "1/10 cargo test" bash -c '
       cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
     '
 
@@ -139,7 +139,7 @@ writeShellApplication {
     # `aeneas_extract` wrapper against `Riscv2ZiskContext::convert` for the
     # covered single-row opcode surface, preventing extraction shims from
     # drifting into a parallel Rust lowering path.
-    run "2/9 zisk-core aeneas_extract tests" bash -c '
+    run "2/10 zisk-core aeneas_extract tests" bash -c '
       cd zisk/core
       cargo test --lib --features aeneas_extract extraction_starts_match_production_convert_for_single_row_opcodes --quiet
     '
@@ -153,21 +153,44 @@ writeShellApplication {
     # trust/scripts/check-all.sh, whose CI job has no build/ at all.
     # `set -e` because `bash -c` otherwise reports only the last command's
     # status, which would let a failing check.py pass behind a green selftest.
-    run "3/9 pilout round trip" bash -c '
+    run "3/10 pilout round trip" bash -c '
       set -e
       python3 tools/pilout-roundtrip/check.py --quiet
       python3 tools/pilout-roundtrip/selftest.py > /dev/null
     '
 
-    # 4. Pinned Aeneas extraction harness. This stays outside the main Lean
+    # 4. Mirror round trip (eth-act/zisk-fv#304), the other direction of step 3.
+    # Step 3 decides that the extractor moved every pilout constraint into
+    # build/extraction/ unaltered; nothing in that argument touches ZiskFv/. This
+    # pairs each comparable generated constraint against the handwritten mirror
+    # clauses under ZiskFv/AirsClean/** that restate it, and reports the
+    # constraints no mirror models, the mirror clauses no constraint backs, and
+    # the pairings that turn on a lane's kind. acceptance.py is the evidence the
+    # gate can fail and classify: one mutation of a COPY of the mirrors per
+    # defect class, each required to move the report in exactly the predicted
+    # way. Python stdlib only, ~40 s together; reads ZiskFv/AirsClean/** source
+    # plus build/, and needs no Lean build.
+    #
+    # This step FAILS at HEAD, and that is the finding, not a wiring bug: 35
+    # comparable generated constraints have no mirror. Neither the failing
+    # findings nor a baseline of them may be silenced here -- mirrors are
+    # protected proof interfaces and closing a gap is proof work. `set -e` for
+    # the same reason as step 3.
+    run "4/10 mirror round trip" bash -c '
+      set -e
+      python3 tools/mirror-roundtrip/check_mirrors.py --quiet
+      python3 tools/mirror-roundtrip/acceptance.py > /dev/null
+    '
+
+    # 5. Pinned Aeneas extraction harness. This stays outside the main Lean
     # build and checks the production-backed extraction boundary. The canonical
     # ProductionM2 extraction is tracked under trust/aeneas/ and diff-checked by
     # CI; temporary generated harness files remain under build/.
-    run_unless_skipped ZISK_FV_TEST_SKIP_AENEAS "4/9 Aeneas production extraction harness" bash -c '
+    run_unless_skipped ZISK_FV_TEST_SKIP_AENEAS "5/10 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
     '
 
-    # 5. Lake build — the FV check. Every theorem typechecks. This is
+    # 6. Lake build — the FV check. Every theorem typechecks. This is
     # the load-bearing claim: if `lake build` is green, every per-opcode
     # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
     #
@@ -181,28 +204,28 @@ writeShellApplication {
     # when sd.lean's elaboration peaked at 42 GiB, before PR #4's
     # layered dsimp+rw refactor cut it to ~8 GiB PSS. Override with
     # LEAN_NUM_THREADS=N at call site for a different cap.
-    run "5/9 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
+    run "6/10 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
-    # 6. The generated extraction files are intentionally outside the main
+    # 7. The generated extraction files are intentionally outside the main
     # Lake library, but the Mem constraint source and generated-artifact
     # wrapper must stay synchronized with the current FV APIs. This runs after
     # `lake build` so clean CI runners have the imported `ZiskFv` oleans.
-    run "6/9 Mem generated artifact wrapper" mem_generated_artifact_wrapper
+    run "7/10 Mem generated artifact wrapper" mem_generated_artifact_wrapper
 
-    # 7. Trust gate (locality + baseline + forbidden tier1 params +
+    # 8. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
-    run "7/9 trust gate (V1 syntactic)" trust/scripts/check-all.sh
+    run "8/10 trust gate (V1 syntactic)" trust/scripts/check-all.sh
 
-    # 8. V2 trust-gate semantic checks. Walks the elaborated
+    # 9. V2 trust-gate semantic checks. Walks the elaborated
     # environment via `lake exe trust-gate`: per-theorem axiom-closure
     # baseline + binder-type forbidden-Names walk. Requires the lake
     # build above to have populated oleans.
-    run "8/9 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
+    run "9/10 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
 
-    # 9. Reproducibility check. The flake.lock pins every input
+    # 10. Reproducibility check. The flake.lock pins every input
     # (sail/sail-riscv/zisk/pil2-* sources, nixpkgs revision) by content
     # hash; `nix flake check` verifies the lock matches the flake.
-    run "9/9 flake repro" nix flake check --no-build
+    run "10/10 flake repro" nix flake check --no-build
 
     if [ $overall -eq 0 ]; then
       echo "================================"
