@@ -2341,7 +2341,8 @@ structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.ld_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
@@ -2420,7 +2421,8 @@ structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.lbu_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
@@ -2502,7 +2504,8 @@ structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.lhu_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
@@ -2584,7 +2587,8 @@ structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.lwu_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
@@ -2677,7 +2681,8 @@ structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.lb_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
@@ -2767,7 +2772,8 @@ structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.lh_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
@@ -2857,7 +2863,8 @@ structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
   h_store_ind :
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
-    (mainRowWithRomLd trace i).rom.store_reg = 1
+    (mainRowWithRomLd trace i).rom.store_reg =
+      if c.lw_input.rd.toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
