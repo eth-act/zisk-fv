@@ -5,16 +5,25 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 /-!
 # Root soundness
 
-The headline soundness statement of the project, factored out of the
-trace-level export development for visibility. It sits parallel to
-`ZiskFv.Compliance` and re-exports the single endpoint theorem.
+The headline soundness statement of the project, factored out of the trace-level
+export development for visibility. It sits parallel to `ZiskFv.Compliance`.
+
+`root_soundness` is the single audit entrypoint: the entire compliance statement
+is reachable from it. `stepSound_of_programDecodes` is the interior layer it
+calls, kept as a separate declaration because the six concrete trace
+instantiations target it directly.
 -/
 
 namespace ZiskFv.Compliance
 
-/-- ** The top-level global soundness theorem: given a satisfying assignment of circuits
-    that does not involve any explicitly enumerated bugs, the zisk machine state transition
-    agrees with the Sail machine state transition.
+/-- Soundness for every executed step, indexed by the COMMITTED-program decode
+    family: given a satisfying assignment of circuits that does not involve any
+    explicitly enumerated bugs, the zisk machine state transition agrees with the
+    Sail machine state transition.
+
+    This is the interior layer of the audit tree, not the entrypoint. The public
+    endpoint is `root_soundness` below, which CONSTRUCTS `programDecodes` from raw
+    RV64IM words through the production lowerer instead of taking it as a premise.
 
     An AcceptedZiskTrace is a set of constraints, and a witness that satisfies those constraints and the
     channel balancing constraint enfoced in the proving system through a lookup argument.
@@ -52,7 +61,7 @@ namespace ZiskFv.Compliance
     (`= state_effect_via_channels …`). The per-row `OpEnvelope` is constructed
     from the trace inside each `stepStrong_<op>` — nothing is caller-supplied
     beyond the trace itself. -/
-theorem root_soundness
+theorem stepSound_of_programDecodes
     (numInstructions : Nat)
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (sailTrace : SailTrace numInstructions)
@@ -70,11 +79,36 @@ theorem root_soundness
       (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i)
       (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
 
-/-- Additive raw-program endpoint. A single production-lowering binding and
-    per-instruction raw decode evidence construct the committed-program decode
-    family consumed by `root_soundness`; the existing headline theorem and
-    `AcceptedZiskTrace` remain unchanged. -/
-theorem root_soundness_rawProgram
+/-- **The root soundness theorem — the entrypoint for an audit of this project's
+    soundness claim.** The entire compliance statement is reachable from here:
+    every premise below is either discharged inside this theorem or is a named
+    trust premise documented in `trust/trusted-base.md`.
+
+    Given an accepted ZisK trace, the raw RV64IM program image, and an exact
+    binding of that image to the committed ROM, every executed step's ZisK state
+    transition agrees with the Sail/RISC-V transition.
+
+    The per-instruction decode family consumed by `stepSound_of_programDecodes` is
+    CONSTRUCTED here (`programDecode_of_rawProgramDecode`, 63 arms) by running the
+    Aeneas-extracted production lowerer on the raw word, rather than being supplied
+    by the caller. `programBinding` states that the committed ROM holds exactly the
+    serialized lowering of `rawProgram` — gap-free, in program order, with two-row
+    (unaligned JALR) expansions occupying adjacent physical slots.
+
+    Residual boundaries, all named in `trust/trusted-base.md`: the layout maps
+    `start` / `addr` are caller-supplied (their meaning is that architectural word
+    `k` sits at the location assigned to `k`, not that the map came from a
+    particular linker image); grounding the same word in Sail's `ext_decode` is
+    #172; and identifying `rawProgram` with the intended compiled binary is the
+    external compile/commitment boundary.
+
+    NON-VACUITY (#320): `programBinding` and `rawProgramDecodes` do not yet have
+    in-tree witnesses. The six concrete instantiations (`addSpin`, `addAddiSpin`,
+    `divSpin`, `jalrSpin`, `sdLdSpin`, degenerate) discharge the premises this
+    theorem SHARES with `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`,
+    `inputsAgree`, `bootSeed`, `hAvoidKnownBugs` — but they satisfy `ProgramDecode`
+    directly and so provide no evidence for those two. -/
+theorem root_soundness
     (numInstructions rawLength : Nat)
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (sailTrace : SailTrace numInstructions)
@@ -96,7 +130,7 @@ theorem root_soundness_rawProgram
         (rowDecode_of_programDecode ziskTrace i
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
             start addr rawProgram programBinding (rawProgramDecodes i))) :=
-  root_soundness numInstructions ziskTrace sailTrace ziskStep
+  stepSound_of_programDecodes numInstructions ziskTrace sailTrace ziskStep
     (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
       start addr rawProgram programBinding (rawProgramDecodes i))
     inputsAgree bootSeed hAvoidKnownBugs

@@ -1,9 +1,14 @@
 0 :: numInstructions :: Nat
-1 :: ziskTrace :: ZiskFv.Compliance.AcceptedZiskTrace numInstructions
-2 :: sailTrace :: ZiskFv.Compliance.SailTrace numInstructions
-3 :: ziskStep :: (i : Fin numInstructions) → ZiskFv.Compliance.ZiskStep ziskTrace i
-4 :: programDecodes :: (i : Fin numInstructions) → ZiskFv.Compliance.ProgramDecode ziskTrace i (ziskStep i)
-5 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgree ziskTrace sailTrace i (ziskStep i)
-6 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace sailTrace ziskStep
-7 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
-8 :: i :: Fin numInstructions
+1 :: rawLength :: Nat
+2 :: ziskTrace :: ZiskFv.Compliance.AcceptedZiskTrace numInstructions
+3 :: sailTrace :: ZiskFv.Compliance.SailTrace numInstructions
+4 :: ziskStep :: (i : Fin numInstructions) → ZiskFv.Compliance.ZiskStep ziskTrace i
+5 :: start :: Fin rawLength → Fin ziskTrace.programLength
+6 :: addr :: Fin rawLength → Fin 18446744069414584321
+7 :: rawProgram :: Fin rawLength → BitVec 32
+8 :: programBinding :: ZiskFv.Compliance.RawProgramBinding.ProgramRowsBinding ziskTrace start addr rawProgram
+9 :: rawProgramDecodes :: (i : Fin numInstructions) → ZiskFv.Compliance.RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram
+10 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgree ziskTrace sailTrace i (ziskStep i)
+11 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace sailTrace ziskStep
+12 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
+13 :: i :: Fin numInstructions

@@ -3,7 +3,7 @@ import ZiskFv.Compliance.TraceLevelExport.RowDataArithMem
 import ZiskFv.Compliance.TraceLevelExport.RowDataControl
 
 /-!
-# Per-op claim / decode / inputs split (root_soundness 3-way refactor)
+# Per-op claim / decode / inputs split (stepSound_of_programDecodes 3-way refactor)
 
 For each RV64IM op, the per-row residual is declared ONCE as a 3-way split —
 `Claim_<op>` (ziskStep claim), `Decode_<op>` (rowDecodes), `Inputs_<op>`

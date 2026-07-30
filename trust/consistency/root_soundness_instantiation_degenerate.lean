@@ -3,16 +3,16 @@ import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.AirsClean.FullEnsemble.Balance.Classification
 
 /-!
-# Degenerate `root_soundness` instantiation (end-to-end integration witness, base case)
+# Degenerate `stepSound_of_programDecodes` instantiation (end-to-end integration witness, base case)
 
 The first concrete inhabitant of `ZiskFv.Compliance.AcceptedZiskTrace` fed through
-`ZiskFv.Compliance.root_soundness` (eth-act/zisk-fv#217, foundation of #74).
+`ZiskFv.Compliance.stepSound_of_programDecodes` (eth-act/zisk-fv#217, foundation of #74).
 
 This is the DEGENERATE base case: `numInstructions = 0`, every provider table empty.
 It exercises the whole witness-construction pipeline — the 11-table
 `EnsembleWitness` (`same_length`/`same_circuits`/`same_data`), `constraints_hold`,
     `transitions_hold`, and the first forward `BalancedChannels`
-proof — and applies `root_soundness` to the result. The `∀ i : Fin 0` conclusion
+proof — and applies `stepSound_of_programDecodes` to the result. The `∀ i : Fin 0` conclusion
 is vacuous, so this establishes only that the quantified-over trace object is
 INHABITED and accepted; the non-vacuous single-ADD instance is #219/#220. No new
 axioms, no `sorry`.
@@ -173,15 +173,15 @@ private def seed : BootSegmentMemorySeed trace sail step where
     exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_ne
   placement := fun i => i.elim0
 
-/-- `root_soundness` applied to a concrete (degenerate) accepted trace. The `Fin 0`
+/-- `stepSound_of_programDecodes` applied to a concrete (degenerate) accepted trace. The `Fin 0`
     conclusion is vacuous, but the term genuinely constructs an `AcceptedZiskTrace`
     and feeds it through the headline theorem — witnessing that the object
-    `root_soundness` quantifies over is inhabited and accepted. -/
+    `stepSound_of_programDecodes` quantifies over is inhabited and accepted. -/
 theorem root_soundness_instantiation_degenerate :
     ∀ i : Fin 0,
       StepSound trace sail i (step i)
         (rowDecode_of_programDecode trace i (decode i)) :=
-  root_soundness 0 trace sail step decode nofun seed nofun
+  stepSound_of_programDecodes 0 trace sail step decode nofun seed nofun
 
 #print axioms root_soundness_instantiation_degenerate
 

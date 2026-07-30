@@ -14,14 +14,22 @@ The headline trace-level soundness theorem is:
 ZiskFv.Compliance.root_soundness
 ```
 
-It proves the Sail/RISC-V step corresponding to every accepted modeled ZisK
-step, indexed by the checked committed-program decode. The additive
-`ZiskFv.Compliance.root_soundness_rawProgram` endpoint constructs those 63
-decode-family bundles from raw RV64IM words, the production Aeneas lowering,
-and an exact raw-word-to-ROM-row binding before applying the same theorem.
+It is the single audit entrypoint: the entire compliance statement is reachable
+from it. It proves the Sail/RISC-V step corresponding to every accepted modeled
+ZisK step, taking the raw RV64IM program image plus an exact binding of that
+image to the committed ROM, and constructing all 63 decode-family bundles from
+the raw words through the production Aeneas lowering.
+
+`ZiskFv.Compliance.stepSound_of_programDecodes` is the interior layer it calls,
+indexed by the checked committed-program decode; the six concrete trace
+instantiations target that layer directly.
 `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` is the older global
 channel-balance theorem retained for trace-level consumers. `lake build`
 typechecking is the formal check.
+
+The root's `programBinding` and `rawProgramDecodes` premises do not yet have
+in-tree witnesses — see
+[#320](https://github.com/eth-act/zisk-fv/issues/320).
 
 ## Trust Boundary
 

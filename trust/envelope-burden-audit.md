@@ -75,7 +75,7 @@ note below.
 
 | Premise class | Current surface | Final trace-level role |
 |---------------|-----------------|------------------------|
-| Program binding and decode | `root_soundness_rawProgram` derives all 63 `ProgramDecode` bundles from raw-word fields plus exact production-lowered primary/successor ROM rows | `ProgramRowsBinding` retains the caller-supplied raw image and its `start`/`addr` layout map; Sail `ext_decode` grounding is #172 and binary identity is the compile/commitment boundary |
+| Program binding and decode | `root_soundness` derives all 63 `ProgramDecode` bundles from raw-word fields plus exact production-lowered primary/successor ROM rows | `ProgramRowsBinding` retains the caller-supplied raw image and its `start`/`addr` layout map; Sail `ext_decode` grounding is #172 and binary identity is the compile/commitment boundary |
 | Boot/profile state | `misa` C-bit facts, `cur_privilege = Machine`, `RISC_V_assumptions`, `ModeRegsFull`, PMA/mstatus/mseccfg values | Named initial-state/profile invariant; not 63 separate assumptions |
 | Aeneas lowering bridge | `env.aeneasBridgeTrust` in `Compliance.lean` | Named bridge premise until generated Aeneas Lean is imported by the main proof |
 | Load memory timeline | `env.memoryTimelineEvidence` for LD/LBU/LHU/LWU/LB/LH/LW routes | Named memory premise until #76 derives it from Mem AIR/replay |

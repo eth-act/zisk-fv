@@ -891,12 +891,18 @@ architectural index `i`. No binder is added — `programDecodes` was already a
 `root_soundness` binder — and `JalrLoweringRows.architectural_start` pins
 `start.val = i.val`; every other family still reads its effect at `i`.
 
-The additive `root_soundness_rawProgram` entry point replaces the caller's 63
+The `root_soundness` entry point replaces the caller's 63
 `ProgramDecode` bundles with a single exact `ProgramRowsBinding` and
 per-instruction `RawProgramDecode` evidence. Each arm checks the raw RV64IM
 shape, uses the Aeneas-extracted production lowerer, and constructs the same
-committed-program decode consumed by `root_soundness`; unaligned JALR uses the
-binding's primary and successor rows. This is a caller-trust reduction and does
+committed-program decode consumed by `stepSound_of_programDecodes`; unaligned
+JALR uses the binding's primary and successor rows. (This endpoint was
+introduced as `root_soundness_rawProgram`; it now holds the `root_soundness`
+name, and the theorem it calls — formerly `root_soundness` — is
+`stepSound_of_programDecodes`. The project keeps exactly one theorem named
+`root_soundness`, and it is the outermost node of the audit tree, so the
+strong-export binder and closure gates retarget onto it by construction.)
+This is a caller-trust reduction and does
 not alter `AcceptedZiskTrace`, the semantic conclusion, the known-defect
 boundary, or the project axiom closure.
 
@@ -907,10 +913,24 @@ gap-free lowered rows relative to that map, not that the map came from a
 particular linker image. Second, grounding the same word in Sail's
 `ext_decode` is #172 and is not claimed here. Third, identifying `rawProgram`
 with the intended compiled binary remains the external compile/commitment
-boundary. Non-vacuity is witnessed independently by
-`RawProgramBinding.memoryProgramBinding`, whose hand-written accepted ROM
-contains SD, LD, and a negative-offset LD and is proved equal to production
-serialization.
+boundary.
+
+**Non-vacuity of this endpoint is NOT yet witnessed (#320).** No theorem in the
+tree concludes `ProgramRowsBinding`, and there is no conversion lemma from the
+older `ProgramBinding`. `RawProgramBinding.memoryProgramBinding` — whose
+hand-written accepted ROM contains SD, LD, and a negative-offset LD and is
+proved equal to production serialization — inhabits `ProgramBinding`, which is
+the physically-indexed predecessor predicate and is not the premise this
+endpoint takes. The six concrete instantiations (`addSpin`, `addAddiSpin`,
+`divSpin`, `jalrSpin`, `sdLdSpin`, degenerate) discharge the premises
+`root_soundness` shares with `stepSound_of_programDecodes` — `ziskTrace`,
+`ziskStep`, `inputsAgree`, `bootSeed`, `hAvoidKnownBugs` — but they satisfy
+`ProgramDecode` directly, and `ProgramRowsBinding + RawProgramDecode ⟹
+ProgramDecode` does not run in the direction that would transfer that evidence.
+So the clauses carrying the binding's weight (4-alignment, `addr + 1 <
+GL_prime`, two-slot separation, and the surjectivity clause) and the two-row
+JALR expansion path are currently unexercised, and no gate detects this:
+`#print axioms` reports nothing about inhabitation.
 
 Two extraction fidelity qualifications also remain visible. The Aeneas wrapper
 passes `rom_address := 0#u64`; this is sound for the exported fields because
@@ -921,6 +941,16 @@ proof. The Rust implementation has a
 feature-selected path with the ordinary production build remains a reviewed
 source/configuration boundary and is cross-checked by the focused real
 `compute_trace_rom` test.
+
+One extraction-boundary allowlist was widened for this endpoint:
+`trust/scripts/check-aeneas-production-boundary.py` exempts
+`extract_transpile_rv64im_rows_raw` from the "no public extraction helpers
+outside the generated start surface" rule. It is the two-row sibling of the
+already-exempt `extract_transpile_rv64im_raw` family and carries the same
+reviewed status; it is recorded here because it is a widening of the extraction
+surface rather than a proof step. Countervailing, `ZiskFv.Compliance.RawProgramBinding`
+was added to `extractionNamespaces` in `bin/TrustGate/Main.lean`, putting the new
+module under the raw-closure regression gate.
 
 **Within-segment boundary (explicit).** `mainTransition_to_next_pc`
 (`Compliance/MainTransition.lean`) requires `i + 1 < mainTable.table.length` — a

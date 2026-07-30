@@ -9,7 +9,7 @@ theorem divSpinRootSoundness :
     ∀ i : Fin 4,
       StepSound divSpinAcceptedTrace divSpinSailTrace i (divSpinZiskStep i)
         (rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i)) :=
-  root_soundness 4 divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep
+  stepSound_of_programDecodes 4 divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep
     divSpinProgramDecodes divSpinInputsAgree divSpinBootSeed
     divSpinOutsideDefectRegion
 

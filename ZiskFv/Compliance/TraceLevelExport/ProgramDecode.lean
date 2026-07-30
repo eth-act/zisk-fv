@@ -6,7 +6,7 @@ import ZiskFv.Compliance.TraceLevelExport.RomDecodeBindingOps
 # Committed-program row-decode dispatch (issue #159, BLOCK 1 wiring, IN PLACE)
 
 This module wires block 1's per-op `Decode_<op>_of_program`
-(`RomDecodeBinding`/`RomDecodeBindingOps`) into the headline `root_soundness`
+(`RomDecodeBinding`/`RomDecodeBindingOps`) into the headline `stepSound_of_programDecodes`
 endpoint (`ZiskFv/Soundness.lean`) by repackaging, per row, exactly the inputs
 those derivations consume that are NOT themselves derivable:
 
@@ -21,7 +21,7 @@ those derivations consume that are NOT themselves derivable:
 `ProgramDecode ziskTrace i zs` is the 63-arm dispatch (mirroring `RowDecode` in
 `Dispatcher.lean`) to the per-op bundle `ProgramDecode_<op>`.
 `rowDecode_of_programDecode` rebuilds block 1's `RowDecode` for one row by
-applying the matching `Decode_<op>_of_program`, so `root_soundness` can take the
+applying the matching `Decode_<op>_of_program`, so `stepSound_of_programDecodes` can take the
 committed-program decode bundle and DERIVE the witness-row decode columns.
 
 The ROM-backed decode columns (`op` / flags / `jmp_offset` / `ind_width`) are no
@@ -1914,7 +1914,7 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | fence c => exact RomDecodeBinding.Decode_fence_of_program ziskTrace i c pd.h_idx pd.h_fm_zero pd.h_rs_x0 pd.h_rd_x0 pd.bits pd.h_bits_ieo pd.h_bits_set_pc pd.h_prog
 
 /-- Lift `rowDecode_of_programDecode` over every instruction: given a per-row
-    `ProgramDecode`, produce the full `rowDecodes` family `root_soundness`
+    `ProgramDecode`, produce the full `rowDecodes` family `stepSound_of_programDecodes`
     consumes. -/
 noncomputable def rowDecodes_of_programDecodes (ziskTrace : AcceptedZiskTrace numInstructions)
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)

@@ -4,9 +4,9 @@ import ZiskFv.Soundness
 set_option maxRecDepth 10000
 
 /-!
-# Concrete `root_soundness` instantiation for the ADD + spin-loop trace (#220)
+# Concrete `stepSound_of_programDecodes` instantiation for the ADD + spin-loop trace (#220)
 
-This file applies the public `root_soundness` theorem to the concrete
+This file applies the public `stepSound_of_programDecodes` theorem to the concrete
 `addSpinAcceptedTrace` witness from `AddSpinWitness.lean`.
 -/
 
@@ -370,7 +370,7 @@ theorem addSpinRootSoundness :
     ∀ i : Fin 2, StepSound addSpinAcceptedTrace addSpinSailTrace i
       (addSpinZiskStep i)
       (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
-  root_soundness 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
+  stepSound_of_programDecodes 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
     addSpinProgramDecodes addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion
 
 theorem addSpinAddStepSound :
@@ -597,7 +597,7 @@ theorem addPaddedRootSoundness :
     ∀ i : Fin 1, StepSound addPaddedAcceptedTrace addPaddedSailTrace i
       (addPaddedZiskStep i)
       (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
-  root_soundness 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
+  stepSound_of_programDecodes 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
     addPaddedProgramDecodes addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion
 
 theorem addPaddedAddStepSound :

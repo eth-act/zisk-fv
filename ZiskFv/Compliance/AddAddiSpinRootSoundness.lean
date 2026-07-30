@@ -4,10 +4,10 @@ import ZiskFv.Soundness
 set_option maxRecDepth 10000
 
 /-!
-# Concrete `root_soundness` instantiation for the ADD/ADDI/spin trace (#220)
+# Concrete `stepSound_of_programDecodes` instantiation for the ADD/ADDI/spin trace (#220)
 
 This file binds the heterogeneous accepted Zisk trace to a three-state Sail trace and applies the
-public `root_soundness` theorem at all three executed rows.
+public `stepSound_of_programDecodes` theorem at all three executed rows.
 -/
 
 open Goldilocks
@@ -494,7 +494,7 @@ theorem addAddiSpinRootSoundness :
         (addAddiSpinZiskStep i)
         (rowDecode_of_programDecode addAddiSpinAcceptedTrace i
           (addAddiSpinProgramDecodes i)) :=
-  root_soundness 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
+  stepSound_of_programDecodes 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
     addAddiSpinProgramDecodes addAddiSpinInputsAgree addAddiSpinBootSeed
     addAddiSpinOutsideDefectRegion
 

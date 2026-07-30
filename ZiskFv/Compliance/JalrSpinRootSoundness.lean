@@ -4,7 +4,7 @@ import ZiskFv.Soundness
 set_option maxRecDepth 10000
 
 /-!
-# Concrete `root_soundness` instantiation for unaligned JALR lowering
+# Concrete `stepSound_of_programDecodes` instantiation for unaligned JALR lowering
 
 The architectural trace executes `ADDI x1,x0,2`, then `JALR x2,2(x1)`.
 The JALR is represented by adjacent physical Main rows `ADD; AND`; the
@@ -495,7 +495,7 @@ theorem jalrSpinRootSoundness :
     ∀ i : Fin 2,
       StepSound jalrAcceptedTrace sailTrace i (jalrSpinZiskStep i)
         (rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i)) :=
-  root_soundness 2 jalrAcceptedTrace sailTrace jalrSpinZiskStep
+  stepSound_of_programDecodes 2 jalrAcceptedTrace sailTrace jalrSpinZiskStep
     programDecodes inputsAgree bootSeed outsideDefectRegion
 
 theorem jalrStepSound :

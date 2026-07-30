@@ -4,7 +4,7 @@ import ZiskFv.Soundness
 set_option maxRecDepth 10000
 
 /-!
-# Concrete `root_soundness` instantiation for the SD/LD spin trace (#221)
+# Concrete `stepSound_of_programDecodes` instantiation for the SD/LD spin trace (#221)
 
 The seven executed rows initialize x1 and x2, store 42 to `0xA0000008`,
 load it into x3, and finish at the self-looping JAL.
@@ -1021,7 +1021,7 @@ theorem sdLdRootSoundness :
     ∀ i : Fin 7, StepSound sdLdAcceptedTrace sdLdSailTrace i
       (sdLdZiskStep i)
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
-  root_soundness 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
+  stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
     sdLdProgramDecodes sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion
 
 theorem sdLdAddiA0StepSound :

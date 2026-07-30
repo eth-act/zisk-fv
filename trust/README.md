@@ -80,9 +80,11 @@ axioms should not exist as source trust, and any future
 soundness closure; canonical active dispatch targets, public-looking
 `Equivalence.equiv_*` helper theorem surfaces, and route-named `OpEnvelope`
 variants are also checked.
-The headline public theorem API is `root_soundness`, with
-`root_soundness_rawProgram` as its additive raw-word/production-lowering entry
-point. `zisk_riscv_compliant_program_bus` remains the older global
+The headline public theorem API is `root_soundness`, the raw-word /
+production-lowering audit entrypoint, with `stepSound_of_programDecodes` as the
+interior committed-program layer it calls. The strong-export binder and closure
+gates target `root_soundness` by name, so they audit whichever theorem holds the
+entrypoint role. `zisk_riscv_compliant_program_bus` remains the older global
 channel-balance theorem consumed by the trace-level export, and the 63
 canonical `ZiskFv.Equivalence.<Op>.equiv_<OP>` theorems remain the per-op
 semantic endpoints. Wrapper and EquivCore routes are implementation details.
