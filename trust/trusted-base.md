@@ -891,6 +891,37 @@ architectural index `i`. No binder is added — `programDecodes` was already a
 `root_soundness` binder — and `JalrLoweringRows.architectural_start` pins
 `start.val = i.val`; every other family still reads its effect at `i`.
 
+The additive `root_soundness_rawProgram` entry point replaces the caller's 63
+`ProgramDecode` bundles with a single exact `ProgramRowsBinding` and
+per-instruction `RawProgramDecode` evidence. Each arm checks the raw RV64IM
+shape, uses the Aeneas-extracted production lowerer, and constructs the same
+committed-program decode consumed by `root_soundness`; unaligned JALR uses the
+binding's primary and successor rows. This is a caller-trust reduction and does
+not alter `AcceptedZiskTrace`, the semantic conclusion, the known-defect
+boundary, or the project axiom closure.
+
+Three boundaries remain explicit. First, the layout functions (`start` and
+`addr`) are caller-supplied: their meaning is that architectural word `k` sits
+at the binary/ROM location assigned to `k`; the binding proves exact,
+gap-free lowered rows relative to that map, not that the map came from a
+particular linker image. Second, grounding the same word in Sail's
+`ext_decode` is #172 and is not claimed here. Third, identifying `rawProgram`
+with the intended compiled binary remains the external compile/commitment
+boundary. Non-vacuity is witnessed independently by
+`RawProgramBinding.memoryProgramBinding`, whose hand-written accepted ROM
+contains SD, LD, and a negative-offset LD and is proved equal to production
+serialization.
+
+Two extraction fidelity qualifications also remain visible. The Aeneas wrapper
+passes `rom_address := 0#u64`; this is sound for the exported fields because
+that value reaches only `paddr` and a discarded map key, but a production
+change that makes it affect another serialized field requires revisiting the
+proof. The Rust implementation has a
+`#[cfg(feature = "aeneas_extract")]` extraction path, so equivalence of that
+feature-selected path with the ordinary production build remains a reviewed
+source/configuration boundary and is cross-checked by the focused real
+`compute_trace_rom` test.
+
 **Within-segment boundary (explicit).** `mainTransition_to_next_pc`
 (`Compliance/MainTransition.lean`) requires `i + 1 < mainTable.table.length` — a
 *physical Main-row successor* must exist — surfaced as the per-opcode `h_idx`.

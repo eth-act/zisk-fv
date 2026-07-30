@@ -8,15 +8,20 @@
 [Sail RISC-V specification](https://github.com/riscv/sail-riscv), restricted
 to RV64IM.
 
-The current verification claim is:
+The headline trace-level soundness theorem is:
 
 ```lean
-ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+ZiskFv.Compliance.root_soundness
 ```
 
-That theorem dispatches all 63 covered RV64IM opcode surfaces through
-`ZiskFv/Compliance/Wrappers/<Op>.lean` to the canonical `equiv_<OP>` theorem
-for each instruction. `lake build` typechecking is the formal check.
+It proves the Sail/RISC-V step corresponding to every accepted modeled ZisK
+step, indexed by the checked committed-program decode. The additive
+`ZiskFv.Compliance.root_soundness_rawProgram` endpoint constructs those 63
+decode-family bundles from raw RV64IM words, the production Aeneas lowering,
+and an exact raw-word-to-ROM-row binding before applying the same theorem.
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus` is the older global
+channel-balance theorem retained for trace-level consumers. `lake build`
+typechecking is the formal check.
 
 ## Trust Boundary
 
