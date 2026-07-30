@@ -342,7 +342,8 @@ carries upstream `sorry`s) so they need the raw-closure regression gate:
 `ZiskFv.Compliance.Extraction` (eth-act/zisk-fv#111, opcode→fields decode pins) and
 `ZiskFv.Compliance.Decode` (eth-act/zisk-fv#162, raw-word→opcode decoder acceptance). -/
 def extractionNamespaces : List Name :=
-  [`ZiskFv.Compliance.Extraction, `ZiskFv.Compliance.Decode]
+  [`ZiskFv.Compliance.Extraction, `ZiskFv.Compliance.Decode,
+   `ZiskFv.Compliance.RawProgramBinding]
 
 /-- Kernel axioms permitted in an extraction-pin closure. Anything else —
 `sorryAx`, `Lean.ofReduceBool`, `Lean.trustCompiler`, a `ZiskFv.*` project
