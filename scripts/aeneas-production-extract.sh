@@ -4148,6 +4148,7 @@ same shape before calling `lower_rv64im_single_row_input`. -/
 def emptyExtractContext : riscv2zisk_context.Riscv2ZiskContext :=
   {
     extract_inst := none,
+    extract_first_inst := none,
     extract_marker := (),
     input_precompile := none,
     output_precompile := none,
@@ -8318,7 +8319,7 @@ def lowerLuiRouteForReg (rd : Std.U32) (imm : Std.I32) : Bool :=
       (do
         let ctx ←
           riscv2zisk_context.Riscv2ZiskContext.lui
-            { extract_inst := none, extract_marker := (),
+            { extract_inst := none, extract_first_inst := none, extract_marker := (),
               input_precompile := none, output_precompile := none,
               input_precompile_reg := none, output_precompile_reg := none }
             { rom_address := 0#u64, rd := rd, rs1 := 0#u32,
@@ -8348,7 +8349,7 @@ def lowerAuipcRouteForReg (rd : Std.U32) (imm : Std.I32) : Bool :=
       (do
         let ctx ←
           riscv2zisk_context.Riscv2ZiskContext.auipc
-            { extract_inst := none, extract_marker := (),
+            { extract_inst := none, extract_first_inst := none, extract_marker := (),
               input_precompile := none, output_precompile := none,
               input_precompile_reg := none, output_precompile_reg := none }
             { rom_address := 0#u64, rd := rd, rs1 := 0#u32,
@@ -8377,7 +8378,7 @@ def lowerJalRouteForReg (rd : Std.U32) (imm : Std.I32) : Bool :=
       (do
         let ctx ←
           riscv2zisk_context.Riscv2ZiskContext.jal
-            { extract_inst := none, extract_marker := (),
+            { extract_inst := none, extract_first_inst := none, extract_marker := (),
               input_precompile := none, output_precompile := none,
               input_precompile_reg := none, output_precompile_reg := none }
             { rom_address := 0#u64, rd := rd, rs1 := 0#u32,
