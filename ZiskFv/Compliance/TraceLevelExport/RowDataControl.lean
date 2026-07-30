@@ -673,6 +673,7 @@ structure JalrLoweringRows
     (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions)
     (imm : BitVec 12)
+    (rs1 : regidx)
     (offset_bv : BitVec 64) where
   start : Fin trace.mainTable.table.length
   finish : Fin trace.mainTable.table.length
@@ -694,7 +695,10 @@ structure JalrLoweringRows
           (((mainOfTable trace.program trace.mainTable).a_0 start.val).val
             + ((mainOfTable trace.program trace.mainTable).a_1 start.val).val * 4294967296)
           = BitVec.signExtend 64 imm
-      ∧ (mainRowWithRomAt trace start).rom.b_src_reg = 1
+      ∧ (mainRowWithRomAt trace start).rom.b_src_imm =
+          ZiskFv.AirsClean.boolF (decide ((regidx_to_fin rs1).val = 0))
+      ∧ (mainRowWithRomAt trace start).rom.b_src_reg =
+          ZiskFv.AirsClean.boolF (decide ((regidx_to_fin rs1).val ≠ 0))
       ∧ (mainRowWithRomAt trace finish).rom.b_src_imm = 0
       ∧ (mainRowWithRomAt trace finish).rom.b_src_mem = 0
       ∧ (mainRowWithRomAt trace finish).rom.b_src_ind = 0
@@ -710,7 +714,7 @@ structure Claim_jalr (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.
 
 structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
-  rows : JalrLoweringRows trace i c.imm c.offset_bv
+  rows : JalrLoweringRows trace i c.imm c.rs1 c.offset_bv
   h_main_op :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).op
       rows.finish.val = ZiskFv.Trusted.OP_AND
@@ -728,12 +732,13 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
       rows.finish.val = 1
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
-      rows.finish.val = 1
+      rows.finish.val =
+        ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_ind :
     (mainRowWithRomAt trace rows.finish).rom.store_ind = 0
   h_store_offset :
     (mainRowWithRomAt trace rows.finish).rom.store_offset =
-      Transpiler.ind (regidx_to_fin c.rd)
+      if (regidx_to_fin c.rd).val = 0 then 0 else Transpiler.ind (regidx_to_fin c.rd)
   -- #100 next-PC transition inputs (replace the exec artifacts; the next-PC
   -- residual is now DERIVED via `jalr_setpc_nextPC_discharged`). All are
   -- same-world circuit / decode / ROM pins (no Sail-binding dependency).
@@ -765,14 +770,15 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
   --     (aligned `imm % 4 == 0` ⇒ `offset_bv` even; trivial for unaligned
   --     `offset_bv = 0`) + the field-level no-FGL-wrap bound.
   h_offset_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        rows.finish.val).val = c.offset_bv.toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      rows.finish.val = (c.offset_bv.toInt : FGL)
   h_offset_even : c.offset_bv &&& 1#64 = 0#64
-  h_no_fgl_wrap :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0
-        rows.finish.val).val
-      + ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-          rows.finish.val).val < GL_prime
+  h_target_nonneg :
+    0 ≤ (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0
+      rows.finish.val).val : Int) + c.offset_bv.toInt
+  h_target_lt :
+    (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0
+      rows.finish.val).val : Int) + c.offset_bv.toInt < GL_prime
 
 structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where

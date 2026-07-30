@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.Pilot.SubNextPC
 import ZiskFv.EquivCore.And
+import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 
 /-!
 # Pilot next-PC discharge for JALR (#100): the masked AND jump target
@@ -205,12 +206,15 @@ theorem jalr_setpc_nextPC_discharged
     (hc6 : row.cBytes.free_in_c_6.val < 256) (hc7 : row.cBytes.free_in_c_7.val < 256)
     (h_c1_zero : (mainOfTable trace.program trace.mainTable).c_1 i.val = 0)
     (h_offset_bridge :
-      ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val
-        = offset_bv.toNat)
+      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val =
+        (offset_bv.toInt : FGL))
     (h_offset_even : offset_bv &&& 1#64 = 0#64)
-    (h_no_fgl_wrap :
-      ((mainOfTable trace.program trace.mainTable).c_0 i.val).val
-        + ((mainOfTable trace.program trace.mainTable).jmp_offset1 i.val).val < GL_prime) :
+    (h_target_nonneg :
+      0 ≤ (((mainOfTable trace.program trace.mainTable).c_0 i.val).val : Int)
+        + offset_bv.toInt)
+    (h_target_lt :
+      (((mainOfTable trace.program trace.mainTable).c_0 i.val).val : Int)
+        + offset_bv.toInt < GL_prime) :
     (register_type_pc_equiv ▸
         (BitVec.ofNat 64 ((execRowAt trace i)[1]!.pc).val))
       = 0xFFFFFFFFFFFFFFFE#64 &&& (operand + offset_bv) := by
@@ -219,9 +223,29 @@ theorem jalr_setpc_nextPC_discharged
         = (0xFFFFFFFFFFFFFFFE#64 &&& operand).toNat :=
     jalr_c0_val_eq_masked_operand row _ _ operand h_matches h_match_clo h_match_chi
       h_a_mask h_b_operand hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7 h_c1_zero
+  have h_target_nonneg' :
+      0 ≤ (((0xFFFFFFFFFFFFFFFE#64 &&& operand).toNat : Int)
+        + offset_bv.toInt) := by
+    rw [← h_c0]
+    exact h_target_nonneg
+  have h_target_lt' :
+      (((0xFFFFFFFFFFFFFFFE#64 &&& operand).toNat : Int)
+        + offset_bv.toInt) < GL_prime := by
+    rw [← h_c0]
+    exact h_target_lt
   rw [setpc_path_nextPC_discharged_at trace i h_idx h_set_pc h_flag,
-      ofNat_fgl_pc_plus_offset_eq _ _ (0xFFFFFFFFFFFFFFFE#64 &&& operand) offset_bv
-        h_c0 h_offset_bridge h_no_fgl_wrap,
-      masked_add_offset_even operand offset_bv h_offset_even]
+      h_offset_bridge,
+      ZiskFv.PackedBitVec.WidePCNoWrap.fgl_pc_plus_signed_offset_val _
+        (0xFFFFFFFFFFFFFFFE#64 &&& operand) offset_bv
+        h_c0 h_target_nonneg' h_target_lt']
+  calc
+    BitVec.ofNat 64
+        ((0xFFFFFFFFFFFFFFFE#64 &&& operand) + offset_bv).toNat =
+        (0xFFFFFFFFFFFFFFFE#64 &&& operand) + offset_bv := by
+          simpa using
+            (BitVec.ofNat_toNat 64
+              ((0xFFFFFFFFFFFFFFFE#64 &&& operand) + offset_bv))
+    _ = 0xFFFFFFFFFFFFFFFE#64 &&& (operand + offset_bv) :=
+      masked_add_offset_even operand offset_bv h_offset_even
 
 end ZiskFv.Compliance.Pilot

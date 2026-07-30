@@ -105,6 +105,66 @@ lemma equiv_JALR_sail
     h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
     h_cur_privilege h_mseccfg
 
+/-- JALR `rd = x0` shape. Production lowering suppresses the register write.
+    The legacy selected-entry adapter still carries multiplicity one, but its
+    x0 pointer makes the write semantically inert. -/
+lemma equiv_JALR_x0_no_memory
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12)
+    (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (promises : ZiskFv.EquivCore.Promises.JumpNoMemPromises
+        state jalr_input.PC jalr_input.rd misa_val
+        (PureSpec.execute_JALR_pure jalr_input).success
+        (PureSpec.execute_JALR_pure jalr_input).nextPC
+        rd exec_row nextPC_val)
+    (h_e_rd_mult : e_rd.multiplicity = 1)
+    (h_e_rd_as : e_rd.as.val = 1)
+    (h_e_rd_idx_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  obtain ⟨h_input_rd, h_input_rd_zero, h_input_pc, h_input_misa, h_misa_c,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_success, h_nextPC_option⟩ := promises
+  rw [equiv_JALR_sail state jalr_input imm rs1 rd misa_val mseccfg
+        h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
+        h_cur_privilege h_mseccfg]
+  symm
+  have h_bus_zero :
+      (bus_effect exec_row [e_rd] state).2 =
+        (bus_effect exec_row [] state).2 := by
+    have h_one_ne_neg_one : (1 : FGL) ≠ -1 := by decide
+    simp [bus_effect, h_exec_len, h_e_rd_mult, h_e_rd_as,
+      h_e_rd_idx_zero, h_one_ne_neg_one]
+  rw [h_bus_zero]
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_jump_no_memory
+        state exec_row nextPC_val false
+        (PureSpec.execute_JALR_pure jalr_input).success
+        jalr_input.PC
+        (0xFFFFFFFFFFFFFFFE &&&
+          (jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm))
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        (by rfl) h_success]
+  simp only [h_nextPC_option]
+  have h_rd_none :
+      (PureSpec.execute_JALR_pure jalr_input).rd = none := by
+    simp [PureSpec.execute_JALR_pure, h_input_rd_zero]
+  simp [h_rd_none, h_success]
+
 /-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
     JALR equals the state computed by applying `bus_effect` to the
     circuit's execution and memory bus rows.

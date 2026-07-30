@@ -251,13 +251,14 @@ def jalrProgramDecode :
           jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 2).core.c_1 = 0
         rw [mainRawAt_finish]
         rfl
-      h_offset_bridge := by
-        simp [jalrIndex, jalrClaim, jalrAndProgramRow, jalrAndBits,
-          ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
-          jalrAndRowTemplate, ZiskFv.AirsClean.Main.mainRomRowOf]
       h_offset_even := by simp [jalrClaim]
-      h_no_fgl_wrap := by
-        norm_num [jalrIndex, jalrAndProgramRow, jalrAndBits,
+      h_target_nonneg := by
+        norm_num [jalrIndex, jalrClaim, jalrAndProgramRow, jalrAndBits,
+          ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
+          jalrAndRowWithLast, jalrAndRowTemplate,
+          ZiskFv.AirsClean.Main.mainRomRowOf]
+      h_target_lt := by
+        norm_num [jalrIndex, jalrClaim, jalrAndProgramRow, jalrAndBits,
           ZiskFv.AirsClean.FullEnsemble.mainOfTable, jalrAndRow,
           jalrAndRowWithLast, jalrAndRowTemplate,
           ZiskFv.AirsClean.Main.mainRomRowOf]
@@ -266,6 +267,7 @@ def jalrProgramDecode :
       h_add_m32 := rfl
       h_add_set_pc := rfl
       h_add_a_src_imm := rfl
+      h_add_b_src_imm := rfl
       h_add_b_src_reg := rfl
       andBits := jalrAndBits
       h_and_ieo := rfl

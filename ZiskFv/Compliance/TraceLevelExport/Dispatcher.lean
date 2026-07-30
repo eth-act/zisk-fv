@@ -1636,7 +1636,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             rw [h_offset, ia.h_input_imm, h_rs1]
           · obtain ⟨h_adj, h_offset, h_add_op, h_add_active, h_add_m32,
                 _h_start_flag, _h_start_set_pc, _h_start_jmp2, h_start_a,
-                _h_start_b_reg, h_finish_b_imm, h_finish_b_mem,
+                _h_start_b_imm, _h_start_b_reg, h_finish_b_imm, h_finish_b_mem,
                 h_finish_b_ind, h_finish_b_reg⟩ := h_unaligned
             have h_add := main_add_packed_result_at ziskTrace rd.rows.start
               h_add_active h_add_op h_add_m32
@@ -1701,7 +1701,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             h_matches h_match_clo h_match_chi h_a_mask h_b_operand
             hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
             rd.h_c1_zero rd.h_offset_bridge
-            rd.h_offset_even rd.h_no_fgl_wrap
+            rd.h_offset_even rd.h_target_nonneg rd.h_target_lt
         exact jalr_nextPC_matches_of_target
           (register_type_pc_equiv ▸
             BitVec.ofNat 64 ((Pilot.execRowAt ziskTrace finish)[1]!.pc).val)
@@ -1710,27 +1710,6 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           (ia.jalr_input.rs1_val
             + BitVec.signExtend 64 ia.jalr_input.imm)
           h_exec hoo
-      let promises : ZiskFv.EquivCore.Promises.JumpPromises
-          state ia.jalr_input.PC ia.jalr_input.rd ia.misa_val
-          (PureSpec.execute_JALR_pure ia.jalr_input).success
-          (PureSpec.execute_JALR_pure ia.jalr_input).nextPC
-          c.rd (Pilot.execRowAt ziskTrace finish) e_rd nextPC_val :=
-        { input_rd_eq := ia.h_input_rd
-          input_pc_eq := ia.h_input_pc
-          input_misa_eq := ia.h_input_misa
-          misa_c_zero := ia.h_misa_c
-          -- exec artifacts: now `rfl` (`Pilot.execRowOf` is a concrete two-entry list).
-          exec_len := by rfl
-          e0_mult := by rfl
-          e1_mult := by rfl
-          nextPC_matches := h_nextPC_disch
-          rd_mult := by rfl
-          rd_as := by rfl
-          success := ia.h_success
-          nextPC_option := h_nextPC_option
-          rd_idx := ia.h_input_rd.trans
-            (eRdAt_rd_idx_of_decode (trace := ziskTrace) (i := finish)
-              (rd := c.rd) rd.h_store_ind rd.h_store_offset) }
       have h_link_bridge :
           (m.pc finish.val + m.jmp_offset2 finish.val).val =
             (ia.jalr_input.PC + 4#64).toNat := by
@@ -1785,14 +1764,78 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           exact jalr_link_bridge_scalar (m.pc rd.rows.start.val)
             (m.pc finish.val) (m.jmp_offset2 finish.val) ia.jalr_input.PC
             h_total h_start_pc h_domain.h_pc_bound
-      exact ZiskFv.Compliance.equiv_JALR
-        state ia.jalr_input c.imm c.rs1 c.rd
-        ia.misa_val ia.mseccfg (Pilot.execRowAt ziskTrace finish)
-        e_rd nextPC_val m r next_pc store_pc_mem pins rd.h_flag
-        rd.h_m32 rd.h_set_pc rd.h_store_pc h_jalr_subset
-        promises ia.h_input_imm ia.h_input_rs1
-        ia.h_cur_privilege ia.h_mseccfg h_link_bridge
-        h_domain.h_pc_bound h_domain.h_pc_offset_lt_2_32
+      by_cases h_rd_zero : (regidx_to_fin c.rd).val = 0
+      · let promises : ZiskFv.EquivCore.Promises.JumpNoMemPromises
+            state ia.jalr_input.PC ia.jalr_input.rd ia.misa_val
+            (PureSpec.execute_JALR_pure ia.jalr_input).success
+            (PureSpec.execute_JALR_pure ia.jalr_input).nextPC
+            c.rd (Pilot.execRowAt ziskTrace finish) nextPC_val :=
+          { input_rd_eq := ia.h_input_rd
+            input_rd_zero := by
+              rw [ia.h_input_rd]
+              exact Fin.ext h_rd_zero
+            input_pc_eq := ia.h_input_pc
+            input_misa_eq := ia.h_input_misa
+            misa_c_zero := ia.h_misa_c
+            exec_len := by rfl
+            e0_mult := by rfl
+            e1_mult := by rfl
+            nextPC_matches := h_nextPC_disch
+            success := ia.h_success
+            nextPC_option := h_nextPC_option }
+        have h_store_offset_zero :
+            (mainRowWithRomAt ziskTrace finish).rom.store_offset =
+              Transpiler.ind (regidx_to_fin c.rd) := by
+          simpa [h_rd_zero, Transpiler.ind] using rd.h_store_offset
+        have h_rd_idx :
+            ia.jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr :=
+          ia.h_input_rd.trans
+            (eRdAt_rd_idx_of_decode (trace := ziskTrace) (i := finish)
+              (rd := c.rd) rd.h_store_ind h_store_offset_zero)
+        have h_e_rd_idx_zero :
+            Transpiler.wrap_to_regidx e_rd.ptr = 0 := by
+          rw [← h_rd_idx]
+          exact promises.input_rd_zero
+        exact ZiskFv.Compliance.equiv_JALR_x0_no_memory
+          state ia.jalr_input c.imm c.rs1 c.rd ia.misa_val ia.mseccfg
+          (Pilot.execRowAt ziskTrace finish) e_rd nextPC_val promises
+          (by rfl) (by rfl) h_e_rd_idx_zero
+          ia.h_input_imm ia.h_input_rs1 ia.h_cur_privilege ia.h_mseccfg
+      · have h_store_offset :
+            (mainRowWithRomAt ziskTrace finish).rom.store_offset =
+              Transpiler.ind (regidx_to_fin c.rd) := by
+          simpa [h_rd_zero] using rd.h_store_offset
+        let promises : ZiskFv.EquivCore.Promises.JumpPromises
+            state ia.jalr_input.PC ia.jalr_input.rd ia.misa_val
+            (PureSpec.execute_JALR_pure ia.jalr_input).success
+            (PureSpec.execute_JALR_pure ia.jalr_input).nextPC
+            c.rd (Pilot.execRowAt ziskTrace finish) e_rd nextPC_val :=
+          { input_rd_eq := ia.h_input_rd
+            input_pc_eq := ia.h_input_pc
+            input_misa_eq := ia.h_input_misa
+            misa_c_zero := ia.h_misa_c
+            exec_len := by rfl
+            e0_mult := by rfl
+            e1_mult := by rfl
+            nextPC_matches := h_nextPC_disch
+            rd_mult := by rfl
+            rd_as := by rfl
+            success := ia.h_success
+            nextPC_option := h_nextPC_option
+            rd_idx := ia.h_input_rd.trans
+              (eRdAt_rd_idx_of_decode (trace := ziskTrace) (i := finish)
+                (rd := c.rd) rd.h_store_ind h_store_offset) }
+        have h_store_pc_one : m.store_pc r = 1 := by
+          rw [rd.h_store_pc]
+          simp [h_rd_zero, ZiskFv.AirsClean.boolF]
+        exact ZiskFv.Compliance.equiv_JALR
+          state ia.jalr_input c.imm c.rs1 c.rd
+          ia.misa_val ia.mseccfg (Pilot.execRowAt ziskTrace finish)
+          e_rd nextPC_val m r next_pc store_pc_mem pins rd.h_flag
+          rd.h_m32 rd.h_set_pc h_store_pc_one h_jalr_subset
+          promises ia.h_input_imm ia.h_input_rs1
+          ia.h_cur_privilege ia.h_mseccfg h_link_bridge
+          h_domain.h_pc_bound h_domain.h_pc_offset_lt_2_32
 
   | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) memEv hAvoidKnownBugs
   | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) memEv hAvoidKnownBugs
