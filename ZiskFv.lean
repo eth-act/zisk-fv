@@ -242,3 +242,9 @@ import ZiskFv.AirsClean.MemAlignMirrorWeld
 -- importing one from anywhere with ZiskFv dependents would add them to the
 -- default simp set for every downstream module.
 import ZiskFv.AirsClean.MemAlignByteMirrorWeld
+-- Machine-checked weld of the three Mem constraint mirrors against the generated
+-- `Extraction.Mem` constraint set. Deliberately a leaf, imported last: it is the
+-- only module under `ZiskFv/` that imports `Extraction.Mem`, whose 34 generated
+-- constraint definitions are all `@[simp]`-tagged, so keeping it out of every
+-- other module's import closure keeps that simp set out of the proofs.
+import ZiskFv.AirsClean.MemMirrorWeld
