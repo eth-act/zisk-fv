@@ -180,6 +180,31 @@ theorem from_inst_ok (zi : zisk_inst.ZiskInst) :
       ∧ e.ind_width = zi.ind_width := by
   refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rfl
 
+/-- `from_inst` copies every instruction field consumed by ROM serialization.
+The operation-type discriminant is the only converted field and is deliberately
+outside this projection lemma. -/
+theorem from_inst_full_fields (zi : zisk_inst.ZiskInst) :
+    ∃ e, aeneas_extract.ZiskInstExtract.from_inst zi = ok e
+      ∧ e.a_src = zi.a_src
+      ∧ e.a_use_sp_imm1 = zi.a_use_sp_imm1
+      ∧ e.a_offset_imm0 = zi.a_offset_imm0
+      ∧ e.b_src = zi.b_src
+      ∧ e.b_use_sp_imm1 = zi.b_use_sp_imm1
+      ∧ e.b_offset_imm0 = zi.b_offset_imm0
+      ∧ e.ind_width = zi.ind_width
+      ∧ e.op = zi.op
+      ∧ e.store = zi.store
+      ∧ e.store_offset = zi.store_offset
+      ∧ e.jmp_offset1 = zi.jmp_offset1
+      ∧ e.jmp_offset2 = zi.jmp_offset2
+      ∧ e.set_pc = zi.set_pc
+      ∧ e.store_pc = zi.store_pc
+      ∧ e.is_external_op = zi.is_external_op
+      ∧ e.m32 = zi.m32 := by
+  refine ⟨_, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rfl
+
+#print axioms from_inst_full_fields
+
 /-- `decode_extract_from_decoded` is total (every opcode/format arm returns `ok`). -/
 theorem decode_extract_ok (d : aeneas_extract.rv64im_decode.DecodedRv64im) :
     ∃ e, aeneas_extract.decode_extract_from_decoded d = ok e := by
