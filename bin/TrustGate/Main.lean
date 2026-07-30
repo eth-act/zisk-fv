@@ -237,7 +237,13 @@ def cmdPrintGlobalBinders (env : Environment) (theoremName : Name) : IO UInt32 :
 /-- The strengthened trace-level export theorem (#61, channel-balance form).
 Audited by the strong-export closure + binder gates exactly as
 `zisk_riscv_compliant_program_bus` is audited by `check-closure-vs-baseline` /
-`check-global-theorem-binders`. -/
+`check-global-theorem-binders`.
+
+This Name deliberately tracks whatever is called `root_soundness`: the gate audits
+the project's audit entrypoint, so promoting a new outermost endpoint to that name
+retargets the binder/closure baselines onto it by construction. It now resolves to
+the raw-program root, whose binder list is the raw image plus its ROM binding
+rather than the caller-supplied `ProgramDecode` family. -/
 def strongExportTheorem : Name :=
   `ZiskFv.Compliance.root_soundness
 

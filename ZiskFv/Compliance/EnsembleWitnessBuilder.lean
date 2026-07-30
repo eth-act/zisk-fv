@@ -8,7 +8,7 @@ from a position-indexed row assignment, together with a lemma-driven
 `BalancedInteractions` combinator and the generic verifier-empty reductions of
 `Constraints` / `BalancedChannels` to per-`tables` obligations.
 
-This is the foundation for instantiating `ZiskFv.Compliance.root_soundness` on a
+This is the foundation for instantiating `ZiskFv.Compliance.stepSound_of_programDecodes` on a
 concrete accepted trace (eth-act/zisk-fv#217, feeding #218/#219). Nothing here is
 ZisK-specific: everything is stated over an abstract `Air.Flat.Ensemble`.
 

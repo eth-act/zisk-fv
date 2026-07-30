@@ -4,7 +4,7 @@ import ZiskFv.Soundness
 set_option maxRecDepth 10000
 
 /-!
-# Concrete `root_soundness` instantiation for the SD/LD spin trace (#221)
+# Concrete `stepSound_of_programDecodes` instantiation for the SD/LD spin trace (#221)
 
 The seven executed rows initialize x1 and x2, store 42 to `0xA0000008`,
 load it into x3, and finish at the self-looping JAL.
@@ -984,10 +984,15 @@ def sdLdLdOutsideDefectRegion :
 def sdLdJalOutsideDefectRegion :
     RowOutsideDefectRegion sdLdAcceptedTrace sdLdJalIndex
       (sdLdZiskStep sdLdJalIndex) where
-  h_no_fgl_wrap := by
+  h_target_nonneg := by
     unfold mainPcVal
     rw [sdLdMainPc]
-    change 24 + (BitVec.signExtend 64 (0#21)).toNat < GL_prime
+    change 0 ≤ (24 : Int) + (BitVec.signExtend 64 (0#21)).toInt
+    simp
+  h_target_lt := by
+    unfold mainPcVal
+    rw [sdLdMainPc]
+    change (24 : Int) + (BitVec.signExtend 64 (0#21)).toInt < GL_prime
     simp
   h_pc_bound := by
     unfold MainSequentialPcDomain mainPcVal
@@ -1016,7 +1021,7 @@ theorem sdLdRootSoundness :
     ∀ i : Fin 7, StepSound sdLdAcceptedTrace sdLdSailTrace i
       (sdLdZiskStep i)
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
-  root_soundness 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
+  stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
     sdLdProgramDecodes sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion
 
 theorem sdLdAddiA0StepSound :

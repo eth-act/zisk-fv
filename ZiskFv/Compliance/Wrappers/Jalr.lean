@@ -21,6 +21,41 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
+/-- Compliance wrapper for production JALR with `rd = x0`. -/
+lemma equiv_JALR_x0_no_memory
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12)
+    (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (promises : ZiskFv.EquivCore.Promises.JumpNoMemPromises
+        state jalr_input.PC jalr_input.rd misa_val
+        (PureSpec.execute_JALR_pure jalr_input).success
+        (PureSpec.execute_JALR_pure jalr_input).nextPC
+        rd exec_row nextPC_val)
+    (h_e_rd_mult : e_rd.multiplicity = 1)
+    (h_e_rd_as : e_rd.as.val = 1)
+    (h_e_rd_idx_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = (bus_effect exec_row [e_rd] state).2 :=
+  ZiskFv.EquivCore.Jalr.equiv_JALR_x0_no_memory
+    state jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val
+    promises h_e_rd_mult h_e_rd_as h_e_rd_idx_zero
+    h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
+
 
 /-- **Compatibility wrapper for `equiv_JALR`.** Derives `h_circuit` from
     explicit Main-row pins and delegates to canonical `equiv_JALR`. -/

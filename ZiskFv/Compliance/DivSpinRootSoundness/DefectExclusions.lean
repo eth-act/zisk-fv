@@ -81,10 +81,15 @@ def divSpinDivOutsideDefectRegion :
 def divSpinJalOutsideDefectRegion :
     RowOutsideDefectRegion divSpinAcceptedTrace divSpinJalIndex
       (divSpinZiskStep divSpinJalIndex) where
-  h_no_fgl_wrap := by
+  h_target_nonneg := by
     unfold mainPcVal
     rw [divSpinMainPc]
-    change 12 + (BitVec.signExtend 64 (0#21)).toNat < GL_prime
+    change 0 ≤ (12 : Int) + (BitVec.signExtend 64 (0#21)).toInt
+    simp
+  h_target_lt := by
+    unfold mainPcVal
+    rw [divSpinMainPc]
+    change (12 : Int) + (BitVec.signExtend 64 (0#21)).toInt < GL_prime
     simp
   h_pc_bound := by
     unfold MainSequentialPcDomain mainPcVal

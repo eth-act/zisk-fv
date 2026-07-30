@@ -6,7 +6,7 @@ set_option maxHeartbeats 8000000
 set_option Elab.async false
 
 /-!
-# Concrete `root_soundness` instantiation for signed DIV
+# Concrete `stepSound_of_programDecodes` instantiation for signed DIV
 
 The four executed rows initialize x1 and x2, compute `6 / 2 = 3`, and finish
 at the self-looping JAL.  The DIV input is reconstructed from the accepted

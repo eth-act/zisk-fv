@@ -126,7 +126,7 @@ noncomputable def mulEnvOf
     `False` and the FENCE defect predicate's negation is `True`, while the
     arith-mul defect predicate is exactly the two exceptional product-sign shapes
     that `h_not_forge` rules out.  Hence the threaded obligation is SATISFIABLE for
-    the concrete `RowData_mul` witness, so the `.mul` arm of `root_soundness`
+    the concrete `RowData_mul` witness, so the `.mul` arm of `stepSound_of_programDecodes`
     does not rely on a contradictory binder.  The full trace-local
     `RowOutsideDefectRegion` premise is stronger: it requires this forge
     negation for every arith witness row whose operation-bus entry, including

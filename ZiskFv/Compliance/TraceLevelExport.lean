@@ -16,7 +16,7 @@ import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeedWitness
 
 This is the achievable closure of #61.  It exports the per-opcode
 `construction_<op>_sound` theorems to a single trace-level statement
-(`root_soundness`, in `ZiskFv/Soundness.lean`) in the channel-balance form:
+(`stepSound_of_programDecodes`, in `ZiskFv/Soundness.lean`) in the channel-balance form:
 given an accepted full-ensemble trace and a program binding, with each row's
 residual split three ways — `ziskStep i : ZiskStep` (which op decoded + its
 `Claim_<op>`), `rowDecodes i : RowDecode` (the circuit-checkable `Decode_<op>`),
