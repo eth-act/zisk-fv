@@ -216,3 +216,9 @@ import ZiskFv.Regression.SignedDivOrdinaryCounterexample
 -- constraint definitions `@[simp]`, so importing it from anywhere with ZiskFv
 -- dependents would add them to the default simp set for every downstream module.
 import ZiskFv.AirsClean.ArithMirrorWeld
+-- `rfl`-level weld of the Main constraint mirror to the generated
+-- `Extraction.Main.constraint_N_every_row` predicates. This is the only ZiskFv
+-- module that may import `Extraction.Main`: that file marks all 144 generated
+-- constraint definitions `@[simp]`, so importing it from anywhere with ZiskFv
+-- dependents would add them to the default simp set for every downstream module.
+import ZiskFv.AirsClean.MainMirrorWeld
