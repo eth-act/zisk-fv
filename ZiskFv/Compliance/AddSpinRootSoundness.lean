@@ -338,10 +338,15 @@ def addSpinAddOutsideDefectRegion :
 def addSpinJalOutsideDefectRegion :
     RowOutsideDefectRegion addSpinAcceptedTrace addSpinJalIndex
       (addSpinZiskStep addSpinJalIndex) where
-  h_no_fgl_wrap := by
+  h_target_nonneg := by
     unfold mainPcVal
     rw [addSpinMainPc_jal]
-    change 4 + (BitVec.signExtend 64 (0#21)).toNat < GL_prime
+    change 0 ≤ (4 : Int) + (BitVec.signExtend 64 (0#21)).toInt
+    simp
+  h_target_lt := by
+    unfold mainPcVal
+    rw [addSpinMainPc_jal]
+    change (4 : Int) + (BitVec.signExtend 64 (0#21)).toInt < GL_prime
     simp
   h_pc_bound := by
     unfold MainSequentialPcDomain mainPcVal
