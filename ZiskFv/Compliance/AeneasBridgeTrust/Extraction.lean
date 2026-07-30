@@ -64,3 +64,4 @@ import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.Precompiled
 import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.Dispatch
 import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.DynamicFields
 import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.Totality
+import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.JalrRows
