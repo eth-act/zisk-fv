@@ -2865,14 +2865,14 @@ theorem mainLoadDestinationFacts_of_program
     (bits : RomFlagBits)
     (rd : BitVec 5)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (rd.toNat ≠ 0))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
           (trace.program j).store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 rd)
         ∧ (trace.program j).flags = packFlags bits) :
     (mainRowWithRomLd trace i).rom.store_ind = 0
-  ∧ (mainRowWithRomLd trace i).rom.store_reg = 1
+  ∧ (mainRowWithRomLd trace i).rom.store_reg = (if rd.toNat = 0 then 0 else 1)
   ∧ (mainRowWithRomLd trace i).rom.store_offset =
       Transpiler.ind (Transpiler.regidxOfBitVec5 rd) := by
   obtain ⟨j, hline, _hop, _hiw, _hj1, _hj2, hflags⟩ :=
@@ -2882,8 +2882,13 @@ theorem mainLoadDestinationFacts_of_program
     mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
   have h_store_ind : (mainRowWithRomLd trace i).rom.store_ind = 0 := by
     simpa [mainRowWithRomLd, h_bits_store_ind, ZiskFv.AirsClean.boolF_false] using p_store_ind
-  have h_store_reg : (mainRowWithRomLd trace i).rom.store_reg = 1 := by
-    simpa [mainRowWithRomLd, h_bits_store_reg, ZiskFv.AirsClean.boolF_true] using p_store_reg
+  have h_store_reg :
+      (mainRowWithRomLd trace i).rom.store_reg = (if rd.toNat = 0 then 0 else 1) := by
+    rw [p_store_reg, h_bits_store_reg]
+    by_cases hrd : rd.toNat = 0
+    · simp [hrd, ZiskFv.AirsClean.boolF_false]
+    · rw [show decide (rd.toNat ≠ 0) = true from decide_eq_true hrd]
+      simp [hrd, ZiskFv.AirsClean.boolF_true]
   have h_store_offset :
       (mainRowWithRomLd trace i).rom.store_offset =
         Transpiler.ind (Transpiler.regidxOfBitVec5 rd) := by
@@ -2931,7 +2936,7 @@ def Decode_ld_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.ld_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -2967,13 +2972,20 @@ def Decode_ld_of_program
     obtain ⟨p_store_ind, _, _p_store_reg⟩ :=
       mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
     simpa [mainRowWithRomLd, h_bits_store_ind, ZiskFv.AirsClean.boolF_false] using p_store_ind
-  have h_store_reg : (mainRowWithRomLd trace i).rom.store_reg = 1 := by
+  have h_store_reg : (mainRowWithRomLd trace i).rom.store_reg =
+      (if c.ld_input.rd.toNat = 0 then 0 else 1) := by
     obtain ⟨j, hline, _hop, _hiw, _hj1, _hj2, hflags⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
     obtain ⟨_hpo, _hpj0, _hpj1, _hpiw, _hpbo, _hpso, hpf⟩ := h_prog j hline
     obtain ⟨_p_store_ind, _, p_store_reg⟩ :=
       mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
-    simpa [mainRowWithRomLd, h_bits_store_reg, ZiskFv.AirsClean.boolF_true] using p_store_reg
+    rw [show (mainRowWithRomLd trace i).rom.store_reg =
+        ZiskFv.AirsClean.boolF bits.store_reg by simpa [mainRowWithRomLd] using p_store_reg,
+      h_bits_store_reg]
+    by_cases hrd : c.ld_input.rd.toNat = 0
+    · simp [hrd, ZiskFv.AirsClean.boolF_false]
+    · rw [show decide (c.ld_input.rd.toNat ≠ 0) = true from decide_eq_true hrd]
+      simp [hrd, ZiskFv.AirsClean.boolF_true]
   have h_b_src_ind : (mainRowWithRomLd trace i).rom.b_src_ind = 1 :=
     mainLoadBsrcInd_of_program trace i h_lt bits h_bits_b_src_ind
       (fun j hline => by
@@ -3019,7 +3031,7 @@ def Decode_lbu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.lbu_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -3092,7 +3104,7 @@ def Decode_lhu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.lhu_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -3165,7 +3177,7 @@ def Decode_lwu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.lwu_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -3254,7 +3266,7 @@ def Decode_lb_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.lb_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -3349,7 +3361,7 @@ def Decode_lh_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.lh_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -3444,7 +3456,7 @@ def Decode_lw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
-    (h_bits_store_reg : bits.store_reg = true)
+    (h_bits_store_reg : bits.store_reg = decide (c.lw_input.rd.toNat ≠ 0))
     (h_bits_b_src_ind : bits.b_src_ind = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line

@@ -800,10 +800,10 @@ theorem or_decode_fields_of_binding (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : r
   exact ⟨ho, hjo1, hjo2, hmso, ext, hok, hieo, hm32, hsetpc, hstorepc,
     hstoreInd, hf⟩
 
-structure RawProgramDecode_add {n : Nat}
+structure RawProgramDecode_add {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_add trace i)
-    (rawProgram : Fin trace.programLength → BitVec 32) where
+    (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32) where
   h_idx : i.val + 1 < trace.mainTable.table.length
   hrd0 : (regidx_to_fin c.rd).val ≠ 0
   hrs10 : (regidx_to_fin c.r1).val ≠ 0
@@ -811,16 +811,19 @@ structure RawProgramDecode_add {n : Nat}
   hLine : ∀ j : Fin trace.programLength,
     (trace.program j).line =
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
-      rawProgram j = rawRType 0 (regidx_to_fin c.r2).val
-        (regidx_to_fin c.r1).val 0 (regidx_to_fin c.rd).val 0x33
+      ∃ k : Fin rawLength,
+        addr k = (trace.program j).line ∧
+          rawProgram k = rawRType 0 (regidx_to_fin c.r2).val
+            (regidx_to_fin c.r1).val 0 (regidx_to_fin c.rd).val 0x33
 
-noncomputable def ProgramDecode_add_from_rawProgram {n : Nat}
+noncomputable def ProgramDecode_add_from_rawProgram {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_add trace i)
-    (addr : Fin trace.programLength → FGL)
-    (rawProgram : Fin trace.programLength → BitVec 32)
-    (hbind : ProgramBinding trace addr rawProgram)
-    (rawDecode : RawProgramDecode_add trace i c rawProgram) :
+    (start : Fin rawLength → Fin trace.programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32)
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (rawDecode : RawProgramDecode_add trace i c addr rawProgram) :
     ZiskFv.Compliance.RomDecodeBinding.ProgramDecode_add trace i c := by
   let rd := (regidx_to_fin c.rd).val
   let rs1 := (regidx_to_fin c.r1).val
@@ -844,14 +847,27 @@ noncomputable def ProgramDecode_add_from_rawProgram {n : Nat}
         exact decide_eq_false hstoreInd
       h_prog := ?_ }
   intro j hline
+  obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+  have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
   have hbk : trace.program j =
-      romMessageOfRaw (addr j) (rawRType 0 rs2 rs1 0 rd 0x33) := by
-    exact (hbind.2 j).trans
-      (congrArg (romMessageOfRaw (addr j)) (rawDecode.hLine j hline))
+      romMessageOfRaw (addr k) (rawRType 0 rs2 rs1 0 rd 0x33) := by
+    have hok' : extract_transpile_rv64im_raw
+        (toU32 (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 0
+          (regidx_to_fin c.rd).val 0x33)) = .ok ext := by
+      simpa only [rd, rs1, rs2, ext] using hok
+    have hnon :
+        (toU32 (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 0
+          (regidx_to_fin c.rd).val 0x33) &&& 127#u32) ≠ 103#u32 := by
+      rw [ZiskFv.Compliance.Decode.toU32_and127,
+        ZiskFv.Compliance.Decode.rawRType_opcode]
+      all_goals decide
+    have hp := hprimary.2
+    rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+    simpa only [rd, rs1, rs2] using hp
   obtain ⟨ho, hj1, hj2, hso, ext', hok', _, _, _, _, _, hf⟩ :=
     add_decode_fields_of_binding rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrd0
-      rawDecode.hrs10 rawDecode.hrs20 (addr j) (trace.program j) hbk
+      rawDecode.hrs10 rawDecode.hrs20 (addr k) (trace.program j) hbk
   have hext : ext' = ext := Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
   subst ext'
   refine ⟨ho, hj1, hj2, ?_, hf⟩
@@ -861,26 +877,29 @@ noncomputable def ProgramDecode_add_from_rawProgram {n : Nat}
   change (regidx_to_fin c.rd).val % GL_prime = (regidx_to_fin c.rd).val
   exact Nat.mod_eq_of_lt (lt_trans (regidx_to_fin c.rd).isLt (by norm_num))
 
-structure RawProgramDecode_or {n : Nat}
+structure RawProgramDecode_or {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_or trace i)
-    (rawProgram : Fin trace.programLength → BitVec 32) where
+    (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32) where
   h_idx : i.val + 1 < trace.mainTable.table.length
   hrs10 : (regidx_to_fin c.r1).val ≠ 0
   hrs20 : (regidx_to_fin c.r2).val ≠ 0
   hLine : ∀ j : Fin trace.programLength,
     (trace.program j).line =
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
-      rawProgram j = rawRType 0 (regidx_to_fin c.r2).val
-        (regidx_to_fin c.r1).val 6 (regidx_to_fin c.rd).val 0x33
+      ∃ k : Fin rawLength,
+        addr k = (trace.program j).line ∧
+          rawProgram k = rawRType 0 (regidx_to_fin c.r2).val
+            (regidx_to_fin c.r1).val 6 (regidx_to_fin c.rd).val 0x33
 
-noncomputable def ProgramDecode_or_from_rawProgram {n : Nat}
+noncomputable def ProgramDecode_or_from_rawProgram {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_or trace i)
-    (addr : Fin trace.programLength → FGL)
-    (rawProgram : Fin trace.programLength → BitVec 32)
-    (hbind : ProgramBinding trace addr rawProgram)
-    (rawDecode : RawProgramDecode_or trace i c rawProgram) :
+    (start : Fin rawLength → Fin trace.programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32)
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (rawDecode : RawProgramDecode_or trace i c addr rawProgram) :
     ZiskFv.Compliance.RomDecodeBinding.ProgramDecode_or trace i c := by
   let rd := (regidx_to_fin c.rd).val
   let rs1 := (regidx_to_fin c.r1).val
@@ -904,14 +923,27 @@ noncomputable def ProgramDecode_or_from_rawProgram {n : Nat}
         exact decide_eq_false hstoreInd
       h_prog := ?_ }
   intro j hline
+  obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+  have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
   have hbk : trace.program j =
-      romMessageOfRaw (addr j) (rawRType 0 rs2 rs1 6 rd 0x33) := by
-    exact (hbind.2 j).trans
-      (congrArg (romMessageOfRaw (addr j)) (rawDecode.hLine j hline))
+      romMessageOfRaw (addr k) (rawRType 0 rs2 rs1 6 rd 0x33) := by
+    have hok' : extract_transpile_rv64im_raw
+        (toU32 (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 6
+          (regidx_to_fin c.rd).val 0x33)) = .ok ext := by
+      simpa only [rd, rs1, rs2, ext] using hok
+    have hnon :
+        (toU32 (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 6
+          (regidx_to_fin c.rd).val 0x33) &&& 127#u32) ≠ 103#u32 := by
+      rw [ZiskFv.Compliance.Decode.toU32_and127,
+        ZiskFv.Compliance.Decode.rawRType_opcode]
+      all_goals decide
+    have hp := hprimary.2
+    rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+    simpa only [rd, rs1, rs2] using hp
   obtain ⟨ho, hj1, hj2, hso, ext', hok', _, _, _, _, _, hf⟩ :=
     or_decode_fields_of_binding rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrs10
-      rawDecode.hrs20 (addr j) (trace.program j) hbk
+      rawDecode.hrs20 (addr k) (trace.program j) hbk
   have hext : ext' = ext := Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
   subst ext'
   refine ⟨ho, hj1, hj2, ?_, hf⟩
@@ -1139,24 +1171,27 @@ local macro "copyb_imm_program_decode" nm:ident "," f3:term : command => do
   let claimName := Lean.mkIdent ((`ZiskFv.Compliance).str ("Claim_" ++ s))
   let programName :=
     Lean.mkIdent ((`ZiskFv.Compliance.RomDecodeBinding).str ("ProgramDecode_" ++ s))
-  let t1 ← `(structure $rawName {n : Nat}
+  let t1 ← `(structure $rawName {n rawLength : Nat}
       (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
-      (rawProgram : Fin trace.programLength → BitVec 32) where
+      (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32) where
     h_idx : i.val + 1 < trace.mainTable.table.length
     hrs10 : (regidx_to_fin c.r1).val ≠ 0
     hLine : ∀ j : Fin trace.programLength,
       (trace.program j).line =
           (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
-        rawProgram j = rawIType c.imm.toNat (regidx_to_fin c.r1).val $f3
-          (regidx_to_fin c.rd).val 0x13)
-  let t2 ← `(noncomputable def $ctorName {n : Nat}
+        ∃ k : Fin rawLength,
+          addr k = (trace.program j).line ∧
+            rawProgram k = rawIType c.imm.toNat (regidx_to_fin c.r1).val $f3
+              (regidx_to_fin c.rd).val 0x13)
+  let t2 ← `(noncomputable def $ctorName {n rawLength : Nat}
       (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
-      (addr : Fin trace.programLength → FGL)
-      (rawProgram : Fin trace.programLength → BitVec 32)
-      (hbind : ProgramBinding trace addr rawProgram)
-      (rawDecode : $rawName trace i c rawProgram) :
+      (start : Fin rawLength → Fin trace.programLength)
+      (addr : Fin rawLength → FGL)
+      (rawProgram : Fin rawLength → BitVec 32)
+      (hbind : ProgramRowsBinding trace start addr rawProgram)
+      (rawDecode : $rawName trace i c addr rawProgram) :
       $programName trace i c := by
     let rd := (regidx_to_fin c.rd).val
     let rs1 := (regidx_to_fin c.r1).val
@@ -1182,13 +1217,26 @@ local macro "copyb_imm_program_decode" nm:ident "," f3:term : command => do
           exact decide_eq_true hsrc
         h_prog := ?_ }
     intro j hline
+    obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+    have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
     have hbk : trace.program j =
-        romMessageOfRaw (addr j) (rawIType imm rs1 $f3 rd 0x13) := by
-      exact (hbind.2 j).trans
-        (congrArg (romMessageOfRaw (addr j)) (rawDecode.hLine j hline))
+        romMessageOfRaw (addr k) (rawIType imm rs1 $f3 rd 0x13) := by
+      have hok' : extract_transpile_rv64im_raw
+          (toU32 (rawIType c.imm.toNat (regidx_to_fin c.r1).val $f3
+            (regidx_to_fin c.rd).val 0x13)) = .ok ext := by
+        simpa only [rd, rs1, imm, ext] using hok
+      have hnon :
+          (toU32 (rawIType c.imm.toNat (regidx_to_fin c.r1).val $f3
+            (regidx_to_fin c.rd).val 0x13) &&& 127#u32) ≠ 103#u32 := by
+        rw [ZiskFv.Compliance.Decode.toU32_and127,
+          ZiskFv.Compliance.Decode.rawIType_opcode]
+        all_goals decide
+      have hp := hprimary.2
+      rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+      simpa only [rd, rs1, imm] using hp
     obtain ⟨ho, hj1, hj2, hso, ext', hok', _, _, _, _, _, _, himm, hf⟩ :=
       $fieldsName rd rs1 imm (regidx_to_fin c.rd).isLt
-        (regidx_to_fin c.r1).isLt rawDecode.hrs10 (addr j) (trace.program j) hbk
+        (regidx_to_fin c.r1).isLt rawDecode.hrs10 (addr k) (trace.program j) hbk
     have hext : ext' = ext :=
       Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
     subst ext'
@@ -1238,10 +1286,10 @@ private theorem decode_i_rawIType_imm_ne_zero
     (by norm_num) RiscvOpcode.Addi d hd, hz]
   rfl
 
-structure RawProgramDecode_addi {n : Nat}
+structure RawProgramDecode_addi {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_addi trace i)
-    (rawProgram : Fin trace.programLength → BitVec 32) where
+    (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32) where
   h_idx : i.val + 1 < trace.mainTable.table.length
   hrd0 : (regidx_to_fin c.rd).val ≠ 0
   hrs10 : (regidx_to_fin c.r1).val ≠ 0
@@ -1249,16 +1297,19 @@ structure RawProgramDecode_addi {n : Nat}
   hLine : ∀ j : Fin trace.programLength,
     (trace.program j).line =
         (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
-      rawProgram j = rawIType c.imm.toNat (regidx_to_fin c.r1).val 0
-        (regidx_to_fin c.rd).val 0x13
+      ∃ k : Fin rawLength,
+        addr k = (trace.program j).line ∧
+          rawProgram k = rawIType c.imm.toNat (regidx_to_fin c.r1).val 0
+            (regidx_to_fin c.rd).val 0x13
 
-noncomputable def ProgramDecode_addi_from_rawProgram {n : Nat}
+noncomputable def ProgramDecode_addi_from_rawProgram {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (c : ZiskFv.Compliance.Claim_addi trace i)
-    (addr : Fin trace.programLength → FGL)
-    (rawProgram : Fin trace.programLength → BitVec 32)
-    (hbind : ProgramBinding trace addr rawProgram)
-    (rawDecode : RawProgramDecode_addi trace i c rawProgram) :
+    (start : Fin rawLength → Fin trace.programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32)
+    (hbind : ProgramRowsBinding trace start addr rawProgram)
+    (rawDecode : RawProgramDecode_addi trace i c addr rawProgram) :
     ZiskFv.Compliance.RomDecodeBinding.ProgramDecode_addi trace i c := by
   let rd := (regidx_to_fin c.rd).val
   let rs1 := (regidx_to_fin c.r1).val
@@ -1290,14 +1341,27 @@ noncomputable def ProgramDecode_addi_from_rawProgram {n : Nat}
         exact decide_eq_true hsrc
       h_prog := ?_ }
   intro j hline
+  obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+  have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
   have hbk : trace.program j =
-      romMessageOfRaw (addr j) (rawIType imm rs1 0 rd 0x13) := by
-    exact (hbind.2 j).trans
-      (congrArg (romMessageOfRaw (addr j)) (rawDecode.hLine j hline))
+      romMessageOfRaw (addr k) (rawIType imm rs1 0 rd 0x13) := by
+    have hok' : extract_transpile_rv64im_raw
+        (toU32 (rawIType c.imm.toNat (regidx_to_fin c.r1).val 0
+          (regidx_to_fin c.rd).val 0x13)) = .ok ext := by
+      simpa only [rd, rs1, imm, ext] using hok
+    have hnon :
+        (toU32 (rawIType c.imm.toNat (regidx_to_fin c.r1).val 0
+          (regidx_to_fin c.rd).val 0x13) &&& 127#u32) ≠ 103#u32 := by
+      rw [ZiskFv.Compliance.Decode.toU32_and127,
+        ZiskFv.Compliance.Decode.rawIType_opcode]
+      all_goals decide
+    have hp := hprimary.2
+    rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+    simpa only [rd, rs1, imm] using hp
   obtain ⟨ho, hj1, hj2, hso, ext', hok', _, _, _, _, _, _, himmv, hf⟩ :=
     addi_decode_fields_of_binding rd rs1 imm (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt rawDecode.hrd0 rawDecode.hrs10 himm
-      (addr j) (trace.program j) hbk
+      (addr k) (trace.program j) hbk
   have hext : ext' = ext :=
     Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
   subst ext'

@@ -1479,7 +1479,7 @@ structure ProgramDecode_ld {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.ld_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -1505,7 +1505,7 @@ structure ProgramDecode_lbu {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.lbu_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -1531,7 +1531,7 @@ structure ProgramDecode_lhu {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.lhu_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -1557,7 +1557,7 @@ structure ProgramDecode_lwu {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.lwu_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -1599,7 +1599,7 @@ structure ProgramDecode_lb {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.lb_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -1641,7 +1641,7 @@ structure ProgramDecode_lh {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.lh_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
@@ -1683,7 +1683,7 @@ structure ProgramDecode_lw {numInstructions : Nat}
   h_bits_set_pc : bits.set_pc = false
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
-  h_bits_store_reg : bits.store_reg = true
+  h_bits_store_reg : bits.store_reg = decide (c.lw_input.rd.toNat ≠ 0)
   h_bits_b_src_ind : bits.b_src_ind = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
