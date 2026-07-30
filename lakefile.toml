@@ -35,7 +35,8 @@ roots = ["Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge", "
 globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifact",
   "Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge", "Extraction.MemAlignRom",
   "Extraction.Arith", "Extraction.Main", "Extraction.MemAlign",
-  "Extraction.MemAlignByte", "Extraction.MemAlignReadByte", "Extraction.MemAlignWriteByte"]
+  "Extraction.MemAlignByte", "Extraction.MemAlignReadByte", "Extraction.MemAlignWriteByte",
+  "Extraction.Binary", "Extraction.BinaryAdd"]
 
 # Clean DSL (Verified-zkEVM/clean) source tree. Populated by
 # `nix run .#populate` from the pinned `clean-src` flake input.
