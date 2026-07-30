@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
+import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 
 /-!
 # Root soundness
@@ -68,5 +69,36 @@ theorem root_soundness
     stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
       (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i)
       (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
+
+/-- Additive raw-program endpoint. A single production-lowering binding and
+    per-instruction raw decode evidence construct the committed-program decode
+    family consumed by `root_soundness`; the existing headline theorem and
+    `AcceptedZiskTrace` remain unchanged. -/
+theorem root_soundness_rawProgram
+    (numInstructions rawLength : Nat)
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (sailTrace : SailTrace numInstructions)
+    (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
+    (start : Fin rawLength → Fin ziskTrace.programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32)
+    (programBinding : RawProgramBinding.ProgramRowsBinding
+      ziskTrace start addr rawProgram)
+    (rawProgramDecodes : ∀ i : Fin numInstructions,
+      RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram)
+    (inputsAgree : ∀ i : Fin numInstructions,
+      InputsAgree ziskTrace sailTrace i (ziskStep i))
+    (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
+    (hAvoidKnownBugs : ∀ i : Fin numInstructions,
+      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
+    ∀ i : Fin numInstructions,
+      StepSound ziskTrace sailTrace i (ziskStep i)
+        (rowDecode_of_programDecode ziskTrace i
+          (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+            start addr rawProgram programBinding (rawProgramDecodes i))) :=
+  root_soundness numInstructions ziskTrace sailTrace ziskStep
+    (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+      start addr rawProgram programBinding (rawProgramDecodes i))
+    inputsAgree bootSeed hAvoidKnownBugs
 
 end ZiskFv.Compliance

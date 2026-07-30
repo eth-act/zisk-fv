@@ -35,7 +35,8 @@ def JalrDestinationPins (i : riscv2zisk_single_row.Rv64imLoweringInput)
 
 def JalrAlignedRowPins (i : riscv2zisk_single_row.Rv64imLoweringInput)
     (row : zisk_inst.ZiskInst) : Prop :=
-  row.op = 14#u8 ∧ row.jmp_offset2 = 4#i64 ∧
+  row.op = 14#u8 ∧ row.jmp_offset1 = IScalar.cast IScalarTy.I64 i.imm ∧
+  row.jmp_offset2 = 4#i64 ∧
   JalrDestinationPins i row ∧ JalrRegisterOrX0SourcePins i row ∧
   row.is_external_op = true ∧ row.m32 = false ∧ row.set_pc = true
 
