@@ -1,0 +1,30 @@
+# trust/generated/weld-columns/mem-align-read-byte.txt
+#
+# The MemAlignReadByte AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/MemAlignReadByte.lean` and normalised by the
+# extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean` welds the handwritten MemAlignReadByte
+# constraint mirror to the generated constraints; that weld's
+# `memAlignReadByteMainValue` maps a column *index* to a `Valid_MemAlignReadByte` field, and
+# this file is what `trust/scripts/check-weld-column-maps.py` checks that map
+# against. Recording it here is what lets the source-only V1 gate check the map
+# on a checkout where the gitignored `build/` tree does not exist; on any
+# populated tree the same check requires this file to reproduce the generated
+# header.
+#
+# Generated — do not hand-edit. Regenerate via `trust/scripts/regenerate.sh`
+# (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 10
+#
+0 sel_high_4b
+1 sel_high_2b
+2 sel_high_b
+3 direct_value
+4 composed_value
+5 value_16b
+6 value_8b
+7 byte_value
+8 addr_w
+9 step

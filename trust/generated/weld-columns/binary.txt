@@ -1,0 +1,59 @@
+# trust/generated/weld-columns/binary.txt
+#
+# The Binary AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/Binary.lean` and normalised by the
+# extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/BinaryMirrorWeld.lean` welds the handwritten Binary
+# constraint mirror to the generated constraints; that weld's
+# `validOfCircuit` maps a column *index* to a `Valid_Binary` field, and
+# this file is what `trust/scripts/check-weld-column-maps.py` checks that map
+# against. Recording it here is what lets the source-only V1 gate check the map
+# on a checkout where the gitignored `build/` tree does not exist; on any
+# populated tree the same check requires this file to reproduce the generated
+# header.
+#
+# Generated — do not hand-edit. Regenerate via `trust/scripts/regenerate.sh`
+# (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 39
+#
+0 b_op
+1 free_in_a_0
+2 free_in_a_1
+3 free_in_a_2
+4 free_in_a_3
+5 free_in_a_4
+6 free_in_a_5
+7 free_in_a_6
+8 free_in_a_7
+9 free_in_b_0
+10 free_in_b_1
+11 free_in_b_2
+12 free_in_b_3
+13 free_in_b_4
+14 free_in_b_5
+15 free_in_b_6
+16 free_in_b_7
+17 free_in_c_0
+18 free_in_c_1
+19 free_in_c_2
+20 free_in_c_3
+21 free_in_c_4
+22 free_in_c_5
+23 free_in_c_6
+24 free_in_c_7
+25 carry_0
+26 carry_1
+27 carry_2
+28 carry_3
+29 carry_4
+30 carry_5
+31 carry_6
+32 carry_7
+33 mode32
+34 result_is_a
+35 use_first_byte
+36 c_is_signed
+37 b_op_or_sext
+38 mode32_and_c_is_signed

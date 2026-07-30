@@ -8,12 +8,13 @@
 #   trust/generated/baseline-zisk-riscv-compliant.txt    — V2: uber-theorem project-axiom closure
 #   trust/generated/baseline-global-theorem-binders.txt  — V2: uber-theorem binder list
 #   trust/generated/baseline-defect-count.txt            — active theorem-side defect identifiers
-#   trust/generated/arith-stage1-columns.txt             — V1: Arith stage-1 column layout
+#   trust/generated/weld-columns/<air>.txt               — V1: per-AIR weld column layout
 #
 # The V2 baseline requires `lake build` to have run (consumes oleans);
-# we skip it gracefully if the build artefact isn't present. The Arith
-# column recording requires `nix run .#populate` (consumes the generated
-# extraction); we skip it the same way.
+# we skip it gracefully if the build artefact isn't present. The weld
+# column recordings require `nix run .#populate` (they consume the generated
+# extraction); we skip them the same way. Which AIRs get a recording is data:
+# it is whatever `trust/weld-airs.toml` registers.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -27,13 +28,11 @@ echo "Refreshing trust-ledger axiom index..."
 python3 tools/trust-ledger-index.py > trust/generated/axiom-index.md
 echo "  → trust/generated/axiom-index.md"
 
-if [ -f build/extraction/Extraction/Arith.lean ]; then
-  echo "Refreshing Arith stage-1 column recording..."
-  python3 trust/scripts/regenerate-arith-stage1-columns.py \
-    > trust/generated/arith-stage1-columns.txt
-  echo "  → trust/generated/arith-stage1-columns.txt"
+if [ -d build/extraction/Extraction ]; then
+  echo "Refreshing weld column recordings..."
+  python3 trust/scripts/regenerate-weld-columns.py
 else
-  echo "Skipping Arith stage-1 column recording (no build/extraction — run \`nix run .#populate\` first)."
+  echo "Skipping weld column recordings (no build/extraction — run \`nix run .#populate\` first)."
 fi
 
 if [ -d .lake/build ]; then

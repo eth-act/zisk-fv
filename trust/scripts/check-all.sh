@@ -35,7 +35,9 @@ run "15/19 generated axiom allowlist" "$dir/check-generated-axiom-allowlist.sh"
 run "16/19 shrinkage floor (axiom-count monotone)" "$dir/check-shrinkage.sh"
 run "17/19 RowData split partition integrity" "$dir/check-rowdata-partition.sh"
 run "18/19 module reachability (lake build graph)" "$dir/check-module-reachability.sh"
-run "19/19 Arith weld stage-1 column map" "$dir/check-arith-column-map.py"
+# One check for every welded AIR, now and in future: AIRs are registered as data
+# in `trust/weld-airs.toml`, so adding one never renumbers this list.
+run "19/19 weld column maps (all registered AIRs)" "$dir/check-weld-column-maps.py"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate: ALL CHECKS PASSED."

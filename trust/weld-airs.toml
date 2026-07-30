@@ -1,0 +1,179 @@
+# trust/weld-airs.toml — the registry of welded AIRs.
+#
+# A *weld* module ties a handwritten constraint mirror to the generated
+# `Extraction.<Air>.constraint_N_every_row` predicates by `Iff.rfl`. Doing that
+# needs a handwritten index -> row-field column map, which is exactly the datum a
+# transcription slip can hide in. `trust/scripts/check-weld-column-maps.py` pins
+# every such map against the extractor's own column header, recorded under
+# `trust/generated/weld-columns/`.
+#
+# THIS FILE IS THE ONLY THING YOU EDIT TO ADD AN AIR. Adding a weld is:
+#
+#   1. add an `[air.<Name>]` block below;
+#   2. run `trust/scripts/regenerate.sh` (needs `nix run .#populate`) to write
+#      `trust/generated/weld-columns/<air>.txt`;
+#   3. commit both.
+#
+# You do not edit the check script, and you do not touch
+# `trust/scripts/check-all.sh` — it runs the check once for all AIRs, so the
+# check numbering never moves no matter how many AIRs land.
+#
+# The full key schema, the alias mechanism, and what each key buys are documented
+# in the header of `trust/scripts/check-weld-column-maps.py`. Two properties worth
+# repeating here, because they are what make this gate worth having:
+#
+#   * Nothing here can be *omitted* into a pass. The check discovers both every
+#     `*MirrorWeld.lean` module (including instance-free inverse maps) and every
+#     top-level `instance _ : Extraction.Circuit ...`, and fails on anything not
+#     accounted for here.
+#   * `pin` names a Lean theorem, not a comment. This file pins the *column map*;
+#     that theorem pins the circuit instance's `main` field TO that column map, in
+#     the kernel. Without it a rebound `main` would leave this gate green while
+#     every weld silently spoke about a different map — the hole the review of
+#     eth-act/zisk-fv#300 found.
+
+[air.Arith]
+weld = "ZiskFv/AirsClean/ArithMirrorWeld.lean"
+column-map = "mainValue"
+wrapper = "ExtractedArithRow"
+instance = "extractedArithRowCircuit"
+pin = "extractedArithRowCircuit_pinned"
+row-type = "ArithMulRow"
+row-decl = ["ZiskFv/AirsClean/ArithMul/Row.lean"]
+generated = "build/extraction/Extraction/Arith.lean"
+recording = "trust/generated/weld-columns/arith.txt"
+# `arithProbeCircuit` is the free circuit whose lanes are structure *fields*
+# (`ArithProbe.mainCell` &c), used by `weldedConstraints_probeBridge` to show a
+# welded constraint cannot read a stubbed lane. It carries no handwritten column
+# map, so there is nothing for this gate to pin — but it must still be declared
+# here, or the discovery scan would have to ignore unknown instances.
+unpinned-instances = ["arithProbeCircuit"]
+note = "eth-act/zisk-fv#296 — 49 F-only constraints, `constraint_0..48_every_row`."
+
+[air.Main]
+weld = "ZiskFv/AirsClean/MainMirrorWeld.lean"
+column-map = "mainValue"
+wrapper = "ExtractedMainRow"
+instance = "extractedMainRowCircuit"
+pin = "extractedMainRowCircuit_pinned"
+row-type = "MainRowWithRom"
+row-decl = ["ZiskFv/AirsClean/Main/Row.lean"]
+generated = "build/extraction/Extraction/Main.lean"
+recording = "trust/generated/weld-columns/main.txt"
+unpinned-instances = ["mainProbeCircuit"]
+
+[air.MemAlignTrace]
+weld = "ZiskFv/AirsClean/MemAlignMirrorWeld.lean"
+column-map = "stage1Column"
+instance-main = "columnTraceMain"
+accessor = "row"
+wrapper = "MemAlignColumnTrace"
+instance = "memAlignColumnTraceCircuit"
+pin = "memAlignColumnTraceCircuit_pinned"
+row-type = "MemAlignRow"
+row-decl = ["ZiskFv/AirsClean/MemAlign/Row.lean"]
+generated = "build/extraction/Extraction/MemAlign.lean"
+recording = "trust/generated/weld-columns/mem-align-trace.txt"
+unpinned-instances = ["memAlignProbeCircuit"]
+
+[air.MemAlignWindow]
+weld = "ZiskFv/AirsClean/MemAlignMirrorWeld.lean"
+column-map = "stage1Column"
+instance-main = "windowMain"
+accessor = "row"
+wrapper = "MemAlignRowWindow"
+instance = "memAlignRowWindowCircuit"
+pin = "memAlignRowWindowCircuit_pinned"
+row-type = "MemAlignRow"
+row-decl = ["ZiskFv/AirsClean/MemAlign/Row.lean"]
+generated = "build/extraction/Extraction/MemAlign.lean"
+recording = "trust/generated/weld-columns/mem-align-window.txt"
+
+[air.MemAlignByte]
+weld = "ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean"
+column-map = "memAlignByteMainValue"
+accessor = "c.cols"
+wrapper = "ExtractedMemAlignByte"
+instance = "extractedMemAlignByteCircuit"
+pin = "extractedMemAlignByteCircuit_pinned"
+row-type = "Valid_MemAlignByte"
+row-decl = ["ZiskFv/Airs/MemAlignByte.lean"]
+leaf-type-heads = ["ℕ"]
+generated = "build/extraction/Extraction/MemAlignByte.lean"
+recording = "trust/generated/weld-columns/mem-align-byte.txt"
+unpinned-instances = ["probeCircuit"]
+
+[air.MemAlignReadByte]
+weld = "ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean"
+column-map = "memAlignReadByteMainValue"
+accessor = "c.cols"
+wrapper = "ExtractedMemAlignReadByte"
+instance = "extractedMemAlignReadByteCircuit"
+pin = "extractedMemAlignReadByteCircuit_pinned"
+row-type = "Valid_MemAlignReadByte"
+row-decl = ["ZiskFv/Airs/MemAlignReadByte.lean"]
+leaf-type-heads = ["ℕ"]
+generated = "build/extraction/Extraction/MemAlignReadByte.lean"
+recording = "trust/generated/weld-columns/mem-align-read-byte.txt"
+
+[air.MemAlignWriteByte]
+weld = "ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean"
+column-map = "memAlignWriteByteMainValue"
+accessor = "c.cols"
+wrapper = "ExtractedMemAlignWriteByte"
+instance = "extractedMemAlignWriteByteCircuit"
+pin = "extractedMemAlignWriteByteCircuit_pinned"
+row-type = "Valid_MemAlignByte"
+row-decl = ["ZiskFv/Airs/MemAlignByte.lean"]
+leaf-type-heads = ["ℕ"]
+generated = "build/extraction/Extraction/MemAlignWriteByte.lean"
+recording = "trust/generated/weld-columns/mem-align-write-byte.txt"
+
+[air.MemRow]
+weld = "ZiskFv/AirsClean/MemMirrorWeld.lean"
+column-map = "rowMainValue"
+accessor = "c.row"
+wrapper = "ExtractedMemRow"
+instance = "extractedMemRowCircuit"
+pin = "extractedMemRowCircuit_pinned"
+row-type = "MemRow"
+row-decl = ["ZiskFv/AirsClean/Mem/Row.lean"]
+generated = "build/extraction/Extraction/Mem.lean"
+recording = "trust/generated/weld-columns/mem-row.txt"
+aliases = { l_increment = "increment_0", h_increment = "increment_1" }
+unpinned-instances = ["memProbeCircuit"]
+
+[air.MemTrace]
+weld = "ZiskFv/AirsClean/MemMirrorWeld.lean"
+column-map = "traceMainValue"
+accessor = "c.v"
+wrapper = "ExtractedMemTrace"
+instance = "extractedMemTraceCircuit"
+pin = "extractedMemTraceCircuit_pinned"
+row-type = "Valid_Mem"
+row-decl = ["ZiskFv/Airs/Mem.lean"]
+leaf-type-heads = ["ℕ"]
+generated = "build/extraction/Extraction/Mem.lean"
+recording = "trust/generated/weld-columns/mem-trace.txt"
+aliases = { l_increment = "increment_0", h_increment = "increment_1" }
+
+[air.Binary]
+weld = "ZiskFv/AirsClean/BinaryMirrorWeld.lean"
+direction = "inverse"
+column-map = "validOfCircuit"
+row-type = "Valid_Binary"
+row-decl = ["ZiskFv/Airs/Binary/Binary.lean"]
+leaf-type-heads = ["ℕ"]
+generated = "build/extraction/Extraction/Binary.lean"
+recording = "trust/generated/weld-columns/binary.txt"
+
+[air.BinaryAdd]
+weld = "ZiskFv/AirsClean/BinaryMirrorWeld.lean"
+direction = "inverse"
+column-map = "validOfCircuit"
+column-map-occurrence = 2
+row-type = "Valid_BinaryAdd"
+row-decl = ["ZiskFv/Airs/Binary/BinaryAdd.lean"]
+leaf-type-heads = ["ℕ"]
+generated = "build/extraction/Extraction/BinaryAdd.lean"
+recording = "trust/generated/weld-columns/binary-add.txt"

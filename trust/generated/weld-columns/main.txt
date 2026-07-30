@@ -1,0 +1,58 @@
+# trust/generated/weld-columns/main.txt
+#
+# The Main AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/Main.lean` and normalised by the
+# extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/MainMirrorWeld.lean` welds the handwritten Main
+# constraint mirror to the generated constraints; that weld's
+# `mainValue` maps a column *index* to a `MainRowWithRom` field, and
+# this file is what `trust/scripts/check-weld-column-maps.py` checks that map
+# against. Recording it here is what lets the source-only V1 gate check the map
+# on a checkout where the gitignored `build/` tree does not exist; on any
+# populated tree the same check requires this file to reproduce the generated
+# header.
+#
+# Generated — do not hand-edit. Regenerate via `trust/scripts/regenerate.sh`
+# (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 38
+#
+0 a_0
+1 a_1
+2 b_0
+3 b_1
+4 c_0
+5 c_1
+6 flag
+7 pc
+8 a_src_imm
+9 a_src_mem
+10 a_offset_imm0
+11 a_imm1
+12 is_precompiled
+13 b_src_imm
+14 b_src_mem
+15 b_offset_imm0
+16 b_imm1
+17 b_src_ind
+18 ind_width
+19 is_external_op
+20 op
+21 store_pc
+22 store_mem
+23 store_ind
+24 store_offset
+25 set_pc
+26 jmp_offset1
+27 jmp_offset2
+28 m32
+29 addr1
+30 a_reg_prev_mem_step
+31 b_reg_prev_mem_step
+32 store_reg_prev_mem_step
+33 store_reg_prev_value_0
+34 store_reg_prev_value_1
+35 a_src_reg
+36 b_src_reg
+37 store_reg
