@@ -329,16 +329,17 @@ inductive OpEnvelope
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) : OpEnvelope state m r_main

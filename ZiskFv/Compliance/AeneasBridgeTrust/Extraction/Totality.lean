@@ -762,7 +762,20 @@ theorem jalr_ok (self : riscv2zisk_context.Riscv2ZiskContext)
     obtain ⟨z3, hz3⟩ := op_zisk_ok z2 zisk_ops.ZiskOp.Add
     obtain ⟨z4, hz4⟩ := j_ok z3 1#i64 1#i64
     obtain ⟨z5, hz5⟩ := build_ok z4
-    obtain ⟨s1, hs1⟩ := insert_inst_ok { self with extract_marker := () } i.rom_address z5
+    let first : aeneas_extract.ZiskInstExtract :=
+      { paddr := z5.i.paddr, store_pc := z5.i.store_pc, store_use_sp := z5.i.store_use_sp
+        store := z5.i.store, store_offset := z5.i.store_offset, set_pc := z5.i.set_pc
+        is_precompiled := z5.i.is_precompiled, ind_width := z5.i.ind_width, «end» := z5.i.end
+        a_src := z5.i.a_src, a_use_sp_imm1 := z5.i.a_use_sp_imm1
+        a_offset_imm0 := z5.i.a_offset_imm0, b_src := z5.i.b_src
+        b_use_sp_imm1 := z5.i.b_use_sp_imm1, b_offset_imm0 := z5.i.b_offset_imm0
+        jmp_offset1 := z5.i.jmp_offset1, jmp_offset2 := z5.i.jmp_offset2
+        is_external_op := z5.i.is_external_op, op := z5.i.op
+        op_type_id := UScalar.cast UScalarTy.U32 (read_discriminant z5.i.op_type)
+        m32 := z5.i.m32, input_size := z5.i.input_size
+        sorted_pc_list_index := z5.i.sorted_pc_list_index }
+    obtain ⟨s1, hs1⟩ := insert_inst_ok
+      { self with extract_first_inst := some first, extract_marker := () } i.rom_address z5
     obtain ⟨roma, hroma⟩ := add_one_at_zero_ok i.rom_address hrom
     obtain ⟨z6, hz6⟩ := new_raw_ok roma
     obtain ⟨z7, hz7⟩ := src_a_imm_ok z6 riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK
@@ -777,12 +790,12 @@ theorem jalr_ok (self : riscv2zisk_context.Riscv2ZiskContext)
     obtain ⟨z13, hz13⟩ := build_ok z12
     obtain ⟨s2, hs2⟩ := insert_inst_ok { s1 with extract_marker := () } roma z13
     refine ⟨{ s2 with extract_marker := () }, ?_⟩
-    simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, hs1, hroma,
+    simp only [lift, Bind.bind, bind_ok, hz0, hz1, hz2, hz3, hz4, hz5, first, hs1, hroma,
       hz6, hz7, hz8, hz9, hz10, hz11, hsix, hz12, hz13, hs2]
 
 /-- The default lowering context the transpile pipeline threads into the dispatcher. -/
 def defCtx : riscv2zisk_context.Riscv2ZiskContext :=
-  { extract_inst := none, extract_marker := (), input_precompile := none,
+  { extract_inst := none, extract_first_inst := none, extract_marker := (), input_precompile := none,
     output_precompile := none, input_precompile_reg := none, output_precompile_reg := none }
 
 /-! ## 9. Index-width totality — DISCHARGES the `hw` premise of §6.

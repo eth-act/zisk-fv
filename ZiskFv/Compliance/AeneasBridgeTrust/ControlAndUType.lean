@@ -87,16 +87,17 @@ def OpEnvelope.auipcOfExtractedShape
     (h_set_pc : provenance.extractedRow.setPc = false)
     (h_store_pc : provenance.extractedRow.storePc = true)
     (h_auipc_subset : ZiskFv.Tactics.UTypeArchetype.auipc_subset_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
@@ -106,7 +107,7 @@ def OpEnvelope.auipcOfExtractedShape
     (MainRowProvenance.auipcRowMode_of_extracted_shape provenance
       h_op h_internal h_m32 h_set_pc h_store_pc)
     h_auipc_subset h_offset_bridge h_pc_bridge promises
-    h_no_wrap h_pc_offset_lt_2_32
+    h_target_nonneg h_target_lt h_pc_offset_lt_2_32
 
 /-- The AUIPC bridge predicate is derivable for the envelope constructed from
 extracted row-shape equalities and the remaining dynamic AUIPC facts. -/
@@ -124,16 +125,17 @@ theorem OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape
     (h_set_pc : provenance.extractedRow.setPc = false)
     (h_store_pc : provenance.extractedRow.storePc = true)
     (h_auipc_subset : ZiskFv.Tactics.UTypeArchetype.auipc_subset_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
@@ -143,7 +145,7 @@ theorem OpEnvelope.aeneasBridgeTrust_auipcOfExtractedShape
       store_pc_mem provenance
       h_op h_internal h_m32 h_set_pc h_store_pc
       h_auipc_subset h_offset_bridge h_pc_bridge promises
-      h_no_wrap h_pc_offset_lt_2_32).aeneasBridgeTrust := by
+      h_target_nonneg h_target_lt h_pc_offset_lt_2_32).aeneasBridgeTrust := by
   unfold OpEnvelope.auipcOfExtractedShape OpEnvelope.aeneasBridgeTrust
   exact ⟨⟨provenance⟩,
     MainRowProvenance.auipcRowMode_of_extracted_shape provenance

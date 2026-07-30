@@ -137,12 +137,13 @@ lemma equiv_AUIPC
     -- Discharge parameters
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296)
@@ -159,28 +160,11 @@ lemma equiv_AUIPC
   -- 32-bit result bound, avoiding the legacy range bus.
   have h_lo_bound :
       (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296 := by
-    have h_no_wrap_fgl :
-        (m.pc r_main).val + (m.jmp_offset2 r_main).val < GL_prime := by
-      rw [h_pc_bridge, h_offset_bridge]
-      exact h_no_wrap
-    have h_fgl_val :
-        (m.pc r_main + m.jmp_offset2 r_main : FGL).val =
-          auipc_input.PC.toNat
-            + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat := by
-      rw [Fin.val_add, Nat.mod_eq_of_lt h_no_wrap_fgl, h_pc_bridge, h_offset_bridge]
-    have h_bv_add :
-        (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat =
-          auipc_input.PC.toNat
-            + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat := by
-      rw [BitVec.toNat_add]
-      have h_lt_64 :
-          auipc_input.PC.toNat
-            + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-              < 18446744073709551616 := by
-        have h_gl_lt : GL_prime < 18446744073709551616 := by decide
-        omega
-      rw [Nat.mod_eq_of_lt h_lt_64]
-    rw [h_fgl_val, ← h_bv_add]
+    rw [h_offset_bridge]
+    rw [ZiskFv.PackedBitVec.WidePCNoWrap.fgl_pc_plus_signed_offset_val
+      (m.pc r_main) auipc_input.PC
+      (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)))
+      h_pc_bridge h_target_nonneg h_target_lt]
     exact h_pc_offset_lt_2_32
   have h_rd_val :
       U64.toBV #v[(byteAt e_rd 0 : BitVec 8), (byteAt e_rd 1 : BitVec 8),
@@ -202,7 +186,7 @@ lemma equiv_AUIPC
     exact ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_auipc
       auipc_input.PC auipc_input.imm m r_main next_pc e_rd
       h_circuit h_offset_bridge h_pc_bridge h_lane_lo h_lane_hi
-      h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+      h_target_nonneg h_target_lt h_lo_bound h_pc_offset_lt_2_32
       hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_AUIPC_sail state auipc_input imm rd
         h_input_imm h_input_rd h_input_pc]

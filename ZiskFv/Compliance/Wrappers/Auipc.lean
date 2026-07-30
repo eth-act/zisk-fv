@@ -60,17 +60,18 @@ lemma equiv_AUIPC_of_main_pins
     (h_set_pc : m.set_pc r_main = 0)
     (h_store_pc : m.store_pc r_main = 1)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     -- Structural `UTypePromises` bundle.
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
@@ -82,7 +83,8 @@ lemma equiv_AUIPC_of_main_pins
       h_m32 h_set_pc h_store_pc h_auipc_subset
   ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
-    promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32
+    promises h_circuit h_offset_bridge h_pc_bridge h_target_nonneg h_target_lt
+      h_pc_offset_lt_2_32
 
 /-- Row-provenance wrapper for `equiv_AUIPC`. The mode pins come from a
     selected production-extracted row shape. The PC/offset dynamic facts are
@@ -100,16 +102,17 @@ lemma equiv_AUIPC
     (provenance : ZiskFv.Compliance.MainRowProvenance m r_main)
     (row_mode : ZiskFv.Compliance.MainRowProvenance.AuipcRowMode provenance)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_offset_bridge : m.jmp_offset2 r_main =
+      ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
@@ -120,6 +123,7 @@ lemma equiv_AUIPC
       m r_main next_pc provenance row_mode h_auipc_subset
   exact ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
-    promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32
+    promises h_circuit h_offset_bridge h_pc_bridge h_target_nonneg h_target_lt
+      h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

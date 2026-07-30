@@ -68,11 +68,11 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
       ∧ (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat
       ∧ (m.b_1 r_main).val
           = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296
-  | .auipc auipc_input _ _ _ _ _ _ _ provenance _ _ _ _ _ _ _ =>
+  | .auipc auipc_input _ _ _ _ _ _ _ provenance _ _ _ _ _ _ _ _ =>
       Nonempty (MainRowProvenance m r_main)
       ∧ MainRowProvenance.AuipcRowMode provenance
-      ∧ (m.jmp_offset2 r_main).val
-          = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+      ∧ m.jmp_offset2 r_main
+          = ((BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL)
       ∧ (m.pc r_main).val = auipc_input.PC.toNat
   | .auipc_x0 .. =>
       True

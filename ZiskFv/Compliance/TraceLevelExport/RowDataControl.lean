@@ -47,8 +47,9 @@ This is not a decoded placement fact: it is the explicit soundness-domain condit
 branch next-PC cast. Keeping it separate from `Inputs_<branch>` leaves those input records focused
 on Sail/ZisK state and value agreement. -/
 def BranchRangeDomain (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin trace.numInstructions) (pc : BitVec 64) (takenOffset : FGL) : Prop :=
-  ((mainOfTable trace.program trace.mainTable).pc i.val).val + takenOffset.val < GL_prime
+    (i : Fin trace.numInstructions) (pc takenOffset : BitVec 64) : Prop :=
+  0 ≤ (pc.toNat : Int) + takenOffset.toInt
+    ∧ (pc.toNat : Int) + takenOffset.toInt < GL_prime
     ∧ pc.toNat < GL_prime - 4
 
 /-- JAL theorem-domain range assumptions.
@@ -56,7 +57,10 @@ def BranchRangeDomain (trace : AcceptedZiskTrace numInstructions)
 These preserve the old JAL target no-wrap, PC-bound, and 32-bit next-PC obligations at the explicit
 soundness theorem boundary instead of mixing them into `Inputs_jal` state/value agreement. -/
 structure JalRangeDomain (jal_input : PureSpec.JalInput) : Prop where
-  h_no_fgl_wrap : jal_input.PC.toNat + (BitVec.signExtend 64 jal_input.imm).toNat < GL_prime
+  h_target_nonneg :
+    0 ≤ (jal_input.PC.toNat : Int) + (BitVec.signExtend 64 jal_input.imm).toInt
+  h_target_lt :
+    (jal_input.PC.toNat : Int) + (BitVec.signExtend 64 jal_input.imm).toInt < GL_prime
   h_pc_bound : jal_input.PC.toNat < GL_prime - 4
   h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296
 
@@ -94,9 +98,8 @@ structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_jmp_offset1_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: taken on flag=1 (`r1 == r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
@@ -182,9 +185,8 @@ structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_jmp_offset2_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: `neg` polarity (taken on flag=0, `r1 ≠ r2`); the taken offset rides on
   -- `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
@@ -271,9 +273,8 @@ structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_jmp_offset1_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: taken on flag=1 (signed `r1 <s r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
@@ -359,9 +360,8 @@ structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_jmp_offset2_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: `neg` polarity (taken on flag=0, signed `r1 ≥s r2`); the taken offset
   -- rides on `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
@@ -448,9 +448,8 @@ structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
   h_jmp_offset1_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100 next-PC transition input (replaces the exec artifacts): the next row
   -- exists. The taken-offset pin (`jmp_offset1 = signExtend imm`) is decoded from
   -- the committed program; `flag = comparison` is DERIVED in `stepStrong_bltu`
@@ -540,9 +539,8 @@ structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
   h_jmp_offset2_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100 next-PC transition input (replaces the exec artifacts): the next row
   -- exists. BGEU is the `create_branch_op`-`neg` polarity (taken on `flag = 0`):
   -- the taken offset rides on `jmp_offset2`; `jmp_offset1 = 4` is the fall-through
@@ -632,9 +630,8 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLui trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
   h_jmp_offset1_imm :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
-        i.val).val
-      = (BitVec.signExtend 64 c.imm).toNat
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
+      i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   h_jmp2 :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4

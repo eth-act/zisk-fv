@@ -104,9 +104,9 @@ theorem construction_auipc_sound_claimed_dead
     (h_input_rd : auipc_input.rd = regidx_to_fin rd)
     (h_input_pc : (binding i).regs.get? Register.PC = .some auipc_input.PC)
     (h_offset_bridge :
-      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
-          i.val).val
-        = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
+          i.val = ((BitVec.signExtend 64
+            (auipc_input.imm ++ (0 : BitVec 12))).toInt : FGL))
     (h_pc_bridge :
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
         = auipc_input.PC.toNat)
@@ -124,9 +124,10 @@ theorem construction_auipc_sound_claimed_dead
       auipc_input.rd =
         Transpiler.wrap_to_regidx (eRdLui trace i).ptr)
     -- (b) RANGE pins
-    (h_no_wrap : auipc_input.PC.toNat
-      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
-        < GL_prime)
+    (h_target_nonneg : 0 ≤ (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt)
+    (h_target_lt : (auipc_input.PC.toNat : Int)
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toInt < GL_prime)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
@@ -189,6 +190,7 @@ theorem construction_auipc_sound_claimed_dead
   exact ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     execRow e_rd m i.val next_pc store_pc_mem
     (PureSpec.execute_AUIPC_pure auipc_input).nextPC
-    promises h_circuit h_offset_bridge h_pc_bridge h_no_wrap h_pc_offset_lt_2_32
+    promises h_circuit h_offset_bridge h_pc_bridge h_target_nonneg h_target_lt
+      h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

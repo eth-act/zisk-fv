@@ -261,6 +261,50 @@ lemma fgl_pc_plus_offset_lo_of_bound
     (no_wrap_of_pc_offset_bound pc_fgl offset_fgl PC offset_bv
       h_pc_bridge h_offset_bridge h_pc_offset_bound)
 
+/-- A signed 64-bit offset is stored in production ROM as its integer cast to
+Goldilocks.  If the mathematical target stays in the field's canonical range,
+field addition agrees with 64-bit addition, including backward offsets. -/
+lemma fgl_pc_plus_signed_offset_val
+    (pc_fgl : FGL) (PC offset_bv : BitVec 64)
+    (h_pc_bridge : pc_fgl.val = PC.toNat)
+    (h_target_nonneg : 0 ≤ (PC.toNat : Int) + offset_bv.toInt)
+    (h_target_lt : (PC.toNat : Int) + offset_bv.toInt < GL_prime) :
+    (pc_fgl + (offset_bv.toInt : FGL)).val = (PC + offset_bv).toNat := by
+  have hpc_eq : pc_fgl = (PC.toNat : FGL) := by
+    apply Fin.ext
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
+    exact h_pc_bridge
+  rw [hpc_eq]
+  let r : Int := (PC.toNat : Int) + offset_bv.toInt
+  have hr0 : 0 ≤ r := by simpa [r] using h_target_nonneg
+  have hrp : r < (GL_prime : Int) := by
+    simpa [r] using h_target_lt
+  have hrnat : ((r : FGL).val) = r.toNat := by
+    rw [Fin.val_intCast]
+    exact congrArg Int.toNat (Int.emod_eq_of_lt hr0 hrp)
+  have hfield : (PC.toNat : FGL) + (offset_bv.toInt : FGL) = (r : FGL) := by
+    simp only [r]
+    push_cast
+    rfl
+  rw [hfield, hrnat, BitVec.toNat_add]
+  have hpc64 : PC.toNat < 2 ^ 64 := PC.isLt
+  simp only [r] at hr0 hrp
+  rw [BitVec.toInt_eq_toNat_cond] at hr0 hrp
+  split at hr0
+  · rename_i hoff
+    rw [if_pos hoff] at hrp
+    have hsum : PC.toNat + offset_bv.toNat < 2 ^ 64 := by omega
+    rw [Nat.mod_eq_of_lt hsum]
+    simp only [r, BitVec.toInt_eq_toNat_cond, if_pos hoff]
+    omega
+  · rename_i hoff
+    rw [if_neg hoff] at hrp
+    have hle : 2 ^ 64 ≤ PC.toNat + offset_bv.toNat := by omega
+    have hlt : PC.toNat + offset_bv.toNat - 2 ^ 64 < 2 ^ 64 := by omega
+    rw [Nat.mod_eq_sub_mod hle, Nat.mod_eq_of_lt hlt]
+    simp only [r, BitVec.toInt_eq_toNat_cond, if_neg hoff]
+    omega
+
 /-- **Hi-half lift specialised to small offset.**  Companion to
 `fgl_pc_plus_offset_lo_of_bound`. -/
 lemma fgl_pc_plus_offset_hi_of_bound
