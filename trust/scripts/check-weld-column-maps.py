@@ -35,6 +35,9 @@ it runs this once, for all AIRs, so the check numbering never moves.
     row-decl    = ["ZiskFv/.../ArithMul/Row.lean"]    # file(s) declaring it
     generated   = "build/extraction/Extraction/Arith.lean"  # extractor output
     recording   = "trust/generated/weld-columns/arith.txt"  # tracked recording
+    direction   = "forward"            # optional default; or "inverse"
+    instance-main = "mainValue"        # optional helper bound as instance.main
+    column-map-occurrence = 1           # for same-named defs in separate namespaces
     stage       = 1                   # optional, default 1: which stage's columns
     unpinned-instances = ["arithProbeCircuit"]  # optional, see "Discovery"
     aliases     = { }                 # optional, see "Aliases"
@@ -43,6 +46,10 @@ it runs this once, for all AIRs, so the check numbering never moves.
 
 Unknown keys are a failure, not a warning: a typo'd key would otherwise silently
 turn a check off.
+
+`direction = "inverse"` covers #308's instance-free shape: a record constructor
+whose fields read `Extraction.Circuit.main ... (column := N)`. It needs the common
+row/layout keys but no `wrapper`, `instance`, or `pin`.
 
 ### Aliases
 
@@ -86,7 +93,8 @@ extractor.
 ## What is checked, per registered AIR, on every run
 
 1. every input exists and parses to a non-empty result -- no vacuous pass;
-2. each `| N => <accessor>.<path>` arm resolves against the *real* row structure,
+2. each forward `| N => <accessor>.<path>` arm, or inverse
+   `field := fun r => Circuit.main ... (column := N)`, resolves against the real row structure,
    walking nested sub-records to any depth: every path segment must be a declared
    field, and the path must end at a leaf (a field whose type is not itself one of
    the declared structures). Checking only the last segment would let an arm keep
@@ -97,12 +105,11 @@ extractor.
 4. the arm set and the recorded column set agree index-by-index and name-by-name
    (modulo declared aliases), under the extractor's `a[0]` -> `a_0` rule
    (`tools/pil-extract/src/clean_component.rs::lean_field_name`);
-5. every arm lies in the body of the registered `column-map` def itself, and no
-   arm lies anywhere else in the weld file -- arms parked in a helper that the
-   column map merely delegates to would be pinned here and unpinned in the build;
-6. the weld declares the registered `pin` theorem, its statement mentions
+5. every counted arm lies in the body of the registered `column-map` def itself;
+6. for forward maps, the weld declares the registered `pin` theorem, whose statement mentions
    `inferInstance`, `Extraction.Circuit`, the registered `wrapper` and
-   `main := <column-map>`, and it is the module's LAST declaration. That theorem
+   `main := <instance-main>`, and no instance declaration follows it. The helper
+   must call the registered column map when the two names differ. That theorem
    is what stops `instance`'s `main` field being rebound to some other function
    while this gate stays green -- the hazard review of #300 found exactly that
    hole. This check can only see that the pin is *present and correctly shaped*;
@@ -110,10 +117,12 @@ extractor.
 7. when the generated file is present, the recorded layout reproduces its header
    exactly.
 
-## Discovery: an unregistered circuit instance is a failure
+## Discovery: an unregistered weld or circuit instance is a failure
 
 The registry cannot be the only source of truth about which AIRs are welded, or
-deleting a block would silently drop coverage. So this check also scans every
+deleting a block would silently drop coverage. The check scans every
+`ZiskFv/AirsClean/**/*MirrorWeld.lean` and requires the file to have a registry
+entry; this catches instance-free inverse maps such as Binary. It also scans every
 `ZiskFv/**/*.lean` for top-level `instance _ : Extraction.Circuit ...`
 declarations and requires each one to be accounted for: either it is a registered
 AIR's pinned `instance`, or it is listed in that AIR's `unpinned-instances`.
@@ -138,21 +147,22 @@ from pathlib import Path
 REGISTRY = Path("trust/weld-airs.toml")
 ZISKFV = Path("ZiskFv")
 
-REQUIRED_KEYS = frozenset(
-    {
-        "weld",
-        "column-map",
-        "wrapper",
-        "instance",
-        "pin",
-        "row-type",
-        "row-decl",
-        "generated",
-        "recording",
-    }
+COMMON_REQUIRED_KEYS = frozenset(
+    {"weld", "column-map", "row-type", "row-decl", "generated", "recording"}
 )
+FORWARD_REQUIRED_KEYS = frozenset({"wrapper", "instance", "pin"})
 OPTIONAL_KEYS = frozenset(
-    {"accessor", "stage", "aliases", "unpinned-instances", "leaf-type-heads", "note"}
+    {
+        "accessor",
+        "stage",
+        "aliases",
+        "unpinned-instances",
+        "leaf-type-heads",
+        "note",
+        "direction",
+        "instance-main",
+        "column-map-occurrence",
+    }
 )
 
 RECORDED_RE = re.compile(r"^(\d+)\s+(\S+)$")
@@ -355,7 +365,9 @@ def explain_path(
     return f"the path stops at sub-record `{struct}`, not a leaf cell"
 
 
-def column_map_body(text: str, name: str, where: Path) -> tuple[list[str], list[str]]:
+def column_map_body(
+    text: str, name: str, where: Path, occurrence: int = 1
+) -> tuple[list[str], list[str]]:
     """The lines of `def <name>`'s body, and every other line of the file.
 
     `\\b` is not enough to delimit the name: `'` is a Lean identifier character but
@@ -366,11 +378,12 @@ def column_map_body(text: str, name: str, where: Path) -> tuple[list[str], list[
     head = re.compile(rf"^def {re.escape(name)}(?![A-Za-z0-9_'])")
     lines = strip_comments(text).splitlines()
     starts = [i for i, line in enumerate(lines) if head.match(line)]
-    if len(starts) != 1:
+    if occurrence < 1 or occurrence > len(starts):
         raise CheckError(
-            f"{where}: expected exactly one top-level `def {name}`, found {len(starts)}"
+            f"{where}: requested occurrence {occurrence} of top-level `def {name}`, "
+            f"found {len(starts)}"
         )
-    start = starts[0]
+    start = starts[occurrence - 1]
     end = len(lines)
     for index in range(start + 1, len(lines)):
         line = lines[index]
@@ -382,7 +395,9 @@ def column_map_body(text: str, name: str, where: Path) -> tuple[list[str], list[
 
 def arm_regex(accessor: str) -> re.Pattern[str]:
     prefix = re.escape(accessor)
-    return re.compile(rf"^\s*\|\s*(\d+)\s*=>\s*{prefix}((?:\.{IDENT})+)\s*$")
+    return re.compile(
+        rf"^\s*\|\s*(\d+)\s*=>\s*{prefix}((?:\.{IDENT})+)(?:\s+{IDENT})?\s*$"
+    )
 
 
 def weld_arms(lines: list[str], arm: re.Pattern[str], where: Path) -> dict[int, tuple[str, ...]]:
@@ -392,6 +407,11 @@ def weld_arms(lines: list[str], arm: re.Pattern[str], where: Path) -> dict[int, 
         if match:
             index = int(match.group(1))
             if index in arms:
+                # A later `id` branch starts a new stage's `match column` at 0.
+                # The registry selects the first stage (the extractor's stage-1
+                # recording); any other repeated index is malformed.
+                if index == 0 and arms:
+                    break
                 raise CheckError(f"duplicate arm for column {index} in {where}")
             arms[index] = tuple(match.group(2).lstrip(".").split("."))
     return arms
@@ -422,11 +442,11 @@ def circuit_instances(text: str) -> list[str]:
 
 
 def pin_block(text: str, name: str, where: Path) -> tuple[str, bool]:
-    """The registered pin theorem's source block, and whether it is last.
+    """The registered pin theorem's source block, and whether no instance follows it.
 
-    "Last" means: every top-level command after it is an `end`. #300's pin argues
-    that position is load-bearing -- an `instance` declared *after* the pin could
-    shadow the one every weld above resolved, and the pin would not see it.
+    Multiple carriers in one weld module have consecutive pin theorems. What is
+    load-bearing is that no `instance` follows a pin: such an instance could shadow
+    the one every weld above resolved, and the pin would not see it.
     """
     lines = strip_comments(text).splitlines()
     head = re.compile(rf"^theorem {re.escape(name)}(?![A-Za-z0-9_'])")
@@ -440,19 +460,45 @@ def pin_block(text: str, name: str, where: Path) -> tuple[str, bool]:
     index = hits[0]
     start, end = blocks[index]
     trailing_ok = all(
-        re.match(r"^end(?![A-Za-z0-9_'])", lines[s]) for s, _ in blocks[index + 1 :]
+        not re.match(r"^instance(?![A-Za-z0-9_'])", lines[s])
+        for s, _ in blocks[index + 1 :]
     )
     return "\n".join(lines[start:end]), trailing_ok
 
 
+def inverse_map(
+    text: str, name: str, stage: int, where: Path, occurrence: int
+) -> tuple[dict[int, tuple[str, ...]], list[str]]:
+    """Parse `field := fun r => Circuit.main ... column := N ...` constructor maps."""
+    body, elsewhere = column_map_body(text, name, where, occurrence)
+    source = "\n".join(body)
+    arm = re.compile(
+        rf"\b({IDENT})\s*:=\s*fun\s+({IDENT})\s*=>\s*"
+        rf"Extraction\.Circuit\.main\s+{IDENT}\s+"
+        rf"\(id\s*:=\s*{stage}\)\s+\(column\s*:=\s*(\d+)\)\s+"
+        rf"\(row\s*:=\s*\2\)\s+\(rotation\s*:=\s*0\)"
+    )
+    arms: dict[int, tuple[str, ...]] = {}
+    for match in arm.finditer(source):
+        field, index = match.group(1), int(match.group(3))
+        if index in arms:
+            raise CheckError(f"duplicate inverse arm for column {index} in {where}")
+        arms[index] = (field,)
+    return arms, elsewhere
+
+
 def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str], str]:
-    unknown = set(spec) - REQUIRED_KEYS - OPTIONAL_KEYS
+    direction = str(spec.get("direction", "forward"))
+    if direction not in {"forward", "inverse"}:
+        raise CheckError(f"[air.{air}]: `direction` must be `forward` or `inverse`")
+    required = COMMON_REQUIRED_KEYS | (FORWARD_REQUIRED_KEYS if direction == "forward" else set())
+    unknown = set(spec) - COMMON_REQUIRED_KEYS - FORWARD_REQUIRED_KEYS - OPTIONAL_KEYS
     if unknown:
         raise CheckError(
             f"[air.{air}]: unknown key(s) {', '.join(sorted(unknown))} in {REGISTRY} -- "
             "a typo'd key would silently disable a check"
         )
-    missing = REQUIRED_KEYS - set(spec)
+    missing = required - set(spec)
     if missing:
         raise CheckError(f"[air.{air}]: {REGISTRY} is missing key(s) {', '.join(sorted(missing))}")
 
@@ -460,12 +506,14 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
     recording_path = Path(str(spec["recording"]))
     generated_path = Path(str(spec["generated"]))
     map_name = str(spec["column-map"])
-    wrapper = str(spec["wrapper"])
-    instance = str(spec["instance"])
-    pin = str(spec["pin"])
+    wrapper = str(spec.get("wrapper", ""))
+    instance = str(spec.get("instance", ""))
+    pin = str(spec.get("pin", ""))
+    instance_main = str(spec.get("instance-main", map_name))
     row_type = str(spec["row-type"])
     accessor = str(spec.get("accessor", "c.row"))
     stage = int(spec.get("stage", 1))  # type: ignore[arg-type]
+    occurrence = int(spec.get("column-map-occurrence", 1))  # type: ignore[arg-type]
     aliases = dict(spec.get("aliases", {}))  # type: ignore[arg-type]
     unpinned = list(spec.get("unpinned-instances", []))  # type: ignore[arg-type]
 
@@ -481,12 +529,15 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
         raise CheckError(f"{recording_path} records no columns; refusing to pass vacuously")
 
     weld_text = read(root, weld_path, f"[air.{air}] weld module")
-    body, elsewhere = column_map_body(weld_text, map_name, weld_path)
     arm = arm_regex(accessor)
-    arms = weld_arms(body, arm, weld_path)
+    if direction == "forward":
+        body, elsewhere = column_map_body(weld_text, map_name, weld_path, occurrence)
+        arms = weld_arms(body, arm, weld_path)
+    else:
+        arms, elsewhere = inverse_map(weld_text, map_name, stage, weld_path, occurrence)
     if not arms:
         raise CheckError(
-            f"{weld_path}: `def {map_name}` has no `| N => {accessor}.<path>` arms; "
+            f"{weld_path}: `def {map_name}` has no stage-{stage} column arms; "
             "refusing to pass vacuously"
         )
 
@@ -509,13 +560,7 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
         frozenset(str(h) for h in spec.get("leaf-type-heads", [])),  # type: ignore[union-attr]
     )
 
-    failures: list[str] = [
-        f"{weld_path}: column-map arm outside `def {map_name}`: {line.strip()} -- "
-        f"the compiled pin `{pin}` names `{map_name}`, so an arm anywhere else is "
-        "checked here and unchecked there"
-        for line in elsewhere
-        if arm.match(line)
-    ]
+    failures: list[str] = []
     failures += [
         f"[air.{air}] leaf-name clash in `{row_type}` -- {clash}; the column map "
         "identifies a cell by field name, so this makes it ambiguous"
@@ -577,9 +622,9 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
                 f"but {recording_path} declares no such stage-{stage} column"
             )
 
-    # The circuit instance must exist here, and be bound to this column map.
+    # A forward map's circuit instance must exist here and be kernel-pinned.
     declared_instances = circuit_instances(weld_text)
-    if instance not in declared_instances:
+    if direction == "forward" and instance not in declared_instances:
         failures.append(
             f"[air.{air}] {weld_path} declares no top-level "
             f"`instance {instance} : Extraction.Circuit ...`"
@@ -591,26 +636,38 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
                 "declare; a stale entry pre-approves a future instance sight-unseen"
             )
 
-    statement, is_last = pin_block(weld_text, pin, weld_path)
-    for needle, why in (
-        ("inferInstance", "so a shadowing instance is caught"),
-        ("Extraction.Circuit", "so it is the circuit class that is pinned"),
-        (wrapper, f"so it is `{wrapper}`'s instance that is pinned"),
-    ):
-        if not re.search(rf"(?<![A-Za-z0-9_']){re.escape(needle)}(?![A-Za-z0-9_'])", statement):
+    if direction == "forward":
+        statement, no_later_instance = pin_block(weld_text, pin, weld_path)
+        for needle, why in (
+            ("inferInstance", "so a shadowing instance is caught"),
+            ("Extraction.Circuit", "so it is the circuit class that is pinned"),
+            (wrapper, f"so it is `{wrapper}`'s instance that is pinned"),
+        ):
+            if not re.search(
+                rf"(?<![A-Za-z0-9_']){re.escape(needle)}(?![A-Za-z0-9_'])", statement
+            ):
+                failures.append(
+                    f"[air.{air}] `theorem {pin}`'s statement does not mention `{needle}` -- {why}"
+                )
+        if not re.search(
+            rf"main\s*:=\s*{re.escape(instance_main)}(?![A-Za-z0-9_'])", statement
+        ):
             failures.append(
-                f"[air.{air}] `theorem {pin}`'s statement does not mention `{needle}` -- {why}"
+                f"[air.{air}] `theorem {pin}` does not bind `main := {instance_main}`"
             )
-    if not re.search(rf"main\s*:=\s*{re.escape(map_name)}(?![A-Za-z0-9_'])", statement):
-        failures.append(
-            f"[air.{air}] `theorem {pin}`'s statement does not bind `main := {map_name}` -- "
-            f"without it this gate pins `{map_name}` while the welds resolve some other map"
-        )
-    if not is_last:
-        failures.append(
-            f"[air.{air}] `theorem {pin}` is not the last declaration in {weld_path}; an "
-            "instance declared after it would shadow the one the welds resolve, unseen by the pin"
-        )
+        if instance_main != map_name:
+            helper_body, _ = column_map_body(weld_text, instance_main, weld_path)
+            if not re.search(
+                rf"(?<![A-Za-z0-9_']){re.escape(map_name)}(?![A-Za-z0-9_'])",
+                "\n".join(helper_body),
+            ):
+                failures.append(
+                    f"[air.{air}] `{instance_main}` does not call `{map_name}`"
+                )
+        if not no_later_instance:
+            failures.append(
+                f"[air.{air}] an `Extraction.Circuit` instance follows `theorem {pin}`"
+            )
 
     # When the extractor output is present, the recording must reproduce it.
     if (root / generated_path).exists():
@@ -634,10 +691,15 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
         source = f"{generated_path} absent (unpopulated tree), so the recording was not re-derived"
 
     alias_note = f", {len(aliases)} via explicit alias" if aliases else ""
+    binding = (
+        f"`{pin}` binds `{instance}.main := {instance_main}`"
+        if direction == "forward"
+        else "inverse map needs no circuit instance"
+    )
     summary = (
         f"  {air}: {len(recorded)} stage-{stage} columns, each a distinct existing "
-        f"`{row_type}` cell{alias_note}, all inside `def {map_name}`; "
-        f"`{pin}` binds `{instance}.main := {map_name}`; {source}."
+        f"`{row_type}` cell{alias_note}, all inside {direction} `def {map_name}`; "
+        f"{binding}; {source}."
     )
     return failures, summary
 
@@ -657,14 +719,12 @@ def registry_airs(root: Path) -> dict[str, dict[str, object]]:
 
 
 def check_discovery(root: Path, airs: dict[str, dict[str, object]]) -> list[str]:
-    """Every `Extraction.Circuit` instance under `ZiskFv/` must be accounted for."""
+    """Every weld module and every `Extraction.Circuit` instance must be accounted for."""
     accounted: dict[str, str] = {}
-    weld_files: dict[str, str] = {}
+    weld_files: set[str] = set()
     for air, spec in airs.items():
         weld = str(spec.get("weld", ""))
-        if weld in weld_files:
-            return [f"{REGISTRY}: `{weld}` is registered by both {weld_files[weld]} and {air}"]
-        weld_files[weld] = air
+        weld_files.add(weld)
         for name in [spec.get("instance")] + list(spec.get("unpinned-instances", [])):  # type: ignore[arg-type]
             if name is not None:
                 accounted[f"{weld}::{name}"] = air
@@ -674,6 +734,18 @@ def check_discovery(root: Path, airs: dict[str, dict[str, object]]) -> list[str]
         raise CheckError(f"found no Lean sources under {ZISKFV}; refusing to pass vacuously")
 
     failures: list[str] = []
+    discovered_welds = {
+        path.relative_to(root).as_posix()
+        for path in (root / "ZiskFv" / "AirsClean").rglob("*MirrorWeld.lean")
+    }
+    for path in sorted(discovered_welds - weld_files):
+        failures.append(
+            f"{path}: weld module is not registered in {REGISTRY}; "
+            "instance-free inverse maps must not disappear from discovery"
+        )
+    for path in sorted(weld_files - discovered_welds):
+        failures.append(f"{REGISTRY}: registered weld module does not exist: {path}")
+
     for path in sources:
         rel = path.relative_to(root).as_posix()
         for name in circuit_instances(path.read_text()):

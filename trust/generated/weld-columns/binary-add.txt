@@ -1,0 +1,30 @@
+# trust/generated/weld-columns/binary-add.txt
+#
+# The BinaryAdd AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/BinaryAdd.lean` and normalised by the
+# extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/BinaryMirrorWeld.lean` welds the handwritten BinaryAdd
+# constraint mirror to the generated constraints; that weld's
+# `validOfCircuit` maps a column *index* to a `Valid_BinaryAdd` field, and
+# this file is what `trust/scripts/check-weld-column-maps.py` checks that map
+# against. Recording it here is what lets the source-only V1 gate check the map
+# on a checkout where the gitignored `build/` tree does not exist; on any
+# populated tree the same check requires this file to reproduce the generated
+# header.
+#
+# Generated — do not hand-edit. Regenerate via `trust/scripts/regenerate.sh`
+# (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 10
+#
+0 a_0
+1 a_1
+2 b_0
+3 b_1
+4 c_chunks_0
+5 c_chunks_1
+6 c_chunks_2
+7 c_chunks_3
+8 cout_0
+9 cout_1

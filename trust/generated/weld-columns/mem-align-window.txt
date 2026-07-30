@@ -1,0 +1,49 @@
+# trust/generated/weld-columns/mem-align-window.txt
+#
+# The MemAlignWindow AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/MemAlign.lean` and normalised by the
+# extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/MemAlignMirrorWeld.lean` welds the handwritten MemAlignWindow
+# constraint mirror to the generated constraints; that weld's
+# `stage1Column` maps a column *index* to a `MemAlignRow` field, and
+# this file is what `trust/scripts/check-weld-column-maps.py` checks that map
+# against. Recording it here is what lets the source-only V1 gate check the map
+# on a checkout where the gitignored `build/` tree does not exist; on any
+# populated tree the same check requires this file to reproduce the generated
+# header.
+#
+# Generated — do not hand-edit. Regenerate via `trust/scripts/regenerate.sh`
+# (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 29
+#
+0 addr
+1 offset
+2 width
+3 wr
+4 pc
+5 reset
+6 sel_up_to_down
+7 sel_down_to_up
+8 reg_0
+9 reg_1
+10 reg_2
+11 reg_3
+12 reg_4
+13 reg_5
+14 reg_6
+15 reg_7
+16 sel_0
+17 sel_1
+18 sel_2
+19 sel_3
+20 sel_4
+21 sel_5
+22 sel_6
+23 sel_7
+24 step
+25 delta_addr
+26 sel_prove
+27 value_0
+28 value_1

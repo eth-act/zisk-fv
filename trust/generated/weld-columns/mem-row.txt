@@ -1,0 +1,33 @@
+# trust/generated/weld-columns/mem-row.txt
+#
+# The MemRow AIR's stage-1 witness column layout, as printed by the PIL
+# extractor at the top of `build/extraction/Extraction/Mem.lean` and normalised by the
+# extractor's `a[0]` -> `a_0` rule.
+#
+# `ZiskFv/AirsClean/MemMirrorWeld.lean` welds the handwritten MemRow
+# constraint mirror to the generated constraints; that weld's
+# `rowMainValue` maps a column *index* to a `MemRow` field, and
+# this file is what `trust/scripts/check-weld-column-maps.py` checks that map
+# against. Recording it here is what lets the source-only V1 gate check the map
+# on a checkout where the gitignored `build/` tree does not exist; on any
+# populated tree the same check requires this file to reproduce the generated
+# header.
+#
+# Generated — do not hand-edit. Regenerate via `trust/scripts/regenerate.sh`
+# (requires `nix run .#populate`).
+#
+# Total stage-1 columns: 13
+#
+0 addr
+1 step
+2 sel
+3 addr_changes
+4 step_dual
+5 sel_dual
+6 value_0
+7 value_1
+8 wr
+9 previous_step
+10 l_increment
+11 h_increment
+12 read_same_addr
