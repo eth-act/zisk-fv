@@ -49,6 +49,18 @@ What each mutation emulates
                                                     -> RECLASSIFICATION, and
                         specifically the kind-erasure route, NOT a gap plus an
                         unrelated strengthening
+    OUT_OF_ROOT_DISAGREES  a clause of the out-of-root Mem mirror
+                        (`segmentResidualEveryRow`) edited to a different
+                        polynomial: the constraint it covered reverts to a
+                                                    -> GAP, and the clause reports
+                        as an unmatched out-of-root finding. Proves the 15
+                        OUT_OF_ROOT matches are decided by polynomial equality, not
+                        declared from `survey.DELEGATED`.
+    BOOL_TYPING_WEAKENED  the `.val < 2` bound on a MemAlignByte selector loosened
+                        to `< 256`: the boolean-shaped constraint over that plain
+                        `F` field is no longer typed, so it reverts to a
+                                                    -> GAP. Proves BOOL_TYPED is
+                        backed by the bound the tool checks, not by the index.
 
 Measured limits
 
@@ -126,6 +138,8 @@ GAP = "GAP"
 STRENGTHENING = "STRENGTHENING"
 RECLASSIFICATION = "RECLASSIFICATION"
 UNBACKED = "UNBACKED"
+OUT_OF_ROOT = "OUT_OF_ROOT"
+BOOL_TYPED = "BOOL_TYPED"
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -338,6 +352,21 @@ def fmt_signed(added: Counter, removed: Counter) -> str:
 
 def gap(air: str, *indices: int) -> Signature:
     return (GAP, air, "", tuple(sorted(indices)), ())
+
+
+def out_of_root(air: str, *indices: int) -> Signature:
+    """An OUT_OF_ROOT coverage finding, keyed like the pairing that produced it.
+
+    `segmentResidualEveryRow` is the only out-of-root mirror at HEAD, so it is the
+    definition every such finding names; a mutation that breaks one of its clauses
+    removes this signature and adds the matching `gap`.
+    """
+    return (OUT_OF_ROOT, air, "", tuple(sorted(indices)), ("segmentResidualEveryRow",))
+
+
+def bool_typed(air: str, *indices: int) -> Signature:
+    """A BOOL_TYPED coverage finding: no mirror clause, so the `defs` slot is empty."""
+    return (BOOL_TYPED, air, "", tuple(sorted(indices)), ())
 
 
 def strengthening(air: str, *definitions: str) -> Signature:
@@ -575,6 +604,43 @@ def replace_in_line(anchor: str, old: str, new: str, occurrence: int = 1) -> Mut
     return apply
 
 
+def replace_in_declaration(head: str, old: str, new: str,
+                           occurrence: int = 1) -> Mutator:
+    """Replace the `occurrence`-th `old` with `new` inside ONE declaration.
+
+    A line-based anchor cannot reach the out-of-root Mem mirror: every clause of
+    `segmentResidualEveryRow` is a verbatim copy of a line in `segment_every_row`
+    in the same file, so no single stripped line is unique. This scopes the edit
+    to the declaration whose head-line starts with `head`, from that line to the
+    next line at column 0, so the target is unambiguous without a unique line.
+    """
+    def apply(lines: list[str]) -> Applied:
+        starts = [i for i, line in enumerate(lines)
+                  if line.strip().startswith(head)]
+        if len(starts) != 1:
+            raise HarnessError(
+                f"declaration head occurs {len(starts)} time(s), need 1: {head!r}")
+        start = starts[0]
+        end = len(lines)
+        for i in range(start + 1, len(lines)):
+            if lines[i] and not lines[i][0].isspace():
+                end = i
+                break
+        remaining = occurrence
+        for i in range(start, end):
+            count = lines[i].count(old)
+            if count >= remaining:
+                pos = -1
+                for _ in range(remaining):
+                    pos = lines[i].index(old, pos + 1)
+                lines[i] = lines[i][:pos] + new + lines[i][pos + len(old):]
+                return lines, f"{head} :: {old} (#{occurrence})", lines[i].strip()
+            remaining -= count
+        raise HarnessError(
+            f"{old!r} occurs fewer than {occurrence} time(s) in declaration {head!r}")
+    return apply
+
+
 def swap_lines(first: str, second: str) -> Mutator:
     def apply(lines: list[str]) -> Applied:
         i, j = locate_line(lines, first), locate_line(lines, second)
@@ -607,13 +673,23 @@ def no_mutation(lines: list[str]) -> Applied:
 # Targets are fixed, real mirror clauses, so a run is reproducible.
 #
 #   ZiskFv/AirsClean/MemAlign/Spec.lean       `Spec`, 16 conjuncts, all paired
-#     #0   row.wr * (1 - row.wr) = 0                     <- MemAlign #25
-#     #11  row.sel_7 * (1 - row.sel_7) = 0               <- MemAlign #24
 #     #12  row.preL1 * row.pc = 0                        <- MemAlign #16, by alias
+#     #13  row.sel_prove * (sel_up_to_down + ...) = 0    <- MemAlign #30, algebraic
+#     #14  row.value_0 - (...) = 0                       <- MemAlign #31, algebraic
 #   ZiskFv/AirsClean/MemAlign/Circuit.lean    `transitionRows`, a two-row mirror
 #     #1   (previous.reg_0 - current.reg_0) * ...        <- MemAlign #1
 #   ZiskFv/AirsClean/Main/Spec.lean           `AddressSpec`
 #     #1   row.rom.addr1 = ...                           <- Main #1, in `a = b` form
+#   ZiskFv/AirsClean/MemAlignByte/Spec.lean   `Assumptions`, the selector bounds
+#     row.sel_high_4b.val < 2                            -> BOOL_TYPED MemAlignByte #0
+#   ZiskFv/Airs/Mem.lean                      `segmentResidualEveryRow`, out-of-root
+#     clause #1  cols.segment_l1' * (value_0 - ...) = 0  <- Mem #9, OUT_OF_ROOT
+#
+# The selector-boolean clauses (`row.sel_7 * (1 - row.sel_7)` etc.) are NOT used
+# as gap targets any more: their columns carry a `.val < 2` bound in
+# `Assumptions`, so deleting the restated equation leaves them BOOL_TYPED-covered
+# rather than a gap. The algebraic `sel_prove`/`value_0` clauses have no such
+# bound, so they still gap.
 #
 # `MemAlign.addr` is witness column 0 of the AIR and `MemAlign.L1` is fixed
 # column 0, which is what makes FIXED_AS_WITNESS a same-index kind swap and not
@@ -623,16 +699,26 @@ MEMALIGN_SPEC = "ZiskFv/AirsClean/MemAlign/Spec.lean"
 MEMALIGN_CIRCUIT = "ZiskFv/AirsClean/MemAlign/Circuit.lean"
 MAIN_SPEC = "ZiskFv/AirsClean/Main/Spec.lean"
 BINARY_SPEC = "ZiskFv/AirsClean/Binary/Spec.lean"
+MEMALIGNBYTE_SPEC = "ZiskFv/AirsClean/MemAlignByte/Spec.lean"
+MEM_OUT_OF_ROOT = "ZiskFv/Airs/Mem.lean"
 
 SEL_6 = "∧ row.sel_6 * (1 - row.sel_6) = 0"
 SEL_7 = "∧ row.sel_7 * (1 - row.sel_7) = 0"
 WR_BOOL = "row.wr * (1 - row.wr) = 0"
 PRE_L1 = "∧ row.preL1 * row.pc = 0"
 SEL_PROVE = "∧ row.sel_prove * (row.sel_up_to_down + row.sel_down_to_up) = 0"
+# The value_0 reconstruction (MemAlign #31): its LHS field, on its own line. It is
+# an ALGEBRAIC clause with no `.val < 2` bound, so unlike the selector booleans a
+# swap of its output field genuinely produces a gap rather than falling to
+# BOOL_TYPED coverage.
+VALUE_0_LHS = "∧ row.value_0 -"
 REG_0_DOWN = ("∧ (previous.reg_0 - current.reg_0) * current.sel_0 "
               "* current.sel_down_to_up = 0")
 ADDR1 = "∧ row.rom.addr1 = row.rom.b_offset_imm0 + row.rom.b_src_ind * row.core.a_0"
 CARRY_7_BOOL = "∧ row.chain.carry_7 * (1 - row.chain.carry_7) = 0"
+# MemAlignByte's `Assumptions`, the line bounding the first two selectors. Loosening
+# `sel_high_4b`'s bound is what proves BOOL_TYPED rests on the bound, not the index.
+MEMALIGNBYTE_ASSUMPTIONS = "row.sel_high_4b.val < 2 ∧ row.sel_high_2b.val < 2"
 
 
 @dataclass(frozen=True)
@@ -665,12 +751,16 @@ MUTATIONS: tuple[Mutation, ...] = (
     ),
     Mutation(
         name="CLAUSE_DELETED",
-        lean_file=MEMALIGN_SPEC, target="Spec#11, the sel_7 boolean",
+        lean_file=MEMALIGN_SPEC, target="Spec#13, the sel_prove disjointness clause",
         intent="a mirror clause that used to restate a constraint and no longer does",
-        # MemAlign #24 was backed by this clause alone, so it loses its only
-        # mirror. Nothing else moves: no clause is added, so no strengthening.
-        apply=drop_line(SEL_7),
-        added=(gap("MemAlign", 24),),
+        # MemAlign #30 (`sel_prove * (sel_up_to_down + sel_down_to_up)`) is backed
+        # by this clause alone -- and it is ALGEBRAIC, not a `col*(1-col)` boolean,
+        # so no `.val < 2` bound covers it. Deleting the clause is therefore a
+        # genuine gap, where deleting a selector-boolean clause would fall to
+        # BOOL_TYPED (the bound still pins the column). Nothing is added, so no
+        # strengthening.
+        apply=drop_line(SEL_PROVE),
+        added=(gap("MemAlign", 30),),
     ),
     Mutation(
         name="CLAUSE_ADDED",
@@ -683,11 +773,16 @@ MUTATIONS: tuple[Mutation, ...] = (
     ),
     Mutation(
         name="PROJECTION_SWAPPED",
-        lean_file=MEMALIGN_SPEC, target="Spec#0, wr -> reset on one side",
+        lean_file=MEMALIGN_SPEC, target="Spec#14, value_0 output read as value_1",
         intent="a mirror reading the wrong row field: still well-formed, still "
                "looks like the constraint it is not",
-        apply=replace_in_line(WR_BOOL, "row.wr", "row.reset", occurrence=2),
-        added=(gap("MemAlign", 25), strengthening("MemAlign", "Spec")),
+        # The value_0 reconstruction's output read as `value_1`. The polynomial is
+        # still well-formed but no longer #31's, so #31 loses its mirror (gap) and
+        # the mutated clause matches nothing (strengthening). An ALGEBRAIC clause is
+        # used deliberately: swapping a field in a selector boolean would leave the
+        # constraint BOOL_TYPED-covered by its bound rather than a gap.
+        apply=replace_in_line(VALUE_0_LHS, "row.value_0", "row.value_1"),
+        added=(gap("MemAlign", 31), strengthening("MemAlign", "Spec")),
     ),
     Mutation(
         name="ROW_DELTA_SHIFTED",
@@ -769,6 +864,44 @@ MUTATIONS: tuple[Mutation, ...] = (
         removed=(reclassification("MemAlign", "declared lane-kind alias", 16,
                                   "Spec"),),
         scope_added=("projection_totality",),
+    ),
+    Mutation(
+        name="OUT_OF_ROOT_DISAGREES",
+        lean_file=MEM_OUT_OF_ROOT,
+        target="segmentResidualEveryRow, Mem #9's clause reads value_1's last-value",
+        intent="a clause of the out-of-root Mem mirror edited to a different "
+               "polynomial, to prove the 15 OUT_OF_ROOT matches are decided by "
+               "canonical equality and not declared from survey.DELEGATED",
+        # `segment_last_value_0 -> segment_last_value_1` inside the segment residual
+        # makes Mem #9's covering clause a different polynomial. #9 reverts to a
+        # GAP, its OUT_OF_ROOT coverage disappears, and the now-orphan clause is
+        # reported as an unmatched out-of-root finding (scope bucket `out_of_root`).
+        # A declaration-scoped edit is required: every line of
+        # `segmentResidualEveryRow` is a verbatim copy of one in `segment_every_row`
+        # in the same file, so no single line is a unique anchor.
+        apply=replace_in_declaration(
+            "def segmentResidualEveryRow", "cols.segment_last_value_0",
+            "cols.segment_last_value_1"),
+        added=(gap("Mem", 9),),
+        removed=(out_of_root("Mem", 9),),
+        scope_added=("out_of_root",),
+    ),
+    Mutation(
+        name="BOOL_TYPING_WEAKENED",
+        lean_file=MEMALIGNBYTE_SPEC,
+        target="Assumptions, sel_high_4b's `.val < 2` loosened to `< 256`",
+        intent="the bound that pins a boolean-shaped constraint's column to {0,1} "
+               "weakened, to prove BOOL_TYPED rests on the bound the tool checks "
+               "and not on the constraint index",
+        # `sel_high_4b` is a plain `F` field, so `< 256` no longer proves it is
+        # boolean. MemAlignByte #0 (`sel_high_4b*(1-sel_high_4b)`) loses its only
+        # typing evidence and reverts to a GAP; the other three selectors keep
+        # their `< 2` bound and stay BOOL_TYPED.
+        apply=replace_in_line(
+            MEMALIGNBYTE_ASSUMPTIONS, "row.sel_high_4b.val < 2",
+            "row.sel_high_4b.val < 256"),
+        added=(gap("MemAlignByte", 0),),
+        removed=(bool_typed("MemAlignByte", 0),),
     ),
     Mutation(
         name="NOOP_REORDER",

@@ -30,7 +30,13 @@ in, and pairs them set-to-set:
 | side | what it is |
 | ---- | ---------- |
 | GENERATED | the *comparable* constraints of `build/extraction/Extraction/<AIR>.lean` |
-| MIRROR | every clause of every inventoried mirror predicate under `ZiskFv/AirsClean/**` |
+| MIRROR | every clause of every inventoried mirror predicate under `ZiskFv/AirsClean/**`, plus the declared out-of-root mirrors (`survey.DELEGATED`) a root component reaches |
+
+A generated constraint no mirror-root clause carries is then given a second
+chance before it is called a gap: an out-of-root mirror clause of the same
+canonical form (`OUT_OF_ROOT`), or a `Bool`/`.val < 2` typing fact for a
+boolean-shaped constraint (`BOOL_TYPED`). Both are coverage the tool decides from
+a checked fact, and a constraint neither covers stays a gap.
 
 *Comparable* is the issue's own rule: the AIR's constraints minus every one whose
 expression reaches `Extraction.Circuit.challenge` or a stage-2 lane
@@ -83,10 +89,20 @@ mechanically instead of by reading.
 | class | meaning |
 | ----- | ------- |
 | `MATCHED` | canonical forms agree |
-| `GAP` | a comparable generated constraint no mirror clause has the canonical form of |
+| `OUT_OF_ROOT` | no mirror-root clause matches, but a declared out-of-root mirror (`survey.DELEGATED`) canonically restates it -- coverage, decided by the same polynomial equality as `MATCHED`, only the mirror is outside `ZiskFv/AirsClean` |
+| `BOOL_TYPED` | a boolean-shaped `col*(1-col)=0` whose column is pinned to {0,1} by TYPING (a `Bool`-typed row field, or a `.val < 2` bound in the AIR's spec) rather than by a restated equation -- coverage the polynomial comparator cannot see, backed by the typing fact the tool checks |
+| `GAP` | a comparable generated constraint no mirror clause has the canonical form of, and neither an out-of-root match nor a Bool-typing fact covers |
 | `STRENGTHENING` | a mirror clause no generated constraint has the canonical form of |
 | `RECLASSIFICATION` | the pairing turns on a lane's KIND: a fixed column modelled as a witness, or a stage-2 lane as stage-1 |
 | `UNBACKED` | a mirror equation over a row field this AIR has no lane for: it has no canonical form, so nothing can pair with it |
+
+`OUT_OF_ROOT` and `BOOL_TYPED` are coverage, not failures. Both are decided by a
+fact the tool checks -- a polynomial match against a mirror parsed through the
+SAME `lanes.LaneMap` and parser as the root, or a `Bool`/`.val < 2` typing fact
+read from the row struct or the spec -- never by an index allowlist. A
+boolean-shaped constraint whose column is neither `Bool`-typed nor bounded stays
+a `GAP`; `MemAlignWriteByte`'s selector booleans, which have no row record and no
+bound, are the standing witness that the recognizer discriminates.
 
 `STRENGTHENING` is a **syntactic** class, and the distinction matters. "No
 generated constraint carries this canonical form" is not the same statement as
@@ -271,9 +287,13 @@ is honestly labelled uncorroborated rather than quietly assumed.
   held against;
 * the exclusion table, with every clause each entry carried and the near-miss
   screen's verdict on each delegation it covers;
-* the per-AIR table: comparable generated, mirror clauses, matched, gap,
-  strengthening, reclassification, unbacked, unparsed, undeclared-unresolved, and
-  a TOTAL;
+* the per-AIR table: comparable generated, mirror clauses, matched, out-of-root,
+  bool-typed, gap, strengthening, reclassification, unbacked, unparsed,
+  undeclared-unresolved, and a TOTAL;
+* the coverage decided outside the mirror-root pairing: each `OUT_OF_ROOT` match
+  with the out-of-root clause and file it rests on, and each `BOOL_TYPED`
+  constraint with the `Bool` field or `.val < 2` bound and citation that pins its
+  column;
 * the pairings, `generated <- mirror clauses`, with `[many]` and
   `[RECLASSIFICATION]` flags, and the measured redundancy: how many canonical
   forms have more than one backing clause, how many clauses sit in one, and how
@@ -314,8 +334,13 @@ of its scope.
 
 Step 4/10 of `nix run .#test`, next to #303's step 3/10, running
 `check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, and
-that is the deliverable: 35 comparable generated constraints have no mirror
-clause. Those are findings for the owner, and mirrors are protected proof
+that is the deliverable: 16 comparable generated constraints have no mirror
+clause and no checked coverage fact -- 9 in `Main` (two of them the weaker
+`SEGMENT_L1`-gated half of a within-segment C-copy) and 7 in `MemAlignWriteByte`,
+which has no mirror at all. The other 19 that once read as gaps are now decided
+coverage: 15 `Mem` segment residuals matched by the out-of-root
+`segmentResidualEveryRow`, and 4 `MemAlignByte` booleans typed by a `.val < 2`
+bound. Those 16 are findings for the owner, and mirrors are protected proof
 interfaces -- closing one is proof work, not something this tool or its gate may
 do, and not something to silence with a baseline.
 
@@ -361,13 +386,17 @@ to make disappear by widening an exclusion.
   near-misses, so a mirror reclassified into a shape the parser refuses would be
   screened as "no equation found" when the truth is "not read". The 51 refused are
   named on every run.
-* **Out-of-root mirrors are named, not compared.** Mem's 15 remaining comparable
-  constraints are claimed by `ZiskFv.Airs.Mem.segmentResidualEveryRow`
-  (`ZiskFv/Airs/Mem.lean:296`), outside the mirror root. They are reported as gaps
-  *with the claim printed*, because this tool parsed nothing of that file: the
-  claim neither closes the gap nor is checked by it. Whether the gate's scope is
-  `AirsClean` only or "every polynomial mirror the AirsClean components reach" is
-  an owner decision.
+* **Out-of-root mirrors are compared, but the match is only as good as the
+  carrier resolution.** Mem's 15 segment-residual constraints are covered by
+  `ZiskFv.Airs.Mem.segmentResidualEveryRow` (`ZiskFv/Airs/Mem.lean:296`), which
+  this tool now parses through the same parser and lane map as the root and pairs
+  by canonical form (`OUT_OF_ROOT`). The witness projections (`v.*`) land on
+  stage-1 columns; the `cols.*` projections land on the AIR's exposed/fixed lanes
+  by name (`Mem.is_first_segment`, `Mem.SEGMENT_L1`), which the `SegmentColumns`
+  schema declares to BE non-witness columns -- so unlike a row record, that is not
+  the F7 reclassification hazard, and a MATCH still does not prove the field is
+  welded to the column. Only `survey.DELEGATED` mirrors are followed; a polynomial
+  mirror the components reach that is not declared there is still uncompared.
 * **Kind erasure erases the kind at a fixed index.** A kind confusion that also
   moves the index reads as a gap plus a strengthening. Relatedly, kind erasure is
   decided only on the LEFTOVERS: a generated constraint that already has a correct
@@ -387,12 +416,17 @@ to make disappear by widening an exclusion.
   classification is left alone deliberately -- softening the decision is how a
   matcher starts accepting things nobody chose. No pair at HEAD is related this
   way.
-* **`.val` bounds and field equations never pair.** `x.val < 2` and
-  `x * (1 - x) = 0` are equivalent facts over `FGL` but not the same term, which
-  is why four MemAlignByte booleans read as gaps (F2). That is a real difference in
-  where the obligation sits -- an `Assumptions` clause is a caller-supplied premise
-  where the generated constraint is an assertion -- but it is not a polynomial
-  disagreement.
+* **A `.val` bound and a field equation are not the same term, and their
+  equivalence is recognised, not pair-matched.** `x.val < 2` and `x * (1 - x) = 0`
+  are equivalent facts over `FGL` but different terms, so they never canonically
+  pair. Rather than read the four MemAlignByte booleans as gaps (F2), the
+  `BOOL_TYPED` recogniser checks the boolean-shaped constraint's column against the
+  AIR's `Bool`-typed row fields and its `.val < 2` bounds, and classifies it as
+  typed coverage only when one of those holds -- the fact is checked, and a
+  boolean-shaped constraint over a plain unbounded column is left a gap. What the
+  recogniser does NOT decide is whether the caller-supplied `Assumptions` premise
+  is discharged where the generated constraint is an assertion; it decides only
+  that the booleanity follows from the typing, wherever the typing holds.
 * **The circuit side is not compared.** The `assertZero` sequences in
   `*/Constraints.lean` hold the same content in `Expression FGL` and are what the
   components actually assert; `Mem/Constraints.lean:112` covers all 24 comparable

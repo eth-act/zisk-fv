@@ -376,6 +376,24 @@ NON_ROW_CARRIERS: dict[str, tuple[str, str]] = {
     ),
 }
 
+# Carrier types used only by the OUT-OF-ROOT mirrors -- declarations a mirror-root
+# predicate reaches (survey.DELEGATED) but that are themselves declared outside
+# `ZiskFv/AirsClean/**`. `segcols` is a mixed-arity schema of an AIR's NON-witness
+# columns: unlike a row record it is DECLARED to hold fixed/exposed lanes, so a
+# projection of one landing on a non-witness lane is the schema working as
+# documented rather than the F7 witness-looking-field hazard. Each field's arity
+# (whether it is read at a row index) is taken from the struct, not assumed.
+OUT_OF_ROOT_CARRIERS: dict[str, tuple[str, str, str]] = {
+    "SegmentColumns": (
+        "segcols",
+        "ZiskFv/Airs/Mem.lean",
+        "the non-witness Mem column schema of ZiskFv/Airs/Mem.lean:162-178: "
+        "per-segment air_value columns (`Mem.is_first_segment`, "
+        "`Mem.segment_last_addr`, ...) and the fixed column `Mem.SEGMENT_L1`, all "
+        "named as the pilout names them",
+    ),
+}
+
 # `Bool -> FGL` coercions the grammar accepts in front of a projection. The
 # projection under one is still resolved (or reported) as a projection.
 BOOL_COERCIONS: dict[str, str] = {
@@ -945,6 +963,9 @@ def _classify_type(type_tokens: list[Token], where: str) -> tuple[str, str, str]
     if short in NON_ROW_CARRIERS:
         kind, note = NON_ROW_CARRIERS[short]
         return (kind, short, note)
+    if short in OUT_OF_ROOT_CARRIERS:
+        kind, _file, note = OUT_OF_ROOT_CARRIERS[short]
+        return (kind, short, note)
     raise MirrorParseError(
         where,
         "binder type is neither a row record nor a declared non-row carrier",
@@ -1069,6 +1090,78 @@ def field_helpers(path: Path, rel: str) -> dict[str, Helper]:
     return found
 
 
+@dataclass(frozen=True)
+class CarrierHelper:
+    """A field-valued `def` whose arguments are carriers and a row index.
+
+    Unlike a `Helper`, whose parameters are `FGL` scalars substituted as
+    polynomials, a carrier helper is inlined by binding its parameter *names* to
+    the caller's carrier binders and index (see `inline_carrier`). Collected only
+    for the out-of-root mirrors, which are the only definitions written this way.
+    """
+
+    name: str
+    binders: tuple[Binder, ...]
+    tokens: tuple[Token, ...]
+    src: Slice
+    site: str
+
+
+_CARRIER_HELPER_CACHE: dict[Path, dict[str, CarrierHelper]] = {}
+
+# A carrier helper is a `def`/`abbrev` returning a single field value whose every
+# binder is a carrier (row / validator / segcols) or a `ℕ` row index. That is a
+# different shape from `_HELPER_SIG`'s all-`FGL` parameters, and the two do not
+# overlap, so collecting these never reclassifies a scalar helper.
+_CARRIER_HELPER_RESULT = frozenset({"F", "FGL"})
+
+
+def carrier_field_helpers(path: Path, rel: str) -> dict[str, CarrierHelper]:
+    """Carrier-argument field helpers visible to a mirror in `path`'s directory.
+
+    Scoped to a directory and cached, like `field_helpers`. A declaration
+    qualifies only if it returns `F`/`FGL` and every binder classifies as a
+    carrier or a row index; anything whose signature or body this grammar cannot
+    read is not offered, so a use site raises rather than receiving a partially
+    understood body. The result set is empty for the AirsClean directories, which
+    have no such helpers, so the general parse is unchanged.
+    """
+    directory = path.parent
+    if directory in _CARRIER_HELPER_CACHE:
+        return _CARRIER_HELPER_CACHE[directory]
+    found: dict[str, CarrierHelper] = {}
+    for candidate in sorted(directory.glob("*.lean")):
+        candidate_rel = (str(candidate.relative_to(REPO_ROOT))
+                         if candidate.is_relative_to(REPO_ROOT) else candidate.name)
+        for name, (decl, src) in declaration_slices(candidate, candidate_rel).items():
+            if decl.keyword not in ("def", "abbrev"):
+                continue
+            if survey.result_type(decl.signature) not in _CARRIER_HELPER_RESULT:
+                continue
+            where = f"carrier helper {name} ({candidate_rel}:{decl.line})"
+            assign = assign_position(src)
+            if assign is None:
+                continue
+            try:
+                sig_tokens = tokenize(src, where, stop=assign)
+                binders = parse_binders(sig_tokens[2:], where)
+            except MirrorParseError:
+                continue
+            if not binders or any(
+                    b.kind not in ("row", "validator", "segcols", "index")
+                    for b in binders):
+                continue
+            try:
+                body_tokens = tokenize(src, where, start=(assign[0], assign[1] + 2))
+            except MirrorParseError:
+                continue
+            found[name] = CarrierHelper(
+                name, tuple(binders), tuple(body_tokens), src,
+                f"{candidate_rel}:{decl.line}")
+    _CARRIER_HELPER_CACHE[directory] = found
+    return found
+
+
 # ---------------------------------------------------------------- the parser
 
 
@@ -1089,6 +1182,7 @@ class Context:
     helpers: dict[str, Helper]
     opaque_locals: frozenset[str]
     locals: dict[str, tuple] = field(default_factory=dict)
+    carrier_helpers: dict[str, "CarrierHelper"] = field(default_factory=dict)
     depth: int = 0
     atoms: list[tuple] = field(default_factory=list)
     unresolved: list[Unresolved] = field(default_factory=list)
@@ -1108,11 +1202,51 @@ def _candidates(air: str | None, leaf: str) -> tuple[str, ...]:
     return (leaf,)
 
 
+def _segcols_candidates(leaf: str) -> tuple[str, ...]:
+    """The pilout lane name a `SegmentColumns` field leaf spells.
+
+    The pilout names these columns `Mem.<...>`; the mirror field drops the
+    `Mem.` prefix, spells array elements `_<k>` where the pilout writes `[k]`, and
+    lowercases the fixed column `SEGMENT_L1` to `segment_l1`. The candidate
+    restores all three so resolution goes through the SAME `lanes.LaneMap` the
+    witness columns do, with no second map and no alias table.
+    """
+    if leaf == "segment_l1":
+        return ("Mem.SEGMENT_L1",)
+    match = re.fullmatch(r"(?P<base>.+?)_(?P<index>[0-9]+)", leaf)
+    if match:
+        return (f"Mem.{match['base']}[{int(match['index'])}]",)
+    return (f"Mem.{leaf}",)
+
+
+_STRUCT_ARITY_CACHE: dict[str, frozenset[str]] = {}
+
+
+def _carrier_row_indexed(type_name: str) -> frozenset[str]:
+    """The fields of an out-of-root carrier struct that take a row index.
+
+    Read from the struct, not assumed: a field typed `ℕ -> F` (or `Nat -> F`) is
+    read at a row, a field typed `F` is a single per-segment value. So the parser
+    consumes a row argument for `cols.segment_l1 (row + 1)` and not for
+    `cols.is_first_segment`, and if the struct changed which fields are indexed
+    the parse would follow it.
+    """
+    if type_name in _STRUCT_ARITY_CACHE:
+        return _STRUCT_ARITY_CACHE[type_name]
+    _kind, file, _note = OUT_OF_ROOT_CARRIERS[type_name]
+    types = survey.structure_field_types(REPO_ROOT / file, type_name)
+    indexed = frozenset(
+        name for name, typ in types.items()
+        if "→" in typ or "->" in typ)
+    _STRUCT_ARITY_CACHE[type_name] = indexed
+    return indexed
+
+
 def _resolve(ctx: Context, carrier: Binder, path: tuple[str, ...], delta: int) -> tuple:
     """One projection as an atom: a lane atom, or a reported `unresolved` marker."""
     dotted = f"{carrier.name}." + ".".join(path)
     leaf = path[-1]
-    if carrier.kind != "row" and carrier.kind != "validator":
+    if carrier.kind not in ("row", "validator", "segcols"):
         kind, note = NON_ROW_CARRIERS.get(carrier.type_name, ("carrier", carrier.note))
         return _unresolved(ctx, carrier, dotted, leaf, delta, "carrier_not_a_row",
                            (), note)
@@ -1121,7 +1255,8 @@ def _resolve(ctx: Context, carrier: Binder, path: tuple[str, ...], delta: int) -
                            "row_relation_undetermined", (), None)
     if ctx.lane_map is None:
         return _unresolved(ctx, carrier, dotted, leaf, delta, "no_lane_map", (), None)
-    candidates = _candidates(ctx.air, leaf)
+    candidates = (_segcols_candidates(leaf) if carrier.kind == "segcols"
+                  else _candidates(ctx.air, leaf))
     hits: list[tuple[str, tuple]] = []
     for candidate in candidates:
         try:
@@ -1156,13 +1291,22 @@ def _resolve(ctx: Context, carrier: Binder, path: tuple[str, ...], delta: int) -
     # column than the declared one does and said nothing about it. `std_alpha`
     # and `std_gamma` are unqualified challenge names on the same footing.
     if lane[0] != "main":
-        alias = FIELD_ALIASES.get((ctx.air, leaf)) if ctx.air is not None else None
+        if carrier.kind == "segcols":
+            # A field of a DECLARED non-witness schema resolving onto a
+            # non-witness lane is the schema working as documented, not the F7
+            # witness-looking-field hazard, so the citation is the schema's, not a
+            # missing-alias warning. It is still recorded, so a consumer can see
+            # which non-witness lanes the match rests on.
+            citation = OUT_OF_ROOT_CARRIERS[carrier.type_name][2]
+        else:
+            alias = FIELD_ALIASES.get((ctx.air, leaf)) if ctx.air is not None else None
+            citation = (alias[1] if alias else
+                        f"NO DECLARED ALIAS: the field leaf {leaf!r} spells lane "
+                        f"{name!r} directly, so a row-record projection resolved "
+                        f"onto a non-witness lane with nothing declared pinning "
+                        f"the field to it")
         ctx.reclassified.append(Reclassified(
-            dotted, leaf, lane, name, (atom[0], atom[1]),
-            alias[1] if alias else
-            f"NO DECLARED ALIAS: the field leaf {leaf!r} spells lane {name!r} "
-            f"directly, so a row-record projection resolved onto a non-witness "
-            f"lane with nothing declared pinning the field to it"))
+            dotted, leaf, lane, name, (atom[0], atom[1]), citation))
     ctx.atoms.append(atom)
     return ("atom", atom)
 
@@ -1306,6 +1450,10 @@ class _ExprParser:
         if helper is not None:
             return self.inline(helper)
 
+        carrier_helper = self.ctx.carrier_helpers.get(head)
+        if carrier_helper is not None:
+            return self.inline_carrier(carrier_helper)
+
         if binder is not None:
             raise MirrorParseError(
                 self.ctx.where,
@@ -1325,6 +1473,15 @@ class _ExprParser:
                 f"{binder.name}." + ".".join(path))
         if binder.kind == "validator":
             delta = self.row_index()
+            return _resolve(self.ctx, binder, path, delta)
+        if binder.kind == "segcols":
+            # A mixed-arity schema: a field typed `ℕ -> F` (`segment_l1`) reads a
+            # row index, a field typed `F` is a per-segment value at delta 0. The
+            # arity comes from the struct via `_carrier_row_indexed`, never a guess.
+            if path[0] in _carrier_row_indexed(binder.type_name):
+                delta = self.row_index()
+            else:
+                delta = 0
             return _resolve(self.ctx, binder, path, delta)
         if binder.kind == "row":
             delta = self.ctx.row_deltas.get(binder.name)
@@ -1377,6 +1534,7 @@ class _ExprParser:
             row_deltas=self.ctx.row_deltas,
             index_binder=self.ctx.index_binder,
             helpers=self.ctx.helpers,
+            carrier_helpers=self.ctx.carrier_helpers,
             opaque_locals=self.ctx.opaque_locals,
             locals=dict(zip(helper.params, args)),
             depth=self.ctx.depth + 1,
@@ -1394,6 +1552,72 @@ class _ExprParser:
                 " ".join(t.text for t in parser.tokens[parser.i:]))
         self.ctx.inlined[helper.name] = self.ctx.inlined.get(helper.name, 0) + 1
         self.ctx.row_relation_ok &= inner.row_relation_ok
+        return node
+
+    def inline_carrier(self, helper: "CarrierHelper") -> tuple:
+        """Inline a helper whose arguments are carriers and a row index.
+
+        `previous_row_step`, `segment_previous_addr` and friends
+        (`ZiskFv/Airs/Mem.lean:182-244`) are field-valued but take carrier
+        binders, not scalars, so the scalar `inline` cannot bind them. Each
+        argument must be a bare binder the caller already holds -- a carrier of
+        the parameter's own kind, or the caller's row index for a `ℕ` parameter.
+        The body is then parsed with the parameter names bound to those, so a
+        `row - 1` inside the helper is a delta relative to the caller's row, and
+        atoms/unresolved/reclassified accumulate in the caller's collectors. A
+        non-bare or wrong-kind argument raises rather than being guessed.
+        """
+        if self.ctx.depth >= MAX_INLINE_DEPTH:
+            raise MirrorParseError(
+                self.ctx.where, f"carrier helper inlining deeper than "
+                f"{MAX_INLINE_DEPTH}", helper.name)
+        inner_binders: dict[str, Binder] = {}
+        inner_index: str | None = None
+        for binder in helper.binders:
+            token = self.next()
+            if token.kind != "ident":
+                raise MirrorParseError(
+                    self.ctx.where, "carrier helper argument is not a bare binder",
+                    token.text)
+            arg = self.ctx.binders.get(token.text)
+            if binder.kind == "index":
+                if token.text != self.ctx.index_binder:
+                    raise MirrorParseError(
+                        self.ctx.where, "carrier helper row argument is not the "
+                        "index binder", token.text)
+                inner_index = binder.name
+                continue
+            if arg is None or arg.kind != binder.kind:
+                raise MirrorParseError(
+                    self.ctx.where,
+                    f"carrier helper argument {token.text!r} is not a caller "
+                    f"binder of kind {binder.kind!r}", token.text)
+            inner_binders[binder.name] = binder
+        inner = Context(
+            where=f"{self.ctx.where} -> {helper.name} ({helper.site})",
+            src=helper.src,
+            air=self.ctx.air,
+            lane_map=self.ctx.lane_map,
+            binders=inner_binders,
+            row_deltas={},
+            index_binder=inner_index,
+            helpers=self.ctx.helpers,
+            carrier_helpers=self.ctx.carrier_helpers,
+            opaque_locals=self.ctx.opaque_locals,
+            depth=self.ctx.depth + 1,
+            atoms=self.ctx.atoms,
+            unresolved=self.ctx.unresolved,
+            reclassified=self.ctx.reclassified,
+            inlined=self.ctx.inlined,
+            lane_of_path=self.ctx.lane_of_path,
+        )
+        parser = _ExprParser(list(helper.tokens), inner)
+        node = parser.expr()
+        if not parser.done():
+            raise MirrorParseError(
+                inner.where, "carrier helper body not fully consumed",
+                " ".join(t.text for t in parser.tokens[parser.i:]))
+        self.ctx.inlined[helper.name] = self.ctx.inlined.get(helper.name, 0) + 1
         return node
 
 
@@ -1674,10 +1898,18 @@ def parse_mirror_definition(decl: survey.Decl, src: Slice, entry: survey.Entry,
     if entry.air is not None:
         lane_map = lane_map_for(entry.air)
 
+    # Carrier-argument helpers are collected only for the out-of-root mirrors,
+    # whose directory is outside `ZiskFv/AirsClean`; the AirsClean parse is left
+    # exactly as it was.
+    carrier_helpers: dict[str, CarrierHelper] = {}
+    if not rel.startswith(f"{survey.MIRROR_PREFIX}/"):
+        carrier_helpers = carrier_field_helpers(REPO_ROOT / rel, rel)
+
     ctx = Context(
         where=where, src=src, air=entry.air, lane_map=lane_map, binders=by_name,
         row_deltas=deltas, index_binder=index_binder,
-        helpers=field_helpers(REPO_ROOT / rel, rel), opaque_locals=frozenset(opaque),
+        helpers=field_helpers(REPO_ROOT / rel, rel),
+        carrier_helpers=carrier_helpers, opaque_locals=frozenset(opaque),
         row_relation_ok=row_relation_ok,
     )
     conjuncts = [part for part in _split_top_level(body_tokens, AND_TOKENS)]
@@ -1758,6 +1990,34 @@ def parse_mirror_file(path: Path | str, lane_map_for) -> list[MirrorDef]:
                 name=name, file=rel, line=decl.line, air=entry.air, cls=entry.cls,
                 row_record=None, row_vars={}, unparsed=[str(error)]))
     return sorted(out, key=lambda d: d.line)
+
+
+def parse_out_of_root(air: str, rel: str, name: str, lane_map_for) -> MirrorDef:
+    """Parse one declared out-of-root mirror (`survey.DELEGATED`).
+
+    Same parser, same `lanes.LaneMap` as the mirror root -- the only difference is
+    the file lives outside `ZiskFv/AirsClean`, so `survey.CLASSIFICATION` does not
+    name it and the entry is synthesised here from the `survey.DELEGATED` record.
+    It carries no row-record binder (its carriers are a `Valid_<AIR>` validator and
+    a non-witness column schema), so the class is `MIRROR_VALIDATOR`, which the
+    row-binder-count notes do not apply to.
+    """
+    path = REPO_ROOT / rel
+    slices = declaration_slices(path, rel)
+    if name not in slices:
+        return MirrorDef(
+            name=name, file=rel, line=0, air=air, cls="MIRROR_VALIDATOR",
+            row_record=None, row_vars={},
+            unparsed=[f"{rel}: survey.DELEGATED names {name} but the file has no "
+                      f"such declaration"])
+    decl, src = slices[name]
+    entry = survey.Entry("MIRROR_VALIDATOR", air, "survey.DELEGATED", frozenset())
+    try:
+        return parse_mirror_definition(decl, src, entry, rel, lane_map_for)
+    except MirrorParseError as error:
+        return MirrorDef(
+            name=name, file=rel, line=decl.line, air=air, cls="MIRROR_VALIDATOR",
+            row_record=None, row_vars={}, unparsed=[str(error)])
 
 
 def inventoried_files() -> list[str]:

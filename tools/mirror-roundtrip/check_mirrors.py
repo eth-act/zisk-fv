@@ -158,11 +158,25 @@ GAP = "GAP"
 STRENGTHENING = "STRENGTHENING"
 RECLASSIFICATION = "RECLASSIFICATION"
 UNBACKED = "UNBACKED"
+# A comparable generated constraint no MIRROR-ROOT clause carries, but a declared
+# out-of-root mirror (`survey.DELEGATED`) canonically restates. Decided by the same
+# polynomial equality as `MATCHED`, so it is coverage, not a gap -- reported apart
+# only because the mirror lives outside `ZiskFv/AirsClean`.
+OUT_OF_ROOT = "OUT_OF_ROOT"
+# A boolean-shaped generated constraint `col*(1-col) = 0` whose column is pinned to
+# {0,1} by TYPING rather than by a restated equation: the row field is declared
+# `Bool`, or the AIR's spec carries a `.val < 2` bound on it. Coverage the
+# polynomial comparator cannot see, backed by the typing fact the tool checks.
+BOOL_TYPED = "BOOL_TYPED"
 
-FINDING_CLASSES = (MATCHED, RECLASSIFICATION, GAP, STRENGTHENING, UNBACKED)
+FINDING_CLASSES = (MATCHED, OUT_OF_ROOT, BOOL_TYPED, RECLASSIFICATION, GAP,
+                   STRENGTHENING, UNBACKED)
 
-# Findings that fail the run. `MATCHED` is the only one that does not.
+# Findings that fail the run. `MATCHED` is not one; neither are the two coverage
+# classes decided by an out-of-root polynomial match or a checked Bool-typing fact.
 FAILING_CLASSES = frozenset({GAP, STRENGTHENING, RECLASSIFICATION, UNBACKED})
+# Classes that count a generated constraint as covered rather than gapped.
+COVERED_CLASSES = frozenset({MATCHED, OUT_OF_ROOT, BOOL_TYPED})
 
 DIFF_TERMS_SHOWN = pilout_check.DIFF_TERMS_SHOWN
 CLAUSE_TEXT_SHOWN = 160
@@ -601,6 +615,11 @@ class Finding:
     nearest: tuple[Clause, int, int] | None = None
     scalar: int | None = None
     out_of_root: list[str] = field(default_factory=list)
+    # On a `BOOL_TYPED` finding: `(generated, atom, source, evidence)` per
+    # constraint, where `source` is `bool` (a Bool-typed row field) or `bound` (a
+    # `.val < 2` clause), and `evidence` cites where the tool read the typing fact.
+    bool_evidence: list[tuple[Generated, tuple, str, str]] = field(
+        default_factory=list)
     # Which of the two routes to `RECLASSIFICATION` this finding came by.
     route: str = ""
     # On a `STRENGTHENING`: the generated constraint that entails the clause, if
@@ -877,6 +896,192 @@ def _out_of_root_claims(air: str, group: list[Generated]) -> list[str]:
         for claim_air, site, name, claimed in survey.DELEGATED
         if claim_air == air and indices & claimed
     ]
+
+
+# ------------------------------------------------- out-of-root mirror comparison
+
+
+def load_out_of_root(lane_map_for) -> tuple[dict[str, list[Clause]], list[str]]:
+    """The comparable clauses of every declared out-of-root mirror, per AIR.
+
+    `survey.DELEGATED` names the mirrors a mirror-root predicate reaches that are
+    themselves declared outside `ZiskFv/AirsClean`. Those used to be printed as an
+    unverified claim on the gap and compared by nothing. They are parsed here --
+    through the SAME `mirror_parse` and the SAME `lanes.LaneMap` the root uses, no
+    second parser and no second lane map -- and canonicalised, so a gap they
+    restate is decided by polynomial equality rather than declared away. A parse
+    failure is a finding, not a silent skip.
+    """
+    out: dict[str, list[Clause]] = defaultdict(list)
+    failures: list[str] = []
+    for air, site, name, _claims in survey.DELEGATED:
+        rel, _line = site.rsplit(":", 1)
+        definition = mirror_parse.parse_out_of_root(air, rel, name, lane_map_for)
+        for message in definition.unparsed:
+            failures.append(f"{air} out-of-root {name}: {message}")
+        for hole in definition.undeclared_unresolved:
+            failures.append(
+                f"{air} out-of-root {name}: {hole.path} ({hole.reason})")
+        for clause in definition.clauses:
+            if not clause.comparable:
+                continue
+            entry = Clause(
+                air=air, definition=definition.name, cls=definition.cls,
+                file=definition.file, def_line=definition.line, line=clause.line,
+                index=clause.index, text=" ".join(clause.source_text.split()),
+                expr=clause.expr)
+            entry.canon = canonical(entry.expr)
+            entry.erased = erased_canonical(entry.expr)
+            out[air].append(entry)
+    return out, failures
+
+
+# ------------------------------------------------- boolean typing recognizer
+
+
+def boolean_atom(entry: Generated) -> tuple | None:
+    """The single witness atom `a` if `entry` is exactly `col*(1-col)`, else None.
+
+    "Boolean-shaped" is precise, not a heuristic: the constraint reaches exactly
+    one atom `a`, `a` is a stage-1 witness column, and the canonical form is
+    identical to `a*(1-a)` or `a*(a-1)` -- so nothing but a booleanity constraint
+    qualifies, and a scalar multiple or a second atom does not.
+    """
+    atoms = set(lean_parse.iter_atoms(entry.expr))
+    if len(atoms) != 1:
+        return None
+    atom = next(iter(atoms))
+    if atom[0] != "main":
+        return None
+    one = ("const", 1)
+    node = ("atom", atom)
+    positive = canonical(("mul", node, ("sub", one, node)))
+    negative = canonical(("mul", node, ("sub", node, one)))
+    return atom if entry.canon in (positive, negative) else None
+
+
+def _boolean_bound_atoms(air: str, lane_map_for) -> dict[tuple, tuple[int, str]]:
+    """Witness atoms an AIR's spec bounds `.val < N`, as `atom -> (N, site)`.
+
+    The bound is what pins a column to {0, 1} when the row field is a plain field
+    and no equation restates the booleanity: `MemAlignByte`'s `Assumptions`
+    (`row.sel_high_4b.val < 2`, ...) and its `Spec` (`row.is_write.val < 2 ^ 1`).
+    Every classified declaration of the AIR that carries bounds is re-parsed as a
+    mirror (forced to `MIRROR` so the parser reads it, exactly as the near-miss
+    screen does); a declaration the parser refuses contributes nothing. Only a
+    bound resolved to a stage-1 witness lane is kept.
+    """
+    out: dict[tuple, tuple[int, str]] = {}
+    for (rel, name), entry in survey.CLASSIFICATION.items():
+        if entry.air != air:
+            continue
+        if entry.cls != "NEAR_RANGE" and entry.cls not in survey.MIRROR_CLASSES:
+            continue
+        try:
+            slices = mirror_parse.declaration_slices(
+                mirror_parse.REPO_ROOT / rel, rel)
+            if name not in slices:
+                continue
+            decl, src = slices[name]
+            forced = dataclasses.replace(entry, cls="MIRROR")
+            definition = mirror_parse.parse_mirror_definition(
+                decl, src, forced, rel, lane_map_for)
+        except Exception:  # noqa: BLE001 - a refused declaration bounds nothing
+            continue
+        for clause in definition.clauses:
+            if clause.kind != "bound" or clause.bound is None or clause.unresolved:
+                continue
+            subject, bound = clause.bound
+            if (subject[0] == "atom" and subject[1][0] == "main"
+                    and bound[0] == "const"):
+                site = f"{rel}:{clause.line}"
+                keep = out.get(subject[1])
+                if keep is None or bound[1] < keep[0]:
+                    out[subject[1]] = (bound[1], site)
+    return out
+
+
+def _boolean_field_atoms(air: str, lane_map, mirror_root: Path
+                         ) -> dict[tuple, str]:
+    """Witness atoms whose row-record field is declared `Bool`, `atom -> site`.
+
+    The second typing route: a row field declared `Bool` (coerced with `boolF`)
+    satisfies `x*(1-x)=0` structurally. No inventoried row at HEAD is Bool-typed --
+    they are extracted `F` records -- so this fires on nothing here, but it is the
+    same fact as the bound route and is checked the same way: the field's declared
+    type is read from the struct, and resolved to a lane through the AIR's own map.
+    """
+    out: dict[tuple, str] = {}
+    for rel, name, record_air in survey.MIRROR_RECORDS:
+        if record_air != air:
+            continue
+        path = survey.resolve_rel(rel, mirror_root)
+        for field_name, type_name in survey.structure_field_types(path, name).items():
+            if type_name.strip() != "Bool":
+                continue
+            for candidate in mirror_parse._candidates(air, field_name):
+                try:
+                    lane = lane_map.resolve(candidate)
+                except lanes.LaneError:
+                    continue
+                atom = lane_map.accessor_atom(lane, 0)
+                if atom[0] == "main":
+                    out[atom] = f"{rel}: field {field_name} : Bool"
+    return out
+
+
+def reclassify_covered(air: str, findings: list[Finding], lane_map,
+                       lane_map_for, mirror_root: Path,
+                       out_of_root: list[Clause]) -> list[Finding]:
+    """Rewrite GAP findings a checked fact covers into a non-failing class.
+
+    Two facts, both mechanical: a boolean-shaped gap whose column is Bool-typed or
+    `.val < 2`-bounded becomes `BOOL_TYPED`; a gap a declared out-of-root mirror
+    canonically restates becomes `OUT_OF_ROOT`. A gap with neither stays a gap, so
+    a booleanity constraint over a plain unbounded field, or a constraint no
+    out-of-root clause matches, is still reported.
+    """
+    bound_atoms = _boolean_bound_atoms(air, lane_map_for) if lane_map else {}
+    field_atoms = (_boolean_field_atoms(air, lane_map, mirror_root)
+                   if lane_map else {})
+    by_canon: dict[tuple, list[Clause]] = defaultdict(list)
+    for clause in out_of_root:
+        by_canon[clause.canon].append(clause)
+
+    rewritten: list[Finding] = []
+    for finding in findings:
+        if finding.kind != GAP or not finding.generated:
+            rewritten.append(finding)
+            continue
+        evidence: list[tuple[Generated, tuple, str, str]] = []
+        typed = True
+        for entry in finding.generated:
+            atom = boolean_atom(entry)
+            if atom is None:
+                typed = False
+                break
+            if atom in bound_atoms and bound_atoms[atom][0] <= 2:
+                value, site = bound_atoms[atom]
+                evidence.append((entry, atom, "bound",
+                                 f"`.val < {value}` at {site}"))
+            elif atom in field_atoms:
+                evidence.append((entry, atom, "bool", field_atoms[atom]))
+            else:
+                typed = False
+                break
+        if typed:
+            covered = Finding(BOOL_TYPED, air, list(finding.generated), [])
+            covered.bool_evidence = evidence
+            rewritten.append(covered)
+            continue
+        canon = finding.generated[0].canon
+        if by_canon.get(canon) and all(e.canon == canon for e in finding.generated):
+            covered = Finding(OUT_OF_ROOT, air, list(finding.generated),
+                              list(by_canon[canon]))
+            rewritten.append(covered)
+            continue
+        rewritten.append(finding)
+    return rewritten
 
 
 # ------------------------------------------------------------------ reachability
@@ -1215,6 +1420,12 @@ class Run:
     screen: NearMissScreen | None = None
     empty: list[str] = field(default_factory=list)
     fold_check: list[str] = field(default_factory=list)
+    # Out-of-root mirror clauses that matched no generated constraint, per AIR, and
+    # any parse failure of an out-of-root mirror. Both are findings: the first is a
+    # restated clause with no counterpart, the second a mirror this tool could not
+    # read where its claim said it should.
+    out_of_root_unmatched: dict[str, list[Clause]] = field(default_factory=dict)
+    out_of_root_failures: list[str] = field(default_factory=list)
     partial: bool = False
     definitions: int = 0
 
@@ -1245,7 +1456,10 @@ class Run:
         return ((self.coverage.failures if self.coverage else [])
                 + self.scope + self.lane_gate + self.projections
                 + (self.screen.failures if self.screen else [])
-                + self.empty + self.fold_check
+                + self.empty + self.fold_check + self.out_of_root_failures
+                + [f"{air}: out-of-root clause {c.label} ({c.site}) matches no "
+                   f"generated constraint" for air, clauses in
+                   sorted(self.out_of_root_unmatched.items()) for c in clauses]
                 + [message for a in self.airs
                    for message in a.mirror.notes + a.mirror.path_aliases
                    + a.mirror.row_order_mismatches])
@@ -1303,6 +1517,7 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
     out.definitions = len(defs)
     out.projections = projection_failures(defs, mirror_root)
     mirrors = load_mirrors(defs, set(unreachable))
+    out_of_root, out.out_of_root_failures = load_out_of_root(lane_map_for)
 
     for air in lanes.DECLARED_AIRS:
         if only is not None and air not in only:
@@ -1318,12 +1533,26 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
                 f"({len(facts[air].comparable)})")
         side = mirrors.get(air, MirrorSide())
         findings = pair_air(air, generated, side.comparable, side.unbacked)
+        # A gap the tool can decide is covered -- by an out-of-root polynomial
+        # match, or by a Bool-typed / `.val < 2`-bounded column -- is moved out of
+        # the gap set here, and any gap that neither covers stays a gap.
+        air_out_of_root = out_of_root.get(air, [])
+        findings = reclassify_covered(
+            air, findings, lane_map_for(air), lane_map_for, mirror_root,
+            air_out_of_root)
+        matched_out_of_root = {
+            clause.canon for finding in findings if finding.kind == OUT_OF_ROOT
+            for clause in finding.clauses}
+        unmatched = [c for c in air_out_of_root if c.canon not in matched_out_of_root]
+        if unmatched:
+            out.out_of_root_unmatched[air] = unmatched
         run = AirRun(air, generated, excluded, side, findings)
-        if run.gen_count(MATCHED) + run.gen_count(RECLASSIFICATION) + run.gen_count(
-                GAP) != len(generated):
+        if (run.gen_count(MATCHED) + run.gen_count(RECLASSIFICATION)
+                + run.gen_count(GAP) + run.gen_count(OUT_OF_ROOT)
+                + run.gen_count(BOOL_TYPED) != len(generated)):
             raise pilout_check.CheckError(
                 f"{air}: generated constraints do not partition into "
-                f"matched/reclassified/gap")
+                f"matched/out-of-root/bool-typed/reclassified/gap")
         if run.mir_count(MATCHED) + run.mir_count(RECLASSIFICATION) + run.mir_count(
                 STRENGTHENING) != len(side.comparable):
             raise pilout_check.CheckError(
@@ -1369,7 +1598,8 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
 
 # ------------------------------------------------------------------- the report
 
-_TABLE = "{:<18} {:>9} {:>7} {:>7} {:>5} {:>11} {:>4} {:>9} {:>8} {:>6}"
+_TABLE = ("{:<18} {:>9} {:>7} {:>7} {:>7} {:>9} {:>4} {:>11} {:>4} {:>9} {:>8} "
+          "{:>6}")
 
 
 def print_declarations(run: Run, out) -> None:
@@ -1440,29 +1670,34 @@ def print_declarations(run: Run, out) -> None:
 
 
 def print_table(run: Run, out) -> None:
-    print(_TABLE.format("air", "generated", "mirror", "matched", "gap",
-                        "strengthen", "recl", "unbacked", "unparsed", "unres"),
-          file=out)
-    print("-" * 96, file=out)
-    totals = [0] * 9
+    print(_TABLE.format("air", "generated", "mirror", "matched", "outroot",
+                        "booltyped", "gap", "strengthen", "recl", "unbacked",
+                        "unparsed", "unres"), file=out)
+    print("-" * 108, file=out)
+    totals = [0] * 11
     for air in run.airs:
         row = [
             len(air.generated), len(air.mirror.comparable),
-            air.gen_count(MATCHED), air.gen_count(GAP),
+            air.gen_count(MATCHED), air.gen_count(OUT_OF_ROOT),
+            air.gen_count(BOOL_TYPED), air.gen_count(GAP),
             air.mir_count(STRENGTHENING), len(air.of_kind(RECLASSIFICATION)),
             air.mir_count(UNBACKED),
             len(air.mirror.unparsed), len(air.mirror.undeclared_unresolved),
         ]
         totals = [t + v for t, v in zip(totals, row)]
         print(_TABLE.format(air.air, *row), file=out)
-    print("-" * 96, file=out)
+    print("-" * 108, file=out)
     print(_TABLE.format("TOTAL", *totals), file=out)
     print("  generated  = comparable generated constraints (total minus the "
           "declared challenge/stage-2 exclusion)", file=out)
     print("  mirror     = comparable mirror clauses (polynomial identity, every "
           "projection resolved)", file=out)
-    print("  matched    = comparable generated constraints with a mirror clause "
-          "of the same canonical form", file=out)
+    print("  matched    = comparable generated constraints with a mirror-ROOT "
+          "clause of the same canonical form", file=out)
+    print("  outroot    = covered by a declared OUT-OF-ROOT mirror clause of the "
+          "same canonical form (survey.DELEGATED)", file=out)
+    print("  booltyped  = boolean-shaped `col*(1-col)` whose column is Bool-typed "
+          "or `.val < 2`-bounded, not restated as an equation", file=out)
     print("  unbacked   = equation clauses this AIR has no lane vocabulary for, "
           "so no generated constraint can carry them", file=out)
     print("  unres      = UNDECLARED unresolved projections; the declared ones "
@@ -1549,6 +1784,51 @@ def _print_reclassified(finding: Finding, out) -> None:
     for path, name, lane, citation in finding.reclassified:
         print(f"    lane-kind alias  {path} -> {name} {lane}", file=out)
         print(f"      cite  {citation}", file=out)
+
+
+def print_coverage(run: Run, out) -> None:
+    """The two non-failing coverage classes, each with the fact it was decided by.
+
+    They are printed apart from `MATCHED` because each rests on something a plain
+    canonical pairing does not: an out-of-root mirror this tool parsed separately,
+    or a typing fact the polynomial comparator cannot see. Printing the evidence on
+    every one is what keeps `BOOL_TYPED` from being an index allowlist.
+    """
+    out_of_root = [(a.air, f) for a in run.airs for f in a.of_kind(OUT_OF_ROOT)]
+    bool_typed = [(a.air, f) for a in run.airs for f in a.of_kind(BOOL_TYPED)]
+    if not out_of_root and not bool_typed and not run.out_of_root_unmatched:
+        return
+    print("coverage decided outside the mirror-root canonical pairing", file=out)
+    for air, finding in out_of_root:
+        gens = ", ".join(f"#{e.index}" for e in finding.generated)
+        mirs = ", ".join(f"{c.definition}#{c.index}" for c in finding.clauses)
+        site = finding.clauses[0].site if finding.clauses else "?"
+        print(f"  OUT_OF_ROOT  {air} {gens}  <- {mirs} ({site})", file=out)
+        print("    a declared out-of-root mirror (survey.DELEGATED) has this "
+              "canonical form; the match is polynomial equality, the same decision "
+              "as any MATCHED, only the mirror is outside ZiskFv/AirsClean.",
+              file=out)
+    for air, finding in bool_typed:
+        for entry, atom, source, evidence in finding.bool_evidence:
+            column = pilout_check.fmt_atom(atom)
+            print(f"  BOOL_TYPED   {air} #{entry.index}  "
+                  f"(constraint_{entry.index}_{entry.suffix})", file=out)
+            print(f"    provenance  {entry.provenance}", file=out)
+            kind = ("a Bool-typed row field" if source == "bool"
+                    else "a `.val < 2` bound")
+            print(f"    {column} is pinned to {{0, 1}} by {kind}, so "
+                  f"`{column}*(1-{column})=0` holds structurally; no equation "
+                  f"restates it and none needs to.", file=out)
+            print(f"    evidence  {evidence}", file=out)
+    print("  a boolean-shaped constraint whose column is NOT Bool-typed and NOT "
+          "bounded is not covered here and stays a gap -- MemAlignWriteByte's "
+          "identical selector booleans, which have no row record or bound, are the "
+          "witness.", file=out)
+    for air, clauses in sorted(run.out_of_root_unmatched.items()):
+        for clause in clauses:
+            print(f"  OUT_OF_ROOT UNMATCHED  {air}: {clause.label} ({clause.site}) "
+                  f"restates no generated constraint -- a finding", file=out)
+    print(file=out)
 
 
 def print_details(run: Run, out) -> None:
@@ -1783,6 +2063,15 @@ def print_checks(run: Run, out) -> None:
                 "kind-erasure route, on fixed-as-witness, stage-2-as-stage-1, a "
                 "negative control and the identity; the declared-alias route is "
                 "exercised by the tree itself", out)
+    out_of_root_check = (
+        run.out_of_root_failures
+        + [f"{air}: {c.label} ({c.site}) matches no generated constraint"
+           for air, clauses in sorted(run.out_of_root_unmatched.items())
+           for c in clauses])
+    _check_line("out-of-root mirrors parse and every clause matches", out_of_root_check,
+                f"{len(survey.DELEGATED)} declared out-of-root mirror(s) "
+                f"(survey.DELEGATED) parsed through the SAME lanes/parser and "
+                f"canonically paired against the gaps", out)
     for air in run.airs:
         for message in air.mirror.unparsed:
             print(f"  UNPARSED {air.air}: {message}", file=out)
@@ -1815,17 +2104,23 @@ def print_report(run: Run, quiet: bool, paths: dict[str, Path],
         print_declarations(run, out)
         print_table(run, out)
         print_pairings(run, out)
+        print_coverage(run, out)
         print_checks(run, out)
         print_details(run, out)
         print_unreachable(run, out)
     generated = sum(len(a.generated) for a in run.airs)
     matched = sum(a.gen_count(MATCHED) for a in run.airs)
+    out_of_root = sum(a.gen_count(OUT_OF_ROOT) for a in run.airs)
+    bool_typed = sum(a.gen_count(BOOL_TYPED) for a in run.airs)
+    covered = matched + out_of_root + bool_typed
     verdict = "FAILED" if run.failures else ("PARTIAL" if run.partial else "OK")
     if run.partial:
         print("PARTIAL: a --air-filtered run gated nothing about the AIRs it "
               "skipped, so it never exits 0.", file=out)
-    print(f"mirror-roundtrip: {verdict} {matched}/{generated} comparable generated "
-          f"constraints matched across {len(run.airs)} air(s); "
+    print(f"mirror-roundtrip: {verdict} {covered}/{generated} comparable generated "
+          f"constraints covered across {len(run.airs)} air(s) "
+          f"({matched} matched, {out_of_root} out-of-root, {bool_typed} "
+          f"bool-typed); "
           f"{sum(a.gen_count(GAP) for a in run.airs)} gap, "
           f"{sum(a.mir_count(STRENGTHENING) for a in run.airs)} strengthening, "
           f"{sum(a.mir_count(UNBACKED) for a in run.airs)} unbacked, "
@@ -1878,6 +2173,11 @@ def to_json(run: Run) -> dict:
             out["kind_pairs"] = [[list(g), list(m)] for g, m in entry.kind_pairs]
         if entry.out_of_root:
             out["out_of_root_claims"] = entry.out_of_root
+        if entry.bool_evidence:
+            out["bool_typed"] = [
+                {"generated_index": g.index, "column": list(atom),
+                 "source": source, "evidence": evidence}
+                for g, atom, source, evidence in entry.bool_evidence]
         if entry.nearest is not None:
             out["nearest"] = {"clause": clause(entry.nearest[0]),
                               "differing_monomials": entry.nearest[1],
@@ -1903,6 +2203,10 @@ def to_json(run: Run) -> dict:
             "near_miss_screen": run.screen.failures if run.screen else [],
             "empty_run": run.empty,
             "canonicaliser_self_test": run.fold_check,
+            "out_of_root": run.out_of_root_failures + [
+                f"{air}: {c.label} ({c.site}) matches no generated constraint"
+                for air, clauses in sorted(run.out_of_root_unmatched.items())
+                for c in clauses],
             "definition_notes": [m for a in run.airs for m in a.mirror.notes],
             "path_aliases": [m for a in run.airs for m in a.mirror.path_aliases],
             "row_order_mismatches": [
@@ -1965,6 +2269,8 @@ def _redirect_roots(mirror_root: Path) -> None:
     mirror_parse.REPO_ROOT = root
     mirror_parse._HELPER_CACHE.clear()
     mirror_parse._LINE_CACHE.clear()
+    mirror_parse._CARRIER_HELPER_CACHE.clear()
+    mirror_parse._STRUCT_ARITY_CACHE.clear()
     # Redirecting `survey.REPO_ROOT` also redirects `survey.reference_counts`,
     # which is what decides reachability. A copy staging less than the roots it
     # scans would silently OVER-report unreachable mirrors -- a use that lives in

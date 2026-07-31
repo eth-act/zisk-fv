@@ -612,6 +612,33 @@ def structure_fields(path: Path, name: str) -> list[str]:
     return fields
 
 
+def structure_field_types(path: Path, name: str) -> dict[str, str]:
+    """`field -> declared type` for `structure <name> ... where`, in file order.
+
+    The type is everything after the field's `:` up to end of line, stripped.
+    Multi-field records here are single-line per field (`segment_l1 : ℕ → F`,
+    `sel_high_4b : F`), so a per-line read is exact; a name resolving to no field
+    is the caller's problem to report, never a silent default.
+    """
+    raw = path.read_text(errors="replace").split("\n")
+    src = strip_comments(raw)
+    start = None
+    for i, line in enumerate(src):
+        if re.match(rf"structure\s+{re.escape(name)}\b", line):
+            start = i
+            break
+    if start is None:
+        raise SystemExit(f"survey.py: no structure {name} in {path}")
+    out: dict[str, str] = {}
+    for line in src[start + 1:]:
+        if line and line[0] not in " \t":
+            break
+        match = re.match(r"\s+([A-Za-z_][A-Za-z0-9_']*)\s*:\s*(.+?)\s*$", line)
+        if match:
+            out[match.group(1)] = match.group(2).strip()
+    return out
+
+
 def flatten_record(mirror_root: Path, rel: str, name: str,
                    known: dict[str, list[str]]) -> list[str]:
     """Field list, expanding a field whose type is another known record."""
