@@ -358,29 +358,30 @@ surface with `lake env lean -R build/extraction ...`.
 
 ## Limitations (deliberate; expand as phases demand)
 
-The extractor renders these operand kinds: `Constant`, `WitnessCol`,
-`Expression` (recursive). All others are unsupported and produce a comment
-stub in place of `constraint_N`:
+`render_operand` renders these operand kinds: `Constant`, `WitnessCol`,
+`FixedCol`, `Challenge`, `AirValue`, `AirGroupValue`, and `Expression`
+(recursive). These four remain unsupported and produce a comment stub in place
+of `constraint_N`: `PeriodicCol`, `ProofValue`, `PublicValue`, `CustomCol`. No
+constraint in the ten extracted AIRs reaches one, so the current tree contains
+zero stubs — the round-trip gate checks that, and requires any stub it does find
+to correspond to a constraint the pilout shows is genuinely unrepresentable.
 
-- `FixedCol` — needed for the row-indicator / final-state constraints on
-  `BinaryAdd` (constraints 6, 8).
-- `Challenge`, `AirValue` — used by the permutation / operation-bus argument
-  (constraints 4, 5, 7).
-- `PeriodicCol`, `ProofValue`, `AirGroupValue`, `PublicValue`, `CustomCol`.
+`AirValue` and `AirGroupValue` share the single `Extraction.Circuit.exposed`
+accessor, so their index spaces overlap in the per-AIR files. See the round-trip
+gate section above for the measured extent (8 of 10 AIRs, index 0, 54
+constraints) and for why the `LookupWiring` rendering, which keeps the two
+kinds apart, is the one the maintained links import.
 
-Constraint kinds: only `everyRow`, `firstRow`, `lastRow`, `everyFrame` are
-handled uniformly (they all produce the same emission — rowness is not yet
-tracked in the Lean output). `everyFrame`'s `offsetMin`/`offsetMax` are
-ignored.
+Constraint kinds: `constraint_kind_suffix` encodes the pilout row domain in the
+definition name (`every_row` / `first_row` / `last_row` /
+`every_frame_<min>_<max>`), so `everyFrame`'s offsets reach the Lean name. All
+4095 constraints in the current pilout are `everyRow`, so the other three
+suffixes are unexercised, and for them the row restriction lives only in the
+name — nothing downstream reads it yet.
 
-Constraints that hit an unsupported operand are silently skipped with a
-warning on stderr, and the extracted Lean file contains a one-line comment
-recording the skip reason. The boolean target constraint (`constraint_0` for
-`BinaryAdd`) does not touch any of these, which is why Phase 0 ships.
-
-Phase 1 must add `FixedCol`, `Challenge`, `AirValue` to render the Main AIR,
-and will need to distinguish `firstRow` / `lastRow` / `everyFrame` from
-`everyRow` at the Lean level.
+Constraints that hit an unsupported operand are skipped with a warning on
+stderr, and the extracted Lean file contains a one-line comment recording the
+skip reason.
 
 ## Reproducibility check
 
@@ -405,6 +406,63 @@ parenthesization) — update the pin and note the change here;
 (b) extractor regressed — fix the extractor, not the pin;
 (c) the upstream `.pil` source changed — rebuild the pilout from the
 new source and re-pin.
+
+## Round-trip gate (`tools/pilout-roundtrip`, eth-act/zisk-fv#303)
+
+Reproducibility says the extractor's output is a deterministic function of the
+lock. It says nothing about whether that output is a faithful translation. The
+round-trip gate is what checks the translation: for every polynomial identity in
+`build/zisk.pilout` it decides, in the pilout's own algebra, that the emitted
+Lean is the same polynomial. It reads the pilout with its own hand-rolled
+protobuf decoder (not `prost`) and the Lean with its own parser (never the
+extractor's code), so a distortion on one side cannot cancel one on the other.
+Python 3 stdlib only, ~1.5 s, no Lean build needed.
+
+Both renderings the extractor produces are decided:
+
+- `Extraction/<AIR>.lean`'s `constraint_<i>_<suffix>`, over the four
+  `Extraction.Circuit` accessors — 355 constraints across the ten AIRs
+  `nix/extracted-lean.nix` extracts;
+- `Extraction/LookupWiring.lean`'s `constraint_<Air>_<i>` and
+  `constraintOnly_<Air>_<i>`, over the `Expr` inductive — the 203 of those that
+  reach a challenge, AIR value or AIR-group value, which is also the set the
+  maintained `ZiskFv/AirsClean/*` links import. Which constraints must be there
+  is computed from the pilout, so a missing rendering is a detected drop.
+
+The second rendering matters for fidelity, not just for coverage.
+`Extraction.Circuit` has one `exposed` accessor for both `AirValue` and
+`AirGroupValue`, so the per-AIR files identify two distinct pilout values
+wherever an index is used by both kinds (8 of the 10 AIRs, index 0, 54
+constraints — e.g. `BinaryAdd.padding_size` and `Zisk.gsum_result` are both
+`exposed (index := 0)` in `BinaryAdd.lean`). `Expr` keeps them apart, and every
+affected constraint is in the second rendering, so the distinction is checked
+even though the per-AIR file cannot express it. Worth closing in the emitter:
+those files are quantified over a class of circuits the pilout does not describe.
+
+Also checked, because each was an assumption before: the emitted witness-column
+name header against a reconstruction from `PilOut.symbols` alone (299 columns,
+exact); `Operand.Constant.value`'s byte order against the constraints' own
+`debugLine` literals (345 discriminating constants, 73 corroborate big-endian,
+0 corroborate little-endian); and the binder list against the two exact
+spellings `render_constraint` writes, which pins `row : ℕ` — the precondition for
+the saturating-subtraction argument in the next section — and pins the
+`ExtF := F` collapse to the constraints whose operands actually need it.
+
+The scope is declared in `check.py` and cross-checked against
+`nix/extracted-lean.nix` and `LookupWiring.lean`'s `airStatus_<Air>` manifest,
+in both directions. It is deliberately not discovered from the extraction
+directory: an AIR whose constraints all became `--skip-unsupported` stubs has no
+`def` left, so a discovered scope would drop it silently and keep reporting a
+perfect ratio.
+
+Wiring: the tail of `nix run .#populate` (so drift fails where it is produced)
+and step 3/9 of `nix run .#test` (`check.py` plus the mutation selftest). Not in
+`trust/scripts/check-all.sh`, whose CI job has no `build/` at all. Exit 1 is a
+mismatch or an uncovered constraint, exit 2 is a missing artifact; neither is a
+pass.
+
+`tools/pilout-roundtrip/README.md` carries the full argument, the two atom
+vocabularies, and the measured residual blind spots.
 
 ## Negative row rotations (Phase 2.5 D2)
 

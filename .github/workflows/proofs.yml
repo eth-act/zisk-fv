@@ -256,7 +256,7 @@ jobs:
           # proof-memory fix, and matches nix/test.nix's default.
           LEAN_NUM_THREADS: "4"
           # The independent Aeneas production-extraction completeness check
-          # (step 3/8) is the single largest cost (~1.5h) and is unrelated to
+          # (step 4/9) is the single largest cost (~1.5h) and is unrelated to
           # the Lake proof graph. Run it in the parallel
           # aeneas-production-extraction job below instead of serializing it
           # ahead of `lake build`. Plain local `nix run .#test` is unaffected.
@@ -322,7 +322,7 @@ jobs:
 
   # ------------------------------------------------------------------
   # Aeneas RV-completeness extraction harness, run in PARALLEL with the
-  # Lake FV gate above. Previously this ran as step 3/8 of `nix run .#test`
+  # Lake FV gate above. Previously this ran as step 4/9 of `nix run .#test`
   # inside the lake-build job, serializing ~1.5h of generated-extraction
   # work ahead of the proof build. It is independent of the Lake proof
   # graph (the `aeneas-extraction-diff` job already guards the tracked

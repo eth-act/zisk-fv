@@ -1,4 +1,4 @@
-{ writeShellApplication, sail-lean-tree, zisk-pilout, extracted-lean, clean-source, aeneas-lean-source }:
+{ writeShellApplication, python3, sail-lean-tree, zisk-pilout, extracted-lean, clean-source, aeneas-lean-source }:
 
 # Replaces docker/build-{sail-lean,zisk-lean}.sh. Copies the
 # Nix-built derivation outputs into the repo paths `lake build`
@@ -21,7 +21,9 @@
 writeShellApplication {
   name = "populate";
 
-  runtimeInputs = [ ];
+  # python3 for tools/pilout-roundtrip (stdlib only), which gates the
+  # extraction against the pilout at the tail of this script.
+  runtimeInputs = [ python3 ];
 
   text = ''
     set -euo pipefail
@@ -82,6 +84,16 @@ EOF
     rm -rf build/aeneas-lean
     cp -rL --no-preserve=mode "${aeneas-lean-source}" build/aeneas-lean
     chmod -R u+w build/aeneas-lean
+
+    # Round-trip the extraction against the pilout it was generated from:
+    # every polynomial identity in build/zisk.pilout must be the same
+    # polynomial in the Lean just copied above (eth-act/zisk-fv#303). Gating
+    # here means extraction drift fails at the moment it is produced, before
+    # anything downstream reads it. Exit 1 is a mismatch or an uncovered
+    # constraint and exit 2 is a missing artifact; `set -e` fails on either,
+    # which is the point -- neither is a pass.
+    echo "▶ pilout round-trip gate (tools/pilout-roundtrip)"
+    python3 tools/pilout-roundtrip/check.py --quiet
 
     echo "✅ build/ populated"
   '';
