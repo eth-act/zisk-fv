@@ -123,6 +123,11 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
 CHECK_MIRRORS = HERE / "check_mirrors.py"
 
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(REPO_ROOT / "tools" / "pilout-roundtrip"))
+import lanes  # noqa: E402
+import pilout_wire  # noqa: E402
+
 DEFAULT_PILOUT = REPO_ROOT / "build" / "zisk.pilout"
 DEFAULT_EXTRACTION = REPO_ROOT / "build" / "extraction" / "Extraction"
 REAL_MIRROR = REPO_ROOT / "ZiskFv" / "AirsClean"
@@ -140,6 +145,7 @@ RECLASSIFICATION = "RECLASSIFICATION"
 UNBACKED = "UNBACKED"
 OUT_OF_ROOT = "OUT_OF_ROOT"
 BOOL_TYPED = "BOOL_TYPED"
+WELD_COVERED = "WELD_COVERED"
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -369,6 +375,12 @@ def bool_typed(air: str, *indices: int) -> Signature:
     return (BOOL_TYPED, air, "", tuple(sorted(indices)), ())
 
 
+def weld_covered(air: str, *indices: int) -> Signature:
+    """A WELD_COVERED coverage finding: bound on an `Iff.rfl` weld's RHS, no mirror
+    clause on the pairing side, so the `defs` slot is empty."""
+    return (WELD_COVERED, air, "", tuple(sorted(indices)), ())
+
+
 def strengthening(air: str, *definitions: str) -> Signature:
     return (STRENGTHENING, air, "", (), tuple(sorted(definitions)))
 
@@ -432,10 +444,6 @@ def reclassification_on(payload: dict, air: str, index: int) -> list[dict]:
             if any(g["index"] == index for g in f["generated"])]
 
 
-def unreachable_named(payload: dict, name: str) -> list[dict]:
-    return [entry for entry in payload["unreachable"] if entry["name"] == name]
-
-
 REPRODUCTIONS: tuple[Reproduction, ...] = (
     Reproduction(
         name="GAP_MAIN_A_SIDE_C_COPY",
@@ -484,16 +492,13 @@ REPRODUCTIONS: tuple[Reproduction, ...] = (
         locate=lambda p: reclassification_on(p, "MemAlign", 16),
         evidence=lambda t: trim(block_with(t, "RECLASSIFICATION  MemAlign #16")),
     ),
-    Reproduction(
-        name="UNREACHABLE_ROMBOOLSPEC",
-        expect_class="UNREACHABLE",
-        names="RomBoolSpec",
-        hand_finding="RomBoolSpec (ZiskFv/AirsClean/Main/Circuit.lean:346), a "
-                     "published 14-conjunct mirror predicate with no consumers "
-                     "anywhere",
-        locate=lambda p: unreachable_named(p, "RomBoolSpec"),
-        evidence=lambda t: trim(block_with(t, "unreachable mirrors"), 8),
-    ),
+    # The fourth 2026-07-28 hand finding -- RomBoolSpec, a 14-conjunct mirror with
+    # no consumers anywhere -- is NOT a live reproduction any more: the #296 weld
+    # fan-out added `romBoolSpec_weld` (ZiskFv/AirsClean/MainMirrorWeld.lean) as its
+    # first consumer, so the tool now reports zero unreachable mirrors. The finding
+    # is RESOLVED, not silenced, and the detection it exercised is preserved by the
+    # `WELD_CONSUMER_REMOVED` mutation below, which strips that consumer and
+    # requires the tool to report RomBoolSpec unreachable again.
 )
 
 
@@ -664,6 +669,21 @@ def append_declaration(head: str, body: list[str]) -> Mutator:
     return apply
 
 
+def replace_all(old: str, new: str) -> Mutator:
+    """Replace every occurrence of `old` across the whole file.
+
+    Used where a single fact is stated in two places -- a constraint welded once on
+    its own and once in a bundle weld -- so removing it from coverage means editing
+    both, which one anchored line cannot do.
+    """
+    def apply(lines: list[str]) -> Applied:
+        text = "\n".join(lines)
+        if old not in text:
+            raise HarnessError(f"replace_all: {old!r} not found")
+        return text.replace(old, new).split("\n"), old, new
+    return apply
+
+
 def no_mutation(lines: list[str]) -> Applied:
     return lines, "(nothing)", "(nothing)"
 
@@ -701,6 +721,11 @@ MAIN_SPEC = "ZiskFv/AirsClean/Main/Spec.lean"
 BINARY_SPEC = "ZiskFv/AirsClean/Binary/Spec.lean"
 MEMALIGNBYTE_SPEC = "ZiskFv/AirsClean/MemAlignByte/Spec.lean"
 MEM_OUT_OF_ROOT = "ZiskFv/Airs/Mem.lean"
+# The weld files (#296): `MemAlignByteMirrorWeld` welds the three MemAlignByte-family
+# AIRs, `ArithMirrorWeld` the Arith AIR (and carries `gen36`).
+MEMALIGNBYTE_WELD = "ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean"
+ARITH_WELD = "ZiskFv/AirsClean/ArithMirrorWeld.lean"
+MAIN_WELD = "ZiskFv/AirsClean/MainMirrorWeld.lean"
 
 SEL_6 = "∧ row.sel_6 * (1 - row.sel_6) = 0"
 SEL_7 = "∧ row.sel_7 * (1 - row.sel_7) = 0"
@@ -734,6 +759,10 @@ class Mutation:
     # mutation that defeats a scope check produces no finding at all, so its
     # prediction lives here rather than in `added`.
     scope_added: tuple[str, ...] = ()
+    # Mirror names this mutation must newly make UNREACHABLE. An unreachable mirror
+    # is in `payload["unreachable"]`, not in `airs[].findings`, so a signature delta
+    # does not see it; its prediction lives here.
+    unreachable_added: tuple[str, ...] = ()
     control: bool = False
     # Set when the predicted delta is EMPTY because the gate cannot see this
     # defect, not because there is nothing to see. Such a case passing is a
@@ -754,13 +783,14 @@ MUTATIONS: tuple[Mutation, ...] = (
         lean_file=MEMALIGN_SPEC, target="Spec#13, the sel_prove disjointness clause",
         intent="a mirror clause that used to restate a constraint and no longer does",
         # MemAlign #30 (`sel_prove * (sel_up_to_down + sel_down_to_up)`) is backed
-        # by this clause alone -- and it is ALGEBRAIC, not a `col*(1-col)` boolean,
-        # so no `.val < 2` bound covers it. Deleting the clause is therefore a
-        # genuine gap, where deleting a selector-boolean clause would fall to
-        # BOOL_TYPED (the bound still pins the column). Nothing is added, so no
-        # strengthening.
+        # by this Spec clause AND by an `Iff.rfl` weld (`sel_prove_disjoint_weld`,
+        # #296). Post-weld, deleting the mirror-root clause no longer gaps the
+        # constraint: the weld still covers it, so it surfaces as MATCHED ->
+        # WELD_COVERED. The discriminating fact -- the mirror-root clause is gone --
+        # is what this asserts; the weld providing the residual backing is the same
+        # redundant-backing phenomenon as REDUNDANT_CLAUSE_DELETED, now via a weld.
         apply=drop_line(SEL_PROVE),
-        added=(gap("MemAlign", 30),),
+        added=(weld_covered("MemAlign", 30),),
     ),
     Mutation(
         name="CLAUSE_ADDED",
@@ -777,12 +807,12 @@ MUTATIONS: tuple[Mutation, ...] = (
         intent="a mirror reading the wrong row field: still well-formed, still "
                "looks like the constraint it is not",
         # The value_0 reconstruction's output read as `value_1`. The polynomial is
-        # still well-formed but no longer #31's, so #31 loses its mirror (gap) and
-        # the mutated clause matches nothing (strengthening). An ALGEBRAIC clause is
-        # used deliberately: swapping a field in a selector boolean would leave the
-        # constraint BOOL_TYPED-covered by its bound rather than a gap.
+        # still well-formed but no longer #31's, so the mutated clause matches
+        # nothing (STRENGTHENING -- the discriminating half, preserved). #31 loses
+        # its mirror-root match and, being welded (`value_0_reconstruction_weld`,
+        # #296), falls to WELD_COVERED rather than a gap.
         apply=replace_in_line(VALUE_0_LHS, "row.value_0", "row.value_1"),
-        added=(gap("MemAlign", 31), strengthening("MemAlign", "Spec")),
+        added=(weld_covered("MemAlign", 31), strengthening("MemAlign", "Spec")),
     ),
     Mutation(
         name="ROW_DELTA_SHIFTED",
@@ -790,9 +820,12 @@ MUTATIONS: tuple[Mutation, ...] = (
         intent="the right fields at the wrong row offset",
         # Lane-kind erasure keeps the row delta, so this must NOT read as a
         # reclassification: a shifted row is a different assertion, not a
-        # differently-kinded one.
+        # differently-kinded one. The shifted clause matches nothing (STRENGTHENING
+        # -- the discriminating half). #1 loses its mirror-root match and, being
+        # welded (`transitionRows_weld`, #296), falls to WELD_COVERED, not a gap.
         apply=replace_in_line(REG_0_DOWN, "current.sel_0", "previous.sel_0"),
-        added=(gap("MemAlign", 1), strengthening("MemAlign", "transitionRows")),
+        added=(weld_covered("MemAlign", 1),
+               strengthening("MemAlign", "transitionRows")),
     ),
     Mutation(
         name="FIXED_AS_WITNESS",
@@ -857,10 +890,12 @@ MUTATIONS: tuple[Mutation, ...] = (
         # `__L1__` is an unqualified fixed-column name in all ten AIRs, and in
         # MemAlign it is fixed column 1 where `MemAlign.L1` is fixed column 0. So
         # this reaches a DIFFERENT fixed column through no declared table at all.
-        # Two checks must move: the projection audit (MemAlignRow has no such
-        # field) and the pairing (#16 loses its backer).
+        # The discriminating checks move: the projection audit fires (MemAlignRow
+        # has no such field) and the declared-alias reclassification goes away, the
+        # mutated clause becoming a STRENGTHENING. #16 loses its mirror-root backer
+        # and, being welded (`boot_pc_zero_weld`, #296), falls to WELD_COVERED.
         apply=replace_in_line(PRE_L1, "row.preL1", "row.__L1__"),
-        added=(gap("MemAlign", 16), strengthening("MemAlign", "Spec")),
+        added=(weld_covered("MemAlign", 16), strengthening("MemAlign", "Spec")),
         removed=(reclassification("MemAlign", "declared lane-kind alias", 16,
                                   "Spec"),),
         scope_added=("projection_totality",),
@@ -873,16 +908,18 @@ MUTATIONS: tuple[Mutation, ...] = (
                "polynomial, to prove the 15 OUT_OF_ROOT matches are decided by "
                "canonical equality and not declared from survey.DELEGATED",
         # `segment_last_value_0 -> segment_last_value_1` inside the segment residual
-        # makes Mem #9's covering clause a different polynomial. #9 reverts to a
-        # GAP, its OUT_OF_ROOT coverage disappears, and the now-orphan clause is
-        # reported as an unmatched out-of-root finding (scope bucket `out_of_root`).
-        # A declaration-scoped edit is required: every line of
+        # makes Mem #9's covering clause a different polynomial. Its OUT_OF_ROOT
+        # coverage disappears (the discriminating half: the match was canonical, not
+        # declared) and the now-orphan clause is reported as an unmatched
+        # out-of-root finding (scope bucket `out_of_root`). #9 loses that coverage
+        # and, being welded (`segment_weld`, #296), falls to WELD_COVERED, not a
+        # gap. A declaration-scoped edit is required: every line of
         # `segmentResidualEveryRow` is a verbatim copy of one in `segment_every_row`
         # in the same file, so no single line is a unique anchor.
         apply=replace_in_declaration(
             "def segmentResidualEveryRow", "cols.segment_last_value_0",
             "cols.segment_last_value_1"),
-        added=(gap("Mem", 9),),
+        added=(weld_covered("Mem", 9),),
         removed=(out_of_root("Mem", 9),),
         scope_added=("out_of_root",),
     ),
@@ -895,13 +932,66 @@ MUTATIONS: tuple[Mutation, ...] = (
                "and not on the constraint index",
         # `sel_high_4b` is a plain `F` field, so `< 256` no longer proves it is
         # boolean. MemAlignByte #0 (`sel_high_4b*(1-sel_high_4b)`) loses its only
-        # typing evidence and reverts to a GAP; the other three selectors keep
-        # their `< 2` bound and stay BOOL_TYPED.
+        # typing evidence -- the discriminating half, BOOL_TYPED withdrawn -- and,
+        # being welded (`memAlignByte_boolean_sel_high_4b_weld`, #296), falls to
+        # WELD_COVERED rather than a gap. The other three selectors keep their
+        # `< 2` bound and stay BOOL_TYPED.
         apply=replace_in_line(
             MEMALIGNBYTE_ASSUMPTIONS, "row.sel_high_4b.val < 2",
             "row.sel_high_4b.val < 256"),
-        added=(gap("MemAlignByte", 0),),
+        added=(weld_covered("MemAlignByte", 0),),
         removed=(bool_typed("MemAlignByte", 0),),
+    ),
+    Mutation(
+        name="WELD_MUTATED_AWAY",
+        lean_file=MEMALIGNBYTE_WELD,
+        target="the two MemAlignWriteByte #0 welds, retargeted off constraint_0",
+        intent="a welded constraint whose weld is mutated away reverts to a gap",
+        # MemAlignWriteByte #0 is WELD_COVERED by BOTH its own
+        # `memAlignWriteByte_boolean_sel_high_4b_weld` and the bundle
+        # `memAlignWriteByte_fOnly_weld`. Retargeting the qualified constraint name
+        # in both -- the only two `Iff.rfl` welds that bind it -- removes #0 from
+        # `weld_parse`'s covered set, so the residual GAP no longer has a weld and
+        # is reported as a gap. The AIR has no mirror at all, so nothing else covers
+        # it. `constraint_777` names no real generated constraint, so the other six
+        # welds are undisturbed.
+        apply=replace_all(
+            "MemAlignWriteByte.extraction.constraint_0_every_row",
+            "MemAlignWriteByte.extraction.constraint_777_every_row"),
+        added=(gap("MemAlignWriteByte", 0),),
+        removed=(weld_covered("MemAlignWriteByte", 0),),
+    ),
+    Mutation(
+        name="WELD_CONSUMER_REMOVED",
+        lean_file=MAIN_WELD,
+        target="RomBoolSpec's only consumers, renamed away in the weld file",
+        intent="a mirror whose sole consumer is a weld becomes unreachable when the "
+               "weld stops naming it -- the tool still detects unreachable mirrors",
+        # RomBoolSpec's `no consumers anywhere` hand finding was resolved by #296:
+        # its ONLY references outside its own definition are `romBoolSpec_weld` and
+        # `extracted_of_mainWithRomAndMemBus_constraints`, both in MainMirrorWeld.
+        # Renaming `RomBoolSpec` throughout the weld file leaves the definition (in
+        # Main/Circuit.lean) referenced by nothing, so it is unreachable again and
+        # the tool reports it -- the same detection the retired reproduction tested.
+        apply=replace_all("RomBoolSpec", "RomBoolSpecX"),
+        unreachable_added=("RomBoolSpec",),
+    ),
+    Mutation(
+        name="UNCLASSIFIED_WELD_MIRROR",
+        lean_file=ARITH_WELD,
+        target="a new mirror `def` in a weld file that nobody classified or welded",
+        intent="a genuinely new mirror in a weld file is NOT rescued as a weld "
+               "internal and still fails the classification gate",
+        # The weld-internal rescue is mechanical: an unclassified Prop def in a
+        # `*MirrorWeld.lean` file is a weld internal only if it binds no row record
+        # (the `ReadsOnly*` predicates) or is pinned by an `Iff.rfl` weld (`gen36`).
+        # This one binds `ArithMulRow` and is welded by nothing, so it is a real
+        # mirror smuggled into a weld file -- neither rescue reaches it, and the
+        # classification gate fails on it exactly as it would anywhere else.
+        apply=append_declaration(
+            "def FabricatedWeldMirror (row : ArithMulRow FGL) : Prop :=",
+            ["  row.chunks.a_0 * row.chunks.a_1 = 0"]),
+        scope_added=("classification_coverage",),
     ),
     Mutation(
         name="NOOP_REORDER",
@@ -942,6 +1032,7 @@ class CaseResult:
     added: Counter = field(default_factory=Counter)
     removed: Counter = field(default_factory=Counter)
     scope_added: Counter = field(default_factory=Counter)
+    unreachable_added: list[str] = field(default_factory=list)
     totals_moved: list[str] = field(default_factory=list)
     summary: str = ""
     evidence: list[str] = field(default_factory=list)
@@ -955,8 +1046,9 @@ class CaseResult:
     def uncaught(self) -> bool:
         """A mutation the gate was supposed to notice and did not notice at all."""
         return (bool(self.mutation.added or self.mutation.removed
-                     or self.mutation.scope_added)
-                and not self.added and not self.removed and not self.scope_added)
+                     or self.mutation.scope_added or self.mutation.unreachable_added)
+                and not self.added and not self.removed and not self.scope_added
+                and not self.unreachable_added)
 
     @property
     def blind(self) -> bool:
@@ -1044,6 +1136,14 @@ def run_case(mutation: Mutation, base: Path, work_dir: Path,
         result.problems.append(
             f"unpredicted new scope failure(s) in {', '.join(sorted(unexpected))}")
 
+    base_unreachable = {e["name"] for e in baseline.payload["unreachable"]}
+    result.unreachable_added = sorted(
+        {e["name"] for e in run.payload["unreachable"]} - base_unreachable)
+    if result.unreachable_added != sorted(mutation.unreachable_added):
+        result.problems.append(
+            f"expected to newly make unreachable {sorted(mutation.unreachable_added)}; "
+            f"the run newly reported {result.unreachable_added or '(nothing)'}")
+
     # Invariants no signature delta covers.
     base_totals, case_totals = totals(baseline.payload), totals(run.payload)
     for air, (generated, mirror, matched) in sorted(base_totals.items()):
@@ -1109,13 +1209,17 @@ def print_mutation_table(results: list[CaseResult]) -> None:
     print("-" * len(header))
     for result in results:
         scope = "; ".join(f"+scope:{b}" for b in result.mutation.scope_added)
+        unreach = "; ".join(f"+unreachable:{n}"
+                            for n in result.mutation.unreachable_added)
         expected = "; ".join(part for part in (
             fmt_signed(Counter(result.mutation.added),
                        Counter(result.mutation.removed)).replace("(nothing)", ""),
-            scope) if part)
+            scope, unreach) if part)
         observed = "; ".join(part for part in (
             fmt_signed(result.added, result.removed).replace("(nothing)", ""),
-            "; ".join(f"+scope:{b}" for b in sorted(result.scope_added))) if part)
+            "; ".join(f"+scope:{b}" for b in sorted(result.scope_added)),
+            "; ".join(f"+unreachable:{n}"
+                      for n in sorted(result.unreachable_added))) if part)
         print(_TABLE.format(
             result.mutation.name,
             (expected or "(nothing)")[:46]
@@ -1237,6 +1341,48 @@ def digest_tree() -> str:
     return digest.hexdigest()
 
 
+def check_weld_columns(work_dir: Path) -> list[str]:
+    """PART C: lanes' derived stage-1 map agrees with #310's, and a forged map fails.
+
+    The reconciliation itself (`lanes.weld_column_failures`) is exercised two ways
+    without touching `trust/`: against the real checked-in maps it must find no
+    disagreement, and against a COPY of them with one field name altered it must
+    report exactly that column. A cross-check that cannot fail is not a check.
+    """
+    problems: list[str] = []
+    pilout = pilout_wire.load(DEFAULT_PILOUT)
+
+    live = lanes.weld_column_failures(pilout)
+    if live:
+        problems.append(
+            f"the real lanes-vs-#310 cross-check reported {len(live)} "
+            f"disagreement(s); expected none: {live[0]}")
+
+    forged = work_dir / "_forged-weld-columns"
+    forged.mkdir()
+    real = lanes.DEFAULT_WELD_COLUMNS
+    for path in sorted(real.glob("*.txt")):
+        shutil.copy(path, forged / path.name)
+    victim = forged / "arith.txt"
+    original = victim.read_text()
+    # Repoint Arith's stage-1 column 0 to a field name the symbol table does not
+    # give it. `carry_0` is the real name; `not_a_real_field` cannot be derived.
+    forged_text = original.replace("0 carry_0", "0 not_a_real_field", 1)
+    if forged_text == original:
+        problems.append("could not forge a disagreement: '0 carry_0' not in arith.txt")
+    victim.write_text(forged_text)
+    forged_failures = lanes.weld_column_failures(pilout, weld_columns_dir=forged)
+    if not any("column 0" in f and "not_a_real_field" in f for f in forged_failures):
+        problems.append(
+            f"a forged column-map disagreement was NOT caught; the cross-check "
+            f"reported {forged_failures or '(nothing)'}")
+
+    missing = lanes.weld_column_failures(pilout, weld_columns_dir=work_dir / "_absent")
+    if not missing:
+        problems.append("a missing weld-columns directory was not reported as a failure")
+    return problems
+
+
 def main(argv: list[str]) -> int:
     if argv[1:]:
         print(__doc__.strip().split("\n")[0], file=sys.stderr)
@@ -1276,6 +1422,7 @@ def main(argv: list[str]) -> int:
             futures = [pool.submit(run_case, mutation, base, work_dir, baseline)
                        for mutation in MUTATIONS]
             cases = [future.result() for future in futures]
+        weld_column_problems = check_weld_columns(work_dir)
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
@@ -1283,6 +1430,17 @@ def main(argv: list[str]) -> int:
     print_mutation_table(cases)
     print_mutation_details(cases)
     print_findings(repro, cases)
+
+    print("PART C -- LANES vs #310 WELD-COLUMN MAPS")
+    if weld_column_problems:
+        print(f"  [FAILED] {len(weld_column_problems)} problem(s):")
+        for problem in weld_column_problems:
+            print(f"    {problem}")
+    else:
+        print("  [ok] lanes' derived stage-1 witness map agrees with every "
+              "trust/generated/weld-columns/*.txt, a forged disagreement is caught, "
+              "and a missing directory is reported")
+    print()
 
     reproduced = sum(1 for r in repro if r.ok)
     to_catch = [c for c in cases
@@ -1305,14 +1463,15 @@ def main(argv: list[str]) -> int:
           f"known blind spots measured, not covered: {len(blind)};  "
           f"runtime {time.time() - started:.1f}s")
 
-    failed = [r.case.name for r in repro if not r.ok] + [
-        c.mutation.name for c in cases if not c.ok]
+    failed = ([r.case.name for r in repro if not r.ok]
+              + [c.mutation.name for c in cases if not c.ok]
+              + (["WELD_COLUMN_CROSS_CHECK"] if weld_column_problems else []))
     if failed:
         print(f"mirror-roundtrip acceptance: FAIL -- {len(failed)} case(s) did not "
               f"behave as expected: {', '.join(failed)}")
         return EXIT_FAILED
     print(f"mirror-roundtrip acceptance: OK -- all {len(repro) + len(cases)} cases "
-          f"behaved as expected")
+          f"and the lanes-vs-#310 column cross-check behaved as expected")
     return EXIT_OK
 
 

@@ -206,6 +206,11 @@ from check import DECLARED_AIRS  # noqa: E402
 
 DEFAULT_PILOUT = REPO_ROOT / "build" / "zisk.pilout"
 DEFAULT_EXTRACTION = REPO_ROOT / "build" / "extraction" / "Extraction"
+# #310's authoritative per-AIR stage-1 witness column maps, checked into the tree
+# (checked by `trust/scripts/check-weld-column-maps.py`, in the V1 gate). This
+# module derives the same map from the symbol table independently, so it can hold
+# the two against each other -- a check ON #310's files, not a second copy of them.
+DEFAULT_WELD_COLUMNS = REPO_ROOT / "trust" / "generated" / "weld-columns"
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -830,6 +835,97 @@ class GateReport:
         return not self.failures and all(air.ok for air in self.airs)
 
 
+# The extractor spells a Lean row field `a_0`, not `a[0]`, because `a[0]` is not a
+# valid identifier; #310's weld-column maps record the normalised spelling. This is
+# the `a[0] -> a_0` rule the header comment of `trust/generated/weld-columns/*.txt`
+# names, applied to this module's raw `name[k]` lane names so the two are comparable.
+_WITNESS_ARRAY = re.compile(r"\[(\d+)\]")
+
+
+def _extractor_field_name(name: str) -> str:
+    return _WITNESS_ARRAY.sub(r"_\1", name)
+
+
+def _parse_weld_column_file(path: Path) -> tuple[str | None, dict[int, str], int | None]:
+    """`(AIR name, {stage-1 column -> field}, declared total)` of a #310 map file.
+
+    The format is the header comment block of `trust/generated/weld-columns/*.txt`:
+    the AIR is the one named by the `extraction/Extraction/<AIR>.lean` reference,
+    `# Total stage-1 columns: N` is the declared width, and every non-comment line
+    is `<column index> <field name>`.
+    """
+    air: str | None = None
+    total: int | None = None
+    columns: dict[int, str] = {}
+    for line in path.read_text().splitlines():
+        ref = re.search(r"extraction/Extraction/(\w+)\.lean", line)
+        if ref:
+            air = ref.group(1)
+        declared = re.search(r"Total stage-1 columns:\s*(\d+)", line)
+        if declared:
+            total = int(declared.group(1))
+        body = line.strip()
+        if not body or body.startswith("#"):
+            continue
+        index, name = body.split(None, 1)
+        columns[int(index)] = name.strip()
+    return air, columns, total
+
+
+def weld_column_failures(
+    pilout: pilout_wire.PilOut,
+    weld_columns_dir: str | Path | None = None,
+    air_names: tuple[str, ...] = DECLARED_AIRS,
+) -> list[str]:
+    """Cross-check the derived stage-1 witness column map against #310's files.
+
+    For every `trust/generated/weld-columns/<file>.txt`, the derived
+    `(column -> field)` stage-1 witness map of the AIR the file names is compared
+    against the file's own map, under the extractor's `a[0] -> a_0` normalisation,
+    and the declared total against the derived width. A disagreement is a FAILURE:
+    two maps of the same columns that differ mean one of them is wrong. This is a
+    check ON #310's artifact, and it leaves this module's independent derivation --
+    which also covers the fixed, exposed and stage-2 lanes those files do not
+    record -- in place.
+
+    A run filtered to a subset of AIRs skips the files of the AIRs it was not asked
+    about; a missing directory is itself a failure, because a cross-check that reads
+    nothing has checked nothing.
+    """
+    directory = Path(weld_columns_dir) if weld_columns_dir else DEFAULT_WELD_COLUMNS
+    if not directory.is_dir():
+        return [f"weld-column maps: {directory} is not a directory; "
+                f"the lanes-vs-#310 cross-check read nothing"]
+    failures: list[str] = []
+    for path in sorted(directory.glob("*.txt")):
+        air, columns, total = _parse_weld_column_file(path)
+        if air is None:
+            failures.append(f"weld-column map {path.name}: names no "
+                            f"extraction/Extraction/<AIR>.lean, so its AIR is unknown")
+            continue
+        if air not in air_names:
+            continue
+        try:
+            lmap = lane_map(pilout, air)
+        except LaneError as exc:
+            failures.append(f"weld-column map {path.name}: {air}: {exc}")
+            continue
+        derived = {
+            col: _extractor_field_name(name)
+            for (stage, col), name in lmap.witness_names().items() if stage == 1}
+        if total is not None and total != len(derived):
+            failures.append(
+                f"weld-column map {path.name}: declares {total} stage-1 column(s), "
+                f"the symbol table derives {len(derived)} for {air}")
+        for col in sorted(set(columns) | set(derived)):
+            if columns.get(col) != derived.get(col):
+                failures.append(
+                    f"weld-column map {path.name}: {air} stage-1 column {col}: "
+                    f"#310 says {columns.get(col)!r}, the symbol table derives "
+                    f"{derived.get(col)!r}")
+    return failures
+
+
 def gate_lane_map(
     pilout: pilout_wire.PilOut,
     extraction: str | Path | None = None,
@@ -1220,6 +1316,10 @@ def main(argv: list[str]) -> int:
         return EXIT_USAGE
 
     report = gate_lane_map(pilout, extraction, air_names)
+    # Hold the derived stage-1 witness map against #310's checked-in weld-column
+    # maps; a disagreement fails the run like any other lane-map failure.
+    weld_column_disagreements = weld_column_failures(pilout, air_names=air_names)
+    report.failures.extend(weld_column_disagreements)
 
     if not args.quiet:
         print(f"pilout      {pilout_path}")

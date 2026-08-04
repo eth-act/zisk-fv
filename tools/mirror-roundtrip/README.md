@@ -8,6 +8,7 @@ python3 tools/mirror-roundtrip/check_mirrors.py          # the gate
 python3 tools/mirror-roundtrip/acceptance.py             # the test that the gate works
 python3 tools/mirror-roundtrip/survey.py                 # the mirror inventory
 python3 tools/mirror-roundtrip/mirror_parse.py           # the mirror parser
+python3 tools/mirror-roundtrip/weld_parse.py             # the *MirrorWeld.lean welds
 python3 tools/mirror-roundtrip/lanes.py                  # pilout lanes <-> accessors
 ```
 
@@ -52,9 +53,10 @@ implemented twice, off the emitted Lean here and off the pilout operands in
 
 | file | what it owns |
 | ---- | ------------ |
-| `survey.py` | the declared mirror inventory (`CLASSIFICATION`), per-AIR comparable sets, reference counts |
+| `survey.py` | the declared mirror inventory (`CLASSIFICATION`), per-AIR comparable sets, reference counts, and the mechanical weld-internal rescue (`_weld_helpers`) |
 | `inventory.md` | the written inventory and findings F1-F10, regenerable from `survey.py` |
-| `lanes.py` | one AIR's lanes: `(stage, column)`, fixed, exposed, challenge, by lane and by name |
+| `weld_parse.py` | the `*MirrorWeld.lean` welds (#296): which `(AIR, index)` a kernel-checked `Iff.rfl` weld binds a mirror to, and which weld-file Prop defs are pinned |
+| `lanes.py` | one AIR's lanes: `(stage, column)`, fixed, exposed, challenge, by lane and by name; cross-checks its stage-1 map against #310's `trust/generated/weld-columns/` |
 | `mirror_parse.py` | mirror Lean source -> the shared expression AST, with declared field-to-lane resolution |
 | `check_mirrors.py` | the driver and gate: canonicalise, pair, classify, report |
 | `acceptance.py` | the test that the gate works: reproductions, mutations of a COPY, controls |
@@ -91,18 +93,21 @@ mechanically instead of by reading.
 | `MATCHED` | canonical forms agree |
 | `OUT_OF_ROOT` | no mirror-root clause matches, but a declared out-of-root mirror (`survey.DELEGATED`) canonically restates it -- coverage, decided by the same polynomial equality as `MATCHED`, only the mirror is outside `ZiskFv/AirsClean` |
 | `BOOL_TYPED` | a boolean-shaped `col*(1-col)=0` whose column is pinned to {0,1} by TYPING (a `Bool`-typed row field, or a `.val < 2` bound in the AIR's spec) rather than by a restated equation -- coverage the polynomial comparator cannot see, backed by the typing fact the tool checks |
-| `GAP` | a comparable generated constraint no mirror clause has the canonical form of, and neither an out-of-root match nor a Bool-typing fact covers |
+| `WELD_COVERED` | a comparable generated constraint bound on the RHS of a kernel-checked `Iff.rfl` weld (`ZiskFv/AirsClean/*MirrorWeld.lean`, issue #296). Lean already proved the mirror predicate IS this constraint (up to a conjunction of them), so the coverage is stronger than a canonical match, not weaker; `weld_parse` reads it off the weld theorem's own text and cites the theorem's `file:line`. Only rewrites a residual `GAP` -- a constraint a mirror already covers stays `MATCHED`/`OUT_OF_ROOT`/`BOOL_TYPED`, its weld reported as redundant confirmation apart |
+| `GAP` | a comparable generated constraint no mirror clause has the canonical form of, and neither an out-of-root match, a Bool-typing fact, nor an `Iff.rfl` weld covers |
 | `STRENGTHENING` | a mirror clause no generated constraint has the canonical form of |
 | `RECLASSIFICATION` | the pairing turns on a lane's KIND: a fixed column modelled as a witness, or a stage-2 lane as stage-1 |
 | `UNBACKED` | a mirror equation over a row field this AIR has no lane for: it has no canonical form, so nothing can pair with it |
 
-`OUT_OF_ROOT` and `BOOL_TYPED` are coverage, not failures. Both are decided by a
-fact the tool checks -- a polynomial match against a mirror parsed through the
-SAME `lanes.LaneMap` and parser as the root, or a `Bool`/`.val < 2` typing fact
-read from the row struct or the spec -- never by an index allowlist. A
-boolean-shaped constraint whose column is neither `Bool`-typed nor bounded stays
-a `GAP`; `MemAlignWriteByte`'s selector booleans, which have no row record and no
-bound, are the standing witness that the recognizer discriminates.
+`OUT_OF_ROOT`, `BOOL_TYPED` and `WELD_COVERED` are coverage, not failures. Each is
+decided by a fact the tool checks -- a polynomial match against a mirror parsed
+through the SAME `lanes.LaneMap` and parser as the root, a `Bool`/`.val < 2` typing
+fact read from the row struct or the spec, or a generated constraint on the RHS of
+a kernel-checked `Iff.rfl` weld -- never by an index allowlist. A boolean-shaped
+constraint whose column is neither `Bool`-typed nor bounded is not `BOOL_TYPED`;
+`MemAlignWriteByte`'s selector booleans, which have no row record and no bound, are
+the standing witness that the `BOOL_TYPED` recognizer discriminates -- they are
+covered instead by their own `Iff.rfl` weld (`WELD_COVERED`), not by typing.
 
 `STRENGTHENING` is a **syntactic** class, and the distinction matters. "No
 generated constraint carries this canonical form" is not the same statement as
@@ -241,6 +246,46 @@ once. **16 of the 40 inventoried mirrors share a name** (`Spec` x8,
 `constraints_at` x6, `FullSpec` x2), and a dead `Spec` among live ones counts as
 coverage with no hollow-match flag. The 16 are listed on every run.
 
+## Weld-awareness (#296)
+
+The weld fan-out (#296) merged after this tool was written. A weld is a
+kernel-checked theorem `mirror <-> constraint_i /\ ... := Iff.rfl` in a
+`ZiskFv/AirsClean/*MirrorWeld.lean` file: Lean's kernel already proved the mirror
+predicate IS that conjunction of generated constraints. `weld_parse.py` reads the
+six weld files and records every `(AIR, index)` on the RHS of such a weld as
+`WELD_COVERED`. It counts ONLY `Iff.rfl` / `by rfl` welds -- an implication weld
+(`mirror -> constraint`) or an `Iff` proved by any other tactic or term is
+recognized and NOT counted, so a redundant restatement never inflates coverage --
+and it RAISES on a weld shape it does not recognize rather than silently dropping
+it. A `constraint_i` in a comment, a docstring, or passed as a bare higher-order
+argument (as in `fOnlyConstraints_readOnlyModeledLanes`) is not a weld: comments
+are stripped and a bare reference is not an application on a side of a top-level
+`<->`. A weld whose RHS conjunction also carries a mirror strengthening -- MemAlign's
+`cyclicSuccessorTransitionRows_weld`, whose first conjunct is the `delta_pc`
+equation with no F-only counterpart -- still weld-covers its generated conjuncts;
+the extra conjunct is the mirror side's business.
+
+The welds also gave the classification gate a new leftover to handle. `survey.py`
+refuses to pass over any unclassified Prop-valued declaration under the mirror root,
+and the welds added seven Prop `def`s that are NOT constraint mirrors:
+`ReadsOnlyModeledLanes` (x5), `ReadsOnlyWindowRows`, and `gen36`. `survey._weld_helpers`
+recognizes these MECHANICALLY, not by an allowlist of names: an unclassified Prop def
+in a `*MirrorWeld.lean` file is a weld internal exactly when it **binds no row record**
+(the `ReadsOnly*` higher-order predicates over a probe -- so it states no field equation
+the comparison could carry) or is **pinned to generated constraints by an `Iff.rfl` weld**
+(`gen36` <- `gen36_pin`). A genuinely new mirror in a weld file binds a row record AND is
+unpinned, so it matches neither and stays a classification-coverage failure -- the
+`UNCLASSIFIED_WELD_MIRROR` acceptance case fabricates exactly that and requires it to fail.
+
+Separately, #310 checked an authoritative per-AIR stage-1 witness column map into
+`trust/generated/weld-columns/*.txt`. `lanes.py` derives the same map from the pilout
+symbol table independently; `lanes.weld_column_failures` cross-checks the two per AIR
+(under the extractor's `a[0]` -> `a_0` normalization the file header names) and FAILS on
+any disagreement. This is a check ON #310's artifact, not a second copy of it, and it
+leaves `lanes.py`'s own derivation -- which also covers the fixed, exposed and stage-2
+lanes those files do not record -- in place. At HEAD the two agree exactly, on every
+column of all eleven files.
+
 ## Declared exclusions
 
 Three, all category-level, each with the citation that earns it, all printed on
@@ -288,7 +333,7 @@ is honestly labelled uncorroborated rather than quietly assumed.
 * the exclusion table, with every clause each entry carried and the near-miss
   screen's verdict on each delegation it covers;
 * the per-AIR table: comparable generated, mirror clauses, matched, out-of-root,
-  bool-typed, gap, strengthening, reclassification, unbacked, unparsed,
+  bool-typed, weld, gap, strengthening, reclassification, unbacked, unparsed,
   undeclared-unresolved, and a TOTAL;
 * the coverage decided outside the mirror-root pairing: each `OUT_OF_ROOT` match
   with the out-of-root clause and file it rests on, and each `BOOL_TYPED`
@@ -334,15 +379,16 @@ of its scope.
 
 Step 4/10 of `nix run .#test`, next to #303's step 3/10, running
 `check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, and
-that is the deliverable: 16 comparable generated constraints have no mirror
-clause and no checked coverage fact -- 9 in `Main` (two of them the weaker
-`SEGMENT_L1`-gated half of a within-segment C-copy) and 7 in `MemAlignWriteByte`,
-which has no mirror at all. The other 19 that once read as gaps are now decided
-coverage: 15 `Mem` segment residuals matched by the out-of-root
-`segmentResidualEveryRow`, and 4 `MemAlignByte` booleans typed by a `.val < 2`
-bound. Those 16 are findings for the owner, and mirrors are protected proof
-interfaces -- closing one is proof work, not something this tool or its gate may
-do, and not something to silence with a baseline.
+that is the deliverable: **9** comparable generated constraints have no mirror
+clause and no checked coverage fact, all in `Main` (`{0, 3, 4, 9, 10, 19, 20, 21,
+38}`; two of them the weaker `SEGMENT_L1`-gated half of a within-segment C-copy).
+The other constraints that once read as gaps are now decided coverage: 15 `Mem`
+segment residuals matched by the out-of-root `segmentResidualEveryRow`, 4
+`MemAlignByte` booleans typed by a `.val < 2` bound, and the 7 `MemAlignWriteByte`
+constraints -- which have no mirror predicate -- bound each by their own `Iff.rfl`
+weld (`WELD_COVERED`). Those 9 are findings for the owner, and mirrors are
+protected proof interfaces -- closing one is proof work, not something this tool or
+its gate may do, and not something to silence with a baseline.
 
 Deliberately not in `nix run .#populate`, where #303's check does live. Populate
 materialises generated inputs, and its tail gates a property of the artifact it
@@ -447,11 +493,20 @@ are different claims.
 python3 tools/mirror-roundtrip/acceptance.py    # the test that the gate works
 ```
 
-Against the tree it was written for it reports 4 of the 4 hand findings
-reproduced as findings, 8 of 8 mutations classified exactly as predicted, 3 of 3
-neutral rewrites unmoved -- and the entries below, which are what it could not get
-the gate to report. No expectation was relaxed and no case was dropped to make the
-run green.
+Against the post-#296 tree it reports 3 of the 3 still-live hand findings
+reproduced as findings, 13 of 13 mutations classified exactly as predicted, 3 of 3
+neutral rewrites unmoved, and the lanes-vs-#310 column cross-check green -- and the
+entries below, which are what it could not get the gate to report. The fourth
+2026-07-28 hand finding, `RomBoolSpec` unreachable, was RESOLVED by the #296 weld
+fan-out (`romBoolSpec_weld` is now its first consumer); its detection is preserved
+by the `WELD_CONSUMER_REMOVED` mutation, which strips that consumer and requires
+the tool to report `RomBoolSpec` unreachable again. Three mutations targeting
+weld-covered constraints (a deleted or reprojected mirror clause on `MemAlign`,
+`Mem` or `MemAlignByte`) now surface as `MATCHED -> WELD_COVERED` rather than a gap:
+the weld is a redundant backing that masks the mirror-root deletion, the same
+phenomenon as `REDUNDANT_CLAUSE_DELETED`; their discriminating assertions (the
+withdrawn `BOOL_TYPED`/`OUT_OF_ROOT`/reclassification, the added strengthening) are
+preserved. No expectation was relaxed and no case was dropped to make the run green.
 
 Three adversarial audits ran against the first version of this tool on
 2026-07-29, and most of what follows is what survived them. What did not survive

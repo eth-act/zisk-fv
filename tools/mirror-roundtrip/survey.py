@@ -939,11 +939,17 @@ class Coverage:
     This lives here rather than inside `main` so that `check_mirrors` -- which
     takes its whole mirror scope from `CLASSIFICATION` -- can run the same gate
     instead of trusting that somebody ran `survey.py` by hand.
+
+    `weld_helpers` are the unclassified Prop defs in `*MirrorWeld.lean` files a
+    MECHANICAL rule (not a name allowlist) recognises as weld internals rather than
+    constraint mirrors, so they are excluded from `unclassified` WITH a cited reason
+    instead of failing the gate. See `_weld_helpers`.
     """
 
     props: int
     unclassified: tuple[tuple[str, int, str], ...]
     vanished: tuple[tuple[str, str], ...]
+    weld_helpers: tuple[tuple[str, str, str], ...] = ()
 
     @property
     def failures(self) -> list[str]:
@@ -956,6 +962,44 @@ class Coverage:
         )
 
 
+def _weld_helpers(mirror_root: Path,
+                  unclassified: list[Decl]) -> dict[tuple[str, str], str]:
+    """Which unclassified Prop defs are weld internals, by a mechanical rule.
+
+    The weld fan-out (#296) added Prop defs to the `*MirrorWeld.lean` files that
+    are NOT constraint mirrors. Rescuing them by name would be the allowlist the
+    rest of this tool forbids, so the rule is mechanical: an unclassified
+    Prop-valued def in a weld file is a weld internal exactly when it
+
+    * binds no row record (`bound_row_variables`), so it states no field equation
+      the comparison could carry -- the `ReadsOnly*` higher-order predicates; or
+    * is pinned to generated constraints by an `Iff.rfl` weld in the weld files
+      (`gen36` <- `gen36_pin`), so its polynomial content is already checked there.
+
+    A genuinely new mirror in a weld file binds a row record AND is unpinned, so it
+    matches neither and stays an `unclassified` failure. `weld_parse` is imported
+    lazily because it imports this module.
+    """
+    candidates = [d for d in unclassified if d.path.endswith("MirrorWeld.lean")]
+    if not candidates:
+        return {}
+    import weld_parse  # noqa: E402 - lazy, breaks the survey <-> weld_parse cycle
+    welds = weld_parse.parse_welds(mirror_root)
+    records = {name for _, name, _ in MIRROR_RECORDS}
+    out: dict[tuple[str, str], str] = {}
+    for decl in candidates:
+        if not bound_row_variables(decl, records):
+            out[(decl.path, decl.name)] = (
+                "weld-internal predicate: binds no row record, so it states no "
+                "field equation the comparison could carry")
+        elif decl.name in welds.pinned:
+            thm, rel, line = welds.pinned[decl.name]
+            out[(decl.path, decl.name)] = (
+                f"pinned to generated constraint(s) by weld `{thm}` ({rel}:{line}) "
+                f"as `Iff.rfl`; its content is checked there")
+    return out
+
+
 def coverage(mirror_root: Path) -> Coverage:
     """Run the classification gate over one mirror root."""
     props = [
@@ -965,12 +1009,16 @@ def coverage(mirror_root: Path) -> Coverage:
         if is_prop_valued(decl)
     ]
     present = {(d.path, d.name) for d in props}
+    unclassified = [d for d in props if (d.path, d.name) not in CLASSIFICATION]
+    helpers = _weld_helpers(mirror_root, unclassified)
     return Coverage(
         props=len(props),
         unclassified=tuple(
-            (d.path, d.line, d.name) for d in props
-            if (d.path, d.name) not in CLASSIFICATION),
+            (d.path, d.line, d.name) for d in unclassified
+            if (d.path, d.name) not in helpers),
         vanished=tuple(sorted(k for k in CLASSIFICATION if k not in present)),
+        weld_helpers=tuple(
+            (rel, name, reason) for (rel, name), reason in sorted(helpers.items())),
     )
 
 
@@ -998,7 +1046,12 @@ def main(argv: list[str]) -> int:
     # --- classification, and the two ways it can be stale
     props = [d for decls in decls_by_file.values() for d in decls if is_prop_valued(d)]
     gate = coverage(mirror_root)
-    unclassified = [d for d in props if (d.path, d.name) not in CLASSIFICATION]
+    # A weld-internal Prop def a mechanical rule recognises is excluded from the
+    # unclassified failures WITH a cited reason, not left to fail the gate.
+    weld_helper_keys = {(rel, name) for rel, name, _ in gate.weld_helpers}
+    unclassified = [d for d in props
+                    if (d.path, d.name) not in CLASSIFICATION
+                    and (d.path, d.name) not in weld_helper_keys]
     vanished = list(gate.vanished)
 
     record_names = {name for _, name, _ in MIRROR_RECORDS}
@@ -1193,9 +1246,14 @@ def main(argv: list[str]) -> int:
         out(f"total {len(dead)} declarations referenced by nothing outside their own head")
         out()
 
+    if gate.weld_helpers:
+        print(f"weld internals (mechanically recognised, excluded from the mirror "
+              f"comparison, NOT by name):")
+        for rel, name, reason in gate.weld_helpers:
+            print(f"  {rel}  {name}: {reason}")
     print(f"SUMMARY  mirrors {len(mirrors)}  near-misses {len(near)}  "
           f"records {len(MIRROR_RECORDS)}  unclassified {len(unclassified)}  "
-          f"stale-entries {len(vanished)}")
+          f"weld-internals {len(gate.weld_helpers)}  stale-entries {len(vanished)}")
     if unclassified:
         print("FAIL: Prop-valued declarations missing from CLASSIFICATION:", file=sys.stderr)
         for d in unclassified:

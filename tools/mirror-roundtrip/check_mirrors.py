@@ -144,6 +144,7 @@ import pilout_atoms  # noqa: E402
 import pilout_wire  # noqa: E402
 import poly  # noqa: E402
 import survey  # noqa: E402
+import weld_parse  # noqa: E402
 
 DEFAULT_PILOUT = lanes.DEFAULT_PILOUT
 DEFAULT_EXTRACTION = lanes.DEFAULT_EXTRACTION
@@ -168,15 +169,22 @@ OUT_OF_ROOT = "OUT_OF_ROOT"
 # `Bool`, or the AIR's spec carries a `.val < 2` bound on it. Coverage the
 # polynomial comparator cannot see, backed by the typing fact the tool checks.
 BOOL_TYPED = "BOOL_TYPED"
+# A comparable generated constraint bound on the RHS of a kernel-checked `Iff.rfl`
+# weld (`ZiskFv/AirsClean/*MirrorWeld.lean`, issue #296). Lean already proved the
+# mirror predicate IS this constraint, up to a conjunction of them -- coverage
+# stronger than a canonical polynomial match, decided by `weld_parse` off the weld
+# theorem's own text, cited to the theorem's file:line.
+WELD_COVERED = "WELD_COVERED"
 
-FINDING_CLASSES = (MATCHED, OUT_OF_ROOT, BOOL_TYPED, RECLASSIFICATION, GAP,
-                   STRENGTHENING, UNBACKED)
+FINDING_CLASSES = (MATCHED, OUT_OF_ROOT, BOOL_TYPED, WELD_COVERED,
+                   RECLASSIFICATION, GAP, STRENGTHENING, UNBACKED)
 
-# Findings that fail the run. `MATCHED` is not one; neither are the two coverage
-# classes decided by an out-of-root polynomial match or a checked Bool-typing fact.
+# Findings that fail the run. `MATCHED` is not one; neither are the coverage
+# classes decided by an out-of-root polynomial match, a checked Bool-typing fact,
+# or a kernel-checked weld.
 FAILING_CLASSES = frozenset({GAP, STRENGTHENING, RECLASSIFICATION, UNBACKED})
 # Classes that count a generated constraint as covered rather than gapped.
-COVERED_CLASSES = frozenset({MATCHED, OUT_OF_ROOT, BOOL_TYPED})
+COVERED_CLASSES = frozenset({MATCHED, OUT_OF_ROOT, BOOL_TYPED, WELD_COVERED})
 
 DIFF_TERMS_SHOWN = pilout_check.DIFF_TERMS_SHOWN
 CLAUSE_TEXT_SHOWN = 160
@@ -625,6 +633,10 @@ class Finding:
     # On a `STRENGTHENING`: the generated constraint that entails the clause, if
     # the cofactor search found one. Its presence withdraws the AGENTS.md demand.
     implied: Implication | None = None
+    # On a `WELD_COVERED`: `(generated, WeldRef)` per constraint, citing the
+    # `Iff.rfl` weld theorem whose RHS binds it.
+    weld_evidence: list[tuple[Generated, weld_parse.WeldRef]] = field(
+        default_factory=list)
 
     @property
     def many_to_many(self) -> bool:
@@ -1084,6 +1096,37 @@ def reclassify_covered(air: str, findings: list[Finding], lane_map,
     return rewritten
 
 
+def reclassify_weld_covered(air: str, findings: list[Finding],
+                            welds: weld_parse.Welds) -> list[Finding]:
+    """Rewrite a GAP whose every constraint an `Iff.rfl` weld binds to WELD_COVERED.
+
+    Run after `reclassify_covered`, so it only ever touches the residual GAPs a
+    mirror-root match, an out-of-root match and a Bool-typing fact all missed. A
+    constraint whose canonical form a mirror already carries stays MATCHED /
+    OUT_OF_ROOT / BOOL_TYPED even when a weld also binds it -- the weld is redundant
+    confirmation there, reported apart in `print_coverage`, not a relabelling.
+
+    The weld fact is stronger than a canonical match, not weaker: the constraint is
+    a conjunct of a mirror the kernel accepted, so nothing here decides it -- it is
+    read off the weld theorem's text and cited to its file:line.
+    """
+    covered = welds.indices(air)
+    if not covered:
+        return findings
+    by_index = welds.air_index_map().get(air, {})
+    rewritten: list[Finding] = []
+    for finding in findings:
+        if (finding.kind != GAP or not finding.generated
+                or any(e.index not in covered for e in finding.generated)):
+            rewritten.append(finding)
+            continue
+        weld = Finding(WELD_COVERED, air, list(finding.generated), [])
+        weld.weld_evidence = [
+            (entry, by_index[entry.index][0]) for entry in finding.generated]
+        rewritten.append(weld)
+    return rewritten
+
+
 # ------------------------------------------------------------------ reachability
 
 
@@ -1428,6 +1471,10 @@ class Run:
     out_of_root_failures: list[str] = field(default_factory=list)
     partial: bool = False
     definitions: int = 0
+    # The `Iff.rfl` welds and the lanes-vs-#310 witness-column agreement. The
+    # weld-internal Prop defs the classification gate rescues live on `coverage`.
+    welds: weld_parse.Welds = field(default_factory=weld_parse.Welds)
+    weld_columns: list[str] = field(default_factory=list)
 
     @property
     def delegation_evidence(self) -> tuple[list[str], list[str]]:
@@ -1452,8 +1499,13 @@ class Run:
 
     @property
     def scope_failures(self) -> list[str]:
-        """Everything that says the run's own scope is not what it claims."""
-        return ((self.coverage.failures if self.coverage else [])
+        """Everything that says the run's own scope is not what it claims.
+
+        `survey.coverage` already excludes the recognised weld internals from its
+        failures (see `survey._weld_helpers`), so `coverage.failures` here is the
+        real classification-coverage set.
+        """
+        return ((self.coverage.failures if self.coverage else []) + self.weld_columns
                 + self.scope + self.lane_gate + self.projections
                 + (self.screen.failures if self.screen else [])
                 + self.empty + self.fold_check + self.out_of_root_failures
@@ -1498,7 +1550,16 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
     # without ever gating it. A new mirror predicate is added by writing a `def`,
     # not by editing a list, so an unclassified one is invisible to a scope that
     # is a declared list.
+    # `survey.coverage` runs the classification gate and mechanically rescues the
+    # weld-internal Prop defs (#296) into `coverage.weld_helpers`, so the 7 they
+    # added stop failing while a genuinely new mirror in a weld file still does.
     out.coverage = survey.coverage(mirror_root)
+    # The `Iff.rfl` welds (#296), parsed off their own text, for WELD_COVERED.
+    out.welds = weld_parse.parse_welds(mirror_root)
+    # #310 checked an authoritative per-AIR stage-1 witness column map into
+    # `trust/generated/weld-columns/`. `lanes` derives the same map from the
+    # symbol table; the two must not diverge.
+    out.weld_columns = lanes.weld_column_failures(pilout)
     out.scope = scope_failures(extraction)
     out.lane_gate = lane_gate_failures(pilout)
     out.screen = near_miss_screen(lane_map_for)
@@ -1540,6 +1601,11 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
         findings = reclassify_covered(
             air, findings, lane_map_for(air), lane_map_for, mirror_root,
             air_out_of_root)
+        # A residual GAP every constraint of which an `Iff.rfl` weld binds is
+        # WELD_COVERED. Run last, so a constraint a mirror already carries stays
+        # MATCHED / OUT_OF_ROOT / BOOL_TYPED and the weld is reported as redundant
+        # confirmation rather than relabelling it.
+        findings = reclassify_weld_covered(air, findings, out.welds)
         matched_out_of_root = {
             clause.canon for finding in findings if finding.kind == OUT_OF_ROOT
             for clause in finding.clauses}
@@ -1549,10 +1615,11 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
         run = AirRun(air, generated, excluded, side, findings)
         if (run.gen_count(MATCHED) + run.gen_count(RECLASSIFICATION)
                 + run.gen_count(GAP) + run.gen_count(OUT_OF_ROOT)
-                + run.gen_count(BOOL_TYPED) != len(generated)):
+                + run.gen_count(BOOL_TYPED) + run.gen_count(WELD_COVERED)
+                != len(generated)):
             raise pilout_check.CheckError(
                 f"{air}: generated constraints do not partition into "
-                f"matched/out-of-root/bool-typed/reclassified/gap")
+                f"matched/out-of-root/bool-typed/weld-covered/reclassified/gap")
         if run.mir_count(MATCHED) + run.mir_count(RECLASSIFICATION) + run.mir_count(
                 STRENGTHENING) != len(side.comparable):
             raise pilout_check.CheckError(
@@ -1598,8 +1665,8 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
 
 # ------------------------------------------------------------------- the report
 
-_TABLE = ("{:<18} {:>9} {:>7} {:>7} {:>7} {:>9} {:>4} {:>11} {:>4} {:>9} {:>8} "
-          "{:>6}")
+_TABLE = ("{:<18} {:>9} {:>7} {:>7} {:>7} {:>9} {:>4} {:>4} {:>11} {:>4} {:>9} "
+          "{:>8} {:>6}")
 
 
 def print_declarations(run: Run, out) -> None:
@@ -1671,22 +1738,23 @@ def print_declarations(run: Run, out) -> None:
 
 def print_table(run: Run, out) -> None:
     print(_TABLE.format("air", "generated", "mirror", "matched", "outroot",
-                        "booltyped", "gap", "strengthen", "recl", "unbacked",
-                        "unparsed", "unres"), file=out)
-    print("-" * 108, file=out)
-    totals = [0] * 11
+                        "booltyped", "weld", "gap", "strengthen", "recl",
+                        "unbacked", "unparsed", "unres"), file=out)
+    print("-" * 112, file=out)
+    totals = [0] * 12
     for air in run.airs:
         row = [
             len(air.generated), len(air.mirror.comparable),
             air.gen_count(MATCHED), air.gen_count(OUT_OF_ROOT),
-            air.gen_count(BOOL_TYPED), air.gen_count(GAP),
+            air.gen_count(BOOL_TYPED), air.gen_count(WELD_COVERED),
+            air.gen_count(GAP),
             air.mir_count(STRENGTHENING), len(air.of_kind(RECLASSIFICATION)),
             air.mir_count(UNBACKED),
             len(air.mirror.unparsed), len(air.mirror.undeclared_unresolved),
         ]
         totals = [t + v for t, v in zip(totals, row)]
         print(_TABLE.format(air.air, *row), file=out)
-    print("-" * 108, file=out)
+    print("-" * 112, file=out)
     print(_TABLE.format("TOTAL", *totals), file=out)
     print("  generated  = comparable generated constraints (total minus the "
           "declared challenge/stage-2 exclusion)", file=out)
@@ -1698,6 +1766,8 @@ def print_table(run: Run, out) -> None:
           "same canonical form (survey.DELEGATED)", file=out)
     print("  booltyped  = boolean-shaped `col*(1-col)` whose column is Bool-typed "
           "or `.val < 2`-bounded, not restated as an equation", file=out)
+    print("  weld       = bound on the RHS of a kernel-checked `Iff.rfl` weld "
+          "(ZiskFv/AirsClean/*MirrorWeld.lean), covering a residual gap", file=out)
     print("  unbacked   = equation clauses this AIR has no lane vocabulary for, "
           "so no generated constraint can carry them", file=out)
     print("  unres      = UNDECLARED unresolved projections; the declared ones "
@@ -1796,9 +1866,20 @@ def print_coverage(run: Run, out) -> None:
     """
     out_of_root = [(a.air, f) for a in run.airs for f in a.of_kind(OUT_OF_ROOT)]
     bool_typed = [(a.air, f) for a in run.airs for f in a.of_kind(BOOL_TYPED)]
-    if not out_of_root and not bool_typed and not run.out_of_root_unmatched:
+    weld_covered = [(a.air, f) for a in run.airs for f in a.of_kind(WELD_COVERED)]
+    if (not out_of_root and not bool_typed and not weld_covered
+            and not run.out_of_root_unmatched):
         return
     print("coverage decided outside the mirror-root canonical pairing", file=out)
+    for air, finding in weld_covered:
+        for entry, ref in finding.weld_evidence:
+            print(f"  WELD_COVERED {air} #{entry.index}  "
+                  f"(constraint_{entry.index}_{entry.suffix})", file=out)
+            print(f"    provenance  {entry.provenance}", file=out)
+            print(f"    a kernel-checked `Iff.rfl` weld binds a mirror to this "
+                  f"constraint: `{ref.theorem}` ({ref.rel}:{ref.line}). Lean "
+                  f"already proved the mirror IS it, so nothing here decides it.",
+                  file=out)
     for air, finding in out_of_root:
         gens = ", ".join(f"#{e.index}" for e in finding.generated)
         mirs = ", ".join(f"{c.definition}#{c.index}" for c in finding.clauses)
@@ -1821,9 +1902,45 @@ def print_coverage(run: Run, out) -> None:
                   f"restates it and none needs to.", file=out)
             print(f"    evidence  {evidence}", file=out)
     print("  a boolean-shaped constraint whose column is NOT Bool-typed and NOT "
-          "bounded is not covered here and stays a gap -- MemAlignWriteByte's "
-          "identical selector booleans, which have no row record or bound, are the "
-          "witness.", file=out)
+          "bounded is not covered as BOOL_TYPED -- MemAlignWriteByte's identical "
+          "selector booleans have no row record or bound, so the recogniser leaves "
+          "them; they are WELD_COVERED above by their own `Iff.rfl` weld instead.",
+          file=out)
+    # A weld may also bind a constraint a mirror already covers, or one a finding
+    # of another class names. Neither is a relabelling -- the class is unchanged --
+    # but the overlap is reported so it is not hidden. For a MATCHED / OUT_OF_ROOT /
+    # BOOL_TYPED constraint the weld is redundant confirmation; for a
+    # RECLASSIFICATION it is relevant context: the constraint IS restated by SOME
+    # kernel-checked mirror, though not necessarily the aliased clause this finding
+    # rests on.
+    also_welded: dict[str, list[int]] = {}
+    reclassified_welded: list[tuple[str, int, weld_parse.WeldRef]] = []
+    for air in run.airs:
+        welded = run.welds.air_index_map().get(air.air, {})
+        for finding in air.of_kind(MATCHED) + air.of_kind(OUT_OF_ROOT) + air.of_kind(
+                BOOL_TYPED):
+            also_welded.setdefault(air.air, []).extend(
+                e.index for e in finding.generated if e.index in welded)
+        for finding in air.of_kind(RECLASSIFICATION):
+            for entry in finding.generated:
+                if entry.index in welded:
+                    reclassified_welded.append(
+                        (air.air, entry.index, welded[entry.index][0]))
+    total_also = sum(len(v) for v in also_welded.values())
+    if total_also:
+        print(f"  {total_also} constraint(s) already covered by a mirror are ALSO "
+              f"bound by an `Iff.rfl` weld (redundant confirmation, class "
+              f"unchanged):", file=out)
+        for air in sorted(k for k, v in also_welded.items() if v):
+            print(f"    {air}: {', '.join(f'#{i}' for i in sorted(set(also_welded[air])))}",
+                  file=out)
+    for air, index, ref in reclassified_welded:
+        print(f"  RECLASSIFICATION {air} #{index} is ALSO bound by `Iff.rfl` weld "
+              f"`{ref.theorem}` ({ref.rel}:{ref.line}): constraint_{index} is "
+              f"restated by that weld's own mirror, independent of the declared "
+              f"alias this finding rests on. Class unchanged -- the weld does not "
+              f"decide whether the aliased mirror-root clause is that mirror.",
+              file=out)
     for air, clauses in sorted(run.out_of_root_unmatched.items()):
         for clause in clauses:
             print(f"  OUT_OF_ROOT UNMATCHED  {air}: {clause.label} ({clause.site}) "
@@ -2024,12 +2141,29 @@ def print_checks(run: Run, out) -> None:
     print("checks", file=out)
     _check_line("comparable rule, two implementations agree", run.rule_agreement,
                 "emitted-Lean accessors vs pilout operands, per AIR", out)
+    coverage = run.coverage
     _check_line("mirror scope, survey.CLASSIFICATION describes the root exactly",
-                run.coverage.failures if run.coverage else [],
+                coverage.failures if coverage else [],
                 f"survey.coverage over "
-                f"{run.coverage.props if run.coverage else 0} Prop-valued "
+                f"{coverage.props if coverage else 0} Prop-valued "
                 f"declaration(s): any unclassified one, and any entry naming a "
                 f"declaration the root no longer has", out)
+    helpers = coverage.weld_helpers if coverage else ()
+    if helpers:
+        print(f"    {len(helpers)} unclassified Prop def(s) in *MirrorWeld.lean "
+              f"recognised as weld internals and excluded from the "
+              f"mirror-comparison denominator, each mechanically (NOT by name):",
+              file=out)
+        for rel, name, reason in helpers:
+            print(f"      {rel} {name}: {reason}", file=out)
+        print(f"    a Prop def in a weld file that binds a row record and is NOT "
+              f"weld-pinned is a genuine mirror and stays a classification-coverage "
+              f"failure -- this rescue never reaches one.", file=out)
+    _check_line("weld-column map, lanes agrees with #310's checked-in maps",
+                run.weld_columns,
+                f"the derived stage-1 witness map cross-checked against "
+                f"trust/generated/weld-columns/*.txt under the `a[0]`->`a_0` rule",
+                out)
     screen = run.screen
     _check_line("near-miss screen, no classified-out declaration carries "
                 "equations", screen.failures if screen else [],
@@ -2112,7 +2246,8 @@ def print_report(run: Run, quiet: bool, paths: dict[str, Path],
     matched = sum(a.gen_count(MATCHED) for a in run.airs)
     out_of_root = sum(a.gen_count(OUT_OF_ROOT) for a in run.airs)
     bool_typed = sum(a.gen_count(BOOL_TYPED) for a in run.airs)
-    covered = matched + out_of_root + bool_typed
+    weld_covered = sum(a.gen_count(WELD_COVERED) for a in run.airs)
+    covered = matched + out_of_root + bool_typed + weld_covered
     verdict = "FAILED" if run.failures else ("PARTIAL" if run.partial else "OK")
     if run.partial:
         print("PARTIAL: a --air-filtered run gated nothing about the AIRs it "
@@ -2120,7 +2255,7 @@ def print_report(run: Run, quiet: bool, paths: dict[str, Path],
     print(f"mirror-roundtrip: {verdict} {covered}/{generated} comparable generated "
           f"constraints covered across {len(run.airs)} air(s) "
           f"({matched} matched, {out_of_root} out-of-root, {bool_typed} "
-          f"bool-typed); "
+          f"bool-typed, {weld_covered} weld-covered); "
           f"{sum(a.gen_count(GAP) for a in run.airs)} gap, "
           f"{sum(a.mir_count(STRENGTHENING) for a in run.airs)} strengthening, "
           f"{sum(a.mir_count(UNBACKED) for a in run.airs)} unbacked, "
@@ -2178,6 +2313,11 @@ def to_json(run: Run) -> dict:
                 {"generated_index": g.index, "column": list(atom),
                  "source": source, "evidence": evidence}
                 for g, atom, source, evidence in entry.bool_evidence]
+        if entry.weld_evidence:
+            out["weld_covered"] = [
+                {"generated_index": g.index, "theorem": ref.theorem,
+                 "file": ref.rel, "line": ref.line}
+                for g, ref in entry.weld_evidence]
         if entry.nearest is not None:
             out["nearest"] = {"clause": clause(entry.nearest[0]),
                               "differing_monomials": entry.nearest[1],
@@ -2195,8 +2335,20 @@ def to_json(run: Run) -> dict:
             for e in DECLARED_EXCLUSIONS],
         "self_check_failures": run.self_check,
         "rule_agreement_failures": run.rule_agreement,
+        "welds": {
+            "iff_rfl_covered": [
+                {"air": ref.air, "index": ref.index, "theorem": ref.theorem,
+                 "file": ref.rel, "line": ref.line}
+                for ref in sorted(run.welds.covered,
+                                  key=lambda r: (r.air, r.index, r.theorem))],
+            "helpers": [
+                {"file": rel, "name": name, "reason": reason}
+                for rel, name, reason in (
+                    run.coverage.weld_helpers if run.coverage else ())],
+        },
         "scope_failures": {
             "classification_coverage": run.coverage.failures if run.coverage else [],
+            "weld_columns": run.weld_columns,
             "declared_airs": run.scope,
             "lane_map_gate": run.lane_gate,
             "projection_totality": run.projections,
