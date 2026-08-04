@@ -31,31 +31,20 @@ theorem equiv_SUBW
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
+    (p : ZiskFv.AirsClean.BinaryFamily.StaticBinaryProvider)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
       (h_match : ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-          (ZiskFv.AirsClean.Binary.opBusMessage
-            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-              (providerTable.environment providerRow))) 1))
+          (ZiskFv.AirsClean.Binary.opBusMessage p.rowInput) 1))
       (h_input_r1_extract :
         (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
-          = ZiskFv.EquivCore.Addw.binaryRowA32
-            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-              (providerTable.environment providerRow)) % 2^32)
+          = ZiskFv.EquivCore.Addw.binaryRowA32 p.rowInput % 2^32)
       (h_input_r2_extract :
         (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
-          = ZiskFv.EquivCore.Addw.binaryRowB32
-            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-              (providerTable.environment providerRow)) % 2^32)
+          = ZiskFv.EquivCore.Addw.binaryRowB32 p.rowInput % 2^32)
       (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
@@ -70,8 +59,7 @@ theorem equiv_SUBW
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
     rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
     exact ZiskFv.Compliance.equiv_SUBW state subw_input r1 r2 rd m
-      providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match
+      p r_main bus pins h_match
       h_input_r1_extract h_input_r2_extract h_lane_rd promises
 
 /-- Row-native static-provider route for `equiv_SUBW`. Bypasses the

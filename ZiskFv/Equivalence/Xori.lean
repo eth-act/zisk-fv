@@ -32,29 +32,18 @@ theorem equiv_XORI
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
+    (p : ZiskFv.AirsClean.BinaryFamily.StaticBinaryProvider)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
+        (ZiskFv.AirsClean.Binary.opBusMessage p.rowInput) 1))
     (h_input_r1_row : xori_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+      ZiskFv.EquivCore.Add.binaryRowA64 p.rowInput)
     (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+      ZiskFv.EquivCore.Add.binaryRowB64 p.rowInput)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -68,25 +57,10 @@ theorem equiv_XORI
         (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
-    state xori_input r1 rd imm m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts
-    (by simpa [row] using h_input_r1_row)
-    (by simpa [row] using h_input_imm_row)
-    h_lane_rd h_xori_subset
+  exact ZiskFv.Compliance.equiv_XORI
+    state xori_input r1 rd imm m p r_main bus pins
+    h_match h_input_r1_row h_input_imm_row h_xori_subset h_lane_rd promises
 
 
 /-- Row-native static-provider route for `equiv_XORI`. -/
@@ -129,65 +103,5 @@ lemma equiv_XORI_of_static_row
     state xori_input r1 rd imm m row r_main bus promises pins
     h_match h_row_spec h_core h_static h_facts
     h_input_r1_row h_input_imm_row h_lane_rd h_xori_subset
-
-/-- Lookup-aware Clean table-row route for `XORI`. -/
-lemma equiv_XORI_of_static_table_row
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (xori_input : PureSpec.XoriInput)
-    (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
-    (r_main : ℕ)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_input_r1_row : xori_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.EquivCore.Promises.ITypePromises
-        state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
-        (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
-        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
-    : (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
-      = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
-  exact equiv_XORI_of_static_row state xori_input r1 rd imm m row r_main
-    bus pins h_match h_row_spec h_core h_static_specs h_facts
-    (by simpa [row] using h_input_r1_row)
-    (by simpa [row] using h_input_imm_row)
-    h_xori_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Xori

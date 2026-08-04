@@ -457,8 +457,9 @@ theorem construction_sll_sound_claimed_dead
       h_m32_zero h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLL
-    state sll_input r1 r2 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state sll_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRL construction: from the accepted trace + honest residual binders,
@@ -623,8 +624,9 @@ theorem construction_srl_sound_claimed_dead
       h_m32_zero h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRL
-    state srl_input r1 r2 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state srl_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRA construction: from the accepted trace + honest residual binders,
@@ -789,8 +791,9 @@ theorem construction_sra_sound_claimed_dead
       h_m32_zero h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRA
-    state sra_input r1 r2 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state sra_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SLLI construction (m32 = 0 immediate shift exemplar). The DELTA from
@@ -935,8 +938,9 @@ theorem construction_slli_sound_claimed_dead
     exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
       h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLI
-    state slli_input r1 rd shamt m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state slli_input r1 rd shamt m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRLI construction (m32 = 0 immediate shift; literal swap of SLLI). The DELTA from
@@ -1081,8 +1085,9 @@ theorem construction_srli_sound_claimed_dead
     exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
       h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLI
-    state srli_input r1 rd shamt m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state srli_input r1 rd shamt m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRAI construction (m32 = 0 immediate shift; literal swap of SLLI). The DELTA from
@@ -1227,8 +1232,9 @@ theorem construction_srai_sound_claimed_dead
     exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
       h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAI
-    state srai_input r1 rd shamt m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state srai_input r1 rd shamt m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-! ## m32 = 1 W-shift sibling helpers (PLAN §PR6b)
@@ -1557,8 +1563,9 @@ theorem construction_sllw_sound_claimed_dead
       h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLW
-    state sllw_input r1 r2 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state sllw_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRLW construction (m32 = 1 W-shift; literal swap of SLLW). DELTA
@@ -1697,8 +1704,9 @@ theorem construction_srlw_sound_claimed_dead
       h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLW
-    state srlw_input r1 r2 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state srlw_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRAW construction (m32 = 1 W signed shift; literal swap of SLLW).
@@ -1838,8 +1846,9 @@ theorem construction_sraw_sound_claimed_dead
       h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAW
-    state sraw_input r1 r2 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state sraw_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SLLIW construction (m32 = 1 W immediate-shift exemplar). The DELTA
@@ -1980,8 +1989,9 @@ theorem construction_slliw_sound_claimed_dead
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val slliw_input.shamt
       h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLIW
-    state slliw_input r1 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state slliw_input r1 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRLIW construction (m32 = 1 W immediate-shift; literal swap of
@@ -2107,8 +2117,9 @@ theorem construction_srliw_sound_claimed_dead
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val srliw_input.shamt
       h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLIW
-    state srliw_input r1 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state srliw_input r1 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 /-- Sound SRAIW construction (m32 = 1 W signed immediate-shift; literal swap
@@ -2235,8 +2246,9 @@ theorem construction_sraiw_sound_claimed_dead
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val sraiw_input.shamt
       h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAIW
-    state sraiw_input r1 rd m providerTable providerRow i.val bus
-    promises pins h_component h_table_spec h_provider_row h_match
+    state sraiw_input r1 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus promises pins h_match
     h_input_r1_row h_shift_pin_row h_lane_rd
 
 end ZiskFv.Compliance

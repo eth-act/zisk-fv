@@ -58,8 +58,8 @@ theorem zisk_riscv_compliant_program_bus_shift
     change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match
+      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus promises pins h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srl srl_input r1 r2 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
@@ -67,8 +67,8 @@ theorem zisk_riscv_compliant_program_bus_shift
     change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRL)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Srl.equiv_SRL state srl_input r1 r2 rd
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match
+      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus promises pins h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sra sra_input r1 r2 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
@@ -76,8 +76,8 @@ theorem zisk_riscv_compliant_program_bus_shift
     change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Sra.equiv_SRA state sra_input r1 r2 rd
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match
+      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus promises pins h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | slli slli_input r1 rd shamt providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
@@ -85,8 +85,8 @@ theorem zisk_riscv_compliant_program_bus_shift
     change execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Slli.equiv_SLLI state slli_input r1 rd shamt
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match
+      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus promises pins h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srli srli_input r1 rd shamt providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
@@ -94,8 +94,8 @@ theorem zisk_riscv_compliant_program_bus_shift
     change execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRLI)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Srli.equiv_SRLI state srli_input r1 rd shamt
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match
+      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus promises pins h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srai srai_input r1 rd shamt providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
@@ -103,8 +103,8 @@ theorem zisk_riscv_compliant_program_bus_shift
     change execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRAI)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Srai.equiv_SRAI state srai_input r1 rd shamt
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match
+      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus promises pins h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   | _ => trivial
 

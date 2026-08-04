@@ -269,8 +269,9 @@ theorem construction_or_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r2) or_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_OR
-    state or_input r1 r2 rd m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state or_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_r2_row h_lane_rd promises
 
 /-- Sound XOR construction: from the accepted trace + honest residual binders,
@@ -467,8 +468,9 @@ theorem construction_xor_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r2) xor_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_XOR
-    state xor_input r1 r2 rd m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state xor_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_r2_row h_lane_rd promises
 
 end ZiskFv.Compliance

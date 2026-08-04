@@ -261,8 +261,9 @@ theorem construction_slt_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r2) slt_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SLT
-    state slt_input r1 r2 rd m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state slt_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_r2_row h_lane_rd promises
 
 /-- Sound SLTU construction: from the accepted trace + honest residual binders,
@@ -456,8 +457,9 @@ theorem construction_sltu_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r2) sltu_input.r2_val
         h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SLTU
-    state sltu_input r1 r2 rd m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state sltu_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_r2_row h_lane_rd promises
 
 end ZiskFv.Compliance
