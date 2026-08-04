@@ -31,7 +31,7 @@ open ZiskFv.EquivCore.Promises
 /-- Compliance-namespace canonical wrapper for SUBW. T2.4 retired the
     original (which routed through `op_bus_perm_sound_Binary` +
     `binary_chain_pin_obtain_W` + `binary_consumer_byte_match_chain_pin`).
-    This version takes the canonical Clean providerTable/providerRow shape
+    This version takes the canonical Clean `StaticBinaryProvider` bundle
     and dispatches through `EquivCore.Subw.equiv_SUBW_of_static_row`.
     `Equivalence.Subw.equiv_SUBW` is a thin channel-balance shim over this. -/
 lemma equiv_SUBW
