@@ -162,8 +162,9 @@ theorem zisk_riscv_compliant_program_bus_misc
         LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Addi.equiv_ADDI
-      state addi_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static h_addi_subset
+      state addi_input r1 rd imm m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static h_addi_subset
       h_input_r1_row h_input_imm_row h_lane_rd promises
   | addi_via_binaryadd addi_input r1 rd imm bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
@@ -201,8 +202,9 @@ theorem zisk_riscv_compliant_program_bus_misc
         LeanRV64D.Functions.execute (instruction.ADDIW (imm, r1, rd))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Addiw.equiv_ADDIW
-      state addiw_input r1 rd imm m providerTable providerRow r_main bus pins
-      h_addiw_subset h_component h_table_spec h_provider_row h_match_static
+      state addiw_input r1 rd imm m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_addiw_subset h_match_static
       h_input_r1_extract h_lane_rd promises
   | _ => trivial
 

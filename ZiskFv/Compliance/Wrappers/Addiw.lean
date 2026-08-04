@@ -38,27 +38,18 @@ lemma equiv_ADDIW
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
+    (p : ZiskFv.AirsClean.BinaryFamily.StaticBinaryProvider)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_addiw_subset : itype_imm_subset_holds_main m r_main addiw_input.imm)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
     (h_match : matches_entry
       (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
+        (ZiskFv.AirsClean.Binary.opBusMessage p.rowInput) 1))
     (h_input_r1_extract :
       (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
-        = ZiskFv.EquivCore.Addw.binaryRowA32
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow)) % 2^32)
+        = ZiskFv.EquivCore.Addw.binaryRowA32 p.rowInput % 2^32)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
@@ -71,16 +62,8 @@ lemma equiv_ADDIW
         (instruction.ADDIW (imm, r1, rd))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨h_main_active, h_main_op_addiw⟩ := pins
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_spec_facts :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (0x1A : FGL) := by
+  obtain ⟨_, h_core, h_spec_facts, h_facts⟩ := p.facts
+  have h_emit : p.rowInput.chain.b_op + 16 * p.rowInput.mode.mode32 = (0x1A : FGL) := by
     have h_lane_eqs := h_match
     simp only [matches_entry, opBus_row_Main,
       ] at h_lane_eqs
@@ -89,13 +72,13 @@ lemma equiv_ADDIW
     simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op_addiw
   obtain ⟨h_mode32_one, h_bop_val⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
-      row h_spec_facts h_core 0x1A (Or.inl rfl) h_emit
-  have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
+      p.rowInput h_spec_facts h_core 0x1A (Or.inl rfl) h_emit
+  have h_b_op : p.rowInput.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
-  let v := ZiskFv.AirsClean.Binary.validOfRow row
+  let v := ZiskFv.AirsClean.Binary.validOfRow p.rowInput
   obtain ⟨h_sext_choice_row, h_carry_7_zero_row⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
-      row h_spec_facts h_facts h_core h_mode32_one (Or.inl h_b_op)
+      p.rowInput h_spec_facts h_facts h_core h_mode32_one (Or.inl h_b_op)
   have h_b_lo_m : m.b_0 r_main = v.free_in_b_0 0 + 256 * v.free_in_b_1 0
                                   + 65536 * v.free_in_b_2 0
                                   + 16777216 * v.free_in_b_3 0 := by
@@ -148,10 +131,10 @@ lemma equiv_ADDIW
   have h_input_imm_extract :
       (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0
         : BitVec (31 - 0 + 1)).toNat
-      = (((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_0 0).val
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_1 0).val * 256
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_2 0).val * 65536
-          + ((ZiskFv.AirsClean.Binary.validOfRow row).free_in_b_3 0).val * 16777216)
+      = (((ZiskFv.AirsClean.Binary.validOfRow p.rowInput).free_in_b_0 0).val
+          + ((ZiskFv.AirsClean.Binary.validOfRow p.rowInput).free_in_b_1 0).val * 256
+          + ((ZiskFv.AirsClean.Binary.validOfRow p.rowInput).free_in_b_2 0).val * 65536
+          + ((ZiskFv.AirsClean.Binary.validOfRow p.rowInput).free_in_b_3 0).val * 16777216)
               % 2^32 := by
     show _ = ((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
               + (v.free_in_b_2 0).val * 65536
@@ -166,11 +149,11 @@ lemma equiv_ADDIW
     have h_b1_lt : (m.b_1 r_main).val < GL_prime := (m.b_1 r_main).isLt
     omega
   exact ZiskFv.EquivCore.Addiw.equiv_ADDIW_of_static_row
-    state addiw_input r1 rd imm m row r_main bus promises
+    state addiw_input r1 rd imm m p.rowInput r_main bus promises
     ⟨h_main_active, h_main_op_addiw⟩
     h_match h_core h_facts h_mode32_one h_b_op
     h_sext_choice_row h_carry_7_zero_row
-    (by simpa [row] using h_input_r1_extract)
+    h_input_r1_extract
     h_lane_rd h_input_imm_extract
 
 end ZiskFv.Compliance

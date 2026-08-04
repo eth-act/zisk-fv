@@ -301,8 +301,9 @@ theorem construction_andi_sound_claimed_dead
         m providerInput i.val andi_input.imm h_matches h_m32_zero h_match
         h_andi_subset
   exact ZiskFv.Compliance.equiv_ANDI
-    state andi_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state andi_input r1 rd imm m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_imm_row h_andi_subset h_lane_rd promises
 
 /-- Sound ORI construction: from the accepted trace + honest residual binders,
@@ -480,8 +481,9 @@ theorem construction_ori_sound_claimed_dead
         m providerInput i.val ori_input.imm h_matches h_m32_zero h_match
         h_ori_subset
   exact ZiskFv.Compliance.equiv_ORI
-    state ori_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state ori_input r1 rd imm m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_imm_row h_ori_subset h_lane_rd promises
 
 /-- Sound XORI construction: from the accepted trace + honest residual binders,
@@ -661,8 +663,9 @@ theorem construction_xori_sound_claimed_dead
         m providerInput i.val xori_input.imm h_matches h_m32_zero h_match
         h_xori_subset
   exact ZiskFv.Compliance.equiv_XORI
-    state xori_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state xori_input r1 rd imm m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_row h_input_imm_row h_xori_subset h_lane_rd promises
 
 /-- Sound SLTI construction: from the accepted trace + honest residual binders,
@@ -836,8 +839,9 @@ theorem construction_slti_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r1) slti_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTI
-    state slti_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match h_m32_zero
+    state slti_input r1 rd imm m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match h_m32_zero
     h_input_r1_row h_slti_subset h_lane_rd promises
 
 /-- Sound SLTIU construction: from the accepted trace + honest residual binders,
@@ -1011,8 +1015,9 @@ theorem construction_sltiu_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r1) sltiu_input.r1_val
         h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTIU
-    state sltiu_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match h_m32_zero
+    state sltiu_input r1 rd imm m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match h_m32_zero
     h_input_r1_row h_sltiu_subset h_lane_rd promises
 
 end ZiskFv.Compliance

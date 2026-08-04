@@ -134,28 +134,17 @@ lemma equiv_OR
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
+    (p : ZiskFv.AirsClean.BinaryFamily.StaticBinaryProvider)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
+        (ZiskFv.AirsClean.Binary.opBusMessage p.rowInput) 1))
     (h_input_r1_row : or_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+      ZiskFv.EquivCore.Add.binaryRowA64 p.rowInput)
     (h_input_r2_row : or_input.r2_val =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+      ZiskFv.EquivCore.Add.binaryRowB64 p.rowInput)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -167,23 +156,10 @@ lemma equiv_OR
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.OR))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
+  obtain ⟨h_row_spec, h_core, h_static_specs, h_facts⟩ := p.facts
   exact ZiskFv.EquivCore.Or.equiv_OR_of_static_row
-    state or_input r1 r2 rd m row r_main bus promises pins
+    state or_input r1 r2 rd m p.rowInput r_main bus promises pins
     h_match h_row_spec h_core h_static_specs h_facts
-    (by simpa [row] using h_input_r1_row)
-    (by simpa [row] using h_input_r2_row)
-    h_lane_rd
+    h_input_r1_row h_input_r2_row h_lane_rd
 
 end ZiskFv.Compliance

@@ -251,8 +251,9 @@ theorem construction_subw_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r2) subw_input.r2_val
         hb0 hb1 hb2 hb3 h_m32_one h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SUBW
-    state subw_input r1 r2 rd m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state subw_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_extract h_input_r2_extract h_lane_rd promises
 
 /-- Sound ADDW construction (m32 = 1 word ALU). DELTA from
@@ -424,8 +425,9 @@ theorem construction_addw_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r2) addw_input.r2_val
         hb0 hb1 hb2 hb3 h_m32_one h_b_lo_t h_b_hi_t h_match h_input_r2
   exact ZiskFv.Compliance.equiv_ADDW
-    state addw_input r1 r2 rd m providerTable providerRow i.val bus pins
-    h_component h_table_spec h_provider_row h_match
+    state addw_input r1 r2 rd m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_match
     h_input_r1_extract h_input_r2_extract h_lane_rd promises
 
 /-- Sound ADDIW construction (m32 = 1 word ALU, ITYPE immediate). DELTA from
@@ -577,8 +579,9 @@ theorem construction_addiw_sound_claimed_dead
         m providerInput i.val (regidx_to_fin r1) addiw_input.r1_val
         ha0 ha1 ha2 ha3 h_m32_one h_a_lo_t h_a_hi_t h_match h_input_r1
   exact ZiskFv.Compliance.equiv_ADDIW
-    state addiw_input r1 rd imm m providerTable providerRow i.val bus pins
-    h_addiw_subset h_component h_table_spec h_provider_row h_match
+    state addiw_input r1 rd imm m
+    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+    i.val bus pins h_addiw_subset h_match
     h_input_r1_extract h_lane_rd promises
 
 end ZiskFv.Compliance

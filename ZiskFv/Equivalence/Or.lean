@@ -31,29 +31,18 @@ theorem equiv_OR
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
+    (p : ZiskFv.AirsClean.BinaryFamily.StaticBinaryProvider)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
+        (ZiskFv.AirsClean.Binary.opBusMessage p.rowInput) 1))
     (h_input_r1_row : or_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+      ZiskFv.EquivCore.Add.binaryRowA64 p.rowInput)
     (h_input_r2_row : or_input.r2_val =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
+      ZiskFv.EquivCore.Add.binaryRowB64 p.rowInput)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -66,25 +55,10 @@ theorem equiv_OR
         (instruction.RTYPE (r2, r1, rd, rop.OR))) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.EquivCore.Or.equiv_OR_of_static_row
-    state or_input r1 r2 rd m row r_main bus promises pins
-    h_match h_row_spec h_core h_static_specs h_facts
-    (by simpa [row] using h_input_r1_row)
-    (by simpa [row] using h_input_r2_row)
-    h_lane_rd
+  exact ZiskFv.Compliance.equiv_OR
+    state or_input r1 r2 rd m p r_main bus pins
+    h_match h_input_r1_row h_input_r2_row h_lane_rd promises
 
 
 /-- Row-native static-provider route for `equiv_OR`. -/
@@ -125,66 +99,5 @@ lemma equiv_OR_of_static_row
     state or_input r1 r2 rd m row r_main bus promises pins
     h_match h_row_spec h_core h_static h_facts
     h_input_r1_row h_input_r2_row h_lane_rd
-
-/-- Noncanonical C7 route for `OR` from a lookup-aware Clean Binary table
-    row. The provider row's Binary core and static BinaryTable facts are
-    projected from `table.Spec`. -/
-lemma equiv_OR_of_static_table_row
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (or_input : PureSpec.OrInput)
-    (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
-    (r_main : ℕ)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
-    (h_match : ZiskFv.Airs.OperationBus.matches_entry
-      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-        (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-            (providerTable.environment providerRow))) 1))
-    (h_input_r1_row : or_input.r1_val =
-      ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_input_r2_row : or_input.r2_val =
-      ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-          (providerTable.environment providerRow)))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.EquivCore.Promises.RTypePromises
-        state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
-        (PureSpec.execute_RTYPE_or_pure or_input).nextPC
-        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    : (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.RTYPE (r2, r1, rd, rop.OR))) state
-      = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
-  exact equiv_OR_of_static_row state or_input r1 r2 rd m row r_main bus pins
-    h_match h_core h_row_spec h_static_specs h_facts
-    (by simpa [row] using h_input_r1_row)
-    (by simpa [row] using h_input_r2_row)
-    h_lane_rd promises
 
 end ZiskFv.Equivalence.Or

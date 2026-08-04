@@ -240,6 +240,31 @@ theorem StaticBinaryProvider.facts (p : StaticBinaryProvider) :
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   exact ⟨h_component_spec.1, h_core, h_component_spec.2, h_wf⟩
 
+/-- Caller-facing bundle for a BinaryAdd provider row backing an op-bus
+    request (the `via_binaryadd` ADD/ADDI route): same shape as
+    `StaticBinaryProvider`, pinned to `BinaryAdd.component`. -/
+structure BinaryAddProvider where
+  table : Table FGL
+  row : Array FGL
+  h_component : table.component = ZiskFv.AirsClean.BinaryAdd.component
+  h_spec : table.Spec
+  h_row : row ∈ table.table
+
+/-- The Clean BinaryAdd row selected by the provider evidence. -/
+def BinaryAddProvider.rowInput (p : BinaryAddProvider) :=
+  ZiskFv.AirsClean.BinaryAdd.component.rowInput (p.table.environment p.row)
+
+/-- One-shot lowering of the BinaryAdd provider evidence to the component
+    spec facts consumed by the `equiv_<op>_of_binaryadd_row` cores. -/
+theorem BinaryAddProvider.facts (p : BinaryAddProvider) :
+    ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts p.rowInput := by
+  have h_component_spec :
+      ZiskFv.AirsClean.BinaryAdd.component.Spec
+        (p.table.environment p.row) := by
+    simpa [p.h_component] using p.h_spec p.row p.h_row
+  simpa [BinaryAddProvider.rowInput,
+    ZiskFv.AirsClean.BinaryAdd.component_spec] using h_component_spec
+
 /-- Row extraction for a BinaryExtension operation-bus provider interaction. -/
 theorem exists_binaryExtension_row_eval_of_interaction_mem
     {table : Table FGL}

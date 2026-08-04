@@ -39,31 +39,20 @@ lemma equiv_SUBW
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main FGL FGL)
-    (providerTable : Air.Flat.Table FGL)
-    (providerRow : Array FGL)
+    (p : ZiskFv.AirsClean.BinaryFamily.StaticBinaryProvider)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
-    (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
-    (h_provider_row : providerRow ∈ providerTable.table)
       (h_match : matches_entry
         (opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-          (ZiskFv.AirsClean.Binary.opBusMessage
-            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-              (providerTable.environment providerRow))) 1))
+          (ZiskFv.AirsClean.Binary.opBusMessage p.rowInput) 1))
       (h_input_r1_extract :
         (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
-          = ZiskFv.EquivCore.Addw.binaryRowA32
-            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-              (providerTable.environment providerRow)) % 2^32)
+          = ZiskFv.EquivCore.Addw.binaryRowA32 p.rowInput % 2^32)
       (h_input_r2_extract :
         (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
-          = ZiskFv.EquivCore.Addw.binaryRowB32
-            (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-              (providerTable.environment providerRow)) % 2^32)
+          = ZiskFv.EquivCore.Addw.binaryRowB32 p.rowInput % 2^32)
       (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
@@ -76,16 +65,8 @@ lemma equiv_SUBW
         (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨h_main_active, h_main_op_subw⟩ := pins
-  let row :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-      (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_spec_facts :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (0x1B : FGL) := by
+  obtain ⟨_, h_core, h_spec_facts, h_facts⟩ := p.facts
+  have h_emit : p.rowInput.chain.b_op + 16 * p.rowInput.mode.mode32 = (0x1B : FGL) := by
     have h_lane_eqs := h_match
     simp only [matches_entry, opBus_row_Main,
       ] at h_lane_eqs
@@ -94,19 +75,18 @@ lemma equiv_SUBW
     simpa [ZiskFv.Trusted.OP_SUB_W] using h_main_op_subw
   obtain ⟨h_mode32_one, h_bop_val⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
-      row h_spec_facts h_core 0x1B (Or.inr rfl) h_emit
-  have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
+      p.rowInput h_spec_facts h_core 0x1B (Or.inr rfl) h_emit
+  have h_b_op : p.rowInput.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB] using h_bop_val
   obtain ⟨h_sext_choice_row, h_carry_7_zero_row⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
-      row h_spec_facts h_facts h_core h_mode32_one (Or.inr h_b_op)
+      p.rowInput h_spec_facts h_facts h_core h_mode32_one (Or.inr h_b_op)
   exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_static_row
-      state subw_input r1 r2 rd m row r_main bus promises
+      state subw_input r1 r2 rd m p.rowInput r_main bus promises
       ⟨h_main_active, h_main_op_subw⟩
       h_match h_core h_facts h_mode32_one h_b_op
       h_sext_choice_row h_carry_7_zero_row
-      (by simpa [row] using h_input_r1_extract)
-      (by simpa [row] using h_input_r2_extract)
+      h_input_r1_extract h_input_r2_extract
       h_lane_rd
 
 end ZiskFv.Compliance

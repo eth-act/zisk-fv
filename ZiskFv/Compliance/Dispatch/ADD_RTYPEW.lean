@@ -58,8 +58,9 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
     change execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Add.equiv_ADD
-      state add_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state add_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
   | add_via_binaryadd add_input r1 r2 rd bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
@@ -96,8 +97,9 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
           (instruction.RTYPEW (r2, r1, rd, ropw.ADDW))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Addw.equiv_ADDW
-      state addw_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state addw_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_extract h_input_r2_extract h_lane_rd promises
   | subw subw_input r1 r2 rd _v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static
@@ -110,8 +112,9 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
           (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
     exact ZiskFv.Equivalence.Subw.equiv_SUBW
-      state subw_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state subw_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_extract h_input_r2_extract h_lane_rd promises
   | _ => trivial
 

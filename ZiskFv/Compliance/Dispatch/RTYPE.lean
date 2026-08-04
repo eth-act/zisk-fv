@@ -124,8 +124,9 @@ theorem zisk_riscv_compliant_program_bus_rtype_binary
       h_input_r1_row h_input_r2_row h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
     exact ZiskFv.Equivalence.Sub.equiv_SUB
-      state sub_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state sub_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
   | and and_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_input_r1_row h_input_r2_row
@@ -141,32 +142,36 @@ theorem zisk_riscv_compliant_program_bus_rtype_binary
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
     exact ZiskFv.Equivalence.Or.equiv_OR
-      state or_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state or_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
   | xor xor_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_input_r1_row h_input_r2_row
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
     exact ZiskFv.Equivalence.Xor.equiv_XOR
-      state xor_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state xor_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
   | slt slt_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_input_r1_row h_input_r2_row
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
     exact ZiskFv.Equivalence.Slt.equiv_SLT
-      state slt_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state slt_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
   | sltu sltu_input r1 r2 rd v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_input_r1_row h_input_r2_row
       h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
     exact ZiskFv.Equivalence.Sltu.equiv_SLTU
-      state sltu_input r1 r2 rd m providerTable providerRow r_main bus pins
-      h_component h_table_spec h_provider_row h_match_static
+      state sltu_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      r_main bus pins h_match_static
       h_input_r1_row h_input_r2_row h_lane_rd promises
   | _ => trivial
 

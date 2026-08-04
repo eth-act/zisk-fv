@@ -490,15 +490,17 @@ theorem construction_add_sound_claimed_dead
           m providerInput i.val (regidx_to_fin r2) add_input.r2_val
           h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
     exact ZiskFv.Compliance.equiv_ADD
-      state add_input r1 r2 rd m providerTable providerRow i.val bus pins
-      h_component h_table_spec h_provider_row h_match
+      state add_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      i.val bus pins h_match
       h_input_r1_row h_input_r2_row h_lane_rd promises
   · -- BinaryAdd arm: discharge via `equiv_ADD_via_binaryadd`.
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
     exact ZiskFv.Compliance.equiv_ADD_via_binaryadd
-      state add_input r1 r2 rd m providerTable providerRow i.val bus pins
-      h_component h_table_spec h_provider_row h_match
+      state add_input r1 r2 rd m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      i.val bus pins h_match
       h_add_subset h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32_zero
       h_lane_rd promises
 
@@ -699,15 +701,17 @@ theorem construction_addi_sound_claimed_dead
           m providerInput i.val addi_input.imm h_matches h_m32_zero h_match
           h_addi_subset
     exact ZiskFv.Compliance.equiv_ADDI
-      state addi_input r1 rd imm m providerTable providerRow i.val bus pins
-      h_component h_table_spec h_provider_row h_match
+      state addi_input r1 rd imm m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      i.val bus pins h_match
       h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
   · -- BinaryAdd arm: discharge via `equiv_ADDI_via_binaryadd`.
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
     exact ZiskFv.Compliance.equiv_ADDI_via_binaryadd
-      state addi_input r1 rd imm m providerTable providerRow i.val bus pins
-      h_component h_table_spec h_provider_row h_match
+      state addi_input r1 rd imm m
+      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
+      i.val bus pins h_match
       h_add_subset h_addi_subset h_a_lo_t h_a_hi_t h_m32_zero h_set_pc_zero
       h_lane_rd promises
 
