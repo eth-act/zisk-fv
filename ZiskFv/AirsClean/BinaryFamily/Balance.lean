@@ -203,6 +203,43 @@ theorem staticBinary_spec_facts_of_table_spec
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   exact h_component_spec.2
 
+/-- Caller-facing bundle for a lookup-aware static Binary provider: the
+    provider table, the selected row, and the three table-level facts that the
+    ALU/Binary `equiv_<op>` wrappers previously took as separate binders. The
+    balance derivations (`main_request_*_provided`) produce exactly these
+    fields. -/
+structure StaticBinaryProvider where
+  table : Table FGL
+  row : Array FGL
+  h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+  h_spec : table.Spec
+  h_row : row ∈ table.table
+
+/-- The Clean `BinaryRow` selected by the provider evidence. -/
+def StaticBinaryProvider.rowInput (p : StaticBinaryProvider) :
+    ZiskFv.AirsClean.Binary.BinaryRow FGL :=
+  ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    (p.table.environment p.row)
+
+/-- One-shot lowering of the table-level provider evidence to the four
+    row-level facts consumed by the `equiv_<op>_of_static_row` cores. Single
+    home of the projection previously repeated inside every ALU/Binary
+    wrapper. -/
+theorem StaticBinaryProvider.facts (p : StaticBinaryProvider) :
+    ZiskFv.AirsClean.Binary.Spec p.rowInput
+      ∧ ZiskFv.Airs.Binary.core_every_row
+          (ZiskFv.AirsClean.Binary.validOfRow p.rowInput) 0
+      ∧ ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts p.rowInput
+      ∧ ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts p.rowInput := by
+  obtain ⟨h_core, h_wf⟩ :=
+    staticBinary_core_and_wf_of_table_spec p.h_component p.h_spec p.h_row
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (p.table.environment p.row) := by
+    simpa [p.h_component] using p.h_spec p.row p.h_row
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
+  exact ⟨h_component_spec.1, h_core, h_component_spec.2, h_wf⟩
+
 /-- Row extraction for a BinaryExtension operation-bus provider interaction. -/
 theorem exists_binaryExtension_row_eval_of_interaction_mem
     {table : Table FGL}
@@ -301,6 +338,30 @@ theorem shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
   rw [ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_spec] at h_component_spec
   exact ⟨ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts _
       h_component_spec.2.1, h_component_spec.2.2⟩
+
+/-- Caller-facing bundle for a shift-range lookup-aware static BinaryExtension
+    provider (the twelve shifts): same shape as `StaticBinaryProvider`, pinned
+    to `shiftStaticLookupComponent`. -/
+structure ShiftStaticProvider where
+  table : Table FGL
+  row : Array FGL
+  h_component :
+    table.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+  h_spec : table.Spec
+  h_row : row ∈ table.table
+
+/-- The Clean BinaryExtension row selected by the provider evidence. -/
+def ShiftStaticProvider.rowInput (p : ShiftStaticProvider) :=
+  ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+    (p.table.environment p.row)
+
+/-- One-shot lowering of the shift provider evidence to the row-level facts
+    consumed by the `equiv_<shift>_of_static_row` cores. -/
+theorem ShiftStaticProvider.facts (p : ShiftStaticProvider) :
+    ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts p.rowInput
+      ∧ ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact p.rowInput :=
+  shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+    p.h_component p.h_spec p.h_row
 
 /-- Convenience projection for consumers that only need the shift-selected
     `b_0 < 2^24` range fact. -/
