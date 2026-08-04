@@ -456,13 +456,76 @@ directory: an AIR whose constraints all became `--skip-unsupported` stubs has no
 perfect ratio.
 
 Wiring: the tail of `nix run .#populate` (so drift fails where it is produced)
-and step 3/9 of `nix run .#test` (`check.py` plus the mutation selftest). Not in
+and step 3/10 of `nix run .#test` (`check.py` plus the mutation selftest). Not in
 `trust/scripts/check-all.sh`, whose CI job has no `build/` at all. Exit 1 is a
 mismatch or an uncovered constraint, exit 2 is a missing artifact; neither is a
 pass.
 
 `tools/pilout-roundtrip/README.md` carries the full argument, the two atom
 vocabularies, and the measured residual blind spots.
+
+## Mirror gate (`tools/mirror-roundtrip`, eth-act/zisk-fv#304)
+
+The round-trip gate above ends at `build/extraction/`. Nothing in its argument
+touches `ZiskFv/`, and no Lean under `ZiskFv/` imports a per-AIR
+`Extraction.<AIR>` module at all, so a constraint can round-trip perfectly and
+still be restated wrongly, partially, or not at all in the handwritten Lean the
+proof actually consumes. This gate closes that second direction for the
+polynomial content.
+
+How the two differ:
+
+| | round-trip gate (#303) | mirror gate (#304) |
+| - | - | - |
+| decides | `pilout` vs `build/extraction/` | `build/extraction/` vs `ZiskFv/AirsClean/**` |
+| both sides are | generated | one generated, one handwritten |
+| a failure means | the extractor dropped or distorted a constraint | a constraint has no mirror, or a mirror has no constraint |
+| its verdict is | `OK` at HEAD | `FAILED` at HEAD, and the failures are the finding |
+| the fix is | change the generator and rerun | proof work on a protected interface |
+
+It reuses `poly.py`, `check.to_poly`, `lean_parse.py`, `pilout_wire.py` and
+`pilout_atoms.py` from `tools/pilout-roundtrip` rather than forking them, so the
+two tools cannot disagree about what a column, an atom or a canonical form is.
+Per AIR it canonicalises the *comparable* generated constraints — the issue's
+rule: all of them minus every constraint reaching `Extraction.Circuit.challenge`
+or a stage-2 lane, 176 of the 355 — and the clauses of every inventoried mirror
+predicate, and pairs the two sets by canonical form rather than by index. The
+comparable rule is implemented twice, off the emitted Lean and off the pilout
+operands, and the two index sets must agree on every run.
+
+Five finding classes: `MATCHED`; `GAP`, a comparable constraint no mirror clause
+has the canonical form of; `STRENGTHENING`, a mirror clause no constraint has the
+form of — a *syntactic* class, so the report also runs a cofactor search and says
+when the clause is in fact implied by a constraint and therefore weaker rather
+than stronger; `RECLASSIFICATION`, a pairing that turns on a lane's kind;
+`UNBACKED`, an equation over a row field this AIR has no lane for, which has no
+canonical form to pair with and so is reported rather than compared.
+
+Besides the pairing, the run holds its own scope: `survey.CLASSIFICATION` against
+the declarations actually under the mirror root, every `NEAR_*`-classified
+declaration re-parsed and required to carry no comparable equation,
+`DECLARED_AIRS` through #303's own `_check_scope`, `lanes.gate_lane_map`, every
+resolved projection against the row record it claims to project, and a non-empty
+floor on both denominators. A scope that shrinks is the failure mode a
+declared-list scope has, and each of those is what makes one loud.
+
+Wiring: step 4/10 of `nix run .#test` (`check_mirrors.py` plus `acceptance.py`,
+the mutation suite that is the evidence the gate can fail and classify). Exit 1
+is a finding, exit 2 a missing artifact; neither is a pass. Deliberately NOT in
+`nix run .#populate`: populate materialises generated inputs, and this gate's
+failing side is handwritten source that populate neither writes nor reads, so a
+gap here is not extraction drift and re-running populate cannot change it.
+Deliberately not in `trust/scripts/check-all.sh` either, for #303's reason — that
+CI job has no `build/`.
+
+**This step fails at HEAD**, and that is the deliverable rather than a wiring
+bug: 35 comparable generated constraints have no mirror clause of their AIR.
+Those are findings for the owner. Mirrors and `Valid_<AIR>` validators are
+protected proof interfaces, so closing one is proof work — not something the tool
+may do, and not something to silence with a baseline here.
+
+`tools/mirror-roundtrip/README.md` carries the full argument, the declared
+exclusions with their citations, and the measured blind spots.
 
 ## Negative row rotations (Phase 2.5 D2)
 
