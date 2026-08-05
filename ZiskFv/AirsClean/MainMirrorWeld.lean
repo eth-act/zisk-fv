@@ -642,25 +642,6 @@ theorem weldedConstraints_probeBridge (row : MainRowWithRom FGL) (r : ℕ) :
    Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl,
    Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl⟩
 
-/-! ## Part A's instance is pinned
-
-`extractedMainRowCircuit_main_eq` near the top already ties the class
-projection the generated constraints read through to `mainValue`. This closes
-the remaining freedom: it fixes all four fields at once, and it is stated
-through `inferInstance`, so it fails to compile both if a field drifts and if
-instance resolution for `Extraction.Circuit FGL FGL ExtractedMainRow` starts
-finding a different instance. It is deliberately the last declaration of
-Part A: every Part A weld resolves that class against the instances declared
-before it, so an instance introduced anywhere above — including one shadowing
-`extractedMainRowCircuit` — is also the one this theorem resolves and checks. -/
-theorem extractedMainRowCircuit_pinned :
-    (inferInstance : Extraction.Circuit FGL FGL ExtractedMainRow) =
-      { main := mainValue
-        preprocessed := fun _ _ _ _ => 0
-        challenge := fun _ _ => 0
-        exposed := fun _ _ => 0 } :=
-  rfl
-
 /-! ## Part B — the nine `exposed`-reading constraints
 
 `ExtractedMainRow` stubs `preprocessed` / `challenge` / `exposed` to `0`
@@ -843,6 +824,26 @@ theorem constraint_10_weld (c : MainExposed FGL FGL) (r : ℕ) :
             + (c.rows (r - 1)).core.c_1)) = 0)
       ↔ Main.extraction.constraint_10_every_row c r :=
   Iff.rfl
+
+/-! ## Part A's instance is pinned
+
+`extractedMainRowCircuit_main_eq` near the top already ties the class
+projection the generated constraints read through to `mainValue`. This closes
+the remaining freedom: it fixes all four fields at once, and it is stated
+through `inferInstance`, so it fails to compile both if a field drifts and if
+instance resolution for `Extraction.Circuit FGL FGL ExtractedMainRow` starts
+finding a different instance. Placed here, after every `instance _ :
+Extraction.Circuit ...` declared in this module (`extractedMainRowCircuit`,
+`mainProbeCircuit`, `extractedMainExposedCircuit`), so an instance introduced
+anywhere above — including one shadowing `extractedMainRowCircuit` — is also
+the one this theorem resolves and checks. -/
+theorem extractedMainRowCircuit_pinned :
+    (inferInstance : Extraction.Circuit FGL FGL ExtractedMainRow) =
+      { main := mainValue
+        preprocessed := fun _ _ _ _ => 0
+        challenge := fun _ _ => 0
+        exposed := fun _ _ => 0 } :=
+  rfl
 
 /-- `extractedMainExposedCircuit`'s four fields are pinned: `inferInstance`
     fails to compile both if a field drifts and if instance resolution for

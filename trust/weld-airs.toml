@@ -62,6 +62,29 @@ generated = "build/extraction/Extraction/Main.lean"
 recording = "trust/generated/weld-columns/main.txt"
 unpinned-instances = ["mainProbeCircuit"]
 
+[air.MainExposed]
+# `MainExposed` (Part B of the same weld module) is a second `Extraction.Circuit`
+# carrier for the nine `exposed`-reading Main constraints. Its `main` lane is
+# `traceMainValue`, which re-applies Part A's `mainValue` (via `extractedMainRow`)
+# to a row picked out of `MainExposed.rows` -- it introduces no new stage-1
+# witness column map, so this block points `column-map` at the *same* `mainValue`
+# def and reuses `[air.Main]`'s recording; `instance-main` is the indirection the
+# schema already uses for MemAlignTrace/MemAlignWindow. `preprocessed` (SEGMENT_L1)
+# and `exposed` (the seven `airval`s) are handwritten maps outside this gate's
+# stage-1-witness scope; they are kernel-checked by the module's `Iff.rfl` welds
+# instead (see the module docstring's "What the weld does and does not certify").
+weld = "ZiskFv/AirsClean/MainMirrorWeld.lean"
+column-map = "mainValue"
+instance-main = "traceMainValue"
+wrapper = "MainExposed"
+instance = "extractedMainExposedCircuit"
+pin = "extractedMainExposedCircuit_pinned"
+row-type = "MainRowWithRom"
+row-decl = ["ZiskFv/AirsClean/Main/Row.lean"]
+generated = "build/extraction/Extraction/Main.lean"
+recording = "trust/generated/weld-columns/main.txt"
+note = "eth-act/zisk-fv#304/#310 -- Part B carrier for the 9 exposed-reading Main constraints; shares Part A's mainValue column map, no new recording."
+
 [air.MemAlignTrace]
 weld = "ZiskFv/AirsClean/MemAlignMirrorWeld.lean"
 column-map = "stage1Column"
