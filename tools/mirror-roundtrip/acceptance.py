@@ -34,11 +34,20 @@ Why the verdict is a DELTA, not (only) an exit code
     meaningful again and is now ALSO asserted on every case: 1 iff the baseline
     already fails, `added` names a FAILING-class signature (GAP/STRENGTHENING/
     RECLASSIFICATION/UNBACKED), or a scope/unreachable bucket grew: else 0.
-    Two cases need an explicit `Mutation.expect_exit` override because the
-    signature the mutation adds is not the whole story: `LANELESS_CLAUSE_ADDED`
-    adds an UNBACKED that is itself auto-declared, and the three
-    `excluded_by_check` cases add no NEW signature at all (an existing one
-    merely stops being excluded).
+    Three cases need an explicit `Mutation.expect_exit` override because the
+    signature they add is not the whole story: each `excluded_by_check` case
+    below (`MAIN_FIXED_COLUMNS_PIN_REMOVED`, `MEMALIGN_FIXED_COLUMNS_PIN_
+    REMOVED`, `MAIN_SOURCE_C_COFACTOR_BROKEN`) adds no NEW signature at all --
+    an EXISTING finding merely stops being excluded, which moves the exit
+    code without moving the signature multiset. `LANELESS_CLAUSE_LAUNDERED`
+    and `ADDR0_CLAUSE_LAUNDERED` also carry an `excluded_by_check` (proving
+    the laundered clause's OWN new finding is not silently re-excluded), but
+    need no override: each adds a genuinely NEW UNBACKED signature, so the
+    default rule already predicts exit 1 correctly. (A prior case here,
+    `LANELESS_CLAUSE_ADDED`, DID need an exit-0 override -- the laundering
+    hole eth-act/zisk-fv#329's review fix closes had the tool auto-declare
+    that added UNBACKED regardless of what the clause asserted. It is
+    `LANELESS_CLAUSE_LAUNDERED` now, and proves the opposite.)
 
     Two invariants are asserted on every case as well: the comparable GENERATED
     count per AIR never moves (these mutations touch only mirrors, so a generated
@@ -502,6 +511,44 @@ def _source_c_cofactor_broken(baseline_payload: dict, run_payload: dict) -> str 
     return None
 
 
+def _laundered_uncommitted_clause_not_excluded(
+        air: str, definition: str, text_needle: str
+        ) -> Callable[[dict, dict], str | None]:
+    """A clause multiplying a no-lane field by a COMMITTED atom must be a real,
+    un-excluded failing UNBACKED -- the laundering hole `mirror_unbacked_
+    field_uncommitted` used to have (excluding ANY clause naming a no-lane
+    field regardless of what else it asserted) and the review fix
+    (`_unbacked_clause_is_definitional_pin`) exists to close.
+
+    `_excluded_by_values` cannot tell this injected clause apart from the
+    field's own genuine definitional-pin finding (both name the same
+    `definition`), so this filters directly on `text_needle`, a substring
+    unique to the injected clause's source text.
+    """
+    def check(baseline_payload: dict, run_payload: dict) -> str | None:
+        findings = [
+            f for entry in run_payload["airs"] if entry["air"] == air
+            for f in entry["findings"]
+            if f["kind"] == UNBACKED
+            and any(m["definition"] == definition and text_needle in m["text"]
+                    for m in f["mirror"])
+        ]
+        if len(findings) != 1:
+            return (f"harness bug: expected exactly one {air} {definition} "
+                    f"UNBACKED finding naming {text_needle!r} in the mutated "
+                    f"run, found {len(findings)}")
+        excluded = findings[0]["excluded_by"]
+        if excluded:
+            return (f"{air} {definition} UNBACKED naming {text_needle!r} is "
+                    f"excluded_by {excluded!r} -- a clause multiplying the "
+                    f"no-lane field by a committed lane must NOT be excluded "
+                    f"by `mirror_unbacked_field_uncommitted`; that it would "
+                    f"be is exactly the laundering hole eth-act/zisk-fv#329's "
+                    f"review fix closes")
+        return None
+    return check
+
+
 # ------------------------------------------------- PART A: the four hand findings
 
 
@@ -867,6 +914,7 @@ SEL_PROVE = "∧ row.sel_prove * (row.sel_up_to_down + row.sel_down_to_up) = 0"
 VALUE_0_LHS = "∧ row.value_0 -"
 REG_0_DOWN = ("∧ (previous.reg_0 - current.reg_0) * current.sel_0 "
               "* current.sel_down_to_up = 0")
+ADDR0 = "row.rom.addr0 = row.rom.a_offset_imm0"
 ADDR1 = "∧ row.rom.addr1 = row.rom.b_offset_imm0 + row.rom.b_src_ind * row.core.a_0"
 CARRY_7_BOOL = "∧ row.chain.carry_7 * (1 - row.chain.carry_7) = 0"
 # MemAlignByte's `Assumptions`, the line bounding the first two selectors. Loosening
@@ -913,17 +961,26 @@ class Mutation:
     blind_spot: str = ""
     # The expected exit code, when the DEFAULT rule -- 1 iff the baseline
     # already fails, or `added` names a FAILING-class signature, or a scope/
-    # unreachable bucket grew -- gets this one wrong. That happens for exactly
-    # one existing case (`LANELESS_CLAUSE_ADDED`: the UNBACKED it adds is
-    # ITSELF auto-declared by `mirror_unbacked_field_uncommitted`, #329) and for
-    # the three `excluded_by_check` cases below, where the signature is
-    # unchanged but its exclusion should withdraw. `None` uses the default rule.
+    # unreachable bucket grew -- gets this one wrong. That happens for the
+    # three `excluded_by_check` cases below, where the signature is unchanged
+    # (an EXISTING finding's exclusion withdraws) so the default rule sees no
+    # new FAILING-class signature to key off. `None` uses the default rule --
+    # which is right even for `LANELESS_CLAUSE_LAUNDERED`/
+    # `ADDR0_CLAUSE_LAUNDERED` below, whose laundered clause is a genuinely
+    # NEW UNBACKED signature. (A prior case, `LANELESS_CLAUSE_ADDED`, DID
+    # need an override here: before the eth-act/zisk-fv#329 review fix, the
+    # UNBACKED it added was itself auto-declared by
+    # `mirror_unbacked_field_uncommitted` regardless of what the clause
+    # asserted -- the laundering hole that fix closes.)
     expect_exit: int | None = None
     # A post-hoc check on `excluded_by` (#329's post-pairing exclusions): a
     # mutation that removes what one of those citations rests on must clear
     # `excluded_by` on the finding it covered, not leave it silently excluded --
     # a signature delta alone cannot see this, since `excluded_by` changes
-    # neither `kind`, `route`, generated indices, nor mirror definitions.
+    # neither `kind`, `route`, generated indices, nor mirror definitions. The
+    # two laundering cases also use this to confirm their brand-new UNBACKED
+    # finding is NOT excluded -- the security property #329's review fix
+    # establishes.
     # `(baseline_payload, run_payload) -> a problem string, or None`.
     excluded_by_check: Callable[[dict, dict], str | None] | None = None
 
@@ -1029,23 +1086,48 @@ MUTATIONS: tuple[Mutation, ...] = (
         scope_added=("classification_coverage",),
     ),
     Mutation(
-        name="LANELESS_CLAUSE_ADDED",
-        lean_file=MEMALIGN_SPEC, target="Spec, one extra conjunct over delta_pc",
-        intent="an unbacked assertion routed through the one field this AIR has "
-               "no lane for",
-        # `delta_pc` is hint #998's payload slot. Any clause naming it used to
-        # leave the compared set before pairing, whatever else it said, and
-        # contributed nothing to the failure count.
+        name="LANELESS_CLAUSE_LAUNDERED",
+        lean_file=MEMALIGN_SPEC,
+        target="Spec, one extra conjunct multiplying delta_pc by a committed atom",
+        intent="a strengthening laundered through the one field this AIR has "
+               "no lane for -- `mirror_unbacked_field_uncommitted` must catch "
+               "this, not tolerate it",
+        # `delta_pc` is hint #998's payload slot, with no lane anywhere in this
+        # AIR's pilout. Before the eth-act/zisk-fv#329 review fix, ANY clause
+        # naming it left the compared set before pairing regardless of what
+        # else it asserted -- so `delta_pc * (addr + wr*12345) = 0`, a REAL
+        # assertion `addr + wr*12345 = 0` on every row where `delta_pc != 0`,
+        # was silently excluded as if it were the genuine definitional pin
+        # `delta_pc = successor.pc - current.pc`. `delta_pc` is multiplied by
+        # a COMMITTED atom here (`addr`, `wr`), not standing alone at
+        # exponent 1, so `_unbacked_clause_is_definitional_pin` must refuse
+        # it: this must now surface as a real, un-excluded, failing UNBACKED.
         apply=add_line_after(
             PRE_L1, "∧ row.delta_pc * (row.addr + row.wr * 12345) = 0"),
         added=(unbacked("MemAlign", "Spec"),),
-        # The added UNBACKED finding is itself auto-declared by #329's
-        # `mirror_unbacked_field_uncommitted`: `delta_pc` has no lane ANYWHERE
-        # in this AIR's pilout, so a clause whose only unresolved projection is
-        # `delta_pc` is excluded regardless of what else it asserts about real
-        # fields (`row.addr`, `row.wr`) alongside it. So exit stays 0, not the
-        # default rule's 1 for a newly-added UNBACKED signature.
-        expect_exit=0,
+        excluded_by_check=_laundered_uncommitted_clause_not_excluded(
+            "MemAlign", "Spec", "12345"),
+    ),
+    Mutation(
+        name="ADDR0_CLAUSE_LAUNDERED",
+        lean_file=MAIN_SPEC,
+        target="AddressSpec, one extra conjunct multiplying addr0 by a committed atom",
+        intent="the same laundering shape as LANELESS_CLAUSE_LAUNDERED, on "
+               "Main's `addr0` instead of MemAlign's `delta_pc` -- proves the "
+               "pin check is a structural property of the clause, not a rule "
+               "special-cased to one AIR or one field",
+        # `addr0` is a PIL `const expr`: no lane anywhere in Main's pilout,
+        # same category as `delta_pc`. `addr0 * (a_offset_imm0 + b_src_ind *
+        # 12345) = 0` multiplies it by two committed atoms rather than
+        # standing alone at exponent 1, so `_unbacked_clause_is_definitional_
+        # pin` must refuse it exactly as it does for the MemAlign case.
+        apply=add_line_after(
+            ADDR0,
+            "∧ row.rom.addr0 * (row.rom.a_offset_imm0 + row.rom.b_src_ind "
+            "* 12345) = 0"),
+        added=(unbacked("Main", "AddressSpec"),),
+        excluded_by_check=_laundered_uncommitted_clause_not_excluded(
+            "Main", "AddressSpec", "12345"),
     ),
     Mutation(
         name="FIXED_LEAF_UNDECLARED",
@@ -1423,10 +1505,14 @@ def run_case(mutation: Mutation, base: Path, work_dir: Path,
     # signal. Now the baseline can be 0 (as it is at HEAD), so the right
     # invariant is the DEFAULT rule below -- 1 iff the baseline already fails,
     # `added` names a FAILING-class signature, or a scope/unreachable bucket
-    # grew -- except for the cases a `Mutation.expect_exit` override names:
-    # `LANELESS_CLAUSE_ADDED` (the added UNBACKED is itself auto-declared) and
-    # the three `excluded_by_check` cases (the signature is unchanged, only its
-    # exclusion withdraws).
+    # grew -- except for the cases a `Mutation.expect_exit` override names: the
+    # three `excluded_by_check` cases (the signature is unchanged, only its
+    # exclusion withdraws). `LANELESS_CLAUSE_LAUNDERED`/`ADDR0_CLAUSE_LAUNDERED`
+    # need no override -- their laundered clause is a genuinely NEW UNBACKED
+    # signature, so the default rule already predicts exit 1 -- which is the
+    # point: the eth-act/zisk-fv#329 review fix means that clause is no longer
+    # the one case (formerly `LANELESS_CLAUSE_ADDED`) whose added UNBACKED was
+    # itself auto-declared regardless of what it asserted.
     if mutation.expect_exit is not None:
         expected_exit = mutation.expect_exit
     else:

@@ -536,8 +536,21 @@ lane-kind record no longer being gated on the alias table, the consumption of
 `notes` / `path_aliases` / `row_order_mismatch`, the cofactor search, filtered
 runs of `lanes.py` and `mirror_parse.py` exiting 1, and the untruncated exclusion
 listing. `acceptance.py` gained `UNCLASSIFIED_PREDICATE_ADDED`,
-`LANELESS_CLAUSE_ADDED` and `FIXED_LEAF_UNDECLARED`, one per fatal defect the
-audits measured, plus the ability to assert a scope-check delta at all.
+`LANELESS_CLAUSE_LAUNDERED` (originally `LANELESS_CLAUSE_ADDED`) and
+`FIXED_LEAF_UNDECLARED`, one per fatal defect the audits measured, plus the
+ability to assert a scope-check delta at all. `LANELESS_CLAUSE_ADDED` itself
+was a reviewer-found laundering hole in `mirror_unbacked_field_uncommitted`
+(eth-act/zisk-fv#329): the exclusion fired on ANY clause naming a no-lane
+field regardless of what the rest of it asserted, so `delta_pc * (committed
+expr) = 0` -- a real strengthening over committed lanes -- was silently
+excluded the same as the genuine `delta_pc = successor.pc - current.pc`
+pin. The fix adds a structural definitional-pin check
+(`_unbacked_clause_is_definitional_pin`): the exclusion may now fire only
+when every monomial touching the no-lane field is that field alone, at
+exponent 1 -- never multiplied by a committed atom. `LANELESS_CLAUSE_
+LAUNDERED` and its `ADDR0_CLAUSE_LAUNDERED` sibling now assert the opposite
+of what `LANELESS_CLAUSE_ADDED` used to: the laundered clause must surface
+as a real, un-excluded, failing `UNBACKED`.
 
 ### A constraint restated by two mirrors keeps its match when one is deleted
 

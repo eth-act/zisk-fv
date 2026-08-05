@@ -323,14 +323,25 @@ DECLARED_EXCLUSIONS = (
         "confirmed to have no lane anywhere in this AIR's pilout -- not a "
         "witness column, not a fixed column, not an exposed value -- so it "
         "is not merely excluded from the comparable slice, it is not an atom "
-        "any generated constraint (comparable or excluded) could ever carry",
+        "any generated constraint (comparable or excluded) could ever carry "
+        "-- AND the clause is confirmed a bare DEFINITIONAL PIN of that "
+        "field: `uncommitted = g(committed)`, where the uncommitted field "
+        "appears ONLY as a constant-coefficient, degree-1 term in the "
+        "clause's canonical polynomial -- never multiplied by a committed "
+        "lane, by a second uncommitted field, or by itself. A clause "
+        "multiplying the field by a committed lane (`strengthening * "
+        "delta_pc = 0`) is a real assertion over committed lanes wherever "
+        "the field is nonzero; it is not a pin and is NOT covered by this "
+        "exclusion -- it is left a failing UNBACKED",
         "mirror_parse.EXPECTED_UNRESOLVED's addr0/addr2 (Main/Constraints."
         "lean:268/270, PIL `const expr`s inlined at every use site) and "
         "delta_pc (MemAlign/Row.lean:52-54, the `pc'-pc` slot of hint #998; "
         "its only generated appearance is inside the challenge-mixed "
         "`constraint_36`, itself already excluded by `challenge_or_stage2`) "
-        "entries, each re-verified here against `lanes.lane_map` rather than "
-        "trusted from the citation text alone",
+        "entries, each re-verified here against `lanes.lane_map` (no lane "
+        "anywhere) AND against `_unbacked_clause_is_definitional_pin` (bare "
+        "pin, no committed cofactor), rather than trusted from the citation "
+        "text alone",
     ),
 )
 
@@ -1340,6 +1351,41 @@ def _declare_reclassification_alias(finding: Finding, declare) -> None:
         return
 
 
+def _unbacked_clause_is_definitional_pin(clause: Clause) -> bool:
+    """Is every monomial touching an uncommitted atom a bare, unit-power pin?
+
+    `mirror_unbacked_field_uncommitted` may only excuse a clause shaped
+    `uncommitted = g(committed)` -- a definition, which constrains nothing
+    over committed lanes because the free uncommitted field absorbs whatever
+    `g(committed)` evaluates to on any row. That the field has no lane
+    anywhere (the caller's own check, against `lanes.lane_map`) is necessary
+    but NOT sufficient: nothing about "no lane" stops a clause from
+    multiplying an arbitrary assertion about committed lanes by that same
+    no-lane field -- `strengthening * delta_pc = 0` still names only
+    `delta_pc` as its one unresolved projection, and would pass the caller's
+    check, while actually asserting `strengthening = 0` on every row where
+    `delta_pc` is nonzero. That is a real constraint on committed lanes
+    laundered through a field-presence check that never looked at what the
+    rest of the equation asserts.
+
+    So this looks at the clause's canonical `poly.Poly` form directly: every
+    monomial containing an uncommitted atom (`atom_key[0] == "unresolved"`,
+    the vocabulary `mirror_parse._unresolved` builds for exactly these
+    fields) must consist of EXACTLY that one atom, at exponent 1, and
+    nothing else -- no committed atom in the same monomial, no second
+    uncommitted atom, no higher power of it. A monomial multiplying the
+    field by a committed atom, by another uncommitted field, or squaring it,
+    fails this and the clause is not a pin.
+    """
+    for monomial, _coeff in canonical(clause.expr):
+        touching = [(key, exp) for key, exp in monomial if key[0] == "unresolved"]
+        if not touching:
+            continue
+        if len(monomial) != 1 or touching[0][1] != 1:
+            return False
+    return True
+
+
 def _declare_unbacked_uncommitted(air: str, finding: Finding, lane_map_for,
                                   declare) -> None:
     """An `UNBACKED` clause whose field(s) the pilout commits to NO lane at all.
@@ -1353,6 +1399,17 @@ def _declare_unbacked_uncommitted(air: str, finding: Finding, lane_map_for,
     an atom any generated constraint (comparable OR excluded) could ever carry.
     That is re-verified here, mechanically, against `lanes.lane_map` rather than
     trusted from the citation text alone.
+
+    Neither of those facts is enough on its own, though: a clause can name a
+    genuinely lane-less field and still assert something real about committed
+    lanes by multiplying it in (`strengthening * delta_pc = 0`), which is
+    silenced by a field-presence check alone regardless of what
+    `strengthening` says. So this exclusion ALSO requires the clause to be a
+    bare DEFINITIONAL PIN -- `uncommitted = g(committed)`, the field appearing
+    only as a constant-coefficient, degree-1 term -- checked structurally by
+    `_unbacked_clause_is_definitional_pin` against the clause's own canonical
+    polynomial. A clause multiplying the field by a committed lane is left an
+    un-excluded, failing UNBACKED.
     """
     clause = finding.clauses[0]
     leaves: list[str] = []
@@ -1374,6 +1431,11 @@ def _declare_unbacked_uncommitted(air: str, finding: Finding, lane_map_for,
         # A lane exists somewhere after all: this clause is not in this
         # category, and is left as a plain UNBACKED failure to report.
         return
+    if not _unbacked_clause_is_definitional_pin(clause):
+        # The field is lane-less, but the clause is not a definition of it --
+        # some monomial multiplies it by a committed atom, a second
+        # uncommitted atom, or itself. Left as a failing UNBACKED.
+        return
     named = ", ".join(sorted(set(leaves)))
     declare(
         finding, "mirror_unbacked_field_uncommitted",
@@ -1386,7 +1448,15 @@ def _declare_unbacked_uncommitted(air: str, finding: Finding, lane_map_for,
         f"(delta_pc, inside `constraint_36`, excluded by `challenge_or_stage2`)"
         f" -- see `mirror_parse.EXPECTED_UNRESOLVED` for the per-field PIL "
         f"citation. No generated constraint, comparable or excluded, could "
-        f"ever carry an equation naming it.",
+        f"ever carry an equation naming it. AND the clause is confirmed a bare "
+        f"DEFINITIONAL PIN of that field (`_unbacked_clause_is_definitional_"
+        f"pin`): every monomial of its canonical polynomial touching the field "
+        f"is that field alone, at a constant coefficient and exponent 1 -- "
+        f"never multiplied by a committed lane, by a second uncommitted "
+        f"field, or by itself. A clause multiplying the field by a committed "
+        f"lane (e.g. `strengthening * {named.split(', ')[0]} = 0`) is a real "
+        f"assertion over committed lanes wherever the field is nonzero and "
+        f"is NOT excluded by this rule -- it is left a failing UNBACKED.",
         f"{clause.label} {clause.site} ({named})")
 
 
