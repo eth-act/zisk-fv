@@ -12,8 +12,9 @@ python3 tools/mirror-roundtrip/weld_parse.py             # the *MirrorWeld.lean 
 python3 tools/mirror-roundtrip/lanes.py                  # pilout lanes <-> accessors
 ```
 
-The first two are step 4/10 of `nix run .#test`. The gate FAILS at HEAD; see
-"Gate" below for why that is the deliverable rather than a wiring bug.
+The first two are step 4/10 of `nix run .#test`. The gate PASSES at HEAD
+(`176/176 covered, 0 failing`); see "Gate" below for how the residuals were
+closed (fixed, or declared with a live-verified citation).
 
 ## What this is
 
