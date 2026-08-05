@@ -445,18 +445,16 @@ def reclassification_on(payload: dict, air: str, index: int) -> list[dict]:
 
 
 REPRODUCTIONS: tuple[Reproduction, ...] = (
-    Reproduction(
-        name="GAP_MAIN_A_SIDE_C_COPY",
-        expect_class=GAP,
-        names="Main #3 and Main #9",
-        hand_finding="the a-side C-copy at main.pil:385 has no mirror counterpart "
-                     "anywhere; sourceCCopyBetween (ZiskFv/AirsClean/Main/"
-                     "Circuit.lean:721) models only the b-side",
-        locate=lambda p: gap_on(p, "Main", 3) + gap_on(p, "Main", 9),
-        expect_count=2,
-        evidence=lambda t: (trim(block_with(t, "GAP  Main #3"), 7)
-                            + [""] + trim(block_with(t, "GAP  Main #9"), 5)),
-    ),
+    # The first 2026-07-28 hand finding -- the a-side C-copy at main.pil:385,
+    # with no mirror counterpart anywhere -- is NOT a live reproduction any
+    # more: commit 8aea6771 welds all nine of Main's exposed-reading gap
+    # constraints, Main #3 and #9 among them, via a `MainExposed` carrier
+    # (`constraint_3_weld` / `constraint_9_weld`,
+    # ZiskFv/AirsClean/MainMirrorWeld.lean), so the tool now reports zero Main
+    # gaps. The finding is RESOLVED, not silenced, and the detection it
+    # exercised is preserved by the `WELD_MAIN_ASIDE_MUTATED_AWAY` mutation
+    # below, which strips those two welds and requires the tool to report
+    # Main #3 and #9 as gaps again.
     Reproduction(
         # The hand finding's word was "strengthening". The class it arrives as is
         # UNBACKED, and that is the more careful of the two claims: the conjunct
@@ -684,6 +682,26 @@ def replace_all(old: str, new: str) -> Mutator:
     return apply
 
 
+def chain(*mutators: Mutator) -> Mutator:
+    """Apply several single-edit mutators to the same file, in sequence.
+
+    Used where one defect needs two edits that no single anchor reaches. The
+    a-side C-copy's two welds name two DIFFERENT generated constraints
+    (`constraint_3_every_row`, `constraint_9_every_row`), so one `replace_all`
+    cannot retarget both the way it can when two welds share one name, as
+    `WELD_MUTATED_AWAY` does. `before`/`after` report what every step touched.
+    """
+    def apply(lines: list[str]) -> Applied:
+        befores: list[str] = []
+        afters: list[str] = []
+        for mutator in mutators:
+            lines, before, after = mutator(lines)
+            befores.append(before)
+            afters.append(after)
+        return lines, "  /  ".join(befores), "  /  ".join(afters)
+    return apply
+
+
 def no_mutation(lines: list[str]) -> Applied:
     return lines, "(nothing)", "(nothing)"
 
@@ -744,6 +762,11 @@ CARRY_7_BOOL = "∧ row.chain.carry_7 * (1 - row.chain.carry_7) = 0"
 # MemAlignByte's `Assumptions`, the line bounding the first two selectors. Loosening
 # `sel_high_4b`'s bound is what proves BOOL_TYPED rests on the bound, not the index.
 MEMALIGNBYTE_ASSUMPTIONS = "row.sel_high_4b.val < 2 ∧ row.sel_high_2b.val < 2"
+# Main's a-side C-copy welds, `constraint_3_weld` / `constraint_9_weld`
+# (ZiskFv/AirsClean/MainMirrorWeld.lean): the `Iff.rfl` RHS line each binds its
+# generated constraint by. Each qualified name occurs exactly once in the file.
+MAIN_ASIDE_WELD_3 = "↔ Main.extraction.constraint_3_every_row c r :="
+MAIN_ASIDE_WELD_9 = "↔ Main.extraction.constraint_9_every_row c r :="
 
 
 @dataclass(frozen=True)
@@ -960,6 +983,35 @@ MUTATIONS: tuple[Mutation, ...] = (
             "MemAlignWriteByte.extraction.constraint_777_every_row"),
         added=(gap("MemAlignWriteByte", 0),),
         removed=(weld_covered("MemAlignWriteByte", 0),),
+    ),
+    Mutation(
+        name="WELD_MAIN_ASIDE_MUTATED_AWAY",
+        lean_file=MAIN_WELD,
+        target="constraint_3_weld / constraint_9_weld, retargeted off their "
+               "constraints",
+        intent="the a-side C-copy's two welds mutated away, so Main #3 and #9 "
+               "revert to gaps",
+        # `constraint_3_weld` and `constraint_9_weld` are the ONLY weld theorems
+        # naming `Main.extraction.constraint_3_every_row` / `..._9_every_row`
+        # (each qualified name occurs exactly once in this file), and no mirror
+        # clause covers either constraint on its own: the a-side C-copy has no
+        # mirror counterpart anywhere (`sourceCCopyBetween`,
+        # ZiskFv/AirsClean/Main/Circuit.lean:721, models only the b-side) --
+        # this is the RESOLVED GAP_MAIN_A_SIDE_C_COPY hand finding, and this
+        # mutation is what now exercises the detection it used to. Retargeting
+        # both RHSes -- the same one-edit-per-name move `WELD_MUTATED_AWAY`
+        # makes on a single shared name, done twice here via `chain` because #3
+        # and #9 are two different names, not one -- removes both from
+        # `weld_parse`'s covered set. Neither fake index names a real generated
+        # constraint, so nothing else the weld file states is disturbed.
+        apply=chain(
+            replace_in_line(MAIN_ASIDE_WELD_3, "constraint_3_every_row",
+                            "constraint_3999_every_row"),
+            replace_in_line(MAIN_ASIDE_WELD_9, "constraint_9_every_row",
+                            "constraint_9999_every_row"),
+        ),
+        added=(gap("Main", 3), gap("Main", 9)),
+        removed=(weld_covered("Main", 3), weld_covered("Main", 9)),
     ),
     Mutation(
         name="WELD_CONSUMER_REMOVED",

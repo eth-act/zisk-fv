@@ -45,7 +45,9 @@ expression reaches `Extraction.Circuit.challenge` or a stage-2 lane
 extractor's own single-field/two-field binder distinction is deliberately **not**
 used instead: it would drop nine more Main constraints -- `{0, 3, 4, 9, 10, 19,
 20, 21, 38}`, the ones reaching an `AirValue`/`AirGroupValue` but no challenge and
-no stage-2 lane -- and Main #3 and #9 are the flagship gap below. The rule is
+no stage-2 lane -- and Main #3 and #9 were the flagship finding this gate was
+built to surface (since welded via the `MainExposed` carrier -- see the Gate
+section). The rule is
 implemented twice, off the emitted Lean here and off the pilout operands in
 `survey.air_facts`, and the two index sets must agree on every run.
 
@@ -378,17 +380,19 @@ of its scope.
 ## Gate
 
 Step 4/10 of `nix run .#test`, next to #303's step 3/10, running
-`check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, and
-that is the deliverable: **9** comparable generated constraints have no mirror
-clause and no checked coverage fact, all in `Main` (`{0, 3, 4, 9, 10, 19, 20, 21,
-38}`; two of them the weaker `SEGMENT_L1`-gated half of a within-segment C-copy).
-The other constraints that once read as gaps are now decided coverage: 15 `Mem`
-segment residuals matched by the out-of-root `segmentResidualEveryRow`, 4
-`MemAlignByte` booleans typed by a `.val < 2` bound, and the 7 `MemAlignWriteByte`
-constraints -- which have no mirror predicate -- bound each by their own `Iff.rfl`
-weld (`WELD_COVERED`). Those 9 are findings for the owner, and mirrors are
-protected proof interfaces -- closing one is proof work, not something this tool or
-its gate may do, and not something to silence with a baseline.
+`check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, but the
+failure is now the residual findings, not gaps: **0 gap**, and the remaining
+failing findings are 2 strengthening + 3 unbacked + 2 reclassification + 1
+undeclared delegation (tracked in eth-act/zisk-fv#329). Every generated constraint
+that once read as a gap is now decided coverage: 15 `Mem` segment residuals matched
+by the out-of-root `segmentResidualEveryRow`, 4 `MemAlignByte` booleans typed by a
+`.val < 2` bound, the 7 `MemAlignWriteByte` constraints bound each by their own
+`Iff.rfl` weld, and the **9 `Main`** constraints `{0, 3, 4, 9, 10, 19, 20, 21, 38}`
+(which read `exposed` air values) welded via the `MainExposed` carrier in
+`MainMirrorWeld.lean` (all `WELD_COVERED`). The remaining findings are for the
+owner, and mirrors are protected proof interfaces -- closing one is proof work, not
+something this tool or its gate may do, and not something to silence with a
+baseline.
 
 Deliberately not in `nix run .#populate`, where #303's check does live. Populate
 materialises generated inputs, and its tail gates a property of the artifact it
@@ -493,14 +497,20 @@ are different claims.
 python3 tools/mirror-roundtrip/acceptance.py    # the test that the gate works
 ```
 
-Against the post-#296 tree it reports 3 of the 3 still-live hand findings
-reproduced as findings, 13 of 13 mutations classified exactly as predicted, 3 of 3
+Against the current tree it reports 2 of the 2 still-live hand findings
+reproduced as findings, 14 of 14 mutations classified exactly as predicted, 3 of 3
 neutral rewrites unmoved, and the lanes-vs-#310 column cross-check green -- and the
-entries below, which are what it could not get the gate to report. The fourth
-2026-07-28 hand finding, `RomBoolSpec` unreachable, was RESOLVED by the #296 weld
-fan-out (`romBoolSpec_weld` is now its first consumer); its detection is preserved
-by the `WELD_CONSUMER_REMOVED` mutation, which strips that consumer and requires
-the tool to report `RomBoolSpec` unreachable again. Three mutations targeting
+entries below, which are what it could not get the gate to report. Two of the four
+2026-07-28 hand findings are RESOLVED rather than live, and neither was dropped to
+make the run green: the fourth, `RomBoolSpec` unreachable, was resolved by the #296
+weld fan-out (`romBoolSpec_weld` is now its first consumer); its detection is
+preserved by the `WELD_CONSUMER_REMOVED` mutation, which strips that consumer and
+requires the tool to report `RomBoolSpec` unreachable again. The first, the a-side
+C-copy at `main.pil:385` (Main #3 and #9) having no mirror counterpart, was resolved
+by commit `8aea6771`'s `MainExposed` weld (`constraint_3_weld` / `constraint_9_weld`,
+`ZiskFv/AirsClean/MainMirrorWeld.lean`); its detection is preserved by the
+`WELD_MAIN_ASIDE_MUTATED_AWAY` mutation, which strips those two welds and requires
+the tool to report Main #3 and #9 as gaps again. Three mutations targeting
 weld-covered constraints (a deleted or reprojected mirror clause on `MemAlign`,
 `Mem` or `MemAlignByte`) now surface as `MATCHED -> WELD_COVERED` rather than a gap:
 the weld is a redundant backing that masks the mirror-root deletion, the same
