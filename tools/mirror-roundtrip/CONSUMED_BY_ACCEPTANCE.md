@@ -11,6 +11,58 @@ python3 tools/mirror-roundtrip/consumed_check.py --json PATH.json
 Python 3 standard library only; no Lean build, no network; nothing under `ZiskFv/`
 is read as anything other than text and nothing under it is written.
 
+## Correction (#304 review): the resolver was not actually strict
+
+An earlier version of this report claimed **36 CONSUMED / 10 FIDELITY-ONLY**,
+with "all 46 classified findings resolve identically under both [the strict and
+the loose] pass." That "strict" pass was not, in fact, namespace-strict:
+`resolve()`'s first step did an unqualified `idx.suffix_map.get(token)` lookup,
+and `suffix_map` held every dotted suffix of every declaration's fully-qualified
+name — including the bare last segment — for every declaration in the tree.
+Concretely, a bare reference like `Spec`, read anywhere in the reachability
+closure, matched **all** declarations named `Spec` regardless of namespace (at
+the time of writing, ~10 of them, one per AIR), and this unqualified match ran
+*before* any namespace-aware resolution, so the "strict" pass was already this
+over-broad — the review's exact diagnosis.
+
+`consumed_check.py`'s `resolve()` is now namespace-strict: every step is an
+**exact** `fqn_map` lookup of a fully-constructed candidate name (the token
+itself if fully qualified; the token prefixed by the reading declaration's own
+namespace or an ancestor of it, longest first; an `open X (token)` alias; a
+blanket `open X` namespace) — never a suffix match against unrelated
+namespaces. A bare token that names nothing in scope this way is UNRESOLVED,
+which is the safe direction for this tool: it can make a mirror look more
+FIDELITY-ONLY than it is, never more CONSUMED. `suffix_map` and the `suffixes()`
+helper are gone; a `_selfcheck()` runs on every invocation and asserts that a
+bare `Spec` read inside `ZiskFv/AirsClean/Mem/Circuit.lean` resolves to exactly
+`ZiskFv.AirsClean.Mem.Spec`, not the other ~9 unrelated `Spec`s.
+
+**Measured impact.** Forward-reachability from the same 9 root files/44
+declarations dropped from 1082 to 805 (of 8690 declarations now indexed,
+tree drift since the original report) — a real, ~26% reduction, confirming the
+old pass was over-reaching by a wide margin in the *general* graph. Against the
+46 classified findings specifically, exactly **one** verdict flips: Arith's
+`ArithDiv/Spec.lean:FullSpec` was wrongly CONSUMED and is now correctly
+FIDELITY-ONLY (concrete mechanism: `ArithMul/Circuit.lean` genuinely references
+its own bare `FullSpec`, i.e. `ZiskFv.AirsClean.ArithMul.FullSpec`; the old
+resolver's unqualified suffix match let that single reference also mark the
+unrelated `ZiskFv.AirsClean.ArithDiv.FullSpec` reachable, purely because both
+share the bare last segment `FullSpec`). Corrected headline: **35 CONSUMED / 11
+FIDELITY-ONLY**, 0 loose-only, 0 not-located — see "Headline numbers" below.
+
+The qualitative conclusion does **not** flip wholesale: most of this report's 46
+classified findings were already resolved through an unqualified reference
+within the SAME namespace as the target (e.g. `Main/Circuit.lean`'s `Spec :=
+fun row _ _ => Spec row.core`, read inside `ZiskFv.AirsClean.Main`, resolving to
+`ZiskFv.AirsClean.Main.Spec`), which the buggy resolver also got right, just for
+the wrong (unqualified) reason. The bug's damage was concentrated in the wider,
+unclassified reachability graph (the 1082 → 805 swing) and in the one
+classified finding that happened to collide on a shared bare segment. That is a
+real correction, not a rounding error, and every number in this report below is
+regenerated from the fixed resolver — but it is not the "massively different"
+outcome a first read of the bug report might suggest. See "Method" and "Method
+limitations" below for what the fix actually changed.
+
 ## The question
 
 `check_mirrors.py` (#304/#305) welds a handwritten mirror predicate to the
@@ -95,23 +147,31 @@ A textual, name-based forward-reachability graph, not an elaborated call graph
    c)` directives active at each point, so each declaration gets a best-effort
    fully-qualified name and an alias table.
 2. Seeds a worklist with the 44 declarations physically in the 9 root files.
-3. Pops a declaration, tokenizes its body, resolves each token against the global
-   index — trying an exact/suffix FQN match, then the declaration's own or an
-   enclosing namespace, then its file's explicit `open` aliases, then a blanket
-   `open X` namespace — and adds every newly-reached declaration to the worklist.
-   A declaration is **CONSUMED** iff it ends up in the visited set.
+3. Pops a declaration, tokenizes its body, resolves each token the way Lean
+   itself would resolve it: a fully-qualified token is an **exact** top-level
+   name; a relative token is resolved by prefixing it with the reading
+   declaration's own namespace or an ancestor of it (longest first) and doing an
+   exact lookup, then by the file's explicit `open X (token)` aliases, then by a
+   blanket `open X` namespace — and adds every newly-reached declaration to the
+   worklist. A bare token naming nothing reachable this way is UNRESOLVED, never
+   a match against "every declaration ending in that segment" (see the
+   correction above). A declaration is **CONSUMED** iff it ends up in the
+   visited set.
 4. A separate, looser pass additionally falls back to an ambiguous bare-name match
    (the same approximation `survey.reference_counts` already uses for "unreachable
    mirror") when the precise resolution finds nothing, purely to flag cases the
-   precise walk might have missed through a resolution gap. **At HEAD it changes
-   no verdict**: all 46 classified findings resolve identically under both passes
-   (0 "loose-only" reclassifications) — the precise walk is not silently
-   under-reaching here.
+   precise walk might have missed through a resolution gap. At the current tree
+   it changes no verdict among the 46 classified findings (0 "loose-only"
+   reclassifications) — meaningfully so now that the strict pass is actually
+   strict; under the pre-fix resolver this same "0" was not informative, since
+   the strict pass it was being compared against was already over-matching in
+   the same direction as the loose one.
 
 This shares `survey.reference_counts`'s soundness property and its limit: a
 **positive** reachability claim is only as good as the textual resolution that
 produced it (two same-named declarations in unrelated namespaces could in
-principle be confused); a **negative** one — nothing in the closure names this
+principle be confused if one is genuinely in scope of the other, e.g. via a
+wildcard `open`); a **negative** one — nothing in the closure names this
 declaration, under either resolution pass — is conclusive in the direction that
 matters for a FIDELITY-ONLY verdict. Every FIDELITY-ONLY finding below was
 additionally checked by direct source reading (not just the mechanical pass); see
@@ -128,9 +188,10 @@ additionally checked by direct source reading (not just the mechanical pass); se
   `permutation_every_row`, `core_every_row`, plus `segmentResidualEveryRow` again
   under its own name) — outside `survey.CLASSIFICATION`'s own scope
   (`ZiskFv/AirsClean/**` only) but squarely inside what this task asked about;
-* every top-level declaration of the six `*MirrorWeld.lean` files themselves (225
-  declarations) — the weld theorems and the `Extracted*`/probe scaffolding they
-  introduce.
+* every top-level declaration of the six `*MirrorWeld.lean` files themselves (241
+  declarations at the current tree; the count moves as the weld files grow, and
+  is orthogonal to the resolver fix) — the weld theorems and the
+  `Extracted*`/probe scaffolding they introduce.
 
 Not reclassified here: `survey.py`'s NEAR_* declarations (already out of the #304
 round trip's own scope, for a declared reason each) and the ~25 `NEAR_BUS`
@@ -143,19 +204,26 @@ the same sense.
 
 | | count |
 | --- | --- |
-| declarations indexed under `ZiskFv/` | 8674 |
+| declarations indexed under `ZiskFv/` | 8690 |
 | root declarations (9 files) | 44 |
-| forward-reachable from the roots | 1082 (12.5% of all `ZiskFv/` declarations) |
+| forward-reachable from the roots | 805 (9.3% of all `ZiskFv/` declarations) |
 | mirror-class findings classified | 46 (40 `CLASSIFICATION` + 1 `DELEGATED` + 5 `EXTRA`) |
-| **CONSUMED** | **36** |
-| **FIDELITY-ONLY** | **10** |
-| `*MirrorWeld.lean` declarations | 225 |
+| **CONSUMED** | **35** |
+| **FIDELITY-ONLY** | **11** |
+| CONSUMED (loose-only, ambiguous, needs manual check) | 0 |
+| not located in tree (stale entry) | 0 |
+| `*MirrorWeld.lean` declarations | 241 |
 | … of which reachable from the acceptance surface | **0** |
+
+(Previously reported, under the pre-fix over-matching resolver: 36 CONSUMED / 10
+FIDELITY-ONLY, forward-reachable 1082. See the correction above.)
 
 ## Per-AIR breakdown
 
-`C` = CONSUMED, `F` = FIDELITY-ONLY. Every verdict below resolved identically
-under the strict and the loose (ambiguous-fallback) pass.
+`C` = CONSUMED, `F` = FIDELITY-ONLY. Every verdict below resolves identically
+under the (now namespace-strict) strict pass and the loose (ambiguous-fallback)
+pass — i.e. none of these 46 needs the ambiguous fallback to be reachable, and
+none is reachable only through it.
 
 | AIR | mirror | class | verdict |
 | --- | --- | --- | --- |
@@ -169,7 +237,7 @@ under the strict and the loose (ambiguous-fallback) pass.
 | Arith | `ArithMul/Spec.lean:SharedDivBlockSpec` | MIRROR_COMPOSITE | C |
 | Arith | `ArithMul/Spec.lean:FullSpec` | MIXED_COMPOSITE | C |
 | Arith | `ArithDiv/Spec.lean:Spec` | MIRROR | C |
-| Arith | `ArithDiv/Spec.lean:FullSpec` | MIXED_COMPOSITE | C |
+| Arith | `ArithDiv/Spec.lean:FullSpec` | MIXED_COMPOSITE | **F** |
 | Binary | `Binary/Spec.lean:Spec` | MIRROR | C |
 | Binary | `Binary/Bridge.lean:constraints_at` | MIRROR_VALIDATOR | **F** |
 | BinaryAdd | `BinaryAdd/Circuit.lean:CoreFacts` | MIRROR | C |
@@ -219,8 +287,8 @@ folded into the honest-row construction the circuit's `assertZero`s run against
 the thing actually checked by an accepted trace is exactly what its Spec/
 transition fields say, and that is where the "real" mirror lives.
 
-Two systematic exceptions, both FIDELITY-ONLY, and neither is what "welded but
-consumed by nothing" usually looks like (dead code) — both are verified below to
+Three systematic exceptions, all FIDELITY-ONLY, and none is what "welded but
+consumed by nothing" usually looks like (dead code) — all are verified below to
 be **used, just not by acceptance**:
 
 ### 1. The whole `MIRROR_VALIDATOR` family (`constraints_at` over `Valid_<AIR>`, `pc_handshake_at`)
@@ -290,6 +358,28 @@ consumes the derivation instead:
   (the orphaned weld). Of the three, `RomBoolSpec` is the one with no live
   downstream use anywhere in the tree today.
 
+### 3. Arith's `ArithDiv/Spec.lean:FullSpec`
+
+The one finding whose verdict the resolver fix actually changed (C → F; see the
+correction at the top of this report). `ArithDiv.FullSpec`'s body (`Spec row ∧
+ArithTableSpec row ∧ IndexedRangeSpec row`) reads its own sibling `Spec` — a
+same-namespace reference, correctly resolved either way — but `FullSpec` itself
+is not one of `ArithDiv`'s live `component.circuit.Spec` fields; that role for
+the div/rem AIRs is filled by `ArithMul`'s `FullSpec ∧ SharedDivBlockSpec`
+(`ArithMul/Circuit.lean:631`, already CONSUMED above), a *different* declaration
+in a *different* namespace that happens to share the bare name `FullSpec`. That
+sharing is exactly what the old resolver's unqualified suffix match confused.
+
+Checked what actually consumes `ArithDiv.FullSpec` instead: `ArithDiv/Bridge.lean`
+projects `FullSpec (rowAt v r)` for a P4 construction, and it flows from there into
+`ZiskFv/Compliance/ConstructionDiv.lean`, `ConstructionDivu.lean`,
+`ConstructionDivuw.lean`, `ConstructionMulh.lean`, `ConstructionMulhsu.lean`,
+`ConstructionMulhu.lean`, `ConstructionMulw.lean`, `ConstructionRemu.lean`,
+`ConstructionRemuw.lean`, `OpBusProviderMatch.lean`, `SharedBundles.lean`, and
+the `TraceLevelExport`/`Wrappers` construction layer. Same shape as the other
+two exceptions: used by the soundness *proof*, not by the acceptance
+*definition*.
+
 ### The Mem `Valid_Mem` family is a different, *consumed* story
 
 Do not conflate `Mem.Bridge.lean`'s `constraints_at` (FIDELITY-ONLY, above) with
@@ -317,9 +407,11 @@ $ grep -rn "import ZiskFv.AirsClean.<Name>MirrorWeld" ZiskFv trust Tests
 # (no output, for every one of the six)
 ```
 
-So every one of their 225 top-level declarations is FIDELITY-ONLY by
-construction, independent of the reachability walk (which agrees: 0/225
-reachable). This includes the mechanically-derived weld-internal defs
+So every one of their 241 top-level declarations is FIDELITY-ONLY by
+construction, independent of the reachability walk (which agrees: 0/241
+reachable — confirmed again against the fixed resolver; this conclusion is
+import-based, not resolver-based, so it was never at risk from the #304-review
+bug). This includes the mechanically-derived weld-internal defs
 `ExtractedMemRow`, `ExtractedMemTrace`, `MemProbe`, `rowMainValue`,
 `traceMainValue`, and their five siblings' equivalents, plus every `constraint_N_weld`,
 `spec_weld`/`segment_weld`/`permutation_weld`, and the two `*_pinned` instance-pin
@@ -353,12 +445,13 @@ omission.
 ## Answering the task's specific questions
 
 * **Which welded constraints are fidelity-only?** All content of all six
-  `*MirrorWeld.lean` files (225 declarations, 0 reachable) — see above. Among the
+  `*MirrorWeld.lean` files (241 declarations, 0 reachable) — see above. Among the
   *pre-existing* mirrors a weld cites (as opposed to weld-owned scaffolding), the
   `MIRROR_VALIDATOR` family is fidelity-only for every AIR that has one (Binary,
-  BinaryAdd, Main, Mem, MemAlignByte, MemAlignReadByte), and Main's
+  BinaryAdd, Main, Mem, MemAlignByte, MemAlignReadByte), Main's
   `AddressSpec`/`SourceSpec`/`RomBoolSpec` are fidelity-only despite being
-  matched/weld-covered by #304/#296.
+  matched/weld-covered by #304/#296, and (post resolver-fix) so is Arith's
+  `ArithDiv.FullSpec`.
 * **Are the Main/Mem welds we care about consumed or fidelity-only?** The weld
   *files* are fidelity-only, full stop (nothing imports them). The mirrors they
   weld are a mix: `Main.Spec`/`Mem.Spec` (the mirrors that actually flow into
@@ -375,17 +468,36 @@ omission.
   without a literal name appearing in source would be invisible to this pass. No
   case of that was found in the 46 classified findings (0 loose-only
   reclassifications), but the tool cannot rule it out in general.
-* **Ambiguity is upper-bounded, not resolved.** The loose pass's bare-name
-  fallback is the same approximation `survey.reference_counts` already accepts;
-  it changed no verdict here, which is itself evidence the namespace/`open`
-  tracking is doing real work, not evidence that ambiguity cannot occur elsewhere
-  in `ZiskFv/`.
+* **Under-matching by design, not over-matching.** `resolve()` only accepts an
+  EXACT `fqn_map` lookup of a fully-constructed candidate name (the token as
+  given, or prefixed by the reading declaration's own/an ancestor namespace, an
+  `open` alias, or a blanket `open` namespace). A bare token matching no real
+  in-scope declaration this way is UNRESOLVED, not a hit against every
+  declaration sharing that bare last segment across unrelated namespaces — that
+  bare-suffix match was a real bug (see the correction at the top of this
+  report), confirmed to have wrongly marked `ArithDiv.FullSpec` CONSUMED via its
+  bare-name collision with the genuinely-consumed `ArithMul.FullSpec`. This is
+  still a heuristic, not kernel-verified: it is a name-based textual pass, not an
+  elaborated call graph, so it can in principle still under-report (miss a real
+  reference the tokenizer or namespace tracking mishandles) but cannot
+  over-report a CONSUMED verdict through a cross-namespace name collision, which
+  was the specific failure mode fixed here.
+* **Ambiguity is upper-bounded, not resolved.** The separate loose pass's
+  bare-name fallback (used only when the strict, namespace-aware resolution
+  finds nothing, and reported separately as "consumed only via ambiguous
+  bare-name fallback, manual check needed") is the same approximation
+  `survey.reference_counts` already accepts; it changes no verdict among the 46
+  classified findings under the fixed resolver, which is now meaningful evidence
+  the namespace/`open` tracking is doing real work — not, as previously claimed,
+  evidence measured against a strict pass that was itself already over-matching.
 * **Every FIDELITY-ONLY verdict above was independently checked by reading
   source**, not accepted from the mechanical pass alone: `Main/Circuit.lean`'s
-  actual `Spec` field text, and a direct `grep` of who else names each
-  `constraints_at`/`AddressSpec`/`SourceSpec`/`RomBoolSpec`. The CONSUMED verdicts
-  were spot-checked the same way for `Mem.Spec` and `ArithMul`'s `FullSpec`/
-  `SharedDivBlockSpec` composition, not exhaustively for all 36.
+  actual `Spec` field text, `ArithMul/Circuit.lean`'s actual `Spec` field text
+  (for `ArithDiv.FullSpec`), and a direct `grep` of who else names each
+  `constraints_at`/`AddressSpec`/`SourceSpec`/`RomBoolSpec`/`FullSpec`. The
+  CONSUMED verdicts were spot-checked the same way for `Mem.Spec` and
+  `ArithMul`'s `FullSpec`/`SharedDivBlockSpec` composition, not exhaustively for
+  all 35.
 * **Scope is `survey.CLASSIFICATION`'s mirror classes plus a small named
   addendum**, not "every Prop under `ZiskFv/`". `NEAR_*` and `NEAR_BUS`
   declarations are not reclassified (see "The Balance/* layer" above for why that

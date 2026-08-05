@@ -38,9 +38,13 @@ declaration under `ZiskFv/`:
 2. Seed a worklist with every declaration physically located in the root files
    above.
 3. For each declaration popped off the worklist, scan its body for identifier-like
-   tokens and resolve each one against the global FQN index -- preferring an exact
-   FQN/suffix match, then the declaration's own (or an ancestor) namespace, then its
-   file's `open` table -- and add every newly-reached declaration to the worklist.
+   tokens and resolve each one the way Lean itself would: a fully-qualified token
+   is an EXACT top-level name; a relative token is resolved by prefixing it with
+   the declaration's own namespace or an ancestor of it (longest first) and doing
+   an exact lookup, then by its file's explicit `open X (token)` aliases, then by
+   a blanket `open X` namespace -- add every newly-reached declaration to the
+   worklist. A bare token that names no real declaration in scope this way is
+   UNRESOLVED, never a match against "every declaration ending in that segment".
 4. A declaration is CONSUMED iff it is in the resulting visited set.
 
 This is a *name-based* approximation, the same kind `survey.reference_counts`
@@ -48,9 +52,13 @@ already uses for "unreachable mirror" -- not an elaborated call graph. It shares
 that function's soundness property and its limit: a *positive* reachability claim
 is only as good as the name resolution that produced it, but a *negative* one
 (nothing in the closure mentions this name, under any resolution this tool tries)
-is conclusive in the direction that matters here. Where resolution is ambiguous
-(a bare name shared by several declarations, resolved only by a blanket fallback)
-the finding says so explicitly rather than silently asserting CONSUMED.
+is conclusive in the direction that matters here. Resolution is deliberately
+UNDER-matching, not over-matching: it never falls back to a bare last-segment
+match against unrelated namespaces (that was a real bug, fixed here -- see
+`resolve()` and `_selfcheck()`). A separate, looser pass additionally tries that
+ambiguous bare-name fallback purely to flag cases the precise walk might have
+missed; a finding reachable only that way is reported as "consumed only via
+ambiguous bare-name fallback, manual check needed", never silently as CONSUMED.
 
 ## Scope
 
@@ -280,11 +288,6 @@ def all_decls() -> list[Decl2]:
 
 # ------------------------------------------------------------------- indexing
 
-def suffixes(fqn: str) -> list[str]:
-    parts = fqn.split(".")
-    return [".".join(parts[i:]) for i in range(len(parts))]
-
-
 def ancestors(prefix: str) -> list[str]:
     if not prefix:
         return [""]
@@ -295,9 +298,10 @@ def ancestors(prefix: str) -> list[str]:
 @dataclass
 class Index:
     decls: list[Decl2]
-    fqn_map: dict = field(default_factory=dict)     # fqn -> list[Decl2]
-    suffix_map: dict = field(default_factory=dict)  # any dotted suffix -> list[Decl2]
+    fqn_map: dict = field(default_factory=dict)     # EXACT fqn -> list[Decl2]
     bare_map: dict = field(default_factory=dict)    # last segment -> list[Decl2]
+                                                     # (LOOSE-only fallback; ambiguous
+                                                     # by construction, see resolve())
     path_name_map: dict = field(default_factory=dict)  # (rel, name) -> list[Decl2]
 
     @staticmethod
@@ -305,8 +309,6 @@ class Index:
         idx = Index(decls=decls)
         for d in decls:
             idx.fqn_map.setdefault(d.fqn, []).append(d)
-            for s in suffixes(d.fqn):
-                idx.suffix_map.setdefault(s, []).append(d)
             bare = d.name.split(".")[-1]
             idx.bare_map.setdefault(bare, []).append(d)
             idx.path_name_map.setdefault((d.rel, d.name), []).append(d)
@@ -316,36 +318,56 @@ class Index:
 # ------------------------------------------------------------------ resolution
 
 def resolve(idx: Index, token: str, decl: Decl2, loose: bool) -> list[Decl2]:
-    """Candidate declarations `token`, read inside `decl`'s body, could name."""
+    """Candidate declarations `token`, read inside `decl`'s body, could name --
+    resolved the way Lean itself would: a reference names a REAL fully-qualified
+    declaration, reached only through the declaration's own namespace, an
+    enclosing namespace, or an explicit `open`. It never matches "every
+    declaration whose name ends in this segment" -- that bare-suffix match was
+    the #304-review bug (a bare `Spec` matching all ~10 unrelated `<AIR>.Spec`
+    declarations across the tree). See `_selfcheck` below for a regression test.
+
+    Every step below is an EXACT `idx.fqn_map` lookup of a fully-constructed
+    candidate name -- never a suffix match against unrelated namespaces.
+    """
     prefix = decl.fqn.rsplit(".", 1)[0] if "." in decl.fqn else ""
-    # 1. exact / suffix match as given (handles both fully- and partially-qualified
-    #    references, including a reference into the declaration's own namespace
-    #    written out in full).
-    hit = idx.suffix_map.get(token)
+    # 1. Fully-qualified: `token` is already a real top-level declaration name.
+    hit = idx.fqn_map.get(token)
     if hit:
         return hit
-    # 2. resolve within the declaration's own namespace or an enclosing one.
+    # 2. Relative to the declaration's own namespace, or an enclosing one
+    #    (longest prefix first): construct the full candidate name and look it
+    #    up EXACTLY. This also covers a partially-qualified token
+    #    (`Circuit.Spec`) prefixed by an enclosing namespace, not a blanket
+    #    suffix match.
     for anc in ancestors(prefix):
         key = f"{anc}.{token}" if anc else token
-        hit = idx.suffix_map.get(key)
+        hit = idx.fqn_map.get(key)
         if hit:
             return hit
-    # 3. an explicit `open X (token)` alias recorded for this file/point.
+    # 3. An explicit `open X (token)` alias recorded for this file/point,
+    #    resolved to an exact fqn.
     hit_names = decl.open_bare.get(token)
     if hit_names:
         out: list[Decl2] = []
         for name in hit_names:
-            out.extend(idx.suffix_map.get(name, []))
+            out.extend(idx.fqn_map.get(name, []))
         if out:
             return out
-    # 4. a blanket `open X` naming the token's namespace.
+    # 4. A blanket `open X` naming the token's namespace, resolved to an exact fqn.
     for ns in decl.open_ns:
-        hit = idx.suffix_map.get(f"{ns}.{token}")
+        hit = idx.fqn_map.get(f"{ns}.{token}")
         if hit:
             return hit
+    # No in-scope resolution: UNRESOLVED. Under-matching is the safe direction
+    # for this tool -- it errs toward FIDELITY-ONLY / flagged-for-review, never
+    # toward falsely-CONSUMED.
     if not loose:
         return []
-    # 5. LOOSE fallback: bare-name match anywhere (ambiguous; ~survey.reference_counts).
+    # 5. LOOSE fallback ONLY (diagnostic, never the basis for a CONSUMED
+    #    verdict on its own -- `main()` reports this as "consumed only via
+    #    ambiguous bare-name fallback, manual check needed"): a bare last-segment
+    #    match anywhere, the same approximation `survey.reference_counts` already
+    #    accepts. Ambiguous by construction.
     bare = token.split(".")[-1]
     return idx.bare_map.get(bare, [])
 
@@ -406,6 +428,39 @@ def classify(idx: Index, visited_strict: set[int], visited_loose: set[int],
     return Finding(rel, name, cls, air, note, strict, (loose and not strict), found=True)
 
 
+def _selfcheck(idx: Index, decls: list[Decl2]) -> None:
+    """Regression check for the namespace-strict resolver fix (#304 review).
+
+    `ZiskFv/AirsClean/Mem/Circuit.lean` (namespace `ZiskFv.AirsClean.Mem`) reads
+    a bare `Spec` in several places (e.g. `Spec := fun row _ _ => Spec row`).
+    There are, at the time of writing, ~10 unrelated top-level `Spec`
+    declarations across the tree -- one per AIR (`ArithDiv`, `ArithMul`,
+    `Binary`, `BinaryAdd`, `BinaryExtension`, `Main`, `Mem`, `MemAlign`,
+    `MemAlignByte`, `MemAlignReadByte`), each in its own namespace. Before the
+    fix, `resolve()`'s first step was an unqualified `suffix_map` lookup, so
+    that bare `Spec` matched ALL of them. After the fix it must resolve to
+    exactly the one `Spec` in scope: `ZiskFv.AirsClean.Mem.Spec`, defined in the
+    same namespace by `ZiskFv/AirsClean/Mem/Spec.lean`.
+    """
+    all_bare_specs = idx.bare_map.get("Spec", [])
+    assert len(all_bare_specs) >= 8, (
+        f"expected the usual ~10 unrelated top-level `Spec` declarations across "
+        f"AIRs (one per AIR namespace); found only {len(all_bare_specs)} -- has "
+        f"the tree changed enough to invalidate this self-check?"
+    )
+    mem_circuit_decls = [d for d in decls if d.rel == "ZiskFv/AirsClean/Mem/Circuit.lean"]
+    assert mem_circuit_decls, "ZiskFv/AirsClean/Mem/Circuit.lean not found -- has it moved?"
+    ctx = mem_circuit_decls[0]
+    hits = resolve(idx, "Spec", ctx, loose=False)
+    hit_fqns = sorted({d.fqn for d in hits})
+    assert hit_fqns == ["ZiskFv.AirsClean.Mem.Spec"], (
+        f"bare `Spec` read inside Mem/Circuit.lean resolved to {hit_fqns} "
+        f"(expected exactly ['ZiskFv.AirsClean.Mem.Spec'], not the other "
+        f"{len(all_bare_specs) - 1} unrelated `Spec`s across AIRs) -- the "
+        f"namespace-strict resolver has regressed to bare-suffix matching"
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -415,6 +470,7 @@ def main() -> int:
 
     decls = all_decls()
     idx = Index.build(decls)
+    _selfcheck(idx, decls)
 
     roots = [d for d in decls if d.rel in ROOT_FILES]
     if not roots:
