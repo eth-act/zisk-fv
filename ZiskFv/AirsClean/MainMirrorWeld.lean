@@ -27,7 +27,7 @@ constraint at that circuit turns it into a polynomial over `MainRowWithRom`
 fields, and the weld theorems say that polynomial is *definitionally* the one
 the mirror asserts.
 
-## Coverage: 29 of the 144 generated constraints
+## Coverage: 38 of the 144 generated constraints
 
 `Extraction/Main.lean` defines `constraint_0_every_row` …
 `constraint_143_every_row`. They partition by their PIL source comment:
@@ -41,39 +41,27 @@ the mirror asserts.
   the mirror to weld them to. This is the same structural exclusion as Arith's
   stage-2 set.
 
-Of the 39, exactly 29 are pure stage-1 row-local (`id := 1`, `rotation := 0`,
+Of the 39, 29 are pure stage-1 row-local (`id := 1`, `rotation := 0`,
 `row := row`, no `preprocessed` / `exposed`): `1`, `2`, `5`–`8`, `11`–`17`,
-`22`–`37`. All 29 are welded below, and every weld is an `Iff`.
+`22`–`37`. All 29 are welded in "Part A" below, over `ExtractedMainRow`, and
+every weld is an `Iff`.
 
-The other 10 are **not** welded, individually because:
-
-* `0` — `exposed(0) * (1 - exposed(0))` (`main_last_segment` booleanity). Reads
-  no row column at all; there is no mirror counterpart anywhere in `ZiskFv/`.
-* `3`, `9` — a-side C-copy `((1 - a_src_mem) - a_src_imm - a_src_reg) *
-  (a[i] - previous_c)` (`main.pil:385`), reading `preprocessed(0)`,
-  `exposed(3+i)` and `c[i]` at `row - 1`. `ZiskFv/` has no counterpart at all:
-  `sourceCCopyBetween` (`Main/Circuit.lean:721`) covers only the *b*-side
-  selector `1 - b_src_mem - b_src_imm - b_src_ind - b_src_reg`, and the legacy
-  `Valid_Main` enumeration likewise stops at `b_src_c_copies_prev_c0` /
-  `b_src_c_copies_prev_c1` (`ZiskFv/Airs/Main/Main.lean:139,147`). Recorded as a
-  mirror-coverage gap; not fixed here, because inventing the missing mirror
-  clause is a modelling decision, not a transcription fix.
-* `4`, `10` — b-side C-copy (`main.pil:386`). `sourceCCopyBetween`'s own
-  docstring (`Main/Circuit.lean:715-720`) states it is a deliberate
-  specialization that drops the `__L1__`-selected public-input branch, so the
-  best available relation is `generated → mirror`, never an `Iff`.
-* `18` — pc handshake (`main.pil:410`). `pcHandshakeBetween`
-  (`Main/Circuit.lean:708`) reproduces the polynomial but substitutes the
-  witness field `core.segment_l1` for the generated `preprocessed (column := 0)`
-  (`SEGMENT_L1`). That substitution is backed by `mainFixedColumns`
-  (`Main/Circuit.lean:768`), which maps slot 17 to fixed column 0 — so this is
-  *not* a claimed defect — but it is not an `Iff.rfl` fact, and it is a two-row
-  constraint needing a two-row bridge this module does not build.
-* `19`, `20`, `21` — segment-final constraints at rotation `row + 1`
-  (`main.pil:423,426`), reading `preprocessed(0)@r+1` and `exposed(5/6/7)`. No
-  mirror counterpart.
-* `38` — `preprocessed(0) * (exposed(2) - pc)` (`main.pil:508`). No mirror
-  counterpart.
+The other 10 read `Extraction.Circuit.exposed` (`main.pil`'s public `airval`s:
+`main_last_segment`, `segment_initial_pc`, `segment_previous_c`,
+`segment_next_pc`, `segment_last_c`) — cells with no representative in
+`MainRowWithRom`, which is why they had no mirror counterpart before this
+module. 9 of them — `0`, `3`, `4`, `9`, `10`, `19`, `20`, `21`, `38` — are
+welded in "Part B" below, over a new carrier `MainExposed` that adds an
+exposed lane and a row-indexed view of the trace. `18` — pc handshake
+(`main.pil:410`) — is **not** welded: `pcHandshakeBetween`
+(`Main/Circuit.lean:708`) reproduces the polynomial but substitutes the
+witness field `core.segment_l1` for the generated `preprocessed (column := 0)`
+(`SEGMENT_L1`). That substitution is backed by `mainFixedColumns`
+(`Main/Circuit.lean:768`), which maps slot 17 to fixed column 0 — so this is
+*not* a claimed defect — but `18` reads `preprocessed(0)` at `row`, `main` at
+`row - 1`, *and* `exposed`, none of which line up with an `Iff.rfl` against
+`pcHandshakeBetween`'s two-`MainRowWithRom` shape without weakening one side or
+the other; left as a recorded gap rather than forced.
 
 ## What the weld does and does not certify
 
@@ -114,6 +102,13 @@ The other 10 are **not** welded, individually because:
   all 29 by `weldedConstraints_readOnlyModeledLanes` and
   `weldedConstraints_probeBridge`, not assumed; see "Which lanes a welded
   constraint is allowed to read".
+* Part B's carrier `MainExposed` reuses `mainValue` verbatim for its `main`
+  lane (via `extractedMainRow`), so it does not duplicate the column map Part A
+  already pins. Its own `preprocessed` and `exposed` maps — `SEGMENT_L1` read
+  off `MainRowWithRom.core.segment_l1` and the seven `airval` indices read off
+  `MainExposed`'s own fields — are handwritten and, like `mainValue`, not
+  column-map-gated: a compensating pair of slips there would also survive as
+  `rfl`.
 
 ## Trust note
 
@@ -125,6 +120,13 @@ namespace ZiskFv.AirsClean.Main
 
 open Goldilocks
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+
+/-! ## Part A — the 29 stage-1 row-local constraints
+
+Everything down to "Which lanes a welded constraint is allowed to read" is
+unchanged from before this module's Part B addition: `ExtractedMainRow` wraps
+a single `MainRowWithRom` and stubs `preprocessed` / `challenge` / `exposed` to
+`0`, which is sound for these 29 because none of them reads those lanes. -/
 
 /-- An `Extraction.Circuit` whose stage-1 columns are the fields of a single
     `MainRowWithRom`. Only used to instantiate the generated `Main` constraint
@@ -204,8 +206,8 @@ instance extractedMainRowCircuit : Extraction.Circuit FGL FGL ExtractedMainRow w
     a column-map gate reading only `mainValue` would leave open — is a
     compile error here, before any weld is stated.
 
-    `extractedMainRowCircuit_pinned` at the end of the module pins the
-    remaining three fields and re-checks this one after all welds have
+    `extractedMainRowCircuit_pinned` at the end of Part A pins the
+    remaining three fields and re-checks this one after all Part A welds have
     resolved their instance. -/
 theorem extractedMainRowCircuit_main_eq
     (c : ExtractedMainRow FGL FGL) (id column r rotation : ℕ) :
@@ -640,15 +642,15 @@ theorem weldedConstraints_probeBridge (row : MainRowWithRom FGL) (r : ℕ) :
    Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl,
    Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl⟩
 
-/-! ## The instance is pinned
+/-! ## Part A's instance is pinned
 
 `extractedMainRowCircuit_main_eq` near the top already ties the class
 projection the generated constraints read through to `mainValue`. This closes
 the remaining freedom: it fixes all four fields at once, and it is stated
 through `inferInstance`, so it fails to compile both if a field drifts and if
 instance resolution for `Extraction.Circuit FGL FGL ExtractedMainRow` starts
-finding a different instance. It is deliberately the last declaration in the
-module: every weld above resolves that class against the instances declared
+finding a different instance. It is deliberately the last declaration of
+Part A: every Part A weld resolves that class against the instances declared
 before it, so an instance introduced anywhere above — including one shadowing
 `extractedMainRowCircuit` — is also the one this theorem resolves and checks. -/
 theorem extractedMainRowCircuit_pinned :
@@ -657,6 +659,201 @@ theorem extractedMainRowCircuit_pinned :
         preprocessed := fun _ _ _ _ => 0
         challenge := fun _ _ => 0
         exposed := fun _ _ => 0 } :=
+  rfl
+
+/-! ## Part B — the nine `exposed`-reading constraints
+
+`ExtractedMainRow` stubs `preprocessed` / `challenge` / `exposed` to `0`
+because none of the 29 Part A constraints reads them. Nine more of the 39
+`main.pil`-sourced constraints — `0`, `3`, `4`, `9`, `10`, `19`, `20`, `21`,
+`38` — read `Extraction.Circuit.exposed` (`main.pil`'s public `airval`s) and,
+for six of the nine, `Extraction.Circuit.preprocessed` (`SEGMENT_L1`) and a
+neighboring trace row (`row - 1` or `row + 1`). `MainExposed` is a second
+`Extraction.Circuit` carrier for exactly those nine: it bundles the seven
+`airval` values Part B's constraints read plus a row-indexed view of the
+trace, and its `main` lane reuses Part A's `mainValue` (via `extractedMainRow`)
+rather than re-deriving the column map. -/
+
+/-- The `airval`s `main.pil:72-77` publishes that the nine Part B constraints
+    read, plus a row-indexed view of the trace for the `main` and
+    `preprocessed` lanes. `main_segment` (`exposed` index `1`) is not read by
+    any of the nine and is deliberately omitted — `traceExposedValue` answers
+    `0` for index `1`, and none of the nine welds below reaches that arm. -/
+structure MainExposed (F ExtF : Type) where
+  /-- `exposed(0)`, `main.pil:72 main_last_segment`. -/
+  main_last_segment : F
+  /-- `exposed(2)`, `main.pil:74 segment_initial_pc`. -/
+  segment_initial_pc : F
+  /-- `exposed(3)`, `main.pil:75 segment_previous_c[0]`. -/
+  segment_previous_c_0 : F
+  /-- `exposed(4)`, `main.pil:75 segment_previous_c[1]`. -/
+  segment_previous_c_1 : F
+  /-- `exposed(5)`, `main.pil:76 segment_next_pc`. -/
+  segment_next_pc : F
+  /-- `exposed(6)`, `main.pil:77 segment_last_c[0]`. -/
+  segment_last_c_0 : F
+  /-- `exposed(7)`, `main.pil:77 segment_last_c[1]`. -/
+  segment_last_c_1 : F
+  /-- The trace, indexed by row. `traceMainValue`/`tracePreprocessedValue`
+      read `rows (row - 1)`, `rows row` and `rows (row + 1)` because the nine
+      constraints below do. -/
+  rows : ℕ → MainRowWithRom FGL
+
+/-- Reuses `mainValue` (Part A's column map) at whichever row the generated
+    constraint asks for, instead of re-deriving stage-1 column indices. -/
+@[reducible]
+def traceMainValue (c : MainExposed FGL FGL) (id column row rotation : ℕ) : FGL :=
+  mainValue (extractedMainRow (c.rows row)) id column row rotation
+
+/-- The one preprocessed column Part B reads: `SEGMENT_L1`, read off
+    `MainRowWithRom.core.segment_l1` at the requested row (`row` for `38`,
+    `row + 1` for `19`/`20`/`21`). This is the same field
+    `pcHandshakeBetween` substitutes for `preprocessed(0)` (see the module
+    docstring); nothing here relies on that other than sharing its name. -/
+@[reducible]
+def tracePreprocessedValue (c : MainExposed FGL FGL) (column row _rotation : ℕ) : FGL :=
+  if column = 0 then (c.rows row).core.segment_l1 else 0
+
+/-- No Part B constraint reads a challenge; `Main.extraction`'s
+    single-`F`-parameter constraints (the "mixed witness/challenge constraint
+    emitted for single-field circuits" ones, which is every constraint welded
+    below) do not even admit a nonzero `ExtF`, so this is never observed. -/
+@[reducible]
+def traceChallengeValue (_c : MainExposed FGL FGL) (_index : ℕ) : FGL := 0
+
+/-- `main.pil:72-77`'s seven public values, at the indices the extractor
+    assigns them. Index `1` (`main_segment`) is not modeled — see
+    `MainExposed`'s docstring. -/
+@[reducible]
+def traceExposedValue (c : MainExposed FGL FGL) (index : ℕ) : FGL :=
+  match index with
+  | 0 => c.main_last_segment
+  | 2 => c.segment_initial_pc
+  | 3 => c.segment_previous_c_0
+  | 4 => c.segment_previous_c_1
+  | 5 => c.segment_next_pc
+  | 6 => c.segment_last_c_0
+  | 7 => c.segment_last_c_1
+  | _ => 0
+
+instance extractedMainExposedCircuit : Extraction.Circuit FGL FGL MainExposed where
+  main := traceMainValue
+  preprocessed := tracePreprocessedValue
+  challenge := traceChallengeValue
+  exposed := traceExposedValue
+
+/-- `main/pil/main.pil:86 Main.main_last_segment*(1-Main.main_last_segment)` —
+    the `main_last_segment` booleanity pin. Reads only the exposed lane, no
+    row column at all. -/
+theorem constraint_0_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    (c.main_last_segment * (1 - c.main_last_segment) = 0)
+      ↔ Main.extraction.constraint_0_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:508 Main.SEGMENT_L1*(Main.segment_initial_pc-pc)` — the
+    first-row `pc` boundary pin, gated by `SEGMENT_L1` at the constraint's own
+    row. -/
+theorem constraint_38_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    ((c.rows r).core.segment_l1 * (c.segment_initial_pc - (c.rows r).core.pc) = 0)
+      ↔ Main.extraction.constraint_38_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:426 Main.SEGMENT_L1'*(Main.segment_last_c[0]-c[0])` —
+    the last-row `c[0]` boundary pin, gated by `SEGMENT_L1` one row ahead
+    (`SEGMENT_LAST = SEGMENT_L1'`). -/
+theorem constraint_20_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    ((c.rows (r + 1)).core.segment_l1 * (c.segment_last_c_0 - (c.rows r).core.c_0) = 0)
+      ↔ Main.extraction.constraint_20_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:426 Main.SEGMENT_L1'*(Main.segment_last_c[1]-c[1])` —
+    the `c[1]` sibling of `constraint_20_weld`. -/
+theorem constraint_21_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    ((c.rows (r + 1)).core.segment_l1 * (c.segment_last_c_1 - (c.rows r).core.c_1) = 0)
+      ↔ Main.extraction.constraint_21_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:423 Main.SEGMENT_L1'*(Main.segment_next_pc-(next_pc'))`
+    — the last-row next-`pc` boundary pin. `next_pc` is `main.pil:421`'s
+    `expected_current_pc` shifted one row, the same three-way `set_pc`/`flag`
+    split `constraint_18_every_row` (the un-welded pc handshake) evaluates at
+    `row - 1`; here it is evaluated at the constraint's own `row`, gated by
+    `SEGMENT_L1` one row ahead. -/
+theorem constraint_19_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    ((c.rows (r + 1)).core.segment_l1 *
+        (c.segment_next_pc -
+          ((((c.rows r).core.set_pc * ((c.rows r).core.c_0 + (c.rows r).core.jmp_offset1))
+              + ((1 - (c.rows r).core.set_pc) *
+                  ((c.rows r).core.pc + (c.rows r).core.jmp_offset2)))
+            + ((c.rows r).core.flag *
+                ((c.rows r).core.jmp_offset1 - (c.rows r).core.jmp_offset2)))) = 0)
+      ↔ Main.extraction.constraint_19_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:385 (a_src_c)*(a[0]-(previous_c))` — the a-side,
+    low-limb source-C copy. `previous_c = SEGMENT_L1 * (segment_previous_c[0]
+    - 'c[0]) + 'c[0]`: `c[0]` one row back, blended at a segment's first row
+    with the previous segment's exported value. `a_src_c` itself is inlined
+    as `(1 - a_src_mem) - a_src_imm - a_src_reg` (`Main/Circuit.lean:94`'s
+    `b_src_c` computes the b-side analogue the same way). -/
+theorem constraint_3_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    ((((1 - (c.rows r).rom.a_src_mem) - (c.rows r).rom.a_src_imm) - (c.rows r).rom.a_src_reg) *
+        ((c.rows r).core.a_0 -
+          (((c.rows r).core.segment_l1 *
+              (c.segment_previous_c_0 - (c.rows (r - 1)).core.c_0))
+            + (c.rows (r - 1)).core.c_0)) = 0)
+      ↔ Main.extraction.constraint_3_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:385 (a_src_c)*(a[1]-(previous_c))` — the `a[1]`
+    sibling of `constraint_3_weld`, reading `segment_previous_c[1]`
+    (`exposed(4)`) and `c[1]` one row back. -/
+theorem constraint_9_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    ((((1 - (c.rows r).rom.a_src_mem) - (c.rows r).rom.a_src_imm) - (c.rows r).rom.a_src_reg) *
+        ((c.rows r).core.a_1 -
+          (((c.rows r).core.segment_l1 *
+              (c.segment_previous_c_1 - (c.rows (r - 1)).core.c_1))
+            + (c.rows (r - 1)).core.c_1)) = 0)
+      ↔ Main.extraction.constraint_9_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:386 (b_src_c)*(b[0]-(previous_c))` — the b-side,
+    low-limb source-C copy, sharing `previous_c`'s `segment_previous_c[0]`
+    boundary with `constraint_3_weld`. `b_src_c` is inlined as
+    `(1 - b_src_mem) - b_src_imm - b_src_ind - b_src_reg`, matching
+    `Main/Circuit.lean:94`'s `b_src_c`. -/
+theorem constraint_4_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    (((((1 - (c.rows r).rom.b_src_mem) - (c.rows r).rom.b_src_imm) - (c.rows r).rom.b_src_ind) -
+          (c.rows r).rom.b_src_reg) *
+        ((c.rows r).core.b_0 -
+          (((c.rows r).core.segment_l1 *
+              (c.segment_previous_c_0 - (c.rows (r - 1)).core.c_0))
+            + (c.rows (r - 1)).core.c_0)) = 0)
+      ↔ Main.extraction.constraint_4_every_row c r :=
+  Iff.rfl
+
+/-- `main/pil/main.pil:386 (b_src_c)*(b[1]-(previous_c))` — the `b[1]`
+    sibling of `constraint_4_weld`. -/
+theorem constraint_10_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    (((((1 - (c.rows r).rom.b_src_mem) - (c.rows r).rom.b_src_imm) - (c.rows r).rom.b_src_ind) -
+          (c.rows r).rom.b_src_reg) *
+        ((c.rows r).core.b_1 -
+          (((c.rows r).core.segment_l1 *
+              (c.segment_previous_c_1 - (c.rows (r - 1)).core.c_1))
+            + (c.rows (r - 1)).core.c_1)) = 0)
+      ↔ Main.extraction.constraint_10_every_row c r :=
+  Iff.rfl
+
+/-- `extractedMainExposedCircuit`'s four fields are pinned: `inferInstance`
+    fails to compile both if a field drifts and if instance resolution for
+    `Extraction.Circuit FGL FGL MainExposed` starts finding a different
+    instance. Deliberately the last declaration in the module. -/
+theorem extractedMainExposedCircuit_pinned :
+    (inferInstance : Extraction.Circuit FGL FGL MainExposed) =
+      { main := traceMainValue
+        preprocessed := tracePreprocessedValue
+        challenge := traceChallengeValue
+        exposed := traceExposedValue } :=
   rfl
 
 end ZiskFv.AirsClean.Main
