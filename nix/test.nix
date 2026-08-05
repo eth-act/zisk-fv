@@ -171,11 +171,14 @@ writeShellApplication {
     # way. Python stdlib only, ~40 s together; reads ZiskFv/AirsClean/** source
     # plus build/, and needs no Lean build.
     #
-    # This step FAILS at HEAD, and that is the finding, not a wiring bug: 35
-    # comparable generated constraints have no mirror. Neither the failing
-    # findings nor a baseline of them may be silenced here -- mirrors are
-    # protected proof interfaces and closing a gap is proof work. `set -e` for
-    # the same reason as step 3.
+    # This step PASSES at HEAD: every comparable generated constraint is covered
+    # (matched / out-of-root / bool-typed / weld-covered) and every residual
+    # finding is disposed -- fixed (e.g. MemAlign's L1 fixed-column schema, #332)
+    # or declared with a cited source, each re-verified live every run and each
+    # backed by a withdrawal mutation in acceptance.py. Mirrors are protected
+    # proof interfaces: findings here are closed by proof work or cited scope,
+    # never silenced with a baseline, so this stays a real gate. `set -e` for the
+    # same reason as step 3.
     run "4/10 mirror round trip" bash -c '
       set -e
       python3 tools/mirror-roundtrip/check_mirrors.py --quiet

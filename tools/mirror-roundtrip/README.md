@@ -386,11 +386,13 @@ of its scope.
 ## Gate
 
 Step 4/10 of `nix run .#test`, next to #303's step 3/10, running
-`check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, but the
-failure is now the residual findings, not gaps: **0 gap**, and the remaining
-failing findings are 2 strengthening + 3 unbacked + 2 reclassification + 1
-undeclared delegation (tracked in eth-act/zisk-fv#329). Every generated constraint
-that once read as a gap is now decided coverage: 15 `Mem` segment residuals matched
+`check_mirrors.py --quiet` and then `acceptance.py`. **It passes at HEAD** —
+`176/176 covered, 0 failing`. The #329 residuals were disposed: the MemAlign `L1`
+reclassification was *fixed* (a real fixed-column schema, #332), the Mem
+delegation was classified, and the rest (2 strengthening + 3 unbacked + the Main
+`SEGMENT_L1` alias) are declared with cited sources, each re-verified live every
+run and each backed by a withdrawal mutation in `acceptance.py`. Every generated
+constraint that once read as a gap is now decided coverage: 15 `Mem` segment residuals matched
 by the out-of-root `segmentResidualEveryRow`, 4 `MemAlignByte` booleans typed by a
 `.val < 2` bound, the 7 `MemAlignWriteByte` constraints bound each by their own
 `Iff.rfl` weld, and the **9 `Main`** constraints `{0, 3, 4, 9, 10, 19, 20, 21, 38}`
