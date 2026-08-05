@@ -15,17 +15,30 @@ gate against the REAL pilout and the REAL extraction, and require the reported
 findings to move in exactly the predicted way -- not merely to move, because "it
 noticed" and "it noticed the right thing" are different claims.
 
-Why the verdict is a DELTA and not an exit code
+Why the verdict is a DELTA, not (only) an exit code
 
-    `check_mirrors.py` already exits 1 at HEAD: 35 gaps, 2 strengthenings, 2
-    reclassifications. So an exit code cannot distinguish a mutated tree from an
-    untouched one, and a case asserting "it failed" would pass for a mutation
-    the gate never saw. Every mutation case here is therefore decided on the
-    SIGNATURE DELTA -- the multiset of failing-class findings, each keyed by
-    (class, air, route, generated indices, mirror definitions), differenced
-    against the baseline run. Exactly the predicted findings must appear and
-    exactly the predicted ones must disappear; anything else is a failure of the
-    case, in either direction.
+    Before eth-act/zisk-fv#329, `check_mirrors.py` exited 1 at HEAD
+    unconditionally (35 gaps, 2 strengthenings, 2 reclassifications), so an exit
+    code alone could not distinguish a mutated tree from an untouched one. Every
+    mutation case here is therefore decided FIRST on the SIGNATURE DELTA -- the
+    multiset of non-MATCHED findings, each keyed by (class, air, route,
+    generated indices, mirror definitions), differenced against the baseline
+    run. Exactly the predicted findings must appear and exactly the predicted
+    ones must disappear; anything else is a failure of the case, in either
+    direction. `excluded_by` (#329's post-pairing exclusions) is deliberately
+    NOT part of that key -- a reviewed exclusion changes neither a finding's
+    kind nor what it names -- so three cases below assert `excluded_by` moving
+    directly, off the JSON payload, where a signature delta cannot see it.
+
+    #329 also closed the baseline to 176/176, 0 failing, so the exit code is
+    meaningful again and is now ALSO asserted on every case: 1 iff the baseline
+    already fails, `added` names a FAILING-class signature (GAP/STRENGTHENING/
+    RECLASSIFICATION/UNBACKED), or a scope/unreachable bucket grew: else 0.
+    Two cases need an explicit `Mutation.expect_exit` override because the
+    signature the mutation adds is not the whole story: `LANELESS_CLAUSE_ADDED`
+    adds an UNBACKED that is itself auto-declared, and the three
+    `excluded_by_check` cases add no NEW signature at all (an existing one
+    merely stops being excluded).
 
     Two invariants are asserted on every case as well: the comparable GENERATED
     count per AIR never moves (these mutations touch only mirrors, so a generated
@@ -61,6 +74,31 @@ What each mutation emulates
                         `F` field is no longer typed, so it reverts to a
                                                     -> GAP. Proves BOOL_TYPED is
                         backed by the bound the tool checks, not by the index.
+
+eth-act/zisk-fv#329's three declared-exclusion reversals
+
+    A category-level `DECLARED_EXCLUSIONS` entry is honest only if removing
+    what its citation rests on makes the finding it covers resurface -- an
+    exclusion that fires unconditionally is a hidden allowlist wearing a
+    citation. Each of the three post-pairing exclusions #329 added gets one
+    reversal here, checked directly against `excluded_by` (a signature delta
+    cannot see it, since a finding's kind/route/indices/definitions never move
+    when an exclusion covers it):
+
+    MAIN_FIXED_COLUMNS_PIN_REMOVED         `main_fixed_lane_alias` cites Main's
+                        REAL `fixedColumns` pin (`componentWithRomMemAndOpBus`).
+                        Flipping that field to `none` must clear `excluded_by`
+                        on RECLASSIFICATION Main #18.
+    MEMALIGN_FIXED_COLUMNS_TEXT_ADDED      `memalign_l1_disclosed_gap` fires
+                        only while MemAlign declares NO `fixedColumns` at all.
+                        Adding text that says otherwise must clear
+                        `excluded_by` on RECLASSIFICATION MemAlign #16.
+    MAIN_SOURCE_C_COFACTOR_BROKEN          `main_source_c_within_segment` cites
+                        a cofactor search result: `sourceCCopyBetween`'s clause
+                        equals `(1 - SEGMENT_L1) * generated #4`. Crossing the
+                        b_0/c_1 indices breaks that relationship, so
+                        `excluded_by` must clear on the mutated clause while
+                        staying set on its untouched sibling.
 
 Measured limits
 
@@ -146,6 +184,11 @@ UNBACKED = "UNBACKED"
 OUT_OF_ROOT = "OUT_OF_ROOT"
 BOOL_TYPED = "BOOL_TYPED"
 WELD_COVERED = "WELD_COVERED"
+# The classes that fail the run, mirroring `check_mirrors.FAILING_CLASSES`
+# (kept as a second literal, the same way MATCHED/GAP/... above already are,
+# rather than importing check_mirrors -- this harness runs the tool only as a
+# subprocess against a staged copy).
+FAILING_KINDS = frozenset({GAP, STRENGTHENING, RECLASSIFICATION, UNBACKED})
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -391,6 +434,71 @@ def unbacked(air: str, *definitions: str) -> Signature:
 
 def reclassification(air: str, route: str, index: int, *definitions: str) -> Signature:
     return (RECLASSIFICATION, air, route, (index,), tuple(sorted(definitions)))
+
+
+# ------------------------------------------------- #329: declared-exclusion checks
+#
+# `excluded_by` is not part of `Signature` -- a finding's kind/route/indices/
+# definitions do not change when a reviewed `DECLARED_EXCLUSIONS` entry (#329)
+# covers it, by design (`check_mirrors.Finding.excluded_by`). So a mutation that
+# removes what one of those citations rests on must be checked a different way:
+# the signature count is unchanged, but `excluded_by` on the matching finding(s)
+# must go from set to empty. These helpers do that check directly off the JSON
+# payload, keyed the same way `signature()` keys a finding.
+
+
+def _excluded_by_values(payload: dict, kind: str, air: str,
+                        definition: str) -> list[str]:
+    """`excluded_by` (possibly `""`) of every `kind` finding under `air` naming
+    `definition` among its mirror clauses."""
+    return [
+        finding.get("excluded_by", "")
+        for entry in payload["airs"] if entry["air"] == air
+        for finding in entry["findings"]
+        if finding["kind"] == kind
+        and any(m["definition"] == definition for m in finding["mirror"])
+    ]
+
+
+def _reclassification_excluded_by_cleared(
+        air: str, definition: str) -> Callable[[dict, dict], str | None]:
+    """`main_fixed_lane_alias`/`memalign_l1_disclosed_gap`: removing the textual
+    fact the citation rests on (Main's real `fixedColumns` pin; MemAlign
+    genuinely declaring none) must clear `excluded_by`, not leave it set."""
+    def check(baseline_payload: dict, run_payload: dict) -> str | None:
+        before = _excluded_by_values(baseline_payload, RECLASSIFICATION, air,
+                                      definition)
+        after = _excluded_by_values(run_payload, RECLASSIFICATION, air, definition)
+        if not before or not all(before):
+            return (f"harness bug: expected every {air} {definition} "
+                    f"RECLASSIFICATION excluded at baseline, got {before!r}")
+        if any(after):
+            return (f"{air} {definition} RECLASSIFICATION is STILL "
+                    f"excluded_by {[e for e in after if e]!r} after the "
+                    f"mutation removed the citation's textual basis -- the "
+                    f"exclusion must withdraw, not persist")
+        return None
+    return check
+
+
+def _source_c_cofactor_broken(baseline_payload: dict, run_payload: dict) -> str | None:
+    """`main_source_c_within_segment`: crossing `sourceCCopyBetween`'s b_0/c_1
+    indices breaks the cofactor relationship to EVERY generated constraint, so
+    exactly one of the two clauses (the mutated one) must lose its exclusion --
+    the other, untouched clause must keep it."""
+    before = _excluded_by_values(baseline_payload, STRENGTHENING, "Main",
+                                 "sourceCCopyBetween")
+    after = _excluded_by_values(run_payload, STRENGTHENING, "Main",
+                                "sourceCCopyBetween")
+    if sorted(before) != ["main_source_c_within_segment"] * 2:
+        return (f"harness bug: expected both sourceCCopyBetween STRENGTHENING "
+                f"findings excluded at baseline, got {before!r}")
+    if len(after) != 2 or sum(1 for e in after if e) != 1:
+        return (f"expected exactly one of the two sourceCCopyBetween clauses "
+                f"to lose its exclusion once the b_0/c_1 mismatch breaks the "
+                f"cited cofactor relationship to generated #4; got "
+                f"excluded_by={after!r}")
+    return None
 
 
 # ------------------------------------------------- PART A: the four hand findings
@@ -736,6 +844,7 @@ def no_mutation(lines: list[str]) -> Applied:
 MEMALIGN_SPEC = "ZiskFv/AirsClean/MemAlign/Spec.lean"
 MEMALIGN_CIRCUIT = "ZiskFv/AirsClean/MemAlign/Circuit.lean"
 MAIN_SPEC = "ZiskFv/AirsClean/Main/Spec.lean"
+MAIN_CIRCUIT = "ZiskFv/AirsClean/Main/Circuit.lean"
 BINARY_SPEC = "ZiskFv/AirsClean/Binary/Spec.lean"
 MEMALIGNBYTE_SPEC = "ZiskFv/AirsClean/MemAlignByte/Spec.lean"
 MEM_OUT_OF_ROOT = "ZiskFv/Airs/Mem.lean"
@@ -767,6 +876,16 @@ MEMALIGNBYTE_ASSUMPTIONS = "row.sel_high_4b.val < 2 ∧ row.sel_high_2b.val < 2"
 # generated constraint by. Each qualified name occurs exactly once in the file.
 MAIN_ASIDE_WELD_3 = "↔ Main.extraction.constraint_3_every_row c r :="
 MAIN_ASIDE_WELD_9 = "↔ Main.extraction.constraint_9_every_row c r :="
+# #329's three declared-exclusion reversal cases. `MAIN_FIXED_COLUMNS_LINE` is
+# `componentWithRomMemAndOpBus`'s own field, the real pin `main_fixed_lane_alias`
+# cites; `MEMALIGN_COMPONENT_HEAD` anchors an insertion into MemAlign's
+# `component` (which has no `fixedColumns` field to mutate, since that is
+# exactly what `memalign_l1_disclosed_gap` says); `SOURCE_C_B0_CLAUSE` is
+# `sourceCCopyBetween`'s first conjunct, the one `main_source_c_within_segment`
+# cites as cofactor-implied by generated #4.
+MAIN_FIXED_COLUMNS_LINE = "fixedColumns := some mainFixedColumns"
+MEMALIGN_COMPONENT_HEAD = "{ circuit := circuit"
+SOURCE_C_B0_CLAUSE = "(curr.core.b_0 - prev.core.c_0) = 0"
 
 
 @dataclass(frozen=True)
@@ -791,6 +910,21 @@ class Mutation:
     # defect, not because there is nothing to see. Such a case passing is a
     # measurement of a limit, never reassurance, and the report says so.
     blind_spot: str = ""
+    # The expected exit code, when the DEFAULT rule -- 1 iff the baseline
+    # already fails, or `added` names a FAILING-class signature, or a scope/
+    # unreachable bucket grew -- gets this one wrong. That happens for exactly
+    # one existing case (`LANELESS_CLAUSE_ADDED`: the UNBACKED it adds is
+    # ITSELF auto-declared by `mirror_unbacked_field_uncommitted`, #329) and for
+    # the three `excluded_by_check` cases below, where the signature is
+    # unchanged but its exclusion should withdraw. `None` uses the default rule.
+    expect_exit: int | None = None
+    # A post-hoc check on `excluded_by` (#329's post-pairing exclusions): a
+    # mutation that removes what one of those citations rests on must clear
+    # `excluded_by` on the finding it covered, not leave it silently excluded --
+    # a signature delta alone cannot see this, since `excluded_by` changes
+    # neither `kind`, `route`, generated indices, nor mirror definitions.
+    # `(baseline_payload, run_payload) -> a problem string, or None`.
+    excluded_by_check: Callable[[dict, dict], str | None] | None = None
 
 
 MUTATIONS: tuple[Mutation, ...] = (
@@ -904,6 +1038,13 @@ MUTATIONS: tuple[Mutation, ...] = (
         apply=add_line_after(
             PRE_L1, "∧ row.delta_pc * (row.addr + row.wr * 12345) = 0"),
         added=(unbacked("MemAlign", "Spec"),),
+        # The added UNBACKED finding is itself auto-declared by #329's
+        # `mirror_unbacked_field_uncommitted`: `delta_pc` has no lane ANYWHERE
+        # in this AIR's pilout, so a clause whose only unresolved projection is
+        # `delta_pc` is excluded regardless of what else it asserts about real
+        # fields (`row.addr`, `row.wr`) alongside it. So exit stays 0, not the
+        # default rule's 1 for a newly-added UNBACKED signature.
+        expect_exit=0,
     ),
     Mutation(
         name="FIXED_LEAF_UNDECLARED",
@@ -1044,6 +1185,64 @@ MUTATIONS: tuple[Mutation, ...] = (
             "def FabricatedWeldMirror (row : ArithMulRow FGL) : Prop :=",
             ["  row.chunks.a_0 * row.chunks.a_1 = 0"]),
         scope_added=("classification_coverage",),
+    ),
+    Mutation(
+        name="MAIN_FIXED_COLUMNS_PIN_REMOVED",
+        lean_file=MAIN_CIRCUIT,
+        target="componentWithRomMemAndOpBus, fixedColumns := some "
+               "mainFixedColumns -> none",
+        intent="#329's `main_fixed_lane_alias` exclusion is backed by Main's "
+               "REAL `fixedColumns` pin, re-verified textually every run -- "
+               "removing that pin must make RECLASSIFICATION Main #18 "
+               "resurface as a plain, un-declared failure, not stay silently "
+               "excluded",
+        # The signature itself (kind/route/index/definitions) is unaffected --
+        # `pcHandshakeBetween`/`pc_handshake_at` still alias `segment_l1` to
+        # `Main.SEGMENT_L1` exactly as before, so `added`/`removed` stay empty.
+        # What must move is `excluded_by`, checked directly.
+        apply=replace_in_line(MAIN_FIXED_COLUMNS_LINE, "some mainFixedColumns",
+                              "none"),
+        excluded_by_check=_reclassification_excluded_by_cleared(
+            "Main", "pcHandshakeBetween"),
+        expect_exit=1,
+    ),
+    Mutation(
+        name="MEMALIGN_FIXED_COLUMNS_TEXT_ADDED",
+        lean_file=MEMALIGN_CIRCUIT,
+        target="component, a fixedColumns-looking line added",
+        intent="#329's `memalign_l1_disclosed_gap` exclusion fires only while "
+               "MemAlign declares NO fixedColumns at all -- the moment that "
+               "premise stops holding, the exclusion must withdraw and "
+               "RECLASSIFICATION MemAlign #16 must resurface as a plain, "
+               "un-declared failure rather than stay silently excluded",
+        apply=add_line_after(
+            MEMALIGN_COMPONENT_HEAD,
+            "-- fixedColumns := some fakeMemAlignFixedColumns"),
+        excluded_by_check=_reclassification_excluded_by_cleared(
+            "MemAlign", "Spec"),
+        expect_exit=1,
+    ),
+    Mutation(
+        name="MAIN_SOURCE_C_COFACTOR_BROKEN",
+        lean_file=MAIN_CIRCUIT,
+        target="sourceCCopyBetween#0, prev.core.c_0 -> prev.core.c_1",
+        intent="#329's `main_source_c_within_segment` exclusion requires the "
+               "cofactor search to actually prove this clause equals "
+               "(1 - SEGMENT_L1) * generated #4 -- crossing the b_0/c_1 "
+               "indices breaks that relationship to EVERY generated "
+               "constraint, so this clause's STRENGTHENING must resurface as "
+               "a plain, un-declared failure while the untouched b_1/c_1 "
+               "clause keeps its exclusion",
+        # `sourceCCopyBetween`'s two clauses share one mirror definition name,
+        # so the SIGNATURE count for `strengthening("Main",
+        # "sourceCCopyBetween")` stays 2 before and after (both clauses are
+        # still two distinct STRENGTHENING findings under that name) --
+        # `added`/`removed` are empty by design. What must move is which of
+        # the two carries `excluded_by`, checked directly.
+        apply=replace_in_line(SOURCE_C_B0_CLAUSE, "prev.core.c_0",
+                              "prev.core.c_1"),
+        excluded_by_check=_source_c_cofactor_broken,
+        expect_exit=1,
     ),
     Mutation(
         name="NOOP_REORDER",
@@ -1213,10 +1412,34 @@ def run_case(mutation: Mutation, base: Path, work_dir: Path,
     if mutation.control and result.totals_moved:
         result.problems.append(
             f"a neutral rewrite moved the totals: {'; '.join(result.totals_moved)}")
-    if run.exit_code != baseline.exit_code:
+
+    # The expected exit code. Before #329's baseline was 176/176, the gate
+    # failed at HEAD unconditionally, so "moved at all" was itself the bug
+    # signal. Now the baseline can be 0 (as it is at HEAD), so the right
+    # invariant is the DEFAULT rule below -- 1 iff the baseline already fails,
+    # `added` names a FAILING-class signature, or a scope/unreachable bucket
+    # grew -- except for the cases a `Mutation.expect_exit` override names:
+    # `LANELESS_CLAUSE_ADDED` (the added UNBACKED is itself auto-declared) and
+    # the three `excluded_by_check` cases (the signature is unchanged, only its
+    # exclusion withdraws).
+    if mutation.expect_exit is not None:
+        expected_exit = mutation.expect_exit
+    else:
+        expected_exit = EXIT_FAILED if (
+            baseline.exit_code == EXIT_FAILED
+            or any(sig[0] in FAILING_KINDS for sig in result.added)
+            or result.scope_added or mutation.unreachable_added
+        ) else EXIT_OK
+    if run.exit_code != expected_exit:
         result.problems.append(
-            f"exit code moved {baseline.exit_code} -> {run.exit_code}; the gate "
-            f"is already failing at HEAD, so it should not")
+            f"exit code {run.exit_code}, expected {expected_exit} (baseline "
+            f"{baseline.exit_code}, added {fmt_delta(result.added)}, "
+            f"scope_added {sorted(result.scope_added) or '(nothing)'})")
+
+    if mutation.excluded_by_check is not None:
+        problem = mutation.excluded_by_check(baseline.payload, run.payload)
+        if problem:
+            result.problems.append(problem)
 
     for sig in mutation.added:
         result.evidence.extend(evidence_for(sig, run.text))
@@ -1466,8 +1689,9 @@ def main(argv: list[str]) -> int:
         print("PART B -- MUTATION")
         print(f"  {len(MUTATIONS)} case(s); one edit each to a copy of "
               f"{'/, '.join(STAGED_ROOTS)}/ under {work_dir}")
-        print("  The gate already exits 1 at HEAD, so the verdict is the signature")
-        print("  delta against the baseline run, never the exit code.")
+        print(f"  Verdict is the signature delta against the baseline run "
+              f"(baseline exit {baseline.exit_code}), plus the exit code the "
+              f"delta predicts and, for #329's exclusions, `excluded_by`.")
         print()
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=min(8, len(MUTATIONS))) as pool:

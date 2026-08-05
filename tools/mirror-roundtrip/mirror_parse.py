@@ -414,6 +414,11 @@ ASCRIPTION_TYPES = frozenset({"FGL", "F", "ℕ", "Nat"})
 
 ROW_RECORDS = frozenset(name for _rel, name, _air in survey.MIRROR_RECORDS)
 DELEGATED_NAMES = frozenset(name for _air, _site, name, _ix in survey.DELEGATED)
+# `name -> class` for `survey.DELEGATED_OUT_OF_SCOPE`: out-of-root delegates
+# that are declared but never parsed for comparison, because their content is
+# structurally out of the F-only scope (see that table's own docstring).
+OUT_OF_SCOPE_DELEGATED: dict[str, str] = {
+    name: cls for _air, _site, name, cls in survey.DELEGATED_OUT_OF_SCOPE}
 
 
 # ------------------------------------------------------------------- exceptions
@@ -1735,6 +1740,14 @@ def _parse_delegation(tokens: list[Token], ctx: Context, rel: str) -> Delegation
         return Delegation(name, site.rsplit(":", 1)[0], int(site.rsplit(":", 1)[1]),
                           "DELEGATED", tuple(args), deltas, True,
                           "declared out-of-root delegate (survey.DELEGATED)")
+    if short in OUT_OF_SCOPE_DELEGATED or name in OUT_OF_SCOPE_DELEGATED:
+        cls = OUT_OF_SCOPE_DELEGATED.get(short, OUT_OF_SCOPE_DELEGATED.get(name))
+        site = next(s for _air, s, n, _cls in survey.DELEGATED_OUT_OF_SCOPE
+                    if n == short)
+        return Delegation(name, site.rsplit(":", 1)[0], int(site.rsplit(":", 1)[1]),
+                          cls, tuple(args), deltas, True,
+                          "declared out-of-root, out-of-scope delegate "
+                          "(survey.DELEGATED_OUT_OF_SCOPE)")
     return Delegation(name, None, None, None, tuple(args), deltas, False,
                       "in neither survey.CLASSIFICATION nor survey.DELEGATED")
 
