@@ -45,7 +45,9 @@ expression reaches `Extraction.Circuit.challenge` or a stage-2 lane
 extractor's own single-field/two-field binder distinction is deliberately **not**
 used instead: it would drop nine more Main constraints -- `{0, 3, 4, 9, 10, 19,
 20, 21, 38}`, the ones reaching an `AirValue`/`AirGroupValue` but no challenge and
-no stage-2 lane -- and Main #3 and #9 are the flagship gap below. The rule is
+no stage-2 lane -- and Main #3 and #9 were the flagship finding this gate was
+built to surface (since welded via the `MainExposed` carrier -- see the Gate
+section). The rule is
 implemented twice, off the emitted Lean here and off the pilout operands in
 `survey.air_facts`, and the two index sets must agree on every run.
 
@@ -378,17 +380,19 @@ of its scope.
 ## Gate
 
 Step 4/10 of `nix run .#test`, next to #303's step 3/10, running
-`check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, and
-that is the deliverable: **9** comparable generated constraints have no mirror
-clause and no checked coverage fact, all in `Main` (`{0, 3, 4, 9, 10, 19, 20, 21,
-38}`; two of them the weaker `SEGMENT_L1`-gated half of a within-segment C-copy).
-The other constraints that once read as gaps are now decided coverage: 15 `Mem`
-segment residuals matched by the out-of-root `segmentResidualEveryRow`, 4
-`MemAlignByte` booleans typed by a `.val < 2` bound, and the 7 `MemAlignWriteByte`
-constraints -- which have no mirror predicate -- bound each by their own `Iff.rfl`
-weld (`WELD_COVERED`). Those 9 are findings for the owner, and mirrors are
-protected proof interfaces -- closing one is proof work, not something this tool or
-its gate may do, and not something to silence with a baseline.
+`check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, but the
+failure is now the residual findings, not gaps: **0 gap**, and the remaining
+failing findings are 2 strengthening + 3 unbacked + 2 reclassification + 1
+undeclared delegation (tracked in eth-act/zisk-fv#329). Every generated constraint
+that once read as a gap is now decided coverage: 15 `Mem` segment residuals matched
+by the out-of-root `segmentResidualEveryRow`, 4 `MemAlignByte` booleans typed by a
+`.val < 2` bound, the 7 `MemAlignWriteByte` constraints bound each by their own
+`Iff.rfl` weld, and the **9 `Main`** constraints `{0, 3, 4, 9, 10, 19, 20, 21, 38}`
+(which read `exposed` air values) welded via the `MainExposed` carrier in
+`MainMirrorWeld.lean` (all `WELD_COVERED`). The remaining findings are for the
+owner, and mirrors are protected proof interfaces -- closing one is proof work, not
+something this tool or its gate may do, and not something to silence with a
+baseline.
 
 Deliberately not in `nix run .#populate`, where #303's check does live. Populate
 materialises generated inputs, and its tail gates a property of the artifact it
