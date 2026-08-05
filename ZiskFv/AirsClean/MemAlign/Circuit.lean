@@ -276,8 +276,121 @@ theorem cyclicSuccessorTransitionRows_memAlignIdleRow :
   norm_num [cyclicSuccessorTransitionRows, memAlignIdleRow, memAlignRowOf,
     memAlignValue0Of, memAlignValue1Of, memAlignLane]
 
+/-- ZisK instantiates both the MemAlign witness and fixed traces over this
+    physical domain (`zisk/pil/src/pil_helpers/traces.rs:328-331`,
+    `MemAlignFixed<F> = GenericTrace<MemAlignFixedRow<F>, 2097152, 0, 17>`). -/
+def memAlignFixedCapacity : Nat := 2097152
+
+/-- Map the 31 effective `MemAlignRow` slots to 30 raw witness slots plus the
+    one physical fixed column `L1`. The flattened `ProvableStruct` order puts
+    `preL1` at slot 26. -/
+private def memAlignFixedLayout (slot : Fin 31) : Sum (Fin 30) (Fin 1) :=
+  if h_preL1 : slot.val = 26 then
+    .inr ⟨0, by omega⟩
+  else
+    .inl ⟨slot.val - (if 26 < slot.val then 1 else 0), by
+      split <;> omega⟩
+
+/-- MemAlign's one fixed column for the currently modeled segment: `L1` is
+    `[1, 0, ...]` (`zisk/state-machines/mem/pil/mem_align.pil:120`). -/
+private def memAlignFixedValues (_slot : Fin 1) (row : Fin memAlignFixedCapacity) : FGL :=
+  if row.val = 0 then 1 else 0
+
+/-- Component-owned MemAlign fixed schema. `IndexedFixedColumns.fixedAt`
+    supplies physical-domain periodic access, while `Table.fixed_domain`
+    bounds every materialized MemAlign prefix by this capacity. -/
+def memAlignFixedColumns : IndexedFixedColumns FGL 30 where
+  capacity := memAlignFixedCapacity
+  capacity_pos := by decide
+  effectiveWidth := 31
+  fixedWidth := 1
+  layout := memAlignFixedLayout
+  values := memAlignFixedValues
+
+/-- The 30 raw witness cells of a MemAlign row, omitting the component-owned
+    `L1` fixed cell (`preL1`) at effective slot 26. -/
+def memAlignRawRow (row : MemAlignRow FGL) : Array FGL :=
+  #[row.addr, row.offset, row.width, row.wr, row.pc, row.reset,
+    row.sel_up_to_down, row.sel_down_to_up,
+    row.reg_0, row.reg_1, row.reg_2, row.reg_3, row.reg_4, row.reg_5, row.reg_6, row.reg_7,
+    row.sel_0, row.sel_1, row.step, row.sel_2, row.sel_3, row.sel_4, row.sel_5, row.sel_6,
+    row.sel_7, row.sel_prove, row.delta_addr, row.delta_pc, row.value_0, row.value_1]
+
+@[simp] theorem memAlignRawRow_size (row : MemAlignRow FGL) : (memAlignRawRow row).size = 30 := by
+  simp [memAlignRawRow]
+
+/- Every materialized MemAlign row reads `L1` from the component-owned fixed
+    schema. -/
+set_option maxRecDepth 4000 in
+theorem eval_memAlignFixedColumns_L1
+    (index : Nat) (data : ProverData FGL) (raw : Array FGL) :
+  (Eval.eval (Environment.fromArray (memAlignFixedColumns.materialize index raw) data)
+      (varFromOffset (F := FGL) MemAlignRow 0)).preL1 =
+      memAlignFixedColumns.fixedAt 0 index := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMemAlignRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go]
+  rw [ProvableType.eval_varFromOffset]
+  simp only [explicit_provable_type, ProvableType.size,
+    IndexedFixedColumns.materialize, Array.getElem?_ofFn]
+  simp [IndexedFixedColumns.fixedAt, memAlignFixedColumns,
+    memAlignFixedLayout, memAlignFixedValues]
+
+/-- The component-owned `L1` fixed column marks the physical first MemAlign
+    row as the boot row (`mem_align.pil:120`, `col fixed L1 = [1,0...]`). -/
+theorem memAlignFixedColumns_L1_first : memAlignFixedColumns.fixedAt 0 0 = 1 := by
+  simp [IndexedFixedColumns.fixedAt, memAlignFixedColumns, memAlignFixedValues]
+
+/-- Away from the physical first row, `L1` is zero before the intrinsic
+    fixed-domain bound permits a periodic wrap. -/
+theorem memAlignFixedColumns_L1_nonfirst (index : Nat)
+    (h_positive : 0 < index) (h_index : index < memAlignFixedCapacity) :
+    memAlignFixedColumns.fixedAt 0 index = 0 := by
+  have h_mod_ne : index % memAlignFixedCapacity ≠ 0 := by
+    rw [Nat.mod_eq_of_lt h_index]
+    exact Nat.ne_of_gt h_positive
+  simp [IndexedFixedColumns.fixedAt, memAlignFixedColumns, memAlignFixedValues, h_mod_ne]
+
+/-- No raw witness array can move the boot row's `preL1` away from `1`: the
+    component-owned fixed schema supplies it independently of `raw`. This is
+    the fact that closes eth-act/zisk-fv#332 -- a prover no longer controls
+    `preL1` at the boot row, so `boot_pc_zero` (`Spec.lean`) genuinely forces
+    `pc = 0` there. -/
+theorem eval_memAlignFixedColumns_L1_boot
+    (data : ProverData FGL) (raw : Array FGL) :
+  (Eval.eval (Environment.fromArray (memAlignFixedColumns.materialize 0 raw) data)
+      (varFromOffset (F := FGL) MemAlignRow 0)).preL1 = 1 := by
+  rw [eval_memAlignFixedColumns_L1, memAlignFixedColumns_L1_first]
+
+/-- Materializing `memAlignRawRow` reconstructs the original MemAlign row when
+    its one fixed cell agrees with the component-owned fixed schema. -/
+theorem eval_memAlignRawRow_materialize
+    (index : Nat) (data : ProverData FGL) (row : MemAlignRow FGL)
+    (h_preL1 : row.preL1 = memAlignFixedColumns.fixedAt 0 index) :
+    Eval.eval
+      (Environment.fromArray (memAlignFixedColumns.materialize index (memAlignRawRow row)) data)
+      (varFromOffset (F := FGL) MemAlignRow 0) = row := by
+  rw [ProvableStruct.eval_eq_eval, ProvableStruct.varFromOffset_eq_varFromOffset]
+  unfold ProvableStruct.eval ProvableStruct.varFromOffset
+  simp only [instProvableStructMemAlignRow, ProvableStruct.eval.go,
+    ProvableStruct.varFromOffset.go, ProvableType.eval_field,
+    ProvableType.varFromOffset_field, Expression.eval, Nat.zero_add]
+  cases row with
+  | mk addr offset width wr pc reset sel_up_to_down sel_down_to_up reg_0 reg_1 reg_2 reg_3
+      reg_4 reg_5 reg_6 reg_7 sel_0 sel_1 step sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
+      sel_prove preL1 delta_addr delta_pc value_0 value_1 =>
+    change preL1 = memAlignFixedColumns.fixedAt 0 index at h_preL1
+    simp [IndexedFixedColumns.materialize, IndexedFixedColumns.fixedAt,
+      memAlignFixedColumns, memAlignFixedLayout, memAlignFixedValues, memAlignRawRow,
+      ProvableType.size]
+    simpa [IndexedFixedColumns.fixedAt, memAlignFixedColumns, memAlignFixedValues] using
+      h_preL1.symm
+
 def component : Air.Flat.Component FGL :=
   { circuit := circuit
+    rawWidth := 30
+    fixedColumns := some memAlignFixedColumns
     transition := transition
     cyclicSuccessorTransition := cyclicSuccessorTransition }
 

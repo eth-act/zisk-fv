@@ -181,15 +181,21 @@ that is where a double count would hide.
   names on the same footing. A projection with no declared alias is reported with
   that fact as its citation.
 
-  The `MemAlign.preL1` entry's citation deserves reading. Unlike the two `Main`
-  entries, which cite a real weld (`mainFixedLayout` slot 17 to fixed column 0,
-  installed at `Main/Circuit.lean:953`), **MemAlign declares no `fixedColumns`
-  anywhere** -- only `Main` and `Mem` do. The field is declared at
-  `MemAlign/Row.lean:51` with nothing pinning it to a column. What the
-  correspondence rests on is the name, and the fact that fixed column 0 is read
-  by exactly one comparable constraint of the AIR. That the clause then matches
-  that constraint is not evidence for the alias -- the alias is what produces the
-  match -- which is exactly why this is a `RECLASSIFICATION` and not a pairing.
+  The `MemAlign.preL1` entry's citation is, as of eth-act/zisk-fv#332, the same
+  shape as the two `Main` entries: `MemAlign/Circuit.lean` gives the component
+  a real `fixedColumns` schema (`memAlignFixedLayout` slot 26 to fixed column
+  0, installed at `MemAlign/Circuit.lean:390-393`), and `eval_memAlignFixedColumns_L1`/
+  `eval_memAlignRawRow_materialize` prove every materialized row reads `preL1`
+  from that schema, not an independent witness. Before #332, `MemAlign`
+  declared no `fixedColumns` at all -- only `Main` and `Mem` did -- and the
+  field was declared at `MemAlign/Row.lean:51` with nothing pinning it to a
+  column; that the clause matched the constraint was not evidence for the
+  alias, since the alias is what produced the match. This finding is still a
+  `RECLASSIFICATION` and not a plain pairing even now that it is backed --
+  agreeing once every atom's kind is erased is a mechanical, structural fact
+  about how the mirror is written, independent of whether a `fixedColumns`
+  schema happens to exist elsewhere; `check_mirrors.py`'s
+  `memalign_fixed_lane_alias` declared exclusion is what records the backing.
 
 Separately from the pairing, the run holds its own **scope**, because a scope
 taken from a declared list fails by shrinking. Each of the following is a

@@ -742,22 +742,28 @@ checked against nothing", with a live circuit-side twin. A gate that took
 `RomBoolSpec` as evidence of Main coverage would be reading a predicate no proof
 consumes.
 
-**F7 -- `MemAlign.L1` is a fixed column modeled as a free witness field.** The
-generated `constraint_16_every_row` is `MemAlign.L1*pc`
+**F7 -- `MemAlign.L1` is a fixed column modeled as a free witness field --
+RESOLVED (eth-act/zisk-fv#332).** The generated `constraint_16_every_row` is
+`MemAlign.L1*pc`
 (`mem_align.pil:121`), rendered as
 `preprocessed c (column := 0) * main c (id := 1) (column := 4)`. The mirror
 represents `MemAlign.L1` as the row field `preL1`
-(`MemAlign/Row.lean:24`, flattened position 26) and `MemAlign.component`
-(`MemAlign/Circuit.lean:279`) declares no `fixedColumns` and no `rawWidth` at all --
-unlike `Main.componentWithRomMemAndOpBus` (`Main/Circuit.lean:952`) and
-`Mem.componentWithDualMemBus` (`Mem/Circuit.lean:253`), both of which carry an
-`IndexedFixedColumns` schema. So PIL's `MemAlign.L1`, a fixed column with a known
-`[1, 0, 0, ...]` value, becomes an unconstrained field whose only constraint is
-`preL1 * pc = 0`. The honest-row builder sets `preL1 := boolF isBoot`
-(`MemAlign/Circuit.lean:137`), which is a completeness-side choice, not a soundness
-pin. This is a candidate mirror-side weakening, and it is a finding for the owner
--- not something to correct here, since `MemAlignRow` is a protected row
-structure.
+(`MemAlign/Row.lean:24`, flattened position 26), and at the time this finding
+was recorded `MemAlign.component` (`MemAlign/Circuit.lean:279`) declared no
+`fixedColumns` and no `rawWidth` at all -- unlike `Main.componentWithRomMemAndOpBus`
+(`Main/Circuit.lean:952`) and `Mem.componentWithDualMemBus` (`Mem/Circuit.lean:253`),
+both of which carried an `IndexedFixedColumns` schema. So PIL's `MemAlign.L1`, a
+fixed column with a known `[1, 0, 0, ...]` value, was an unconstrained field
+whose only constraint was `preL1 * pc = 0`, letting a prover set it to `0` and
+evade `pc = 0` at the boot row. #332 gave `MemAlign.component` the same
+`fixedColumns` shape Main and Mem already had (`memAlignFixedColumns`,
+`MemAlign/Circuit.lean:287-308`, wired at `:390-393`); `eval_memAlignFixedColumns_L1`/
+`eval_memAlignRawRow_materialize` (`:325`/`:368`) prove every materialized row
+reads `preL1` from that schema, not an independent witness. The honest-row
+builder's `preL1 := boolF isBoot` (`MemAlign/Circuit.lean:137`) remains a
+completeness-side choice, unaffected by this fix. See
+`check_mirrors.py`'s `memalign_fixed_lane_alias` exclusion (formerly
+`memalign_l1_disclosed_gap`) for the mechanical side of the closure.
 
 **F8 -- both `Expr`-to-field maps are partial with a zeroing fallback, gated only
 for one tuple each.** `h998ExprToField` (`MemAlign/Bridge.lean:31`, 38 arms) and

@@ -31,7 +31,7 @@ theorem divSpinArithProviderTable_eq
     | change (4 : Nat) = 44 at h_width
     | change (10 : Nat) = 44 at h_width
     | change (16 : Nat) = 44 at h_width
-    | change (31 : Nat) = 44 at h_width
+    | change (30 : Nat) = 44 at h_width
     | change (1 : Nat) = 44 at h_width
     | change (6 : Nat) = 44 at h_width
     | change (17 : Nat) = 44 at h_width

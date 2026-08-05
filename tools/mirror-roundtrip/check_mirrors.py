@@ -303,25 +303,19 @@ DECLARED_EXCLUSIONS = (
         "independent witness -- a real pin, not merely a name correspondence",
     ),
     Exclusion(
-        "memalign_l1_disclosed_gap", "mirror",
-        "a declared lane-kind alias with NO such pin: a genuine, "
-        "already-disclosed, currently-inert lane-class gap, not a benign "
-        "alias -- declared here as a live, open residual, not as resolved",
-        "ZiskFv/AirsClean/MemAlignMirrorWeld.lean's own module header (point "
-        "2, from #296) already states `MemAlignRow.preL1` is an ordinary "
-        "witness field nothing pins to fixed column `MemAlign.L1` (MemAlign "
-        "declares no `fixedColumns` at all), and that a prover controlling it "
-        "can set it to 0 and evade `pc=0` at the boot row; `boot_pc_zero_weld`/"
-        "`component_spec_weld` are explicitly documented there as NOT "
-        "certifying constraint_16's fidelity. Not fixed here because no proof "
-        "under ZiskFv/Compliance consumes `boot_pc_zero`/`preL1` for any "
-        "conclusion (grepped: the only references outside MemAlign's own "
-        "module and this weld are none), so the gap is currently inert for "
-        "`root_soundness`, and a real fix -- a genuine `fixedColumns` schema "
-        "for MemAlign, the shape of change Main already has -- touches "
-        "Row/Circuit/Bridge/Constraints/Soundness/Spec and the weld bridges "
-        "together, not a local mirror correction. A tracking issue (the "
-        "eth-act/zisk-fv#328 model) is the recommended next step",
+        "memalign_fixed_lane_alias", "mirror",
+        "a declared lane-kind alias where the aliased row field is PROVEN "
+        "pinned to the real fixed column by the checked-in Lean, not merely "
+        "named the same",
+        "ZiskFv/AirsClean/MemAlign/Circuit.lean:287-308 (`memAlignFixedLayout`/"
+        "`memAlignFixedValues`) and :390-393 (`fixedColumns := some "
+        "memAlignFixedColumns` on the live component) declare `preL1`/`L1` a "
+        "component-owned FIXED column, and :325/:368 "
+        "(`eval_memAlignFixedColumns_L1`, `eval_memAlignRawRow_materialize`) "
+        "prove every materialized row reads it from that schema, never from "
+        "an independent witness -- a real pin, not merely a name "
+        "correspondence (eth-act/zisk-fv#332, closing the `memalign_l1_"
+        "disclosed_gap` this exclusion replaces)",
     ),
     Exclusion(
         "mirror_unbacked_field_uncommitted", "mirror",
@@ -1269,16 +1263,18 @@ def _main_fixed_columns_pin_holds() -> bool:
     return "fixedColumns := some mainFixedColumns" in path.read_text()
 
 
-def _memalign_declares_no_fixed_columns() -> bool:
-    """Textually re-verify MemAlign's live component still declares NO
-    `fixedColumns` at all -- `memalign_l1_disclosed_gap`'s entire premise.
+def _memalign_fixed_columns_pin_holds() -> bool:
+    """Textually re-verify MemAlign's live component still gives `preL1`/`L1`
+    a real `fixedColumns` schema (eth-act/zisk-fv#332).
 
-    If this ever goes false (MemAlign gains a real fixed-column schema, the
-    honest fix), the disclosed-gap framing no longer applies and this
-    exclusion must stop firing, not keep citing a premise that no longer holds.
+    `memalign_fixed_lane_alias`'s whole citation rests on this one line;
+    reading it fresh from the (possibly redirected, see `_redirect_roots`)
+    source on every run is what makes a mutation that removes the pin
+    re-surface the finding, rather than the exclusion firing unconditionally
+    off a hardcoded lane name.
     """
     path = mirror_parse.REPO_ROOT / "ZiskFv/AirsClean/MemAlign/Circuit.lean"
-    return "fixedColumns := some" not in path.read_text()
+    return "fixedColumns := some memAlignFixedColumns" in path.read_text()
 
 
 def _declare_reclassification_alias(finding: Finding, declare) -> None:
@@ -1287,18 +1283,20 @@ def _declare_reclassification_alias(finding: Finding, declare) -> None:
     Both agree canonically only because a row field stands for a fixed lane --
     but `this tool does not check welds`, so whether that stand-in is BACKED
     (a real pin the checked-in Lean proves) or merely NAMED is exactly the
-    thing a reviewer, not this mechanical comparator, has to decide. The two
-    current cases land on opposite sides, and each is re-verified textually
-    (`_main_fixed_columns_pin_holds`/`_memalign_declares_no_fixed_columns`)
+    thing a reviewer, not this mechanical comparator, has to decide. Both
+    current cases ARE backed (eth-act/zisk-fv#332 gave MemAlign the same
+    `fixedColumns` shape Main already had), and each is re-verified textually
+    (`_main_fixed_columns_pin_holds`/`_memalign_fixed_columns_pin_holds`)
     rather than trusted from the lane name alone:
 
     * Main's `segment_l1`/`main_step` ARE pinned: `Circuit.lean` gives the
       component real `fixedColumns`, and `eval_mainFixedColumns_*`/
       `eval_mainRawRow_*_materialize` prove every materialized row reads them
       from that schema, not an independent witness.
-    * MemAlign's `preL1` is NOT pinned -- MemAlign declares no `fixedColumns`
-      at all -- and `MemAlignMirrorWeld.lean`'s own module header already
-      discloses this as a real gap, not a benign rename.
+    * MemAlign's `preL1` IS pinned the same way: `Circuit.lean` gives the
+      component real `fixedColumns`, and `eval_memAlignFixedColumns_L1`/
+      `eval_memAlignRawRow_materialize` prove every materialized row reads it
+      from that schema, not an independent witness.
     """
     lane_names = {item[1] for item in finding.reclassified}
     if not lane_names:
@@ -1323,27 +1321,21 @@ def _declare_reclassification_alias(finding: Finding, declare) -> None:
             f"Main {gens} <- {mirrors_desc}")
         return
     if (finding.air == "MemAlign" and lane_names == {"MemAlign.L1"}
-            and _memalign_declares_no_fixed_columns()):
+            and _memalign_fixed_columns_pin_holds()):
         declare(
-            finding, "memalign_l1_disclosed_gap",
-            "NOT a benign alias -- a genuine, already-disclosed, currently "
-            "inert lane-class gap. ZiskFv/AirsClean/MemAlignMirrorWeld.lean's "
-            "own module header (point 2) already states `preL1` is an "
-            "ordinary witness field nothing pins to fixed column `MemAlign.L1` "
-            "(MemAlign declares no `fixedColumns` at all), and that a prover "
-            "controlling it can set it to 0 and evade `pc=0` at the boot row; "
-            "`boot_pc_zero_weld`/`component_spec_weld` are explicitly "
-            "documented there as NOT certifying constraint_16's fidelity. "
-            "Declared rather than fixed here because: no proof under "
-            "ZiskFv/Compliance consumes `boot_pc_zero`/`preL1` for any "
-            "conclusion (the only references outside MemAlign's own module and "
-            "this weld are none), so the gap is currently inert for "
-            "`root_soundness`; and a real fix -- giving MemAlign a genuine "
-            "`fixedColumns` schema, the same shape of change Main already has "
-            "-- touches Row/Circuit/Bridge/Constraints/Soundness/Spec and the "
-            "weld bridges together, not a local mirror correction. This is a "
-            "live, disclosed gap, not a closed one; a tracking issue (the "
-            "eth-act/zisk-fv#328 model) is recommended.",
+            finding, "memalign_fixed_lane_alias",
+            "the aliased row field is not a free witness (eth-act/"
+            "zisk-fv#332): ZiskFv/AirsClean/MemAlign/Circuit.lean:287-308 "
+            "(`memAlignFixedLayout`/`memAlignFixedValues`) and :390-393 "
+            "(`fixedColumns := some memAlignFixedColumns` on the live "
+            "component) declare `preL1`/`L1` a component-owned FIXED column, "
+            "and :325/:368 (`eval_memAlignFixedColumns_L1`, "
+            "`eval_memAlignRawRow_materialize`) prove every materialized row "
+            "reads it from that schema and not from an independent witness -- "
+            "a real pin, verified here by citation, not merely a name "
+            "correspondence. Before #332, MemAlign declared no `fixedColumns` "
+            "at all and this exclusion was `memalign_l1_disclosed_gap`, a "
+            "disclosed, unfixed gap; see that commit for the prior finding.",
             f"MemAlign {gens} <- {mirrors_desc}")
         return
 

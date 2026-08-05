@@ -89,9 +89,10 @@ eth-act/zisk-fv#329's three declared-exclusion reversals
                         REAL `fixedColumns` pin (`componentWithRomMemAndOpBus`).
                         Flipping that field to `none` must clear `excluded_by`
                         on RECLASSIFICATION Main #18.
-    MEMALIGN_FIXED_COLUMNS_TEXT_ADDED      `memalign_l1_disclosed_gap` fires
-                        only while MemAlign declares NO `fixedColumns` at all.
-                        Adding text that says otherwise must clear
+    MEMALIGN_FIXED_COLUMNS_PIN_REMOVED     `memalign_fixed_lane_alias` cites
+                        MemAlign's REAL `fixedColumns` pin (eth-act/zisk-fv#332
+                        gave `MemAlign.component` the same shape Main already
+                        had). Flipping that field to `none` must clear
                         `excluded_by` on RECLASSIFICATION MemAlign #16.
     MAIN_SOURCE_C_COFACTOR_BROKEN          `main_source_c_within_segment` cites
                         a cofactor search result: `sourceCCopyBetween`'s clause
@@ -462,9 +463,9 @@ def _excluded_by_values(payload: dict, kind: str, air: str,
 
 def _reclassification_excluded_by_cleared(
         air: str, definition: str) -> Callable[[dict, dict], str | None]:
-    """`main_fixed_lane_alias`/`memalign_l1_disclosed_gap`: removing the textual
-    fact the citation rests on (Main's real `fixedColumns` pin; MemAlign
-    genuinely declaring none) must clear `excluded_by`, not leave it set."""
+    """`main_fixed_lane_alias`/`memalign_fixed_lane_alias`: removing the
+    textual fact the citation rests on (Main's or MemAlign's real
+    `fixedColumns` pin) must clear `excluded_by`, not leave it set."""
     def check(baseline_payload: dict, run_payload: dict) -> str | None:
         before = _excluded_by_values(baseline_payload, RECLASSIFICATION, air,
                                       definition)
@@ -878,13 +879,13 @@ MAIN_ASIDE_WELD_3 = "↔ Main.extraction.constraint_3_every_row c r :="
 MAIN_ASIDE_WELD_9 = "↔ Main.extraction.constraint_9_every_row c r :="
 # #329's three declared-exclusion reversal cases. `MAIN_FIXED_COLUMNS_LINE` is
 # `componentWithRomMemAndOpBus`'s own field, the real pin `main_fixed_lane_alias`
-# cites; `MEMALIGN_COMPONENT_HEAD` anchors an insertion into MemAlign's
-# `component` (which has no `fixedColumns` field to mutate, since that is
-# exactly what `memalign_l1_disclosed_gap` says); `SOURCE_C_B0_CLAUSE` is
+# cites; `MEMALIGN_FIXED_COLUMNS_LINE` is `MemAlign.component`'s own field, the
+# real pin `memalign_fixed_lane_alias` cites (eth-act/zisk-fv#332 gave it the
+# same `fixedColumns` shape Main already had); `SOURCE_C_B0_CLAUSE` is
 # `sourceCCopyBetween`'s first conjunct, the one `main_source_c_within_segment`
 # cites as cofactor-implied by generated #4.
 MAIN_FIXED_COLUMNS_LINE = "fixedColumns := some mainFixedColumns"
-MEMALIGN_COMPONENT_HEAD = "{ circuit := circuit"
+MEMALIGN_FIXED_COLUMNS_LINE = "fixedColumns := some memAlignFixedColumns"
 SOURCE_C_B0_CLAUSE = "(curr.core.b_0 - prev.core.c_0) = 0"
 
 
@@ -1207,17 +1208,21 @@ MUTATIONS: tuple[Mutation, ...] = (
         expect_exit=1,
     ),
     Mutation(
-        name="MEMALIGN_FIXED_COLUMNS_TEXT_ADDED",
+        name="MEMALIGN_FIXED_COLUMNS_PIN_REMOVED",
         lean_file=MEMALIGN_CIRCUIT,
-        target="component, a fixedColumns-looking line added",
-        intent="#329's `memalign_l1_disclosed_gap` exclusion fires only while "
-               "MemAlign declares NO fixedColumns at all -- the moment that "
-               "premise stops holding, the exclusion must withdraw and "
-               "RECLASSIFICATION MemAlign #16 must resurface as a plain, "
-               "un-declared failure rather than stay silently excluded",
-        apply=add_line_after(
-            MEMALIGN_COMPONENT_HEAD,
-            "-- fixedColumns := some fakeMemAlignFixedColumns"),
+        target="component, fixedColumns := some memAlignFixedColumns -> none",
+        intent="#332 gave `MemAlign.component` a REAL `fixedColumns` pin, the "
+               "same shape Main already has; #329's `memalign_fixed_lane_alias` "
+               "exclusion is backed by that pin, re-verified textually every "
+               "run -- removing it must make RECLASSIFICATION MemAlign #16 "
+               "resurface as a plain, un-declared failure, not stay silently "
+               "excluded",
+        # The signature itself (kind/route/index/definitions) is unaffected --
+        # `preprocessedColumn` still aliases `preL1` to `MemAlign.L1` exactly
+        # as before, so `added`/`removed` stay empty. What must move is
+        # `excluded_by`, checked directly.
+        apply=replace_in_line(MEMALIGN_FIXED_COLUMNS_LINE,
+                              "some memAlignFixedColumns", "none"),
         excluded_by_check=_reclassification_excluded_by_cleared(
             "MemAlign", "Spec"),
         expect_exit=1,
