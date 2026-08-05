@@ -493,14 +493,20 @@ are different claims.
 python3 tools/mirror-roundtrip/acceptance.py    # the test that the gate works
 ```
 
-Against the post-#296 tree it reports 3 of the 3 still-live hand findings
-reproduced as findings, 13 of 13 mutations classified exactly as predicted, 3 of 3
+Against the current tree it reports 2 of the 2 still-live hand findings
+reproduced as findings, 14 of 14 mutations classified exactly as predicted, 3 of 3
 neutral rewrites unmoved, and the lanes-vs-#310 column cross-check green -- and the
-entries below, which are what it could not get the gate to report. The fourth
-2026-07-28 hand finding, `RomBoolSpec` unreachable, was RESOLVED by the #296 weld
-fan-out (`romBoolSpec_weld` is now its first consumer); its detection is preserved
-by the `WELD_CONSUMER_REMOVED` mutation, which strips that consumer and requires
-the tool to report `RomBoolSpec` unreachable again. Three mutations targeting
+entries below, which are what it could not get the gate to report. Two of the four
+2026-07-28 hand findings are RESOLVED rather than live, and neither was dropped to
+make the run green: the fourth, `RomBoolSpec` unreachable, was resolved by the #296
+weld fan-out (`romBoolSpec_weld` is now its first consumer); its detection is
+preserved by the `WELD_CONSUMER_REMOVED` mutation, which strips that consumer and
+requires the tool to report `RomBoolSpec` unreachable again. The first, the a-side
+C-copy at `main.pil:385` (Main #3 and #9) having no mirror counterpart, was resolved
+by commit `8aea6771`'s `MainExposed` weld (`constraint_3_weld` / `constraint_9_weld`,
+`ZiskFv/AirsClean/MainMirrorWeld.lean`); its detection is preserved by the
+`WELD_MAIN_ASIDE_MUTATED_AWAY` mutation, which strips those two welds and requires
+the tool to report Main #3 and #9 as gaps again. Three mutations targeting
 weld-covered constraints (a deleted or reprojected mirror clause on `MemAlign`,
 `Mem` or `MemAlignByte`) now surface as `MATCHED -> WELD_COVERED` rather than a gap:
 the weld is a redundant backing that masks the mirror-root deletion, the same
