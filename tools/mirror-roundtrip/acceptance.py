@@ -39,11 +39,12 @@ Why the verdict is a DELTA, not (only) an exit code
     below (`MAIN_FIXED_COLUMNS_PIN_REMOVED`, `MEMALIGN_FIXED_COLUMNS_PIN_
     REMOVED`, `MAIN_SOURCE_C_COFACTOR_BROKEN`) adds no NEW signature at all --
     an EXISTING finding merely stops being excluded, which moves the exit
-    code without moving the signature multiset. `LANELESS_CLAUSE_LAUNDERED`
-    and `ADDR0_CLAUSE_LAUNDERED` also carry an `excluded_by_check` (proving
-    the laundered clause's OWN new finding is not silently re-excluded), but
-    need no override: each adds a genuinely NEW UNBACKED signature, so the
-    default rule already predicts exit 1 correctly. (A prior case here,
+    code without moving the signature multiset. `LANELESS_CLAUSE_LAUNDERED`,
+    `LANELESS_CLAUSE_CANCELLED_LAUNDERED`, and `ADDR0_CLAUSE_LAUNDERED` also
+    carry an `excluded_by_check` (proving the laundered clause's OWN new
+    finding is not silently re-excluded), but need no override: each adds a
+    genuinely NEW UNBACKED signature, so the default rule already predicts
+    exit 1 correctly. (A prior case here,
     `LANELESS_CLAUSE_ADDED`, DID need an exit-0 override -- the laundering
     hole eth-act/zisk-fv#329's review fix closes had the tool auto-declare
     that added UNBACKED regardless of what the clause asserted. It is
@@ -1107,6 +1108,32 @@ MUTATIONS: tuple[Mutation, ...] = (
         added=(unbacked("MemAlign", "Spec"),),
         excluded_by_check=_laundered_uncommitted_clause_not_excluded(
             "MemAlign", "Spec", "12345"),
+    ),
+    Mutation(
+        name="LANELESS_CLAUSE_CANCELLED_LAUNDERED",
+        lean_file=MEMALIGN_SPEC,
+        target="Spec, one extra conjunct where the no-lane field cancels to "
+               "leave a committed strengthening",
+        intent="a committed strengthening laundered through a no-lane field "
+               "that CANCELS in canonicalisation -- `_unbacked_clause_is_"
+               "definitional_pin` reads the canonical form, so a clause the "
+               "field vanishes from must not vacuously pass the pin check",
+        # `delta_pc - delta_pc + addr*54321 = 0` names the no-lane field in its
+        # raw text (so it is classed UNBACKED and routed to the pin check), but
+        # the two `delta_pc` terms cancel in `poly.Poly` normal form, leaving
+        # `54321*addr = 0` -- a REAL assertion `addr = 0` over a committed lane
+        # with no uncommitted atom left in any monomial. Before the terminal
+        # `return saw_uncommitted` fix, the per-monomial loop found nothing
+        # touching an unresolved atom and fell through to `return True`,
+        # vacuously excluding the strengthening as if it were a genuine
+        # definitional pin. The pin is real only if an uncommitted atom
+        # SURVIVES canonicalisation; here none does, so this must now surface
+        # as a real, un-excluded, failing UNBACKED.
+        apply=add_line_after(
+            PRE_L1, "∧ row.delta_pc - row.delta_pc + row.addr * 54321 = 0"),
+        added=(unbacked("MemAlign", "Spec"),),
+        excluded_by_check=_laundered_uncommitted_clause_not_excluded(
+            "MemAlign", "Spec", "54321"),
     ),
     Mutation(
         name="ADDR0_CLAUSE_LAUNDERED",

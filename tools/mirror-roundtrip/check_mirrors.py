@@ -1376,14 +1376,26 @@ def _unbacked_clause_is_definitional_pin(clause: Clause) -> bool:
     uncommitted atom, no higher power of it. A monomial multiplying the
     field by a committed atom, by another uncommitted field, or squaring it,
     fails this and the clause is not a pin.
+
+    One more thing the CANONICAL form makes necessary: the uncommitted atom
+    must still be present after cancellation. `delta_pc - delta_pc + addr = 0`
+    canonicalises to `addr = 0` -- a committed-lane strengthening that only
+    looked UNBACKED because the raw clause named `delta_pc`. If every
+    uncommitted atom cancels away, no monomial touches one, the per-monomial
+    loop is vacuously satisfied, and the residue is a real assertion over
+    committed lanes. So a clause is a pin only if its canonical form still
+    RETAINS an uncommitted pin term; otherwise it is not a pin and stays a
+    failure.
     """
+    saw_uncommitted = False
     for monomial, _coeff in canonical(clause.expr):
         touching = [(key, exp) for key, exp in monomial if key[0] == "unresolved"]
         if not touching:
             continue
+        saw_uncommitted = True
         if len(monomial) != 1 or touching[0][1] != 1:
             return False
-    return True
+    return saw_uncommitted
 
 
 def _declare_unbacked_uncommitted(air: str, finding: Finding, lane_map_for,
