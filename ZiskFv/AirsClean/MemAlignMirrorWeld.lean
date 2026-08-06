@@ -92,17 +92,32 @@ what that composition does and does not add over
    direction) would still be `rfl`.  Pinning the map against the extractor's own
    column-name header is a gate's job, not a weld's; this module keeps the map
    in one named definition so that gate has a single target.
-2. **`constraint_16`'s lane class.**  The AIR declares `L1` as a *fixed* column
+2. **`constraint_16`'s lane class — CLOSED (eth-act/zisk-fv#332).**  The AIR
+   declares `L1` as a *fixed* column
    (`zisk/state-machines/mem/pil/mem_align.pil:120`, `col fixed L1 = [1,0...]`),
    and the extractor emits the read as
    `Extraction.Circuit.preprocessed c (column := 0)`.  Both mirrors model it as
    an ordinary witness field, `Valid_MemAlign.preL1` / `MemAlignRow.preL1`, and
-   the bridges close the gap by mapping `preprocessed (column := 0)` to that
-   field.  The polynomial matches; the *provenance* does not.  A prover that
-   controls `preL1` can set it to `0` on the boot row and evade `pc = 0`, which
-   a fixed column would not permit.  This is pre-existing mirror behaviour, not
-   introduced here, but `boot_pc_zero_weld` and `component_spec_weld` must not
-   be read as certifying that `constraint_16` is faithfully modelled.
+   the bridges map `preprocessed (column := 0)` to that field, exactly as
+   `boot_pc_zero_weld` below does.  Until #332 the polynomial matched but the
+   *provenance* did not: nothing stopped a prover from setting `preL1` to `0`
+   on the boot row and evading `pc = 0`.  It is now backed by
+   `MemAlign.memAlignFixedColumns` (`ZiskFv/AirsClean/MemAlign/Circuit.lean:
+   287-308`), whose layout (`memAlignFixedLayout`) maps `MemAlignRow`'s slot 26
+   (`preL1`) to fixed column `0` with value `[1, 0, ...]`
+   (`mem_align.pil:120`), wired onto the live component at `:390-393`
+   (`fixedColumns := some memAlignFixedColumns`). `eval_memAlignFixedColumns_L1`
+   and `eval_memAlignRawRow_materialize` (`:325`, `:368`) prove every row
+   `MemAlign.component`'s `Table` actually materializes reads `preL1` from that
+   schema — never from an independent raw witness cell — so for any such row
+   `boot_pc_zero_weld` and `component_spec_weld` now certify that
+   `constraint_16` is faithfully modelled, not merely that its polynomial
+   matches. `Valid_MemAlign.preL1` (Bridge A, above) is untouched: it remains a
+   plain `ℕ → F` accessor with no such pin, so this closure is about Bridge B
+   (`MemAlignRow`/`MemAlign.component`) and the constraint's real soundness
+   consumer, not about the legacy `Valid_MemAlign` validator. See
+   `tools/mirror-roundtrip/check_mirrors.py`'s `memalign_fixed_lane_alias`
+   exclusion for the mechanical mirror-roundtrip side of this same fact.
 3. **The skippable-`sel_prove` defect's multiplicity.**
    `ZISK-DEFECT-MEMALIGN-SKIPPABLE-PROVE` (`trust/defects.md`) lives in the
    memory-bus selector `sel_prove - (sel_up_to_down + sel_down_to_up)`
@@ -184,8 +199,11 @@ def stage1Column (row : MemAlignRow FGL) : ℕ → FGL
     `preprocessed (column := 1)` (`__L1__`) but are challenge-lane constraints
     and are not welded, so column `1` stays unmodeled and answers `0`.
 
-    Mapping column `0` to the witness field `preL1` is the lane-class gap
-    recorded as point 2 of the module header. -/
+    Mapping column `0` to the witness-shaped field `preL1` is the same
+    lane-class substitution discussed as point 2 of the module header --
+    closed there for `MemAlignRow`/`MemAlign.component` by
+    `memAlignFixedColumns`, so `preL1` reads a genuine component-owned fixed
+    cell for every row the component actually materializes. -/
 @[reducible]
 def preprocessedColumn (row : MemAlignRow FGL) : ℕ → FGL
   | 0 => row.preL1
@@ -316,7 +334,11 @@ theorem down_to_up_continuity_7_weld (columns : ZiskFv.Airs.MemAlign.Valid_MemAl
       ↔ MemAlign.extraction.constraint_15_every_row (extractedColumns columns) row :=
   Iff.rfl
 
-/-- `mem_align.pil:121` — `MemAlign.L1 * pc`.  See the `L1` note in the module header: `preL1` is a WITNESS field standing for a FIXED column. -/
+/-- `mem_align.pil:121` — `MemAlign.L1 * pc`.  Bridge A's `Valid_MemAlign.preL1`
+    is still a plain `ℕ → F` witness accessor, untouched by #332's fix -- see
+    the `L1` note in the module header: that fix pins `MemAlignRow.preL1`
+    (Bridge B, `MemAlign.component`) via `memAlignFixedColumns`, not this
+    legacy validator. -/
 theorem boot_pc_zero_weld (columns : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (row : ℕ) :
     ZiskFv.Airs.MemAlign.boot_pc_zero columns row
       ↔ MemAlign.extraction.constraint_16_every_row (extractedColumns columns) row :=

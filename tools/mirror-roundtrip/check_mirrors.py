@@ -208,10 +208,11 @@ class Exclusion:
     citation: str
 
 
-# The complete exclusion list. Three entries, all category-level; a fourth would
-# be worth arguing about and a per-index one would be laundering. `counts` in the
-# report is computed live, so an entry that stops carrying anything shows as 0 and
-# an entry that starts carrying more shows that too.
+# The complete exclusion list. `carried` in the report is computed live, so an
+# entry that stops carrying anything shows as 0 and an entry that starts
+# carrying more shows that too. Every entry is category-level: none names an
+# individual constraint index or mirror clause, and a per-index one would be
+# laundering.
 #
 # There used to be a fourth, `mirror_field_has_no_lane`, and it was wrong. It
 # bucketed an equation clause out of the compared set because one of its
@@ -224,6 +225,18 @@ class Exclusion:
 # citations that justified the bucket did not disappear -- they are printed on
 # each finding, as the reason the field has no lane rather than as a reason to
 # stop looking at it.
+#
+# The first three entries are PRE-PAIRING filters: a clause matching the rule
+# never becomes a Generated/Clause in the first place, so it never has a
+# `kind` to report. The remaining entries (eth-act/zisk-fv#329) are different
+# in shape and are applied POST-pairing, by `apply_declared_mirror_exclusions`:
+# each tags a SPECIFIC already-computed STRENGTHENING/RECLASSIFICATION/UNBACKED
+# finding via a structural, re-verified check (never an index), leaving its
+# `kind` and full printed detail intact and only removing it from the
+# failing/summary counts. That split exists because these four are REVIEWED
+# judgement calls a mechanical pre-filter cannot make (is a weakening's dropped
+# half in scope, is a lane-kind alias actually pinned) -- see each entry's own
+# `_declare_*` function in the code above for the exact check.
 DECLARED_EXCLUSIONS = (
     Exclusion(
         "challenge_or_stage2", "generated",
@@ -257,6 +270,78 @@ DECLARED_EXCLUSIONS = (
         "declared out-of-root mirror (survey.DELEGATED, named not compared), or "
         "NEAR_*-classified AND shown equation-free by the near-miss screen below. "
         "Any other delegate is an undeclared delegation and a finding",
+    ),
+    Exclusion(
+        "main_source_c_within_segment", "mirror",
+        "a STRENGTHENING clause cofactor-implied by a generated b-side "
+        "source-C copy constraint (`main.pil:386`) with cofactor "
+        "`1 - Main.SEGMENT_L1`: the within-segment specialization Clean's "
+        "row-only `Component.transition` interface can state, dropping only "
+        "the cross-segment `SEGMENT_L1=1` boundary term",
+        "tools/mirror-roundtrip/FINDING_main_copyc.md works the exact "
+        "polynomial diff and the soundness trace: the dropped term is the "
+        "cross-segment continuation datum `segment_previous_c` (an `airval`, "
+        "unreachable from a two-row `Component.transition : Input F -> "
+        "Input F -> Prop`), tracked out-of-current-single-segment-scope by "
+        "eth-act/zisk-fv#328. The within-segment region this clause states "
+        "matches the generated constraint exactly and is the only region any "
+        "soundness proof reads it in (JALR's `segment_l1=0` case, "
+        "TraceLevelExport/StepStrongControlStore.lean:383)",
+    ),
+    Exclusion(
+        "main_fixed_lane_alias", "mirror",
+        "a declared lane-kind alias where the aliased row field is PROVEN "
+        "pinned to the real fixed column by the checked-in Lean, not merely "
+        "named the same",
+        "ZiskFv/AirsClean/Main/Circuit.lean:744-757 (`mainFixedLayout`/"
+        "`mainFixedValues`) and :952-953 (`fixedColumns := some "
+        "mainFixedColumns` on the live component) declare `segment_l1`/"
+        "`main_step` component-owned FIXED columns, and :776-882 "
+        "(`eval_mainFixedColumns_segment_l1`/`_main_step`, "
+        "`eval_mainRawRow_core_materialize`/`_rom_materialize`) prove every "
+        "materialized row reads them from that schema, never from an "
+        "independent witness -- a real pin, not merely a name correspondence",
+    ),
+    Exclusion(
+        "memalign_fixed_lane_alias", "mirror",
+        "a declared lane-kind alias where the aliased row field is PROVEN "
+        "pinned to the real fixed column by the checked-in Lean, not merely "
+        "named the same",
+        "ZiskFv/AirsClean/MemAlign/Circuit.lean:287-308 (`memAlignFixedLayout`/"
+        "`memAlignFixedValues`) and :390-393 (`fixedColumns := some "
+        "memAlignFixedColumns` on the live component) declare `preL1`/`L1` a "
+        "component-owned FIXED column, and :325/:368 "
+        "(`eval_memAlignFixedColumns_L1`, `eval_memAlignRawRow_materialize`) "
+        "prove every materialized row reads it from that schema, never from "
+        "an independent witness -- a real pin, not merely a name "
+        "correspondence (eth-act/zisk-fv#332, closing the `memalign_l1_"
+        "disclosed_gap` this exclusion replaces)",
+    ),
+    Exclusion(
+        "mirror_unbacked_field_uncommitted", "mirror",
+        "an UNBACKED equation whose no-lane field(s) are independently "
+        "confirmed to have no lane anywhere in this AIR's pilout -- not a "
+        "witness column, not a fixed column, not an exposed value -- so it "
+        "is not merely excluded from the comparable slice, it is not an atom "
+        "any generated constraint (comparable or excluded) could ever carry "
+        "-- AND the clause is confirmed a bare DEFINITIONAL PIN of that "
+        "field: `uncommitted = g(committed)`, where the uncommitted field "
+        "appears ONLY as a constant-coefficient, degree-1 term in the "
+        "clause's canonical polynomial -- never multiplied by a committed "
+        "lane, by a second uncommitted field, or by itself. A clause "
+        "multiplying the field by a committed lane (`strengthening * "
+        "delta_pc = 0`) is a real assertion over committed lanes wherever "
+        "the field is nonzero; it is not a pin and is NOT covered by this "
+        "exclusion -- it is left a failing UNBACKED",
+        "mirror_parse.EXPECTED_UNRESOLVED's addr0/addr2 (Main/Constraints."
+        "lean:268/270, PIL `const expr`s inlined at every use site) and "
+        "delta_pc (MemAlign/Row.lean:52-54, the `pc'-pc` slot of hint #998; "
+        "its only generated appearance is inside the challenge-mixed "
+        "`constraint_36`, itself already excluded by `challenge_or_stage2`) "
+        "entries, each re-verified here against `lanes.lane_map` (no lane "
+        "anywhere) AND against `_unbacked_clause_is_definitional_pin` (bare "
+        "pin, no committed cofactor), rather than trusted from the citation "
+        "text alone",
     ),
 )
 
@@ -637,6 +722,16 @@ class Finding:
     # `Iff.rfl` weld theorem whose RHS binds it.
     weld_evidence: list[tuple[Generated, weld_parse.WeldRef]] = field(
         default_factory=list)
+    # Set when a REVIEWED, category-level `DECLARED_EXCLUSIONS` entry covers this
+    # otherwise-failing finding -- the key into that tuple, plus the reviewed
+    # justification specific to this finding. `kind` is left UNCHANGED (still
+    # STRENGTHENING/RECLASSIFICATION/UNBACKED): this is not a mechanically-decided
+    # coverage class like BOOL_TYPED/WELD_COVERED/OUT_OF_ROOT, it is a human
+    # judgement call the citation records, so the finding keeps printing in full
+    # under its real class with this annotation attached, and only the
+    # failing/summary counts treat it as resolved.
+    excluded_by: str = ""
+    excluded_reason: str = ""
 
     @property
     def many_to_many(self) -> bool:
@@ -1127,6 +1222,296 @@ def reclassify_weld_covered(air: str, findings: list[Finding],
     return rewritten
 
 
+# --------------------------------------------------------- declared mirror findings
+
+
+def _declare_main_source_c_boundary(finding: Finding, declare) -> None:
+    """`sourceCCopyBetween`'s two clauses (`ZiskFv/AirsClean/Main/Circuit.lean:
+    721,727`) against generated `#4`/`#10` (`main.pil:386`, the b-side source-C
+    copy). The cofactor search already proves each mirror clause equals
+    `(1 - Main.SEGMENT_L1) * generated`; what remains is whether the dropped
+    `SEGMENT_L1 = 1` half is a fixable slip or an out-of-scope boundary term.
+    `FINDING_main_copyc.md` works this out: it is the cross-segment
+    continuation datum `segment_previous_c`, an `airval` no two-row
+    `Component.transition` can reach, tracked by eth-act/zisk-fv#328. See
+    `DECLARED_EXCLUSIONS["main_source_c_within_segment"]`.
+    """
+    if finding.air != "Main" or len(finding.clauses) != 1:
+        return
+    clause = finding.clauses[0]
+    if clause.definition != "sourceCCopyBetween":
+        return
+    implied = finding.implied
+    if implied is None or not implied.cofactor.startswith("1 - "):
+        return
+    if "main.pil:386" not in implied.generated.provenance:
+        return
+    declare(
+        finding, "main_source_c_within_segment",
+        f"cofactor-implied by generated #{implied.generated.index} "
+        f"({implied.generated.provenance}) with cofactor `{implied.cofactor}` "
+        f"-- the boolean fixed lane `Main.SEGMENT_L1`. The dropped "
+        f"`SEGMENT_L1=1` half is the cross-segment continuation term "
+        f"(`segment_previous_c`), out of `root_soundness`'s current "
+        f"single-segment scope per FINDING_main_copyc.md and "
+        f"eth-act/zisk-fv#328; the within-segment region this clause states "
+        f"matches the generated constraint exactly and is the only region any "
+        f"soundness proof reads it in (JALR's `segment_l1=0` case, "
+        f"StepStrongControlStore.lean:383).",
+        f"{clause.label} {clause.site} <- generated #{implied.generated.index}")
+
+
+def _main_fixed_columns_pin_holds() -> bool:
+    """Textually re-verify Main's live component still gives `segment_l1`/
+    `main_step` a real `fixedColumns` schema.
+
+    `main_fixed_lane_alias`'s whole citation rests on this one line; reading it
+    fresh from the (possibly redirected, see `_redirect_roots`) source on every
+    run is what makes a mutation that removes the pin re-surface the finding,
+    rather than the exclusion firing unconditionally off a hardcoded lane name.
+    """
+    path = mirror_parse.REPO_ROOT / "ZiskFv/AirsClean/Main/Circuit.lean"
+    return "fixedColumns := some mainFixedColumns" in path.read_text()
+
+
+def _memalign_fixed_columns_pin_holds() -> bool:
+    """Textually re-verify MemAlign's live component still gives `preL1`/`L1`
+    a real `fixedColumns` schema (eth-act/zisk-fv#332).
+
+    `memalign_fixed_lane_alias`'s whole citation rests on this one line;
+    reading it fresh from the (possibly redirected, see `_redirect_roots`)
+    source on every run is what makes a mutation that removes the pin
+    re-surface the finding, rather than the exclusion firing unconditionally
+    off a hardcoded lane name.
+    """
+    path = mirror_parse.REPO_ROOT / "ZiskFv/AirsClean/MemAlign/Circuit.lean"
+    return "fixedColumns := some memAlignFixedColumns" in path.read_text()
+
+
+def _declare_reclassification_alias(finding: Finding, declare) -> None:
+    """The two `RECLASSIFICATION` findings from a declared lane-kind alias.
+
+    Both agree canonically only because a row field stands for a fixed lane --
+    but `this tool does not check welds`, so whether that stand-in is BACKED
+    (a real pin the checked-in Lean proves) or merely NAMED is exactly the
+    thing a reviewer, not this mechanical comparator, has to decide. Both
+    current cases ARE backed (eth-act/zisk-fv#332 gave MemAlign the same
+    `fixedColumns` shape Main already had), and each is re-verified textually
+    (`_main_fixed_columns_pin_holds`/`_memalign_fixed_columns_pin_holds`)
+    rather than trusted from the lane name alone:
+
+    * Main's `segment_l1`/`main_step` ARE pinned: `Circuit.lean` gives the
+      component real `fixedColumns`, and `eval_mainFixedColumns_*`/
+      `eval_mainRawRow_*_materialize` prove every materialized row reads them
+      from that schema, not an independent witness.
+    * MemAlign's `preL1` IS pinned the same way: `Circuit.lean` gives the
+      component real `fixedColumns`, and `eval_memAlignFixedColumns_L1`/
+      `eval_memAlignRawRow_materialize` prove every materialized row reads it
+      from that schema, not an independent witness.
+    """
+    lane_names = {item[1] for item in finding.reclassified}
+    if not lane_names:
+        return
+    gens = ", ".join(f"#{e.index}" for e in finding.generated)
+    mirrors_desc = ", ".join(c.label for c in finding.clauses)
+    if (finding.air == "Main" and lane_names <= {
+            "Main.SEGMENT_L1", "Main.SEGMENT_STEP"}
+            and _main_fixed_columns_pin_holds()):
+        declare(
+            finding, "main_fixed_lane_alias",
+            "the aliased row field is not a free witness: "
+            "ZiskFv/AirsClean/Main/Circuit.lean:744-757 (`mainFixedLayout`/"
+            "`mainFixedValues`) and :952-953 (`fixedColumns := some "
+            "mainFixedColumns` on the live component) declare it a "
+            "component-owned FIXED column, and :776-882 "
+            "(`eval_mainFixedColumns_segment_l1`/`_main_step`, "
+            "`eval_mainRawRow_core_materialize`/`_rom_materialize`) prove every "
+            "materialized row reads it from that schema and not from an "
+            "independent witness -- a real pin, verified here by citation, not "
+            "merely a name correspondence.",
+            f"Main {gens} <- {mirrors_desc}")
+        return
+    if (finding.air == "MemAlign" and lane_names == {"MemAlign.L1"}
+            and _memalign_fixed_columns_pin_holds()):
+        declare(
+            finding, "memalign_fixed_lane_alias",
+            "the aliased row field is not a free witness (eth-act/"
+            "zisk-fv#332): ZiskFv/AirsClean/MemAlign/Circuit.lean:287-308 "
+            "(`memAlignFixedLayout`/`memAlignFixedValues`) and :390-393 "
+            "(`fixedColumns := some memAlignFixedColumns` on the live "
+            "component) declare `preL1`/`L1` a component-owned FIXED column, "
+            "and :325/:368 (`eval_memAlignFixedColumns_L1`, "
+            "`eval_memAlignRawRow_materialize`) prove every materialized row "
+            "reads it from that schema and not from an independent witness -- "
+            "a real pin, verified here by citation, not merely a name "
+            "correspondence. Before #332, MemAlign declared no `fixedColumns` "
+            "at all and this exclusion was `memalign_l1_disclosed_gap`, a "
+            "disclosed, unfixed gap; see that commit for the prior finding.",
+            f"MemAlign {gens} <- {mirrors_desc}")
+        return
+
+
+def _unbacked_clause_is_definitional_pin(clause: Clause) -> bool:
+    """Is every monomial touching an uncommitted atom a bare, unit-power pin?
+
+    `mirror_unbacked_field_uncommitted` may only excuse a clause shaped
+    `uncommitted = g(committed)` -- a definition, which constrains nothing
+    over committed lanes because the free uncommitted field absorbs whatever
+    `g(committed)` evaluates to on any row. That the field has no lane
+    anywhere (the caller's own check, against `lanes.lane_map`) is necessary
+    but NOT sufficient: nothing about "no lane" stops a clause from
+    multiplying an arbitrary assertion about committed lanes by that same
+    no-lane field -- `strengthening * delta_pc = 0` still names only
+    `delta_pc` as its one unresolved projection, and would pass the caller's
+    check, while actually asserting `strengthening = 0` on every row where
+    `delta_pc` is nonzero. That is a real constraint on committed lanes
+    laundered through a field-presence check that never looked at what the
+    rest of the equation asserts.
+
+    So this looks at the clause's canonical `poly.Poly` form directly: every
+    monomial containing an uncommitted atom (`atom_key[0] == "unresolved"`,
+    the vocabulary `mirror_parse._unresolved` builds for exactly these
+    fields) must consist of EXACTLY that one atom, at exponent 1, and
+    nothing else -- no committed atom in the same monomial, no second
+    uncommitted atom, no higher power of it. A monomial multiplying the
+    field by a committed atom, by another uncommitted field, or squaring it,
+    fails this and the clause is not a pin.
+
+    One more thing the CANONICAL form makes necessary: the uncommitted atom
+    must still be present after cancellation. `delta_pc - delta_pc + addr = 0`
+    canonicalises to `addr = 0` -- a committed-lane strengthening that only
+    looked UNBACKED because the raw clause named `delta_pc`. If every
+    uncommitted atom cancels away, no monomial touches one, the per-monomial
+    loop is vacuously satisfied, and the residue is a real assertion over
+    committed lanes. So a clause is a pin only if its canonical form still
+    RETAINS an uncommitted pin term; otherwise it is not a pin and stays a
+    failure.
+    """
+    saw_uncommitted = False
+    for monomial, _coeff in canonical(clause.expr):
+        touching = [(key, exp) for key, exp in monomial if key[0] == "unresolved"]
+        if not touching:
+            continue
+        saw_uncommitted = True
+        if len(monomial) != 1 or touching[0][1] != 1:
+            return False
+    return saw_uncommitted
+
+
+def _declare_unbacked_uncommitted(air: str, finding: Finding, lane_map_for,
+                                  declare) -> None:
+    """An `UNBACKED` clause whose field(s) the pilout commits to NO lane at all.
+
+    Every `UNBACKED` clause already carries a citation
+    (`mirror_parse.EXPECTED_UNRESOLVED`) explaining why its field has no lane in
+    the COMPARABLE slice. What that citation does not by itself establish is the
+    stronger fact this exclusion needs: that the field has no lane ANYWHERE in
+    the pilout for this AIR -- not a witness column, not a fixed column, not an
+    exposed value -- so it is not merely out of the comparable slice, it is not
+    an atom any generated constraint (comparable OR excluded) could ever carry.
+    That is re-verified here, mechanically, against `lanes.lane_map` rather than
+    trusted from the citation text alone.
+
+    Neither of those facts is enough on its own, though: a clause can name a
+    genuinely lane-less field and still assert something real about committed
+    lanes by multiplying it in (`strengthening * delta_pc = 0`), which is
+    silenced by a field-presence check alone regardless of what
+    `strengthening` says. So this exclusion ALSO requires the clause to be a
+    bare DEFINITIONAL PIN -- `uncommitted = g(committed)`, the field appearing
+    only as a constant-coefficient, degree-1 term -- checked structurally by
+    `_unbacked_clause_is_definitional_pin` against the clause's own canonical
+    polynomial. A clause multiplying the field by a committed lane is left an
+    un-excluded, failing UNBACKED.
+    """
+    clause = finding.clauses[0]
+    leaves: list[str] = []
+    for path, reason, citation in clause.laneless:
+        if reason != "no_lane" or not citation:
+            return
+        leaf = path.rsplit(".", 1)[-1]
+        if (air, leaf) not in mirror_parse.EXPECTED_UNRESOLVED:
+            return
+        leaves.append(leaf)
+    if not leaves:
+        return
+    lane_map = lane_map_for(air)
+    for leaf in leaves:
+        try:
+            lane_map.resolve(leaf)
+        except lanes.LaneError:
+            continue
+        # A lane exists somewhere after all: this clause is not in this
+        # category, and is left as a plain UNBACKED failure to report.
+        return
+    if not _unbacked_clause_is_definitional_pin(clause):
+        # The field is lane-less, but the clause is not a definition of it --
+        # some monomial multiplies it by a committed atom, a second
+        # uncommitted atom, or itself. Left as a failing UNBACKED.
+        return
+    named = ", ".join(sorted(set(leaves)))
+    declare(
+        finding, "mirror_unbacked_field_uncommitted",
+        f"every no-lane field here ({named}) is independently confirmed, "
+        f"against `lanes.lane_map({air!r})`, to have NO lane anywhere in this "
+        f"AIR's pilout symbol table -- not merely excluded from the comparable "
+        f"slice. Each is a PIL `const expr` inlined at every use site (addr0/"
+        f"addr2) or a hint payload for a challenge-mixed lookup whose only "
+        f"generated appearance is inside an already-excluded constraint "
+        f"(delta_pc, inside `constraint_36`, excluded by `challenge_or_stage2`)"
+        f" -- see `mirror_parse.EXPECTED_UNRESOLVED` for the per-field PIL "
+        f"citation. No generated constraint, comparable or excluded, could "
+        f"ever carry an equation naming it. AND the clause is confirmed a bare "
+        f"DEFINITIONAL PIN of that field (`_unbacked_clause_is_definitional_"
+        f"pin`): every monomial of its canonical polynomial touching the field "
+        f"is that field alone, at a constant coefficient and exponent 1 -- "
+        f"never multiplied by a committed lane, by a second uncommitted "
+        f"field, or by itself. A clause multiplying the field by a committed "
+        f"lane (e.g. `strengthening * {named.split(', ')[0]} = 0`) is a real "
+        f"assertion over committed lanes wherever the field is nonzero and "
+        f"is NOT excluded by this rule -- it is left a failing UNBACKED.",
+        f"{clause.label} {clause.site} ({named})")
+
+
+def apply_declared_mirror_exclusions(
+        air: str, findings: list[Finding],
+        lane_map_for) -> tuple[list[Finding], dict[str, list[str]]]:
+    """Tag specific residual findings a reviewed `DECLARED_EXCLUSIONS` entry covers.
+
+    Unlike `reclassify_covered`/`reclassify_weld_covered` -- both MECHANICALLY
+    decided facts (a typing bound, a kernel-checked weld) that relabel a
+    finding's `kind` -- every rule here is a REVIEWED judgement call:
+    AGENTS.md's anti-laundering section asks for a real source citation and,
+    for a strengthening, a constructibility argument; for a reclassification,
+    whether the aliased lane is really pinned or is a disclosed, unfixed gap.
+    So `finding.kind` is left EXACTLY as `pair_air` decided it -- still
+    STRENGTHENING/RECLASSIFICATION/UNBACKED -- and only `excluded_by`/
+    `excluded_reason` are set. The full finding keeps printing, annotated; only
+    the `_active` failing/summary counts (`AirRun.*_active`) treat it as
+    resolved. This function decides FOUR specific, narrow, structurally-checked
+    categories -- never an index, always re-verified here rather than trusted
+    from a prior finding's own citation.
+
+    Returns the same findings list (mutated in place) and a `key -> site
+    string` map for `print_declarations`' "took" listing, the same
+    auditability the two pre-pairing exclusions already get.
+    """
+    sites: dict[str, list[str]] = defaultdict(list)
+
+    def declare(finding: Finding, key: str, reason: str, site: str) -> None:
+        finding.excluded_by = key
+        finding.excluded_reason = reason
+        sites[key].append(site)
+
+    for finding in findings:
+        if finding.kind == STRENGTHENING:
+            _declare_main_source_c_boundary(finding, declare)
+        elif finding.kind == RECLASSIFICATION:
+            _declare_reclassification_alias(finding, declare)
+        elif finding.kind == UNBACKED:
+            _declare_unbacked_uncommitted(air, finding, lane_map_for, declare)
+    return findings, sites
+
+
 # ------------------------------------------------------------------ reachability
 
 
@@ -1293,6 +1678,29 @@ def near_miss_screen(lane_map_for) -> NearMissScreen:
     finally:
         survey.CLASSIFICATION.clear()
         survey.CLASSIFICATION.update(original)
+    # `survey.DELEGATED_OUT_OF_SCOPE`: declared out-of-root delegates never
+    # parsed for comparison (`load_out_of_root` only reads `survey.DELEGATED`).
+    # Screened the same way as an in-root NEAR_*: re-parsed, on its own file,
+    # through the SAME out-of-root reader `load_out_of_root` uses, and required
+    # to carry no comparable equation.
+    for air, site, name, cls in survey.DELEGATED_OUT_OF_SCOPE:
+        rel = site.rsplit(":", 1)[0]
+        out.screened += 1
+        try:
+            parsed = mirror_parse.parse_out_of_root(air, rel, name, lane_map_for)
+        except Exception as error:  # noqa: BLE001 - the screen must not abort
+            out.refused.append(f"{rel} {name}: {type(error).__name__}: {error}")
+            continue
+        equations = [clause for clause in parsed.clauses if clause.comparable]
+        if equations:
+            out.carrying.append(
+                f"{rel}:{parsed.line} {name} [{cls}]: declared out-of-root and "
+                f"out of scope but carries {len(equations)} comparable "
+                f"polynomial equation(s), so nothing compares them")
+        elif parsed.unparsed:
+            out.refused.append(f"{rel} {name}: {parsed.unparsed[0][:120]}")
+        else:
+            out.equation_free.add((rel, name))
     return out
 
 
@@ -1446,6 +1854,31 @@ class AirRun:
     def mir_count(self, kind: str) -> int:
         return sum(len(f.clauses) for f in self.of_kind(kind))
 
+    # --- the same three views, over what is STILL FAILING once a reviewed
+    # `DECLARED_EXCLUSIONS` entry (`Finding.excluded_by`) is taken into account.
+    # `kind` never changes on an excluded finding (see `Finding.excluded_by`), so
+    # the partition invariants in `run_check` keep using the unfiltered `of_kind`
+    # /`gen_count`/`mir_count` above; only the summary/table/exit-code counts,
+    # which report what a reviewer still owes, use these.
+
+    def of_kind_active(self, kind: str) -> list[Finding]:
+        return [f for f in self.of_kind(kind) if not f.excluded_by]
+
+    def gen_count_active(self, kind: str) -> int:
+        return sum(len(f.generated) for f in self.of_kind_active(kind))
+
+    def mir_count_active(self, kind: str) -> int:
+        return sum(len(f.clauses) for f in self.of_kind_active(kind))
+
+    def of_kind_declared(self, kind: str) -> list[Finding]:
+        return [f for f in self.of_kind(kind) if f.excluded_by]
+
+    def gen_count_declared(self, kind: str) -> int:
+        return sum(len(f.generated) for f in self.of_kind_declared(kind))
+
+    def mir_count_declared(self, kind: str) -> int:
+        return sum(len(f.clauses) for f in self.of_kind_declared(kind))
+
 
 @dataclass
 class Run:
@@ -1518,9 +1951,14 @@ class Run:
 
     @property
     def failures(self) -> int:
-        return (sum(a.gen_count(GAP) + a.mir_count(STRENGTHENING)
-                    + a.mir_count(UNBACKED)
-                    + len(a.of_kind(RECLASSIFICATION)) + len(a.mirror.unparsed)
+        # `_active` excludes a finding a reviewed `DECLARED_EXCLUSIONS` entry
+        # covers (eth-act/zisk-fv#329) -- still printed in full by
+        # `print_details`, just no longer counted as owed. GAP is never
+        # excluded this way, so `gen_count`/`gen_count_active` agree on it.
+        return (sum(a.gen_count_active(GAP) + a.mir_count_active(STRENGTHENING)
+                    + a.mir_count_active(UNBACKED)
+                    + len(a.of_kind_active(RECLASSIFICATION))
+                    + len(a.mirror.unparsed)
                     + len(a.mirror.undeclared_unresolved)
                     + len(a.mirror.undeclared_delegations) for a in self.airs)
                 + len(self.unreachable) + len(self.self_check)
@@ -1606,6 +2044,14 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
         # MATCHED / OUT_OF_ROOT / BOOL_TYPED and the weld is reported as redundant
         # confirmation rather than relabelling it.
         findings = reclassify_weld_covered(air, findings, out.welds)
+        # Reviewed, cited `DECLARED_EXCLUSIONS` entries for specific residual
+        # STRENGTHENING/RECLASSIFICATION/UNBACKED findings. Unlike the two
+        # reclassifications above, this never changes `finding.kind` -- see
+        # `apply_declared_mirror_exclusions`.
+        findings, declared_sites = apply_declared_mirror_exclusions(
+            air, findings, lane_map_for)
+        for key, declared_site_list in declared_sites.items():
+            side.excluded_sites[key].extend(declared_site_list)
         matched_out_of_root = {
             clause.canon for finding in findings if finding.kind == OUT_OF_ROOT
             for clause in finding.clauses}
@@ -1665,8 +2111,8 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
 
 # ------------------------------------------------------------------- the report
 
-_TABLE = ("{:<18} {:>9} {:>7} {:>7} {:>7} {:>9} {:>4} {:>4} {:>11} {:>4} {:>9} "
-          "{:>8} {:>6}")
+_TABLE = ("{:<18} {:>9} {:>7} {:>7} {:>7} {:>9} {:>4} {:>8} {:>4} {:>11} {:>4} "
+          "{:>9} {:>8} {:>6}")
 
 
 def print_declarations(run: Run, out) -> None:
@@ -1695,6 +2141,14 @@ def print_declarations(run: Run, out) -> None:
         "mirror_clause_not_an_equation":
             sum(a.mirror.not_an_equation for a in run.airs),
     }
+    # The four post-pairing exclusions (#329) are not pre-filtered, so they have
+    # no dedicated counter field: `carried` for them is exactly the number of
+    # sites `apply_declared_mirror_exclusions` recorded, the same live-computed
+    # site list `print_declarations` already prints below.
+    for entry in DECLARED_EXCLUSIONS:
+        if entry.key not in carried:
+            carried[entry.key] = sum(
+                len(a.mirror.excluded_sites.get(entry.key, ())) for a in run.airs)
     for entry in DECLARED_EXCLUSIONS:
         print(f"  [{entry.side:<9}] {entry.key}   carries "
               f"{carried[entry.key]}", file=out)
@@ -1738,23 +2192,33 @@ def print_declarations(run: Run, out) -> None:
 
 def print_table(run: Run, out) -> None:
     print(_TABLE.format("air", "generated", "mirror", "matched", "outroot",
-                        "booltyped", "weld", "gap", "strengthen", "recl",
-                        "unbacked", "unparsed", "unres"), file=out)
-    print("-" * 112, file=out)
-    totals = [0] * 12
+                        "booltyped", "weld", "declared", "gap", "strengthen",
+                        "recl", "unbacked", "unparsed", "unres"), file=out)
+    print("-" * 120, file=out)
+    totals = [0] * 13
     for air in run.airs:
         row = [
             len(air.generated), len(air.mirror.comparable),
             air.gen_count(MATCHED), air.gen_count(OUT_OF_ROOT),
             air.gen_count(BOOL_TYPED), air.gen_count(WELD_COVERED),
+            # `declared` is the generated-side share of a reviewed
+            # DECLARED_EXCLUSIONS entry (eth-act/zisk-fv#329):
+            # RECLASSIFICATION findings tagged `excluded_by` still have a real
+            # generated-constraint index, so it is counted here rather than
+            # silently vanishing from the row's accounting.
+            air.gen_count_declared(RECLASSIFICATION),
             air.gen_count(GAP),
-            air.mir_count(STRENGTHENING), len(air.of_kind(RECLASSIFICATION)),
-            air.mir_count(UNBACKED),
+            # strengthen/recl/unbacked are ACTIVE counts: a finding a reviewed
+            # exclusion covers is still printed in full by `print_details`
+            # (see `DECLARED` there) but no longer counts as failing here.
+            air.mir_count_active(STRENGTHENING),
+            len(air.of_kind_active(RECLASSIFICATION)),
+            air.mir_count_active(UNBACKED),
             len(air.mirror.unparsed), len(air.mirror.undeclared_unresolved),
         ]
         totals = [t + v for t, v in zip(totals, row)]
         print(_TABLE.format(air.air, *row), file=out)
-    print("-" * 112, file=out)
+    print("-" * 120, file=out)
     print(_TABLE.format("TOTAL", *totals), file=out)
     print("  generated  = comparable generated constraints (total minus the "
           "declared challenge/stage-2 exclusion)", file=out)
@@ -1768,6 +2232,12 @@ def print_table(run: Run, out) -> None:
           "or `.val < 2`-bounded, not restated as an equation", file=out)
     print("  weld       = bound on the RHS of a kernel-checked `Iff.rfl` weld "
           "(ZiskFv/AirsClean/*MirrorWeld.lean), covering a residual gap", file=out)
+    print("  declared   = a RECLASSIFICATION a reviewed DECLARED_EXCLUSIONS entry "
+          "covers (#329); printed in full under 'declared residuals' below, not "
+          "silently dropped", file=out)
+    print("  strengthen/recl/unbacked = STILL FAILING: excludes findings a "
+          "reviewed DECLARED_EXCLUSIONS entry covers (also printed in full "
+          "below)", file=out)
     print("  unbacked   = equation clauses this AIR has no lane vocabulary for, "
           "so no generated constraint can carry them", file=out)
     print("  unres      = UNDECLARED unresolved projections; the declared ones "
@@ -2083,6 +2553,13 @@ def print_details(run: Run, out) -> None:
                     print(f"      generated {pilout_check.fmt_atom(gen_atom):<22} "
                           f"mirror {pilout_check.fmt_atom(mir_atom)}", file=out)
                 _print_diff(finding, out)
+            if finding.excluded_by:
+                print(f"    DECLARED  excluded via `{finding.excluded_by}` "
+                      f"(eth-act/zisk-fv#329) -- reviewed, not silently "
+                      f"passing; this finding is still printed above in full "
+                      f"and no longer counts toward the failing/summary "
+                      f"totals:", file=out)
+                print(f"      {finding.excluded_reason}", file=out)
             print(file=out)
         claimed = sum(len(f.generated) for f in air.of_kind(GAP) if f.out_of_root)
         if claimed:
@@ -2247,7 +2724,15 @@ def print_report(run: Run, quiet: bool, paths: dict[str, Path],
     out_of_root = sum(a.gen_count(OUT_OF_ROOT) for a in run.airs)
     bool_typed = sum(a.gen_count(BOOL_TYPED) for a in run.airs)
     weld_covered = sum(a.gen_count(WELD_COVERED) for a in run.airs)
-    covered = matched + out_of_root + bool_typed + weld_covered
+    # A RECLASSIFICATION a reviewed `DECLARED_EXCLUSIONS` entry covers still has
+    # a real generated-constraint index (unlike STRENGTHENING/UNBACKED, which
+    # are mirror-side only), so it belongs in the covered count -- reported
+    # apart from `matched`, never folded into it silently.
+    declared_recl = sum(a.gen_count_declared(RECLASSIFICATION) for a in run.airs)
+    declared_strengthening = sum(
+        a.mir_count_declared(STRENGTHENING) for a in run.airs)
+    declared_unbacked = sum(a.mir_count_declared(UNBACKED) for a in run.airs)
+    covered = matched + out_of_root + bool_typed + weld_covered + declared_recl
     verdict = "FAILED" if run.failures else ("PARTIAL" if run.partial else "OK")
     if run.partial:
         print("PARTIAL: a --air-filtered run gated nothing about the AIRs it "
@@ -2255,11 +2740,13 @@ def print_report(run: Run, quiet: bool, paths: dict[str, Path],
     print(f"mirror-roundtrip: {verdict} {covered}/{generated} comparable generated "
           f"constraints covered across {len(run.airs)} air(s) "
           f"({matched} matched, {out_of_root} out-of-root, {bool_typed} "
-          f"bool-typed, {weld_covered} weld-covered); "
-          f"{sum(a.gen_count(GAP) for a in run.airs)} gap, "
-          f"{sum(a.mir_count(STRENGTHENING) for a in run.airs)} strengthening, "
-          f"{sum(a.mir_count(UNBACKED) for a in run.airs)} unbacked, "
-          f"{sum(len(a.of_kind(RECLASSIFICATION)) for a in run.airs)} "
+          f"bool-typed, {weld_covered} weld-covered, {declared_recl} declared); "
+          f"{sum(a.gen_count_active(GAP) for a in run.airs)} gap, "
+          f"{sum(a.mir_count_active(STRENGTHENING) for a in run.airs)} "
+          f"strengthening ({declared_strengthening} declared), "
+          f"{sum(a.mir_count_active(UNBACKED) for a in run.airs)} unbacked "
+          f"({declared_unbacked} declared), "
+          f"{sum(len(a.of_kind_active(RECLASSIFICATION)) for a in run.airs)} "
           f"reclassification, {len(run.unreachable)} unreachable mirror, "
           f"{sum(len(a.mirror.unparsed) for a in run.airs)} unparsed, "
           f"{sum(len(a.mirror.undeclared_unresolved) for a in run.airs)} "
@@ -2284,6 +2771,8 @@ def to_json(run: Run) -> dict:
     def finding(entry: Finding) -> dict:
         out = {
             "kind": entry.kind, "air": entry.air, "route": entry.route,
+            "excluded_by": entry.excluded_by,
+            "excluded_reason": entry.excluded_reason,
             "scalar_factor": entry.scalar,
             "implied_by": None if entry.implied is None else {
                 "generated_index": entry.implied.generated.index,

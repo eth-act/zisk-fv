@@ -78,6 +78,8 @@ CLASSES = {
     "NEAR_DATA": "prover-data or raw-cell binding, not an AIR constraint",
     "NEAR_SOUNDNESS": "a quantified `ConstraintsHold` surface, not an equation list",
     "NEAR_LITERAL": "a disjunction of literal values",
+    "NEAR_CHALLENGE": "restates only challenge/stage-2 constraints, the same "
+        "machinery `challenge_or_stage2` excludes on the generated side",
 }
 
 MIRROR_CLASSES = frozenset(k for k in CLASSES if k.startswith("MIRROR") or k == "MIXED_COMPOSITE")
@@ -251,8 +253,10 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
         _e("MIRROR_VALIDATOR", "Mem", "the same 9, over `Valid_Mem`", claims="3-8,18,21,23"),
     ("ZiskFv/AirsClean/Mem/GeneratedTransition.lean", "generatedTransition"):
         _e("MIRROR_COMPOSITE", "Mem",
-           "delegates to ZiskFv/Airs/Mem.segmentResidualEveryRow and permutation_every_row, "
-           "which are OUTSIDE the mirror root"),
+           "delegates to ZiskFv/Airs/Mem.segmentResidualEveryRow (DELEGATED, "
+           "compared) and permutation_every_row (DELEGATED_OUT_OF_SCOPE, "
+           "NEAR_CHALLENGE -- challenge/stage-2 only), both OUTSIDE the mirror "
+           "root"),
     ("ZiskFv/AirsClean/Mem/GeneratedTransition.lean", "memRangeSidecarBridge"):
         _e("NEAR_DATA", "Mem"),
     ("ZiskFv/AirsClean/Mem/Constraints.lean", "dualMemRowRangeFacts"): _e("NEAR_RANGE", "Mem"),
@@ -369,6 +373,22 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
 DELEGATED: list[tuple[str, str, str, frozenset[int]]] = [
     ("Mem", "ZiskFv/Airs/Mem.lean:296", "segmentResidualEveryRow",
      _ix("0-2,9-17,19,20,22")),
+]
+
+# Out-of-root delegates that are declared but deliberately NOT parsed or paired:
+# every one of their clauses reaches only the challenge/stage-2 machinery
+# `check_mirrors.load_generated` already excludes on the generated side
+# (`challenge_or_stage2`), so there is no comparable polynomial identity to
+# carry either direction. Recorded here (rather than left undeclared) so the
+# delegation is named and the near-miss screen can confirm the claim; recorded
+# apart from `DELEGATED` (rather than folded in) because those entries ARE
+# parsed and canonically paired, and this content structurally cannot be --
+# `permutation_every_row`'s carriers (`PermutationColumns`) are the prover's
+# random-linear-combination accumulators, not row-record projections.
+#
+# `(air, site, name, class)`, the class drawn from `CLASSES`' NEAR_* vocabulary.
+DELEGATED_OUT_OF_SCOPE: list[tuple[str, str, str, str]] = [
+    ("Mem", "ZiskFv/Airs/Mem.lean:1459", "permutation_every_row", "NEAR_CHALLENGE"),
 ]
 
 # Row records used by a mirror, in the order a reader should see them, together

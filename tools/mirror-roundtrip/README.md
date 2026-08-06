@@ -12,8 +12,9 @@ python3 tools/mirror-roundtrip/weld_parse.py             # the *MirrorWeld.lean 
 python3 tools/mirror-roundtrip/lanes.py                  # pilout lanes <-> accessors
 ```
 
-The first two are step 4/10 of `nix run .#test`. The gate FAILS at HEAD; see
-"Gate" below for why that is the deliverable rather than a wiring bug.
+The first two are step 4/10 of `nix run .#test`. The gate PASSES at HEAD
+(`176/176 covered, 0 failing`); see "Gate" below for how the residuals were
+closed (fixed, or declared with a live-verified citation).
 
 ## What this is
 
@@ -181,15 +182,21 @@ that is where a double count would hide.
   names on the same footing. A projection with no declared alias is reported with
   that fact as its citation.
 
-  The `MemAlign.preL1` entry's citation deserves reading. Unlike the two `Main`
-  entries, which cite a real weld (`mainFixedLayout` slot 17 to fixed column 0,
-  installed at `Main/Circuit.lean:953`), **MemAlign declares no `fixedColumns`
-  anywhere** -- only `Main` and `Mem` do. The field is declared at
-  `MemAlign/Row.lean:51` with nothing pinning it to a column. What the
-  correspondence rests on is the name, and the fact that fixed column 0 is read
-  by exactly one comparable constraint of the AIR. That the clause then matches
-  that constraint is not evidence for the alias -- the alias is what produces the
-  match -- which is exactly why this is a `RECLASSIFICATION` and not a pairing.
+  The `MemAlign.preL1` entry's citation is, as of eth-act/zisk-fv#332, the same
+  shape as the two `Main` entries: `MemAlign/Circuit.lean` gives the component
+  a real `fixedColumns` schema (`memAlignFixedLayout` slot 26 to fixed column
+  0, installed at `MemAlign/Circuit.lean:390-393`), and `eval_memAlignFixedColumns_L1`/
+  `eval_memAlignRawRow_materialize` prove every materialized row reads `preL1`
+  from that schema, not an independent witness. Before #332, `MemAlign`
+  declared no `fixedColumns` at all -- only `Main` and `Mem` did -- and the
+  field was declared at `MemAlign/Row.lean:51` with nothing pinning it to a
+  column; that the clause matched the constraint was not evidence for the
+  alias, since the alias is what produced the match. This finding is still a
+  `RECLASSIFICATION` and not a plain pairing even now that it is backed --
+  agreeing once every atom's kind is erased is a mechanical, structural fact
+  about how the mirror is written, independent of whether a `fixedColumns`
+  schema happens to exist elsewhere; `check_mirrors.py`'s
+  `memalign_fixed_lane_alias` declared exclusion is what records the backing.
 
 Separately from the pairing, the run holds its own **scope**, because a scope
 taken from a declared list fails by shrinking. Each of the following is a
@@ -380,11 +387,13 @@ of its scope.
 ## Gate
 
 Step 4/10 of `nix run .#test`, next to #303's step 3/10, running
-`check_mirrors.py --quiet` and then `acceptance.py`. **It fails at HEAD**, but the
-failure is now the residual findings, not gaps: **0 gap**, and the remaining
-failing findings are 2 strengthening + 3 unbacked + 2 reclassification + 1
-undeclared delegation (tracked in eth-act/zisk-fv#329). Every generated constraint
-that once read as a gap is now decided coverage: 15 `Mem` segment residuals matched
+`check_mirrors.py --quiet` and then `acceptance.py`. **It passes at HEAD** —
+`176/176 covered, 0 failing`. The #329 residuals were disposed: the MemAlign `L1`
+reclassification was *fixed* (a real fixed-column schema, #332), the Mem
+delegation was classified, and the rest (2 strengthening + 3 unbacked + the Main
+`SEGMENT_L1` alias) are declared with cited sources, each re-verified live every
+run and each backed by a withdrawal mutation in `acceptance.py`. Every generated
+constraint that once read as a gap is now decided coverage: 15 `Mem` segment residuals matched
 by the out-of-root `segmentResidualEveryRow`, 4 `MemAlignByte` booleans typed by a
 `.val < 2` bound, the 7 `MemAlignWriteByte` constraints bound each by their own
 `Iff.rfl` weld, and the **9 `Main`** constraints `{0, 3, 4, 9, 10, 19, 20, 21, 38}`
@@ -528,8 +537,21 @@ lane-kind record no longer being gated on the alias table, the consumption of
 `notes` / `path_aliases` / `row_order_mismatch`, the cofactor search, filtered
 runs of `lanes.py` and `mirror_parse.py` exiting 1, and the untruncated exclusion
 listing. `acceptance.py` gained `UNCLASSIFIED_PREDICATE_ADDED`,
-`LANELESS_CLAUSE_ADDED` and `FIXED_LEAF_UNDECLARED`, one per fatal defect the
-audits measured, plus the ability to assert a scope-check delta at all.
+`LANELESS_CLAUSE_LAUNDERED` (originally `LANELESS_CLAUSE_ADDED`) and
+`FIXED_LEAF_UNDECLARED`, one per fatal defect the audits measured, plus the
+ability to assert a scope-check delta at all. `LANELESS_CLAUSE_ADDED` itself
+was a reviewer-found laundering hole in `mirror_unbacked_field_uncommitted`
+(eth-act/zisk-fv#329): the exclusion fired on ANY clause naming a no-lane
+field regardless of what the rest of it asserted, so `delta_pc * (committed
+expr) = 0` -- a real strengthening over committed lanes -- was silently
+excluded the same as the genuine `delta_pc = successor.pc - current.pc`
+pin. The fix adds a structural definitional-pin check
+(`_unbacked_clause_is_definitional_pin`): the exclusion may now fire only
+when every monomial touching the no-lane field is that field alone, at
+exponent 1 -- never multiplied by a committed atom. `LANELESS_CLAUSE_
+LAUNDERED` and its `ADDR0_CLAUSE_LAUNDERED` sibling now assert the opposite
+of what `LANELESS_CLAUSE_ADDED` used to: the laundered clause must surface
+as a real, un-excluded, failing `UNBACKED`.
 
 ### A constraint restated by two mirrors keeps its match when one is deleted
 
