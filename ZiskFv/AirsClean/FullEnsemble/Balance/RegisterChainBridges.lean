@@ -143,7 +143,6 @@ theorem not_activeMainMemAlignProviderRowMatchSpec_of_main_mem_op_three
         (eval (mainTable.environment mainRow) mainMsg).mem_op :=
     memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
   rw [ZiskFv.AirsClean.MemAlign.eval_memBusMessageExpr, h_main_mem_op] at h_provider_mem_op
-  simp only [ZiskFv.AirsClean.MemAlign.memBusMessage] at h_provider_mem_op
   -- `wr + 1 = 3` gives `wr = 2`, contradicting booleanity.
   have h_wr_two :
       (eval (providerTable.environment providerRow)
@@ -151,5 +150,134 @@ theorem not_activeMainMemAlignProviderRowMatchSpec_of_main_mem_op_three
     linear_combination h_provider_mem_op
   rw [h_wr_two] at h_wr
   exact absurd h_wr (by decide)
+
+/-- A Main memory-bus interaction at `mem_op = 3` cannot have been provided by `MemAlignByte`, whose
+    message sets `mem_op := 1 + is_write` for an `is_write` its own `Spec` bounds by `2 ^ 1`
+    (`MemAlignByte/Spec.lean`, last conjunct). So its `mem_op` is `1` or `2`, never `3`. -/
+theorem not_activeMainMemAlignByteProviderRowMatchSpec_of_main_mem_op_three
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 3) :
+    ¬ ActiveMainMemAlignByteProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as := by
+  intro h_mab
+  rcases h_mab with
+    ⟨providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, _h_providerTable, _h_providerInteraction,
+      providerRow, _h_providerRow, h_providerSpec, h_providerComponent,
+      h_providerEval, _h_providerMatches⟩
+  rw [h_providerComponent, ZiskFv.AirsClean.MemAlignByte.component_spec,
+    component_rowInput_eq_eval_rowInputVar] at h_providerSpec
+  have h_isw := h_providerSpec.2.2.2.2.2.2.2
+  have h_raw :
+      (((MemBusChannel.pushed
+        (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+        (providerTable.environment providerRow)).msg =
+        (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow)).msg := by
+    rw [← h_providerEval, ← h_mainEval]
+    exact h_msg
+  have h_provider_mem_op :
+      (eval (providerTable.environment providerRow)
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).mem_op =
+        (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+    memBusMessage_mem_op_eq_of_eval_pushed_provider_msg_eq (h_msg := h_raw)
+  rw [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr, h_main_mem_op] at h_provider_mem_op
+  -- `1 + is_write = 3` gives `is_write = 2`, contradicting the `2 ^ 1` bound.
+  have h_isw_two :
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = 2 := by
+    linear_combination h_provider_mem_op
+  rw [h_isw_two] at h_isw
+  exact absurd h_isw (by decide)
+
+/-- A Main memory-bus interaction at `mem_op = 3` cannot have been provided by the mutable-Mem
+    component on either of its two emission shapes: the primary message sets `mem_op := wr + 1` for a
+    `wr` its `Spec` pins boolean (`Mem/Spec.lean:60`), and the dual message pins `mem_op` to the
+    literal `1` (`Mem/Bridge.lean:102`). -/
+theorem not_activeMainMutableMemProviderRowMatchSpec_of_main_mem_op_three
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 3) :
+    ¬ ActiveMainMutableMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as := by
+  intro h_mem
+  rcases h_mem with
+    ⟨providerInteraction, _h_provider_witness, h_msg, _h_nonpull, _h_nonzero,
+      providerTable, _h_providerTable, _h_providerInteraction,
+      providerRow, _h_providerRow, h_providerSpec, h_providerComponent, h_branch⟩
+  rw [h_providerComponent] at h_providerSpec
+  have h_rowSpec :=
+    ZiskFv.AirsClean.Mem.spec_of_componentWithDualMemBus_spec _ h_providerSpec
+  rw [component_rowInput_eq_eval_rowInputVar] at h_rowSpec
+  rcases h_branch with ⟨h_providerEval, _⟩ | ⟨h_providerEval, _⟩
+  · -- Primary emission: `mem_op = wr + 1`, and `wr` is boolean.
+    have h_wr := h_rowSpec.2.2.2.2.1
+    have h_raw :
+        (((MemBusChannel.emitted
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_providerEval, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Mem.memBusMessageExpr
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr, h_main_mem_op] at h_provider_mem_op
+    have h_wr_two :
+        (eval (providerTable.environment providerRow)
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 2 := by
+      linear_combination h_provider_mem_op
+    rw [h_wr_two] at h_wr
+    exact absurd h_wr (by decide)
+  · -- Dual emission: `mem_op` is the literal `1`.
+    have h_raw :
+        (((MemBusChannel.emitted
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar.sel_dual
+          (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).toRaw).eval
+          (providerTable.environment providerRow)).msg =
+          (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+            (mainTable.environment mainRow)).msg := by
+      rw [← h_providerEval, ← h_mainEval]
+      exact h_msg
+    have h_provider_mem_op :
+        (eval (providerTable.environment providerRow)
+            (ZiskFv.AirsClean.Mem.memBusDualMessageExpr
+              ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar)).mem_op =
+          (eval (mainTable.environment mainRow) mainMsg).mem_op :=
+      memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_provider_mem_op
+    simp [h_main_mem_op] at h_provider_mem_op
 
 end ZiskFv.AirsClean.FullEnsemble
