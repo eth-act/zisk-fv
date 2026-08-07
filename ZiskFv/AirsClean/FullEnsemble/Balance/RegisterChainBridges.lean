@@ -280,4 +280,53 @@ theorem not_activeMainMutableMemProviderRowMatchSpec_of_main_mem_op_three
     rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_provider_mem_op
     simp [h_main_mem_op] at h_provider_mem_op
 
+/-- **The register-partition classification.** For a Main memory-bus interaction at `mem_op = 3`,
+    every memory-side provider is excluded, so the counterpart is one of the two register-side
+    branches: another Main row's register pre-load push, or the `RegisterBoundary` boot / reload.
+
+    This is the step that turns the register branch from something only ever *ruled out*
+    (`BootSegmentMemorySeed.lean:942`) into something that can be walked forward: the counterpart of
+    a register read is the previous access to that register, and the chain terminates at
+    `RegisterBoundary.bootMessage`'s literal `(timestamp 0, value 0)`. -/
+theorem activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 3)
+    (h_match :
+      ActiveMainMemProviderRowMatchSpec program witness mainTable mainRow
+        mainInteraction mainMsg multiplicity as) :
+    ActiveMainSelfMemProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as
+      ∨ ActiveMainRegisterBoundaryProviderRowMatchSpec program witness mainTable
+        mainRow mainInteraction mainMsg multiplicity as := by
+  rcases activeMainMemProviderRowMatchSpec_mutable_or_nonmutable h_match with
+    h_mutable | h_nonmutable
+  · exact absurd h_mutable
+      (not_activeMainMutableMemProviderRowMatchSpec_of_main_mem_op_three
+        h_mainEval h_main_mem_op)
+  rcases activeMainNonMutableMemProviderRowMatchSpec_branch_cases h_nonmutable with
+    h_marb | h_mab | h_memAlign | h_main | h_regBoundary
+  · exact absurd h_marb
+      (not_activeMainMemAlignReadByteProviderRowMatchSpec_of_main_mem_op_three
+        h_mainEval h_main_mem_op)
+  · exact absurd h_mab
+      (not_activeMainMemAlignByteProviderRowMatchSpec_of_main_mem_op_three
+        h_mainEval h_main_mem_op)
+  · exact absurd h_memAlign
+      (not_activeMainMemAlignProviderRowMatchSpec_of_main_mem_op_three
+        h_mainEval h_main_mem_op)
+  · exact Or.inl h_main
+  · exact Or.inr h_regBoundary
+
 end ZiskFv.AirsClean.FullEnsemble
