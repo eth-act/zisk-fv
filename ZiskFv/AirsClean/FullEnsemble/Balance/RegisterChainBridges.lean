@@ -443,4 +443,65 @@ theorem pc_eq_nextPcMux_of_pcHandshakeBetween
   have h_diff := (mul_eq_zero.mp h_handshake).resolve_left h_gate
   linear_combination h_diff
 
+/-- The named-column Main view at an in-range row is the row input evaluated at that row's
+    environment — the form `main_pcHandshakeBetween_of_transitions_hold` produces.
+
+    `mainTableRowAtOrZero` (`TableProjections.lean:76`) and `Table.environmentAt`
+    (`Clean/Air/FlatComponent.lean:234`) are definitionally the same lookup; this discharges the
+    in-range guard so the two views can be used interchangeably. -/
+theorem mainTableRowAtOrZero_eq_eval_environmentAt
+    {length : ℕ} (program : Program length) (table : Table FGL)
+    (index : Fin table.length) :
+    mainTableRowAtOrZero program table index.val =
+      Eval.eval (table.environmentAt index)
+        (varFromOffset (F := FGL) ZiskFv.AirsClean.Main.MainRowWithRom 0) := by
+  have h_lt : index.val < table.table.length := by
+    simpa only [Air.Flat.Table.table_length] using index.isLt
+  unfold mainTableRowAtOrZero
+  rw [dif_pos h_lt]
+  rfl
+
+/-- **The ZisK-side PC recurrence, in the named-column view.**
+
+    Composing `main_pcHandshakeBetween_of_transitions_hold` (the circuit certificate),
+    `pc_eq_nextPcMux_of_pcHandshakeBetween` (its solved form) and
+    `mainTableRowAtOrZero_eq_eval_environmentAt` (the view bridge): off a segment boundary, the Main
+    `pc` column at a row is the next-PC mux of the preceding row's columns.
+
+    This is the fact the PC arm's induction transports Sail agreement along. It is derived entirely
+    from `AcceptedZiskTrace.transitions_hold`, so it costs no premise and is independent of the
+    register-partition ordering question. -/
+theorem mainOfTable_pc_eq_nextPcMux_of_transitions_hold
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_transitions : witness.TransitionConstraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (index : Fin mainTable.length)
+    (h_not_boundary :
+      (mainOfTable program mainTable).segment_l1 index.val ≠ 1) :
+    (mainOfTable program mainTable).pc index.val =
+      (mainOfTable program mainTable).set_pc (index.val - 1) *
+          ((mainOfTable program mainTable).c_0 (index.val - 1)
+            + (mainOfTable program mainTable).jmp_offset1 (index.val - 1))
+        + (1 - (mainOfTable program mainTable).set_pc (index.val - 1)) *
+          ((mainOfTable program mainTable).pc (index.val - 1)
+            + (mainOfTable program mainTable).jmp_offset2 (index.val - 1))
+        + (mainOfTable program mainTable).flag (index.val - 1) *
+          ((mainOfTable program mainTable).jmp_offset1 (index.val - 1)
+            - (mainOfTable program mainTable).jmp_offset2 (index.val - 1)) := by
+  have h_handshake :=
+    main_pcHandshakeBetween_of_transitions_hold h_transitions h_mainTable h_mainComponent index
+  rw [Air.Flat.Table.previousEnvironment,
+    ← mainTableRowAtOrZero_eq_eval_environmentAt program mainTable ⟨index.val - 1, by omega⟩,
+    ← mainTableRowAtOrZero_eq_eval_environmentAt program mainTable index] at h_handshake
+  have h_solved :=
+    pc_eq_nextPcMux_of_pcHandshakeBetween h_handshake
+      (by simpa only [mainOfTable_segment_l1] using h_not_boundary)
+  simpa only [mainOfTable_pc, mainOfTable_set_pc, mainOfTable_c_0, mainOfTable_flag,
+    mainOfTable_jmp_offset1, mainOfTable_jmp_offset2] using h_solved
+
 end ZiskFv.AirsClean.FullEnsemble
