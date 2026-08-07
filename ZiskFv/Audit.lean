@@ -107,9 +107,17 @@ info: skeletal_root_completeness : ∀ (state : SailDecode.SailState),
 Each `#print axioms` is pinned. A stray `sorry` (which would add `sorryAx`) or a
 newly introduced trusted premise anywhere below an endpoint changes this output
 and breaks the build. The `riscv_*` / reservation / `plat_term_write` /
-`get_16_random_bits` entries are the trusted Sail-extraction primitives; the
-remaining `propext` / `Classical.choice` / `Quot.sound` / `Lean.ofReduceBool` /
-`Lean.trustCompiler` entries are the standard permitted Lean axioms. -/
+`get_16_random_bits` entries are the trusted Sail-extraction primitives, and
+`propext` / `Classical.choice` / `Quot.sound` are the standard Lean axioms.
+
+`Lean.ofReduceBool` / `Lean.trustCompiler` are neither: they are the
+compiler-evaluation axioms emitted by `native_decide`, which
+`trust/scripts/check-generated-axiom-allowlist.sh` rejects in the generated
+ledgers and which issue #75 tracks for elimination. Their presence records the
+existing `native_decide` surface; it is not a permitted baseline. Note the
+corresponding blind spot: because they are already listed, a *newly* introduced
+`native_decide` under an endpoint leaves these snapshots byte-identical, so this
+file does not gate that particular trust expansion. -/
 
 /--
 info: 'ZiskFv.Compliance.root_soundness' depends on axioms: [cancel_reservation,

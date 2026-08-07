@@ -19,10 +19,12 @@ ZiskFv.Compliance.root_soundness
 
 `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` is the **internal**
 per-arm channel-balance lemma that `root_soundness` consumes; it is audited
-alongside the endpoint but is not the claim. Both statements, and their axiom
-closure, together with the completeness endpoints, are additionally frozen
-*in-build* by `ZiskFv/Audit.lean` — the script gates below need oleans and a
-separate run, the golden tests there fail during `lake build` itself.
+alongside the endpoint but is not the claim. The statement and full axiom
+closure of `root_soundness`, and of the two completeness endpoints, are
+additionally frozen *in-build* by `ZiskFv/Audit.lean`: the script gates below
+need oleans and a separate run, whereas those golden tests fail during
+`lake build` itself. `zisk_riscv_compliant_program_bus` is not pinned there —
+it is covered by the script gates only.
 
 Current generated counts:
 

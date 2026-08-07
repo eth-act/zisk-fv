@@ -13,9 +13,9 @@ plus the per-arm `OpEnvelope` glue that the global theorem in
   the channel-balance form. `ZiskFv/Equivalence/<Op>.lean` is a thin
   re-export *above* this wrapper, not an input to it — the dependency
   runs `EquivCore → Wrappers → Equivalence`. The wrapper's parameter
-  surface is the *minimal* caller-burden remaining after discharge; that
-  surface is drift-guarded by
-  `trust/generated/baseline-wrapper-caller-burden.txt`.
+  surface is the *minimal* caller-burden remaining after discharge; there
+  is no generated ledger pinning it today, so a new caller-supplied
+  hypothesis is caught only by review.
 
 The global theorem `zisk_riscv_compliant_program_bus` lives in
 `ZiskFv/Compliance.lean` (the file at the level above this folder).
