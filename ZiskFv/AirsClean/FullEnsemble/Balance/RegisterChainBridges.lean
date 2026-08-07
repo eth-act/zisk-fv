@@ -390,4 +390,34 @@ theorem main_pcHandshakeBetween_of_transitions_hold
   (main_transitionBetween_of_transitions_hold h_transitions h_mainTable
     h_mainComponent index).1
 
+/-! ## Toward the telescope: full message equality
+
+`memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq` projects `mem_op` out of the raw-message
+equality that balance supplies. The register chain needs the rest of it — `ptr`, `timestamp`, and
+both value lanes — because the content of the telescope is that a register read's value equals the
+value the previous access pushed at the identical `(ptr, timestamp)`.
+
+This is ordering-free: it says the counterpart carries the same payload, not that it is *earlier*.
+Establishing which access is the predecessor is what needs `main.pil:277-279`. -/
+
+/-- Balance-supplied raw-message equality gives equality of the whole decoded `MemBusMessage`, for a
+    provider that emits with an arbitrary (selector-gated) multiplicity. -/
+theorem memBusMessage_eq_of_eval_emitted_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    (h_msg :
+      (((MemBusChannel.emitted providerMult providerMsg).toRaw).eval providerEnv).msg =
+        (((MemBusChannel.emitted mainMult mainMsg).toRaw).eval mainEnv).msg) :
+    eval providerEnv providerMsg = eval mainEnv mainMsg := by
+  have h_vec :
+      Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+        Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_from := congrArg
+    (fun xs => (fromElements xs :
+      ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+  simpa [ProvableType.fromElements_eval_toElements] using h_from
+
 end ZiskFv.AirsClean.FullEnsemble
