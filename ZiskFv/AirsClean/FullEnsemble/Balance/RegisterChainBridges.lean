@@ -365,4 +365,29 @@ theorem main_transitionBetween_of_transitions_hold
   rw [h_mainComponent] at h_table
   exact h_table
 
+/-- The PC half of Main's row handshake, projected out of `transitionBetween`
+    (`Main/Circuit.lean:734`, `pcHandshakeBetween ∧ sourceCCopyBetween`).
+
+    This is the ZisK-side fact the PC arm consumes: successive Main rows agree on the next-PC mux.
+    What remains for Phase 5 is the Sail side — a `SegmentPcSeed` carrying boot PC agreement and the
+    Sail successor relation (two fields, mirroring `BootSegmentMemorySeed`), from which
+    `h_pc_bridge` is derived for all 63 ops by induction, replacing 63 assumed occurrences. -/
+theorem main_pcHandshakeBetween_of_transitions_hold
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_transitions : witness.TransitionConstraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (index : Fin mainTable.length) :
+    ZiskFv.AirsClean.Main.pcHandshakeBetween
+      (Eval.eval (mainTable.previousEnvironment index)
+        (varFromOffset (F := FGL) ZiskFv.AirsClean.Main.MainRowWithRom 0))
+      (Eval.eval (mainTable.environmentAt index)
+        (varFromOffset (F := FGL) ZiskFv.AirsClean.Main.MainRowWithRom 0)) :=
+  (main_transitionBetween_of_transitions_hold h_transitions h_mainTable
+    h_mainComponent index).1
+
 end ZiskFv.AirsClean.FullEnsemble
