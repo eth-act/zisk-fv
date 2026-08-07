@@ -224,6 +224,10 @@ import ZiskFv.Completeness.Aspirational
 import ZiskFv.Completeness.Rv64im.SailDecode
 import ZiskFv.Completeness.Rv64im.SailDecode.ZiskClassifyMatch
 import ZiskFv.Completeness
+-- The audit surface: re-states nothing, but freezes the statement and the axiom
+-- closure of each public endpoint as `#guard_msgs` golden tests, so drift in what
+-- is claimed or trusted breaks `lake build` rather than a separate gate run.
+import ZiskFv.Audit
 -- Checked defect reproductions. Imported so `lake build` actually compiles them:
 -- a regression that is not in the build graph is a regression that never runs, and
 -- `trust/defects.md` cites this one as evidence for

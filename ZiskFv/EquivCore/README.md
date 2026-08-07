@@ -1,8 +1,9 @@
-# `ZiskFv/Equivalence/`
+# `ZiskFv/EquivCore/`
 
-Per-opcode canonical equivalence theorems. The 63 top-level files
-(`Add.lean`, `Addi.lean`, …, `Xori.lean`, one per RV64IM opcode)
-each contain the **canonical** `equiv_<OP>` theorem:
+Per-opcode **core** equivalence theorems — the bottom of the per-opcode
+tower. The 63 top-level files (`Add.lean`, `Addi.lean`, …, `Xori.lean`,
+one per RV64IM opcode) each contain the `equiv_<OP>` theorem in its
+`execute = bus_effect` form:
 
 ```lean
 equiv_<OP> :
@@ -24,16 +25,24 @@ by deriving their cross-entry rd-value byte equations from circuit
 witnesses in `ZiskCircuit/LoadDerivation.lean` and
 `ZiskCircuit/SextLoadBridge.lean`).
 
-Each canonical theorem is wrapped by a `ZiskFv.Compliance.equiv_<OP>`
+Each core theorem is consumed by a `ZiskFv.Compliance.equiv_<OP>`
 theorem in `ZiskFv/Compliance/Wrappers/<Op>.lean`, which discharges
 the promise hypotheses from the trust ledger; the global theorem
-chains those wrappers via `OpEnvelope`.
+chains those wrappers via `OpEnvelope`. `ZiskFv/Equivalence/<Op>.lean`
+sits *above* the wrapper as a thin re-export, so the dependency runs
+bottom-up:
+
+```text
+EquivCore/<Op>  →  Compliance/Wrappers/<Op>  →  Equivalence/<Op>
+```
 
 ## Subdirectories
 
 - **`Bridge/`** — cross-AIR equivalence machinery shared across many
   opcodes: arith, binary, binary-add, binary-extension, mem,
   control-flow, sail-state-bridge, state-bridge.
+- **`Promises/`** — the per-family promise bundles the core theorems
+  take as hypotheses, plus their helper lemmas.
 - **`WriteValueProofs/`** — shared rd-value derivations factored
   across opcode families that share a derivation pattern: arith,
   binary-compare, binary-logic, binary-shift, jump+utype, mul/div/rem

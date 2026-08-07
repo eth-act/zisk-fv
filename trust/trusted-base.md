@@ -11,23 +11,34 @@ The intended soundness claim is:
 > extraction are trusted, every state transition accepted by the modeled ZisK
 > RV64IM circuits is a valid RISC-V state transition.
 
-The global Lean theorem is:
+The advertised Lean endpoint is:
 
 ```text
-ZiskFv.Compliance.zisk_riscv_compliant_program_bus
+ZiskFv.Compliance.root_soundness
 ```
+
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus` is the **internal**
+per-arm channel-balance lemma that `root_soundness` consumes; it is audited
+alongside the endpoint but is not the claim. The statement and full axiom
+closure of `root_soundness`, and of the two completeness endpoints, are
+additionally frozen *in-build* by `ZiskFv/Audit.lean`: the script gates below
+need oleans and a separate run, whereas those golden tests fail during
+`lake build` itself. `zisk_riscv_compliant_program_bus` is not pinned there —
+it is covered by the script gates only.
 
 Current generated counts:
 
-| Surface                                                                | Count | Ledger                                                                                       |
-| ---                                                                    | ---:  | ---                                                                                          |
-| Source Lean trust declarations                                         | 0     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                             |
-| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 0     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt) |
+| Surface                                                                | Count | Ledger                                                                                             |
+| ---                                                                    | ---:  | ---                                                                                                |
+| Source Lean trust declarations                                         | 0     | [`generated/baseline-axioms.txt`](generated/baseline-axioms.txt)                                   |
+| Transitive project-axiom closure of `root_soundness`                   | 0     | [`generated/baseline-strong-export-closure.txt`](generated/baseline-strong-export-closure.txt)     |
+| Transitive project-axiom closure of `zisk_riscv_compliant_program_bus` | 0     | [`generated/baseline-zisk-riscv-compliant.txt`](generated/baseline-zisk-riscv-compliant.txt)       |
 
-The source trust ledger currently contains no project axioms. The global theorem
-also has no transitive project-axiom closure. The former Aeneas row-lowering and
-memory-state load bridge axioms are now visible conditional inputs:
-`env.aeneasBridgeTrust` and `env.memoryTimelineEvidence` on the global theorem.
+The source trust ledger currently contains no project axioms. Neither the
+endpoint nor the internal global theorem has a transitive project-axiom closure.
+The former Aeneas row-lowering and memory-state load bridge axioms are now
+visible conditional inputs: `env.aeneasBridgeTrust` and
+`env.memoryTimelineEvidence` on the internal global theorem.
 
 The extraction assumptions are part of the project premise but outside the
 Lean axiom ledger:
