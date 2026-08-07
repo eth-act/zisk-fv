@@ -225,4 +225,54 @@ theorem singleAddProgramBinding :
 
 #print axioms singleAddProgramBinding
 
+/-- Identity embedding of architectural raw-word indices into physical ROM
+    rows: the single-ADD witness has one raw word and one physical row. -/
+def singleAddStart :
+    Fin singleAddAcceptedTrace.programLength → Fin singleAddAcceptedTrace.programLength :=
+  id
+
+theorem singleAddProgramRowsBinding :
+    ProgramRowsBinding singleAddAcceptedTrace singleAddStart singleAddAddr
+      singleAddRawProgram := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro k k' h
+    fin_cases k
+    fin_cases k'
+    simp at h
+  · intro k
+    fin_cases k
+    decide
+  · intro k
+    fin_cases k
+    decide
+  · intro k k' h
+    fin_cases k
+    fin_cases k'
+    simp at h
+  · intro k
+    fin_cases k
+    simp only [singleAddStart, id_eq, singleAddAddr, singleAddRawProgram]
+    obtain ⟨ext, hext, hstatic⟩ := transpile_add 1 1 1 (by omega) (by omega) (by omega)
+      (by omega) (by omega) (by omega)
+    have hraw : (Completeness.Rv64imShapes.rawRType 0 1 1 0 1 0x33 : BitVec 32)
+        = 0x001080b3 := by decide
+    rw [hraw] at hext
+    have hnon : (ZiskFv.Compliance.Decode.toU32 (0x001080b3 : BitVec 32) &&& 127#u32)
+        ≠ 103#u32 := by decide
+    have hsnd : (romMessagesOfRaw (0 : FGL) (0x001080b3 : BitVec 32)).2 = none := by
+      unfold romMessagesOfRaw
+      rw [aeneas_extract.extract_transpile_rv64im_rows_raw, hext]
+      simp only [lift, Bind.bind, bind_ok, hnon]
+      rfl
+    refine ⟨?_, ?_⟩
+    · rw [romMessagesOfRaw_fst_of_non_jalr _ _ ext hext hnon]
+      exact singleAddProgramBinding.2 _
+    · rw [hsnd]
+      trivial
+  · intro j
+    fin_cases j
+    exact ⟨⟨0, Nat.zero_lt_one⟩, Or.inl rfl⟩
+
+#print axioms singleAddProgramRowsBinding
+
 end ZiskFv.Compliance.RawProgramBinding

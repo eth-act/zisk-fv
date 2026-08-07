@@ -702,4 +702,101 @@ theorem memoryProgramBinding :
 
 #print axioms memoryProgramBinding
 
+/-- Identity embedding of architectural raw-word indices into physical ROM
+    rows: the 3-row memory witness has exactly one physical row per raw word
+    (SD and the two LDs are all non-JALR, so no expansion row is ever
+    produced). -/
+def memoryStart :
+    Fin memoryAcceptedTrace.programLength → Fin memoryAcceptedTrace.programLength :=
+  id
+
+/-- A committed ROM row known to differ from the all-zero default (via its
+    `flags`) must have come from the successful branch of `romMessageOfRaw`,
+    exposing the underlying `extract_transpile_rv64im_raw` witness. Avoids
+    re-deriving the full decode/lower/serialize chain a second time. -/
+private theorem memoryRomMessage_ext_of_ne_default {line : FGL} {raw : BitVec 32}
+    {msg : ZiskRomMessage FGL} (heq : msg = romMessageOfRaw line raw)
+    (hflags : msg.flags ≠ 0) :
+    ∃ ext : aeneas_extract.Rv64imTranspileExtract,
+      aeneas_extract.extract_transpile_rv64im_raw
+        (ZiskFv.Compliance.Decode.toU32 raw) = ok ext := by
+  unfold romMessageOfRaw at heq
+  split at heq
+  · rename_i ext hext
+    exact ⟨ext, hext⟩
+  · exact absurd (congrArg ZiskRomMessage.flags heq) (by simpa using hflags)
+
+theorem memoryProgramRowsBinding :
+    ProgramRowsBinding memoryAcceptedTrace memoryStart memoryAddr memoryRawProgram := by
+  have hnonSd : (ZiskFv.Compliance.Decode.toU32
+      (ZiskFv.Completeness.Rv64imShapes.rawSType 0 2 1 3) &&& 127#u32) ≠ 103#u32 := by decide
+  have hnonLdZero : (ZiskFv.Compliance.Decode.toU32
+      (ZiskFv.Completeness.Rv64imShapes.rawIType 0 1 3 3 0x03) &&& 127#u32) ≠ 103#u32 := by
+    decide
+  have hnonLdNeg : (ZiskFv.Compliance.Decode.toU32
+      (ZiskFv.Completeness.Rv64imShapes.rawIType 4088 1 3 4 0x03) &&& 127#u32) ≠ 103#u32 := by
+    decide
+  obtain ⟨extSd, hextSd⟩ := memoryRomMessage_ext_of_ne_default
+    memorySdRow_eq_romMessageOfRaw (by decide)
+  obtain ⟨extLdZero, hextLdZero⟩ := memoryRomMessage_ext_of_ne_default
+    memoryLdZeroRow_eq_romMessageOfRaw (by decide)
+  obtain ⟨extLdNeg, hextLdNeg⟩ := memoryRomMessage_ext_of_ne_default
+    memoryLdNegativeRow_eq_romMessageOfRaw (by decide)
+  have hsndSd : (romMessagesOfRaw (0 : FGL)
+      (ZiskFv.Completeness.Rv64imShapes.rawSType 0 2 1 3)).2 = none := by
+    unfold romMessagesOfRaw
+    rw [aeneas_extract.extract_transpile_rv64im_rows_raw, hextSd]
+    simp only [lift, Bind.bind, bind_ok, hnonSd]
+    rfl
+  have hsndLdZero : (romMessagesOfRaw (4 : FGL)
+      (ZiskFv.Completeness.Rv64imShapes.rawIType 0 1 3 3 0x03)).2 = none := by
+    unfold romMessagesOfRaw
+    rw [aeneas_extract.extract_transpile_rv64im_rows_raw, hextLdZero]
+    simp only [lift, Bind.bind, bind_ok, hnonLdZero]
+    rfl
+  have hsndLdNeg : (romMessagesOfRaw (8 : FGL)
+      (ZiskFv.Completeness.Rv64imShapes.rawIType 4088 1 3 4 0x03)).2 = none := by
+    unfold romMessagesOfRaw
+    rw [aeneas_extract.extract_transpile_rv64im_rows_raw, hextLdNeg]
+    simp only [lift, Bind.bind, bind_ok, hnonLdNeg]
+    rfl
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro k k' h
+    fin_cases k <;> fin_cases k' <;> revert h <;> decide
+  · intro k
+    fin_cases k <;> decide
+  · intro k
+    fin_cases k <;> decide
+  · intro k k' h
+    fin_cases k <;> fin_cases k' <;>
+      simp only [memoryAddr, memoryRawProgram, hsndSd, hsndLdZero, hsndLdNeg] <;>
+      revert h <;> decide
+  · intro k
+    fin_cases k
+    · simp only [memoryStart, id_eq, memoryAddr, memoryRawProgram]
+      refine ⟨?_, ?_⟩
+      · rw [romMessagesOfRaw_fst_of_non_jalr _ _ extSd hextSd hnonSd]
+        exact memorySdRow_eq_romMessageOfRaw
+      · rw [hsndSd]
+        trivial
+    · simp only [memoryStart, id_eq, memoryAddr, memoryRawProgram]
+      refine ⟨?_, ?_⟩
+      · rw [romMessagesOfRaw_fst_of_non_jalr _ _ extLdZero hextLdZero hnonLdZero]
+        exact memoryLdZeroRow_eq_romMessageOfRaw
+      · rw [hsndLdZero]
+        trivial
+    · simp only [memoryStart, id_eq, memoryAddr, memoryRawProgram]
+      refine ⟨?_, ?_⟩
+      · rw [romMessagesOfRaw_fst_of_non_jalr _ _ extLdNeg hextLdNeg hnonLdNeg]
+        exact memoryLdNegativeRow_eq_romMessageOfRaw
+      · rw [hsndLdNeg]
+        trivial
+  · intro j
+    fin_cases j
+    · exact ⟨⟨0, by decide⟩, Or.inl rfl⟩
+    · exact ⟨⟨1, by decide⟩, Or.inl rfl⟩
+    · exact ⟨⟨2, by decide⟩, Or.inl rfl⟩
+
+#print axioms memoryProgramRowsBinding
+
 end ZiskFv.Compliance.RawProgramBinding

@@ -188,6 +188,7 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingMext
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingControl
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingNonvacuity
 import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingMemoryNonvacuity
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingJalrExpansionNonvacuity
 import ZiskFv.Compliance
 import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.Compliance.RegisterMemBusBalance
@@ -200,6 +201,10 @@ import ZiskFv.Compliance.AddAddiSpinRootSoundness
 import ZiskFv.Compliance.SdLdSpinRootSoundness
 import ZiskFv.Compliance.JalrSpinRootSoundness
 import ZiskFv.Compliance.DivSpinRootSoundness
+import ZiskFv.Compliance.MemoryRawRootSoundness
+import ZiskFv.Compliance.AddFaithfulPaddedWitness
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingAddFaithfulNonvacuity
+import ZiskFv.Compliance.AddFaithfulPaddedRootSoundness
 import ZiskFv.Compliance.RangeWiringWitness
 -- In-build per-opcode static decode/row-mode pin discharge from the real
 -- Aeneas-extracted ZisK lowerer (eth-act/zisk-fv#111). Standalone; not yet

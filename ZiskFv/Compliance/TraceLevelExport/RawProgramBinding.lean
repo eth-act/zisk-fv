@@ -95,8 +95,11 @@ def serializeExtract (line : FGL) (e : zisk_core.aeneas_extract.ZiskInstExtract)
   flags := packFlags (romFlagBitsOfExtract e)                         -- rom.rs:264
 
 /-- Independently named ROM-row transcription used at the program-image boundary.
-    Keeping it separate from `serializeExtract` makes the fidelity equation an
-    explicit checked contract rather than an implicit definitional convention. -/
+    It is a separate definition from `serializeExtract` to give that boundary its own
+    stable handle; `romRowOf_eq_serializeExtract` proves the two agree definitionally
+    (`rfl`). That catches editing one transcription without the other, but it is a
+    consistency check between two hand-written transcriptions — not a check against the
+    Rust source. -/
 def romRowOf (line : FGL) (e : zisk_core.aeneas_extract.ZiskInstExtract) :
     ZiskRomMessage FGL where
   line := line
