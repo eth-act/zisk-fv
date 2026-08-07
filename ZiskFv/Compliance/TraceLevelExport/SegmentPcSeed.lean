@@ -157,4 +157,19 @@ theorem pcBridge_of_pcSeed
       rw [h_rec]
       simpa only [nextPcMux, Nat.add_sub_cancel] using seed.succ j h_succ_lt
 
+/-- **The consumption point.** `Inputs_<op>.h_pc_bridge` is stated against the operand bundle's
+    named PC (`h_input_pc : (binding i).regs.get? Register.PC = .some v`), so this is the form the
+    dispatcher actually needs: given the seed and that naming, the field follows.
+
+    This is what makes `SegmentPcSeed` load-bearing rather than decorative — it produces exactly the
+    field that all 63 `Inputs_<op>` structures currently assume. -/
+theorem h_pc_bridge_of_pcSeed
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    (seed : SegmentPcSeed ziskTrace binding)
+    (i : Fin ziskTrace.numInstructions) {v : BitVec 64}
+    (h_input_pc : (binding i).regs.get? Register.PC = .some v) :
+    ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val = v.toNat := by
+  simpa only [h_input_pc, Option.elim] using pcBridge_of_pcSeed seed i
+
 end ZiskFv.Compliance
