@@ -420,4 +420,27 @@ theorem memBusMessage_eq_of_eval_emitted_provider_msg_eq
       ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
   simpa [ProvableType.fromElements_eval_toElements] using h_from
 
+/-- The PC handshake, solved for the successor row's `pc`.
+
+    `pcHandshakeBetween` states `(1 - curr.segment_l1) * (curr.pc - mux prev) = 0`
+    (`Main/Circuit.lean:~745`). Off a segment boundary the gate is nonzero, so the successor row's
+    `pc` *is* the previous row's next-PC mux.
+
+    This is the arithmetic core of the PC arm's induction step: it converts the circuit's transition
+    constraint into a usable equation `pc(i+1) = nextPC(i)`. -/
+theorem pc_eq_nextPcMux_of_pcHandshakeBetween
+    {prev curr : ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    (h_handshake : ZiskFv.AirsClean.Main.pcHandshakeBetween prev curr)
+    (h_not_boundary : curr.core.segment_l1 ≠ 1) :
+    curr.core.pc =
+      prev.core.set_pc * (prev.core.c_0 + prev.core.jmp_offset1)
+        + (1 - prev.core.set_pc) * (prev.core.pc + prev.core.jmp_offset2)
+        + prev.core.flag * (prev.core.jmp_offset1 - prev.core.jmp_offset2) := by
+  unfold ZiskFv.AirsClean.Main.pcHandshakeBetween at h_handshake
+  have h_gate : (1 : FGL) - curr.core.segment_l1 ≠ 0 := by
+    intro h
+    exact h_not_boundary (by linear_combination -h)
+  have h_diff := (mul_eq_zero.mp h_handshake).resolve_left h_gate
+  linear_combination h_diff
+
 end ZiskFv.AirsClean.FullEnsemble
