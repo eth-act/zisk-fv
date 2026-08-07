@@ -329,4 +329,40 @@ theorem activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three
   · exact Or.inl h_main
   · exact Or.inr h_regBoundary
 
+/-! ## Phase 5 — the PC arm
+
+`h_pc_bridge` is the one `InputsAgree` field present in all 63 `Inputs_<op>` structures, and it does
+not go through the MemBus at all: PC adjacency is a component `transition`, so this arm is
+independent of the register-partition ordering question above.
+
+The ZisK side needs no new premise. `AcceptedZiskTrace.transitions_hold` is a *field*
+(`AcceptedZiskTrace.lean:126`), it unfolds to a per-table `Table.TransitionConstraints`
+(`Clean/Air/FlatEnsemble.lean:216`), and Main's component transition is `pcHandshakeTransition`
+(`Main/Circuit.lean:941`), which is `transitionBetween` on the evaluated predecessor and current
+rows. -/
+
+/-- Main's predecessor/current PC handshake holds at every row of the Main table, extracted from the
+    accepted trace's `transitions_hold` certificate.
+
+    Ordering-free and premise-free: this composes a field the trace already carries, exactly as the
+    register work composes `channels_balanced`. -/
+theorem main_transitionBetween_of_transitions_hold
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_transitions : witness.TransitionConstraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (index : Fin mainTable.length) :
+    ZiskFv.AirsClean.Main.transitionBetween
+      (Eval.eval (mainTable.previousEnvironment index)
+        (varFromOffset (F := FGL) ZiskFv.AirsClean.Main.MainRowWithRom 0))
+      (Eval.eval (mainTable.environmentAt index)
+        (varFromOffset (F := FGL) ZiskFv.AirsClean.Main.MainRowWithRom 0)) := by
+  have h_table := h_transitions mainTable h_mainTable index
+  rw [h_mainComponent] at h_table
+  exact h_table
+
 end ZiskFv.AirsClean.FullEnsemble
