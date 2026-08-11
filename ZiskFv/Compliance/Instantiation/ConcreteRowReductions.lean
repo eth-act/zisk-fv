@@ -1076,7 +1076,8 @@ theorem memRowsTable_rowInput
       (Environment.fromArray
         (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
           (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data) = row := by
-  simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize index data row
 
 /-- Row-local Mem constraints for a bounded concrete table follow from each

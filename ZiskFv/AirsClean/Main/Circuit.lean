@@ -962,7 +962,8 @@ theorem componentWithRomMemAndOpBus_rowInput_materialize
     (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
     (componentWithRomMemAndOpBus length program).rowInput
       (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data) = row := by
-  simpa only [Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Component.rowInput, Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     eval_mainRawRow_materialize index data row h_segment_l1 h_main_step
 
 /-- Project the generic Clean component `Spec` for the unified
