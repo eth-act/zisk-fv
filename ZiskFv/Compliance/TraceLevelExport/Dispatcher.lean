@@ -255,6 +255,78 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
   | .lw c => Inputs_lw ziskTrace sailTrace i c
   | .fence c => Inputs_fence ziskTrace sailTrace i c
 
+/-- `InputsAgree` minus the `h_pc_bridge` field — the cross-machine operand agreement
+    a caller must actually supply.
+
+    `root_soundness` assumes this instead of `InputsAgree`.  The PC half is no longer
+    assumed per row: `inputsAgree_of_pcSeed` (in `SegmentPcSeed.lean`) rebuilds the full
+    `InputsAgree` from this core plus the two-premise `SegmentPcSeed`. -/
+def InputsAgreeCore (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
+    (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Type
+  | .sub c => InputsCore_sub ziskTrace sailTrace i c
+  | .and c => InputsCore_and ziskTrace sailTrace i c
+  | .or c => InputsCore_or ziskTrace sailTrace i c
+  | .xor c => InputsCore_xor ziskTrace sailTrace i c
+  | .slt c => InputsCore_slt ziskTrace sailTrace i c
+  | .sltu c => InputsCore_sltu ziskTrace sailTrace i c
+  | .andi c => InputsCore_andi ziskTrace sailTrace i c
+  | .ori c => InputsCore_ori ziskTrace sailTrace i c
+  | .xori c => InputsCore_xori ziskTrace sailTrace i c
+  | .slti c => InputsCore_slti ziskTrace sailTrace i c
+  | .sltiu c => InputsCore_sltiu ziskTrace sailTrace i c
+  | .sll c => InputsCore_sll ziskTrace sailTrace i c
+  | .srl c => InputsCore_srl ziskTrace sailTrace i c
+  | .sra c => InputsCore_sra ziskTrace sailTrace i c
+  | .slli c => InputsCore_slli ziskTrace sailTrace i c
+  | .srli c => InputsCore_srli ziskTrace sailTrace i c
+  | .srai c => InputsCore_srai ziskTrace sailTrace i c
+  | .add c => InputsCore_add ziskTrace sailTrace i c
+  | .addi c => InputsCore_addi ziskTrace sailTrace i c
+  | .subw c => InputsCore_subw ziskTrace sailTrace i c
+  | .addw c => InputsCore_addw ziskTrace sailTrace i c
+  | .addiw c => InputsCore_addiw ziskTrace sailTrace i c
+  | .sllw c => InputsCore_sllw ziskTrace sailTrace i c
+  | .srlw c => InputsCore_srlw ziskTrace sailTrace i c
+  | .sraw c => InputsCore_sraw ziskTrace sailTrace i c
+  | .slliw c => InputsCore_slliw ziskTrace sailTrace i c
+  | .srliw c => InputsCore_srliw ziskTrace sailTrace i c
+  | .sraiw c => InputsCore_sraiw ziskTrace sailTrace i c
+  | .mul c => InputsCore_mul ziskTrace sailTrace i c
+  | .mulh c => InputsCore_mulh ziskTrace sailTrace i c
+  | .mulhsu c => InputsCore_mulhsu ziskTrace sailTrace i c
+  | .mulw c => InputsCore_mulw ziskTrace sailTrace i c
+  | .mulhu c => InputsCore_mulhu ziskTrace sailTrace i c
+  | .div c => InputsCore_div ziskTrace sailTrace i c
+  | .rem c => InputsCore_rem ziskTrace sailTrace i c
+  | .divw c => InputsCore_divw ziskTrace sailTrace i c
+  | .remw c => InputsCore_remw ziskTrace sailTrace i c
+  | .divu c => InputsCore_divu ziskTrace sailTrace i c
+  | .divuw c => InputsCore_divuw ziskTrace sailTrace i c
+  | .remu c => InputsCore_remu ziskTrace sailTrace i c
+  | .remuw c => InputsCore_remuw ziskTrace sailTrace i c
+  | .beq c => InputsCore_beq ziskTrace sailTrace i c
+  | .bne c => InputsCore_bne ziskTrace sailTrace i c
+  | .blt c => InputsCore_blt ziskTrace sailTrace i c
+  | .bge c => InputsCore_bge ziskTrace sailTrace i c
+  | .bltu c => InputsCore_bltu ziskTrace sailTrace i c
+  | .bgeu c => InputsCore_bgeu ziskTrace sailTrace i c
+  | .lui c => InputsCore_lui ziskTrace sailTrace i c
+  | .auipc c => InputsCore_auipc ziskTrace sailTrace i c
+  | .jal c => InputsCore_jal ziskTrace sailTrace i c
+  | .jalr c => InputsCore_jalr ziskTrace sailTrace i c
+  | .sb c => InputsCore_sb ziskTrace sailTrace i c
+  | .sh c => InputsCore_sh ziskTrace sailTrace i c
+  | .sw c => InputsCore_sw ziskTrace sailTrace i c
+  | .sd c => InputsCore_sd ziskTrace sailTrace i c
+  | .ld c => InputsCore_ld ziskTrace sailTrace i c
+  | .lbu c => InputsCore_lbu ziskTrace sailTrace i c
+  | .lhu c => InputsCore_lhu ziskTrace sailTrace i c
+  | .lwu c => InputsCore_lwu ziskTrace sailTrace i c
+  | .lb c => InputsCore_lb ziskTrace sailTrace i c
+  | .lh c => InputsCore_lh ziskTrace sailTrace i c
+  | .lw c => InputsCore_lw ziskTrace sailTrace i c
+  | .fence c => InputsCore_fence ziskTrace sailTrace i c
+
 /-- The per-op memory-coherence residual each memory `stepStrong_<op>` core
     consumes, dispatched by op-kind: the load memory-timeline evidence for the
     seven loads, the sub-doubleword RMW evidence for `sb`/`sh`/`sw`, and `True`

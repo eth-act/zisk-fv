@@ -172,4 +172,152 @@ theorem h_pc_bridge_of_pcSeed
     ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val = v.toNat := by
   simpa only [h_input_pc, Option.elim] using pcBridge_of_pcSeed seed i
 
+/-- **The collapse.** Rebuild the full per-row `InputsAgree` from the caller-supplied
+    `InputsAgreeCore` and the single segment-wide `SegmentPcSeed`.
+
+    This is where the 63 assumed `h_pc_bridge` fields stop being premises. Each arm
+    feeds `h_pc_bridge_of_pcSeed` the row's own Sail-PC naming, which every op already
+    carries in one of three places:
+
+    * 45 ops name it directly, as `h_input_pc`;
+    * the 7 signed M-extension ops carry it inside `promises` (`input_pc_eq`);
+    * the 11 memory ops carry it as the first conjunct of `<op>_state_assumptions`.
+
+    None of those three is a new premise — all were already fields of the same structure.
+    What the seed supplies is the other half: that the Main `pc` column equals that named
+    PC, which used to be assumed and is now derived. -/
+def inputsAgree_of_pcSeed {numInstructions : ℕ}
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    (seed : SegmentPcSeed ziskTrace binding)
+    (i : Fin ziskTrace.numInstructions) :
+    (zs : ZiskStep ziskTrace i) → InputsAgreeCore ziskTrace binding i zs →
+      InputsAgree ziskTrace binding i zs
+  | .sub _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .and _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .or _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .xor _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .slt _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sltu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .andi _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .ori _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .xori _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .slti _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sltiu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sll _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .srl _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sra _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .slli _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .srli _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .srai _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .add _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .addi _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .subw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .addw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .addiw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sllw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .srlw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sraw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .slliw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .srliw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sraiw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .mul _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .mulh _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .mulhsu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .mulw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .mulhu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .div _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .rem _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .divw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .remw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.promises.input_pc_eq }
+  | .divu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .divuw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .remu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .remuw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .beq _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .bne _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .blt _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .bge _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .bltu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .bgeu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .lui _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .auipc _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .jal _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .jalr _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+  | .sb _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .sh _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .sw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .sd _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .ld _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .lbu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .lhu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .lwu _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .lb _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .lh _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .lw _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
+  | .fence _, core =>
+      { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+
 end ZiskFv.Compliance
