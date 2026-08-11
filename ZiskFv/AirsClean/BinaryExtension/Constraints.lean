@@ -69,9 +69,6 @@ def opBusMessageExpr (row : Var BinaryExtensionRow FGL) :
 def main (row : Var BinaryExtensionRow FGL) : Circuit FGL Unit := do
   OpBusChannel.push (opBusMessageExpr row)
 
-/-- Elaborated BinaryExtension circuit: no local witnesses, one
-    operation-bus push. -/
-
 /-- BinaryExtensionTable consumer path. This emits the eight per-byte table
     tuples with negative multiplicity after the op-bus push. It makes no local
     table-membership claim: the static provider and finished channel own it. -/

@@ -48,7 +48,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRangeMessage unit  where
     · simpa only [Table.fromStatic, StaticTable.toTable, rangeTable8,
         rangeStaticTable] using h_holds
     · intro _
-      trivial
+      simp [MemAlignRangeChannel]
   completeness := by
     circuit_proof_start [Lookup.completeness_def]
     simpa only [Table.fromStatic, StaticTable.toTable, rangeTable8,

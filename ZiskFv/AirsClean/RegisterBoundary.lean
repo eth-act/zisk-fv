@@ -125,8 +125,6 @@ def main (row : Var RegisterBoundaryRow FGL) : Circuit FGL Unit := do
   MemBusChannel.emit (-1) (bootMessageExpr row)
   MemBusChannel.emit 1 (reloadMessageExpr row)
 
-/-- The elaborated circuit: two channel emissions, no fresh witnesses, no algebraic constraints. -/
-
 /-- RegisterBoundary as a Clean `GeneralFormalCircuit`.  `Assumptions := True` and `Spec := True`:
     the component asserts no algebraic relation; its only obligations are the two bus emissions'
     `MemBusChannel.Guarantees = True` requirements. -/
@@ -145,7 +143,7 @@ def circuit : GeneralFormalCircuit FGL RegisterBoundaryRow unit  where
   soundness := by
     circuit_proof_start
     intro _
-    trivial
+    simp [MemBusChannel]
   completeness := by
     circuit_proof_start [MemBusChannel]
 

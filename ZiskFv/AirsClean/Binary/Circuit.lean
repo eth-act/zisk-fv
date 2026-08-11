@@ -95,7 +95,7 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit  where
             , by simpa [sub_eq_add_neg] using h5
             , by simpa [sub_eq_add_neg] using h6 ⟩
     · intro _
-      trivial
+      simp [OpBusChannel]
   completeness := by
     circuit_proof_start [OpBusChannel]
     obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
@@ -134,6 +134,20 @@ def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
       , BinaryTableChannel.emitted (-1) (lookupMessage5 row)
       , BinaryTableChannel.emitted (-1) (lookupMessage6 row)
       , BinaryTableChannel.emitted (-1) (lookupMessage7 row) ]
+  -- Two `expose` blocks appended, so `circuit_norm`'s `exposedChannelsLawful_expose`
+  -- cannot fire on the whole list. Split the membership first, then discharge each
+  -- channel separately.
+  exposedChannels_eq := by
+    intro input offset exposed h_mem
+    simp only [expose, List.singleton_append, List.mem_cons, List.mem_singleton,
+      List.not_mem_nil, or_false] at h_mem
+    rcases h_mem with rfl | rfl
+    · simp [circuit_norm, mainWithBinaryTable, main, opBusMessageExpr,
+        OpBusChannel, BinaryTableChannel]
+    · simp [circuit_norm, mainWithBinaryTable, main, opBusMessageExpr,
+        lookupMessage0, lookupMessage1, lookupMessage2, lookupMessage3,
+        lookupMessage4, lookupMessage5, lookupMessage6, lookupMessage7,
+        OpBusChannel, BinaryTableChannel]
   Assumptions := fun _ _ => True
   Spec := fun row _ _ => Spec row
   ProverAssumptions := fun row _ _ =>
@@ -154,7 +168,7 @@ def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
             , by simpa [sub_eq_add_neg] using h5
             , by simpa [sub_eq_add_neg] using h6 ⟩
     · intro _
-      trivial
+      simp [OpBusChannel]
   completeness := by
     circuit_proof_start [OpBusChannel, BinaryTableChannel]
     obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
@@ -389,9 +403,7 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithStaticBinaryTable, main, opBusMessageExpr,
       OpBusChannel]
   Assumptions := fun _ _ => True
@@ -469,7 +481,7 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
                     simp [lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h14 ⊢
                     exact h14 ⟩ ⟩
     · intro _
-      trivial
+      simp [OpBusChannel]
   completeness := by
     circuit_proof_start [OpBusChannel, Lookup.completeness_def]
     obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
