@@ -122,8 +122,8 @@ theorem componentRowInput :
 private theorem evalRowInput :
     Eval.eval arithEnv ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar =
       arithRow := by
-  simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using
-    componentRowInput
+  simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using componentRowInput
 
 private theorem evalArithRow (env : Environment FGL)
     (row : ZiskFv.AirsClean.ArithMul.ArithMulRow (Expression FGL)) :
