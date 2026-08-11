@@ -4,6 +4,7 @@ import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.Mem.Bridge
+import ZiskFv.AirsClean.RegisterStepRangeSlice
 import ZiskFv.AirsClean.RegisterBoundary
 
 /-!
@@ -689,6 +690,31 @@ example :
 def binaryAddRowArray (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) : Array FGL :=
   (toElements row).toArray
 
+private theorem registerStepRangeSlice_component_rawWidth :
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component.rawWidth = 1 := by
+  change ZiskFv.AirsClean.RegisterStepRangeSlice.circuit.size = 1
+  rw [GeneralFormalCircuit.size_eq]
+  rfl
+
+/-- A bus-102 register-step provider table over concrete distance values.
+
+    Every active Main register slot emits one consumer interaction on bus 102, so a witness whose
+    Main rows use register sources must supply one provider row per active slot, carrying that
+    slot's `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`. This is the descent data
+    `main.pil:333-335` range-checks; before #330 Phase 3 no witness had to exhibit it. -/
+def registerStepRangeRowsTable (values : List FGL) : Table FGL where
+  component := ZiskFv.AirsClean.RegisterStepRangeSlice.component
+  rawRows := values.map (fun v => #[v])
+  data := emptyData
+  raw_uniform_width := by
+    intro arr h_arr
+    rcases List.mem_map.mp h_arr with ⟨v, _, rfl⟩
+    rw [registerStepRangeSlice_component_rawWidth]
+    simp
+  fixed_domain := by
+    intro columns h_columns
+    simp [ZiskFv.AirsClean.RegisterStepRangeSlice.component] at h_columns
+
 private theorem binaryAdd_component_rawWidth :
     ZiskFv.AirsClean.BinaryAdd.component.rawWidth =
       size ZiskFv.AirsClean.BinaryAdd.BinaryAddRow := by
@@ -813,6 +839,39 @@ theorem binaryAddRowsTable_constraints_of_proverAssumptions
       ZiskFv.AirsClean.BinaryAdd.component row h_localLength (h_assumptions row h_row)
   simpa [binaryAddRowsTable, binaryAddRowArray, Table.table, Environment.fromInput]
     using h_component
+
+/-- The bus-102 provider table satisfies its constraints exactly when every supplied distance is
+    inside the 24-bit range. The provider owns the static lookup, so this is the only obligation —
+    and it is the honest one: a witness cannot invent register-step distances it cannot range-check.
+
+    `ProverAssumptions` for the slice is `rangeTable24.Spec value`, so the hypothesis is stated in
+    the same terms the caller can discharge by `decide` on concrete values. -/
+theorem registerStepRangeRowsTable_constraints
+    (values : List FGL)
+    (h_range : ∀ v ∈ values, ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v) :
+    (registerStepRangeRowsTable values).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.RegisterStepRangeSlice.component.circuit.localLength
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component.rowInputVar = 0 := by
+    rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ values.map (fun v => #[v]) at h_arr
+  rcases List.mem_map.mp h_arr with ⟨v, h_v, rfl⟩
+  have h_component :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.RegisterStepRangeSlice.component v h_localLength (h_range v h_v)
+  simpa [registerStepRangeRowsTable, Table.table, Environment.fromInput]
+    using h_component
+
+/-- The bus-102 provider table carries interactions on its own channel and nothing else. -/
+theorem registerStepRangeRowsTable_interactionsWith_of_ne
+    (values : List FGL) (channel : RawChannel FGL)
+    (h_ne : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    (registerStepRangeRowsTable values).interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+  simpa using h_ne
 
 def binaryExtensionRowArray
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL) : Array FGL :=
