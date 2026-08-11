@@ -301,7 +301,7 @@ theorem memAlignRangeTable_spec_of_memAlignRangeSlice_provider_row
   simpa only [Component.Spec, Component.rowInput, eval_varFromOffset_valueFromOffset,
     ZiskFv.AirsClean.MemAlignRangeSlice.component,
     ZiskFv.AirsClean.MemAlignRangeSlice.circuit,
-    ZiskFv.AirsClean.MemAlignRangeSlice.elaborated] using h_spec
+    Component.rowInputVar] using h_spec
 
 /-- Raw finished-channel equality restores equality of the one-slot typed
     provider and consumer messages. -/

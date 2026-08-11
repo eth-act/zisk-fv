@@ -303,7 +303,7 @@ theorem rangeTable16_spec_of_specifiedRangesSlice_provider_interaction
     simpa [Component.Spec, Component.rowInput,
       ZiskFv.AirsClean.SpecifiedRangesSlice.component,
       ZiskFv.AirsClean.SpecifiedRangesSlice.circuit,
-      ZiskFv.AirsClean.SpecifiedRangesSlice.elaborated] using h_spec
+      Component.rowInputVar] using h_spec
   simpa [h_value'] using h_providerSpec
 
 end ZiskFv.AirsClean.FullEnsemble

@@ -1817,7 +1817,8 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignReadByteLoadProviderR
         ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar) := by
     rw [h_component] at h_spec
     rw [ZiskFv.AirsClean.MemAlignReadByte.component_spec] at h_spec
-    simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using h_spec
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+      eval_varFromOffset_valueFromOffset] using h_spec
   refine ⟨
     ZiskFv.AirsClean.MemAlignReadByte.validOfRow
       (eval (providerTable.environment providerRow)
@@ -1853,7 +1854,8 @@ theorem exists_subdoublewordLoadProviderWitness_of_memAlignByteLoadProviderRowMa
         ZiskFv.AirsClean.MemAlignByte.component.rowInputVar) := by
     rw [h_component] at h_spec
     rw [ZiskFv.AirsClean.MemAlignByte.component_spec] at h_spec
-    simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using h_spec
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+      eval_varFromOffset_valueFromOffset] using h_spec
   refine ⟨
     ZiskFv.AirsClean.MemAlignByte.validOfRow
       (eval (providerTable.environment providerRow)
