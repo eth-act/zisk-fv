@@ -702,15 +702,18 @@ private theorem registerStepRangeSlice_component_rawWidth :
     Main rows use register sources must supply one provider row per active slot, carrying that
     slot's `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`. This is the descent data
     `main.pil:333-335` range-checks; before #330 Phase 3 no witness had to exhibit it. -/
+def registerStepRangeRowArray (v : FGL) : Array FGL :=
+  (toElements (M := field) v).toArray
+
 def registerStepRangeRowsTable (values : List FGL) : Table FGL where
   component := ZiskFv.AirsClean.RegisterStepRangeSlice.component
-  rawRows := values.map (fun v => #[v])
+  rawRows := values.map registerStepRangeRowArray
   data := emptyData
   raw_uniform_width := by
     intro arr h_arr
     rcases List.mem_map.mp h_arr with ⟨v, _, rfl⟩
     rw [registerStepRangeSlice_component_rawWidth]
-    simp
+    simp [registerStepRangeRowArray, show size field = 1 from rfl]
   fixed_domain := by
     intro columns h_columns
     simp [ZiskFv.AirsClean.RegisterStepRangeSlice.component] at h_columns
@@ -856,7 +859,7 @@ theorem registerStepRangeRowsTable_constraints
     rfl
   rw [Table.Constraints]
   intro arr h_arr
-  change arr ∈ values.map (fun v => #[v]) at h_arr
+  change arr ∈ values.map registerStepRangeRowArray at h_arr
   rcases List.mem_map.mp h_arr with ⟨v, h_v, rfl⟩
   have h_component :=
     component_constraintsHold_of_proverAssumptions
@@ -881,20 +884,35 @@ def registerStepRangeInteraction (v : FGL) : Interaction FGL where
   same_size := by simp [Channel.toRaw]
   assumeGuarantees := false
 
+/-- Evaluating the provider's abstract push under a row's environment gives that row's concrete
+    push. Mirrors `binaryAddComponentOpBusInteraction_eval`; the named `registerStepRangeRowArray`
+    wrapper is what lets the `change` below see the environment in `Environment.fromInput` form. -/
+theorem registerStepRangeComponentInteraction_eval (values : List FGL) (v : FGL) :
+    (((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.pushed
+        (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+          ZiskFv.AirsClean.RegisterStepRangeSlice.component.rowInputVar)).toRaw).eval
+      ((registerStepRangeRowsTable values).environment (registerStepRangeRowArray v))) =
+      registerStepRangeInteraction v := by
+  simp [registerStepRangeInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    ZiskFv.Channels.SpecifiedRanges.registerStepMessage, toElements_eval_toArray,
+    circuit_norm, Table.environment, registerStepRangeRowsTable, registerStepRangeRowArray,
+    Component.rowInputVar, Component.rowOffset,
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component]
+
 /-- The bus-102 provider emits exactly one push per row, carrying that row's value. -/
 theorem registerStepRangeRowsTable_row
     (values : List FGL) (v : FGL) :
     ZiskFv.AirsClean.RegisterStepRangeSlice.component.operations.interactionValuesWith
         ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
-        ((registerStepRangeRowsTable values).environment #[v]) =
+        ((registerStepRangeRowsTable values).environment (registerStepRangeRowArray v)) =
       [registerStepRangeInteraction v] := by
-  simp [Operations.interactionValuesWith_eq_map,
-    ZiskFv.AirsClean.RegisterStepRangeSlice.component_interactionsWith_rangeChannel,
-    registerStepRangeInteraction, registerStepRangeRowsTable]
+  simp [registerStepRangeRowsTable, Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component_interactionsWith_rangeChannel]
+  exact registerStepRangeComponentInteraction_eval values v
 
 private theorem registerStepRangeRowsTable_interactionsWith_go
     (allValues values : List FGL) :
-    (values.map (fun v => #[v])).flatMap (fun arr =>
+    (values.map registerStepRangeRowArray).flatMap (fun arr =>
         ZiskFv.AirsClean.RegisterStepRangeSlice.component.operations.interactionValuesWith
           ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
           ((registerStepRangeRowsTable allValues).environment arr)) =
@@ -902,7 +920,9 @@ private theorem registerStepRangeRowsTable_interactionsWith_go
   induction values with
   | nil => rfl
   | cons v rest ih =>
-      simp [registerStepRangeRowsTable_row, ih]
+      simp only [List.map_cons, List.flatMap_cons, ih]
+      rw [registerStepRangeRowsTable_row allValues v]
+      rfl
 
 /-- The bus-102 provider table's interaction list: one push per supplied distance. -/
 theorem registerStepRangeRowsTable_interactionsWith
