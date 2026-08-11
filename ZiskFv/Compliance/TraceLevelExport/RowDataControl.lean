@@ -103,7 +103,7 @@ structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
   -- #100: taken on flag=1 (`r1 == r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_beq (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_beq trace i) : Type where
   beq_input : PureSpec.BeqInput
   misa_val : RegisterType Register.misa
@@ -136,12 +136,20 @@ structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+  h_success : (PureSpec.execute_BEQ_pure beq_input).success = true
+
+/-- The PC agreement `Inputs_beq` carries on top of `InputsCore_beq`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_beq (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_beq trace i) : Type extends InputsCore_beq trace binding i c where
   -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
   -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = beq_input.PC.toNat
-  h_success : (PureSpec.execute_BEQ_pure beq_input).success = true
 
 /-- Per-op residual bundle for the `beq` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_beq` bundles them. -/
@@ -191,7 +199,7 @@ structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
   -- `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_bne (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bne trace i) : Type where
   bne_input : PureSpec.BneInput
   misa_val : RegisterType Register.misa
@@ -224,12 +232,20 @@ structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+  h_success : (PureSpec.execute_BNE_pure bne_input).success = true
+
+/-- The PC agreement `Inputs_bne` carries on top of `InputsCore_bne`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_bne (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bne trace i) : Type extends InputsCore_bne trace binding i c where
   -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
   -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bne_input.PC.toNat
-  h_success : (PureSpec.execute_BNE_pure bne_input).success = true
 
 /-- Per-op residual bundle for the `bne` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_bne` bundles them. -/
@@ -278,7 +294,7 @@ structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
   -- #100: taken on flag=1 (signed `r1 <s r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_blt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_blt trace i) : Type where
   blt_input : PureSpec.BltInput
   misa_val : RegisterType Register.misa
@@ -311,12 +327,20 @@ structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+  h_success : (PureSpec.execute_BLT_pure blt_input).success = true
+
+/-- The PC agreement `Inputs_blt` carries on top of `InputsCore_blt`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_blt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_blt trace i) : Type extends InputsCore_blt trace binding i c where
   -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
   -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = blt_input.PC.toNat
-  h_success : (PureSpec.execute_BLT_pure blt_input).success = true
 
 /-- Per-op residual bundle for the `blt` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_blt` bundles them. -/
@@ -366,7 +390,7 @@ structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
   -- rides on `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_bge (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bge trace i) : Type where
   bge_input : PureSpec.BgeInput
   misa_val : RegisterType Register.misa
@@ -399,12 +423,20 @@ structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+  h_success : (PureSpec.execute_BGE_pure bge_input).success = true
+
+/-- The PC agreement `Inputs_bge` carries on top of `InputsCore_bge`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_bge (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bge trace i) : Type extends InputsCore_bge trace binding i c where
   -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
   -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bge_input.PC.toNat
-  h_success : (PureSpec.execute_BGE_pure bge_input).success = true
 
 /-- Per-op residual bundle for the `bge` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_bge` bundles them. -/
@@ -456,7 +488,7 @@ structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
   -- from the LTU Binary provider.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
   bltu_input : PureSpec.BltuInput
   misa_val : RegisterType Register.misa
@@ -490,12 +522,20 @@ structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+  h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
+
+/-- The PC agreement `Inputs_bltu` carries on top of `InputsCore_bltu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type extends InputsCore_bltu trace binding i c where
   -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
   -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bltu_input.PC.toNat
-  h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true
 
 /-- Per-op residual bundle for the `bltu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_bltu` bundles them. -/
@@ -547,7 +587,7 @@ structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
   -- side. `flag = comparison` is DERIVED in `stepStrong_bgeu`.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where
   bgeu_input : PureSpec.BgeuInput
   misa_val : RegisterType Register.misa
@@ -580,12 +620,20 @@ structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+  h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
+
+/-- The PC agreement `Inputs_bgeu` carries on top of `InputsCore_bgeu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type extends InputsCore_bgeu trace binding i c where
   -- #100: PC bridge. The range/domain facts used by the branch next-PC cast live
   -- in `RowOutsideDefectRegion` as `BranchRangeDomain`.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = bgeu_input.PC.toNat
-  h_success : (PureSpec.execute_BGEU_pure bgeu_input).success = true
 
 /-- Per-op residual bundle for the `bgeu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_bgeu` bundles them. -/
@@ -643,13 +691,10 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
   -- `flag_eq_one_of_internal_op_zero`.
   h_idx : i.val + 1 < trace.mainTable.table.length
 
-structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type where
   jal_input : PureSpec.JalInput
   misa_val : RegisterType Register.misa
-  h_pc_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      = jal_input.PC.toNat
   -- #100: PC bridge. The JAL range/domain facts live in `RowOutsideDefectRegion`
   -- as `JalRangeDomain`.
   h_input_rd : jal_input.rd = regidx_to_fin c.rd
@@ -658,6 +703,17 @@ structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JAL_pure jal_input).success = true
   h_input_imm : jal_input.imm = c.imm
+
+/-- The PC agreement `Inputs_jal` carries on top of `InputsCore_jal`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_jal (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_jal trace i) : Type extends InputsCore_jal trace binding i c where
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = jal_input.PC.toNat
 
 -- `jal` and `jalr` have no `RowData_<op>` bundle: their dispatch arms consume
 -- the `Claim`/`Decode`/`Inputs` triple directly (the `jalr` conclusion is stated
@@ -780,7 +836,7 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
     (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0
       rows.finish.val).val : Int) + c.offset_bv.toInt < GL_prime
 
-structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
   jalr_input : PureSpec.JalrInput
   misa_val : RegisterType Register.misa
@@ -800,9 +856,6 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       = jalr_input.rs1_val
   h_input_rd : jalr_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some jalr_input.PC
-  h_pc_bridge :
-    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      = jalr_input.PC.toNat
   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
   h_success : (PureSpec.execute_JALR_pure jalr_input).success = true
@@ -815,6 +868,17 @@ structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     = EStateM.Result.ok mseccfg (binding i)
   -- #100: JALR link-PC range/domain facts live in `RowOutsideDefectRegion`
   -- as `JalrRangeDomain`.
+
+/-- The PC agreement `Inputs_jalr` carries on top of `InputsCore_jalr`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type extends InputsCore_jalr trace binding i c where
+  h_pc_bridge :
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
+      = jalr_input.PC.toNat
 
 
 structure Claim_fence (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
@@ -852,12 +916,20 @@ structure Decode_fence (trace : AcceptedZiskTrace numInstructions)
   h_rs_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rs
   h_rd_x0 : ZiskFv.Compliance.Defects.IsX0Reg c.rd
 
-structure Inputs_fence (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_fence (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_fence trace i) : Type where
   fence_input : PureSpec.FenceInput
   h_input_pc : (binding i).regs.get? Register.PC = .some fence_input.PC
   h_input_priv :
     (binding i).regs.get? Register.cur_privilege = .some Privilege.Machine
+
+/-- The PC agreement `Inputs_fence` carries on top of `InputsCore_fence`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_fence (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_fence trace i) : Type extends InputsCore_fence trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = fence_input.PC.toNat
