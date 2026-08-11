@@ -287,6 +287,7 @@ private theorem addSpinMain_constraintsHold_materialize
     exact eval_mainRawRow_materialize index emptyData row h_segment_l1 h_main_step
   have h_input : Eval.eval proverEnv
       (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar = row := by
+    unfold Air.Flat.Component.rowInputVar at h_input_verifier ⊢
     rw [ProvableType.eval_varFromOffset_prover]
     rw [← h_input_verifier]
     rw [ProvableType.eval_varFromOffset]

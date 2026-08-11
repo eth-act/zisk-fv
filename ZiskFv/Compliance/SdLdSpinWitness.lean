@@ -535,6 +535,7 @@ private theorem sdLdMain_constraintsHold_materialize
     exact eval_mainRawRow_materialize index data row h_segment_l1 h_main_step
   have h_input : Eval.eval proverEnv
       (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = row := by
+    unfold Air.Flat.Component.rowInputVar at h_input_verifier ⊢
     rw [ProvableType.eval_varFromOffset_prover]
     rw [← h_input_verifier]
     rw [ProvableType.eval_varFromOffset]
