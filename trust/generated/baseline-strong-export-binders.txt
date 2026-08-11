@@ -8,7 +8,8 @@
 7 :: rawProgram :: Fin rawLength → BitVec 32
 8 :: programBinding :: ZiskFv.Compliance.RawProgramBinding.ProgramRowsBinding ziskTrace start addr rawProgram
 9 :: rawProgramDecodes :: (i : Fin numInstructions) → ZiskFv.Compliance.RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram
-10 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgree ziskTrace sailTrace i (ziskStep i)
-11 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace sailTrace ziskStep
-12 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
-13 :: i :: Fin numInstructions
+10 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgreeCore ziskTrace sailTrace i (ziskStep i)
+11 :: pcSeed :: ZiskFv.Compliance.SegmentPcSeed ziskTrace sailTrace
+12 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace sailTrace ziskStep
+13 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
+14 :: i :: Fin numInstructions

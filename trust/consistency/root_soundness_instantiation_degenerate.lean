@@ -173,6 +173,12 @@ private def seed : BootSegmentMemorySeed trace sail step where
     exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_ne
   placement := fun i => i.elim0
 
+/-- The PC seed for the degenerate execution (#330). Both premises are vacuous for the
+    same reason `seed`'s are: there is no step `0`, and no step `j + 1`. -/
+def pcSeed : SegmentPcSeed trace sail where
+  boot := fun h => absurd h (Nat.not_lt_zero _)
+  succ := fun _ h => absurd h (Nat.not_lt_zero _)
+
 /-- `stepSound_of_programDecodes` applied to a concrete (degenerate) accepted trace. The `Fin 0`
     conclusion is vacuous, but the term genuinely constructs an `AcceptedZiskTrace`
     and feeds it through the headline theorem — witnessing that the object
@@ -181,7 +187,7 @@ theorem root_soundness_instantiation_degenerate :
     ∀ i : Fin 0,
       StepSound trace sail i (step i)
         (rowDecode_of_programDecode trace i (decode i)) :=
-  stepSound_of_programDecodes 0 trace sail step decode nofun seed nofun
+  stepSound_of_programDecodes 0 trace sail step decode nofun pcSeed seed nofun
 
 #print axioms root_soundness_instantiation_degenerate
 
