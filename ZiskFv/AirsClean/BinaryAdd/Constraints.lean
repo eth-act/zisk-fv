@@ -69,9 +69,4 @@ def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
   -- slot-for-slot faithful to the hand-written reference.
   OpBusChannel.push (opBusMessageExpr row)
 
-/-- The elaborated circuit for BinaryAdd's `main` — 4 `assertZero`
-    constraints + the bus push, no fresh witnesses (`localLength = 0`,
-    `unit` output). Lives here (next to `main`) so the `Circuit.lean`
-    wrapper can reuse it without an import cycle. -/
-
 end ZiskFv.AirsClean.BinaryAdd
