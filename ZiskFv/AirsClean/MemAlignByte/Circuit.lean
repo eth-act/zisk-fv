@@ -105,82 +105,88 @@ set_option maxHeartbeats 1000000 in
     `a + -b` form) directly, with the 3 range clauses fed from static
     lookup soundness. The four boolean constraints (0, 1, 2, 4) are
     unused. -/
-def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit :=
-  { memAlignByteElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => Spec row
-    -- Completeness covers rows built by `memAlignByteRowOf`; fields not
-    -- constrained by this slice remain free operands.
-    ProverAssumptions := fun row _ _ =>
-      ∃ sel_high_4b sel_high_2b sel_high_b isWrite byteVal writtenByteVal
-        direct_value value_16b value_8b addr_w step,
-        byteVal < 2 ^ 8 ∧ writtenByteVal < 2 ^ 8 ∧
-          value_16b.val < 2 ^ 16 ∧ value_8b.val < 2 ^ 8 ∧
-          row = memAlignByteRowOf sel_high_4b sel_high_2b sel_high_b isWrite
-            byteVal writtenByteVal direct_value value_16b value_8b addr_w step
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · -- the MemAlignByte algebraic relation: the 5 definitional
-        -- constraints (3, 5, 6, 7, 8) imply the 5 algebraic Spec
-        -- clauses; the 3 `bits(N)` range clauses come from the static
-        -- range lookups prepended to `main`. The 4 boolean constraints
-        -- (0, 1, 2, 4) are unused.
-        obtain ⟨h_bus_range, h_byte_range, h_is_write_range,
-          _h_value16_range, _h_dual_byte_range,
-          _h0, _h1, _h2, h_composed, _h4, h_written, h_m0, h_m1,
-          h_bus, _h_aligned_read⟩ := h_holds
-        simp only [byte_value_factor, value_8b_factor, value_16b_factor]
-        refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-        · linear_combination h_composed
-        · linear_combination h_written
-        · linear_combination h_m0
-        · linear_combination h_m1
-        · linear_combination h_bus
-        · exact h_bus_range
-        · exact h_byte_range
-        · exact h_is_write_range
-      · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
-        -- is `True`.
-        intro _
-        trivial
-    completeness := by
-      circuit_proof_start [MemBusChannel, Lookup.completeness_def]
-      obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, isWrite, byteVal, writtenByteVal,
-        direct_value, value_16b, value_8b, addr_w, step, h_byte, h_written,
-        h_value16, h_value8, hrow⟩ :=
-        h_assumptions
-      injection hrow with h_sel_high_4b h_sel_high_2b h_sel_high_b h_direct_value
-        h_composed_value h_written_composed_value h_written_byte_value h_value_16b
-        h_value_8b h_byte_value h_addr_w h_step h_is_write h_mem_write_values_0
-        h_mem_write_values_1 h_bus_byte
-      subst_vars
-      simp [memAlignByteComposedValueOf, memAlignByteMemWriteValues0Of,
-        memAlignByteMemWriteValues1Of, byte_value_factor, value_8b_factor,
-        value_16b_factor] at h_input ⊢
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
-        rw [memAlignByteBusByteOf_eq]
-        cases isWrite
-        · exact fgl_natCast_val_lt_of_lt (by decide) h_byte
-        · exact fgl_natCast_val_lt_of_lt (by decide) h_written
-      · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
-        exact fgl_natCast_val_lt_of_lt (by decide) h_byte
-      · simp only [RangeTables.rangeTable1, RangeTables.rangeStaticTable]
-        cases isWrite <;> simp [boolF]
-      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
-        exact h_value16
-      · simpa [Lookup.Completeness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
-          RangeTables.dualByteTable, h_input] using
-          (show ((byteVal : FGL).val < 2 ^ 8 ∧ value_8b.val < 2 ^ 8) from
-            ⟨fgl_natCast_val_lt_of_lt (by decide) h_byte, h_value8⟩)
-      · ring
-      · ring
-      · ring
-      · ring
-      · simp [memAlignByteBusByteOf]
-        ring }
+def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit  where
+  name := "MemAlignByte"
+  main := main
+  channelsWithRequirements := [MemBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [ MemBusChannel.pulled (memReadMessageExpr row)
+      , MemBusChannel.pushed (memBusMessageExpr row) ]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row
+  -- Completeness covers rows built by `memAlignByteRowOf`; fields not
+  -- constrained by this slice remain free operands.
+  ProverAssumptions := fun row _ _ =>
+    ∃ sel_high_4b sel_high_2b sel_high_b isWrite byteVal writtenByteVal
+      direct_value value_16b value_8b addr_w step,
+      byteVal < 2 ^ 8 ∧ writtenByteVal < 2 ^ 8 ∧
+        value_16b.val < 2 ^ 16 ∧ value_8b.val < 2 ^ 8 ∧
+        row = memAlignByteRowOf sel_high_4b sel_high_2b sel_high_b isWrite
+          byteVal writtenByteVal direct_value value_16b value_8b addr_w step
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · -- the MemAlignByte algebraic relation: the 5 definitional
+      -- constraints (3, 5, 6, 7, 8) imply the 5 algebraic Spec
+      -- clauses; the 3 `bits(N)` range clauses come from the static
+      -- range lookups prepended to `main`. The 4 boolean constraints
+      -- (0, 1, 2, 4) are unused.
+      obtain ⟨h_bus_range, h_byte_range, h_is_write_range,
+        _h_value16_range, _h_dual_byte_range,
+        _h0, _h1, _h2, h_composed, _h4, h_written, h_m0, h_m1,
+        h_bus, _h_aligned_read⟩ := h_holds
+      simp only [byte_value_factor, value_8b_factor, value_16b_factor]
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · linear_combination h_composed
+      · linear_combination h_written
+      · linear_combination h_m0
+      · linear_combination h_m1
+      · linear_combination h_bus
+      · exact h_bus_range
+      · exact h_byte_range
+      · exact h_is_write_range
+    · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
+      -- is `True`.
+      intro _
+      trivial
+  completeness := by
+    circuit_proof_start [MemBusChannel, Lookup.completeness_def]
+    obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, isWrite, byteVal, writtenByteVal,
+      direct_value, value_16b, value_8b, addr_w, step, h_byte, h_written,
+      h_value16, h_value8, hrow⟩ :=
+      h_assumptions
+    injection hrow with h_sel_high_4b h_sel_high_2b h_sel_high_b h_direct_value
+      h_composed_value h_written_composed_value h_written_byte_value h_value_16b
+      h_value_8b h_byte_value h_addr_w h_step h_is_write h_mem_write_values_0
+      h_mem_write_values_1 h_bus_byte
+    subst_vars
+    simp [memAlignByteComposedValueOf, memAlignByteMemWriteValues0Of,
+      memAlignByteMemWriteValues1Of, byte_value_factor, value_8b_factor,
+      value_16b_factor] at h_input ⊢
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
+      rw [memAlignByteBusByteOf_eq]
+      cases isWrite
+      · exact fgl_natCast_val_lt_of_lt (by decide) h_byte
+      · exact fgl_natCast_val_lt_of_lt (by decide) h_written
+    · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
+      exact fgl_natCast_val_lt_of_lt (by decide) h_byte
+    · simp only [RangeTables.rangeTable1, RangeTables.rangeStaticTable]
+      cases isWrite <;> simp [boolF]
+    · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+      exact h_value16
+    · simpa [Lookup.Completeness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+        RangeTables.dualByteTable, h_input] using
+        (show ((byteVal : FGL).val < 2 ^ 8 ∧ value_8b.val < 2 ^ 8) from
+          ⟨fgl_natCast_val_lt_of_lt (by decide) h_byte, h_value8⟩)
+    · ring
+    · ring
+    · ring
+    · ring
+    · simp [memAlignByteBusByteOf]
+      ring
 
 /-- MemAlignByte as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
@@ -200,8 +206,7 @@ theorem component_interactionsWith_memBus :
       [ ((MemBusChannel.pulled (memReadMessageExpr component.rowInputVar)).toRaw)
       , ((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw) ]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, memAlignByteElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 
 set_option maxHeartbeats 1000000 in
@@ -249,8 +254,7 @@ theorem spec_via_component (row : MemAlignByteRow FGL)
     (h_value8_range : row.value_8b.val < 2 ^ 8) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, memAlignByteElaborated,
-    circuit_norm] at hsound
+  simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   -- The `circuit_norm`-normalized constraint goals are in `a + -b`
   -- form; re-express the caller's `a - b` hypotheses to match.
   simp only [byte_value_factor, value_8b_factor, value_16b_factor,

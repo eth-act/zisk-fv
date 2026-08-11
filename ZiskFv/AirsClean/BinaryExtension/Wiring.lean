@@ -27,8 +27,7 @@ the exact static BinaryExtensionTable provider. -/
 def binaryExtensionTableConnectionEnsemble : FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
     |>.addTable tableConsumerComponent
-        (by simp [tableConsumerComponent, tableConsumerCircuit,
-          binaryExtensionWithTableElaborated])
+        (by simp [tableConsumerComponent, tableConsumerCircuit])
         (by
           intro channel h_finished
           change channel ∈ ([] : List (RawChannel FGL)) at h_finished

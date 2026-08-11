@@ -26,39 +26,32 @@ def main (value : Expression FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable16) value
   SpecifiedRangesSliceChannel.push (memDistanceMessage value)
 
-@[reducible]
-def elaborated : ElaboratedCircuit FGL field unit where
+
+/-- The bounded provider derives its own static membership; it carries no
+caller-supplied assumption. -/
+def circuit : GeneralFormalCircuit FGL field unit  where
   name := "SpecifiedRangesSlice103"
   main := main
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [SpecifiedRangesSliceChannel.toRaw]
   exposedChannels value _ :=
     expose SpecifiedRangesSliceChannel
       [SpecifiedRangesSliceChannel.pushed (memDistanceMessage value)]
-  channelsLawful := by
-    simp only [circuit_norm, main, memDistanceMessage, SpecifiedRangesSliceChannel]
-
-/-- The bounded provider derives its own static membership; it carries no
-caller-supplied assumption. -/
-def circuit : GeneralFormalCircuit FGL field unit :=
-  { elaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun value _ _ => rangeTable16.Spec value
-    ProverAssumptions := fun value _ _ => rangeTable16.Spec value
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · simpa only [Table.fromStatic, StaticTable.toTable, rangeTable16,
-          rangeStaticTable] using h_holds
-      · intro _
-        simpa [SpecifiedRangesSliceChannel, memDistanceMessage,
-          memDistanceRangeId] using h_holds
-    completeness := by
-      circuit_proof_start [Lookup.completeness_def]
-      simpa only [Table.fromStatic, StaticTable.toTable, rangeTable16,
-        rangeStaticTable] using h_assumptions }
+  Assumptions := fun _ _ => True
+  Spec := fun value _ _ => rangeTable16.Spec value
+  ProverAssumptions := fun value _ _ => rangeTable16.Spec value
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · simpa only [Table.fromStatic, StaticTable.toTable, rangeTable16,
+        rangeStaticTable] using h_holds
+    · intro _
+      simpa [SpecifiedRangesSliceChannel, memDistanceMessage,
+        memDistanceRangeId] using h_holds
+  completeness := by
+    circuit_proof_start [Lookup.completeness_def]
+    simpa only [Table.fromStatic, StaticTable.toTable, rangeTable16,
+      rangeStaticTable] using h_assumptions
 
 /-- The bus-103 provider component for the full ensemble. -/
 def component : Component FGL := { circuit }
@@ -71,7 +64,7 @@ theorem component_interactionsWith_rangeChannel :
   change ⟨SpecifiedRangesSliceChannel.toRaw,
       [((SpecifiedRangesSliceChannel.pushed
         (memDistanceMessage component.rowInputVar)).toRaw)]⟩ ∈ component.exposedChannels
-  simp only [component, circuit, elaborated, Component.exposedChannels, expose,
+  simp only [component, circuit, Component.exposedChannels, expose,
     List.mem_singleton, List.map_cons, List.map_nil]
 
 end ZiskFv.AirsClean.SpecifiedRangesSlice
