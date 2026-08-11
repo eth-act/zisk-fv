@@ -275,7 +275,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
   clear h_mem
   simp only [fullRv64imSoundEnsemble, circuit_norm, Ensemble.allTables] at h
   rcases h with
-    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     (rw [h]
      trivial)
 

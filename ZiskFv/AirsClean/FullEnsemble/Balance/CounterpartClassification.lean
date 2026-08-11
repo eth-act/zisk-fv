@@ -139,7 +139,7 @@ theorem exists_matching_op_component_of_active_main_interaction
       table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom | h_mem | h_ranges |
+    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom | h_mem | h_ranges | h_regRange |
     h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -170,6 +170,9 @@ theorem exists_matching_op_component_of_active_main_interaction
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       exact specifiedRangesSlice_table_interactionsWith_opBus_nil h_ranges
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
+      exact registerStepRangeSlice_table_interactionsWith_opBus_nil h_regRange
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       exact arithDiv_table_interactionsWith_opBus_nil h_arithDiv
@@ -300,7 +303,7 @@ theorem exists_matching_mem_component_of_active_main_interaction
       table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom | h_mem | h_ranges |
+    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom | h_mem | h_ranges | h_regRange |
     h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -342,6 +345,9 @@ theorem exists_matching_mem_component_of_active_main_interaction
       Or.inr (Or.inr (Or.inr (Or.inl h_mem)))⟩
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       exact specifiedRangesSlice_table_interactionsWith_memBus_nil h_ranges
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact registerStepRangeSlice_table_interactionsWith_memBus_nil h_regRange
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       exact arithDiv_table_interactionsWith_memBus_nil h_arithDiv
