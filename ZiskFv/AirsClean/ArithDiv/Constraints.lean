@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.ArithDiv.Spec
 import ZiskFv.AirsClean.ArithTable
 import ZiskFv.AirsClean.RangeTables
 import Clean.Circuit.Basic
+import Clean.Circuit.Formal
 import ZiskFv.Channels.OperationBus
 
 /-!
@@ -281,97 +282,71 @@ def mainWithSignedCarryRanges (row : Var ArithDivRow FGL) : Circuit FGL Unit := 
   lookup (Table.fromStatic signedCarryRangeTable) row.aux.carry_6
 
 /-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
-    separate from `arithDivElaborated` so existing carry-chain consumers do
+    separate from `ArithDiv.circuit` so existing carry-chain consumers do
     not acquire a new caller-supplied lookup promise before Compliance has
     a global source for it. -/
 @[reducible] def arithDivWithArithTableElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivWithArithTable"
   main := mainWithArithTable
-  localLength _ := 0
-  output _ _ := ()
 
 @[reducible] def arithDivWithChunkRangesElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivWithChunkRanges"
   main := mainWithChunkRanges
-  localLength _ := 0
-  output _ _ := ()
 
 @[reducible] def arithDivWithUnsignedCarryRangesElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivWithUnsignedCarryRanges"
   main := mainWithUnsignedCarryRanges
-  localLength _ := 0
-  output _ _ := ()
 
 @[reducible] def arithDivWithSignedCarryRangesElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivWithSignedCarryRanges"
   main := mainWithSignedCarryRanges
-  localLength _ := 0
-  output _ _ := ()
 
 @[reducible] def arithDivPrimaryOpBusElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivPrimaryOpBus"
   main := mainWithPrimaryOpBus
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithPrimaryOpBus, main, primaryOpBusMessageExpr,
       OpBusChannel]
 
 @[reducible] def arithDivSecondaryOpBusElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivSecondaryOpBus"
   main := mainWithSecondaryOpBus
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithSecondaryOpBus, main, secondaryOpBusMessageExpr,
       OpBusChannel]
 
 @[reducible] def arithDivPrimaryOpBusWithArithTableElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivPrimaryOpBusWithArithTable"
   main := mainWithPrimaryOpBusAndArithTable
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithPrimaryOpBusAndArithTable,
       mainWithPrimaryOpBus, main, primaryOpBusMessageExpr, OpBusChannel]
 
 @[reducible] def arithDivSecondaryOpBusWithArithTableElaborated :
-    ElaboratedCircuit FGL ArithDivRow unit where
+    FormalCircuitBase FGL ArithDivRow unit where
   name := "ArithDivSecondaryOpBusWithArithTable"
   main := mainWithSecondaryOpBusAndArithTable
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithSecondaryOpBusAndArithTable,
       mainWithSecondaryOpBus, main, secondaryOpBusMessageExpr, OpBusChannel]
-
-/-- The elaborated circuit for ArithDiv's `main` — 11 `assertZero`
-    constraints, no fresh witnesses (`localLength = 0`, `unit` output)
-    and no channel interactions. Lives here (next to `main`) so the
-    `Circuit.lean` wrapper can reuse it without an import cycle. -/
-@[reducible] def arithDivElaborated : ElaboratedCircuit FGL ArithDivRow unit where
-  name := "ArithDiv"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
 
 end ZiskFv.AirsClean.ArithDiv

@@ -190,8 +190,9 @@ set_option maxHeartbeats 4000000 in
     `ArithDiv.soundness_of_constraints` (`Soundness.lean`) — the same
     11 `linear_combination` discharges, reshaped to consume the
     `circuit_norm`-normalized constraints (in `a + -b` form) directly. -/
-def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
-  { arithDivElaborated with
+def circuit : GeneralFormalCircuit FGL ArithDivRow unit where
+    name := "ArithDiv"
+    main := main
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers unsigned rows built from a dividend and nonzero divisor.
@@ -289,7 +290,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
             (e1 := arithDivE1 c b) (e2 := arithDivE2 c b) (e3 := arithDivE3 c b)
             (e4 := arithDivE4 c b) (e5 := arithDivE5 c b) (e6 := arithDivE6 c b)
             (e7 := arithDivE7 c b) fgl_65536_ne_zero
-            (arithDivChainSum_zero c b hc hb hb_ne)) }
+            (arithDivChainSum_zero c b hc hb hb_ne))
 
 /-- ArithDiv as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
@@ -396,8 +397,7 @@ theorem spec_via_component (row : ArithDivRow FGL)
         + row.aux.carry_6 = 0) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, arithDivElaborated,
-    circuit_norm] at hsound
+  simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   -- The `circuit_norm`-normalized constraint goals are in `a + -b`
   -- form; re-express the caller's `a - b` hypotheses to match.
   simp only [sub_eq_add_neg] at h_c6 h_c7 h_c8 h_c31 h_c32 h_c33 h_c34 h_c35 h_c36 h_c37 h_c38

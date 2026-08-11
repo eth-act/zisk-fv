@@ -172,8 +172,14 @@ set_option maxHeartbeats 4000000 in
     (`Soundness.lean`) — same per-clause `linear_combination` discharge,
     reshaped to consume the `circuit_norm`-normalized constraints
     directly. -/
-def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
-  { arithMulElaborated with
+def circuit : GeneralFormalCircuit FGL ArithMulRow unit where
+    name := "ArithMul"
+    main := main
+    channelsWithRequirements := [OpBusChannel.toRaw]
+    exposedChannels row _ :=
+      expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
+    exposedChannels_eq := by
+      simp only [circuit_norm, main, primaryOpBusMessageExpr, OpBusChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers unsigned rows built from two 64-bit operands.
@@ -201,7 +207,7 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
         · linear_combination h_c38
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`.
         intro _
-        trivial
+        simp [OpBusChannel]
     completeness := by
       circuit_proof_start_core
       simp only [main, circuit_norm, primaryOpBusMessageExpr, OpBusChannel]
@@ -255,17 +261,19 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
             (e1 := arithMulE1 a b) (e2 := arithMulE2 a b) (e3 := arithMulE3 a b)
             (e4 := arithMulE4 a b) (e5 := arithMulE5 a b) (e6 := arithMulE6 a b)
             (e7 := arithMulE7 a b) fgl_65536_ne_zero
-            (arithMulChainSum_zero a b ha hb)) }
+            (arithMulChainSum_zero a b ha hb))
 
 set_option maxHeartbeats 4000000 in
 /-- Lookup-aware ArithMul component circuit. Its soundness exposes the full
     carry-chain plus ArithTable membership contract; completeness is intentionally
     vacuous until an honest lookup-aware row constructor is added. -/
-def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
-  { arithMulWithArithTableElaborated with
+def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit where
+    name := "ArithMulWithArithTable"
+    main := mainWithArithTable
+    channelsWithRequirements := [OpBusChannel.toRaw]
     exposedChannels row _ :=
       expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
-    channelsLawful := by
+    exposedChannels_eq := by
       simp only [circuit_norm, mainWithArithTable, main, primaryOpBusMessageExpr,
         OpBusChannel]
     Assumptions := fun _ _ => True
@@ -393,10 +401,10 @@ def circuitWithArithTable : GeneralFormalCircuit FGL ArithMulRow unit :=
                     StaticTable.toTable, Table.toRaw, Expression.eval, h_range_cd, h_id3]
                     using h_rd3⟩
       · intro _
-        trivial
+        simp [OpBusChannel]
     completeness := by
       circuit_proof_start_core
-      exact False.elim h_assumptions }
+      exact False.elim h_assumptions
 
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
@@ -436,7 +444,7 @@ theorem component_interactionsWith_opBus :
   change ⟨OpBusChannel.toRaw,
       [((OpBusChannel.pushed (primaryOpBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, arithMulElaborated, Component.exposedChannels,
+  simp only [component, circuit, Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil,
     primaryOpBusMessageExpr]
 
@@ -557,8 +565,7 @@ theorem spec_via_component (row : ArithMulRow FGL)
         + row.carries.carry_6 = 0) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, arithMulElaborated,
-    circuit_norm] at hsound
+  simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   -- The `circuit_norm`-normalized constraint goals are in `a + -b`
   -- form; re-express the caller's `a - b` hypotheses to match.
   simp only [sub_eq_add_neg] at h_c6 h_c7 h_c8 h_c31 h_c32 h_c33 h_c34 h_c35 h_c36 h_c37 h_c38
@@ -639,10 +646,11 @@ def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit  where
       h_input trivial h_base
     exact ⟨⟨h_old.1, h_div_input⟩, by
       unfold Operations.Requirements at h_old ⊢
-      simp only [circuitWithArithTable, arithMulWithArithTableElaborated,
+      simp only [circuitWithArithTable,
         sharedMainCompleteWithRemainderBound, sharedMainComplete,
         mainWithArithTable, main, circuit_norm] at h_old ⊢
-      exact ⟨h_old.2, fun _ => trivial⟩⟩
+      -- `Channel.toRaw.Requirements` now takes `mult ≠ -1` *and* `mult ≠ 0`.
+      exact ⟨h_old.2, fun _ _ => trivial⟩⟩
   completeness := by
     circuit_proof_start_core
     exact False.elim h_assumptions
