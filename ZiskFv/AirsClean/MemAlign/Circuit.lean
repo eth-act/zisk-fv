@@ -181,7 +181,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit where
     exposedChannels_eq := by
       intro input offset exposed h_mem
       simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
-        List.mem_singleton, List.not_mem_nil, or_false] at h_mem
+        List.not_mem_nil, or_false] at h_mem
       rcases h_mem with rfl | rfl | rfl <;>
         simp [circuit_norm, mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main,
           selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,

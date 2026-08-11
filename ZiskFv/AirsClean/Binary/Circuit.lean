@@ -139,7 +139,7 @@ def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
   -- channel separately.
   exposedChannels_eq := by
     intro input offset exposed h_mem
-    simp only [expose, List.singleton_append, List.mem_cons, List.mem_singleton,
+    simp only [expose, List.singleton_append, List.mem_cons,
       List.not_mem_nil, or_false] at h_mem
     rcases h_mem with rfl | rfl
     · simp [circuit_norm, mainWithBinaryTable, main, opBusMessageExpr,
