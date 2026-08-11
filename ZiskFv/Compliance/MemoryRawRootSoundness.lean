@@ -100,11 +100,19 @@ def memoryBootSeed :
     exact absurd (by simp [AcceptedZiskTrace.numInstructions]) h_ne
   placement := fun i => i.elim0
 
-/-- The PC seed for the empty execution. Both premises are vacuous here for the same
+/-- The PC premises for the empty execution. All of them are vacuous here for the same
     reason `memoryBootSeed`'s are: there is no step `0`, and no step `j + 1`. -/
-def memoryPcSeed : SegmentPcSeed memoryAcceptedTrace memorySailTrace where
+def memoryPcChain :
+    SegmentPcChain memoryAcceptedTrace memorySailTrace memoryZiskStep where
+  retire := fun _ h => absurd h (Nat.not_lt_zero _)
   boot := fun h => absurd h (Nat.not_lt_zero _)
-  succ := fun _ h => absurd h (Nat.not_lt_zero _)
+
+def memoryRowsAligned :
+    StepRowsAligned memoryAcceptedTrace memoryZiskStep
+      (fun i => rowDecode_of_programDecode memoryAcceptedTrace i
+        (programDecode_of_rawProgramDecode memoryAcceptedTrace i (memoryZiskStep i)
+          memoryStart memoryAddr memoryRawProgram memoryProgramRowsBinding i.elim0)) :=
+  fun _ h => absurd h (Nat.not_lt_zero _)
 
 /-- `root_soundness` instantiated on the memory witness with the real, already-proven
     `memoryProgramRowsBinding` as `programBinding` — strengthening
@@ -119,7 +127,8 @@ theorem memoryRawRootSoundness :
             memoryStart memoryAddr memoryRawProgram memoryProgramRowsBinding i.elim0)) :=
   root_soundness 0 3 memoryAcceptedTrace memorySailTrace memoryZiskStep
     memoryStart memoryAddr memoryRawProgram memoryProgramRowsBinding
-    (fun i => i.elim0) (fun i => i.elim0) memoryPcSeed memoryBootSeed (fun i => i.elim0)
+    (fun i => i.elim0) (fun i => i.elim0) memoryPcChain memoryRowsAligned memoryBootSeed
+    (fun i => i.elim0)
 
 #print axioms memoryRawRootSoundness
 

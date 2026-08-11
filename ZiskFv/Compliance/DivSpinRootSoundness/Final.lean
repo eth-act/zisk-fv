@@ -5,13 +5,33 @@ open ZiskFv.Compliance.DivSpinWitness
 
 namespace ZiskFv.Compliance.DivSpinRootSoundness
 
+/-- #330 Phase 7: each executed step's producer entry is its own row's successor `pc`. Only a
+    two-row unaligned JALR lowering can break this, and only at a step that has a successor. -/
+def divSpinRowsAligned :
+    StepRowsAligned divSpinAcceptedTrace divSpinZiskStep
+      (fun i => rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i)) := by
+  intro j h
+  have h' : j + 1 < 4 := h
+  have hj : j < 4 - 1 := by omega
+  interval_cases j <;> rfl
+
+/-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
+    `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
+    witness already proves — no new content, and no hand-evaluated Sail execution. -/
+def divSpinPcChain : SegmentPcChain divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep where
+  toSailRetireChain :=
+    sailRetireChain_of_inputsAgree
+      (fun i => rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i))
+      divSpinInputsAgree divSpinBootSeed divSpinOutsideDefectRegion divSpinRowsAligned
+  boot := (pcSeed_of_inputsAgree divSpinInputsAgree).boot
+
 theorem divSpinRootSoundness :
     ∀ i : Fin 4,
       StepSound divSpinAcceptedTrace divSpinSailTrace i (divSpinZiskStep i)
         (rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 4 divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep
-    divSpinProgramDecodes divSpinInputsAgreeCore divSpinPcSeed divSpinBootSeed
-    divSpinOutsideDefectRegion
+    divSpinProgramDecodes divSpinInputsAgreeCore divSpinPcChain divSpinRowsAligned
+    divSpinBootSeed divSpinOutsideDefectRegion
 
 theorem divSpinAddiX1StepSound :
     StepSound divSpinAcceptedTrace divSpinSailTrace divSpinAddiX1Index

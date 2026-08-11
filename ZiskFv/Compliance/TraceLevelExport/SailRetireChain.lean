@@ -1,3 +1,4 @@
+import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeed
 import ZiskFv.Compliance.TraceLevelExport.SegmentPcSeed
 
 /-!
@@ -746,5 +747,98 @@ theorem pcBridge_succ_of_stepSound
     (Nat.mod_eq_of_lt
       (lt_trans ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc (j + 1)).isLt
         (by norm_num))).symm
+
+/-- **The PC premise of `root_soundness`, after Phase 7.** One cross-machine equation, at row `0`,
+    plus the Sail-internal retire law.
+
+    Compare `SegmentPcSeed`, which this replaces: that carried `boot` **and** `succ`, and `succ`
+    named the `pc` column at every step. Here the only statement relating a committed column to a
+    Sail register is `boot`. Everything else about the PC is derived —
+    `mainOfTable_pc_succ_eq_nextPcMux` from the circuit's own transition constraint,
+    `nextPC_of_busEffect_ok` from `bus_effect`, and the step-to-step link from `retire`.
+
+    `pcSeed_of_inputsAgree` proved `SegmentPcSeed` inter-derivable with the old per-row bundle, so
+    Phase 5/6 was a restructuring. This is not: `retire` cannot be recovered from the per-row
+    `h_pc_bridge` fields, because they say nothing about whether the Sail step retires. -/
+structure SegmentPcChain
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (binding : SailTrace ziskTrace.numInstructions)
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i) : Prop
+    extends SailRetireChain ziskTrace binding ziskStep where
+  /-- Boot: the Sail PC at step `0` is the Main `pc` column at row `0`. The one cross-machine
+      premise left on the PC arm. -/
+  boot : ∀ (h : 0 < ziskTrace.numInstructions),
+    ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc 0).val
+      = ((binding ⟨0, h⟩).regs.get? Register.PC).elim 0 BitVec.toNat
+
+/-- **The old per-row bundle implies the retire law, at an aligned step.** Given the full
+    `InputsAgree` a caller used to supply, plus the memory seed and defect exclusions it already
+    supplies, `StepSound` follows at every row; reading `nextPC` off it and comparing with the next
+    row's own `h_pc_bridge` gives `retire`.
+
+    **This direction is why Phase 7 is not, by itself, a logical-strength reduction, and the
+    docstrings must not claim one.** Together with `pcBridge_succ_of_stepSound` (which goes the other
+    way) it shows the old bundle and `boot` + `retire` are inter-derivable *given*
+    `StepRowsAligned` — the same situation `pcSeed_of_inputsAgree` established for Phase 5/6.
+
+    What Phase 7 does change is where the assumption lives: the old bundle asserted cross-machine
+    agreement at every executed row, while `boot` + `retire` assert it at row `0` only and otherwise
+    speak about the Sail trace alone. And `StepRowsAligned`, which the old bundle silently did
+    without, is now a visible premise.
+
+    Its immediate job is the regression floor: the seven checked-in accepted-trace witnesses build
+    their retire chain through here instead of proving Sail execution results by hand. -/
+theorem sailRetireChain_of_inputsAgree
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (rowDecodes : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (inputsAgree : ∀ i : Fin ziskTrace.numInstructions,
+      InputsAgree ziskTrace binding i (ziskStep i))
+    (bootSeed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (hAvoidKnownBugs : ∀ i : Fin ziskTrace.numInstructions,
+      RowOutsideDefectRegion ziskTrace i (ziskStep i))
+    (aligned : StepRowsAligned ziskTrace ziskStep rowDecodes) :
+    SailRetireChain ziskTrace binding ziskStep where
+  retire := by
+    intro j h result post h_res
+    have hj : j < ziskTrace.numInstructions := Nat.lt_of_succ_lt h
+    have h_step := stepSound_of_evidence ziskTrace binding ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
+      (rowDecodes ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩)
+      (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
+    have h_iff :=
+      (stepSound_iff (binding := binding) ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).mp h_step
+    have h_ok :
+        (bus_effect (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).execRows
+          (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).memRows
+          (binding ⟨j, hj⟩)).2 = .ok result post := by
+      have h2 : ZiskFv.Channels.state_effect_via_channels
+          (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)) (binding ⟨j, hj⟩)
+          = .ok result post := h_iff ▸ h_res
+      exact h2
+    have hx := stepChannelOutput_execRows ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)
+    have h_len :
+        (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).execRows.length = 2 := by
+      rw [hx]; rfl
+    have h_e0 :
+        (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
+          (rowDecodes ⟨j, hj⟩)).execRows[0]!.multiplicity = -1 := by
+      rw [hx]; rfl
+    have h_e1 :
+        (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
+          (rowDecodes ⟨j, hj⟩)).execRows[1]!.multiplicity = 1 := by
+      rw [hx]; rfl
+    have h_prod :
+        (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).execRows[1]!.pc
+          = (mainOfTable ziskTrace.program ziskTrace.mainTable).pc (j + 1) := by
+      rw [hx, aligned j h]; rfl
+    have h_next := nextPC_of_busEffect_ok _ _ _ _ _ h_len h_e0 h_e1 h_ok
+    obtain ⟨v, hv⟩ :=
+      pcNamed_of_inputsAgree ⟨j + 1, h⟩ (ziskStep ⟨j + 1, h⟩) (inputsAgree ⟨j + 1, h⟩)
+    have h_ag :=
+      pcAgreement_of_inputsAgree ⟨j + 1, h⟩ (ziskStep ⟨j + 1, h⟩) (inputsAgree ⟨j + 1, h⟩)
+    simp only [hv, Option.elim] at h_ag
+    rw [hv, h_next, h_prod, h_ag]
+    exact congrArg some (BitVec.eq_of_toNat_eq (by simp)).symm
 
 end ZiskFv.Compliance

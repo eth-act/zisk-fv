@@ -71,14 +71,18 @@ info: root_soundness : ∀ (numInstructions rawLength : ℕ) (ziskTrace : Accept
   (programBinding : RawProgramBinding.ProgramRowsBinding ziskTrace start addr rawProgram)
   (rawProgramDecodes : (i : Fin numInstructions) → RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram)
   (inputsAgree : (i : Fin numInstructions) → InputsAgreeCore ziskTrace sailTrace i (ziskStep i)),
-  SegmentPcSeed ziskTrace sailTrace →
-    ∀ (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep),
-      (∀ (i : Fin numInstructions), RowOutsideDefectRegion ziskTrace i (ziskStep i)) →
-        ∀ (i : Fin numInstructions),
-          StepSound ziskTrace sailTrace i (ziskStep i)
-            (rowDecode_of_programDecode ziskTrace i
-              (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
-                (rawProgramDecodes i)))
+  SegmentPcChain ziskTrace sailTrace ziskStep →
+    (StepRowsAligned ziskTrace ziskStep fun i ↦
+        rowDecode_of_programDecode ziskTrace i
+          (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
+            (rawProgramDecodes i))) →
+      ∀ (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep),
+        (∀ (i : Fin numInstructions), RowOutsideDefectRegion ziskTrace i (ziskStep i)) →
+          ∀ (i : Fin numInstructions),
+            StepSound ziskTrace sailTrace i (ziskStep i)
+              (rowDecode_of_programDecode ziskTrace i
+                (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
+                  (rawProgramDecodes i)))
 -/
 #guard_msgs (whitespace := lax) in
 #check @root_soundness
