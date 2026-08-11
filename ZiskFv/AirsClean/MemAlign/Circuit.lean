@@ -29,6 +29,8 @@ namespace ZiskFv.AirsClean.MemAlign
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
+open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
 
 /-- Honest MemAlign phase: prove row, up-to-down transition,
     down-to-up transition, or idle. -/
@@ -155,8 +157,35 @@ def memAlignIdleRow : MemAlignRow FGL :=
 
 set_option maxRecDepth 2000 in
 set_option maxHeartbeats 4000000 in
-def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
-  { memAlignWithMemBusAndMemAlignRomAndRangesElaborated with
+def circuit : GeneralFormalCircuit FGL MemAlignRow unit where
+    name := "MemAlignWithMemBusAndMemAlignRomAndRanges"
+    main := mainWithMemBusAndMemAlignRomAndRanges
+    channelsWithRequirements := [MemBusChannel.toRaw, MemAlignRomChannel.toRaw,
+      MemAlignRangeChannel.toRaw]
+    exposedChannels row _ :=
+      expose MemBusChannel
+        [MemBusChannel.emitted (row.sel_prove - selAssumeExpr row) (memBusMessageExpr row)] ++
+      expose MemAlignRomChannel
+        [MemAlignRomChannel.emitted (-1) (memAlignRomMessageExpr row)] ++
+      expose MemAlignRangeChannel
+        [ MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_0)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_1)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_2)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_3)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_4)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_5)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_6)
+        , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_7) ]
+    -- Three `expose` blocks appended, so `exposedChannelsLawful_expose` cannot
+    -- fire on the whole list; split the membership first.
+    exposedChannels_eq := by
+      intro input offset exposed h_mem
+      simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
+        List.mem_singleton, List.not_mem_nil, or_false] at h_mem
+      rcases h_mem with rfl | rfl | rfl <;>
+        simp [circuit_norm, mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main,
+          selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
+          memAlignRangeMessageExpr, MemBusChannel, MemAlignRomChannel, MemAlignRangeChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers rows built by `memAlignRowOf`: phase and Boolean
@@ -192,7 +221,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
               , by simpa only [sub_eq_add_neg] using h14
               , by simpa only [sub_eq_add_neg] using h15 ⟩
       · intro _
-        trivial
+        simp [MemBusChannel]
     completeness := by
       circuit_proof_start_core
       simp only [mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main, circuit_norm,
@@ -218,7 +247,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
           h_sel_prove, h_preL1, h_value_0, h_value_1, memAlignValue0Of,
           memAlignValue1Of, memAlignLane] <;>
         ring_nf <;>
-        simp }
+        simp
 
 /-- The source's predecessor/current MemAlign constraints: c29's gated
     `delta_addr` relation and c1/c3/.../c15's register continuity.

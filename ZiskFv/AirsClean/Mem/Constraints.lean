@@ -196,12 +196,6 @@ def permutationGeneratedConstraintAssertions
         + permutation.im_direct_2) + permutation.im_direct_3)
         + permutation.im_direct_4) + permutation.im_direct_5))))
 
-@[reducible] def memElaborated :
-    ElaboratedCircuit FGL MemRow unit where
-  name := "Mem"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
 
 /-! ## T4.0.7 — memory-bus provider emission
 
@@ -381,35 +375,25 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
     rw [h_sel_dual] at h_delta_range
     simpa [sub_eq_add_neg, rangeTable24, rangeStaticTable] using h_delta_range
 
-/-- Elaborated `memWithMemBus` circuit, ready for use in Clean
-    memory-bus component assembly. -/
-@[reducible] def memWithMemBusElaborated :
-    ElaboratedCircuit FGL MemRow unit where
-  name := "MemWithMemBus"
-  main := memWithMemBus
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [MemBusChannel.toRaw]
-  exposedChannels row _ :=
-    expose MemBusChannel [MemBusChannel.emitted row.sel (memBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, memWithMemBus, main, memBusMessageExpr, MemBusChannel]
-
 /-- Elaborated dual-aware Mem circuit exposing both primary and dual
-    memory-bus provider emissions. Kept separate from `memWithMemBusElaborated`
+    memory-bus provider emissions. Kept separate from `Mem.circuitWithMemBus`
     so existing FullEnsemble proofs can migrate deliberately. -/
 @[reducible] def memWithDualMemBusElaborated :
-    ElaboratedCircuit FGL MemRow unit where
+    FormalCircuitBase FGL MemRow unit where
   name := "MemWithDualMemBus"
   main := memWithDualMemBus
-  localLength _ := 0
-  output _ _ := ()
+  -- `elaborate_circuit` cannot derive this: the gated `sel_dual` range lookup has
+  -- no `ExplicitCircuit` instance. These are the same two values the pre-migration
+  -- `ElaboratedCircuit` stated by hand.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
         , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, memWithDualMemBus, main, rowRangeLookups,
       gatedDualStepDeltaRangeLookup, memBusMessageExpr, memBusDualMessageExpr, MemBusChannel]
 
@@ -428,31 +412,5 @@ def memWithDualMemBusAndRange (row : Var MemRow FGL) : Circuit FGL Unit := do
   SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceBase1Wiring.source)
   SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceEnd0Wiring.source)
   SpecifiedRangesSliceChannel.emit (-1) (memDistanceMessage distanceEnd1Wiring.source)
-
-/-- Dual Mem component plus the source-linked bus-103 consumer interactions.
-The range cells are table-resident raw values pinned by `generatedTransition`.
--/
-@[reducible]
-def memWithDualMemBusAndRangeElaborated : ElaboratedCircuit FGL MemRow unit where
-  name := "MemWithDualMemBusAndRange"
-  main := memWithDualMemBusAndRange
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [MemBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
-  exposedChannels row _ :=
-    expose MemBusChannel
-      [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
-      , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ] ++
-    expose SpecifiedRangesSliceChannel
-      [ SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase0Expr)
-      , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase1Expr)
-      , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd0Expr)
-      , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd1Expr) ]
-  channelsLawful := by
-    simp [circuit_norm, memWithDualMemBusAndRange, memWithDualMemBus, main,
-      rowRangeLookups, gatedDualStepDeltaRangeLookup, memBusMessageExpr,
-      memBusDualMessageExpr, memDistanceMessage, memDistanceBase0Expr,
-      memDistanceBase1Expr, memDistanceEnd0Expr, memDistanceEnd1Expr,
-      MemBusChannel, SpecifiedRangesSliceChannel]
 
 end ZiskFv.AirsClean.Mem
