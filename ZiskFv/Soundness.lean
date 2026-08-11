@@ -40,8 +40,38 @@ namespace ZiskFv.Compliance
     witness-row decode columns are no longer assumed, they are DERIVED from the
     program-level decode facts via the in-circuit ROM lookup
     (`rowDecode_of_programDecode`, block 1); and `inputsAgree` is the cross-world
-    fact that ZisK's inputs equal the Sail model's register / PC / memory state.
+    fact that ZisK's inputs equal the Sail model's register / memory state.
     `hAvoidKnownBugs` excludes the enumerated forge defects.
+
+    `pcSeed` is the single named **cross-row PC seed** premise, in the same shape as
+    `bootSeed` below.  The PC half of `inputsAgree` used to be a per-row assumption:
+    all 63 `Inputs_<op>` structures carried an `h_pc_bridge` field asserting that the
+    Main `pc` column at that row equals the Sail PC.  Those are gone.  `inputsAgree`
+    now takes `InputsAgreeCore` (`Inputs_<op>` minus that field), and every row's PC
+    agreement is *derived* from `pcSeed`'s two premises by `inputsAgree_of_pcSeed`:
+
+      * `boot` — the Sail PC agrees with the Main `pc` column at step `0`;
+      * `succ` — the Sail PC at step `j + 1` is the next-PC mux the Main row at `j`
+        computed.
+
+    `succ` never mentions the `pc` column.  Converting it into agreement at `j + 1`
+    is done by the circuit's own transition constraint
+    (`mainOfTable_pc_eq_nextPcMux_of_transitions_hold`), which is derived from the
+    `AcceptedZiskTrace.transitions_hold` certificate and costs no premise.
+
+    **Be precise about the claim.**  `pcSeed_of_inputsAgree` proves the converse, so over
+    an `AcceptedZiskTrace` the old bundle and `InputsAgreeCore` + `pcSeed` are
+    inter-derivable.  This is a *restructuring* of the premise, not a reduction in
+    logical strength.  What changes is that a caller supplies 2 facts about a segment
+    instead of one PC equation per executed row, that cross-machine PC agreement is
+    asserted at one point plus a successor law rather than independently at every row,
+    and that the trust ledger carries one named premise instead of 63 scattered fields.
+
+    `succ` is irreducible at *this* layer for the same reason `bootSeed` is: `SailTrace`
+    is a bare `Fin n → SailState` (`Compliance/SailTrace.lean`) with no chaining, so
+    *something* must say the Sail states form an execution.  Making `SailTrace` a chained
+    execution would discharge `succ` by induction from `boot` alone — a real strength
+    reduction, and now a local change here rather than 63 structure edits.  Tracked on #330.
 
     `bootSeed` is the single named **cross-row memory seed** premise: the segment's
     initial memory state at segment entry, together with the one consistent
@@ -67,7 +97,8 @@ theorem stepSound_of_programDecodes
     (sailTrace : SailTrace numInstructions)
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
     (programDecodes : ∀ i : Fin numInstructions, ProgramDecode ziskTrace i (ziskStep i))
-    (inputsAgree : ∀ i : Fin numInstructions, InputsAgree ziskTrace sailTrace i (ziskStep i))
+    (inputsAgree : ∀ i : Fin numInstructions, InputsAgreeCore ziskTrace sailTrace i (ziskStep i))
+    (pcSeed : SegmentPcSeed ziskTrace sailTrace)
     (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
@@ -76,7 +107,8 @@ theorem stepSound_of_programDecodes
         (rowDecode_of_programDecode ziskTrace i (programDecodes i)) :=
   fun i =>
     stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
-      (rowDecode_of_programDecode ziskTrace i (programDecodes i)) (inputsAgree i)
+      (rowDecode_of_programDecode ziskTrace i (programDecodes i))
+      (inputsAgree_of_pcSeed pcSeed i (ziskStep i) (inputsAgree i))
       (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
 
 /-- **The root soundness theorem — the entrypoint for an audit of this project's
@@ -121,7 +153,8 @@ theorem root_soundness
     (rawProgramDecodes : ∀ i : Fin numInstructions,
       RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram)
     (inputsAgree : ∀ i : Fin numInstructions,
-      InputsAgree ziskTrace sailTrace i (ziskStep i))
+      InputsAgreeCore ziskTrace sailTrace i (ziskStep i))
+    (pcSeed : SegmentPcSeed ziskTrace sailTrace)
     (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
@@ -133,6 +166,6 @@ theorem root_soundness
   stepSound_of_programDecodes numInstructions ziskTrace sailTrace ziskStep
     (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
       start addr rawProgram programBinding (rawProgramDecodes i))
-    inputsAgree bootSeed hAvoidKnownBugs
+    inputsAgree pcSeed bootSeed hAvoidKnownBugs
 
 end ZiskFv.Compliance

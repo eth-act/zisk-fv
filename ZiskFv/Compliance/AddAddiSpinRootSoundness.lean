@@ -439,6 +439,15 @@ def addAddiSpinInputsAgree :
   | ⟨1, _⟩ => addAddiSpinAddiInputs
   | ⟨2, _⟩ => addAddiSpinJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addAddiSpinPcSeed : SegmentPcSeed addAddiSpinAcceptedTrace addAddiSpinSailTrace :=
+  pcSeed_of_inputsAgree addAddiSpinInputsAgree
+
+def addAddiSpinInputsAgreeCore :
+    ∀ i : Fin 3, InputsAgreeCore addAddiSpinAcceptedTrace addAddiSpinSailTrace i (addAddiSpinZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addAddiSpinZiskStep i) (addAddiSpinInputsAgree i)
+
 def addAddiSpinAddOutsideDefectRegion :
     RowOutsideDefectRegion addAddiSpinAcceptedTrace addAddiSpinAddIndex
       (addAddiSpinZiskStep addAddiSpinAddIndex) := by
@@ -495,7 +504,7 @@ theorem addAddiSpinRootSoundness :
         (rowDecode_of_programDecode addAddiSpinAcceptedTrace i
           (addAddiSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
-    addAddiSpinProgramDecodes addAddiSpinInputsAgree addAddiSpinBootSeed
+    addAddiSpinProgramDecodes addAddiSpinInputsAgreeCore addAddiSpinPcSeed addAddiSpinBootSeed
     addAddiSpinOutsideDefectRegion
 
 theorem addAddiSpinAddStepSound :

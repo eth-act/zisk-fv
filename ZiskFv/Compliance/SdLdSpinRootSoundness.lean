@@ -780,6 +780,15 @@ def sdLdInputsAgree :
   | ⟨5, _⟩ => sdLdLdInputs
   | ⟨6, _⟩ => sdLdJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def sdLdPcSeed : SegmentPcSeed sdLdAcceptedTrace sdLdSailTrace :=
+  pcSeed_of_inputsAgree sdLdInputsAgree
+
+def sdLdInputsAgreeCore :
+    ∀ i : Fin 7, InputsAgreeCore sdLdAcceptedTrace sdLdSailTrace i (sdLdZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (sdLdZiskStep i) (sdLdInputsAgree i)
+
 private theorem sdLdStoreEntry_eq :
     (busSt sdLdAcceptedTrace sdLdSdIndex
       (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2 =
@@ -1022,7 +1031,7 @@ theorem sdLdRootSoundness :
       (sdLdZiskStep i)
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
   stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
-    sdLdProgramDecodes sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion
+    sdLdProgramDecodes sdLdInputsAgreeCore sdLdPcSeed sdLdBootSeed sdLdOutsideDefectRegion
 
 theorem sdLdAddiA0StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index

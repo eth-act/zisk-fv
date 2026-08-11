@@ -200,6 +200,16 @@ def addFaithfulInputsAgree :
     ∀ i : Fin 1, InputsAgree addFaithfulAcceptedTrace addFaithfulSailTrace i (addFaithfulZiskStep i)
   | ⟨0, _⟩ => addFaithfulAddInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addFaithfulPcSeed : SegmentPcSeed addFaithfulAcceptedTrace addFaithfulSailTrace :=
+  pcSeed_of_inputsAgree addFaithfulInputsAgree
+
+def addFaithfulInputsAgreeCore :
+    ∀ i : Fin 1,
+      InputsAgreeCore addFaithfulAcceptedTrace addFaithfulSailTrace i (addFaithfulZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addFaithfulZiskStep i) (addFaithfulInputsAgree i)
+
 def addFaithfulAddOutsideDefectRegion :
     RowOutsideDefectRegion addFaithfulAcceptedTrace addFaithfulAddIndex
       (addFaithfulZiskStep addFaithfulAddIndex) := by
@@ -255,8 +265,8 @@ theorem addFaithfulPaddedRawRootSoundness :
             addFaithfulProgramRowsBinding (addFaithfulRawProgramDecodes i))) :=
   root_soundness 1 2 addFaithfulAcceptedTrace addFaithfulSailTrace addFaithfulZiskStep
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
-    addFaithfulRawProgramDecodes addFaithfulInputsAgree addFaithfulBootSeed
-    addFaithfulOutsideDefectRegion
+    addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcSeed
+    addFaithfulBootSeed addFaithfulOutsideDefectRegion
 
 #print axioms addFaithfulPaddedRawRootSoundness
 

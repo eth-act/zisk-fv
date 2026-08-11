@@ -5,25 +5,43 @@ import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 # The segment PC seed (`SegmentPcSeed`) — #330 Phase 5
 
 `h_pc_bridge` is the one `InputsAgree` field present in **all 63** `Inputs_<op>` structures: it
-asserts that the Main `pc` column at a row equals the Sail PC at that step. Today it is assumed
+asserts that the Main `pc` column at a row equals the Sail PC at that step. It used to be assumed
 once per opcode structure, i.e. at every row.
 
-This module replaces those with **two** premises, in the shape `BootSegmentMemorySeed` established
-for memory (#185/#115):
+`root_soundness` now assumes `InputsAgreeCore` (`Inputs_<op>` minus that field) plus **two**
+premises from this module, in the shape `BootSegmentMemorySeed` established for memory (#185/#115):
 
 * `boot` — the Sail PC agrees with the Main `pc` column at step `0`;
 * `succ` — the Sail PC at step `j + 1` is the **next-PC mux** the Main row at `j` computes.
 
-The reduction is genuine rather than a repackaging, because `succ` never mentions the `pc` column.
-Converting "Sail's PC advanced to the mux value" into "Sail's PC equals the next row's `pc` column"
-is done by the circuit's own transition constraint, via
-`mainOfTable_pc_eq_nextPcMux_of_transitions_hold` — which is derived from
-`AcceptedZiskTrace.transitions_hold` and costs no premise. Without that constraint `succ` would not
-imply agreement at all.
+## What this is, and what it is not
 
-`succ` is the honest content: `SailTrace` is a bare `Fin n → SailState`
-(`ZiskFv/Compliance/SailTrace.lean:20`) with no chaining whatsoever, so *something* must say the
-Sail states form an execution. This says it once, for every step, instead of 63 times.
+Both directions are proved in this file, so be precise about the claim:
+
+* `inputsAgree_of_pcSeed` — core + seed ⟹ the full per-row `InputsAgree`;
+* `pcSeed_of_inputsAgree` — the full per-row `InputsAgree` ⟹ the seed.
+
+Over an `AcceptedZiskTrace` the two bundles are therefore **inter-derivable**. This is a
+*restructuring* of the premise, NOT a reduction in logical strength. Claiming otherwise would be
+laundering, and the converse direction above is what proves it would be.
+
+What genuinely changes:
+
+* the caller supplies **2** facts about a segment instead of one PC equation per executed row;
+* `succ` never mentions the `pc` column — it says the Sail PC advances to the value the ZisK row
+  computes, so cross-machine PC agreement is asserted at one point (`boot`) plus a successor law,
+  instead of independently at every row;
+* the per-row bridging is done by the circuit's own transition constraint, via
+  `mainOfTable_pc_eq_nextPcMux_of_transitions_hold`, derived from
+  `AcceptedZiskTrace.transitions_hold` at no premise cost;
+* the trust ledger gains one named premise where it had 63 scattered fields.
+
+This is the same bargain `BootSegmentMemorySeed` (#185/#115) struck for memory, and it is the
+prerequisite for the genuinely weaker statement rather than a substitute for it. `SailTrace` is a
+bare `Fin n → SailState` (`ZiskFv/Compliance/SailTrace.lean:20`) with **no chaining**, so *something*
+must say the Sail states form an execution. Making `SailTrace` a chained execution would let `succ`
+be discharged by induction from `boot` alone — a real strength reduction, and now a local change at
+the root rather than 63 structure edits. That follow-on is tracked on #330.
 
 ## Scope
 
@@ -55,8 +73,8 @@ noncomputable def nextPcMux (ziskTrace : AcceptedZiskTrace numInstructions) (j :
 
 /-- The two-premise PC seed: boot agreement plus the Sail execution's PC successor.
 
-    Replaces the 63 per-opcode `h_pc_bridge` assumptions. See the module docstring for why `succ`
-    is weaker than assuming agreement per row. -/
+    Replaces the 63 per-opcode `h_pc_bridge` assumptions as the root premise. It is
+    inter-derivable with them, not weaker — see the module docstring for exactly what changes. -/
 structure SegmentPcSeed
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace ziskTrace.numInstructions) where
@@ -319,5 +337,190 @@ def inputsAgree_of_pcSeed {numInstructions : ℕ}
       { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_opcode_assumptions.1 }
   | .fence _, core =>
       { core with h_pc_bridge := h_pc_bridge_of_pcSeed seed i core.h_input_pc }
+
+/-- The PC half of a full `InputsAgree`, in the seed's `Option.elim` form.
+
+    Each arm reads the row's `h_pc_bridge` and the row's own Sail-PC naming — the same
+    three places `inputsAgree_of_pcSeed` uses, in the opposite direction. -/
+theorem pcAgreement_of_inputsAgree {numInstructions : ℕ}
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    (i : Fin ziskTrace.numInstructions) :
+    (zs : ZiskStep ziskTrace i) → InputsAgree ziskTrace binding i zs →
+      ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val
+        = ((binding i).regs.get? Register.PC).elim 0 BitVec.toNat
+  | .sub _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .and _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .or _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .xor _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .slt _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sltu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .andi _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .ori _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .xori _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .slti _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sltiu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sll _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .srl _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sra _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .slli _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .srli _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .srai _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .add _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .addi _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .subw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .addw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .addiw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sllw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .srlw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sraw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .slliw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .srliw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sraiw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .mul _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .mulh _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .mulhsu _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .mulw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .mulhu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .div _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .rem _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .divw _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .remw _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
+  | .divu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .divuw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .remu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .remuw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .beq _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .bne _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .blt _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .bge _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .bltu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .bgeu _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .lui _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .auipc _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .jal _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .jalr _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .sb _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .sh _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .sw _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .sd _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .ld _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .lbu _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .lhu _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .lwu _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .lb _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .lh _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .lw _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .fence _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+
+/-- **`SegmentPcSeed` is no stronger than what callers already assumed.** Anything that
+    could supply the old 63-field `InputsAgree` family can supply the seed.
+
+    `boot` is row `0`'s PC agreement.  `succ` is row `j + 1`'s PC agreement pushed back
+    through the circuit's own PC recurrence — the same
+    `mainOfTable_pc_eq_nextPcMux_of_transitions_hold` that `pcBridge_of_pcSeed` uses
+    forwards, run in the other direction.
+
+    Together with `inputsAgree_of_pcSeed` this makes the two bundles inter-derivable over
+    an `AcceptedZiskTrace`.  Stated plainly: the seed is a **restructuring** of the old
+    premise, not a weakening of it.  See the module docstring for what does change, and
+    for the chained-`SailTrace` follow-on that would make it a real reduction. -/
+def pcSeed_of_inputsAgree {numInstructions : ℕ}
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (ia : ∀ i : Fin ziskTrace.numInstructions,
+      InputsAgree ziskTrace binding i (ziskStep i)) :
+    SegmentPcSeed ziskTrace binding where
+  boot h := pcAgreement_of_inputsAgree ⟨0, h⟩ _ (ia ⟨0, h⟩)
+  succ j h := by
+    have h_row : j + 1 < ziskTrace.mainTable.table.length :=
+      ziskTrace.mainTable_index ⟨j + 1, h⟩
+    have h_len : j + 1 < ziskTrace.mainTable.length := by
+      simpa only [Air.Flat.Table.table_length] using h_row
+    have h_rec :=
+      ZiskFv.AirsClean.FullEnsemble.mainOfTable_pc_eq_nextPcMux_of_transitions_hold
+        ziskTrace.transitions_hold ziskTrace.mainTable_mem ziskTrace.mainTable_component
+        ⟨j + 1, h_len⟩
+        (mainOfTable_segment_l1_ne_one_of_pos ziskTrace.mainTable_component (j + 1)
+          (by omega) h_row
+          (mainTable_index_lt_capacity ziskTrace.mainTable_component (j + 1) h_row))
+    have h_agree := pcAgreement_of_inputsAgree ⟨j + 1, h⟩ _ (ia ⟨j + 1, h⟩)
+    rw [h_rec] at h_agree
+    simpa only [nextPcMux, Nat.add_sub_cancel] using h_agree
+
+/-- Forget the PC field: the `InputsAgreeCore` inside a full `InputsAgree`.
+
+    Paired with `pcSeed_of_inputsAgree`, this is how an existing accepted-trace witness
+    that already proved the 63-field family supplies the two new root premises. -/
+def inputsAgreeCore_of_inputsAgree {numInstructions : ℕ}
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    (i : Fin ziskTrace.numInstructions) :
+    (zs : ZiskStep ziskTrace i) → InputsAgree ziskTrace binding i zs →
+      InputsAgreeCore ziskTrace binding i zs
+  | .sub _, ia => ia.toInputsCore_sub
+  | .and _, ia => ia.toInputsCore_and
+  | .or _, ia => ia.toInputsCore_or
+  | .xor _, ia => ia.toInputsCore_xor
+  | .slt _, ia => ia.toInputsCore_slt
+  | .sltu _, ia => ia.toInputsCore_sltu
+  | .andi _, ia => ia.toInputsCore_andi
+  | .ori _, ia => ia.toInputsCore_ori
+  | .xori _, ia => ia.toInputsCore_xori
+  | .slti _, ia => ia.toInputsCore_slti
+  | .sltiu _, ia => ia.toInputsCore_sltiu
+  | .sll _, ia => ia.toInputsCore_sll
+  | .srl _, ia => ia.toInputsCore_srl
+  | .sra _, ia => ia.toInputsCore_sra
+  | .slli _, ia => ia.toInputsCore_slli
+  | .srli _, ia => ia.toInputsCore_srli
+  | .srai _, ia => ia.toInputsCore_srai
+  | .add _, ia => ia.toInputsCore_add
+  | .addi _, ia => ia.toInputsCore_addi
+  | .subw _, ia => ia.toInputsCore_subw
+  | .addw _, ia => ia.toInputsCore_addw
+  | .addiw _, ia => ia.toInputsCore_addiw
+  | .sllw _, ia => ia.toInputsCore_sllw
+  | .srlw _, ia => ia.toInputsCore_srlw
+  | .sraw _, ia => ia.toInputsCore_sraw
+  | .slliw _, ia => ia.toInputsCore_slliw
+  | .srliw _, ia => ia.toInputsCore_srliw
+  | .sraiw _, ia => ia.toInputsCore_sraiw
+  | .mul _, ia => ia.toInputsCore_mul
+  | .mulh _, ia => ia.toInputsCore_mulh
+  | .mulhsu _, ia => ia.toInputsCore_mulhsu
+  | .mulw _, ia => ia.toInputsCore_mulw
+  | .mulhu _, ia => ia.toInputsCore_mulhu
+  | .div _, ia => ia.toInputsCore_div
+  | .rem _, ia => ia.toInputsCore_rem
+  | .divw _, ia => ia.toInputsCore_divw
+  | .remw _, ia => ia.toInputsCore_remw
+  | .divu _, ia => ia.toInputsCore_divu
+  | .divuw _, ia => ia.toInputsCore_divuw
+  | .remu _, ia => ia.toInputsCore_remu
+  | .remuw _, ia => ia.toInputsCore_remuw
+  | .beq _, ia => ia.toInputsCore_beq
+  | .bne _, ia => ia.toInputsCore_bne
+  | .blt _, ia => ia.toInputsCore_blt
+  | .bge _, ia => ia.toInputsCore_bge
+  | .bltu _, ia => ia.toInputsCore_bltu
+  | .bgeu _, ia => ia.toInputsCore_bgeu
+  | .lui _, ia => ia.toInputsCore_lui
+  | .auipc _, ia => ia.toInputsCore_auipc
+  | .jal _, ia => ia.toInputsCore_jal
+  | .jalr _, ia => ia.toInputsCore_jalr
+  | .sb _, ia => ia.toInputsCore_sb
+  | .sh _, ia => ia.toInputsCore_sh
+  | .sw _, ia => ia.toInputsCore_sw
+  | .sd _, ia => ia.toInputsCore_sd
+  | .ld _, ia => ia.toInputsCore_ld
+  | .lbu _, ia => ia.toInputsCore_lbu
+  | .lhu _, ia => ia.toInputsCore_lhu
+  | .lwu _, ia => ia.toInputsCore_lwu
+  | .lb _, ia => ia.toInputsCore_lb
+  | .lh _, ia => ia.toInputsCore_lh
+  | .lw _, ia => ia.toInputsCore_lw
+  | .fence _, ia => ia.toInputsCore_fence
 
 end ZiskFv.Compliance

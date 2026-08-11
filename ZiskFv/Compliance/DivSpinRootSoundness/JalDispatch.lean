@@ -38,4 +38,12 @@ def divSpinInputsAgree :
   | ⟨2, _⟩ => divSpinDivInputs
   | ⟨3, _⟩ => divSpinJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def divSpinPcSeed : SegmentPcSeed divSpinAcceptedTrace divSpinSailTrace :=
+  pcSeed_of_inputsAgree divSpinInputsAgree
+
+def divSpinInputsAgreeCore :
+    ∀ i : Fin 4, InputsAgreeCore divSpinAcceptedTrace divSpinSailTrace i (divSpinZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (divSpinZiskStep i) (divSpinInputsAgree i)
 end ZiskFv.Compliance.DivSpinRootSoundness

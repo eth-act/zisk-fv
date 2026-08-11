@@ -461,6 +461,15 @@ def inputsAgree :
   | ⟨0, _⟩ => setupInputs
   | ⟨1, _⟩ => jalrInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def pcSeed : SegmentPcSeed jalrAcceptedTrace sailTrace :=
+  pcSeed_of_inputsAgree inputsAgree
+
+def inputsAgreeCore :
+    ∀ i : Fin 2, InputsAgreeCore jalrAcceptedTrace sailTrace i (jalrSpinZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (jalrSpinZiskStep i) (inputsAgree i)
+
 def setupOutsideDefectRegion :
     RowOutsideDefectRegion jalrAcceptedTrace setupIndex
       (jalrSpinZiskStep setupIndex) := by
@@ -496,7 +505,7 @@ theorem jalrSpinRootSoundness :
       StepSound jalrAcceptedTrace sailTrace i (jalrSpinZiskStep i)
         (rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i)) :=
   stepSound_of_programDecodes 2 jalrAcceptedTrace sailTrace jalrSpinZiskStep
-    programDecodes inputsAgree bootSeed outsideDefectRegion
+    programDecodes inputsAgreeCore pcSeed bootSeed outsideDefectRegion
 
 theorem jalrStepSound :
     StepSound jalrAcceptedTrace sailTrace jalrIndex

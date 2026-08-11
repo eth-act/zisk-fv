@@ -327,6 +327,15 @@ def addSpinInputsAgree :
   | ⟨0, _⟩ => addSpinAddInputs
   | ⟨1, _⟩ => addSpinJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addSpinPcSeed : SegmentPcSeed addSpinAcceptedTrace addSpinSailTrace :=
+  pcSeed_of_inputsAgree addSpinInputsAgree
+
+def addSpinInputsAgreeCore :
+    ∀ i : Fin 2, InputsAgreeCore addSpinAcceptedTrace addSpinSailTrace i (addSpinZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addSpinZiskStep i) (addSpinInputsAgree i)
+
 def addSpinAddOutsideDefectRegion :
     RowOutsideDefectRegion addSpinAcceptedTrace addSpinAddIndex
       (addSpinZiskStep addSpinAddIndex) := by
@@ -371,7 +380,7 @@ theorem addSpinRootSoundness :
       (addSpinZiskStep i)
       (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
-    addSpinProgramDecodes addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion
+    addSpinProgramDecodes addSpinInputsAgreeCore addSpinPcSeed addSpinBootSeed addSpinOutsideDefectRegion
 
 theorem addSpinAddStepSound :
     StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
@@ -581,6 +590,15 @@ def addPaddedInputsAgree :
     ∀ i : Fin 1, InputsAgree addPaddedAcceptedTrace addPaddedSailTrace i (addPaddedZiskStep i)
   | ⟨0, _⟩ => addPaddedAddInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addPaddedPcSeed : SegmentPcSeed addPaddedAcceptedTrace addPaddedSailTrace :=
+  pcSeed_of_inputsAgree addPaddedInputsAgree
+
+def addPaddedInputsAgreeCore :
+    ∀ i : Fin 1, InputsAgreeCore addPaddedAcceptedTrace addPaddedSailTrace i (addPaddedZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addPaddedZiskStep i) (addPaddedInputsAgree i)
+
 def addPaddedAddOutsideDefectRegion :
     RowOutsideDefectRegion addPaddedAcceptedTrace addPaddedAddIndex
       (addPaddedZiskStep addPaddedAddIndex) := by
@@ -598,7 +616,7 @@ theorem addPaddedRootSoundness :
       (addPaddedZiskStep i)
       (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
   stepSound_of_programDecodes 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
-    addPaddedProgramDecodes addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion
+    addPaddedProgramDecodes addPaddedInputsAgreeCore addPaddedPcSeed addPaddedBootSeed addPaddedOutsideDefectRegion
 
 theorem addPaddedAddStepSound :
     StepSound addPaddedAcceptedTrace addPaddedSailTrace addPaddedAddIndex

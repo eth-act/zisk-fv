@@ -10,7 +10,7 @@ theorem divSpinRootSoundness :
       StepSound divSpinAcceptedTrace divSpinSailTrace i (divSpinZiskStep i)
         (rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 4 divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep
-    divSpinProgramDecodes divSpinInputsAgree divSpinBootSeed
+    divSpinProgramDecodes divSpinInputsAgreeCore divSpinPcSeed divSpinBootSeed
     divSpinOutsideDefectRegion
 
 theorem divSpinAddiX1StepSound :
