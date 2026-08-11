@@ -782,7 +782,27 @@ theorem singleAddWitness_registerStepRangeChannel_balanced :
         (·.interactionsWith
           ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  sorry
+  have h_boundary :=
+    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
+      (table := registerBoundaryRowsTable) rfl
+  have h_binaryAdd :=
+    ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
+      (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
+  refine balancedInteractions_of_present ?_ [(toElements
+      (ZiskFv.Channels.SpecifiedRanges.registerStepMessage (0 : FGL))).toArray] ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    simp [singleAddTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd]
+    sorry
+  · intro i hi
+    simp [singleAddTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd] at hi
+    sorry
+  · intro msg hmsg
+    simp only [List.mem_singleton] at hmsg
+    subst msg
+    simp [balanceOf, singleAddTables, emptyComponentTable_interactionsWith, h_boundary,
+      h_binaryAdd]
+    sorry
 
 theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels := by
   refine singleAddWitness.balancedChannels_of_tables singleAddEnsemble_verifier ?_

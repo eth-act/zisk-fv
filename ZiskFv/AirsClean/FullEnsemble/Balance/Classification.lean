@@ -730,4 +730,36 @@ theorem registerStepRangeSlice_table_interactionsWith_memAlignRom_nil
   simp [MemAlignRomChannel, ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
     Channel.toRaw] at h_name
 
+/-- `RegisterBoundary` carries no bus-102 interactions. -/
+theorem registerBoundary_table_interactionsWith_registerStepRange_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component) :
+    table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
+  have h_not :
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉
+        ZiskFv.AirsClean.RegisterBoundary.component.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
+      ZiskFv.AirsClean.RegisterBoundary.circuit,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- `BinaryAdd` carries no bus-102 interactions. -/
+theorem binaryAdd_table_interactionsWith_registerStepRange_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.BinaryAdd.component) :
+    table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
+  have h_not :
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉
+        ZiskFv.AirsClean.BinaryAdd.component.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
+      ZiskFv.AirsClean.BinaryAdd.circuit,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, OpBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
 end ZiskFv.AirsClean.FullEnsemble
