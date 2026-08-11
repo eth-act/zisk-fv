@@ -78,9 +78,13 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit  where
   -- This circuit `pull`s from MemBus, so `elaborate_circuit` would derive
   -- `channelsWithGuarantees := [MemBusChannel.toRaw]`. That is the eager syntactic
   -- list, not the minimal one: `MemBusChannel.Guarantees` is `True`, so the pull
-  -- assumes nothing and `ChannelsLawful main []` holds — which is what
-  -- `channelsLawful` below proves, and what the pre-#398 `ElaboratedCircuit`
-  -- declared. Keeping it `[]` is required for `SoundEnsemble.addTable`, whose
+  -- assumes nothing and `ChannelsLawful main []` holds. `[]` is therefore the
+  -- STRONGER declaration, and it is discharged — not defaulted — by the autoParam
+  -- on `ElaboratedCircuit.channelsLawful` (`Clean/Circuit/Basic.lean:247-254`),
+  -- which must close `ChannelsLawful main channelsWithGuarantees` for the
+  -- `elaborated` instance below to elaborate at all. If `MemBusChannel.Guarantees`
+  -- ever stops being `True`, this stops compiling; it cannot silently weaken.
+  -- Keeping it `[]` is also required for `SoundEnsemble.addTable`, whose
   -- `channelsWithGuarantees ⊆ finished` obligation orders a table after every
   -- channel it genuinely relies on.
   elaborated :=

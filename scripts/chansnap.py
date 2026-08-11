@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Channel-interface snapshot gate for the Clean API migration.
+"""Channel-interface snapshot: extract and normalise every channel declaration.
+
+Wired into the trust gate as `trust/scripts/check-channel-declarations.sh`
+(check 20/20), which diffs this script's output against
+`trust/generated/baseline-channel-declarations.txt`. It is a permanent gate, not
+one-shot migration evidence: any add, drop or edit of a channel declaration shows
+up as a baseline diff and must be justified in the PR that makes it.
 
 The post-#398 Clean migration moves fields between `ElaboratedCircuit`,
 `FormalCircuitBase` and `GeneralFormalCircuit`.  A careless rewrite can drop an
