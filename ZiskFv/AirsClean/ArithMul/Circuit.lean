@@ -11,8 +11,7 @@ import Clean.Utils.Tactics
 Packages ZisK's Arith AIR (MUL-mode carry-chain view) as a Clean
 `Air.Flat.Component`:
 
-* `arithMulElaborated` — the `ElaboratedCircuit` over `main` — lives in
-  `Constraints.lean`. Its `main`
+* `main` — lives in `Constraints.lean`. It
   emits the 11 `assertZero` carry-chain constraints (named-form `6/7/8`
   + `31..38`) and the operation-bus proves-side `push`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` (plan D-2:

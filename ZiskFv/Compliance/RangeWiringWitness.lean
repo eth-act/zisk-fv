@@ -268,33 +268,33 @@ private theorem demoInteractions_requirements :
   intro interaction h_interaction
   simp only [demoInteractions, List.mem_cons] at h_interaction
   rcases h_interaction with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | h_empty
-  · change (-1 : FGL) ≠ -1 →
+  · change (-1 : FGL) ≠ -1 → (-1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees distanceBase0DemoMessage distanceBase0DemoData
     simp
-  · change (-1 : FGL) ≠ -1 →
+  · change (-1 : FGL) ≠ -1 → (-1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees demoZeroMessage distanceBase0DemoData
     simp
-  · change (-1 : FGL) ≠ -1 →
+  · change (-1 : FGL) ≠ -1 → (-1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees demoZeroMessage distanceBase0DemoData
     simp
-  · change (-1 : FGL) ≠ -1 →
+  · change (-1 : FGL) ≠ -1 → (-1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees demoZeroMessage distanceBase0DemoData
     simp
-  · change (1 : FGL) ≠ -1 →
+  · change (1 : FGL) ≠ -1 → (1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees distanceBase0DemoMessage distanceBase0DemoData
-    intro _
+    intro _ _
     exact ⟨rfl, demoBaseProviderMembership⟩
-  · change (1 : FGL) ≠ -1 →
+  · change (1 : FGL) ≠ -1 → (1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees demoZeroMessage distanceBase0DemoData
-    intro _
+    intro _ _
     exact ⟨rfl, demoZeroProviderMembership⟩
-  · change (1 : FGL) ≠ -1 →
+  · change (1 : FGL) ≠ -1 → (1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees demoZeroMessage distanceBase0DemoData
-    intro _
+    intro _ _
     exact ⟨rfl, demoZeroProviderMembership⟩
-  · change (1 : FGL) ≠ -1 →
+  · change (1 : FGL) ≠ -1 → (1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees demoZeroMessage distanceBase0DemoData
-    intro _
+    intro _ _
     exact ⟨rfl, demoZeroProviderMembership⟩
   · simp at h_empty
 
@@ -317,11 +317,11 @@ private theorem demoStaticProvider_membership_of_balance_match
   · have h_requirement := demoInteractions_requirements
       (SpecifiedRangesSliceChannel.pushedValue distanceBase0DemoMessage) (by
         simp [demoInteractions])
-    change (1 : FGL) ≠ -1 →
+    change (1 : FGL) ≠ -1 → (1 : FGL) ≠ 0 →
       SpecifiedRangesSliceChannel.Guarantees distanceBase0DemoMessage distanceBase0DemoData
       at h_requirement
     exact ZiskFv.Channels.SpecifiedRanges.memDistanceMessage_guarantees_iff
-      distanceBase0DemoValue distanceBase0DemoData |>.mp (h_requirement h_nonnegative)
+      distanceBase0DemoValue distanceBase0DemoData |>.mp (h_requirement h_nonnegative one_ne_zero)
   · exact (h_messages h_message.symm).elim
   · exact (h_messages h_message.symm).elim
   · exact (h_messages h_message.symm).elim
@@ -343,8 +343,8 @@ theorem distanceBase0Demo_membership_from_balancedWitness :
         demoWitness.interactionsWith SpecifiedRangesSliceChannel.toRaw := by
     rw [demoWitness_rangeInteractions]
     simp [demoInteractions]
-  obtain ⟨provider, h_provider, h_message, h_nonnegative, _⟩ :=
-    exists_nonzero_push_of_pull
+  obtain ⟨provider, h_provider, h_message, _, h_nonnegative⟩ :=
+    exists_push_of_pull
       (demoWitness.interactionsWith SpecifiedRangesSliceChannel.toRaw)
       h_balanced (consumerValue distanceBase0DemoMessage) h_consumer rfl
   have h_provider_demo : provider ∈ demoInteractions := by

@@ -113,8 +113,8 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
       memAlignInteraction ∈ witness.interactionsWith MemAlignRomChannel.toRaw := by
     rw [EnsembleWitness.mem_interactionsWith]
     exact ⟨memAlignTable, h_memAlignTable, h_memAlignInteraction⟩
-  obtain ⟨providerInteraction, h_providerWitness, h_message, h_nonpull, h_nonzero⟩ :=
-    exists_nonzero_push_of_pull
+  obtain ⟨providerInteraction, h_providerWitness, h_message, h_nonzero, h_nonpull⟩ :=
+    exists_push_of_pull
       (witness.interactionsWith MemAlignRomChannel.toRaw)
       (memAlignRom_balanced_of_witness witness h_balanced)
       memAlignInteraction h_memWitness h_active

@@ -34,11 +34,9 @@ def binaryFamilyOpBusEnsemble : FormalEnsemble FGL unit :=
           ZiskFv.AirsClean.Main.mainWithOpBusElaborated])
     |>.addTable ZiskFv.AirsClean.BinaryAdd.component
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit,
-          ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
+          ZiskFv.AirsClean.BinaryAdd.circuit])
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit,
-          ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
+          ZiskFv.AirsClean.BinaryAdd.circuit])
     |>.addTable ZiskFv.AirsClean.Binary.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
@@ -82,11 +80,9 @@ def binaryFamilyStaticBinaryTableOpBusEnsemble : FormalEnsemble FGL unit :=
           ZiskFv.AirsClean.Main.mainWithOpBusElaborated])
     |>.addTable ZiskFv.AirsClean.BinaryAdd.component
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit,
-          ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
+          ZiskFv.AirsClean.BinaryAdd.circuit])
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit,
-          ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
+          ZiskFv.AirsClean.BinaryAdd.circuit])
     |>.addTable ZiskFv.AirsClean.Binary.staticLookupComponent
         (by
           change ([] : List (RawChannel FGL)) ⊆ _

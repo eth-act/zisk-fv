@@ -9,9 +9,8 @@ import Clean.Utils.Tactics
 
 Packages ZisK's MemAlignReadByte AIR as a Clean `Air.Flat.Component`:
 
-* `memAlignReadByteElaborated` — the `ElaboratedCircuit` over `main` —
-  lives in `Constraints.lean`.
-  Its `main` emits the 4 `assertZero` algebraic constraints and the
+* `main` — lives in `Constraints.lean`.
+  It emits the 4 `assertZero` algebraic constraints and the
   memory-bus proves-side `push`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
   soundness; completeness is proved for honest rows built from Boolean byte
@@ -76,6 +75,18 @@ set_option maxHeartbeats 1000000 in
 def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit  where
   name := "MemAlignReadByte"
   main := main
+  -- This circuit `pull`s from MemBus, so `elaborate_circuit` would derive
+  -- `channelsWithGuarantees := [MemBusChannel.toRaw]`. That is the eager syntactic
+  -- list, not the minimal one: `MemBusChannel.Guarantees` is `True`, so the pull
+  -- assumes nothing and `ChannelsLawful main []` holds — which is what
+  -- `channelsLawful` below proves, and what the pre-#398 `ElaboratedCircuit`
+  -- declared. Keeping it `[]` is required for `SoundEnsemble.addTable`, whose
+  -- `channelsWithGuarantees ⊆ finished` obligation orders a table after every
+  -- channel it genuinely relies on.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := ()
+      channelsWithGuarantees := [] }
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
