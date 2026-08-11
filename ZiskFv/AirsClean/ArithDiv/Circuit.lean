@@ -10,8 +10,7 @@ import Clean.Utils.Tactics
 Packages the Arith AIR's **DIV carry-chain sub-circuit** as a Clean
 `Air.Flat.Component`:
 
-* `arithDivElaborated` — the `ElaboratedCircuit` over `main` — lives in
-  `Constraints.lean`. Its `main`
+* `main` — lives in `Constraints.lean`. It
   emits the 11 `assertZero` DIV carry-chain constraints (arith.pil:58-60
   + 205-209). No channel interaction — the Arith op-bus is a shared
   channel wired family-terminal (plan phase C7/CZ).

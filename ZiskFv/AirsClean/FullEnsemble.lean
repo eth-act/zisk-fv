@@ -97,11 +97,9 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           ZiskFv.AirsClean.Main.mainWithRomMemAndOpBusElaborated])
     |>.addTable ZiskFv.AirsClean.BinaryAdd.component
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit,
-          ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
+          ZiskFv.AirsClean.BinaryAdd.circuit])
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit,
-          ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated])
+          ZiskFv.AirsClean.BinaryAdd.circuit])
     |>.addTable ZiskFv.AirsClean.Binary.staticLookupComponent
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
@@ -117,19 +115,16 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           intro channel h
           simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.ArithMul.componentComplete
-        (by simp [ZiskFv.AirsClean.ArithMul.componentComplete,
-          ZiskFv.AirsClean.ArithMul.circuitComplete,
-          ZiskFv.AirsClean.ArithMul.arithMulCompleteElaborated])
+        (by simp [circuit_norm, ZiskFv.AirsClean.ArithMul.componentComplete,
+          ZiskFv.AirsClean.ArithMul.circuitComplete])
         (by
           intro channel h
           simp [circuit_norm] at h)
     |>.addTable ZiskFv.AirsClean.ArithDiv.component
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
-          ZiskFv.AirsClean.ArithDiv.circuit,
-          ZiskFv.AirsClean.ArithDiv.arithDivElaborated])
+          ZiskFv.AirsClean.ArithDiv.circuit])
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
-          ZiskFv.AirsClean.ArithDiv.circuit,
-          ZiskFv.AirsClean.ArithDiv.arithDivElaborated])
+          ZiskFv.AirsClean.ArithDiv.circuit])
     |>.addTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
@@ -195,19 +190,16 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
     |>.addFinishedChannel MemAlignRomChannel.toRaw
     |>.addTable ZiskFv.AirsClean.MemAlignByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
-          ZiskFv.AirsClean.MemAlignByte.circuit,
-          ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
+          ZiskFv.AirsClean.MemAlignByte.circuit])
         (by
           intro channel h_finished h_memBus
           have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
               SpecifiedRangesSliceChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
-              ZiskFv.AirsClean.MemAlignByte.circuit,
-              ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated] using h_finished
+              ZiskFv.AirsClean.MemAlignByte.circuit] using h_finished
           have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
-              ZiskFv.AirsClean.MemAlignByte.circuit,
-              ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated] using h_memBus
+              ZiskFv.AirsClean.MemAlignByte.circuit] using h_memBus
           have h_finished' : channel = MemAlignRomChannel.toRaw ∨
               channel = SpecifiedRangesSliceChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
@@ -219,19 +211,16 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
     |>.addTable ZiskFv.AirsClean.MemAlignReadByte.component
         (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
-          ZiskFv.AirsClean.MemAlignReadByte.circuit,
-          ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
+          ZiskFv.AirsClean.MemAlignReadByte.circuit])
         (by
           intro channel h_finished h_memBus
           have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
               SpecifiedRangesSliceChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
-              ZiskFv.AirsClean.MemAlignReadByte.circuit,
-              ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated] using h_finished
+              ZiskFv.AirsClean.MemAlignReadByte.circuit] using h_finished
           have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
-              ZiskFv.AirsClean.MemAlignReadByte.circuit,
-              ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated] using h_memBus
+              ZiskFv.AirsClean.MemAlignReadByte.circuit] using h_memBus
           have h_finished' : channel = MemAlignRomChannel.toRaw ∨
               channel = SpecifiedRangesSliceChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
@@ -243,19 +232,16 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
     |>.addTable ZiskFv.AirsClean.RegisterBoundary.component
         (by simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
-          ZiskFv.AirsClean.RegisterBoundary.circuit,
-          ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated])
+          ZiskFv.AirsClean.RegisterBoundary.circuit])
         (by
           intro channel h_finished h_memBus
           have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
               SpecifiedRangesSliceChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
-              ZiskFv.AirsClean.RegisterBoundary.circuit,
-              ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated] using h_finished
+              ZiskFv.AirsClean.RegisterBoundary.circuit] using h_finished
           have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
-              ZiskFv.AirsClean.RegisterBoundary.circuit,
-              ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated] using h_memBus
+              ZiskFv.AirsClean.RegisterBoundary.circuit] using h_memBus
           have h_finished' : channel = MemAlignRomChannel.toRaw ∨
               channel = SpecifiedRangesSliceChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list

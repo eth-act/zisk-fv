@@ -503,9 +503,11 @@ theorem exists_matching_nonzero_nonpull_of_active_main_interaction
       providerInteraction.msg = mainInteraction.msg
         ∧ providerInteraction.mult ≠ -1
         ∧ providerInteraction.mult ≠ 0 := by
-  exact exists_nonzero_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
-    (opBus_balanced_of_witness witness h_balanced)
-    mainInteraction h_mem h_active
+  obtain ⟨provider, h_provider, h_msg, h_ne_zero, h_ne_neg_one⟩ :=
+    exists_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
+      (opBus_balanced_of_witness witness h_balanced)
+      mainInteraction h_mem h_active
+  exact ⟨provider, h_provider, h_msg, h_ne_neg_one, h_ne_zero⟩
 
 theorem exists_static_matching_nonzero_nonpull_of_active_main_interaction
     (witness : EnsembleWitness binaryFamilyStaticBinaryTableOpBusEnsemble.ensemble)
@@ -517,9 +519,11 @@ theorem exists_static_matching_nonzero_nonpull_of_active_main_interaction
       providerInteraction.msg = mainInteraction.msg
         ∧ providerInteraction.mult ≠ -1
         ∧ providerInteraction.mult ≠ 0 := by
-  exact exists_nonzero_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
-    (staticOpBus_balanced_of_witness witness h_balanced)
-    mainInteraction h_mem h_active
+  obtain ⟨provider, h_provider, h_msg, h_ne_zero, h_ne_neg_one⟩ :=
+    exists_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
+      (staticOpBus_balanced_of_witness witness h_balanced)
+      mainInteraction h_mem h_active
+  exact ⟨provider, h_provider, h_msg, h_ne_neg_one, h_ne_zero⟩
 
 /-- Compatibility projection for existing C7 callers that only need the
     older non-pull shape. -/

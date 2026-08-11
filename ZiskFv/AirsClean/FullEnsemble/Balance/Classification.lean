@@ -202,7 +202,6 @@ theorem memAlignReadByte_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.MemAlignReadByte.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
       ZiskFv.AirsClean.MemAlignReadByte.circuit,
-      ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
@@ -219,7 +218,6 @@ theorem memAlignByte_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.MemAlignByte.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
       ZiskFv.AirsClean.MemAlignByte.circuit,
-      ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
@@ -311,7 +309,6 @@ theorem registerBoundary_table_interactionsWith_opBus_nil
         ZiskFv.AirsClean.RegisterBoundary.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
       ZiskFv.AirsClean.RegisterBoundary.circuit,
-      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated,
       OpBusChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]

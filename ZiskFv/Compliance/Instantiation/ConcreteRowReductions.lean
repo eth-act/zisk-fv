@@ -799,8 +799,6 @@ theorem binaryAddRowsTable_constraints_of_proverAssumptions
   have h_localLength :
       ZiskFv.AirsClean.BinaryAdd.component.circuit.localLength
         ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated.localLength
-        ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0
     rfl
   rw [Table.Constraints]
   intro arr h_arr
@@ -965,8 +963,6 @@ theorem binarySingleRowTable_constraints_of_proverAssumptions
   have h_localLength :
       ZiskFv.AirsClean.Binary.staticLookupComponent.circuit.localLength
         ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated.localLength
-        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar = 0
     rfl
   have h_component :
       ZiskFv.AirsClean.Binary.staticLookupComponent.operations.ConstraintsHold
@@ -1612,8 +1608,6 @@ theorem registerBoundarySingleRowTable_constraints
   have h_localLength :
       ZiskFv.AirsClean.RegisterBoundary.component.circuit.localLength
         ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated.localLength
-        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0
     rfl
   have h_component :
       ZiskFv.AirsClean.RegisterBoundary.component.operations.ConstraintsHold
@@ -1633,8 +1627,6 @@ theorem registerBoundaryRowsTableOf_constraints
   have h_localLength :
       ZiskFv.AirsClean.RegisterBoundary.component.circuit.localLength
         ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated.localLength
-        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0
     rfl
   rw [Table.Constraints, registerBoundaryRowsTableOf_effectiveRows]
   intro arr h_arr

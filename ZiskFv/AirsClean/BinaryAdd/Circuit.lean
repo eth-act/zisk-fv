@@ -9,8 +9,7 @@ import Clean.Utils.Tactics
 
 Packages ZisK's BinaryAdd AIR as a Clean `Air.Flat.Component`:
 
-* `binaryAddElaborated` — the `ElaboratedCircuit` over `main` — lives in
-  `Constraints.lean`.
+* `main` — lives in `Constraints.lean`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
   soundness; completeness is proved for honest rows built from two 64-bit
   operands.
