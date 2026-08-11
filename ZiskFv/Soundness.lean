@@ -134,12 +134,16 @@ theorem stepSound_of_programDecodes
     #172; and identifying `rawProgram` with the intended compiled binary is the
     external compile/commitment boundary.
 
-    NON-VACUITY (#320): `programBinding` and `rawProgramDecodes` do not yet have
-    in-tree witnesses. The six concrete instantiations (`addSpin`, `addAddiSpin`,
-    `divSpin`, `jalrSpin`, `sdLdSpin`, degenerate) discharge the premises this
-    theorem SHARES with `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`,
-    `inputsAgree`, `bootSeed`, `hAvoidKnownBugs` — but they satisfy `ProgramDecode`
-    directly and so provide no evidence for those two. -/
+    NON-VACUITY (#320): witnessed. `addFaithfulPaddedRawRootSoundness`
+    (`Compliance/AddFaithfulPaddedRootSoundness.lean`) instantiates this theorem on a
+    one-instruction execution with the proved `addFaithfulProgramRowsBinding` and real
+    `addFaithfulRawProgramDecodes`, so the conclusion it obtains is not vacuous.
+    `memoryRawRootSoundness` supplies a second real `ProgramRowsBinding`, on an
+    empty execution. The other instantiations (`addSpin`, `addAddiSpin`, `divSpin`,
+    `jalrSpin`, `sdLdSpin`) discharge the premises this theorem SHARES with
+    `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `pcSeed`,
+    `bootSeed`, `hAvoidKnownBugs` — but satisfy `ProgramDecode` directly, so they
+    provide no evidence for `programBinding` / `rawProgramDecodes`. -/
 theorem root_soundness
     (numInstructions rawLength : Nat)
     (ziskTrace : AcceptedZiskTrace numInstructions)

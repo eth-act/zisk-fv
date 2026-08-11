@@ -494,6 +494,66 @@ whole-state floor" property is a property of the `LoadMemoryTimelineCoherenceEvi
 cursor, so the earlier `witnessStore_nondegenerate` regs/cycleCount side-claim was
 dropped as describing a cursor the evidence no longer uses.)
 
+### One named PC seed premise (`SegmentPcSeed`) — #330
+
+The same restructuring as `BootSegmentMemorySeed` above, applied to the PC arm.
+
+**Before.** `h_pc_bridge` was a field of **all 63** `Inputs_<op>` structures: at
+every executed row, the caller asserted that the Main `pc` column equals the Sail
+PC at that step. `root_soundness` took the whole family as
+`inputsAgree : ∀ i, InputsAgree …`.
+
+**After (live).** `root_soundness` takes
+`inputsAgree : ∀ i, InputsAgreeCore …` — the same 63 structures **minus** that one
+field — plus **one** binder
+`pcSeed : SegmentPcSeed ziskTrace sailTrace`
+(`ZiskFv/Compliance/TraceLevelExport/SegmentPcSeed.lean`), with two fields:
+
+* `boot` — the Sail PC agrees with the Main `pc` column at step `0`;
+* `succ` — the Sail PC at step `j + 1` is the next-PC mux the Main row at `j`
+  computed.
+
+`inputsAgree_of_pcSeed` rebuilds every row's `h_pc_bridge` from the seed. Row `0`
+is `boot`; every later row is `succ` composed with the circuit's own PC
+recurrence, `mainOfTable_pc_eq_nextPcMux_of_transitions_hold`, derived from the
+`AcceptedZiskTrace.transitions_hold` certificate at no premise cost. Two side
+conditions are derived rather than assumed: `segment_l1 ≠ 1` away from row `0`
+(from the component-owned fixed `SEGMENT_L1 = [1,0,0,…]` schema) and the
+fixed-column capacity bound (from the table's own `fixed_domain` field).
+
+**Trust class, stated precisely.** A named external-trust premise, the same class
+as `bootSeed` and channel-balance — not an axiom, not a defect. `root_soundness`'s
+axiom closure is unchanged; the new declarations close over
+`[propext, Classical.choice, Quot.sound]`.
+
+**This is a restructuring, not a strength reduction.** `pcSeed_of_inputsAgree`
+proves the converse, so over an `AcceptedZiskTrace` the old bundle and
+`InputsAgreeCore` + `pcSeed` are **inter-derivable**. Do not read this entry as a
+trust reduction. What it buys:
+
+* the caller supplies 2 facts about a segment instead of one PC equation per
+  executed row;
+* `succ` never names the `pc` column, so cross-machine PC agreement is asserted at
+  one point plus a successor law rather than independently at every row;
+* the ledger carries one named, auditable premise instead of 63 scattered fields.
+
+**Why irreducible at this layer.** `SailTrace` is a bare `Fin n → SailState`
+(`ZiskFv/Compliance/SailTrace.lean`) with no chaining, so *something* must say the
+Sail states form an execution — exactly the reason `bootSeed` is irreducible at
+the single-segment level. Making `SailTrace` a chained execution would discharge
+`succ` by induction from `boot` alone. That would be a real strength reduction,
+and it is now a local change at the root instead of 63 structure edits. Tracked as
+the #330 follow-on.
+
+**Non-vacuity.** All seven accepted-trace witnesses supply the seed and still
+instantiate `root_soundness` / `stepSound_of_programDecodes`, via
+`pcSeed_of_inputsAgree` (the empty-execution memory witness gets a vacuous seed,
+as its `memoryBootSeed` already is).
+
+**Scope.** The PC arm only. The register fields (`h_a_*_t` / `h_b_*_t`, 116
+occurrences) stay assumed; they go through the MemBus and are the separate
+register-partition axis (`main.pil:277-279`, #169/#19).
+
 ### Register MemBus balance (`MEMORY_REG_OP`) — #225
 
 The full RV64IM Clean ensemble now **emits** the complete register-consistency
@@ -926,18 +986,23 @@ particular linker image. Second, grounding the same word in Sail's
 with the intended compiled binary remains the external compile/commitment
 boundary.
 
-**Non-vacuity of this endpoint is NOT yet witnessed (#320).** No theorem in the
-tree concludes `ProgramRowsBinding`, and there is no conversion lemma from the
-older `ProgramBinding`. `RawProgramBinding.memoryProgramBinding` — whose
-hand-written accepted ROM contains SD, LD, and a negative-offset LD and is
-proved equal to production serialization — inhabits `ProgramBinding`, which is
-the physically-indexed predecessor predicate and is not the premise this
-endpoint takes. The six concrete instantiations (`addSpin`, `addAddiSpin`,
-`divSpin`, `jalrSpin`, `sdLdSpin`, degenerate) discharge the premises
-`root_soundness` shares with `stepSound_of_programDecodes` — `ziskTrace`,
-`ziskStep`, `inputsAgree`, `bootSeed`, `hAvoidKnownBugs` — but they satisfy
-`ProgramDecode` directly, and `ProgramRowsBinding + RawProgramDecode ⟹
-ProgramDecode` does not run in the direction that would transfer that evidence.
+**Non-vacuity of this endpoint IS witnessed (#320).** Two theorems in the tree
+conclude `ProgramRowsBinding` and feed it to `root_soundness`:
+
+* `addFaithfulProgramRowsBinding`
+  (`TraceLevelExport/RawProgramBindingAddFaithfulNonvacuity.lean`), consumed by
+  `addFaithfulPaddedRawRootSoundness` on a **one-instruction** execution together
+  with real `addFaithfulRawProgramDecodes` — so the conclusion obtained there is
+  not vacuous;
+* `memoryProgramRowsBinding`, consumed by `memoryRawRootSoundness`, on an empty
+  execution (real binding, vacuous `∀ i : Fin 0` conclusion).
+
+The remaining instantiations (`addSpin`, `addAddiSpin`, `divSpin`, `jalrSpin`,
+`sdLdSpin`) discharge the premises `root_soundness` shares with
+`stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `pcSeed`,
+`bootSeed`, `hAvoidKnownBugs` — but they satisfy `ProgramDecode` directly, and
+`ProgramRowsBinding + RawProgramDecode ⟹ ProgramDecode` does not run in the
+direction that would transfer that evidence.
 So the clauses carrying the binding's weight (4-alignment, `addr + 1 <
 GL_prime`, two-slot separation, and the surjectivity clause) and the two-row
 JALR expansion path are currently unexercised, and no gate detects this:
