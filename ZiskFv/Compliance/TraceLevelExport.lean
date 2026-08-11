@@ -11,6 +11,7 @@ import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeed
 import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeedWitness
 import ZiskFv.Compliance.TraceLevelExport.SegmentPcSeed
+import ZiskFv.Compliance.TraceLevelExport.SailRetireChain
 
 /-!
 # TraceLevelExport.lean — P5 trace-level export (channel-balance form)
