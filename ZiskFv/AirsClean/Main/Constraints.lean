@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.Main.Spec
 import ZiskFv.AirsClean.ZiskInstructionRom
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.MemoryBus
+import ZiskFv.Channels.SpecifiedRanges
 import ZiskFv.Channels.ZiskRomBus
 import Clean.Circuit.Basic
 import Clean.Circuit.Formal
@@ -317,6 +318,7 @@ Memory operation codes (`mem.pil:71-73`):
 * `store_mem_step = 1 + main_step * 4 + 2` -/
 
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
+open ZiskFv.Channels.SpecifiedRanges (RegisterStepRangeChannel registerStepMessage)
 
 /-- `mem_op` literal for the a-side push: `MEMORY_LOAD_OP * a_src_mem +
     MEMORY_REG_OP * a_src_reg = a_src_mem + 3 * a_src_reg`. -/
@@ -491,6 +493,23 @@ the same Main row.  This combined circuit exposes both channels from the
 single `MainRowWithRom.core`.
 -/
 
+/-- The a-side register-step distance range-checked by `main.pil:333`:
+    `a_mem_step - a_reg_prev_mem_step - 1`, with `a_mem_step = 1 + main_step * 4` (the timestamp
+    `aMemMessageExpr` already uses). -/
+@[reducible]
+def aRegStepDistanceExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  (1 + row.rom.main_step * 4) - row.rom.a_reg_prev_mem_step - 1
+
+/-- The b-side register-step distance (`main.pil:334`), `b_mem_step = 2 + main_step * 4`. -/
+@[reducible]
+def bRegStepDistanceExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  (2 + row.rom.main_step * 4) - row.rom.b_reg_prev_mem_step - 1
+
+/-- The store-side register-step distance (`main.pil:335`), `store_mem_step = 3 + main_step * 4`. -/
+@[reducible]
+def cRegStepDistanceExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  (3 + row.rom.main_step * 4) - row.rom.store_reg_prev_mem_step - 1
+
 /-- Main constraints + ROM lookup + memory-bus consumer emissions +
     operation-bus consumer emission, all from one `MainRowWithRom`.
 
@@ -502,6 +521,14 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
     (row : Var MainRowWithRom FGL) : Circuit FGL Unit := do
   mainWithRomAndMemBus length program row
   OpBusChannel.emit (-row.core.is_external_op) (opBusMessageExpr row.core)
+  -- Register-step descent (`main.pil:333-335`). These are what stop the register
+  -- MemBus telescope from admitting cycles disjoint from `RegisterBoundary.bootMessage`.
+  RegisterStepRangeChannel.emit (-row.rom.a_src_reg)
+    (registerStepMessage (aRegStepDistanceExpr row))
+  RegisterStepRangeChannel.emit (-row.rom.b_src_reg)
+    (registerStepMessage (bRegStepDistanceExpr row))
+  RegisterStepRangeChannel.emit (-row.rom.store_reg)
+    (registerStepMessage (cRegStepDistanceExpr row))
 
 /-- Elaborated unified Main circuit for the full Clean ensemble. -/
 instance mainWithRomMemAndOpBusElaboratedInstance
@@ -513,7 +540,8 @@ instance mainWithRomMemAndOpBusElaboratedInstance
     (length : ℕ) (program : Program length) :
     FormalCircuitBase FGL MainRowWithRom unit where
   main := mainWithRomMemAndOpBus length program
-  channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw]
+  channelsWithRequirements :=
+    [MemBusChannel.toRaw, OpBusChannel.toRaw, RegisterStepRangeChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted row.rom.a_src_reg
@@ -531,19 +559,28 @@ instance mainWithRomMemAndOpBusElaboratedInstance
     ++ expose OpBusChannel
       [ OpBusChannel.emitted (-row.core.is_external_op)
           (opBusMessageExpr row.core) ]
+    ++ expose RegisterStepRangeChannel
+      [ RegisterStepRangeChannel.emitted (-row.rom.a_src_reg)
+          (registerStepMessage (aRegStepDistanceExpr row))
+      , RegisterStepRangeChannel.emitted (-row.rom.b_src_reg)
+          (registerStepMessage (bRegStepDistanceExpr row))
+      , RegisterStepRangeChannel.emitted (-row.rom.store_reg)
+          (registerStepMessage (cRegStepDistanceExpr row)) ]
   -- Two `expose` blocks appended, so `exposedChannelsLawful_expose` cannot fire
   -- on the whole list; split the membership first.
   exposedChannels_eq := by
     intro input offset exposed h_mem
     simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at h_mem
-    rcases h_mem with rfl | rfl <;>
+    rcases h_mem with rfl | rfl | rfl <;>
       simp [circuit_norm, mainWithRomMemAndOpBus, mainWithRomAndMemBus,
         mainWithRom, main, romMessageExpr, romFlagsExpr, romStaticTable,
         aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
         aRegPreMessageExpr, bRegPreMessageExpr, cRegPreMessageExpr,
         aMemOpExpr, bMemOpExpr, cMemOpExpr,
         storeValueLoExpr, storeValueHiExpr, opBusMessageExpr,
-        MemBusChannel, OpBusChannel]
+        aRegStepDistanceExpr, bRegStepDistanceExpr, cRegStepDistanceExpr,
+        registerStepMessage,
+        MemBusChannel, OpBusChannel, RegisterStepRangeChannel]
 
 end ZiskFv.AirsClean.Main
