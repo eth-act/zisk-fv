@@ -27,15 +27,14 @@ the exact static BinaryExtensionTable provider. -/
 def binaryExtensionTableConnectionEnsemble : FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
     |>.addTable tableConsumerComponent
-        (by simp [tableConsumerComponent, tableConsumerCircuit])
+        (by simp [circuit_norm, tableConsumerComponent, tableConsumerCircuit])
         (by
           intro channel h_finished
           change channel ∈ ([] : List (RawChannel FGL)) at h_finished
           simp at h_finished)
     |>.addTable ZiskFv.AirsClean.BinaryExtensionTableSlice.component
-        (by simp [ZiskFv.AirsClean.BinaryExtensionTableSlice.component,
-          ZiskFv.AirsClean.BinaryExtensionTableSlice.circuit,
-          ZiskFv.AirsClean.BinaryExtensionTableSlice.elaborated])
+        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryExtensionTableSlice.component,
+          ZiskFv.AirsClean.BinaryExtensionTableSlice.circuit])
         (by
           intro channel h_finished
           change channel ∈ ([] : List (RawChannel FGL)) at h_finished

@@ -175,12 +175,15 @@ abbrev StaticBinaryExtensionTableSpecFacts
 def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  where
   name := "BinaryExtensionWithStaticTable"
   main := mainWithStaticBinaryExtensionTable
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  -- `elaborate_circuit` times out on the eight static table lookups. These are the
+  -- same two values the pre-migration `ElaboratedCircuit` stated by hand.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithStaticBinaryExtensionTable, main,
       opBusMessageExpr, aLo, aHi, OpBusChannel]
   Assumptions := fun _ _ => True
@@ -249,7 +252,7 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  wher
         by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h6,
         by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩
     · intro _
-      trivial
+      simp [OpBusChannel]
   completeness := by
     circuit_proof_start [OpBusChannel, Lookup.completeness_def]
     obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, b0, b1,
@@ -376,12 +379,15 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  wher
 def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  where
   name := "BinaryExtensionWithStaticTableAndShiftRange"
   main := mainWithStaticBinaryExtensionTableAndShiftRange
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  -- `elaborate_circuit` times out on the eight static table lookups. These are the
+  -- same two values the pre-migration `ElaboratedCircuit` stated by hand.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithStaticBinaryExtensionTableAndShiftRange,
       mainWithStaticBinaryExtensionTable, main, opBusMessageExpr, aLo, aHi,
       OpBusChannel]
@@ -453,7 +459,7 @@ def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit 
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩,
         by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩
     · intro _
-      trivial
+      simp [OpBusChannel]
   completeness := by
     circuit_proof_start [OpBusChannel, Lookup.completeness_def]
     obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, b0, b1,

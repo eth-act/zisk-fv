@@ -104,15 +104,14 @@ bus 125. No per-opcode premise or soundness-side `ProverAssumptions` is used. -/
 def binaryTableConnectionEnsemble : FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
     |>.addTable tableConsumerComponent
-        (by simp [tableConsumerComponent, tableConsumerCircuit])
+        (by simp [circuit_norm, tableConsumerComponent, tableConsumerCircuit])
         (by
           intro channel h_finished
           change channel ∈ ([] : List (RawChannel FGL)) at h_finished
           simp at h_finished)
     |>.addTable ZiskFv.AirsClean.BinaryTableSlice.component
-        (by simp [ZiskFv.AirsClean.BinaryTableSlice.component,
-          ZiskFv.AirsClean.BinaryTableSlice.circuit,
-          ZiskFv.AirsClean.BinaryTableSlice.elaborated])
+        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryTableSlice.component,
+          ZiskFv.AirsClean.BinaryTableSlice.circuit])
         (by
           intro channel h_finished
           change channel ∈ ([] : List (RawChannel FGL)) at h_finished

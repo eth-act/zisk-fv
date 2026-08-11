@@ -36,7 +36,7 @@ def circuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  where
   soundness := by
     circuit_proof_start
     intro _
-    trivial
+    simp [OpBusChannel]
   completeness := by circuit_proof_start [OpBusChannel]
 
 /-- BinaryExtension as a Clean `Air.Flat.Component`. -/
@@ -48,6 +48,11 @@ provider-owned and is not a local consumer premise. -/
 def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  where
   name := "BinaryExtensionWithTable"
   main := mainWithBinaryExtensionTable
+  -- `elaborate_circuit` times out on the eight table emissions. These are the same
+  -- two values the pre-migration `ElaboratedCircuit` stated by hand.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
   channelsWithRequirements := [OpBusChannel.toRaw, BinaryExtensionTableChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)] ++
@@ -116,6 +121,15 @@ def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  whe
             c_lo_byte := row.cColsHi.free_in_c_14
             c_hi_byte := row.cColsHi.free_in_c_15
             op_is_shift := row.flags.op_is_shift } ]
+  -- Two `expose` blocks appended, so `exposedChannelsLawful_expose` cannot fire on
+  -- the whole list; split the membership first.
+  exposedChannels_eq := by
+    intro input offset exposed h_mem
+    simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at h_mem
+    rcases h_mem with rfl | rfl <;>
+      simp [circuit_norm, mainWithBinaryExtensionTable, main,
+        opBusMessageExpr, aLo, aHi, OpBusChannel, BinaryExtensionTableChannel]
   Assumptions := fun _ _ => True
   Spec := fun row _ _ => Spec row
   ProverAssumptions := fun _ _ _ => True
@@ -123,7 +137,7 @@ def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  whe
   soundness := by
     circuit_proof_start
     intro _
-    trivial
+    simp [OpBusChannel]
   completeness := by circuit_proof_start [OpBusChannel, BinaryExtensionTableChannel]
 
 def tableConsumerComponent : Air.Flat.Component FGL := { circuit := tableConsumerCircuit }

@@ -109,7 +109,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit  where
     · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
       -- is `True`.
       intro _
-      trivial
+      simp [MemBusChannel]
   completeness := by
     circuit_proof_start [MemBusChannel, Lookup.completeness_def]
     obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, byteVal,
