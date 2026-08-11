@@ -259,8 +259,11 @@ def InputsAgree (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : Sai
     a caller must actually supply.
 
     `root_soundness` assumes this instead of `InputsAgree`.  The PC half is no longer
-    assumed per row: `inputsAgree_of_pcSeed` (in `SegmentPcSeed.lean`) rebuilds the full
-    `InputsAgree` from this core plus the two-premise `SegmentPcSeed`. -/
+    assumed per row: `inputsAgree_of_pcBridge` (in `SegmentPcSeed.lean`) rebuilds the
+    full `InputsAgree` from this core plus that row's PC agreement, which the strong
+    induction in `stepSound_of_programDecodes` derives from `SegmentPcChain.boot` and
+    `retire`.  (`inputsAgree_of_pcSeed` is the seed-driven wrapper, retained only for
+    the converse-direction evidence in `SegmentPcSeed.lean`.) -/
 def InputsAgreeCore (ziskTrace : AcceptedZiskTrace numInstructions) (sailTrace : SailTrace ziskTrace.numInstructions)
     (i : Fin ziskTrace.numInstructions) : ZiskStep ziskTrace i → Type
   | .sub c => InputsCore_sub ziskTrace sailTrace i c

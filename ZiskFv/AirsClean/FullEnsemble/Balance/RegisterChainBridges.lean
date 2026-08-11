@@ -26,6 +26,19 @@ cases need their AIR's booleanity and are handled separately.
 Combined with `activeMainNonMutableMemProviderRowMatchSpec_branch_cases`, ruling the memory
 providers out leaves exactly the two register-side branches — Main-self and `RegisterBoundary` —
 which is the step that lets the register chain be walked forward rather than only ruled out.
+
+## Status — the Phase 2/3 half is groundwork for a blocked phase
+
+`activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three` and the four exclusions it composes
+have **no consumer yet**. They are the classification step (#340) that the register telescope needs,
+and the telescope itself is blocked on #342: the register-step descent (`main.pil:333-335`, bus 102)
+is not modelled, so `<slot>_reg_prev_mem_step` is a free witness column and balance admits register
+access cycles disjoint from `RegisterBoundary.bootMessage`.
+
+`memBusMessage_eq_of_eval_emitted_provider_msg_eq` is in the same position.
+
+The Phase 5 PC lemmas below (`main_transitionBetween_of_transitions_hold` onward) ARE consumed —
+by `SegmentPcSeed.lean` and the accepted-trace witnesses.
 -/
 
 namespace ZiskFv.AirsClean.FullEnsemble

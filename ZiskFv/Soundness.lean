@@ -43,35 +43,42 @@ namespace ZiskFv.Compliance
     fact that ZisK's inputs equal the Sail model's register / memory state.
     `hAvoidKnownBugs` excludes the enumerated forge defects.
 
-    `pcSeed` is the single named **cross-row PC seed** premise, in the same shape as
-    `bootSeed` below.  The PC half of `inputsAgree` used to be a per-row assumption:
-    all 63 `Inputs_<op>` structures carried an `h_pc_bridge` field asserting that the
-    Main `pc` column at that row equals the Sail PC.  Those are gone.  `inputsAgree`
-    now takes `InputsAgreeCore` (`Inputs_<op>` minus that field), and every row's PC
-    agreement is *derived* from `pcSeed`'s two premises by `inputsAgree_of_pcSeed`:
+    `pcChain` and `rowsAligned` carry the **PC arm**.  The PC half of `inputsAgree`
+    used to be a per-row assumption: all 63 `Inputs_<op>` structures carried an
+    `h_pc_bridge` field asserting that the Main `pc` column at that row equals the
+    Sail PC.  Those are gone.  `inputsAgree` now takes `InputsAgreeCore`
+    (`Inputs_<op>` minus that field), and per-row PC agreement is *derived* by the
+    strong induction in `stepSound_of_programDecodes` below:
 
-      * `boot` — the Sail PC agrees with the Main `pc` column at step `0`;
-      * `succ` — the Sail PC at step `j + 1` is the next-PC mux the Main row at `j`
-        computed.
+      * `pcChain.boot` — the Sail PC agrees with the Main `pc` column at step `0`.
+        This is the ONLY premise here relating a committed ZisK column to a Sail
+        register.
+      * `pcChain.retire` — the Sail state at `j + 1` takes its `PC` from what step
+        `j` retired into `nextPC`.  Mentions no `mainOfTable`, `nextPcMux` or `pc`
+        column: it relates two Sail states through Sail's own step function.
+      * `rowsAligned` — at every step with a successor, the step's execution-bus
+        producer entry is its own Main row's successor `pc`.  Mentions no Sail
+        state.  Only a two-row unaligned JALR lowering can violate it; see
+        `ZISK-MODEL-GAP-JALR-EXPANSION-STEP-ROW-INDEX` in `trust/defects.md`.
 
-    `succ` never mentions the `pc` column.  Converting it into agreement at `j + 1`
-    is done by the circuit's own transition constraint
-    (`mainOfTable_pc_eq_nextPcMux_of_transitions_hold`), which is derived from the
-    `AcceptedZiskTrace.transitions_hold` certificate and costs no premise.
+    Row `0` is `boot`; every later row comes from the PREVIOUS row's own `StepSound`
+    via `pcBridge_succ_of_stepSound`, which reads the retired `nextPC` off the
+    channel effect (`nextPC_of_busEffect_ok`) and identifies it with `pc (j + 1)`
+    using `rowsAligned`.
 
-    **Be precise about the claim.**  `pcSeed_of_inputsAgree` proves the converse, so over
-    an `AcceptedZiskTrace` the old bundle and `InputsAgreeCore` + `pcSeed` are
-    inter-derivable.  This is a *restructuring* of the premise, not a reduction in
-    logical strength.  What changes is that a caller supplies 2 facts about a segment
-    instead of one PC equation per executed row, that cross-machine PC agreement is
-    asserted at one point plus a successor law rather than independently at every row,
-    and that the trust ledger carries one named premise instead of 63 scattered fields.
+    **Be precise about the claim.**  `sailRetireChain_of_inputsAgree` proves the
+    converse — the old per-row bundle plus `rowsAligned` yields `retire` — so over an
+    `AcceptedZiskTrace` the two premise sets are inter-derivable.  This is a
+    *restructuring*, NOT a reduction in logical strength, and it is the same bargain
+    `BootSegmentMemorySeed` struck for memory.  What changes: the cross-machine
+    content collapses to `boot` alone, the other two premises are each one-sided, and
+    `rowsAligned` — which the old `succ` silently did without — is now visible.
 
-    `succ` is irreducible at *this* layer for the same reason `bootSeed` is: `SailTrace`
-    is a bare `Fin n → SailState` (`Compliance/SailTrace.lean`) with no chaining, so
-    *something* must say the Sail states form an execution.  Making `SailTrace` a chained
-    execution would discharge `succ` by induction from `boot` alone — a real strength
-    reduction, and now a local change here rather than 63 structure edits.  Tracked on #330.
+    `retire` is irreducible at *this* layer for the same reason `bootSeed` is:
+    `SailTrace` is a bare `Fin n → SailState` (`Compliance/SailTrace.lean`) with no
+    chaining, so *something* must say the Sail states form an execution.  Defining
+    `SailTrace` as the sequence Sail's own semantics generates would make `retire`
+    definitional — a real strength reduction, tracked as #343.
 
     `bootSeed` is the single named **cross-row memory seed** premise: the segment's
     initial memory state at segment entry, together with the one consistent
@@ -86,17 +93,6 @@ namespace ZiskFv.Compliance
     *memory* seed: the coherence chain constrains only memory; PC / registers are
     pinned only incidentally through the initial-state snapshot (per-step next-PC is
     discharged separately by the `AcceptedZiskTrace` PC-handshake certificate).
-
-    #330 Phase 7: the PC arm is an INDUCTION, not a per-`i` map. `pcChain.boot` gives
-    row `0`'s PC agreement; every later row is derived from the previous row's own
-    `StepSound` by `pcBridge_succ_of_stepSound`, using `pcChain.retire` (a law about
-    the Sail trace alone) and `rowsAligned` (a condition about ZisK row placement).
-    Neither premise relates a committed column to a Sail register — `boot` is the only
-    one that does. This is NOT a logical-strength reduction:
-    `sailRetireChain_of_inputsAgree` proves the converse, so given `rowsAligned` the
-    old per-row `h_pc_bridge` bundle and `boot` + `retire` are inter-derivable. See
-    `trust/trusted-base.md`.
-
     Every row then satisfies the canonical channel-balance conclusion
     (`= state_effect_via_channels …`). The per-row `OpEnvelope` is constructed
     from the trace inside each `stepStrong_<op>` — nothing is caller-supplied
@@ -171,7 +167,7 @@ theorem stepSound_of_programDecodes
     `memoryRawRootSoundness` supplies a second real `ProgramRowsBinding`, on an
     empty execution. The other instantiations (`addSpin`, `addAddiSpin`, `divSpin`,
     `jalrSpin`, `sdLdSpin`) discharge the premises this theorem SHARES with
-    `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `pcSeed`,
+    `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `pcChain`, `rowsAligned`,
     `bootSeed`, `hAvoidKnownBugs` — but satisfy `ProgramDecode` directly, so they
     provide no evidence for `programBinding` / `rawProgramDecodes`. -/
 theorem root_soundness

@@ -43,6 +43,26 @@ must say the Sail states form an execution. Making `SailTrace` a chained executi
 be discharged by induction from `boot` alone — a real strength reduction, and now a local change at
 the root rather than 63 structure edits. That follow-on is tracked on #330.
 
+## Status after #330 Phase 7 — this module is converse-direction evidence
+
+`root_soundness` no longer takes `SegmentPcSeed`. It takes `SegmentPcChain` (`boot` + `retire`) and
+`StepRowsAligned`, and per-row PC agreement is derived by the strong induction in
+`stepSound_of_programDecodes` via `inputsAgree_of_pcBridge`.
+
+What is still load-bearing here:
+
+* `inputsAgree_of_pcBridge` — the live consumption point, called from that induction;
+* `pcNamed_of_inputsAgree` and `pcAgreement_of_inputsAgree` — used by
+  `sailRetireChain_of_inputsAgree` to prove the converse;
+* `mainOfTable_segment_l1_ne_one_of_pos`, `mainTable_index_lt_capacity`,
+  `mainOfTable_pc_succ_eq_nextPcMux` — the circuit-side PC recurrence, still used by the witnesses.
+
+What is retained as **evidence, not on the live path**: `SegmentPcSeed` itself,
+`pcBridge_of_pcSeed`, `h_pc_bridge_of_pcSeed`, `inputsAgree_of_pcSeed` and `pcSeed_of_inputsAgree`.
+They exist because `pcSeed_of_inputsAgree` is what proves Phase 5/6 was a restructuring rather than
+a strength reduction. Deleting them would delete that proof. `nextPcMux` is likewise off the live
+path: `pcBridge_succ_of_stepSound` reads `pc (j + 1)` straight off the execution bus.
+
 ## Scope
 
 This is the PC arm only. The register fields (`h_a_*_t` / `h_b_*_t`) stay assumed; they go through

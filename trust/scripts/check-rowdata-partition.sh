@@ -11,8 +11,14 @@
 # enforced here so they cannot come back:
 #   (a) no `structure Decode_<op>` may mention `SailTrace` (in a parameter OR
 #       a field type) — keeps `rowDecodes` sailTrace-free;
-#   (b) no `structure Inputs_<op>` may declare a `h_main_op` or `h_main_active`
-#       field — those are circuit-only decode pins and belong in Decode_<op>.
+#   (b) no `structure Inputs_<op>` OR `structure InputsCore_<op>` may declare a
+#       `h_main_op` or `h_main_active` field — those are circuit-only decode
+#       pins and belong in Decode_<op>.
+#
+# `InputsCore_<op>` matters as much as `Inputs_<op>`: since #330 Phase 6 the
+# substantive fields live in the core and `Inputs_<op>` merely `extends` it with
+# `h_pc_bridge`. A regex that matched only `Inputs_` would inspect 63 wrappers
+# and pass vacuously while a decode pin sat in the core.
 #
 # Cheap, syntactic, build-free: parses the per-op struct declarations under
 # ZiskFv/Compliance/TraceLevelExport/RowData*.lean.
@@ -26,12 +32,14 @@ files = sorted(glob.glob('ZiskFv/Compliance/TraceLevelExport/RowData*.lean'))
 errors = []
 n_decode = 0
 n_inputs = 0
+n_inputs_core = 0
 
 for f in files:
     txt = open(f).read()
     # Each per-op struct runs until the next `structure`/doc-comment/EOF.
-    for m in re.finditer(r'^structure (Decode|Inputs)_(\w+)\b.*?(?=^structure |^/--|\Z)',
-                         txt, re.S | re.M):
+    for m in re.finditer(
+            r'^structure (Decode|InputsCore|Inputs)_(\w+)\b.*?(?=^structure |^/--|\Z)',
+            txt, re.S | re.M):
         kind, op, body = m.group(1), m.group(2), m.group(0)
         if kind == 'Decode':
             n_decode += 1
@@ -39,23 +47,27 @@ for f in files:
                 errors.append(
                     f"{f}: structure Decode_{op} mentions SailTrace "
                     f"(rowDecodes must be sailTrace-free)")
-        else:  # Inputs
-            n_inputs += 1
+        else:  # Inputs / InputsCore
+            if kind == 'InputsCore':
+                n_inputs_core += 1
+            else:
+                n_inputs += 1
             for fld in ('h_main_op', 'h_main_active'):
                 # field declaration, e.g. `  h_main_op :` — not `dec.h_main_op`
                 # references or `(ho : ...)` forall binders.
                 if re.search(r'^\s+' + fld + r'\s*:', body, re.M):
                     errors.append(
-                        f"{f}: structure Inputs_{op} declares field `{fld}` "
+                        f"{f}: structure {kind}_{op} declares field `{fld}` "
                         f"(circuit-only decode pin belongs in Decode_{op})")
 
 # Parser-sabotage guard: there are 63 RV64IM opcodes, each with one Decode and
 # one Inputs struct. If the parser stops matching, fail loudly rather than
 # vacuously passing.
-if n_decode < 63 or n_inputs < 63:
+if n_decode < 63 or n_inputs < 63 or n_inputs_core < 63:
     errors.append(
-        f"parser sabotage guard: found {n_decode} Decode_<op> and "
-        f"{n_inputs} Inputs_<op> structs (expected >= 63 each)")
+        f"parser sabotage guard: found {n_decode} Decode_<op>, "
+        f"{n_inputs} Inputs_<op> and {n_inputs_core} InputsCore_<op> structs "
+        f"(expected >= 63 each)")
 
 if errors:
     print("trust-gate: RowData partition-integrity FAILED:")
@@ -64,6 +76,7 @@ if errors:
     sys.exit(1)
 
 print(f"trust-gate: RowData partition integrity holds — {n_decode} Decode_<op> "
-      f"are sailTrace-free; none of {n_inputs} Inputs_<op> carries a decode pin "
+      f"are sailTrace-free; none of {n_inputs} Inputs_<op> or "
+      f"{n_inputs_core} InputsCore_<op> carries a decode pin "
       f"(h_main_op / h_main_active).")
 PY

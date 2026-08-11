@@ -24,21 +24,29 @@ the per-step soundness result the export already proves.
 3. `SailRetireChain` — the Sail-internal law: the state at `j + 1` has as its `PC` whatever the step
    at `j` retired into `nextPC`.
 
-Composing them: `StepSound j` equates the Sail action with the channel effect, (1) reads `nextPC`
-off it, (2) identifies it with the mux, (3) hands it to the next step's `PC`, and
-`mainOfTable_pc_succ_eq_nextPcMux` puts it back on the `pc` column. That is `succ j`.
+Composing them: `StepSound j` equates the Sail action with the channel effect,
+`nextPC_of_busEffect_ok` reads `nextPC` off it, `stepChannelOutput_execRows` plus `StepRowsAligned`
+identify that producer entry as the `pc` column at row `j + 1`, and `retire` hands it to the next
+step's `PC`. That is the per-row PC agreement the export needs.
 
-## Why this is a strength reduction and not another repackaging
+(The live path reads `pc (j + 1)` straight off the execution bus. `mainOfTable_pc_succ_eq_nextPcMux`
+is *not* used by `pcBridge_succ_of_stepSound`; it belongs to the Phase 5 seed route, kept below as
+converse-direction evidence.)
 
-`SegmentPcSeed.succ` and `SegmentPcSeed.boot` are inter-derivable with the old per-row
-`h_pc_bridge` bundle (`pcSeed_of_inputsAgree`), which is why Phase 5/6 was labelled a restructuring
-in `trust/trusted-base.md`. `SailRetireChain` is different in kind: it is a statement about the Sail
-trace alone. Nothing in it mentions `mainOfTable`, `nextPcMux`, or any committed column, so it
-cannot encode an assumed cross-machine agreement. The cross-machine content that `succ` carried is
-*derived* here, from `StepSound` — a theorem — instead of assumed.
+## This is NOT a strength reduction — do not describe it as one
 
-The converse does not hold: `SailRetireChain` cannot be recovered from `succ`, because `succ` says
-nothing about whether the Sail step retires at all.
+`sailRetireChain_of_inputsAgree` (below) recovers `retire` from the old per-row `h_pc_bridge`
+bundle plus `StepRowsAligned`, and `pcBridge_succ_of_stepSound` goes the other way. So over an
+`AcceptedZiskTrace`, given `StepRowsAligned`, the two are **inter-derivable** — exactly the
+situation Phase 5/6 was in, and the same bargain `BootSegmentMemorySeed` (#185/#115) struck for
+memory. `trust/trusted-base.md` records it in those words.
+
+What does change is *where* the assumption lives. `boot` is the only premise left relating a
+committed ZisK column to a Sail register; `retire` mentions no `mainOfTable`, `nextPcMux` or `pc`
+column, and `StepRowsAligned` mentions no Sail state. Each is dischargeable by reasoning on one
+machine only. And `StepRowsAligned`, which the assumed `succ` silently did without, is now visible.
+
+The genuine discharge is chaining `SailTrace` so `retire` becomes definitional (#343).
 -/
 
 namespace ZiskFv.Compliance
@@ -754,12 +762,14 @@ theorem pcBridge_succ_of_stepSound
     Compare `SegmentPcSeed`, which this replaces: that carried `boot` **and** `succ`, and `succ`
     named the `pc` column at every step. Here the only statement relating a committed column to a
     Sail register is `boot`. Everything else about the PC is derived —
-    `mainOfTable_pc_succ_eq_nextPcMux` from the circuit's own transition constraint,
-    `nextPC_of_busEffect_ok` from `bus_effect`, and the step-to-step link from `retire`.
+    `stepChannelOutput_execRows` plus `StepRowsAligned` identify the producer entry as the `pc`
+    column at the next row, `nextPC_of_busEffect_ok` reads it off `bus_effect`, and `retire`
+    supplies the step-to-step link.
 
-    `pcSeed_of_inputsAgree` proved `SegmentPcSeed` inter-derivable with the old per-row bundle, so
-    Phase 5/6 was a restructuring. This is not: `retire` cannot be recovered from the per-row
-    `h_pc_bridge` fields, because they say nothing about whether the Sail step retires. -/
+    **This is a restructuring too, not a strength reduction.** `pcSeed_of_inputsAgree` proved
+    `SegmentPcSeed` inter-derivable with the old per-row bundle; `sailRetireChain_of_inputsAgree`
+    proves the same for `retire`, given `StepRowsAligned`. What changes is that `boot` is now the
+    only cross-machine premise, and that `StepRowsAligned` is explicit rather than hidden. -/
 structure SegmentPcChain
     (ziskTrace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace ziskTrace.numInstructions)

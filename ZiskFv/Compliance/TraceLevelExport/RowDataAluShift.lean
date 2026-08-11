@@ -132,14 +132,16 @@ structure InputsCore_sub (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sub trace i) : Type extends InputsCore_sub trace binding i c where
-  -- #100: the JAL/AUIPC-style PC provenance bridge + no-wrap bound (the same
-  -- shapes `Inputs_jal`/`Inputs_jalr` already carry).  `Pilot.sub_nextPC_discharged`
-  -- consumes these — together with the `Decode_sub` transition inputs — to DERIVE
-  -- the (now-removed) cross-world `h_nextPC_matches` from the in-circuit
-  -- `pcHandshakeBetween` transition certificate, rather than asserting it.
+  -- #100: the PC provenance bridge. `Pilot.sub_nextPC_discharged` consumes it —
+  -- together with the `Decode_sub` transition inputs — to DERIVE the (now-removed)
+  -- cross-world `h_nextPC_matches` from the in-circuit `pcHandshakeBetween`
+  -- transition certificate, rather than asserting it. Since #330 Phase 6 this is
+  -- the only field the wrapper adds to `InputsCore_sub`; the no-wrap bound the
+  -- earlier wording mentioned lives elsewhere.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sub_input.PC.toNat
@@ -231,7 +233,8 @@ structure InputsCore_and (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_and (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_and trace i) : Type extends InputsCore_and trace binding i c where
   h_pc_bridge :
@@ -325,7 +328,8 @@ structure InputsCore_or (trace : AcceptedZiskTrace numInstructions) (binding : S
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_or (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_or trace i) : Type extends InputsCore_or trace binding i c where
   h_pc_bridge :
@@ -419,7 +423,8 @@ structure InputsCore_xor (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_xor (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_xor trace i) : Type extends InputsCore_xor trace binding i c where
   h_pc_bridge :
@@ -513,7 +518,8 @@ structure InputsCore_slt (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_slt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slt trace i) : Type extends InputsCore_slt trace binding i c where
   h_pc_bridge :
@@ -607,7 +613,8 @@ structure InputsCore_sltu (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sltu trace i) : Type extends InputsCore_sltu trace binding i c where
   h_pc_bridge :
@@ -696,7 +703,8 @@ structure InputsCore_andi (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_andi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_andi trace i) : Type extends InputsCore_andi trace binding i c where
   h_pc_bridge :
@@ -785,7 +793,8 @@ structure InputsCore_ori (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_ori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ori trace i) : Type extends InputsCore_ori trace binding i c where
   h_pc_bridge :
@@ -874,7 +883,8 @@ structure InputsCore_xori (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_xori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_xori trace i) : Type extends InputsCore_xori trace binding i c where
   h_pc_bridge :
@@ -963,7 +973,8 @@ structure InputsCore_slti (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_slti (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slti trace i) : Type extends InputsCore_slti trace binding i c where
   h_pc_bridge :
@@ -1052,7 +1063,8 @@ structure InputsCore_sltiu (trace : AcceptedZiskTrace numInstructions) (binding 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sltiu trace i) : Type extends InputsCore_sltiu trace binding i c where
   h_pc_bridge :
@@ -1146,7 +1158,8 @@ structure InputsCore_sll (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sll (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sll trace i) : Type extends InputsCore_sll trace binding i c where
   h_pc_bridge :
@@ -1240,7 +1253,8 @@ structure InputsCore_srl (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_srl (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srl trace i) : Type extends InputsCore_srl trace binding i c where
   h_pc_bridge :
@@ -1334,7 +1348,8 @@ structure InputsCore_sra (trace : AcceptedZiskTrace numInstructions) (binding : 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sra (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sra trace i) : Type extends InputsCore_sra trace binding i c where
   h_pc_bridge :
@@ -1419,7 +1434,8 @@ structure InputsCore_slli (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_slli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slli trace i) : Type extends InputsCore_slli trace binding i c where
   h_pc_bridge :
@@ -1504,7 +1520,8 @@ structure InputsCore_srli (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_srli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srli trace i) : Type extends InputsCore_srli trace binding i c where
   h_pc_bridge :
@@ -1589,7 +1606,8 @@ structure InputsCore_srai (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_srai (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srai trace i) : Type extends InputsCore_srai trace binding i c where
   h_pc_bridge :
@@ -1683,7 +1701,8 @@ structure InputsCore_sllw (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sllw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sllw trace i) : Type extends InputsCore_sllw trace binding i c where
   h_pc_bridge :
@@ -1777,7 +1796,8 @@ structure InputsCore_srlw (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_srlw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srlw trace i) : Type extends InputsCore_srlw trace binding i c where
   h_pc_bridge :
@@ -1871,7 +1891,8 @@ structure InputsCore_sraw (trace : AcceptedZiskTrace numInstructions) (binding :
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sraw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sraw trace i) : Type extends InputsCore_sraw trace binding i c where
   h_pc_bridge :
@@ -1954,7 +1975,8 @@ structure InputsCore_slliw (trace : AcceptedZiskTrace numInstructions) (binding 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_slliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slliw trace i) : Type extends InputsCore_slliw trace binding i c where
   h_pc_bridge :
@@ -2037,7 +2059,8 @@ structure InputsCore_srliw (trace : AcceptedZiskTrace numInstructions) (binding 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_srliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srliw trace i) : Type extends InputsCore_srliw trace binding i c where
   h_pc_bridge :
@@ -2120,7 +2143,8 @@ structure InputsCore_sraiw (trace : AcceptedZiskTrace numInstructions) (binding 
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
     two-premise `SegmentPcSeed`, from which the dispatcher builds this field via
-    `h_pc_bridge_of_pcSeed`.  Kept as a field so every consumer reads it unchanged. -/
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
 structure Inputs_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sraiw trace i) : Type extends InputsCore_sraiw trace binding i c where
   h_pc_bridge :
