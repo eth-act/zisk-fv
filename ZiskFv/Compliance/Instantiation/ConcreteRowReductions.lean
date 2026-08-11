@@ -873,6 +873,47 @@ theorem registerStepRangeRowsTable_interactionsWith_of_ne
   change channel ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
   simpa using h_ne
 
+/-- The value-level bus-102 provider push for one distance. -/
+def registerStepRangeInteraction (v : FGL) : Interaction FGL where
+  channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+  mult := 1
+  msg := (toElements (ZiskFv.Channels.SpecifiedRanges.registerStepMessage v)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+/-- The bus-102 provider emits exactly one push per row, carrying that row's value. -/
+theorem registerStepRangeRowsTable_row
+    (values : List FGL) (v : FGL) :
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component.operations.interactionValuesWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+        ((registerStepRangeRowsTable values).environment #[v]) =
+      [registerStepRangeInteraction v] := by
+  simp [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component_interactionsWith_rangeChannel,
+    registerStepRangeInteraction, registerStepRangeRowsTable]
+
+private theorem registerStepRangeRowsTable_interactionsWith_go
+    (allValues values : List FGL) :
+    (values.map (fun v => #[v])).flatMap (fun arr =>
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component.operations.interactionValuesWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+          ((registerStepRangeRowsTable allValues).environment arr)) =
+      values.map registerStepRangeInteraction := by
+  induction values with
+  | nil => rfl
+  | cons v rest ih =>
+      simp [registerStepRangeRowsTable_row, ih]
+
+/-- The bus-102 provider table's interaction list: one push per supplied distance. -/
+theorem registerStepRangeRowsTable_interactionsWith
+    (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      values.map registerStepRangeInteraction := by
+  rw [Table.interactionsWith]
+  simpa [registerStepRangeRowsTable, Table.table] using
+    registerStepRangeRowsTable_interactionsWith_go values values
+
 def binaryExtensionRowArray
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL) : Array FGL :=
   (toElements row).toArray
