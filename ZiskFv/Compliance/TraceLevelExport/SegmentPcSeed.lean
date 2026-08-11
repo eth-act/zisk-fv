@@ -134,6 +134,48 @@ theorem mainTable_index_lt_capacity
     subst component
     exact lt_of_lt_of_le h_raw (fixed_domain ZiskFv.AirsClean.Main.mainFixedColumns rfl)
 
+/-! ## Phase 7 groundwork: what `succ` is actually asserting
+
+`succ` is stated against `nextPcMux`. The three lemmas below make explicit that this value is
+exactly what the circuit hands the Sail model through the execution bus, which is what turns
+"chain `SailTrace`" from a vague plan into a mechanical one.
+-/
+
+/-- The circuit's PC recurrence in successor form: the Main `pc` column at row `j + 1` **is** the
+    next-PC mux the row at `j` computed. Derived from `AcceptedZiskTrace.transitions_hold`; both
+    side conditions (`segment_l1 ≠ 1` off row `0`, fixed-column capacity) are discharged here, so
+    this costs no premise. -/
+theorem mainOfTable_pc_succ_eq_nextPcMux
+    {ziskTrace : AcceptedZiskTrace numInstructions} (j : ℕ)
+    (h_row : j + 1 < ziskTrace.mainTable.table.length) :
+    (mainOfTable ziskTrace.program ziskTrace.mainTable).pc (j + 1) = nextPcMux ziskTrace j := by
+  have h_len : j + 1 < ziskTrace.mainTable.length := by
+    simpa only [Air.Flat.Table.table_length] using h_row
+  have h_rec :=
+    ZiskFv.AirsClean.FullEnsemble.mainOfTable_pc_eq_nextPcMux_of_transitions_hold
+      ziskTrace.transitions_hold ziskTrace.mainTable_mem ziskTrace.mainTable_component
+      ⟨j + 1, h_len⟩
+      (mainOfTable_segment_l1_ne_one_of_pos ziskTrace.mainTable_component (j + 1)
+        (by omega) h_row
+        (mainTable_index_lt_capacity ziskTrace.mainTable_component (j + 1) h_row))
+  simpa only [nextPcMux, Nat.add_sub_cancel] using h_rec
+
+/-- **The exec-bus producer entry carries the mux.** `bus_effect` writes
+    `Register.nextPC := BitVec.ofNat 64 (execution_bus[1]!.pc).val`
+    (`ZiskFv/SailSpec/BusEffect.lean`), and `Pilot.execRowOf`'s producer entry is definitionally
+    the Main `pc` column at row `i + 1`. So the value ZisK pushes into Sail's `nextPC` for step `i`
+    is exactly `nextPcMux ziskTrace i`.
+
+    This is the fact that makes `SegmentPcSeed.succ` mechanically dischargeable rather than
+    irreducible: `succ` says "the Sail PC at `j + 1` is the mux at `j`", and this says "the mux at
+    `j` is what the circuit already wrote into Sail's `nextPC` at step `j`". What remains is the
+    Sail-side retire law — see `SailRetireChain` below. -/
+theorem execRowOf_producer_pc_eq_nextPcMux
+    {ziskTrace : AcceptedZiskTrace numInstructions} (i : Fin ziskTrace.numInstructions)
+    (h_row : i.val + 1 < ziskTrace.mainTable.table.length) :
+    (Pilot.execRowOf ziskTrace i)[1]!.pc = nextPcMux ziskTrace i :=
+  mainOfTable_pc_succ_eq_nextPcMux i.val h_row
+
 /-- **The PC arm.** From the two seed premises, the Main `pc` column agrees with the Sail PC at
     every executed step — the content of `h_pc_bridge` in all 63 `Inputs_<op>` structures.
 
@@ -159,21 +201,12 @@ theorem pcBridge_of_pcSeed
       simpa using seed.boot h_pos
   | j + 1 =>
       have h_succ_lt : j + 1 < ziskTrace.numInstructions := by omega
-      have h_index_lt : i.val < ziskTrace.mainTable.length := by
-        simpa only [Air.Flat.Table.table_length] using h_lt
-      have h_not_boundary :
-          (mainOfTable ziskTrace.program ziskTrace.mainTable).segment_l1 i.val ≠ 1 :=
-        mainOfTable_segment_l1_ne_one_of_pos ziskTrace.mainTable_component i.val
-          (by omega) h_lt
-          (mainTable_index_lt_capacity ziskTrace.mainTable_component i.val h_lt)
-      have h_rec :=
-        ZiskFv.AirsClean.FullEnsemble.mainOfTable_pc_eq_nextPcMux_of_transitions_hold
-          ziskTrace.transitions_hold ziskTrace.mainTable_mem ziskTrace.mainTable_component
-          ⟨i.val, h_index_lt⟩ h_not_boundary
+      have h_row : j + 1 < ziskTrace.mainTable.table.length := by omega
+      have h_rec := mainOfTable_pc_succ_eq_nextPcMux (ziskTrace := ziskTrace) j h_row
       have h_eq : i = ⟨j + 1, h_succ_lt⟩ := Fin.ext (by simpa using h_i)
       subst h_eq
       rw [h_rec]
-      simpa only [nextPcMux, Nat.add_sub_cancel] using seed.succ j h_succ_lt
+      exact seed.succ j h_succ_lt
 
 /-- **The consumption point.** `Inputs_<op>.h_pc_bridge` is stated against the operand bundle's
     named PC (`h_input_pc : (binding i).regs.get? Register.PC = .some v`), so this is the form the
@@ -434,20 +467,8 @@ def pcSeed_of_inputsAgree {numInstructions : ℕ}
     SegmentPcSeed ziskTrace binding where
   boot h := pcAgreement_of_inputsAgree ⟨0, h⟩ _ (ia ⟨0, h⟩)
   succ j h := by
-    have h_row : j + 1 < ziskTrace.mainTable.table.length :=
-      ziskTrace.mainTable_index ⟨j + 1, h⟩
-    have h_len : j + 1 < ziskTrace.mainTable.length := by
-      simpa only [Air.Flat.Table.table_length] using h_row
-    have h_rec :=
-      ZiskFv.AirsClean.FullEnsemble.mainOfTable_pc_eq_nextPcMux_of_transitions_hold
-        ziskTrace.transitions_hold ziskTrace.mainTable_mem ziskTrace.mainTable_component
-        ⟨j + 1, h_len⟩
-        (mainOfTable_segment_l1_ne_one_of_pos ziskTrace.mainTable_component (j + 1)
-          (by omega) h_row
-          (mainTable_index_lt_capacity ziskTrace.mainTable_component (j + 1) h_row))
     have h_agree := pcAgreement_of_inputsAgree ⟨j + 1, h⟩ _ (ia ⟨j + 1, h⟩)
-    rw [h_rec] at h_agree
-    simpa only [nextPcMux, Nat.add_sub_cancel] using h_agree
+    rwa [mainOfTable_pc_succ_eq_nextPcMux j (ziskTrace.mainTable_index ⟨j + 1, h⟩)] at h_agree
 
 /-- Forget the PC field: the `InputsAgreeCore` inside a full `InputsAgree`.
 
@@ -522,5 +543,6 @@ def inputsAgreeCore_of_inputsAgree {numInstructions : ℕ}
   | .lh _, ia => ia.toInputsCore_lh
   | .lw _, ia => ia.toInputsCore_lw
   | .fence _, ia => ia.toInputsCore_fence
+
 
 end ZiskFv.Compliance
