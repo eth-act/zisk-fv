@@ -126,35 +126,28 @@ def main (row : Var RegisterBoundaryRow FGL) : Circuit FGL Unit := do
   MemBusChannel.emit 1 (reloadMessageExpr row)
 
 /-- The elaborated circuit: two channel emissions, no fresh witnesses, no algebraic constraints. -/
-@[reducible] def registerBoundaryElaborated :
-    ElaboratedCircuit FGL RegisterBoundaryRow unit where
+
+/-- RegisterBoundary as a Clean `GeneralFormalCircuit`.  `Assumptions := True` and `Spec := True`:
+    the component asserts no algebraic relation; its only obligations are the two bus emissions'
+    `MemBusChannel.Guarantees = True` requirements. -/
+def circuit : GeneralFormalCircuit FGL RegisterBoundaryRow unit  where
   name := "RegisterBoundary"
   main := main
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted (-1) (bootMessageExpr row)
       , MemBusChannel.emitted 1 (reloadMessageExpr row) ]
-  channelsLawful := by
-    simp only [circuit_norm, main, bootMessageExpr, reloadMessageExpr, MemBusChannel]
-
-/-- RegisterBoundary as a Clean `GeneralFormalCircuit`.  `Assumptions := True` and `Spec := True`:
-    the component asserts no algebraic relation; its only obligations are the two bus emissions'
-    `MemBusChannel.Guarantees = True` requirements. -/
-def circuit : GeneralFormalCircuit FGL RegisterBoundaryRow unit :=
-  { registerBoundaryElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun _ _ _ => True
-    ProverAssumptions := fun _ _ _ => True
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      intro _
-      trivial
-    completeness := by
-      circuit_proof_start [MemBusChannel] }
+  Assumptions := fun _ _ => True
+  Spec := fun _ _ _ => True
+  ProverAssumptions := fun _ _ _ => True
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    intro _
+    trivial
+  completeness := by
+    circuit_proof_start [MemBusChannel]
 
 /-- RegisterBoundary as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
@@ -174,7 +167,6 @@ theorem component_interactionsWith_memBus :
       [ ((MemBusChannel.emitted (-1) (bootMessageExpr component.rowInputVar)).toRaw)
       , ((MemBusChannel.emitted 1 (reloadMessageExpr component.rowInputVar)).toRaw) ]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, registerBoundaryElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil]
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 end ZiskFv.AirsClean.RegisterBoundary

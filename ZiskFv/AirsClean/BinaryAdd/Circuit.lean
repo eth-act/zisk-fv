@@ -135,27 +135,31 @@ set_option maxHeartbeats 800000 in
 /-- BinaryAdd as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 8 column range bounds the soundness proof needs are supplied by
     Clean static lookups, not by a caller assumption. -/
-def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
-  { binaryAddElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => ComponentSpecFacts row
-    -- Completeness covers honest BinaryAdd rows built from two 64-bit operands.
-    ProverAssumptions := fun row _ _ =>
-      ∃ a b, a < 2 ^ 64 ∧ b < 2 ^ 64 ∧ row = binaryAddRowOf a b
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · -- the BinaryAdd algebraic relation: 4 assertZero constraints +
-        -- the 8 `bits(N)` column range bounds from Clean static lookups.
-        obtain ⟨ha0, ha1, hb0, hb1, hc0r, hc1r, hc2r, hc3r,
-          hb0eq, hc0eq, hb1eq, hc1eq⟩ := h_holds
-        let row : BinaryAddRow FGL :=
-          { a_0 := input_a_0, a_1 := input_a_1, b_0 := input_b_0,
-            b_1 := input_b_1, c_chunks_0 := input_c_chunks_0,
-            c_chunks_1 := input_c_chunks_1, c_chunks_2 := input_c_chunks_2,
-            c_chunks_3 := input_c_chunks_3, cout_0 := input_cout_0,
-            cout_1 := input_cout_1 }
+def circuit : GeneralFormalCircuit FGL BinaryAddRow unit  where
+  name := "BinaryAdd"
+  main := main
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => ComponentSpecFacts row
+  -- Completeness covers honest BinaryAdd rows built from two 64-bit operands.
+  ProverAssumptions := fun row _ _ =>
+    ∃ a b, a < 2 ^ 64 ∧ b < 2 ^ 64 ∧ row = binaryAddRowOf a b
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · -- the BinaryAdd algebraic relation: 4 assertZero constraints +
+      -- the 8 `bits(N)` column range bounds from Clean static lookups.
+      obtain ⟨ha0, ha1, hb0, hb1, hc0r, hc1r, hc2r, hc3r,
+        hb0eq, hc0eq, hb1eq, hc1eq⟩ := h_holds
+      let row : BinaryAddRow FGL :=
+        { a_0 := input_a_0, a_1 := input_a_1, b_0 := input_b_0,
+          b_1 := input_b_1, c_chunks_0 := input_c_chunks_0,
+          c_chunks_1 := input_c_chunks_1, c_chunks_2 := input_c_chunks_2,
+          c_chunks_3 := input_c_chunks_3, cout_0 := input_cout_0,
+          cout_1 := input_cout_1
         change ComponentSpecFacts row
         have ha0' : row.a_0.val < 2 ^ 32 := by
           dsimp [row]
@@ -305,7 +309,7 @@ theorem component_interactionsWith_opBus :
   change ⟨OpBusChannel.toRaw,
       [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, binaryAddElaborated, Component.exposedChannels,
+  simp only [component, circuit, Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 /-- The BinaryAdd `Spec` for a row, derived **through the Clean Component
@@ -330,8 +334,7 @@ theorem spec_via_component (row : BinaryAddRow FGL)
             + -(row.cout_1 * 4294967296 + row.c_chunks_3 * 65536 + row.c_chunks_2) = 0) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, binaryAddElaborated,
-    circuit_norm] at hsound
+  simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   refine (hsound (Environment.fromInput row (fun _ n => (#[] : Array (Vector FGL n))))
     { a_0 := .const row.a_0, a_1 := .const row.a_1,
       b_0 := .const row.b_0, b_1 := .const row.b_1,

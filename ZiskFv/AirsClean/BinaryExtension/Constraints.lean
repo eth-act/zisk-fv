@@ -71,17 +71,6 @@ def main (row : Var BinaryExtensionRow FGL) : Circuit FGL Unit := do
 
 /-- Elaborated BinaryExtension circuit: no local witnesses, one
     operation-bus push. -/
-@[reducible] def binaryExtensionElaborated :
-    ElaboratedCircuit FGL BinaryExtensionRow unit where
-  name := "BinaryExtension"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, main, opBusMessageExpr, aLo, aHi, OpBusChannel]
 
 /-- BinaryExtensionTable consumer path. This emits the eight per-byte table
     tuples with negative multiplicity after the op-bus push. It makes no local
@@ -155,83 +144,6 @@ def mainWithBinaryExtensionTable (row : Var BinaryExtensionRow FGL) :
       c_hi_byte := row.cColsHi.free_in_c_15
       op_is_shift := row.flags.op_is_shift }
 
-@[reducible] def binaryExtensionWithTableElaborated :
-    ElaboratedCircuit FGL BinaryExtensionRow unit where
-  name := "BinaryExtensionWithTable"
-  main := mainWithBinaryExtensionTable
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw, BinaryExtensionTableChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)] ++
-    expose BinaryExtensionTableChannel
-      [ BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 0
-            a_byte := row.aCols.free_in_a_0
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsLo.free_in_c_0
-            c_hi_byte := row.cColsLo.free_in_c_1
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 1
-            a_byte := row.aCols.free_in_a_1
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsLo.free_in_c_2
-            c_hi_byte := row.cColsLo.free_in_c_3
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 2
-            a_byte := row.aCols.free_in_a_2
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsLo.free_in_c_4
-            c_hi_byte := row.cColsLo.free_in_c_5
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 3
-            a_byte := row.aCols.free_in_a_3
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsLo.free_in_c_6
-            c_hi_byte := row.cColsLo.free_in_c_7
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 4
-            a_byte := row.aCols.free_in_a_4
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsHi.free_in_c_8
-            c_hi_byte := row.cColsHi.free_in_c_9
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 5
-            a_byte := row.aCols.free_in_a_5
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsHi.free_in_c_10
-            c_hi_byte := row.cColsHi.free_in_c_11
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 6
-            a_byte := row.aCols.free_in_a_6
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsHi.free_in_c_12
-            c_hi_byte := row.cColsHi.free_in_c_13
-            op_is_shift := row.flags.op_is_shift }
-      , BinaryExtensionTableChannel.emitted (-1)
-          { op := row.flags.op
-            byte_index := 7
-            a_byte := row.aCols.free_in_a_7
-            shift_amount := row.flags.free_in_b
-            c_lo_byte := row.cColsHi.free_in_c_14
-            c_hi_byte := row.cColsHi.free_in_c_15
-            op_is_shift := row.flags.op_is_shift } ]
-  channelsLawful := by
-    simp [circuit_norm, mainWithBinaryExtensionTable, main,
-      opBusMessageExpr, aLo, aHi, OpBusChannel, BinaryExtensionTableChannel]
 
 /-- Static-provider lookup-aware BinaryExtension circuit path. This is the
     same eight BinaryExtensionTable rows as `mainWithBinaryExtensionTable`,
@@ -321,31 +233,6 @@ def mainWithStaticBinaryExtensionTableAndShiftRange
   lookup (Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable24)
     row.flags.b_0
 
-@[reducible] def binaryExtensionWithStaticTableElaborated :
-    ElaboratedCircuit FGL BinaryExtensionRow unit where
-  name := "BinaryExtensionWithStaticTable"
-  main := mainWithStaticBinaryExtensionTable
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, mainWithStaticBinaryExtensionTable, main,
-      opBusMessageExpr, aLo, aHi, OpBusChannel]
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
 
-@[reducible] def binaryExtensionWithStaticTableAndShiftRangeElaborated :
-    ElaboratedCircuit FGL BinaryExtensionRow unit where
-  name := "BinaryExtensionWithStaticTableAndShiftRange"
-  main := mainWithStaticBinaryExtensionTableAndShiftRange
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, mainWithStaticBinaryExtensionTableAndShiftRange,
-      mainWithStaticBinaryExtensionTable, main, opBusMessageExpr, aLo, aHi,
-      OpBusChannel]
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
 
 end ZiskFv.AirsClean.BinaryExtension

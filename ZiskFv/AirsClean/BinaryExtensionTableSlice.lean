@@ -31,33 +31,26 @@ def main (message : BinaryExtensionTableMessage (Expression FGL)) : Circuit FGL 
   lookup (Table.fromStatic binaryExtensionTable) message
   BinaryExtensionTableChannel.push message
 
-@[reducible]
-def elaborated : ElaboratedCircuit FGL BinaryExtensionTableMessage unit where
+
+def circuit : GeneralFormalCircuit FGL BinaryExtensionTableMessage unit  where
   name := "BinaryExtensionTableSlice124"
   main := main
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [BinaryExtensionTableChannel.toRaw]
   exposedChannels message _ :=
     expose BinaryExtensionTableChannel [BinaryExtensionTableChannel.pushed message]
-  channelsLawful := by
-    simp only [circuit_norm, main, BinaryExtensionTableChannel]
-
-def circuit : GeneralFormalCircuit FGL BinaryExtensionTableMessage unit :=
-  { elaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun message _ _ => binaryExtensionTable.Spec message
-    ProverAssumptions := fun message _ _ => binaryExtensionTable.Spec message
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · simpa only [Table.fromStatic, StaticTable.toTable] using h_holds
-      · intro _
-        simp [BinaryExtensionTableChannel]
-    completeness := by
-      circuit_proof_start [Lookup.completeness_def]
-      simpa only [Table.fromStatic, StaticTable.toTable] using h_assumptions }
+  Assumptions := fun _ _ => True
+  Spec := fun message _ _ => binaryExtensionTable.Spec message
+  ProverAssumptions := fun message _ _ => binaryExtensionTable.Spec message
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · simpa only [Table.fromStatic, StaticTable.toTable] using h_holds
+    · intro _
+      simp [BinaryExtensionTableChannel]
+  completeness := by
+    circuit_proof_start [Lookup.completeness_def]
+    simpa only [Table.fromStatic, StaticTable.toTable] using h_assumptions
 
 def component : Component FGL := { circuit }
 
@@ -68,7 +61,7 @@ theorem component_interactionsWith_binaryExtensionTableChannel :
   change ⟨BinaryExtensionTableChannel.toRaw,
       [((BinaryExtensionTableChannel.pushed component.rowInputVar).toRaw)]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, elaborated, Component.exposedChannels, expose,
+  simp only [component, circuit, Component.exposedChannels, expose,
     List.mem_singleton, List.map_cons, List.map_nil]
 
 end ZiskFv.AirsClean.BinaryExtensionTableSlice

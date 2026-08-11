@@ -73,15 +73,5 @@ def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
     constraints + the bus push, no fresh witnesses (`localLength = 0`,
     `unit` output). Lives here (next to `main`) so the `Circuit.lean`
     wrapper can reuse it without an import cycle. -/
-@[reducible] def binaryAddElaborated : ElaboratedCircuit FGL BinaryAddRow unit where
-  name := "BinaryAdd"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, main, opBusMessageExpr, OpBusChannel]
 
 end ZiskFv.AirsClean.BinaryAdd

@@ -104,8 +104,7 @@ bus 125. No per-opcode premise or soundness-side `ProverAssumptions` is used. -/
 def binaryTableConnectionEnsemble : FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
     |>.addTable tableConsumerComponent
-        (by simp [tableConsumerComponent, tableConsumerCircuit,
-          binaryWithBinaryTableElaborated])
+        (by simp [tableConsumerComponent, tableConsumerCircuit])
         (by
           intro channel h_finished
           change channel ∈ ([] : List (RawChannel FGL)) at h_finished

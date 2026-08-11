@@ -67,47 +67,51 @@ def binaryRowOf (mode32 resultIsA useFirstByte cIsSigned carry7 : Bool)
         c_is_signed := boolF cIsSigned
         mode32_and_c_is_signed := binaryMode32AndCIsSignedOf mode32 cIsSigned } }
 
-def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
-  { binaryElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => Spec row
-    -- Completeness covers rows built by `binaryRowOf`: Boolean columns are
-    -- honest bits and dependent mux columns are computed by the builder.
-    ProverAssumptions := fun row _ _ =>
-      ∃ mode32 resultIsA useFirstByte cIsSigned carry7
-        aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp,
-        row = binaryRowOf mode32 resultIsA useFirstByte cIsSigned carry7
-          aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := h_holds
-        exact ⟨ by simpa [sub_eq_add_neg] using h0
-              , by simpa [sub_eq_add_neg] using h1
-              , by simpa [sub_eq_add_neg] using h2
-              , by simpa [sub_eq_add_neg] using h3
-              , by simpa [sub_eq_add_neg] using h4
-              , by simpa [sub_eq_add_neg] using h5
-              , by simpa [sub_eq_add_neg] using h6 ⟩
-      · intro _
-        trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel]
-      obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
-        aBytes, bBytes, cBytes, carry0, carry1, carry2, carry3, carry4,
-        carry5, carry6, bOp, hrow⟩ := h_assumptions
-      injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
-      subst aBytes
-      subst bBytes
-      subst cBytes
-      injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
-        h_carry6 h_carry7 h_bOp h_bOpOrSext
-      injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
-        h_mode32AndCIsSigned
-      subst_vars
-      simp [binaryBOpOrSextOf, binaryMode32AndCIsSignedOf]
-      ring_nf }
+def circuit : GeneralFormalCircuit FGL BinaryRow unit  where
+  name := "Binary"
+  main := main
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row
+  -- Completeness covers rows built by `binaryRowOf`: Boolean columns are
+  -- honest bits and dependent mux columns are computed by the builder.
+  ProverAssumptions := fun row _ _ =>
+    ∃ mode32 resultIsA useFirstByte cIsSigned carry7
+      aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp,
+      row = binaryRowOf mode32 resultIsA useFirstByte cIsSigned carry7
+        aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := h_holds
+      exact ⟨ by simpa [sub_eq_add_neg] using h0
+            , by simpa [sub_eq_add_neg] using h1
+            , by simpa [sub_eq_add_neg] using h2
+            , by simpa [sub_eq_add_neg] using h3
+            , by simpa [sub_eq_add_neg] using h4
+            , by simpa [sub_eq_add_neg] using h5
+            , by simpa [sub_eq_add_neg] using h6 ⟩
+    · intro _
+      trivial
+  completeness := by
+    circuit_proof_start [OpBusChannel]
+    obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
+      aBytes, bBytes, cBytes, carry0, carry1, carry2, carry3, carry4,
+      carry5, carry6, bOp, hrow⟩ := h_assumptions
+    injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
+    subst aBytes
+    subst bBytes
+    subst cBytes
+    injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
+      h_carry6 h_carry7 h_bOp h_bOpOrSext
+    injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
+      h_mode32AndCIsSigned
+    subst_vars
+    simp [binaryBOpOrSextOf, binaryMode32AndCIsSignedOf]
+    ring_nf
 
 def component : Air.Flat.Component FGL := { circuit := circuit }
 
@@ -115,45 +119,58 @@ def component : Air.Flat.Component FGL := { circuit := circuit }
 constraints and operation-bus emission as `component`, plus the eight negative
 BinaryTable emissions. Its soundness claim deliberately has no table-membership
 conjunct: membership belongs to `BinaryTableSlice` and a finished channel. -/
-def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
-  { binaryWithBinaryTableElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => Spec row
-    ProverAssumptions := fun row _ _ =>
-      ∃ mode32 resultIsA useFirstByte cIsSigned carry7
-        aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp,
-        row = binaryRowOf mode32 resultIsA useFirstByte cIsSigned carry7
-          aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := h_holds
-        exact ⟨ by simpa [sub_eq_add_neg] using h0
-              , by simpa [sub_eq_add_neg] using h1
-              , by simpa [sub_eq_add_neg] using h2
-              , by simpa [sub_eq_add_neg] using h3
-              , by simpa [sub_eq_add_neg] using h4
-              , by simpa [sub_eq_add_neg] using h5
-              , by simpa [sub_eq_add_neg] using h6 ⟩
-      · intro _
-        trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel, BinaryTableChannel]
-      obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
-        aBytes, bBytes, cBytes, carry0, carry1, carry2, carry3, carry4,
-        carry5, carry6, bOp, hrow⟩ := h_assumptions
-      injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
-      subst aBytes
-      subst bBytes
-      subst cBytes
-      injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
-        h_carry6 h_carry7 h_bOp h_bOpOrSext
-      injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
-        h_mode32AndCIsSigned
-      subst_vars
-      simp [binaryBOpOrSextOf, binaryMode32AndCIsSignedOf]
-      ring_nf }
+def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
+  name := "BinaryWithBinaryTable"
+  main := mainWithBinaryTable
+  channelsWithRequirements := [OpBusChannel.toRaw, BinaryTableChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)] ++
+    expose BinaryTableChannel
+      [ BinaryTableChannel.emitted (-1) (lookupMessage0 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage1 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage2 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage3 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage4 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage5 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage6 row)
+      , BinaryTableChannel.emitted (-1) (lookupMessage7 row) ]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row
+  ProverAssumptions := fun row _ _ =>
+    ∃ mode32 resultIsA useFirstByte cIsSigned carry7
+      aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp,
+      row = binaryRowOf mode32 resultIsA useFirstByte cIsSigned carry7
+        aBytes bBytes cBytes carry0 carry1 carry2 carry3 carry4 carry5 carry6 bOp
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := h_holds
+      exact ⟨ by simpa [sub_eq_add_neg] using h0
+            , by simpa [sub_eq_add_neg] using h1
+            , by simpa [sub_eq_add_neg] using h2
+            , by simpa [sub_eq_add_neg] using h3
+            , by simpa [sub_eq_add_neg] using h4
+            , by simpa [sub_eq_add_neg] using h5
+            , by simpa [sub_eq_add_neg] using h6 ⟩
+    · intro _
+      trivial
+  completeness := by
+    circuit_proof_start [OpBusChannel, BinaryTableChannel]
+    obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
+      aBytes, bBytes, cBytes, carry0, carry1, carry2, carry3, carry4,
+      carry5, carry6, bOp, hrow⟩ := h_assumptions
+    injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
+    subst aBytes
+    subst bBytes
+    subst cBytes
+    injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
+      h_carry6 h_carry7 h_bOp h_bOpOrSext
+    injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
+      h_mode32AndCIsSigned
+    subst_vars
+    simp [binaryBOpOrSextOf, binaryMode32AndCIsSignedOf]
+    ring_nf
 
 def tableConsumerComponent : Air.Flat.Component FGL := { circuit := tableConsumerCircuit }
 
@@ -195,7 +212,7 @@ theorem tableConsumerComponent_interactionsWith_binaryTableChannel :
             (lookupMessage7 tableConsumerComponent.rowInputVar)).toRaw) ]⟩ ∈
       tableConsumerComponent.exposedChannels
   simp only [tableConsumerComponent, tableConsumerCircuit,
-    binaryWithBinaryTableElaborated, Component.exposedChannels, expose,
+    Component.exposedChannels, expose,
     List.mem_append, List.mem_singleton, List.map_cons, List.map_nil]
   exact Or.inr trivial
 
@@ -366,245 +383,249 @@ abbrev StaticBinaryTableSpecFacts (row : BinaryRow FGL) : Prop :=
       ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage6Row row)
       ∧ ZiskFv.AirsClean.BinaryTable.binaryTable.Spec (lookupMessage7Row row)
 
-def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit :=
-  { binaryWithStaticBinaryTableElaborated with
-    exposedChannels row _ :=
-      expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-    channelsLawful := by
-      simp only [circuit_norm, mainWithStaticBinaryTable, main, opBusMessageExpr,
-        OpBusChannel]
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => Spec row ∧ StaticBinaryTableSpecFacts row
-    -- Completeness covers index-route rows: the eight lookup tuples are
-    -- built from BinaryTable indices, with semantic consistency facts for
-    -- shared mode/op/carry slots.
-    ProverAssumptions := fun row _ _ =>
-      ∃ mode32 resultIsA useFirstByte cIsSigned carry7
-        i0 i1 i2 i3 i4 i5 i6 i7,
-        (binaryTableRow i0).pos_ind = 2 * boolF useFirstByte ∧
-        (binaryTableRow i0).cin = 0 ∧
-        (binaryTableRow i0).flags =
-          (binaryTableRow i1).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte ∧
-        (binaryTableRow i1).pos_ind = 0 ∧
-        (binaryTableRow i1).op = (binaryTableRow i0).op ∧
-        (binaryTableRow i1).flags =
-          (binaryTableRow i2).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte ∧
-        (binaryTableRow i2).pos_ind = 0 ∧
-        (binaryTableRow i2).op = (binaryTableRow i0).op ∧
-        (binaryTableRow i2).flags =
-          (binaryTableRow i3).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte ∧
-        (binaryTableRow i3).pos_ind = boolF mode32 ∧
-        (binaryTableRow i3).op = (binaryTableRow i0).op ∧
-        (binaryTableRow i3).flags =
-          (binaryTableRow i4).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
-        (binaryTableRow i4).pos_ind = 0 ∧
-        (binaryTableRow i4).op =
-          binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
-        (binaryTableRow i4).flags =
-          (binaryTableRow i5).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
-        (binaryTableRow i5).pos_ind = 0 ∧
-        (binaryTableRow i5).op =
-          binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
-        (binaryTableRow i5).flags =
-          (binaryTableRow i6).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
-        (binaryTableRow i6).pos_ind = 0 ∧
-        (binaryTableRow i6).op =
-          binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
-        (binaryTableRow i6).flags =
-          (binaryTableRow i7).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
-        (binaryTableRow i7).pos_ind = 1 - boolF mode32 ∧
-        (binaryTableRow i7).op =
-          binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
-        (binaryTableRow i7).flags =
-          boolF carry7 + 2 * boolF resultIsA + 4 * boolF useFirstByte
-            + 8 * boolF cIsSigned ∧
-        row = binaryStaticRowOf mode32 resultIsA useFirstByte cIsSigned carry7
-          i0 i1 i2 i3 i4 i5 i6 i7
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ :=
-          h_holds
-        exact ⟨ ⟨ by simpa [sub_eq_add_neg] using h0
-                  , by simpa [sub_eq_add_neg] using h1
-                  , by simpa [sub_eq_add_neg] using h2
-                  , by simpa [sub_eq_add_neg] using h3
-                  , by simpa [sub_eq_add_neg] using h4
-                  , by simpa [sub_eq_add_neg] using h5
-                  , by simpa [sub_eq_add_neg] using h6 ⟩
-              , ⟨ by simp [lookupMessage0Row, lookupFlags012Row] at h7 ⊢; exact h7
-                  , by simp [lookupMessage1Row, lookupFlags012Row] at h8 ⊢; exact h8
-                  , by simp [lookupMessage2Row, lookupFlags012Row] at h9 ⊢; exact h9
-                  , by simp [lookupMessage3Row, lookupFlags3456Row] at h10 ⊢; exact h10
-                  , by simp [lookupMessage4Row, lookupFlags3456Row] at h11 ⊢; exact h11
-                  , by simp [lookupMessage5Row, lookupFlags3456Row] at h12 ⊢; exact h12
-                  , by simp [lookupMessage6Row, lookupFlags3456Row] at h13 ⊢; exact h13
-                  , by
-                      simp [lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h14 ⊢
-                      exact h14 ⟩ ⟩
-      · intro _
-        trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel, Lookup.completeness_def]
-      obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
-        i0, i1, i2, i3, i4, i5, i6, i7,
-        h0_pos, h0_cin, h0_flags,
-        h1_pos, h1_op, h1_flags,
-        h2_pos, h2_op, h2_flags,
-        h3_pos, h3_op, h3_flags,
-        h4_pos, h4_op, h4_flags,
-        h5_pos, h5_op, h5_flags,
-        h6_pos, h6_op, h6_flags,
-        h7_pos, h7_op, h7_flags, hrow⟩ := h_assumptions
-      injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
-      injection h_aBytes with h_a0 h_a1 h_a2 h_a3 h_a4 h_a5 h_a6 h_a7
-      injection h_bBytes with h_b0 h_b1 h_b2 h_b3 h_b4 h_b5 h_b6 h_b7
-      injection h_cBytes with h_c0 h_c1 h_c2 h_c3 h_c4 h_c5 h_c6 h_c7
-      injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
-        h_carry6 h_carry7 h_bOp h_bOpOrSext
-      injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
-        h_mode32AndCIsSigned
-      subst_vars
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · exact boolF_booleanity_add mode32
-      · exact boolF_booleanity_add carry7
-      · exact boolF_booleanity_add resultIsA
-      · exact boolF_booleanity_add useFirstByte
-      · exact boolF_booleanity_add cIsSigned
-      · simp [binaryBOpOrSextOf]
-        ring_nf
-      · simp [binaryMode32AndCIsSignedOf]
-      · exact ⟨i0, by
-          change
-            { pos_ind := 2 * boolF useFirstByte
-              op := (binaryTableRow i0).op
-              a_byte := (binaryTableRow i0).a_byte
-              b_byte := (binaryTableRow i0).b_byte
-              cin := 0
-              c_byte := (binaryTableRow i0).c_byte
-              flags := (binaryTableRow i1).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte } = binaryTableRow i0
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i0)
-            (2 * boolF useFirstByte) (binaryTableRow i0).op 0
-            ((binaryTableRow i1).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte)
-            h0_pos rfl h0_cin h0_flags⟩
-      · exact ⟨i1, by
-          change
-            { pos_ind := 0
-              op := (binaryTableRow i0).op
-              a_byte := (binaryTableRow i1).a_byte
-              b_byte := (binaryTableRow i1).b_byte
-              cin := (binaryTableRow i1).cin
-              c_byte := (binaryTableRow i1).c_byte
-              flags := (binaryTableRow i2).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte } = binaryTableRow i1
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i1)
-            0 (binaryTableRow i0).op (binaryTableRow i1).cin
-            ((binaryTableRow i2).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte)
-            h1_pos h1_op rfl h1_flags⟩
-      · exact ⟨i2, by
-          change
-            { pos_ind := 0
-              op := (binaryTableRow i0).op
-              a_byte := (binaryTableRow i2).a_byte
-              b_byte := (binaryTableRow i2).b_byte
-              cin := (binaryTableRow i2).cin
-              c_byte := (binaryTableRow i2).c_byte
-              flags := (binaryTableRow i3).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte } = binaryTableRow i2
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i2)
-            0 (binaryTableRow i0).op (binaryTableRow i2).cin
-            ((binaryTableRow i3).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte)
-            h2_pos h2_op rfl h2_flags⟩
-      · exact ⟨i3, by
-          change
-            { pos_ind := boolF mode32
-              op := (binaryTableRow i0).op
-              a_byte := (binaryTableRow i3).a_byte
-              b_byte := (binaryTableRow i3).b_byte
-              cin := (binaryTableRow i3).cin
-              c_byte := (binaryTableRow i3).c_byte
-              flags := (binaryTableRow i4).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte
-                + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i3
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i3)
-            (boolF mode32) (binaryTableRow i0).op (binaryTableRow i3).cin
-            ((binaryTableRow i4).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
-            h3_pos h3_op rfl h3_flags⟩
-      · exact ⟨i4, by
-          change
-            { pos_ind := 0
-              op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
-              a_byte := (binaryTableRow i4).a_byte
-              b_byte := (binaryTableRow i4).b_byte
-              cin := (binaryTableRow i4).cin
-              c_byte := (binaryTableRow i4).c_byte
-              flags := (binaryTableRow i5).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte
-                + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i4
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i4)
-            0 (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
-            (binaryTableRow i4).cin
-            ((binaryTableRow i5).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
-            h4_pos h4_op rfl h4_flags⟩
-      · exact ⟨i5, by
-          change
-            { pos_ind := 0
-              op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
-              a_byte := (binaryTableRow i5).a_byte
-              b_byte := (binaryTableRow i5).b_byte
-              cin := (binaryTableRow i5).cin
-              c_byte := (binaryTableRow i5).c_byte
-              flags := (binaryTableRow i6).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte
-                + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i5
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i5)
-            0 (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
-            (binaryTableRow i5).cin
-            ((binaryTableRow i6).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
-            h5_pos h5_op rfl h5_flags⟩
-      · exact ⟨i6, by
-          change
-            { pos_ind := 0
-              op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
-              a_byte := (binaryTableRow i6).a_byte
-              b_byte := (binaryTableRow i6).b_byte
-              cin := (binaryTableRow i6).cin
-              c_byte := (binaryTableRow i6).c_byte
-              flags := (binaryTableRow i7).cin + 2 * boolF resultIsA
-                + 4 * boolF useFirstByte
-                + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i6
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i6)
-            0 (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
-            (binaryTableRow i6).cin
-            ((binaryTableRow i7).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
-              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
-            h6_pos h6_op rfl h6_flags⟩
-      · exact ⟨i7, by
-          change
-            { pos_ind := 1 + -boolF mode32
-              op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
-              a_byte := (binaryTableRow i7).a_byte
-              b_byte := (binaryTableRow i7).b_byte
-              cin := (binaryTableRow i7).cin
-              c_byte := (binaryTableRow i7).c_byte
-              flags := boolF carry7 + 2 * boolF resultIsA + 4 * boolF useFirstByte
-                + 8 * boolF cIsSigned } = binaryTableRow i7
-          exact binaryTableMessage_eq_of_shared (binaryTableRow i7)
-            (1 + -boolF mode32)
-            (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
-            (binaryTableRow i7).cin
-            (boolF carry7 + 2 * boolF resultIsA + 4 * boolF useFirstByte
-              + 8 * boolF cIsSigned)
-            (by simpa [sub_eq_add_neg] using h7_pos) h7_op rfl h7_flags⟩ }
+def staticLookupCircuit : GeneralFormalCircuit FGL BinaryRow unit  where
+  name := "BinaryWithStaticBinaryTable"
+  main := mainWithStaticBinaryTable
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithStaticBinaryTable, main, opBusMessageExpr,
+      OpBusChannel]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row ∧ StaticBinaryTableSpecFacts row
+  -- Completeness covers index-route rows: the eight lookup tuples are
+  -- built from BinaryTable indices, with semantic consistency facts for
+  -- shared mode/op/carry slots.
+  ProverAssumptions := fun row _ _ =>
+    ∃ mode32 resultIsA useFirstByte cIsSigned carry7
+      i0 i1 i2 i3 i4 i5 i6 i7,
+      (binaryTableRow i0).pos_ind = 2 * boolF useFirstByte ∧
+      (binaryTableRow i0).cin = 0 ∧
+      (binaryTableRow i0).flags =
+        (binaryTableRow i1).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte ∧
+      (binaryTableRow i1).pos_ind = 0 ∧
+      (binaryTableRow i1).op = (binaryTableRow i0).op ∧
+      (binaryTableRow i1).flags =
+        (binaryTableRow i2).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte ∧
+      (binaryTableRow i2).pos_ind = 0 ∧
+      (binaryTableRow i2).op = (binaryTableRow i0).op ∧
+      (binaryTableRow i2).flags =
+        (binaryTableRow i3).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte ∧
+      (binaryTableRow i3).pos_ind = boolF mode32 ∧
+      (binaryTableRow i3).op = (binaryTableRow i0).op ∧
+      (binaryTableRow i3).flags =
+        (binaryTableRow i4).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+          + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
+      (binaryTableRow i4).pos_ind = 0 ∧
+      (binaryTableRow i4).op =
+        binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
+      (binaryTableRow i4).flags =
+        (binaryTableRow i5).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+          + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
+      (binaryTableRow i5).pos_ind = 0 ∧
+      (binaryTableRow i5).op =
+        binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
+      (binaryTableRow i5).flags =
+        (binaryTableRow i6).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+          + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
+      (binaryTableRow i6).pos_ind = 0 ∧
+      (binaryTableRow i6).op =
+        binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
+      (binaryTableRow i6).flags =
+        (binaryTableRow i7).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+          + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned ∧
+      (binaryTableRow i7).pos_ind = 1 - boolF mode32 ∧
+      (binaryTableRow i7).op =
+        binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op ∧
+      (binaryTableRow i7).flags =
+        boolF carry7 + 2 * boolF resultIsA + 4 * boolF useFirstByte
+          + 8 * boolF cIsSigned ∧
+      row = binaryStaticRowOf mode32 resultIsA useFirstByte cIsSigned carry7
+        i0 i1 i2 i3 i4 i5 i6 i7
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ :=
+        h_holds
+      exact ⟨ ⟨ by simpa [sub_eq_add_neg] using h0
+                , by simpa [sub_eq_add_neg] using h1
+                , by simpa [sub_eq_add_neg] using h2
+                , by simpa [sub_eq_add_neg] using h3
+                , by simpa [sub_eq_add_neg] using h4
+                , by simpa [sub_eq_add_neg] using h5
+                , by simpa [sub_eq_add_neg] using h6 ⟩
+            , ⟨ by simp [lookupMessage0Row, lookupFlags012Row] at h7 ⊢; exact h7
+                , by simp [lookupMessage1Row, lookupFlags012Row] at h8 ⊢; exact h8
+                , by simp [lookupMessage2Row, lookupFlags012Row] at h9 ⊢; exact h9
+                , by simp [lookupMessage3Row, lookupFlags3456Row] at h10 ⊢; exact h10
+                , by simp [lookupMessage4Row, lookupFlags3456Row] at h11 ⊢; exact h11
+                , by simp [lookupMessage5Row, lookupFlags3456Row] at h12 ⊢; exact h12
+                , by simp [lookupMessage6Row, lookupFlags3456Row] at h13 ⊢; exact h13
+                , by
+                    simp [lookupMessage7Row, lookupFlags7Row, sub_eq_add_neg] at h14 ⊢
+                    exact h14 ⟩ ⟩
+    · intro _
+      trivial
+  completeness := by
+    circuit_proof_start [OpBusChannel, Lookup.completeness_def]
+    obtain ⟨mode32, resultIsA, useFirstByte, cIsSigned, carry7,
+      i0, i1, i2, i3, i4, i5, i6, i7,
+      h0_pos, h0_cin, h0_flags,
+      h1_pos, h1_op, h1_flags,
+      h2_pos, h2_op, h2_flags,
+      h3_pos, h3_op, h3_flags,
+      h4_pos, h4_op, h4_flags,
+      h5_pos, h5_op, h5_flags,
+      h6_pos, h6_op, h6_flags,
+      h7_pos, h7_op, h7_flags, hrow⟩ := h_assumptions
+    injection hrow with h_aBytes h_bBytes h_cBytes h_chain h_mode
+    injection h_aBytes with h_a0 h_a1 h_a2 h_a3 h_a4 h_a5 h_a6 h_a7
+    injection h_bBytes with h_b0 h_b1 h_b2 h_b3 h_b4 h_b5 h_b6 h_b7
+    injection h_cBytes with h_c0 h_c1 h_c2 h_c3 h_c4 h_c5 h_c6 h_c7
+    injection h_chain with h_carry0 h_carry1 h_carry2 h_carry3 h_carry4 h_carry5
+      h_carry6 h_carry7 h_bOp h_bOpOrSext
+    injection h_mode with h_mode32 h_resultIsA h_useFirstByte h_cIsSigned
+      h_mode32AndCIsSigned
+    subst_vars
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · exact boolF_booleanity_add mode32
+    · exact boolF_booleanity_add carry7
+    · exact boolF_booleanity_add resultIsA
+    · exact boolF_booleanity_add useFirstByte
+    · exact boolF_booleanity_add cIsSigned
+    · simp [binaryBOpOrSextOf]
+      ring_nf
+    · simp [binaryMode32AndCIsSignedOf]
+    · exact ⟨i0, by
+        change
+          { pos_ind := 2 * boolF useFirstByte
+            op := (binaryTableRow i0).op
+            a_byte := (binaryTableRow i0).a_byte
+            b_byte := (binaryTableRow i0).b_byte
+            cin := 0
+            c_byte := (binaryTableRow i0).c_byte
+            flags := (binaryTableRow i1).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte } = binaryTableRow i0
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i0)
+          (2 * boolF useFirstByte) (binaryTableRow i0).op 0
+          ((binaryTableRow i1).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte)
+          h0_pos rfl h0_cin h0_flags⟩
+    · exact ⟨i1, by
+        change
+          { pos_ind := 0
+            op := (binaryTableRow i0).op
+            a_byte := (binaryTableRow i1).a_byte
+            b_byte := (binaryTableRow i1).b_byte
+            cin := (binaryTableRow i1).cin
+            c_byte := (binaryTableRow i1).c_byte
+            flags := (binaryTableRow i2).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte } = binaryTableRow i1
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i1)
+          0 (binaryTableRow i0).op (binaryTableRow i1).cin
+          ((binaryTableRow i2).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte)
+          h1_pos h1_op rfl h1_flags⟩
+    · exact ⟨i2, by
+        change
+          { pos_ind := 0
+            op := (binaryTableRow i0).op
+            a_byte := (binaryTableRow i2).a_byte
+            b_byte := (binaryTableRow i2).b_byte
+            cin := (binaryTableRow i2).cin
+            c_byte := (binaryTableRow i2).c_byte
+            flags := (binaryTableRow i3).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte } = binaryTableRow i2
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i2)
+          0 (binaryTableRow i0).op (binaryTableRow i2).cin
+          ((binaryTableRow i3).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte)
+          h2_pos h2_op rfl h2_flags⟩
+    · exact ⟨i3, by
+        change
+          { pos_ind := boolF mode32
+            op := (binaryTableRow i0).op
+            a_byte := (binaryTableRow i3).a_byte
+            b_byte := (binaryTableRow i3).b_byte
+            cin := (binaryTableRow i3).cin
+            c_byte := (binaryTableRow i3).c_byte
+            flags := (binaryTableRow i4).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte
+              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i3
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i3)
+          (boolF mode32) (binaryTableRow i0).op (binaryTableRow i3).cin
+          ((binaryTableRow i4).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
+          h3_pos h3_op rfl h3_flags⟩
+    · exact ⟨i4, by
+        change
+          { pos_ind := 0
+            op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
+            a_byte := (binaryTableRow i4).a_byte
+            b_byte := (binaryTableRow i4).b_byte
+            cin := (binaryTableRow i4).cin
+            c_byte := (binaryTableRow i4).c_byte
+            flags := (binaryTableRow i5).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte
+              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i4
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i4)
+          0 (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
+          (binaryTableRow i4).cin
+          ((binaryTableRow i5).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
+          h4_pos h4_op rfl h4_flags⟩
+    · exact ⟨i5, by
+        change
+          { pos_ind := 0
+            op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
+            a_byte := (binaryTableRow i5).a_byte
+            b_byte := (binaryTableRow i5).b_byte
+            cin := (binaryTableRow i5).cin
+            c_byte := (binaryTableRow i5).c_byte
+            flags := (binaryTableRow i6).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte
+              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i5
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i5)
+          0 (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
+          (binaryTableRow i5).cin
+          ((binaryTableRow i6).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
+          h5_pos h5_op rfl h5_flags⟩
+    · exact ⟨i6, by
+        change
+          { pos_ind := 0
+            op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
+            a_byte := (binaryTableRow i6).a_byte
+            b_byte := (binaryTableRow i6).b_byte
+            cin := (binaryTableRow i6).cin
+            c_byte := (binaryTableRow i6).c_byte
+            flags := (binaryTableRow i7).cin + 2 * boolF resultIsA
+              + 4 * boolF useFirstByte
+              + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned } = binaryTableRow i6
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i6)
+          0 (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
+          (binaryTableRow i6).cin
+          ((binaryTableRow i7).cin + 2 * boolF resultIsA + 4 * boolF useFirstByte
+            + 8 * binaryMode32AndCIsSignedOf mode32 cIsSigned)
+          h6_pos h6_op rfl h6_flags⟩
+    · exact ⟨i7, by
+        change
+          { pos_ind := 1 + -boolF mode32
+            op := binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op
+            a_byte := (binaryTableRow i7).a_byte
+            b_byte := (binaryTableRow i7).b_byte
+            cin := (binaryTableRow i7).cin
+            c_byte := (binaryTableRow i7).c_byte
+            flags := boolF carry7 + 2 * boolF resultIsA + 4 * boolF useFirstByte
+              + 8 * boolF cIsSigned } = binaryTableRow i7
+        exact binaryTableMessage_eq_of_shared (binaryTableRow i7)
+          (1 + -boolF mode32)
+          (binaryBOpOrSextOf mode32 cIsSigned (binaryTableRow i0).op)
+          (binaryTableRow i7).cin
+          (boolF carry7 + 2 * boolF resultIsA + 4 * boolF useFirstByte
+            + 8 * boolF cIsSigned)
+          (by simpa [sub_eq_add_neg] using h7_pos) h7_op rfl h7_flags⟩
 
 def staticLookupComponent : Air.Flat.Component FGL := { circuit := staticLookupCircuit }
 
@@ -616,7 +637,7 @@ theorem staticLookupComponent_interactionsWith_opBus :
       [((OpBusChannel.pushed (opBusMessageExpr staticLookupComponent.rowInputVar)).toRaw)]⟩ ∈
     staticLookupComponent.exposedChannels
   simp only [staticLookupComponent, staticLookupCircuit,
-    binaryWithStaticBinaryTableElaborated, Component.exposedChannels,
+    Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 theorem staticLookupComponent_spec
@@ -633,7 +654,7 @@ theorem component_interactionsWith_opBus :
   change ⟨OpBusChannel.toRaw,
       [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, binaryElaborated, Component.exposedChannels,
+  simp only [component, circuit, Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 theorem spec_via_component (row : BinaryRow FGL)
@@ -650,8 +671,7 @@ theorem spec_via_component (row : BinaryRow FGL)
         + -(row.mode.mode32 * row.mode.c_is_signed) = 0) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, binaryElaborated,
-    circuit_norm] at hsound
+  simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   refine (hsound (Environment.fromInput row (fun _ n => (#[] : Array (Vector FGL n))))
     { aBytes := {
         free_in_a_0 := .const row.aBytes.free_in_a_0

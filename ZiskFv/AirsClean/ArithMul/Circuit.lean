@@ -607,54 +607,45 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
-@[reducible] def arithMulCompleteElaborated :
-    ElaboratedCircuit FGL ArithMulRow unit where
+
+/-- Shared Arith provider with the complete audited generated local constraints. -/
+def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit  where
   name := "ArithComplete"
   main := sharedMainCompleteWithRemainderBound
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel
       [ OpBusChannel.pushed (primaryOpBusMessageExpr row)
       , OpBusChannel.emitted (-(row.flags.div * (1 - row.flags.div_by_zero)))
           (remainderBoundOpBusMessageExpr row) ]
-  channelsLawful := by
-    simp only [circuit_norm, sharedMainCompleteWithRemainderBound, sharedMainComplete,
-      mainWithArithTable, main, primaryOpBusMessageExpr, remainderBoundOpBusMessageExpr,
-      OpBusChannel]
-
-/-- Shared Arith provider with the complete audited generated local constraints. -/
-def circuitComplete : GeneralFormalCircuit FGL ArithMulRow unit :=
-  { arithMulCompleteElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => FullSpec row ∧ SharedDivBlockSpec row
-    ProverAssumptions := fun _ _ _ => False
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      intro offset env input_var input h_input _h_assumptions h_holds
-      have h_complete :
-          ConstraintsHold.Soundness env
-            ((sharedMainComplete input_var).operations offset) := by
-        change Operations.forAllNoOffset _
-          (((sharedMainComplete input_var).operations offset) ++ _) at h_holds
-        rw [Operations.forAllNoOffset_append] at h_holds
-        exact h_holds.1
-      have h_base := sharedMainComplete_base_soundness offset env input_var h_complete
-      have h_div := sharedDivBlockSpec_of_soundness offset env input_var h_complete
-      have h_div_input : SharedDivBlockSpec input := by
-        simpa [h_input] using h_div
-      have h_old := circuitWithArithTable.soundness offset env input_var input
-        h_input trivial h_base
-      exact ⟨⟨h_old.1, h_div_input⟩, by
-        unfold Operations.Requirements at h_old ⊢
-        simp only [circuitWithArithTable, arithMulWithArithTableElaborated,
-          sharedMainCompleteWithRemainderBound, sharedMainComplete,
-          mainWithArithTable, main, circuit_norm] at h_old ⊢
-        exact ⟨h_old.2, fun _ => trivial⟩⟩
-    completeness := by
-      circuit_proof_start_core
-      exact False.elim h_assumptions }
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => FullSpec row ∧ SharedDivBlockSpec row
+  ProverAssumptions := fun _ _ _ => False
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    intro offset env input_var input h_input _h_assumptions h_holds
+    have h_complete :
+        ConstraintsHold.Soundness env
+          ((sharedMainComplete input_var).operations offset) := by
+      change Operations.forAllNoOffset _
+        (((sharedMainComplete input_var).operations offset) ++ _) at h_holds
+      rw [Operations.forAllNoOffset_append] at h_holds
+      exact h_holds.1
+    have h_base := sharedMainComplete_base_soundness offset env input_var h_complete
+    have h_div := sharedDivBlockSpec_of_soundness offset env input_var h_complete
+    have h_div_input : SharedDivBlockSpec input := by
+      simpa [h_input] using h_div
+    have h_old := circuitWithArithTable.soundness offset env input_var input
+      h_input trivial h_base
+    exact ⟨⟨h_old.1, h_div_input⟩, by
+      unfold Operations.Requirements at h_old ⊢
+      simp only [circuitWithArithTable, arithMulWithArithTableElaborated,
+        sharedMainCompleteWithRemainderBound, sharedMainComplete,
+        mainWithArithTable, main, circuit_norm] at h_old ⊢
+      exact ⟨h_old.2, fun _ => trivial⟩⟩
+  completeness := by
+    circuit_proof_start_core
+    exact False.elim h_assumptions
 
 def componentComplete : Air.Flat.Component FGL := { circuit := circuitComplete }
 
@@ -686,8 +677,7 @@ theorem componentComplete_interactionsWith_opBus :
             (1 - componentComplete.rowInputVar.flags.div_by_zero)))
           (remainderBoundOpBusMessageExpr componentComplete.rowInputVar)).toRaw) ]⟩ ∈
     componentComplete.exposedChannels
-  simp only [componentComplete, circuitComplete, arithMulCompleteElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil,
+  simp only [componentComplete, circuitComplete, Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil,
     primaryOpBusMessageExpr, remainderBoundOpBusMessageExpr]
 
 end ZiskFv.AirsClean.ArithMul
