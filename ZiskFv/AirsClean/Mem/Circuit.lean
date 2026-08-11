@@ -116,9 +116,8 @@ def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-! ## Mem-with-MemBus Component
 
-`circuitWithMemBus` bundles Mem's per-row
-constraints + the memory-bus provider emission) as a Clean
-`GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
+`circuitWithMemBus` bundles Mem's per-row constraints and the memory-bus
+provider emission as a Clean `GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
 the channel emission adds no per-row soundness obligation; the soundness
 proof mirrors the base component. -/
 
@@ -296,7 +295,8 @@ theorem componentWithDualMemBus_rowInput_materialize
     (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
     componentWithDualMemBus.rowInput
       (Environment.fromArray (memFixedColumns.materialize index (memRawRow row)) data) = row := by
-  simpa only [Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Component.rowInput, Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     eval_memRawRow_materialize index data row
 
 /-- Project the live dual-Mem static lookups to the row-level range facts they
