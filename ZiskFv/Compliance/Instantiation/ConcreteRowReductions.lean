@@ -153,6 +153,7 @@ private theorem component_constraintsHold_of_proverAssumptions_at
     rw [component.circuit.localLength_eq]
     exact h_localLength
   have h_input' : Eval.eval proverEnv component.rowInputVar = row := by
+    unfold Component.rowInputVar at h_input ⊢
     rw [ProvableType.eval_varFromOffset_prover]
     rw [← h_input]
     rw [ProvableType.eval_varFromOffset]
@@ -187,6 +188,7 @@ theorem component_constraintsHold_of_proverAssumptions_at_data
     rw [component.circuit.localLength_eq]
     exact h_localLength
   have h_input' : Eval.eval proverEnv component.rowInputVar = row := by
+    unfold Component.rowInputVar at h_input ⊢
     rw [ProvableType.eval_varFromOffset_prover]
     rw [← h_input]
     rw [ProvableType.eval_varFromOffset]

@@ -193,7 +193,7 @@ theorem memAlignRomTable_spec_of_memAlignRomSlice_provider_row
   simpa only [Component.Spec, Component.rowInput, eval_varFromOffset_valueFromOffset,
     ZiskFv.AirsClean.MemAlignRomSlice.component,
     ZiskFv.AirsClean.MemAlignRomSlice.circuit,
-    ZiskFv.AirsClean.MemAlignRomSlice.elaborated] using h_spec
+    Component.rowInputVar] using h_spec
 
 /-- A negative MemAlign h998 interaction is matched by balance to a concrete
 static ROM row, whose exact membership is derived from witness constraints.
