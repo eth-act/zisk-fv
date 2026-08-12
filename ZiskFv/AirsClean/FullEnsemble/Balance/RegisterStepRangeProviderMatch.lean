@@ -230,6 +230,46 @@ theorem prev_val_lt_of_registerStepSpec
   rw [Nat.mod_eq_of_lt h_small] at h_val
   omega
 
+/-- A register chain linked by the bus-102 descent has strictly increasing timestamps.
+
+Each counterpart step carries the earlier access's timestamp into the next row's
+`<slot>_reg_prev_mem_step`, and that row's own bus-102 guarantee bounds
+`<slot>_mem_step - <slot>_reg_prev_mem_step - 1`, so the step moves strictly forward in time. -/
+theorem registerChain_strictMono_of_descent
+    (timestamps : List FGL)
+    (h_bounds : ∀ t ∈ timestamps, t.val < 2 ^ 32)
+    (h_chain : List.IsChain (fun a b =>
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (b - a - 1)) timestamps) :
+    List.IsChain (fun a b => a.val < b.val) timestamps := by
+  induction timestamps with
+  | nil => simp
+  | cons a rest ih =>
+      cases rest with
+      | nil => simp
+      | cons b rest' =>
+          rw [List.isChain_cons_cons] at h_chain
+          rw [List.isChain_cons_cons]
+          exact ⟨prev_val_lt_of_registerStepSpec h_chain.1
+              (h_bounds b (by simp)) (h_bounds a (by simp)),
+            ih (fun t ht => h_bounds t (by simp [ht])) h_chain.2⟩
+
+/-- **No register-chain cycle.** A chain of accesses linked by the bus-102 descent visits no
+timestamp twice, so the balanced register partition cannot decompose into the boundary path plus a
+disjoint cycle -- exactly the counterexample #342 was opened about. Strictly increasing timestamps
+cannot return to their start. -/
+theorem registerChain_nodup_of_descent
+    (timestamps : List FGL)
+    (h_bounds : ∀ t ∈ timestamps, t.val < 2 ^ 32)
+    (h_chain : List.IsChain (fun a b =>
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (b - a - 1)) timestamps) :
+    timestamps.Nodup := by
+  have h_mono := registerChain_strictMono_of_descent timestamps h_bounds h_chain
+  haveI : Trans (fun a b : FGL => a.val < b.val) (fun a b : FGL => a.val < b.val)
+      (fun a b : FGL => a.val < b.val) := ⟨fun h1 h2 => Nat.lt_trans h1 h2⟩
+  have h_pairwise : timestamps.Pairwise (fun a b => a.val < b.val) :=
+    h_mono.pairwise
+  exact h_pairwise.imp (fun {a b} h h_eq => absurd (congrArg Fin.val h_eq) (Nat.ne_of_lt h))
+
 /-- **Balance turns a bus-102 pull into a provider push.** Every component other than the
 `RegisterStepRangeSlice` provider is silent on bus 102 except Main, and Main only ever emits at
 multiplicity `-a_src_reg` and friends, which `exists_push_of_pull` excludes by returning a
