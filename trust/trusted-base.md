@@ -668,9 +668,16 @@ distances are the `[0, 0, 0]` that `singleAddWitness`'s provider list records. E
 result in `RegisterWalk.lean` is an implication out of `RegSupplies`, so an empty relation
 would make them hold without saying anything about ZisK.
 
-**What this still does not give.** Acyclicity bounds the walk from below, not above. The
-`main.pil:447` gap above is unchanged, so nothing yet forces a register chain to *reach*
-`RegisterBoundary.bootMessage`; the boundary can still self-pair at timestamp `0`.
+**What this still does not give.** Acyclicity bounds the walk from below, not above. Nothing yet
+forces a register chain to *reach* `RegisterBoundary.bootMessage`, for two separate reasons.
+First, the `main.pil:447` gap above is unchanged, so the boundary can still self-pair at
+timestamp `0`. Second, iterating the supply step needs the supplying row's own access to be a
+`mem_op = 3` **pull**, i.e. `a_src_mem + a_src_reg = 1`, because `exists_push_of_pull` fires only
+at multiplicity exactly `-1`. Main's constraints give **booleanity only**
+(`Main/Constraints.lean:252,259`); no exclusivity constraint exists in the component, so `(1, 1)`
+is admissible in the model and the pull would ride at `-2` with `mem_op = 4`. Ruling that out means
+pinning `rom_flags` to a decoded instruction — the committed-program decode bridge (#172, on top of
+#164's proven decoder), a different axis from this range slice.
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
 `main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope
