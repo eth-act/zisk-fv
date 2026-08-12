@@ -1096,6 +1096,50 @@ theorem componentWithRomMemAndOpBus_interactionsWith_opBus
     mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,
     List.map_cons, List.map_nil]
 
+/-- Main's three bus-102 register-step emissions (`main.pil:333-335`), read off the exposed
+    channel list. Main is a *consumer* here — all three multiplicities are negated selectors — so
+    this lemma supplies the pull side that the `RegisterStepRangeSlice` provider table matches. -/
+theorem componentWithRomMemAndOpBus_interactionsWith_registerStepRange
+    (length : ℕ) (program : Program length) :
+    (componentWithRomMemAndOpBus length program).operations.interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      [ ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (aRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (bRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (cRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw,
+      [ ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (aRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (bRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (cRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw) ]⟩ ∈
+    (componentWithRomMemAndOpBus length program).exposedChannels
+  simp [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+    mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,
+    List.map_cons, List.map_nil]
+
 theorem is_external_op_boolean_of_mainWithRomMemAndOpBus_constraints
     (length : ℕ) (program : Program length)
     (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)

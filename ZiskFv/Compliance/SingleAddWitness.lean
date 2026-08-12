@@ -770,6 +770,30 @@ theorem singleAddWitness_memAlignRomChannel_balanced :
   · intro msg
     simp [balanceOf]
 
+/-- The witness's bus-102 interaction list: the provider table's three pushes, then Main's three
+    pulls. Every other table is silent on this channel. -/
+theorem singleAddWitness_registerStepRange_interactions :
+    singleAddWitness.tables.flatMap
+        (·.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
+      [registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+        registerStepRangeInteraction (0 : FGL)] ++
+        [mainARegStepInteraction addX1Row, mainBRegStepInteraction addX1Row,
+          mainCRegStepInteraction addX1Row] := by
+  have h_boundary :=
+    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
+      (table := registerBoundaryRowsTable) rfl
+  have h_binaryAdd :=
+    ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
+      (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
+  have h_main :=
+    mainSingleRowTable_interactionsWith_registerStepRange 1 addX1Program addX1Row
+      (by rfl) (by rfl)
+  rw [show singleAddWitness.tables = singleAddTables from rfl]
+  simp [singleAddTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd,
+    registerStepRangeRowsTable_interactionsWith, h_main]
+
+set_option maxRecDepth 8000 in
 /-- Bus-102 balance for the single-ADD witness.
 
     The ADD row has all three register slots active, so Main emits three consumer interactions at
@@ -781,28 +805,21 @@ theorem singleAddWitness_registerStepRangeChannel_balanced :
       (singleAddWitness.tables.flatMap
         (·.interactionsWith
           ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
-  rw [show singleAddWitness.tables = singleAddTables from rfl]
-  have h_boundary :=
-    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
-      (table := registerBoundaryRowsTable) rfl
-  have h_binaryAdd :=
-    ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
-      (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
-  refine balancedInteractions_of_present ?_ [(toElements
-      (ZiskFv.Channels.SpecifiedRanges.registerStepMessage (0 : FGL))).toArray] ?_ ?_
+  rw [singleAddWitness_registerStepRange_interactions]
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([(registerStepRangeInteraction (0 : FGL)).msg] : List (Array FGL)) ?_ ?_
   · left
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-    simp [singleAddTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd]
-    sorry
-  · intro i hi
-    simp [singleAddTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd] at hi
-    sorry
-  · intro msg hmsg
-    simp only [List.mem_singleton] at hmsg
+    decide
+  · intro interaction h_interaction
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at h_interaction
+    simp only [List.mem_singleton]
+    rcases h_interaction with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  · intro msg h_msg
+    simp only [List.mem_singleton] at h_msg
     subst msg
-    simp [balanceOf, singleAddTables, emptyComponentTable_interactionsWith, h_boundary,
-      h_binaryAdd]
-    sorry
+    decide
 
 theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels := by
   refine singleAddWitness.balancedChannels_of_tables singleAddEnsemble_verifier ?_
