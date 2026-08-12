@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
+import ZiskFv.AirsClean.FullEnsemble.Balance.RegisterStepRangeProviderMatch
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
@@ -1958,5 +1959,105 @@ theorem registerBoundaryRowsTableOf_constraints
       ZiskFv.AirsClean.RegisterBoundary.component row h_localLength trivial
   simpa [registerBoundaryRowsTableOf, registerBoundaryRowArray, Table.environment,
     Environment.fromInput] using h_component
+
+/-- **Every active register read in an accepted trace has a 24-bit-bounded step distance.**
+
+This is the row-level form of the bus-102 descent: given a Main table row whose a-side register
+selector is on, the distance `a_mem_step - a_reg_prev_mem_step - 1` that row pulls is forced into
+`rangeTable24`. Nothing about the register columns is assumed -- the bound comes from the provider
+table's own `Spec` via balance.
+
+The b-side and store-side twins differ only in which selector and which distance they name. -/
+theorem rangeTable24_spec_aRegStepDistance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : row.rom.a_src_reg = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance row) := by
+  have h_list :
+      mainARegStepInteraction row ∈
+        mainTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    refine List.mem_flatMap.mpr ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, mainRegisterStepInteractionsAt length program _ row h_input]
+    simp
+  refine ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_mainTable h_list ?_ ?_
+  · simp [mainARegStepInteraction, h_active]
+  · rfl
+
+/-- The b-side twin of `rangeTable24_spec_aRegStepDistance_of_active`. -/
+theorem rangeTable24_spec_bRegStepDistance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : row.rom.b_src_reg = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (bRegStepDistance row) := by
+  have h_list :
+      mainBRegStepInteraction row ∈
+        mainTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    refine List.mem_flatMap.mpr ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, mainRegisterStepInteractionsAt length program _ row h_input]
+    simp
+  refine ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_mainTable h_list ?_ ?_
+  · simp [mainBRegStepInteraction, h_active]
+  · rfl
+
+/-- The store-side twin of `rangeTable24_spec_aRegStepDistance_of_active`. -/
+theorem rangeTable24_spec_cRegStepDistance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : row.rom.store_reg = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (cRegStepDistance row) := by
+  have h_list :
+      mainCRegStepInteraction row ∈
+        mainTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    refine List.mem_flatMap.mpr ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, mainRegisterStepInteractionsAt length program _ row h_input]
+    simp
+  refine ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_mainTable h_list ?_ ?_
+  · simp [mainCRegStepInteraction, h_active]
+  · rfl
 
 end ZiskFv.Compliance.Instantiation
