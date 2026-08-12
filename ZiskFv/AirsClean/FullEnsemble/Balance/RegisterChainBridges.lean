@@ -517,4 +517,27 @@ theorem mainOfTable_pc_eq_nextPcMux_of_transitions_hold
   simpa only [mainOfTable_pc, mainOfTable_set_pc, mainOfTable_c_0, mainOfTable_flag,
     mainOfTable_jmp_offset1, mainOfTable_jmp_offset2] using h_solved
 
+/-- **The counterpart step, read off as a timestamp equality.** Two memory-bus messages whose
+entries match carry the same timestamp -- `matches_memory_entry` has a timestamp component and
+`toEntry` passes it through unchanged.
+
+This is the piece the register walk needs from the counterpart machinery. When a Main register read
+is supplied by another Main row's register-pre push, that push carries the consumer's read
+timestamp in its `<slot>_reg_prev_mem_step`; composed with the bus-102 descent on the provider row
+(which bounds `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`), the step moves strictly later in
+the trace, which is what rules out the register cycle in #342.
+
+Stated on the entry match rather than on `ActiveMainSelfMemProviderRowMatchSpec` itself, because
+that spec is a six-way disjunction over which of Main's memory-bus emissions supplied the read; the
+caller picks the branch and applies this to it. -/
+theorem memBusMessage_timestamp_eq_of_entry_match
+    {msg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage FGL}
+    {multiplicity as : FGL}
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry msg multiplicity as)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry providerMsg multiplicity as)) :
+    msg.timestamp = providerMsg.timestamp := by
+  simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_entry.2.2.2.2.2
+
 end ZiskFv.AirsClean.FullEnsemble
