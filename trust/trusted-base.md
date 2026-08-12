@@ -707,17 +707,29 @@ constant once the reference slot is fixed, giving
 
 So **every** Main register access is a genuine `-1` pull at `mem_op = 3`.
 
-**What this still does not give.** Termination remains open, for two reasons.
+**Update (termination).** The walk now provably ends at the boundary.
+`exists_boundarySuppliedSite`: from any witness site — a Main row with an active register slot —
+following supply counterparts reaches a site whose own register read is supplied by
+`RegisterBoundary`.
 
-First, `registerRead_counterpart_of_trace` is stated on `trace.mainTable`, while the provider it
-returns is any witness table carrying Main's component. Iterating the walk therefore needs
-*uniqueness* of the Main table in the witness. That is derivable in principle —
-`EnsembleWitness.allTables_map_component` pins the component list — but it requires distinguishing
-Main from the other fifteen components, which are structure values with no cheap decidable equality.
-It is **not** proved yet, and it is not an assumption anywhere.
+Three things make it go through. `regSlot_mem_pull_of_selector` turns source exclusivity into the
+`-1`-pull shape on all three slots, so the counterpart classification applies to a *supplying* row
+in turn and not only to the consumer. `registerRead_counterpart_of_witnessTable` restates that
+classification over any witness table carrying Main's component — the underlying ensemble lemma
+already quantified over an arbitrary table, so no uniqueness-of-the-Main-table argument is needed.
+And `exists_boundarySuppliedSite_of_fuel` is an induction on `2 ^ 40 - readTimestamp`: the measure
+strictly decreases because each supply step moves strictly later in time, and it is well-founded
+because every read timestamp is below `2 ^ 40` — from the Main table's own fixed-column capacity,
+not from a premise about segment length.
 
-Second, the `main.pil:447` gap above is unchanged, so the boundary can still self-pair at
-timestamp `0`.
+No new premise, no decode fact, no assumption about the number of Main tables. Axiom closure is the
+three standard axioms.
+
+**What this still does not give.** The `main.pil:447` gap above is unchanged: the reload timestamp
+is free, so the boundary can self-pair at timestamp `0`. Termination says the walk *reaches* the
+boundary; pinning **which** boundary message it lands on — and so anchoring the value telescope at
+`bootMessage`'s literal `(ts 0, value 0)` — is that separate gap, and it is what #330 Phase 4 needs
+next.
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
 `main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope
