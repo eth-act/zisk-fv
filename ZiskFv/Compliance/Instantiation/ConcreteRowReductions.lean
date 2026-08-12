@@ -2060,4 +2060,30 @@ theorem rangeTable24_spec_cRegStepDistance_of_active
   · simp [mainCRegStepInteraction, h_active]
   · rfl
 
+/-- **One counterpart step moves strictly later in the trace.**
+
+Composes the three pieces the register walk needs:
+
+* the counterpart carries the consumer's read timestamp in the provider row's
+  `a_reg_prev_mem_step` (`selfMemProvider_registerPre_timestamp_of_mem_op_three`);
+* that provider row's own bus-102 pull bounds `a_mem_step - a_reg_prev_mem_step - 1`
+  (`rangeTable24_spec_aRegStepDistance_of_active`);
+* and the bound is a genuine order once both timestamps sit below `2 ^ 32`
+  (`prev_val_lt_of_registerStepSpec`).
+
+So the row that supplies a register read performs its own access strictly later. A cycle would
+need a timestamp to increase back to itself, which `registerChain_nodup_of_descent` rules out.
+
+The b-side and store-side twins differ only in which columns they name. -/
+theorem registerRead_timestamp_lt_provider_access
+    {mainTs : FGL} {providerRow : MainRowWithRom FGL}
+    (h_link : providerRow.rom.a_reg_prev_mem_step = mainTs)
+    (h_descent :
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance providerRow))
+    (h_bound_prev : mainTs.val < 2 ^ 32)
+    (h_bound_cur : (1 + providerRow.rom.main_step * 4 : FGL).val < 2 ^ 32) :
+    mainTs.val < (1 + providerRow.rom.main_step * 4 : FGL).val := by
+  refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound_cur h_bound_prev
+  simpa [aRegStepDistance, h_link] using h_descent
+
 end ZiskFv.Compliance.Instantiation
