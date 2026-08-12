@@ -494,6 +494,94 @@ whole-state floor" property is a property of the `LoadMemoryTimelineCoherenceEvi
 cursor, so the earlier `witnessStore_nondegenerate` regs/cycleCount side-claim was
 dropped as describing a cursor the evidence no longer uses.)
 
+### The PC premises (`SegmentPcChain` + `StepRowsAligned`) — #330
+
+**Before (pre-#330).** `h_pc_bridge` was a field of **all 63** `Inputs_<op>`
+structures: at every executed row, the caller asserted that the Main `pc` column
+equals the Sail PC at that step. `root_soundness` took the whole family as
+`inputsAgree : ∀ i, InputsAgree …`.
+
+**Intermediate (Phase 5/6).** `inputsAgree` dropped to `InputsAgreeCore` (the same
+63 structures minus that field) plus one `pcSeed : SegmentPcSeed` with `boot` and
+`succ`. That was a restructuring only: `pcSeed_of_inputsAgree` proved the converse,
+and `succ` still named `nextPcMux` — a committed ZisK column.
+
+**After (live, Phase 7).** `root_soundness` takes
+`inputsAgree : ∀ i, InputsAgreeCore …` plus **two** binders
+(`ZiskFv/Compliance/TraceLevelExport/SailRetireChain.lean`):
+
+* `pcChain : SegmentPcChain ziskTrace sailTrace ziskStep` — `boot` (the Sail PC
+  agrees with the Main `pc` column at step `0`) and `retire` (the Sail state at
+  `j + 1` takes its `PC` from what step `j` retired into `nextPC`);
+* `rowsAligned : StepRowsAligned ziskTrace ziskStep …` — at every step with a
+  successor, the step's execution-bus producer entry is its own Main row's
+  successor `pc`.
+
+`stepSound_of_programDecodes` is now a **strong induction on the step index**
+rather than a per-`i` map. Row `0`'s PC agreement is `boot`; each later row comes
+from the previous row's own `StepSound` via `pcBridge_succ_of_stepSound`. Three
+facts make that step work, all proved, none assumed:
+
+* `mainOfTable_pc_succ_eq_nextPcMux` — the circuit's own PC recurrence, from the
+  `AcceptedZiskTrace.transitions_hold` certificate. Two side conditions are derived
+  rather than assumed: `segment_l1 ≠ 1` away from row `0` (from the component-owned
+  fixed `SEGMENT_L1 = [1,0,0,…]` schema) and the fixed-column capacity bound (from
+  the table's own `fixed_domain` field).
+* `nextPC_of_busEffect_ok` — if the channel effect succeeds, its post-state's
+  `nextPC` **is** the producer entry's `pc`. Needs only the execution bus's shape.
+* `stepChannelOutput_busEffect_ok` — the channel effect never faults.
+  `MemBusMessage.toEntry` takes multiplicity and address space as explicit
+  arguments and every bus passes numerals, so `bus_effect`'s "impossible under
+  assumptions" error exits are unreachable.
+
+**Trust class, stated precisely.** Named external-trust premises, the same class as
+`bootSeed` and channel-balance — not axioms, not defects. `root_soundness`'s axiom
+closure is unchanged; the new ZisK-side declarations close over
+`[propext, Classical.choice, Quot.sound]`, and the ones that mention `StepSound`
+close over the pre-existing Sail LHS set the endpoint already carried.
+
+**This is still not a logical-strength reduction — say so plainly.**
+`sailRetireChain_of_inputsAgree` proves the converse direction: the old per-row
+bundle, plus `rowsAligned`, yields `retire`. Together with
+`pcBridge_succ_of_stepSound` that makes the old bundle and `boot` + `retire`
+**inter-derivable given `rowsAligned`**, the same situation Phase 5/6 was in. Do
+not read this entry as a trust reduction.
+
+What it does change, and why the change is worth having:
+
+* **The per-step cross-machine burden is gone.** `boot` is now the only premise
+  relating a committed ZisK column to a Sail register. `retire` mentions no
+  `mainOfTable`, no `nextPcMux`, no `pc` column — it relates two Sail states
+  through Sail's own step function. `rowsAligned` mentions no Sail state at all.
+  A caller can discharge each by reasoning on one side only.
+* **A hidden condition became visible.** `JalrLoweringRows` permits a two-row
+  unaligned JALR lowering with `finish = start + 1`, and `StepSound`'s JALR arm is
+  indexed by `finish`, so such a step writes `pc (j + 2)` into Sail's `nextPC`
+  while step `j + 1`'s bridge is stated at `pc (j + 1)`. Assuming `succ` let a
+  trace satisfy the PC equation while its Sail step had in fact retired elsewhere;
+  nothing checked the two agreed. `rowsAligned` is that check, now on the record.
+  It binds only at steps that have a successor, so a trailing unaligned JALR — the
+  shape `jalrSpinRootSoundness` uses — discharges it vacuously.
+
+**What would be a real strength reduction, and is not done.** `SailTrace` is a bare
+`Fin n → SailState` (`ZiskFv/Compliance/SailTrace.lean`) with no chaining, so
+*something* must say the Sail states form an execution — exactly the reason
+`bootSeed` is irreducible at the single-segment level. Defining `SailTrace` as the
+sequence Sail's own semantics generates from an initial state would make `retire`
+definitional and leave `boot` alone. That is a change to a protected interface used
+by all 63 arms, and it remains the open #330 follow-on.
+
+**Non-vacuity.** All seven accepted-trace witnesses supply both binders and still
+instantiate `root_soundness` / `stepSound_of_programDecodes`. They build `retire`
+through `sailRetireChain_of_inputsAgree` from the per-row `InputsAgree` family they
+already prove — no witness evaluates a Sail execution by hand. The
+empty-execution memory witness and the degenerate probe get vacuous ones, as their
+`bootSeed`s already are.
+
+**Scope.** The PC arm only. The register fields (`h_a_*_t` / `h_b_*_t`, 116
+occurrences) stay assumed; they go through the MemBus and are the separate
+register-partition axis (`main.pil:277-279`, #169/#19).
+
 ### Register MemBus balance (`MEMORY_REG_OP`) — #225
 
 The full RV64IM Clean ensemble now **emits** the complete register-consistency
@@ -926,18 +1014,23 @@ particular linker image. Second, grounding the same word in Sail's
 with the intended compiled binary remains the external compile/commitment
 boundary.
 
-**Non-vacuity of this endpoint is NOT yet witnessed (#320).** No theorem in the
-tree concludes `ProgramRowsBinding`, and there is no conversion lemma from the
-older `ProgramBinding`. `RawProgramBinding.memoryProgramBinding` — whose
-hand-written accepted ROM contains SD, LD, and a negative-offset LD and is
-proved equal to production serialization — inhabits `ProgramBinding`, which is
-the physically-indexed predecessor predicate and is not the premise this
-endpoint takes. The six concrete instantiations (`addSpin`, `addAddiSpin`,
-`divSpin`, `jalrSpin`, `sdLdSpin`, degenerate) discharge the premises
-`root_soundness` shares with `stepSound_of_programDecodes` — `ziskTrace`,
-`ziskStep`, `inputsAgree`, `bootSeed`, `hAvoidKnownBugs` — but they satisfy
-`ProgramDecode` directly, and `ProgramRowsBinding + RawProgramDecode ⟹
-ProgramDecode` does not run in the direction that would transfer that evidence.
+**Non-vacuity of this endpoint IS witnessed (#320).** Two theorems in the tree
+conclude `ProgramRowsBinding` and feed it to `root_soundness`:
+
+* `addFaithfulProgramRowsBinding`
+  (`TraceLevelExport/RawProgramBindingAddFaithfulNonvacuity.lean`), consumed by
+  `addFaithfulPaddedRawRootSoundness` on a **one-instruction** execution together
+  with real `addFaithfulRawProgramDecodes` — so the conclusion obtained there is
+  not vacuous;
+* `memoryProgramRowsBinding`, consumed by `memoryRawRootSoundness`, on an empty
+  execution (real binding, vacuous `∀ i : Fin 0` conclusion).
+
+The remaining instantiations (`addSpin`, `addAddiSpin`, `divSpin`, `jalrSpin`,
+`sdLdSpin`) discharge the premises `root_soundness` shares with
+`stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `pcSeed`,
+`bootSeed`, `hAvoidKnownBugs` — but they satisfy `ProgramDecode` directly, and
+`ProgramRowsBinding + RawProgramDecode ⟹ ProgramDecode` does not run in the
+direction that would transfer that evidence.
 So the clauses carrying the binding's weight (4-alignment, `addr + 1 <
 GL_prime`, two-slot separation, and the surjectivity clause) and the two-row
 JALR expansion path are currently unexercised, and no gate detects this:

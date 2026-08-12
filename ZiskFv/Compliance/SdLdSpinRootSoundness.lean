@@ -780,6 +780,15 @@ def sdLdInputsAgree :
   | ⟨5, _⟩ => sdLdLdInputs
   | ⟨6, _⟩ => sdLdJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def sdLdPcSeed : SegmentPcSeed sdLdAcceptedTrace sdLdSailTrace :=
+  pcSeed_of_inputsAgree sdLdInputsAgree
+
+def sdLdInputsAgreeCore :
+    ∀ i : Fin 7, InputsAgreeCore sdLdAcceptedTrace sdLdSailTrace i (sdLdZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (sdLdZiskStep i) (sdLdInputsAgree i)
+
 private theorem sdLdStoreEntry_eq :
     (busSt sdLdAcceptedTrace sdLdSdIndex
       (Pilot.execRowOf sdLdAcceptedTrace sdLdSdIndex)).e2 =
@@ -1017,12 +1026,33 @@ def sdLdOutsideDefectRegion :
   | ⟨5, _⟩ => sdLdLdOutsideDefectRegion
   | ⟨6, _⟩ => sdLdJalOutsideDefectRegion
 
+/-- #330 Phase 7: each executed step's producer entry is its own row's successor `pc`. Only a
+    two-row unaligned JALR lowering can break this, and only at a step that has a successor. -/
+def sdLdRowsAligned :
+    StepRowsAligned sdLdAcceptedTrace sdLdZiskStep
+      (fun i => rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) := by
+  intro j h
+  have h' : j + 1 < 7 := h
+  have hj : j < 7 - 1 := by omega
+  interval_cases j <;> rfl
+
+/-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
+    `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
+    witness already proves — no new content, and no hand-evaluated Sail execution. -/
+def sdLdPcChain : SegmentPcChain sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep where
+  toSailRetireChain :=
+    sailRetireChain_of_inputsAgree
+      (fun i => rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i))
+      sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion sdLdRowsAligned
+  boot := (pcSeed_of_inputsAgree sdLdInputsAgree).boot
+
 theorem sdLdRootSoundness :
     ∀ i : Fin 7, StepSound sdLdAcceptedTrace sdLdSailTrace i
       (sdLdZiskStep i)
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
   stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
-    sdLdProgramDecodes sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion
+    sdLdProgramDecodes sdLdInputsAgreeCore sdLdPcChain sdLdRowsAligned
+    sdLdBootSeed sdLdOutsideDefectRegion
 
 theorem sdLdAddiA0StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index

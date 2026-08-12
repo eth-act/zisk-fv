@@ -96,7 +96,7 @@ structure Decode_sub (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sub (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sub trace i) : Type where
   sub_input : PureSpec.SubInput
   h_input_r1 :
@@ -127,11 +127,21 @@ structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
-  -- #100: the JAL/AUIPC-style PC provenance bridge + no-wrap bound (the same
-  -- shapes `Inputs_jal`/`Inputs_jalr` already carry).  `Pilot.sub_nextPC_discharged`
-  -- consumes these — together with the `Decode_sub` transition inputs — to DERIVE
-  -- the (now-removed) cross-world `h_nextPC_matches` from the in-circuit
-  -- `pcHandshakeBetween` transition certificate, rather than asserting it.
+
+/-- The PC agreement `Inputs_sub` carries on top of `InputsCore_sub`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sub (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sub trace i) : Type extends InputsCore_sub trace binding i c where
+  -- #100: the PC provenance bridge. `Pilot.sub_nextPC_discharged` consumes it —
+  -- together with the `Decode_sub` transition inputs — to DERIVE the (now-removed)
+  -- cross-world `h_nextPC_matches` from the in-circuit `pcHandshakeBetween`
+  -- transition certificate, rather than asserting it. Since #330 Phase 6 this is
+  -- the only field the wrapper adds to `InputsCore_sub`; the no-wrap bound the
+  -- earlier wording mentioned lives elsewhere.
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sub_input.PC.toNat
@@ -187,7 +197,7 @@ structure Decode_and (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_and (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_and (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_and trace i) : Type where
   and_input : PureSpec.AndInput
   h_input_r1 :
@@ -218,6 +228,15 @@ structure Inputs_and (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_and` carries on top of `InputsCore_and`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_and (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_and trace i) : Type extends InputsCore_and trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = and_input.PC.toNat
@@ -273,7 +292,7 @@ structure Decode_or (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_or (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_or (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_or trace i) : Type where
   or_input : PureSpec.OrInput
   h_input_r1 :
@@ -304,6 +323,15 @@ structure Inputs_or (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_or` carries on top of `InputsCore_or`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_or (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_or trace i) : Type extends InputsCore_or trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = or_input.PC.toNat
@@ -359,7 +387,7 @@ structure Decode_xor (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_xor (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_xor (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_xor trace i) : Type where
   xor_input : PureSpec.XorInput
   h_input_r1 :
@@ -390,6 +418,15 @@ structure Inputs_xor (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_xor` carries on top of `InputsCore_xor`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_xor (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_xor trace i) : Type extends InputsCore_xor trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = xor_input.PC.toNat
@@ -445,7 +482,7 @@ structure Decode_slt (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_slt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_slt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slt trace i) : Type where
   slt_input : PureSpec.SltInput
   h_input_r1 :
@@ -476,6 +513,15 @@ structure Inputs_slt (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_slt` carries on top of `InputsCore_slt`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_slt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_slt trace i) : Type extends InputsCore_slt trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = slt_input.PC.toNat
@@ -531,7 +577,7 @@ structure Decode_sltu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sltu trace i) : Type where
   sltu_input : PureSpec.SltuInput
   h_input_r1 :
@@ -562,6 +608,15 @@ structure Inputs_sltu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_sltu` carries on top of `InputsCore_sltu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sltu trace i) : Type extends InputsCore_sltu trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sltu_input.PC.toNat
@@ -624,7 +679,7 @@ structure Decode_andi (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_andi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_andi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_andi trace i) : Type where
   andi_input : PureSpec.AndiInput
   h_input_r1 :
@@ -643,6 +698,15 @@ structure Inputs_andi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_andi` carries on top of `InputsCore_andi`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_andi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_andi trace i) : Type extends InputsCore_andi trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = andi_input.PC.toNat
@@ -705,7 +769,7 @@ structure Decode_ori (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_ori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_ori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ori trace i) : Type where
   ori_input : PureSpec.OriInput
   h_input_r1 :
@@ -724,6 +788,15 @@ structure Inputs_ori (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_ori` carries on top of `InputsCore_ori`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_ori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_ori trace i) : Type extends InputsCore_ori trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = ori_input.PC.toNat
@@ -786,7 +859,7 @@ structure Decode_xori (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_xori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_xori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_xori trace i) : Type where
   xori_input : PureSpec.XoriInput
   h_input_r1 :
@@ -805,6 +878,15 @@ structure Inputs_xori (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_xori` carries on top of `InputsCore_xori`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_xori (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_xori trace i) : Type extends InputsCore_xori trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = xori_input.PC.toNat
@@ -867,7 +949,7 @@ structure Decode_slti (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_slti (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_slti (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slti trace i) : Type where
   slti_input : PureSpec.SltiInput
   h_input_r1 :
@@ -886,6 +968,15 @@ structure Inputs_slti (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_slti` carries on top of `InputsCore_slti`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_slti (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_slti trace i) : Type extends InputsCore_slti trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = slti_input.PC.toNat
@@ -948,7 +1039,7 @@ structure Decode_sltiu (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sltiu trace i) : Type where
   sltiu_input : PureSpec.SltiuInput
   h_input_r1 :
@@ -967,6 +1058,15 @@ structure Inputs_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_sltiu` carries on top of `InputsCore_sltiu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sltiu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sltiu trace i) : Type extends InputsCore_sltiu trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sltiu_input.PC.toNat
@@ -1022,7 +1122,7 @@ structure Decode_sll (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sll (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sll (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sll trace i) : Type where
   sll_input : PureSpec.SllInput
   h_input_r1 :
@@ -1053,6 +1153,15 @@ structure Inputs_sll (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_sll` carries on top of `InputsCore_sll`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sll (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sll trace i) : Type extends InputsCore_sll trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sll_input.PC.toNat
@@ -1108,7 +1217,7 @@ structure Decode_srl (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_srl (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_srl (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srl trace i) : Type where
   srl_input : PureSpec.SrlInput
   h_input_r1 :
@@ -1139,6 +1248,15 @@ structure Inputs_srl (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_srl` carries on top of `InputsCore_srl`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_srl (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_srl trace i) : Type extends InputsCore_srl trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srl_input.PC.toNat
@@ -1194,7 +1312,7 @@ structure Decode_sra (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sra (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sra (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sra trace i) : Type where
   sra_input : PureSpec.SraInput
   h_input_r1 :
@@ -1225,6 +1343,15 @@ structure Inputs_sra (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_sra` carries on top of `InputsCore_sra`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sra (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sra trace i) : Type extends InputsCore_sra trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sra_input.PC.toNat
@@ -1283,7 +1410,7 @@ structure Decode_slli (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_slli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_slli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slli trace i) : Type where
   slli_input : PureSpec.SlliInput
   h_input_r1 :
@@ -1302,6 +1429,15 @@ structure Inputs_slli (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_slli` carries on top of `InputsCore_slli`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_slli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_slli trace i) : Type extends InputsCore_slli trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = slli_input.PC.toNat
@@ -1360,7 +1496,7 @@ structure Decode_srli (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_srli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_srli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srli trace i) : Type where
   srli_input : PureSpec.SrliInput
   h_input_r1 :
@@ -1379,6 +1515,15 @@ structure Inputs_srli (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_srli` carries on top of `InputsCore_srli`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_srli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_srli trace i) : Type extends InputsCore_srli trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srli_input.PC.toNat
@@ -1437,7 +1582,7 @@ structure Decode_srai (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_srai (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_srai (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srai trace i) : Type where
   srai_input : PureSpec.SraiInput
   h_input_r1 :
@@ -1456,6 +1601,15 @@ structure Inputs_srai (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_srai` carries on top of `InputsCore_srai`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_srai (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_srai trace i) : Type extends InputsCore_srai trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srai_input.PC.toNat
@@ -1511,7 +1665,7 @@ structure Decode_sllw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sllw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sllw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sllw trace i) : Type where
   sllw_input : PureSpec.SllwInput
   h_input_r1 :
@@ -1542,6 +1696,15 @@ structure Inputs_sllw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_sllw` carries on top of `InputsCore_sllw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sllw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sllw trace i) : Type extends InputsCore_sllw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sllw_input.PC.toNat
@@ -1597,7 +1760,7 @@ structure Decode_srlw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_srlw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_srlw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srlw trace i) : Type where
   srlw_input : PureSpec.SrlwInput
   h_input_r1 :
@@ -1628,6 +1791,15 @@ structure Inputs_srlw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_srlw` carries on top of `InputsCore_srlw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_srlw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_srlw trace i) : Type extends InputsCore_srlw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = srlw_input.PC.toNat
@@ -1683,7 +1855,7 @@ structure Decode_sraw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sraw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sraw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sraw trace i) : Type where
   sraw_input : PureSpec.SrawInput
   h_input_r1 :
@@ -1714,6 +1886,15 @@ structure Inputs_sraw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_sraw` carries on top of `InputsCore_sraw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sraw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sraw trace i) : Type extends InputsCore_sraw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = sraw_input.PC.toNat
@@ -1769,7 +1950,7 @@ structure Decode_slliw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_slliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_slliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slliw trace i) : Type where
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
@@ -1789,6 +1970,15 @@ structure Inputs_slliw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_w_b_lo c.slliw_input.shamt
+
+/-- The PC agreement `Inputs_slliw` carries on top of `InputsCore_slliw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_slliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_slliw trace i) : Type extends InputsCore_slliw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.slliw_input.PC.toNat
@@ -1844,7 +2034,7 @@ structure Decode_srliw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_srliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_srliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srliw trace i) : Type where
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
@@ -1864,6 +2054,15 @@ structure Inputs_srliw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_w_b_lo c.srliw_input.shamt
+
+/-- The PC agreement `Inputs_srliw` carries on top of `InputsCore_srliw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_srliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_srliw trace i) : Type extends InputsCore_srliw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.srliw_input.PC.toNat
@@ -1919,7 +2118,7 @@ structure Decode_sraiw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sraiw trace i) : Type where
   h_input_r1 :
     read_xreg (regidx_to_fin c.r1) (binding i)
@@ -1939,6 +2138,15 @@ structure Inputs_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_w_b_lo c.sraiw_input.shamt
+
+/-- The PC agreement `Inputs_sraiw` carries on top of `InputsCore_sraiw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sraiw trace i) : Type extends InputsCore_sraiw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sraiw_input.PC.toNat

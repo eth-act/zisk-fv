@@ -10,6 +10,9 @@ import ZiskFv.Compliance.TraceLevelExport.StepStrongSignedM
 import ZiskFv.Compliance.TraceLevelExport.Dispatcher
 import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeed
 import ZiskFv.Compliance.TraceLevelExport.BootSegmentMemorySeedWitness
+import ZiskFv.Compliance.TraceLevelExport.SegmentPcSeed
+import ZiskFv.Compliance.TraceLevelExport.SailRetireChain
+import ZiskFv.Compliance.TraceLevelExport.RegisterWriteback
 
 /-!
 # TraceLevelExport.lean — P5 trace-level export (channel-balance form)

@@ -200,6 +200,16 @@ def addFaithfulInputsAgree :
     ∀ i : Fin 1, InputsAgree addFaithfulAcceptedTrace addFaithfulSailTrace i (addFaithfulZiskStep i)
   | ⟨0, _⟩ => addFaithfulAddInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addFaithfulPcSeed : SegmentPcSeed addFaithfulAcceptedTrace addFaithfulSailTrace :=
+  pcSeed_of_inputsAgree addFaithfulInputsAgree
+
+def addFaithfulInputsAgreeCore :
+    ∀ i : Fin 1,
+      InputsAgreeCore addFaithfulAcceptedTrace addFaithfulSailTrace i (addFaithfulZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addFaithfulZiskStep i) (addFaithfulInputsAgree i)
+
 def addFaithfulAddOutsideDefectRegion :
     RowOutsideDefectRegion addFaithfulAcceptedTrace addFaithfulAddIndex
       (addFaithfulZiskStep addFaithfulAddIndex) := by
@@ -246,6 +256,28 @@ def addFaithfulRawProgramDecodes :
   | ⟨0, _⟩ => ⟨⟨addFaithfulRawDecode⟩⟩
 
 open ZiskFv.Compliance.RawProgramBinding in
+/-- #330 Phase 7: vacuous here — a one-instruction execution has no step with a successor. -/
+def addFaithfulRowsAligned :
+    StepRowsAligned addFaithfulAcceptedTrace addFaithfulZiskStep
+      (fun i => rowDecode_of_programDecode addFaithfulAcceptedTrace i
+        (programDecode_of_rawProgramDecode addFaithfulAcceptedTrace i (addFaithfulZiskStep i)
+          addFaithfulStart addFaithfulAddr addFaithfulRawProgram
+          addFaithfulProgramRowsBinding (addFaithfulRawProgramDecodes i))) := by
+  intro j h
+  have h' : j + 1 < 1 := h
+  omega
+
+/-- The two root PC premises: boot agreement, and the Sail-internal retire law. `retire` is vacuous
+    on a one-instruction execution; `boot` is the witness's own row-0 PC agreement. -/
+def addFaithfulPcChain :
+    SegmentPcChain addFaithfulAcceptedTrace addFaithfulSailTrace addFaithfulZiskStep where
+  retire := by
+    intro j h
+    have h' : j + 1 < 1 := h
+    omega
+  boot := (pcSeed_of_inputsAgree addFaithfulInputsAgree).boot
+
+open ZiskFv.Compliance.RawProgramBinding in
 theorem addFaithfulPaddedRawRootSoundness :
     ∀ i : Fin 1,
       StepSound addFaithfulAcceptedTrace addFaithfulSailTrace i (addFaithfulZiskStep i)
@@ -255,8 +287,8 @@ theorem addFaithfulPaddedRawRootSoundness :
             addFaithfulProgramRowsBinding (addFaithfulRawProgramDecodes i))) :=
   root_soundness 1 2 addFaithfulAcceptedTrace addFaithfulSailTrace addFaithfulZiskStep
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
-    addFaithfulRawProgramDecodes addFaithfulInputsAgree addFaithfulBootSeed
-    addFaithfulOutsideDefectRegion
+    addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcChain
+    addFaithfulRowsAligned addFaithfulBootSeed addFaithfulOutsideDefectRegion
 
 #print axioms addFaithfulPaddedRawRootSoundness
 

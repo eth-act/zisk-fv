@@ -168,7 +168,7 @@ structure Decode_add (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_add trace i) : Type where
   add_input : PureSpec.AddInput
   h_input_r1 :
@@ -199,6 +199,15 @@ structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_add` carries on top of `InputsCore_add`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_add trace i) : Type extends InputsCore_add trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = add_input.PC.toNat
@@ -261,7 +270,7 @@ structure Decode_addi (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type where
   addi_input : PureSpec.AddiInput
   h_input_r1 :
@@ -280,6 +289,15 @@ structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_addi` carries on top of `InputsCore_addi`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_addi (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_addi trace i) : Type extends InputsCore_addi trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addi_input.PC.toNat
@@ -335,7 +353,7 @@ structure Decode_subw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_subw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_subw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_subw trace i) : Type where
   subw_input : PureSpec.SubwInput
   h_input_r1 :
@@ -366,6 +384,15 @@ structure Inputs_subw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_subw` carries on top of `InputsCore_subw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_subw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_subw trace i) : Type extends InputsCore_subw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = subw_input.PC.toNat
@@ -421,7 +448,7 @@ structure Decode_addw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_addw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_addw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addw trace i) : Type where
   addw_input : PureSpec.AddwInput
   h_input_r1 :
@@ -452,6 +479,15 @@ structure Inputs_addw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r2))
+
+/-- The PC agreement `Inputs_addw` carries on top of `InputsCore_addw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_addw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_addw trace i) : Type extends InputsCore_addw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addw_input.PC.toNat
@@ -514,7 +550,7 @@ structure Decode_addiw (trace : AcceptedZiskTrace numInstructions)
         (((mainRowWithRomSub trace i).rom.b_offset_imm0).val
           + ((mainRowWithRomSub trace i).rom.b_imm1).val * 4294967296)
 
-structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_addiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addiw trace i) : Type where
   addiw_input : PureSpec.AddiwInput
   h_input_r1 :
@@ -533,6 +569,15 @@ structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
           (regidx_to_fin c.r1))
+
+/-- The PC agreement `Inputs_addiw` carries on top of `InputsCore_addiw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_addiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_addiw trace i) : Type extends InputsCore_addiw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = addiw_input.PC.toNat
@@ -598,12 +643,21 @@ structure Decode_lui (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
-structure Inputs_lui (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lui (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lui trace i) : Type where
   lui_input : PureSpec.LuiInput
   h_input_imm : lui_input.imm = c.imm
   h_input_rd : lui_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some lui_input.PC
+
+/-- The PC agreement `Inputs_lui` carries on top of `InputsCore_lui`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lui (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lui trace i) : Type extends InputsCore_lui trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = lui_input.PC.toNat
@@ -666,17 +720,26 @@ structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset1
       i.val = 4
 
-structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_auipc (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_auipc trace i) : Type where
   auipc_input : PureSpec.AuipcInput
   h_input_imm : auipc_input.imm = c.imm
   h_input_rd : auipc_input.rd = regidx_to_fin c.rd
   h_input_pc : (binding i).regs.get? Register.PC = .some auipc_input.PC
+  -- #100: PC bridge. The AUIPC range/domain facts live in `RowOutsideDefectRegion`
+  -- as `AuipcRangeDomain`.
+
+/-- The PC agreement `Inputs_auipc` carries on top of `InputsCore_auipc`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_auipc (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_auipc trace i) : Type extends InputsCore_auipc trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
       = auipc_input.PC.toNat
-  -- #100: PC bridge. The AUIPC range/domain facts live in `RowOutsideDefectRegion`
-  -- as `AuipcRangeDomain`.
 
 /-- Per-op residual bundle for the `auipc` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_auipc` bundles them. -/
@@ -722,7 +785,7 @@ structure Decode_mulw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type where
   mulw_input : PureSpec.MulwInput
   h_input_r1 :
@@ -733,9 +796,6 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       = EStateM.Result.ok mulw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some mulw_input.PC
   h_input_rd : mulw_input.rd = regidx_to_fin c.rd
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = mulw_input.PC.toNat
   h_a23 :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W),
@@ -777,6 +837,18 @@ structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       = (((vOfMulwRow (mulwArow trace binding i ha ho)).b_0 0).val
             + ((vOfMulwRow (mulwArow trace binding i ha ho)).b_1 0).val * 65536 : ℤ)
           - ((vOfMulwRow (mulwArow trace binding i ha ho)).nb 0).val * (2:ℤ)^32
+
+/-- The PC agreement `Inputs_mulw` carries on top of `InputsCore_mulw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_mulw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_mulw trace i) : Type extends InputsCore_mulw trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = mulw_input.PC.toNat
 
 /-- Per-op residual bundle for the `mulw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulw` bundles them. -/
@@ -833,7 +905,7 @@ structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_mul (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mul trace i) : Type where
   mul_input : PureSpec.MulInput
   v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
@@ -865,6 +937,15 @@ structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_not_forge :
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+
+/-- The PC agreement `Inputs_mul` carries on top of `InputsCore_mul`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_mul (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_mul trace i) : Type extends InputsCore_mul trace binding i c where
   -- #100 next-PC transition inputs (consumed by `mulEnvOf`): the committed Main `pc`
   -- column at row `i` equals the Sail PC (JAL/AUIPC-class provenance bridge), the
   -- `pc + 4` successor does not wrap FGL, and the bus exec_row is the real committed
@@ -922,7 +1003,7 @@ structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_mulh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulh trace i) : Type where
   mulh_input : PureSpec.MulhInput
   v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
@@ -953,6 +1034,15 @@ structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : Sai
   h_not_forge :
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+
+/-- The PC agreement `Inputs_mulh` carries on top of `InputsCore_mulh`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_mulh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_mulh trace i) : Type extends InputsCore_mulh trace binding i c where
   -- #100 next-PC transition inputs (consumed by `mulhEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulh_input.PC.toNat
@@ -1006,7 +1096,7 @@ structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhsu trace i) : Type where
   mulhsu_input : PureSpec.MulhsuInput
   v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL
@@ -1037,6 +1127,15 @@ structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : S
   h_not_forge :
     ¬ ((v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0))
+
+/-- The PC agreement `Inputs_mulhsu` carries on top of `InputsCore_mulhsu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_mulhsu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_mulhsu trace i) : Type extends InputsCore_mulhsu trace binding i c where
   -- #100 next-PC transition inputs (consumed by `mulhsuEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = mulhsu_input.PC.toNat
@@ -1092,7 +1191,7 @@ structure Decode_div (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_div (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_div trace i) : Type where
   div_input : PureSpec.DivInput
   -- #100: value/data promises only — `nextPC_matches` DERIVED in `divEnvOf`.
@@ -1128,6 +1227,15 @@ structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : Sail
             ((divV trace binding i h_main_active h_main_op).b_3 0).val : ℤ)
             - ((divV trace binding i h_main_active h_main_op).nb 0).val
                 * (2 : ℤ) ^ 64
+
+/-- The PC agreement `Inputs_div` carries on top of `InputsCore_div`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_div (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_div trace i) : Type extends InputsCore_div trace binding i c where
   -- #100 next-PC transition inputs (consumed by `divEnvOf`); see `Inputs_mul`.
   -- These are next-PC plumbing only and leave the DivRemForge value gate untouched.
   h_pc_bridge :
@@ -1184,7 +1292,7 @@ structure Decode_rem (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_rem (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_rem trace i) : Type where
   rem_input : PureSpec.RemInput
   v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
@@ -1246,6 +1354,15 @@ structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : Sail
   h_not_forge :
     ¬ ((ZiskFv.Compliance.Defects.signedRemainderInt v r_a).natAbs
         = rem_input.r2_val.toInt.natAbs)
+
+/-- The PC agreement `Inputs_rem` carries on top of `InputsCore_rem`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_rem (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_rem trace i) : Type extends InputsCore_rem trace binding i c where
   -- #100 next-PC transition inputs (consumed by `remEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = rem_input.PC.toNat
@@ -1301,7 +1418,7 @@ structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_divw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divw trace i) : Type where
   divw_input : PureSpec.DivwInput
   v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
@@ -1393,6 +1510,15 @@ structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ¬ (Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
         ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
           = (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt.natAbs)
+
+/-- The PC agreement `Inputs_divw` carries on top of `InputsCore_divw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_divw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_divw trace i) : Type extends InputsCore_divw trace binding i c where
   -- #100 next-PC transition inputs (consumed by `divwEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = divw_input.PC.toNat
@@ -1448,7 +1574,7 @@ structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
       (busSub trace i (Pilot.execRowOf trace i)).e2
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
 
-structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_remw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remw trace i) : Type where
   remw_input : PureSpec.RemwInput
   v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL
@@ -1538,6 +1664,15 @@ structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : Sai
     ¬ (Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
         ∧ (ZiskFv.Compliance.Defects.signedRemainderIntW v r_a).natAbs
           = (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs)
+
+/-- The PC agreement `Inputs_remw` carries on top of `InputsCore_remw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_remw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_remw trace i) : Type extends InputsCore_remw trace binding i c where
   -- #100 next-PC transition inputs (consumed by `remwEnvOf`); see `Inputs_mul`.
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val = remw_input.PC.toNat
@@ -1587,7 +1722,7 @@ structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type where
   mulhu_input : PureSpec.MulhuInput
   h_input_r1 :
@@ -1598,9 +1733,6 @@ structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       = EStateM.Result.ok mulhu_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some mulhu_input.PC
   h_input_rd : mulhu_input.rd = regidx_to_fin c.rd
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = mulhu_input.PC.toNat
   h_rs1_value :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH),
@@ -1619,6 +1751,18 @@ structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : Sa
         ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_1 0).val
         ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_2 0).val
         ((vOfMulwRow (mulhuArow trace binding i ha ho)).b_3 0).val
+
+/-- The PC agreement `Inputs_mulhu` carries on top of `InputsCore_mulhu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_mulhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_mulhu trace i) : Type extends InputsCore_mulhu trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = mulhu_input.PC.toNat
 
 /-- Per-op residual bundle for the `mulhu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_mulhu` bundles them. -/
@@ -1665,7 +1809,7 @@ structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type where
   divu_input : PureSpec.DivuInput
   h_input_r1 :
@@ -1676,9 +1820,6 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       = EStateM.Result.ok divu_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some divu_input.PC
   h_input_rd : divu_input.rd = regidx_to_fin c.rd
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = divu_input.PC.toNat
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU),
@@ -1702,6 +1843,18 @@ structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
         ((divuArow trace binding i ha ho).chunks.b_1).val
         ((divuArow trace binding i ha ho).chunks.b_2).val
         ((divuArow trace binding i ha ho).chunks.b_3).val
+
+/-- The PC agreement `Inputs_divu` carries on top of `InputsCore_divu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_divu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_divu trace i) : Type extends InputsCore_divu trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = divu_input.PC.toNat
 
 /-- Per-op residual bundle for the `divu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_divu` bundles them. -/
@@ -1748,7 +1901,7 @@ structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type where
   divuw_input : PureSpec.DivuwInput
   h_input_r1 :
@@ -1759,9 +1912,6 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       = EStateM.Result.ok divuw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some divuw_input.PC
   h_input_rd : divuw_input.rd = regidx_to_fin c.rd
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = divuw_input.PC.toNat
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W),
@@ -1806,6 +1956,18 @@ structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
     = ((divuwArow trace binding i ha ho).chunks.b_0).val
         + ((divuwArow trace binding i ha ho).chunks.b_1).val * 65536
+
+/-- The PC agreement `Inputs_divuw` carries on top of `InputsCore_divuw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_divuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_divuw trace i) : Type extends InputsCore_divuw trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = divuw_input.PC.toNat
 
 /-- Per-op residual bundle for the `divuw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_divuw` bundles them. -/
@@ -1852,7 +2014,7 @@ structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type where
   remu_input : PureSpec.RemuInput
   h_input_r1 :
@@ -1863,9 +2025,6 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
       = EStateM.Result.ok remu_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some remu_input.PC
   h_input_rd : remu_input.rd = regidx_to_fin c.rd
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = remu_input.PC.toNat
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU),
@@ -1889,6 +2048,18 @@ structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : Sai
         ((remuArow trace binding i ha ho).chunks.b_1).val
         ((remuArow trace binding i ha ho).chunks.b_2).val
         ((remuArow trace binding i ha ho).chunks.b_3).val
+
+/-- The PC agreement `Inputs_remu` carries on top of `InputsCore_remu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_remu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_remu trace i) : Type extends InputsCore_remu trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = remu_input.PC.toNat
 
 /-- Per-op residual bundle for the `remu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_remu` bundles them. -/
@@ -1935,7 +2106,7 @@ structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
 
-structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type where
   remuw_input : PureSpec.RemuwInput
   h_input_r1 :
@@ -1946,9 +2117,6 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
       = EStateM.Result.ok remuw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some remuw_input.PC
   h_input_rd : remuw_input.rd = regidx_to_fin c.rd
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = remuw_input.PC.toNat
   remainder_bound :
     ∀ (ha : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1)
       (ho : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W),
@@ -1993,6 +2161,18 @@ structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
     = ((remuwArow trace binding i ha ho).chunks.b_0).val
         + ((remuwArow trace binding i ha ho).chunks.b_1).val * 65536
+
+/-- The PC agreement `Inputs_remuw` carries on top of `InputsCore_remuw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_remuw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_remuw trace i) : Type extends InputsCore_remuw trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = remuw_input.PC.toNat
 
 /-- Per-op residual bundle for the `remuw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_remuw` bundles them. -/
@@ -2047,7 +2227,7 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
-structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sb_state_assumptions c.sb_input (binding i)
@@ -2065,6 +2245,15 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_hi c.sb_input.r2_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- The PC agreement `Inputs_sb` carries on top of `InputsCore_sb`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type extends InputsCore_sb trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sb_input.PC.toNat
@@ -2122,7 +2311,7 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
-structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sh_state_assumptions c.sh_input (binding i)
@@ -2140,6 +2329,15 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_hi c.sh_input.r2_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- The PC agreement `Inputs_sh` carries on top of `InputsCore_sh`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type extends InputsCore_sh trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sh_input.PC.toNat
@@ -2197,7 +2395,7 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
-structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sw_state_assumptions c.sw_input (binding i)
@@ -2215,6 +2413,15 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_hi c.sw_input.r2_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- The PC agreement `Inputs_sw` carries on top of `InputsCore_sw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type extends InputsCore_sw trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sw_input.PC.toNat
@@ -2269,7 +2476,7 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
-structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   h_opcode_assumptions : PureSpec.sd_state_assumptions c.sd_input (binding i)
@@ -2287,6 +2494,15 @@ structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_hi c.sd_input.r2_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- The PC agreement `Inputs_sd` carries on top of `InputsCore_sd`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type extends InputsCore_sd trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
       = c.sd_input.PC.toNat
@@ -2351,7 +2567,7 @@ structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.ld_input.imm).toInt : FGL)
 
-structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2362,14 +2578,23 @@ structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_lo c.ld_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.ld_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_ld` carries on top of `InputsCore_ld`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type extends InputsCore_ld trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.ld_input.PC.toNat
 
 /-- Per-op residual bundle for the `ld` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_ld` bundles them. -/
@@ -2431,7 +2656,7 @@ structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.lbu_input.imm).toInt : FGL)
 
-structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2445,14 +2670,23 @@ structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_lo c.lbu_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lbu_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_lbu` carries on top of `InputsCore_lbu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type extends InputsCore_lbu trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.lbu_input.PC.toNat
 
 /-- Per-op residual bundle for the `lbu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lbu` bundles them. -/
@@ -2514,7 +2748,7 @@ structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.lhu_input.imm).toInt : FGL)
 
-structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2528,14 +2762,23 @@ structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_lo c.lhu_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lhu_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_lhu` carries on top of `InputsCore_lhu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type extends InputsCore_lhu trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.lhu_input.PC.toNat
 
 /-- Per-op residual bundle for the `lhu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lhu` bundles them. -/
@@ -2597,7 +2840,7 @@ structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.lwu_input.imm).toInt : FGL)
 
-structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2611,14 +2854,23 @@ structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
       ZiskFv.Trusted.lane_lo c.lwu_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lwu_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_lwu` carries on top of `InputsCore_lwu`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type extends InputsCore_lwu trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.lwu_input.PC.toNat
 
 /-- Per-op residual bundle for the `lwu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lwu` bundles them. -/
@@ -2691,7 +2943,7 @@ structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.lb_input.imm).toInt : FGL)
 
-structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2702,14 +2954,23 @@ structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_lo c.lb_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lb_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_lb` carries on top of `InputsCore_lb`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type extends InputsCore_lb trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.lb_input.PC.toNat
 
 /-- Per-op residual bundle for the `lb` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lb` bundles them. -/
@@ -2782,7 +3043,7 @@ structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.lh_input.imm).toInt : FGL)
 
-structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2793,14 +3054,23 @@ structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_lo c.lh_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lh_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_lh` carries on top of `InputsCore_lh`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type extends InputsCore_lh trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.lh_input.PC.toNat
 
 /-- Per-op residual bundle for the `lh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lh` bundles them. -/
@@ -2873,7 +3143,7 @@ structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
       ((BitVec.signExtend 64 c.lw_input.imm).toInt : FGL)
 
-structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+structure InputsCore_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
@@ -2884,14 +3154,23 @@ structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
       ZiskFv.Trusted.lane_lo c.lw_input.r1_val
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-  h_pc_bridge :
-    ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lw_input.PC.toNat
   h_msg :
     loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+/-- The PC agreement `Inputs_lw` carries on top of `InputsCore_lw`.
+
+    No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
+    two-premise `SegmentPcChain`, from which the dispatcher builds this field via
+    `h_pc_bridge_of_pcBridge`, from the per-row PC agreement the induction in
+    `stepSound_of_programDecodes` carries.  Kept as a field so every consumer reads it unchanged. -/
+structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
+    (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type extends InputsCore_lw trace binding i c where
+  h_pc_bridge :
+    ((mainOfTable trace.program trace.mainTable).pc i.val).val
+      = c.lw_input.PC.toNat
 
 /-- Per-op residual bundle for the `lw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lw` bundles them. -/

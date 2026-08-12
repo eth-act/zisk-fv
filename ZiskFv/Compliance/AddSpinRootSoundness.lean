@@ -327,6 +327,15 @@ def addSpinInputsAgree :
   | ⟨0, _⟩ => addSpinAddInputs
   | ⟨1, _⟩ => addSpinJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addSpinPcSeed : SegmentPcSeed addSpinAcceptedTrace addSpinSailTrace :=
+  pcSeed_of_inputsAgree addSpinInputsAgree
+
+def addSpinInputsAgreeCore :
+    ∀ i : Fin 2, InputsAgreeCore addSpinAcceptedTrace addSpinSailTrace i (addSpinZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addSpinZiskStep i) (addSpinInputsAgree i)
+
 def addSpinAddOutsideDefectRegion :
     RowOutsideDefectRegion addSpinAcceptedTrace addSpinAddIndex
       (addSpinZiskStep addSpinAddIndex) := by
@@ -366,12 +375,33 @@ def addSpinOutsideDefectRegion :
   | ⟨0, _⟩ => addSpinAddOutsideDefectRegion
   | ⟨1, _⟩ => addSpinJalOutsideDefectRegion
 
+/-- #330 Phase 7: each executed step's producer entry is its own row's successor `pc`. Only a
+    two-row unaligned JALR lowering can break this, and only at a step that has a successor. -/
+def addSpinRowsAligned :
+    StepRowsAligned addSpinAcceptedTrace addSpinZiskStep
+      (fun i => rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) := by
+  intro j h
+  have h' : j + 1 < 2 := h
+  have hj : j < 2 - 1 := by omega
+  interval_cases j <;> rfl
+
+/-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
+    `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
+    witness already proves — no new content, and no hand-evaluated Sail execution. -/
+def addSpinPcChain : SegmentPcChain addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep where
+  toSailRetireChain :=
+    sailRetireChain_of_inputsAgree
+      (fun i => rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i))
+      addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion addSpinRowsAligned
+  boot := (pcSeed_of_inputsAgree addSpinInputsAgree).boot
+
 theorem addSpinRootSoundness :
     ∀ i : Fin 2, StepSound addSpinAcceptedTrace addSpinSailTrace i
       (addSpinZiskStep i)
       (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
-    addSpinProgramDecodes addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion
+    addSpinProgramDecodes addSpinInputsAgreeCore addSpinPcChain addSpinRowsAligned
+    addSpinBootSeed addSpinOutsideDefectRegion
 
 theorem addSpinAddStepSound :
     StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
@@ -581,6 +611,15 @@ def addPaddedInputsAgree :
     ∀ i : Fin 1, InputsAgree addPaddedAcceptedTrace addPaddedSailTrace i (addPaddedZiskStep i)
   | ⟨0, _⟩ => addPaddedAddInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addPaddedPcSeed : SegmentPcSeed addPaddedAcceptedTrace addPaddedSailTrace :=
+  pcSeed_of_inputsAgree addPaddedInputsAgree
+
+def addPaddedInputsAgreeCore :
+    ∀ i : Fin 1, InputsAgreeCore addPaddedAcceptedTrace addPaddedSailTrace i (addPaddedZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addPaddedZiskStep i) (addPaddedInputsAgree i)
+
 def addPaddedAddOutsideDefectRegion :
     RowOutsideDefectRegion addPaddedAcceptedTrace addPaddedAddIndex
       (addPaddedZiskStep addPaddedAddIndex) := by
@@ -593,12 +632,33 @@ def addPaddedOutsideDefectRegion :
     ∀ i : Fin 1, RowOutsideDefectRegion addPaddedAcceptedTrace i (addPaddedZiskStep i)
   | ⟨0, _⟩ => addPaddedAddOutsideDefectRegion
 
+/-- #330 Phase 7: each executed step's producer entry is its own row's successor `pc`. Only a
+    two-row unaligned JALR lowering can break this, and only at a step that has a successor. -/
+def addPaddedRowsAligned :
+    StepRowsAligned addPaddedAcceptedTrace addPaddedZiskStep
+      (fun i => rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) := by
+  intro j h
+  have h' : j + 1 < 1 := h
+  have hj : j < 1 - 1 := by omega
+  interval_cases j <;> rfl
+
+/-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
+    `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
+    witness already proves — no new content, and no hand-evaluated Sail execution. -/
+def addPaddedPcChain : SegmentPcChain addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep where
+  toSailRetireChain :=
+    sailRetireChain_of_inputsAgree
+      (fun i => rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i))
+      addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion addPaddedRowsAligned
+  boot := (pcSeed_of_inputsAgree addPaddedInputsAgree).boot
+
 theorem addPaddedRootSoundness :
     ∀ i : Fin 1, StepSound addPaddedAcceptedTrace addPaddedSailTrace i
       (addPaddedZiskStep i)
       (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
   stepSound_of_programDecodes 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
-    addPaddedProgramDecodes addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion
+    addPaddedProgramDecodes addPaddedInputsAgreeCore addPaddedPcChain addPaddedRowsAligned
+    addPaddedBootSeed addPaddedOutsideDefectRegion
 
 theorem addPaddedAddStepSound :
     StepSound addPaddedAcceptedTrace addPaddedSailTrace addPaddedAddIndex

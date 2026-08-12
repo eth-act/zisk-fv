@@ -439,6 +439,15 @@ def addAddiSpinInputsAgree :
   | ⟨1, _⟩ => addAddiSpinAddiInputs
   | ⟨2, _⟩ => addAddiSpinJalInputs
 
+/-- The two root PC premises for this witness, from the per-row family above
+    (`pcSeed_of_inputsAgree` / `inputsAgreeCore_of_inputsAgree`). -/
+def addAddiSpinPcSeed : SegmentPcSeed addAddiSpinAcceptedTrace addAddiSpinSailTrace :=
+  pcSeed_of_inputsAgree addAddiSpinInputsAgree
+
+def addAddiSpinInputsAgreeCore :
+    ∀ i : Fin 3, InputsAgreeCore addAddiSpinAcceptedTrace addAddiSpinSailTrace i (addAddiSpinZiskStep i) :=
+  fun i => inputsAgreeCore_of_inputsAgree i (addAddiSpinZiskStep i) (addAddiSpinInputsAgree i)
+
 def addAddiSpinAddOutsideDefectRegion :
     RowOutsideDefectRegion addAddiSpinAcceptedTrace addAddiSpinAddIndex
       (addAddiSpinZiskStep addAddiSpinAddIndex) := by
@@ -488,6 +497,26 @@ def addAddiSpinOutsideDefectRegion :
   | ⟨1, _⟩ => addAddiSpinAddiOutsideDefectRegion
   | ⟨2, _⟩ => addAddiSpinJalOutsideDefectRegion
 
+/-- #330 Phase 7: each executed step's producer entry is its own row's successor `pc`. Only a
+    two-row unaligned JALR lowering can break this, and only at a step that has a successor. -/
+def addAddiSpinRowsAligned :
+    StepRowsAligned addAddiSpinAcceptedTrace addAddiSpinZiskStep
+      (fun i => rowDecode_of_programDecode addAddiSpinAcceptedTrace i (addAddiSpinProgramDecodes i)) := by
+  intro j h
+  have h' : j + 1 < 3 := h
+  have hj : j < 3 - 1 := by omega
+  interval_cases j <;> rfl
+
+/-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
+    `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
+    witness already proves — no new content, and no hand-evaluated Sail execution. -/
+def addAddiSpinPcChain : SegmentPcChain addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep where
+  toSailRetireChain :=
+    sailRetireChain_of_inputsAgree
+      (fun i => rowDecode_of_programDecode addAddiSpinAcceptedTrace i (addAddiSpinProgramDecodes i))
+      addAddiSpinInputsAgree addAddiSpinBootSeed addAddiSpinOutsideDefectRegion addAddiSpinRowsAligned
+  boot := (pcSeed_of_inputsAgree addAddiSpinInputsAgree).boot
+
 theorem addAddiSpinRootSoundness :
     ∀ i : Fin 3,
       StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace i
@@ -495,8 +524,8 @@ theorem addAddiSpinRootSoundness :
         (rowDecode_of_programDecode addAddiSpinAcceptedTrace i
           (addAddiSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
-    addAddiSpinProgramDecodes addAddiSpinInputsAgree addAddiSpinBootSeed
-    addAddiSpinOutsideDefectRegion
+    addAddiSpinProgramDecodes addAddiSpinInputsAgreeCore addAddiSpinPcChain
+    addAddiSpinRowsAligned addAddiSpinBootSeed addAddiSpinOutsideDefectRegion
 
 theorem addAddiSpinAddStepSound :
     StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinAddIndex
