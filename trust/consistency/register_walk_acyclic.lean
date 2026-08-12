@@ -44,8 +44,19 @@ theorem register_walk_timestamps_nodup
     ((steps.map (traceWalkStep trace)).map RegWalkStep.timestamp).Nodup :=
   regSupplies_chain_timestamps_nodup_of_trace trace steps h_active h_chain
 
+/-- Non-vacuity: the supply relation holds on a checked witness's real Main row, so the
+    implications above are not empty. -/
+theorem register_walk_non_vacuous :
+    List.IsChain RegWalkStep.Supplies
+      [(ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.a),
+       (ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.b),
+       (ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.c)] :=
+  addX1Row_walk_isChain
+
 #print axioms register_walk_no_two_cycle
 #print axioms register_walk_timestamps_nodup
+#print axioms register_walk_non_vacuous
+#print axioms ZiskFv.Compliance.addX1Row_walk_timestamps_nodup
 #print axioms ZiskFv.Compliance.registerRead_counterpart_of_trace
 #print axioms ZiskFv.Compliance.registerRead_supplied_by_boundary_or_strictly_later_row
 #print axioms ZiskFv.Compliance.regSlot_descent_of_trace

@@ -3,6 +3,7 @@ import ZiskFv.Compliance.AcceptedZiskTrace.Spec
 import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
 import ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridges
 import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
+import ZiskFv.Compliance.RegisterMemBusBalance
 
 /-!
 # The register walk on an accepted trace
@@ -322,5 +323,78 @@ theorem registerRead_supplied_by_boundary_or_strictly_later_row
       · exact rangeTable24_spec_distance_of_active trace.channels_balanced trace.spec_holds
           trace.constraints_hold h_providerTable h_providerRow rfl h_providerComponent sp h_sel
       · exact regSlot_timestamp_bound_of_trace trace i sc
+
+/-! ## Non-vacuity
+
+The supply relation is inhabited, and by a row of a checked witness rather than a hand-built one.
+On the `add x1,x1,x1` row all three register slots are active and the accesses run at timestamps
+`1`, `2`, `3`, so within that single row the b-slot supplies the a-slot's read and the store-slot
+supplies the b-slot's read. That is a legal configuration, not a cycle: it is exactly the
+strictly-increasing walk the theorems above describe, and the same row is what
+`singleAddWitness`'s bus-102 provider list `[0, 0, 0]` records.
+
+This matters because every result in this file is an implication out of `RegSupplies`. If the
+relation were empty the implications would hold vacuously and prove nothing about ZisK. -/
+
+open ZiskFv.Compliance.RegisterMemBusBalance (addX1Row)
+
+/-- The `add x1,x1,x1` row's b-slot supplies its own a-slot register read: `b_reg_prev_mem_step`
+    is `1`, which is the a-slot's read timestamp. -/
+theorem addX1Row_regSupplies_a_b : RegSupplies RegSlot.a RegSlot.b addX1Row addX1Row := by
+  show addX1Row.rom.b_reg_prev_mem_step = 1 + addX1Row.rom.main_step * 4
+  decide
+
+/-- The `add x1,x1,x1` row's store-slot supplies its own b-slot register read. -/
+theorem addX1Row_regSupplies_b_c : RegSupplies RegSlot.b RegSlot.c addX1Row addX1Row := by
+  show addX1Row.rom.store_reg_prev_mem_step = 2 + addX1Row.rom.main_step * 4
+  decide
+
+/-- The three slots of the `add x1,x1,x1` row form a genuine supply chain. -/
+theorem addX1Row_walk_isChain :
+    List.IsChain RegWalkStep.Supplies
+      [(addX1Row, RegSlot.a), (addX1Row, RegSlot.b), (addX1Row, RegSlot.c)] := by
+  rw [List.isChain_cons_cons]
+  refine ⟨addX1Row_regSupplies_a_b, ?_⟩
+  rw [List.isChain_cons_cons]
+  exact ⟨addX1Row_regSupplies_b_c, List.isChain_singleton _⟩
+
+/-- The `add x1,x1,x1` row's three bus-102 distances are all `0`, so each is in `rangeTable24`. -/
+theorem addX1Row_descent (s : RegSlot) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (s.distance addX1Row) := by
+  cases s
+  · show (RegSlot.a.distance addX1Row).val < 2 ^ 24; decide
+  · show (RegSlot.b.distance addX1Row).val < 2 ^ 24; decide
+  · show (RegSlot.c.distance addX1Row).val < 2 ^ 24; decide
+
+/-- The `add x1,x1,x1` row's three read timestamps are `1`, `2`, `3`. -/
+theorem addX1Row_timestamp_bound (s : RegSlot) : (s.readTimestamp addX1Row).val < 2 ^ 40 := by
+  cases s
+  · show (RegSlot.a.readTimestamp addX1Row).val < 2 ^ 40; decide
+  · show (RegSlot.b.readTimestamp addX1Row).val < 2 ^ 40; decide
+  · show (RegSlot.c.readTimestamp addX1Row).val < 2 ^ 40; decide
+
+/-- The general no-cycle theorem, applied to that chain: its read timestamps are `1`, `2`, `3` and
+    they do not repeat. Non-vacuous instantiation of `regSupplies_chain_timestamps_nodup`. -/
+theorem addX1Row_walk_timestamps_nodup :
+    ([(addX1Row, RegSlot.a), (addX1Row, RegSlot.b), (addX1Row, RegSlot.c)].map
+      RegWalkStep.timestamp).Nodup :=
+  regSupplies_chain_timestamps_nodup _
+    (fun p hp => by
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact addX1Row_descent RegSlot.a
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact addX1Row_descent RegSlot.b
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact addX1Row_descent RegSlot.c
+      · exact absurd hp (by simp))
+    (fun p hp => by
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact addX1Row_timestamp_bound RegSlot.a
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact addX1Row_timestamp_bound RegSlot.b
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact addX1Row_timestamp_bound RegSlot.c
+      · exact absurd hp (by simp))
+    addX1Row_walk_isChain
 
 end ZiskFv.Compliance

@@ -662,6 +662,12 @@ cycles are excluded too. V2 check 19 keeps the axiom closure visible
 (`trust/consistency/register_walk_acyclic.lean`); it is kernel-only and adds no project
 axioms.
 
+The relation is **not vacuous**: `addX1Row_walk_isChain` exhibits it on the `add x1,x1,x1`
+witness row, whose three slots read at timestamps `1`, `2`, `3` and whose bus-102
+distances are the `[0, 0, 0]` that `singleAddWitness`'s provider list records. Every
+result in `RegisterWalk.lean` is an implication out of `RegSupplies`, so an empty relation
+would make them hold without saying anything about ZisK.
+
 **What this still does not give.** Acyclicity bounds the walk from below, not above. The
 `main.pil:447` gap above is unchanged, so nothing yet forces a register chain to *reach*
 `RegisterBoundary.bootMessage`; the boundary can still self-pair at timestamp `0`.
