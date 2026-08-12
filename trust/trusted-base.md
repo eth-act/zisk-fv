@@ -671,16 +671,39 @@ distances are the `[0, 0, 0]` that `singleAddWitness`'s provider list records. E
 result in `RegisterWalk.lean` is an implication out of `RegSupplies`, so an empty relation
 would make them hold without saying anything about ZisK.
 
-**What this still does not give.** Acyclicity bounds the walk from below, not above. Nothing yet
-forces a register chain to *reach* `RegisterBoundary.bootMessage`, for two separate reasons.
-First, the `main.pil:447` gap above is unchanged, so the boundary can still self-pair at
-timestamp `0`. Second, iterating the supply step needs the supplying row's own access to be a
-`mem_op = 3` **pull**, i.e. `a_src_mem + a_src_reg = 1`, because `exists_push_of_pull` fires only
-at multiplicity exactly `-1`. Main's constraints give **booleanity only**
-(`Main/Constraints.lean:252,259`); no exclusivity constraint exists in the component, so `(1, 1)`
-is admissible in the model and the pull would ride at `-2` with `mem_op = 4`. Ruling that out means
-pinning `rom_flags` to a decoded instruction — the committed-program decode bridge (#172, on top of
-#164's proven decoder), a different axis from this range slice.
+**Update (#342, source exclusivity).** The second obstacle above is gone, and it did **not** need
+the decode bridge. `ZiskFv/AirsClean/FullEnsemble/Balance/MemBusSourceExclusivity.lean` proves the
+operand-source flags exclusive from `BalancedChannels` alone.
+
+`Air.Flat.BalancedInteractions` is **message-exact** — `∀ msg, balanceOf interactions msg = 0`, not
+a challenge-mixed sum — so one message can be reasoned about on its own. A row setting two a-side
+source flags emits its a-side current access at `mem_op = 4`, and
+`memBus_mult_eq_of_msg_eq_mem_op_high` shows every memory-bus interaction of the witness carrying
+that message rides at `-2`: Main's three register-pre pushes are the only positive emissions and
+carry the literal `3`; `RegisterBoundary` carries `3`; `MemAlignReadByte` carries `1`; `MemAlign`,
+`MemAlignByte` and `Mem` carry `wr + 1` or `1 + is_write` for a flag their own `Spec` pins to
+`{0, 1}`; and Main's three *current* accesses are all pulls that booleanity pins to `-2` there. The
+balance is then `-2 * count` with `count ≥ 1` and `count < GL_prime`, which cannot vanish
+(`no_balanced_message_with_constant_nonzero_mult`).
+
+So `main_not_a_src_mem_and_a_src_reg` holds, and with it `main_aMem_pull_of_a_src_reg`: a
+register-reading row's a-side access is a genuine `-1` pull at `mem_op = 3`, which is the shape
+`exists_push_of_pull` consumes. The same argument at `mem_op = 7` gives
+`main_not_store_mem_and_store_ind_and_store_reg`. No new premise, no decode fact; axiom closure is
+the three standard axioms.
+
+**What this still does not give.** Acyclicity bounds the walk from below, not above, and two things
+still stand between that and termination at `RegisterBoundary.bootMessage`.
+
+First, the remaining b-side and store-side flag combinations land at `mem_op = 5`, where the
+multiplicity is not constant across slots — a b-side current rides at `-3`, a store-side current at
+`-2` — so the classification above does not apply as stated. The message **timestamp** separates
+them: the three slots sit at `1, 2, 3 + 4 * main_step`, `main_step` is the row index, and the Main
+table's own fixed-column capacity caps it at `2^22`, so no wraparound can move between residue
+classes mod `4`. That instance is not yet built.
+
+Second, the `main.pil:447` gap above is unchanged, so the boundary can still self-pair at
+timestamp `0`.
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
 `main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope
