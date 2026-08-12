@@ -20,7 +20,7 @@ theorem divSpinArithProviderTable_eq
   simp [divSpinAcceptedTrace, Air.Flat.EnsembleWitness.allTables,
     divSpinWitness, divSpinTables] at h_table
   rcases h_table with
-    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   all_goals subst providerTable
   all_goals try rfl
   all_goals

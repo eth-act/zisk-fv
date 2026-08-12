@@ -1,9 +1,11 @@
 import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
+import ZiskFv.AirsClean.FullEnsemble.Balance.RegisterStepRangeProviderMatch
 import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.Mem.Bridge
+import ZiskFv.AirsClean.RegisterStepRangeSlice
 import ZiskFv.AirsClean.RegisterBoundary
 
 /-!
@@ -632,6 +634,142 @@ theorem mainSingleRowTable_interactionsWith_memBus
   simp [mainMemBusInteractions, Operations.interactionValuesWith_eq_map,
     componentWithRomMemAndOpBus_interactionsWith_memBus]
 
+/-- Evaluating a bus-102 emission: the multiplicity and the carried distance evaluate
+    independently, so one lemma serves all three register slots (and every witness). -/
+theorem registerStepRange_emitted_eval
+    (env : Environment FGL) (multExpr distExpr : Expression FGL) (multVal distVal : FGL)
+    (h_mult : Expression.eval env multExpr = multVal)
+    (h_dist : Expression.eval env distExpr = distVal) :
+    ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted multExpr
+        (ZiskFv.Channels.SpecifiedRanges.registerStepMessage distExpr)).toRaw).eval env =
+      { channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+        mult := multVal
+        msg := (toElements
+          (ZiskFv.Channels.SpecifiedRanges.registerStepMessage distVal)).toArray
+        same_size := by simp [Channel.toRaw]
+        assumeGuarantees := false } := by
+  simp [AbstractInteraction.eval, ChannelInteraction.toRaw,
+    ZiskFv.Channels.SpecifiedRanges.registerStepMessage, toElements_eval_toArray,
+    circuit_norm, h_mult, h_dist]
+
+/-- The a-side register-step distance at the value level (`main.pil:333`), with
+    `a_mem_step = 1 + main_step * 4`. -/
+def aRegStepDistance (row : MainRowWithRom FGL) : FGL :=
+  (1 + row.rom.main_step * 4) - row.rom.a_reg_prev_mem_step - 1
+
+/-- The b-side register-step distance (`main.pil:334`). -/
+def bRegStepDistance (row : MainRowWithRom FGL) : FGL :=
+  (2 + row.rom.main_step * 4) - row.rom.b_reg_prev_mem_step - 1
+
+/-- The store-side register-step distance (`main.pil:335`). -/
+def cRegStepDistance (row : MainRowWithRom FGL) : FGL :=
+  (3 + row.rom.main_step * 4) - row.rom.store_reg_prev_mem_step - 1
+
+/-- Main's a-side bus-102 pull. The multiplicity is the negated selector, so an inactive
+    register slot emits at `0` and contributes nothing to the balance. -/
+def mainARegStepInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+  mult := -row.rom.a_src_reg
+  msg := (toElements
+    (ZiskFv.Channels.SpecifiedRanges.registerStepMessage (aRegStepDistance row))).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+/-- Main's b-side bus-102 pull. -/
+def mainBRegStepInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+  mult := -row.rom.b_src_reg
+  msg := (toElements
+    (ZiskFv.Channels.SpecifiedRanges.registerStepMessage (bRegStepDistance row))).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+/-- Main's store-side bus-102 pull. -/
+def mainCRegStepInteraction (row : MainRowWithRom FGL) : Interaction FGL where
+  channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+  mult := -row.rom.store_reg
+  msg := (toElements
+    (ZiskFv.Channels.SpecifiedRanges.registerStepMessage (cRegStepDistance row))).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+/-- Main's three bus-102 pulls under any environment where the row variable evaluates to `row`.
+    Row-generic, so the multi-row spin witnesses reuse it per row exactly as they reuse their
+    `main*OpBusInteractionsAt` helpers. -/
+theorem mainRegisterStepInteractionsAt
+    (length : ℕ) (program : Program length) (env : Environment FGL) (row : MainRowWithRom FGL)
+    (h_input : eval env (componentWithRomMemAndOpBus length program).rowInputVar = row) :
+    (componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw env =
+      [mainARegStepInteraction row, mainBRegStepInteraction row,
+        mainCRegStepInteraction row] := by
+  have h_rom :
+      eval env (componentWithRomMemAndOpBus length program).rowInputVar.rom = row.rom := by
+    rw [ZiskFv.AirsClean.FullEnsemble.mainRowWithRom_eval_rom]
+    exact congrArg MainRowWithRom.rom h_input
+  obtain ⟨h_a, h_b, h_c, h_step, h_ap, h_bp, h_cp⟩ :=
+    ZiskFv.AirsClean.FullEnsemble.mainRomRow_eval_registerStep_fields env
+      (componentWithRomMemAndOpBus length program).rowInputVar.rom
+  rw [h_rom] at h_a h_b h_c h_step h_ap h_bp h_cp
+  rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_registerStepRange]
+  simp only [List.map_cons, List.map_nil]
+  have h_ma : Expression.eval env
+      (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)
+        = -row.rom.a_src_reg := by
+    simp [Expression.eval, h_a]
+  have h_mb : Expression.eval env
+      (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)
+        = -row.rom.b_src_reg := by
+    simp [Expression.eval, h_b]
+  have h_mc : Expression.eval env
+      (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)
+        = -row.rom.store_reg := by
+    simp [Expression.eval, h_c]
+  have h_da : Expression.eval env
+      (ZiskFv.AirsClean.Main.aRegStepDistanceExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)
+        = aRegStepDistance row := by
+    simp [aRegStepDistance, circuit_norm, h_step, h_ap]
+    ring
+  have h_db : Expression.eval env
+      (ZiskFv.AirsClean.Main.bRegStepDistanceExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)
+        = bRegStepDistance row := by
+    simp [bRegStepDistance, circuit_norm, h_step, h_bp]
+    ring
+  have h_dc : Expression.eval env
+      (ZiskFv.AirsClean.Main.cRegStepDistanceExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)
+        = cRegStepDistance row := by
+    simp [cRegStepDistance, circuit_norm, h_step, h_cp]
+    ring
+  rw [registerStepRange_emitted_eval (h_mult := h_ma) (h_dist := h_da),
+    registerStepRange_emitted_eval (h_mult := h_mb) (h_dist := h_db),
+    registerStepRange_emitted_eval (h_mult := h_mc) (h_dist := h_dc)]
+  rfl
+
+/-- Main's three bus-102 pulls at a single row, in exposed-channel order. Mirrors
+    `mainSingleRowTable_interactionsWith_opBus`: the two fixed-column side conditions are what let
+    the row variable evaluate to the concrete row. -/
+theorem mainSingleRowTable_interactionsWith_registerStepRange
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL)
+    (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 0)
+    (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 0) :
+    (mainSingleRowTable length program row).interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      [mainARegStepInteraction row, mainBRegStepInteraction row,
+        mainCRegStepInteraction row] := by
+  rw [Table.interactionsWith, mainSingleRowTable_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  change
+    (componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+        (mainSingleRowTableEnvironment length program row) =
+      [mainARegStepInteraction row, mainBRegStepInteraction row, mainCRegStepInteraction row]
+  exact mainRegisterStepInteractionsAt length program _ row
+    (mainSingleRowTable_eval_rowInputVar length program row h_segment_l1 h_main_step)
+
 theorem mainSingleRowTable_constraints_of_proverAssumptions
     (length : ℕ) (program : Program length) (row : MainRowWithRom FGL)
     (h_segment_l1 : row.core.segment_l1 = mainFixedColumns.fixedAt 0 0)
@@ -688,6 +826,34 @@ example :
 
 def binaryAddRowArray (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) : Array FGL :=
   (toElements row).toArray
+
+private theorem registerStepRangeSlice_component_rawWidth :
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component.rawWidth = 1 := by
+  change ZiskFv.AirsClean.RegisterStepRangeSlice.circuit.size = 1
+  rw [GeneralFormalCircuit.size_eq]
+  rfl
+
+/-- A bus-102 register-step provider table over concrete distance values.
+
+    Every active Main register slot emits one consumer interaction on bus 102, so a witness whose
+    Main rows use register sources must supply one provider row per active slot, carrying that
+    slot's `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`. This is the descent data
+    `main.pil:333-335` range-checks; before #330 Phase 3 no witness had to exhibit it. -/
+def registerStepRangeRowArray (v : FGL) : Array FGL :=
+  (toElements (M := field) v).toArray
+
+def registerStepRangeRowsTable (values : List FGL) : Table FGL where
+  component := ZiskFv.AirsClean.RegisterStepRangeSlice.component
+  rawRows := values.map registerStepRangeRowArray
+  data := emptyData
+  raw_uniform_width := by
+    intro arr h_arr
+    rcases List.mem_map.mp h_arr with ⟨v, _, rfl⟩
+    rw [registerStepRangeSlice_component_rawWidth]
+    simp [registerStepRangeRowArray, show size field = 1 from rfl]
+  fixed_domain := by
+    intro columns h_columns
+    simp [ZiskFv.AirsClean.RegisterStepRangeSlice.component] at h_columns
 
 private theorem binaryAdd_component_rawWidth :
     ZiskFv.AirsClean.BinaryAdd.component.rawWidth =
@@ -813,6 +979,158 @@ theorem binaryAddRowsTable_constraints_of_proverAssumptions
       ZiskFv.AirsClean.BinaryAdd.component row h_localLength (h_assumptions row h_row)
   simpa [binaryAddRowsTable, binaryAddRowArray, Table.table, Environment.fromInput]
     using h_component
+
+/-- The bus-102 provider table satisfies its constraints exactly when every supplied distance is
+    inside the 24-bit range. The provider owns the static lookup, so this is the only obligation —
+    and it is the honest one: a witness cannot invent register-step distances it cannot range-check.
+
+    `ProverAssumptions` for the slice is `rangeTable24.Spec value`, so the hypothesis is stated in
+    the same terms the caller can discharge by `decide` on concrete values.
+
+    Stated for an arbitrary `ProverData`: the slice's constraints never read `data`, and the
+    witnesses that carry real prover data (SdLd) need exactly that generality. -/
+theorem registerStepRangeRowsTableWithData_constraints
+    (values : List FGL) (data : ProverData FGL)
+    (h_range : ∀ v ∈ values, ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v) :
+    { registerStepRangeRowsTable values with data := data }.Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.RegisterStepRangeSlice.component.circuit.localLength
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component.rowInputVar = 0 := by
+    rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ values.map registerStepRangeRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨v, h_v, rfl⟩
+  refine component_constraintsHold_of_proverAssumptions_at_data
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component _ v data h_localLength ?_ ?_
+    (h_range v h_v)
+  · show eval (Environment.fromArray (registerStepRangeRowArray v) data)
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component.rowInputVar = v
+    exact ProvableType.eval_fromInput_varFromOffset_zero (Input := field) v data
+  · rfl
+
+theorem registerStepRangeRowsTable_constraints
+    (values : List FGL)
+    (h_range : ∀ v ∈ values, ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v) :
+    (registerStepRangeRowsTable values).Constraints :=
+  registerStepRangeRowsTableWithData_constraints values emptyData h_range
+
+/-- The bus-102 provider table carries interactions on its own channel and nothing else. -/
+theorem registerStepRangeRowsTable_interactionsWith_of_ne
+    (values : List FGL) (channel : RawChannel FGL)
+    (h_ne : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    (registerStepRangeRowsTable values).interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+  simpa using h_ne
+
+/-- The value-level bus-102 provider push for one distance. -/
+def registerStepRangeInteraction (v : FGL) : Interaction FGL where
+  channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+  mult := 1
+  msg := (toElements (ZiskFv.Channels.SpecifiedRanges.registerStepMessage v)).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+/-- Evaluating the provider's abstract push under a row's environment gives that row's concrete
+    push. Mirrors `binaryAddComponentOpBusInteraction_eval`; the named `registerStepRangeRowArray`
+    wrapper is what lets the `change` below see the environment in `Environment.fromInput` form. -/
+theorem registerStepRangeComponentInteraction_eval
+    (values : List FGL) (data : ProverData FGL) (v : FGL) :
+    (((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.pushed
+        (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+          ZiskFv.AirsClean.RegisterStepRangeSlice.component.rowInputVar)).toRaw).eval
+      ({ registerStepRangeRowsTable values with data := data }.environment
+        (registerStepRangeRowArray v))) =
+      registerStepRangeInteraction v := by
+  simp [registerStepRangeInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
+    ZiskFv.Channels.SpecifiedRanges.registerStepMessage, toElements_eval_toArray,
+    circuit_norm, Table.environment, registerStepRangeRowsTable, registerStepRangeRowArray,
+    Component.rowInputVar, Component.rowOffset,
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component]
+
+/-- The bus-102 provider emits exactly one push per row, carrying that row's value. -/
+theorem registerStepRangeRowsTable_row
+    (values : List FGL) (data : ProverData FGL) (v : FGL) :
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component.operations.interactionValuesWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+        ({ registerStepRangeRowsTable values with data := data }.environment
+          (registerStepRangeRowArray v)) =
+      [registerStepRangeInteraction v] := by
+  simp [registerStepRangeRowsTable, Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.RegisterStepRangeSlice.component_interactionsWith_rangeChannel]
+  exact registerStepRangeComponentInteraction_eval values data v
+
+private theorem registerStepRangeRowsTable_interactionsWith_go
+    (allValues values : List FGL) (data : ProverData FGL) :
+    (values.map registerStepRangeRowArray).flatMap (fun arr =>
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component.operations.interactionValuesWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+          ({ registerStepRangeRowsTable allValues with data := data }.environment arr)) =
+      values.map registerStepRangeInteraction := by
+  induction values with
+  | nil => rfl
+  | cons v rest ih =>
+      simp only [List.map_cons, List.flatMap_cons, ih]
+      rw [registerStepRangeRowsTable_row allValues data v]
+      rfl
+
+/-- The bus-102 provider table's interaction list: one push per supplied distance. -/
+theorem registerStepRangeRowsTableWithData_interactionsWith
+    (values : List FGL) (data : ProverData FGL) :
+    { registerStepRangeRowsTable values with data := data }.interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      values.map registerStepRangeInteraction := by
+  rw [Table.interactionsWith]
+  simpa [registerStepRangeRowsTable, Table.table] using
+    registerStepRangeRowsTable_interactionsWith_go values values data
+
+theorem registerStepRangeRowsTable_interactionsWith
+    (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      values.map registerStepRangeInteraction :=
+  registerStepRangeRowsTableWithData_interactionsWith values emptyData
+
+
+/-- Any channel whose name is not the bus-102 slice's is a different channel. The five
+    corollaries below are what every witness needs to show the provider table is silent on the
+    other buses; they live here rather than per-witness so the seven witnesses share one copy. -/
+theorem registerStepRange_ne (c : RawChannel FGL)
+    (h_name : c.name ≠ "SpecifiedRangesSlice102") :
+    c ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+  intro h
+  exact h_name (by rw [h]; rfl)
+
+theorem registerStepRangeRowsTable_interactionsWith_rangeChannel_nil (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel.toRaw = [] :=
+  registerStepRangeRowsTable_interactionsWith_of_ne values _
+    (registerStepRange_ne _ (by decide))
+
+theorem registerStepRangeRowsTable_interactionsWith_memAlignRangeChannel_nil
+    (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith
+      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw = [] :=
+  registerStepRangeRowsTable_interactionsWith_of_ne values _
+    (registerStepRange_ne _ (by decide))
+
+theorem registerStepRangeRowsTable_interactionsWith_memBus_nil (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith MemBusChannel.toRaw = [] :=
+  registerStepRangeRowsTable_interactionsWith_of_ne values _
+    (registerStepRange_ne _ (by decide))
+
+theorem registerStepRangeRowsTable_interactionsWith_memAlignRomChannel_nil
+    (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith
+      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel.toRaw = [] :=
+  registerStepRangeRowsTable_interactionsWith_of_ne values _
+    (registerStepRange_ne _ (by decide))
+
+theorem registerStepRangeRowsTable_interactionsWith_opBus_nil (values : List FGL) :
+    (registerStepRangeRowsTable values).interactionsWith OpBusChannel.toRaw = [] :=
+  registerStepRangeRowsTable_interactionsWith_of_ne values _
+    (registerStepRange_ne _ (by decide))
 
 def binaryExtensionRowArray
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL) : Array FGL :=
@@ -1641,5 +1959,150 @@ theorem registerBoundaryRowsTableOf_constraints
       ZiskFv.AirsClean.RegisterBoundary.component row h_localLength trivial
   simpa [registerBoundaryRowsTableOf, registerBoundaryRowArray, Table.environment,
     Environment.fromInput] using h_component
+
+/-- **Every active register read in an accepted trace has a 24-bit-bounded step distance.**
+
+This is the row-level form of the bus-102 descent: given a Main table row whose a-side register
+selector is on, the distance `a_mem_step - a_reg_prev_mem_step - 1` that row pulls is forced into
+`rangeTable24`. Nothing about the register columns is assumed -- the bound comes from the provider
+table's own `Spec` via balance.
+
+The b-side and store-side twins differ only in which selector and which distance they name. -/
+theorem rangeTable24_spec_aRegStepDistance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : row.rom.a_src_reg = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance row) := by
+  have h_list :
+      mainARegStepInteraction row ∈
+        mainTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    refine List.mem_flatMap.mpr ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, mainRegisterStepInteractionsAt length program _ row h_input]
+    simp
+  refine ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_mainTable h_list ?_ ?_
+  · simp [mainARegStepInteraction, h_active]
+  · rfl
+
+/-- The b-side twin of `rangeTable24_spec_aRegStepDistance_of_active`. -/
+theorem rangeTable24_spec_bRegStepDistance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : row.rom.b_src_reg = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (bRegStepDistance row) := by
+  have h_list :
+      mainBRegStepInteraction row ∈
+        mainTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    refine List.mem_flatMap.mpr ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, mainRegisterStepInteractionsAt length program _ row h_input]
+    simp
+  refine ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_mainTable h_list ?_ ?_
+  · simp [mainBRegStepInteraction, h_active]
+  · rfl
+
+/-- The store-side twin of `rangeTable24_spec_aRegStepDistance_of_active`. -/
+theorem rangeTable24_spec_cRegStepDistance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : row.rom.store_reg = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (cRegStepDistance row) := by
+  have h_list :
+      mainCRegStepInteraction row ∈
+        mainTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    refine List.mem_flatMap.mpr ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, mainRegisterStepInteractionsAt length program _ row h_input]
+    simp
+  refine ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_mainTable h_list ?_ ?_
+  · simp [mainCRegStepInteraction, h_active]
+  · rfl
+
+/-- **One counterpart step moves strictly later in the trace**, composed from the two lemmas that
+supply its inputs rather than taking them as premises.
+
+`selfMemProvider_registerPre_timestamp_of_mem_op_three` says the counterpart of a `mem_op = 3`
+register read is a register-pre push carrying the consumer's read timestamp in the provider row's
+`a_reg_prev_mem_step`; `rangeTable24_spec_aRegStepDistance_of_active` bounds that provider row's own
+`a_mem_step - a_reg_prev_mem_step - 1`. Together the read happens strictly before the row that
+supplied it accesses the register itself.
+
+Only the a-side branch is discharged here — the collapse lemma returns a three-way disjunction and
+the b/store twins need their own selector hypotheses. -/
+theorem registerRead_timestamp_lt_provider_access
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {providerTable : Table FGL}
+    (h_providerTable : providerTable ∈ witness.allTables)
+    {providerRowArray : Array FGL} (h_providerRowArray : providerRowArray ∈ providerTable.table)
+    {providerRow : MainRowWithRom FGL}
+    (h_providerInput :
+      eval (providerTable.environment providerRowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = providerRow)
+    (h_providerComponent :
+      providerTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : providerRow.rom.a_src_reg = 1)
+    {mainTs : FGL}
+    (h_link :
+      (eval (providerTable.environment providerRowArray)
+        (ZiskFv.AirsClean.Main.aRegPreMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)).timestamp = mainTs)
+    (h_bound : mainTs.val < 2 ^ 40) :
+    mainTs.val < (1 + providerRow.rom.main_step * 4 : FGL).val := by
+  have h_descent :
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance providerRow) :=
+    rangeTable24_spec_aRegStepDistance_of_active h_balanced h_specs h_constraints
+      h_providerTable h_providerRowArray h_providerInput h_providerComponent h_active
+  have h_prev : providerRow.rom.a_reg_prev_mem_step = mainTs := by
+    rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr, h_providerInput] at h_link
+    simpa [ZiskFv.AirsClean.Main.aRegPreMessage] using h_link
+  refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound
+  simpa [aRegStepDistance, h_prev] using h_descent
 
 end ZiskFv.Compliance.Instantiation

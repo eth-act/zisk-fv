@@ -322,6 +322,9 @@ def divSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component
   , emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  -- bus-102: five of the fifteen pulls are active -- each ADDI row's store (2 and 6) and all
+  -- three of the DIV row's slots (a 5, b 2, c 10). Both JAL rows emit at multiplicity 0.
+  , registerStepRangeRowsTable [2, 6, 5, 2, 10]
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , divSpinArithTable
@@ -337,16 +340,16 @@ def divSpinWitness : EnsembleWitness divSpinEnsemble where
   same_length := by
     simp [divSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
       divSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
-      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
       divSpinMainTable, mainRowsTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 14 := by
+    have hi' : i < 15 := by
       simpa [divSpinTables] using hi
     interval_cases i <;>
       simp [divSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
         divSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
-        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         divSpinBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
         divSpinArithTable, divSpinRemainderBoundTable, binarySingleRowTable,
         divSpinBinaryAddTable, binaryAddRowsTable, divSpinMainTable, mainRowsTable]
@@ -356,7 +359,7 @@ def divSpinWitness : EnsembleWitness divSpinEnsemble where
       emptyComponentTable, divSpinArithTable, divSpinRemainderBoundTable,
       binarySingleRowTable, divSpinBinaryAddTable, binaryAddRowsTable,
       divSpinMainTable, mainRowsTable] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> rfl
 
 theorem divSpinEnsemble_verifier :
@@ -369,7 +372,7 @@ theorem divSpinWitness_table_constraints :
   intro table h_table
   simp [divSpinWitness, divSpinTables] at h_table
   rcases h_table with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact divSpinBoundaryTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
@@ -378,6 +381,11 @@ theorem divSpinWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRangeSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRomSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  · refine registerStepRangeRowsTable_constraints _ ?_
+    intro v hv
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+    rcases hv with rfl | rfl | rfl | rfl | rfl <;>
+      simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · rw [Table.Constraints]
@@ -408,7 +416,7 @@ theorem divSpinWitness_transitions : divSpinWitness.TransitionConstraints := by
     simp [EnsembleWitness.verifierTable]
   · simp [divSpinWitness, divSpinTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
@@ -420,6 +428,9 @@ theorem divSpinWitness_transitions : divSpinWitness.TransitionConstraints := by
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignRangeSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [registerStepRangeRowsTable, ZiskFv.AirsClean.RegisterStepRangeSlice.component]
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
     · rw [Table.TransitionConstraints]
@@ -448,7 +459,7 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
     simp [EnsembleWitness.verifierTable]
   · simp [divSpinWitness, divSpinTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
@@ -466,6 +477,9 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
         ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [registerStepRangeRowsTable, ZiskFv.AirsClean.RegisterStepRangeSlice.component]
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions
@@ -485,4 +499,6 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
         ZiskFv.AirsClean.BinaryAdd.component]
     · exact divSpinMainTable_cyclicSuccessorTransitions
 
+
 end ZiskFv.Compliance.DivSpinWitness
+

@@ -527,6 +527,10 @@ def jalrTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component
   , emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  -- bus-102: only four of the twelve pulls are active -- the setup row's store (distance 2),
+  -- the ADD row's b operand (2), the AND row's store (10), and the successor row's b (7).
+  -- The other eight sit at multiplicity 0.
+  , registerStepRangeRowsTable [2, 2, 10, 7]
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
@@ -552,11 +556,11 @@ def jalrWitness : EnsembleWitness jalrEnsemble where
       SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 14 := by simpa [jalrTables] using hi
+    have hi' : i < 15 := by simpa [jalrTables] using hi
     interval_cases i <;>
       simp [jalrEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
         jalrTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
-        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         jalrBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
         jalrBinaryAndTable, binarySingleRowTable, jalrBinaryAddTable,
         binaryAddRowsTable, jalrMainTable,
@@ -568,7 +572,7 @@ def jalrWitness : EnsembleWitness jalrEnsemble where
       jalrBinaryAddTable, binaryAddRowsTable, jalrMainTable,
       ZiskFv.Compliance.AddSpinWitness.mainRowsTable] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem jalrWitness_table_constraints :
@@ -576,7 +580,7 @@ theorem jalrWitness_table_constraints :
   intro table h_table
   simp [jalrWitness, jalrTables] at h_table
   rcases h_table with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact jalrBoundaryTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
@@ -585,6 +589,11 @@ theorem jalrWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRangeSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRomSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
+  · refine registerStepRangeRowsTable_constraints _ ?_
+    intro v hv
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+    rcases hv with rfl | rfl | rfl | rfl <;>
+      simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentComplete
@@ -608,7 +617,7 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
     simp [EnsembleWitness.verifierTable]
   · simp [jalrWitness, jalrTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
@@ -620,6 +629,9 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignRangeSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [registerStepRangeRowsTable, ZiskFv.AirsClean.RegisterStepRangeSlice.component]
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentComplete
@@ -646,7 +658,7 @@ theorem jalrWitness_cyclicSuccessorTransitions :
     simp [EnsembleWitness.verifierTable]
   · simp [jalrWitness, jalrTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
@@ -663,6 +675,9 @@ theorem jalrWitness_cyclicSuccessorTransitions :
         ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [registerStepRangeRowsTable, ZiskFv.AirsClean.RegisterStepRangeSlice.component]
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_cyclicSuccessorTransitions ZiskFv.AirsClean.ArithDiv.component
@@ -797,7 +812,8 @@ theorem jalrOpBus_interactions :
   simp [jalrTables, h_boundary, emptyComponentTable_interactionsWith,
     jalrBinaryAndTable, binarySingleRowTable_interactionsWith_opBus,
     jalrBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus,
-    jalrMainTable_interactionsWith_opBus]
+    jalrMainTable_interactionsWith_opBus,
+    registerStepRangeRowsTable_interactionsWith_opBus_nil]
 
 theorem jalrWitness_opBus_balanced :
     BalancedInteractions
@@ -852,7 +868,8 @@ theorem jalrWitness_memBus_interactions :
         (table := jalrBinaryAddTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, jalrMemBusInteractions, h_boundary, h_binary, h_binaryAdd,
-    emptyComponentTable_interactionsWith, jalrMainTable_interactionsWith_memBus]
+    emptyComponentTable_interactionsWith, jalrMainTable_interactionsWith_memBus,
+    registerStepRangeRowsTable_interactionsWith_memBus_nil]
 
 private def jalrX1Interactions : List (Interaction FGL) :=
   boundaryInteractions jalrBoundaryRowX1 ++
@@ -1143,7 +1160,8 @@ private theorem jalrChannel_ne
 private theorem jalrWitness_otherChannel_balanced
     (channel : RawChannel FGL)
     (hne_mem : channel ≠ MemBusChannel.toRaw)
-    (hne_op : channel ≠ OpBusChannel.toRaw) :
+    (hne_op : channel ≠ OpBusChannel.toRaw)
+    (hne_rsr : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
     BalancedInteractions
       (jalrWitness.tables.flatMap (·.interactionsWith channel)) := by
   have h_boundary : jalrBoundaryTable.interactionsWith channel = [] := by
@@ -1160,13 +1178,16 @@ private theorem jalrWitness_otherChannel_balanced
     simpa only [List.mem_singleton] using hne_op
   have h_main : jalrMainTable.interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw, ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
     simpa only [List.mem_cons, List.not_mem_nil, or_false] using
       (by
         simp only [not_or]
-        exact ⟨hne_mem, hne_op⟩)
+        exact ⟨hne_mem, hne_op, hne_rsr⟩)
+  have h_provider :
+      (registerStepRangeRowsTable [2, 2, 10, 7]).interactionsWith channel = [] :=
+    registerStepRangeRowsTable_interactionsWith_of_ne _ channel hne_rsr
   rw [show jalrWitness.tables = jalrTables from rfl]
-  simp [jalrTables, h_boundary, h_binary, h_binaryAdd, h_main,
+  simp [jalrTables, h_boundary, h_binary, h_binaryAdd, h_main, h_provider,
     emptyComponentTable_interactionsWith]
   refine ⟨?_, ?_⟩
   · left
@@ -1199,24 +1220,126 @@ private theorem jalrMemAlignRomChannel_ne_opBus :
     MemAlignRomChannel.toRaw ≠ OpBusChannel.toRaw := by
   exact jalrChannel_ne _ _ rfl _ _ rfl (by decide)
 
+private theorem jalrRangeChannel_ne_registerStepRange :
+    SpecifiedRangesSliceChannel.toRaw ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+  exact jalrChannel_ne _ _ rfl _ _ rfl (by decide)
+
+private theorem jalrMemAlignRangeChannel_ne_registerStepRange :
+    MemAlignRangeChannel.toRaw ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+  exact jalrChannel_ne _ _ rfl _ _ rfl (by decide)
+
+private theorem jalrMemAlignRomChannel_ne_registerStepRange :
+    MemAlignRomChannel.toRaw ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+  exact jalrChannel_ne _ _ rfl _ _ rfl (by decide)
+
 theorem jalrWitness_rangeChannel_balanced :
     BalancedInteractions
       (jalrWitness.tables.flatMap
         (·.interactionsWith SpecifiedRangesSliceChannel.toRaw)) :=
   jalrWitness_otherChannel_balanced _ jalrRangeChannel_ne_memBus
-    jalrRangeChannel_ne_opBus
+    jalrRangeChannel_ne_opBus jalrRangeChannel_ne_registerStepRange
 
 theorem jalrWitness_memAlignRangeChannel_balanced :
     BalancedInteractions
       (jalrWitness.tables.flatMap (·.interactionsWith MemAlignRangeChannel.toRaw)) :=
   jalrWitness_otherChannel_balanced _ jalrMemAlignRangeChannel_ne_memBus
-    jalrMemAlignRangeChannel_ne_opBus
+    jalrMemAlignRangeChannel_ne_opBus jalrMemAlignRangeChannel_ne_registerStepRange
 
 theorem jalrWitness_memAlignRomChannel_balanced :
     BalancedInteractions
       (jalrWitness.tables.flatMap (·.interactionsWith MemAlignRomChannel.toRaw)) :=
   jalrWitness_otherChannel_balanced _ jalrMemAlignRomChannel_ne_memBus
-    jalrMemAlignRomChannel_ne_opBus
+    jalrMemAlignRomChannel_ne_opBus jalrMemAlignRomChannel_ne_registerStepRange
+
+/-- Main's bus-102 pulls for all four rows. -/
+theorem jalrMainTable_interactionsWith_registerStepRange :
+    jalrMainTable.interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      [ mainARegStepInteraction jalrSetupRow, mainBRegStepInteraction jalrSetupRow
+      , mainCRegStepInteraction jalrSetupRow
+      , mainARegStepInteraction jalrAddRow, mainBRegStepInteraction jalrAddRow
+      , mainCRegStepInteraction jalrAddRow
+      , mainARegStepInteraction jalrAndRow, mainBRegStepInteraction jalrAndRow
+      , mainCRegStepInteraction jalrAndRow
+      , mainARegStepInteraction jalrSuccessorRow, mainBRegStepInteraction jalrSuccessorRow
+      , mainCRegStepInteraction jalrSuccessorRow ] := by
+  rw [Table.interactionsWith, jalrMainTable_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have h_at (index : Nat) (row : MainRowWithRom FGL)
+      (h_segment : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+      (h_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+      jalrMainTable.component.operations.interactionValuesWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+          (jalrMainTable.environment
+            (mainFixedColumns.materialize index (mainRawRow row))) =
+        [mainARegStepInteraction row, mainBRegStepInteraction row,
+          mainCRegStepInteraction row] := by
+    simpa [jalrMainTable, ZiskFv.Compliance.AddSpinWitness.mainRowsTable] using
+      (mainRegisterStepInteractionsAt 3 jalrProgram
+        (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData)
+        row
+        (eval_mainRawRow_materialize index emptyData row h_segment h_step))
+  rw [h_at 0 jalrSetupRow (by rfl) (by rfl), h_at 1 jalrAddRow (by rfl) (by rfl),
+    h_at 2 jalrAndRow (by rfl) (by rfl), h_at 3 jalrSuccessorRow (by rfl) (by rfl)]
+  rfl
+
+theorem jalrRegisterStepRange_interactions :
+    jalrWitness.tables.flatMap
+        (·.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
+      [ registerStepRangeInteraction (2 : FGL), registerStepRangeInteraction (2 : FGL)
+      , registerStepRangeInteraction (10 : FGL), registerStepRangeInteraction (7 : FGL) ] ++
+      [ mainARegStepInteraction jalrSetupRow, mainBRegStepInteraction jalrSetupRow
+      , mainCRegStepInteraction jalrSetupRow
+      , mainARegStepInteraction jalrAddRow, mainBRegStepInteraction jalrAddRow
+      , mainCRegStepInteraction jalrAddRow
+      , mainARegStepInteraction jalrAndRow, mainBRegStepInteraction jalrAndRow
+      , mainCRegStepInteraction jalrAndRow
+      , mainARegStepInteraction jalrSuccessorRow, mainBRegStepInteraction jalrSuccessorRow
+      , mainCRegStepInteraction jalrSuccessorRow ] := by
+  have h_boundary :=
+    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
+      (table := jalrBoundaryTable) rfl
+  have h_binaryAdd :=
+    ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
+      (table := jalrBinaryAddTable) rfl
+  have h_binary :=
+    ZiskFv.AirsClean.FullEnsemble.staticBinary_table_interactionsWith_registerStepRange_nil
+      (table := jalrBinaryAndTable) rfl
+  rw [show jalrWitness.tables = jalrTables from rfl]
+  simp [jalrTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd, h_binary,
+    registerStepRangeRowsTable_interactionsWith,
+    jalrMainTable_interactionsWith_registerStepRange]
+
+set_option maxRecDepth 8000 in
+/-- Bus-102 balance. Four of the twelve pulls are active: the setup row's store and the ADD row's
+    b operand both at distance 2, the AND row's store at 10, and the successor row's b at 7. The
+    provider supplies exactly those four; the other eight pulls sit at multiplicity 0. -/
+theorem jalrWitness_registerStepRangeChannel_balanced :
+    BalancedInteractions
+      (jalrWitness.tables.flatMap
+        (·.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+  rw [jalrRegisterStepRange_interactions]
+  refine Air.Flat.balancedInteractions_of_present ?_
+    ([(registerStepRangeInteraction (0 : FGL)).msg, (registerStepRangeInteraction (1 : FGL)).msg,
+      (registerStepRangeInteraction (2 : FGL)).msg, (registerStepRangeInteraction (3 : FGL)).msg,
+      (registerStepRangeInteraction (6 : FGL)).msg, (registerStepRangeInteraction (7 : FGL)).msg,
+      (registerStepRangeInteraction (8 : FGL)).msg, (registerStepRangeInteraction (9 : FGL)).msg,
+      (registerStepRangeInteraction (10 : FGL)).msg] : List (Array FGL)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at h_interaction
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rcases h_interaction with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  · intro msg h_msg
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h_msg
+    rcases h_msg with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem jalrWitness_balancedChannels : jalrWitness.BalancedChannels := by
   refine jalrWitness.balancedChannels_of_tables jalrEnsemble_verifier ?_
@@ -1224,7 +1347,8 @@ theorem jalrWitness_balancedChannels : jalrWitness.BalancedChannels := by
   simp [jalrEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
-  rcases h_channel with rfl | rfl | rfl | rfl | rfl
+  rcases h_channel with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact jalrWitness_registerStepRangeChannel_balanced
   · exact jalrWitness_memAlignRangeChannel_balanced
   · exact jalrWitness_memBus_balanced
   · exact jalrWitness_opBus_balanced
@@ -1271,8 +1395,10 @@ private theorem jalrWitness_main_component_cases
     exact not_jalr_main_component_of_width_ne (by decide) h_component
   · simp [jalrWitness, jalrTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_jalr_main_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_jalr_main_component_of_name_ne (by decide) h_component
     · exfalso
@@ -1320,7 +1446,7 @@ private theorem jalrWitness_mutable_mem_component_tables_empty
     exact absurd h_verifier_nil (by simp)
   · simp [jalrWitness, jalrTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_jalr_mutable_mem_component_of_name_ne (by decide) h_component
@@ -1330,6 +1456,8 @@ private theorem jalrWitness_mutable_mem_component_tables_empty
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignRangeSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.MemAlignRomSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.Mem.componentWithDualMemBus
+    · exfalso
+      exact not_jalr_mutable_mem_component_of_name_ne (by decide) h_component
     · exact emptyComponentTable_table ZiskFv.AirsClean.SpecifiedRangesSlice.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentComplete
@@ -1378,5 +1506,6 @@ theorem jalrAcceptedTrace_mainTable_eq :
   exact jalrWitness_main_component_cases
     (by simpa [jalrAcceptedTrace] using jalrAcceptedTrace.mainTable_mem)
     (by simpa [jalrAcceptedTrace] using jalrAcceptedTrace.mainTable_component)
+
 
 end ZiskFv.Compliance.JalrSpinWitness

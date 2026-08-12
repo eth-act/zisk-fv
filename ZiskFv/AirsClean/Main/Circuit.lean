@@ -637,6 +637,29 @@ def componentWithRomAndMemBus
 
 /-! ### Unified Main component for the full T7 ensemble -/
 
+set_option maxHeartbeats 1000000 in
+/-- The three register-slot selectors are boolean, read straight off Main's own row constraints
+    (`Constraints.lean:259-261`).
+
+    Isolated as its own declaration because unfolding the full `mainWithRomAndMemBus` operation list
+    is expensive; keeping it here confines the cost to one lemma. It is what makes the bus-102
+    `Operations.Requirements` conjuncts vacuous — see `mainWithRomMemAndOpBus_soundness`. -/
+theorem mainWithRomAndMemBus_selector_bool (length : ℕ) (program : Program length)
+    (offset : ℕ) (env : Environment FGL) (input_var : Var MainRowWithRom FGL)
+    (h : ConstraintsHold.Soundness env
+      ((mainWithRomAndMemBus length program input_var).operations offset)) :
+    Expression.eval env input_var.rom.a_src_reg
+        * (1 - Expression.eval env input_var.rom.a_src_reg) = 0
+      ∧ Expression.eval env input_var.rom.b_src_reg
+          * (1 - Expression.eval env input_var.rom.b_src_reg) = 0
+      ∧ Expression.eval env input_var.rom.store_reg
+          * (1 - Expression.eval env input_var.rom.store_reg) = 0 := by
+  simp only [mainWithRomAndMemBus, mainWithRom, main, circuit_norm] at h
+  simp only [sub_eq_add_neg]
+  exact ⟨h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1,
+    h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1,
+    h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
+
 /-- Soundness wrapper for the unified Main component. The added
     operation-bus emission is an exposed channel interaction, not a new
     Main constraint; the row-local Main/ROM/memory soundness is inherited
@@ -654,7 +677,32 @@ theorem mainWithRomMemAndOpBus_soundness (length : ℕ) (program : Program lengt
   have h_sound :=
     mainWithRomAndMemBus_soundness length program
       offset env input_var input h_input h_assumptions h_mem
-  simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_sound
+  -- The three bus-102 register-step emissions add `Operations.Requirements` conjuncts of the
+  -- #337-gated form `¬(sel = 1) → ¬(sel = 0) → Guarantees …`. Main constrains every selector
+  -- boolean (`Constraints.lean:259-261`), so both hypotheses cannot hold and each conjunct is
+  -- vacuous. Main proves no range fact here — it *consumes* one, via balance against
+  -- `RegisterStepRangeSlice`.
+  have h_bool : ∀ x : FGL, x * (1 - x) = 0 → x = 0 ∨ x = 1 := by
+    intro x hx
+    rcases mul_eq_zero.mp hx with h | h
+    · exact Or.inl h
+    · exact Or.inr (by linear_combination -h)
+  have h_sel := mainWithRomAndMemBus_selector_bool length program offset env input_var h_mem
+  obtain ⟨h_spec, h_reqs⟩ := h_sound
+  refine ⟨h_spec, ?_⟩
+  -- `MemBusChannel.Guarantees` and `OpBusChannel.Guarantees` are `True`, so those conjuncts
+  -- collapse; what is left is exactly the three bus-102 ones.
+  simp only [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel]
+  refine ⟨?_, ?_, ?_⟩ <;> intro h_one h_zero
+  · rcases h_bool _ h_sel.1 with h | h
+    · exact absurd h h_zero
+    · exact absurd (by rw [h]) h_one
+  · rcases h_bool _ h_sel.2.1 with h | h
+    · exact absurd h h_zero
+    · exact absurd (by rw [h]) h_one
+  · rcases h_bool _ h_sel.2.2 with h | h
+    · exact absurd h h_zero
+    · exact absurd (by rw [h]) h_one
 
 /-- Completeness wrapper for the unified ROM/memory/op-bus Main component.
     The added operation-bus emission has a trivial channel guarantee, so the
@@ -1043,6 +1091,50 @@ theorem componentWithRomMemAndOpBus_interactionsWith_opBus
       [((OpBusChannel.emitted
           (-(componentWithRomMemAndOpBus length program).rowInputVar.core.is_external_op)
           (opBusMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar.core)).toRaw)]⟩ ∈
+    (componentWithRomMemAndOpBus length program).exposedChannels
+  simp [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+    mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,
+    List.map_cons, List.map_nil]
+
+/-- Main's three bus-102 register-step emissions (`main.pil:333-335`), read off the exposed
+    channel list. Main is a *consumer* here — all three multiplicities are negated selectors — so
+    this lemma supplies the pull side that the `RegisterStepRangeSlice` provider table matches. -/
+theorem componentWithRomMemAndOpBus_interactionsWith_registerStepRange
+    (length : ℕ) (program : Program length) :
+    (componentWithRomMemAndOpBus length program).operations.interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      [ ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (aRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (bRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (cRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw,
+      [ ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (aRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (bRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw)
+      , ((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted
+            (-(componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg)
+            (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+              (cRegStepDistanceExpr
+                (componentWithRomMemAndOpBus length program).rowInputVar))).toRaw) ]⟩ ∈
     (componentWithRomMemAndOpBus length program).exposedChannels
   simp [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
     mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,

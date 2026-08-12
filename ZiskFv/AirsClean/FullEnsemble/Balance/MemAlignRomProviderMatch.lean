@@ -54,7 +54,8 @@ theorem memAlignRom_balanced_of_witness
     BalancedInteractions (witness.interactionsWith MemAlignRomChannel.toRaw) := by
   have h := h_balanced MemAlignRomChannel.toRaw (by
     change MemAlignRomChannel.toRaw ∈
-      [ ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw
+      [ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw
       , ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw
       , ZiskFv.Channels.OperationBus.OpBusChannel.toRaw
       , MemAlignRomChannel.toRaw
@@ -124,7 +125,7 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
       providerTable.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_rom | h_mem | h_ranges |
+    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_rom | h_mem | h_ranges | h_regRange |
       h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
   · have h_nil : providerTable.interactionsWith MemAlignRomChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -144,6 +145,7 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
     exact ⟨providerTable, h_providerTable, h_providerInteraction⟩
   · simp [mem_table_interactionsWith_memAlignRom_nil h_mem] at h_providerInteraction
   · simp [specifiedRangesSlice_table_interactionsWith_memAlignRom_nil h_ranges] at h_providerInteraction
+  · simp [registerStepRangeSlice_table_interactionsWith_memAlignRom_nil h_regRange] at h_providerInteraction
   · simp [arithDiv_table_interactionsWith_memAlignRom_nil h_div] at h_providerInteraction
   · simp [arithMul_table_interactionsWith_memAlignRom_nil h_mul] at h_providerInteraction
   · simp [staticBinaryExtension_table_interactionsWith_memAlignRom_nil h_extension] at h_providerInteraction

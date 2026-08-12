@@ -235,6 +235,42 @@ theorem mainRowWithRom_eval_core
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go]
 
+/-- Evaluating the `rom` projection of the combined Main+ROM row variable agrees with projecting
+    `rom` after evaluating the combined row. The `core` twin above. -/
+theorem mainRowWithRom_eval_rom
+    (env : Environment FGL)
+    (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    eval env row.rom = (eval env row).rom := by
+  cases row
+  simp [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go]
+
+/-- The seven ROM columns the bus-102 register-step emissions read (`main.pil:333-335`): the three
+    register selectors, the row's `main_step`, and the three previous-access timestamps. Proved as
+    one conjunction so the 25-field `mk` pattern is written once. -/
+theorem mainRomRow_eval_registerStep_fields
+    (env : Environment FGL)
+    (row : Var ZiskFv.AirsClean.Main.MainRomRow FGL) :
+    Expression.eval env row.a_src_reg = (eval env row).a_src_reg
+  ∧ Expression.eval env row.b_src_reg = (eval env row).b_src_reg
+  ∧ Expression.eval env row.store_reg = (eval env row).store_reg
+  ∧ Expression.eval env row.main_step = (eval env row).main_step
+  ∧ Expression.eval env row.a_reg_prev_mem_step = (eval env row).a_reg_prev_mem_step
+  ∧ Expression.eval env row.b_reg_prev_mem_step = (eval env row).b_reg_prev_mem_step
+  ∧ Expression.eval env row.store_reg_prev_mem_step
+      = (eval env row).store_reg_prev_mem_step := by
+  cases row with
+  | mk a_offset_imm0 a_imm1 b_offset_imm0 b_imm1 store_offset a_src_imm a_src_mem
+      is_precompiled b_src_imm b_src_mem store_mem store_ind b_src_ind a_src_reg b_src_reg
+      store_reg addr0 addr1 addr2 main_step a_reg_prev_mem_step b_reg_prev_mem_step
+      store_reg_prev_mem_step store_reg_prev_value_0 store_reg_prev_value_1 =>
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+      simpa [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+        ProvableStruct.fromComponents, ProvableStruct.components,
+        ProvableStruct.toComponents, ProvableStruct.eval.go] using
+        (CircuitType.eval_expr env _).symm
+
 /-- Evaluating the `is_external_op` projection directly agrees with projecting
     it after evaluating the Main core row. -/
 theorem mainRow_eval_is_external_op

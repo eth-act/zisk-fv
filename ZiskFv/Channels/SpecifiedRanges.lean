@@ -46,4 +46,35 @@ theorem memDistanceMessage_guarantees_iff (value : FGL) (data : ProverData FGL) 
       rangeTable16.Spec value := by
   simp [SpecifiedRangesSliceChannel, memDistanceMessage, memDistanceRangeId]
 
+/-- The `Range Check` hint bus used by Main's three register-step distances.
+
+`main.pil:333-335` emits `range_check(<slot>_mem_step - <slot>_reg_prev_mem_step - 1, min: 0,
+max: MAX_RANGE)` for the a, b and store register slots, with `MAX_RANGE = (1 << 24) - 1`. The
+pinned extraction puts all three on bus **102**
+(`build/extraction/Extraction/LookupWiring.lean` `hint_Main_40_1`, and `constraint_Main_41` for the
+b / store twins). -/
+def registerStepRangeId : FGL := 102
+
+/-- The source-linked static slice of the bus-102 range check.
+
+This is the **descent** the register MemBus telescope needs. Without it
+`<slot>_reg_prev_mem_step` is a free witness column, balance admits register access *cycles*
+disjoint from `RegisterBoundary.bootMessage`, and a register read is unconstrained. See
+`ZiskFv/AirsClean/RegisterStepRangeSlice.lean`. -/
+instance RegisterStepRangeChannel : Channel FGL SpecifiedRangeMessage where
+  name := "SpecifiedRangesSlice102"
+  Guarantees msg _ :=
+    msg.rangeId = registerStepRangeId ∧ rangeTable24.Spec msg.value
+
+/-- The value-level bus-102 message for one register-step distance. -/
+@[reducible]
+def registerStepMessage {F : Type} [OfNat F 102] (value : F) : SpecifiedRangeMessage F :=
+  { rangeId := 102, value }
+
+/-- Channel membership on the bus-102 slice is exactly the 24-bit static range predicate. -/
+theorem registerStepMessage_guarantees_iff (value : FGL) (data : ProverData FGL) :
+    RegisterStepRangeChannel.Guarantees (registerStepMessage value) data ↔
+      rangeTable24.Spec value := by
+  simp [RegisterStepRangeChannel, registerStepMessage, registerStepRangeId]
+
 end ZiskFv.Channels.SpecifiedRanges

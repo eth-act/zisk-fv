@@ -57,7 +57,8 @@ theorem specifiedRangesSlice_balanced_of_witness
     BalancedInteractions (witness.interactionsWith SpecifiedRangesSliceChannel.toRaw) := by
   have h := h_balanced SpecifiedRangesSliceChannel.toRaw (by
     change SpecifiedRangesSliceChannel.toRaw ∈
-      [ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw,
+      [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw,
+        ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw,
         MemBusChannel.toRaw, OpBusChannel.toRaw, MemAlignRomChannel.toRaw,
         SpecifiedRangesSliceChannel.toRaw]
     simp)
@@ -131,7 +132,7 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
       providerTable.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
-    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_memAlignRom | h_mem | h_ranges |
+    h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_memAlignRom | h_mem | h_ranges | h_regRange |
       h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -192,6 +193,17 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
     exact ⟨providerTable, h_providerTable, h_providerInteraction⟩
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
+      rw [h_regRange]
+      change SpecifiedRangesSliceChannel.toRaw ∉
+        [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+      simp only [List.mem_singleton]
+      intro h
+      have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+      simp [SpecifiedRangesSliceChannel,
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
+    simp [h_nil] at h_providerInteraction
+  · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
+      apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_div]
       change SpecifiedRangesSliceChannel.toRaw ∉ []
       simp
@@ -227,12 +239,17 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_main]
-      change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+      change SpecifiedRangesSliceChannel.toRaw ∉
+        [MemBusChannel.toRaw, OpBusChannel.toRaw,
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
       intro h
       simp only [List.mem_cons] at h
-      rcases h with h | h | h
+      rcases h with h | h | h | h
       · exact specifiedRangesSliceChannel_ne_memBus h
       · exact specifiedRangesSliceChannel_ne_opBus h
+      · have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+        simp [SpecifiedRangesSliceChannel,
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
       · simp at h
     simp [h_nil] at h_providerInteraction
 

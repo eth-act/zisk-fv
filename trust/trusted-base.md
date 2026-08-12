@@ -633,7 +633,18 @@ partition `BalancedInteractions` — the object #219 consumes — not the whole-
 **#219**. The balance is conditional on the previous-step timestamp chain
 (`a_reg_prev_mem_step = 0`, `b_reg_prev_mem_step = 1`, `store_reg_prev_mem_step = 2`,
 reload at `3`), pinned in the concrete row here; deriving it from ZisK's
-ordering/range checks (`main.pil:447`) is the **#169/#19** range-fidelity axis.
+ordering/range checks is the **#169/#19** range-fidelity axis.
+
+**Update (#342, bus 102).** Half of that axis is now delivered. `main.pil:333-335`'s
+three 24-bit register-step range checks are modelled as the `RegisterStepRangeChannel`
+(bus 102) with a real `Guarantees`, provided by `RegisterStepRangeSlice` and consumed by
+Main; balance turns a Main register pull into the provider's `rangeTable24.Spec` on
+`<slot>_mem_step - <slot>_reg_prev_mem_step - 1`. So `a_reg_prev_mem_step` is no longer a
+free witness column. `main.pil:447`'s reload-timestamp check remains **unmodelled**: the
+`RegisterBoundary` reload timestamp is still free, and
+`registerBoundary_table_interactionsWith_registerStepRange_nil` currently *proves* that
+component silent on bus 102 — so modelling 447 later will require revisiting that lemma
+and the provider case split in `exists_registerStepRange_provider_of_pull`.
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
 `main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope
@@ -1107,9 +1118,14 @@ not a derivable *conclusion*. Clean transfers a requirement to a guarantee at
 produced by `exists_push_of_pull`, which concludes `b.mult ≠ 0 ∧ b.mult ≠ -1`
 (`Balance.lean:155-156`). Both the old and the new definition agree on that
 range. The case the new definition drops, `mult = 0`, is therefore never
-consumed, so nothing derivable from the stronger form is lost. Today the point
-is moot twice over: every channel we declare sets `Guarantees := True`, which
-makes both forms trivial.
+consumed, so nothing derivable from the stronger form is lost.
+
+The second half of that sentence used to read "every channel we declare sets
+`Guarantees := True`, which makes both forms trivial". That was already inaccurate when
+written — bus-103 `SpecifiedRangesSliceChannel` carries `rangeTable16.Spec` — and #342
+adds a second non-trivial one, `RegisterStepRangeChannel` with
+`rangeId = 102 ∧ rangeTable24.Spec value`. The gating argument above does not depend on
+`Guarantees` being trivial; it depends only on where Clean consumes `Requirements`.
 
 Two caveats a later reader must not lose:
 

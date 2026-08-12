@@ -7,6 +7,7 @@ import ZiskFv.AirsClean.ArithMul.Circuit
 import ZiskFv.AirsClean.ArithDiv.Circuit
 import ZiskFv.AirsClean.Mem.Circuit
 import ZiskFv.AirsClean.SpecifiedRangesSlice
+import ZiskFv.AirsClean.RegisterStepRangeSlice
 import ZiskFv.AirsClean.MemAlign.Circuit
 import ZiskFv.AirsClean.MemAlignRomSlice
 import ZiskFv.AirsClean.MemAlignRangeSlice
@@ -45,7 +46,7 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
-open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel RegisterStepRangeChannel)
 open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
 open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
@@ -126,6 +127,13 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
           ZiskFv.AirsClean.ArithDiv.circuit])
     |>.addTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
+    |>.addTable ZiskFv.AirsClean.RegisterStepRangeSlice.component
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
           simp)
@@ -254,6 +262,7 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.addFinishedChannel MemBusChannel.toRaw
     |>.addFinishedChannel MemAlignRangeChannel.toRaw
+    |>.addFinishedChannel RegisterStepRangeChannel.toRaw
 
 /-- Per-table assumptions discharge for the full ensemble: each migrated
     component's per-row `Assumptions` reduce to `True`, so the ensemble-level
@@ -266,7 +275,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
   clear h_mem
   simp only [fullRv64imSoundEnsemble, circuit_norm, Ensemble.allTables] at h
   rcases h with
-    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     (rw [h]
      trivial)
 
