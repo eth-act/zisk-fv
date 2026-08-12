@@ -2190,7 +2190,10 @@ end RegSlot
 
 /-- `(provider, sp)` supplies `(consumer, sc)`'s register read: the provider slot's register-pre
 push carries the consumer slot's read timestamp. This is exactly what
-`selfMemProvider_registerPre_timestamp_of_mem_op_three` concludes from balance. -/
+`selfMemProvider_registerPre_timestamp_of_mem_op_three` concludes from balance.
+
+Read the argument order as *consumer first*: `RegSupplies sc sp consumer provider` is a fact about
+`consumer`'s read, and `provider` is what answers it. -/
 def RegSupplies (sc sp : RegSlot) (consumer provider : MainRowWithRom FGL) : Prop :=
   sp.prevStep provider = sc.readTimestamp consumer
 
@@ -2203,8 +2206,9 @@ def RegWalkStep.timestamp (p : RegWalkStep) : FGL := p.2.readTimestamp p.1
 /-- The bus-102 distance a walk step's slot range-checks. -/
 def RegWalkStep.distance (p : RegWalkStep) : FGL := p.2.distance p.1
 
-/-- The supply relation lifted to walk steps. -/
-def RegWalkStep.Supplies (p q : RegWalkStep) : Prop := RegSupplies p.2 q.2 p.1 q.1
+/-- The supply relation lifted to walk steps: `p.SuppliedBy q` says `q`'s register-pre push answers
+`p`'s register read. The walk therefore runs consumer-to-provider, which is *forwards* in time. -/
+def RegWalkStep.SuppliedBy (p q : RegWalkStep) : Prop := RegSupplies p.2 q.2 p.1 q.1
 
 /-- **One supply step moves strictly later in time.** The provider's own bus-102 pull bounds
 `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`, and the supply link identifies that predecessor
@@ -2251,7 +2255,7 @@ theorem regSupplies_chain_timestamps_nodup
     (h_descent : ∀ p ∈ steps,
       ZiskFv.AirsClean.RangeTables.rangeTable24.Spec p.distance)
     (h_bounds : ∀ p ∈ steps, p.timestamp.val < 2 ^ 40)
-    (h_chain : List.IsChain RegWalkStep.Supplies steps) :
+    (h_chain : List.IsChain RegWalkStep.SuppliedBy steps) :
     (steps.map RegWalkStep.timestamp).Nodup := by
   have h_mono : List.IsChain
       (fun p q : RegWalkStep => p.timestamp.val < q.timestamp.val) steps := by

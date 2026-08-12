@@ -443,13 +443,40 @@ theorem regSlot_timestamp_bound_of_mem
   rw [h_rowAt]
   exact regSlot_timestamp_bound_of_mainTable h_component h_index s
 
+/-- A walk step whose own register read is answered by the `RegisterBoundary`.
+
+    `ActiveMainRegisterBoundaryProviderRowMatchSpec` ignores its trailing `multiplicity` and `as`
+    arguments — both are `_`-bound in its definition — so this predicate passes `0` for each and is
+    independent of them. Carrying them here would be two parameters that mean nothing. -/
+def BoundarySuppliedAt {n : Nat} (trace : AcceptedZiskTrace n) (p : RegWalkStep) : Prop :=
+  ∃ table ∈ trace.witness.allTables,
+    ∃ _h_comp : table.component =
+        componentWithRomMemAndOpBus trace.programLength trace.program,
+      ∃ row ∈ table.table,
+        p.1 = eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar
+        ∧ p.2.selector p.1 = 1
+        ∧ ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness table row
+            (((MemBusChannel.emitted
+              (p.2.memMult
+                (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+              (p.2.memMessageExpr
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar)).toRaw).eval (table.environment row))
+            (p.2.memMessageExpr
+              (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+            0 0
+
 /-- **One step of the register walk, between witness sites.**
 
     A row whose slot selector is set has its register read supplied either by the
-    `RegisterBoundary`, or by another witness site whose own read happens **strictly later**. Every
-    input is discharged: the `-1` pull shape from source exclusivity, the branch split from
-    `channels_balanced`, the descent from the bus-102 slice, and the no-wrap bound from the Main
-    table's fixed-column capacity. -/
+    `RegisterBoundary`, or by another witness site that **supplies** it and whose own read happens
+    strictly later. Every input is discharged: the `-1` pull shape from source exclusivity, the
+    branch split from `channels_balanced`, the descent from the bus-102 slice, and the no-wrap bound
+    from the Main table's fixed-column capacity.
+
+    The supply link is part of the conclusion, not just the timestamp inequality, so iterating this
+    step builds a chain rather than an unrelated sequence of sites. -/
 theorem site_step
     {n : Nat} (trace : AcceptedZiskTrace n)
     {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
@@ -457,19 +484,15 @@ theorem site_step
       componentWithRomMemAndOpBus trace.programLength trace.program)
     {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
     (h_sel : s.selector (eval (table.environment row)
-      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1)
-    {multiplicity as : FGL} :
-    ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness table row
-        (((MemBusChannel.emitted
-          (s.memMult
-            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
-          (s.memMessageExpr
-            (componentWithRomMemAndOpBus trace.programLength
-              trace.program).rowInputVar)).toRaw).eval (table.environment row))
-        (s.memMessageExpr
-          (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
-        multiplicity as
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    BoundarySuppliedAt trace
+        (eval (table.environment row)
+          (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)
       ∨ ∃ q : RegWalkStep, IsActiveWitnessMainRow trace q
+          ∧ RegWalkStep.SuppliedBy
+              (eval (table.environment row)
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar, s) q
           ∧ (s.readTimestamp (eval (table.environment row)
               (componentWithRomMemAndOpBus trace.programLength
                 trace.program).rowInputVar)).val < q.timestamp.val := by
@@ -477,18 +500,18 @@ theorem site_step
     trace.constraints_hold trace.spec_holds h_table h_component h_row s h_sel
   rcases registerRead_counterpart_of_witnessTable trace h_table h_row
       (regSlot_mem_interaction_mem_table h_component h_row s) rfl h_pull h_op
-      (multiplicity := multiplicity) (as := as) with h_boundary | ⟨q, h_q, h_ts⟩
-  · exact Or.inl h_boundary
-  · refine Or.inr ⟨q, h_q, ?_⟩
-    have h_supplies :
+      (multiplicity := 0) (as := 0) with h_boundary | ⟨q, h_q, h_ts⟩
+  · exact Or.inl ⟨table, h_table, h_component, row, h_row, rfl, h_sel, h_boundary⟩
+  · have h_supplies :
         RegSupplies s q.2 (eval (table.environment row)
           (componentWithRomMemAndOpBus trace.programLength
             trace.program).rowInputVar) q.1 := by
       show q.2.prevStep q.1 = s.readTimestamp _
       rw [h_ts, RegSlot.eval_memMessageExpr_timestamp]
-    exact readTimestamp_lt_of_regSupplies h_supplies
-      (regSlot_descent_of_witnessMainRow trace h_q)
-      (regSlot_timestamp_bound_of_mem h_component h_row s)
+    exact Or.inr ⟨q, h_q, h_supplies,
+      readTimestamp_lt_of_regSupplies h_supplies
+        (regSlot_descent_of_witnessMainRow trace h_q)
+        (regSlot_timestamp_bound_of_mem h_component h_row s)⟩
 
 
 /-! ## Termination: the walk ends at the `RegisterBoundary`
@@ -496,34 +519,23 @@ theorem site_step
 Each supply step strictly increases the read timestamp, and every read timestamp is below `2^40`.
 So following the counterparts cannot go on forever: after finitely many steps the counterpart is no
 longer another Main row, and the only remaining memory-bus provider at `mem_op = 3` is the
-`RegisterBoundary`. -/
+`RegisterBoundary`.
 
-/-- A witness site whose own register read is supplied by the `RegisterBoundary`. -/
-def BoundarySuppliedSite {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL) : Prop :=
-  ∃ table ∈ trace.witness.allTables,
-    ∃ _h_comp : table.component =
-        componentWithRomMemAndOpBus trace.programLength trace.program,
-      ∃ row ∈ table.table, ∃ s : RegSlot,
-        s.selector (eval (table.environment row)
-          (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1
-        ∧ ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness table row
-            (((MemBusChannel.emitted
-              (s.memMult
-                (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
-              (s.memMessageExpr
-                (componentWithRomMemAndOpBus trace.programLength
-                  trace.program).rowInputVar)).toRaw).eval (table.environment row))
-            (s.memMessageExpr
-              (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
-            multiplicity as
+The result records the **path**, not just the fact that some boundary-supplied site exists. A bare
+existential would not say that *this* site's read is the one traced back to the boundary, and
+transporting a register value along the telescope needs the intermediate steps. -/
 
 set_option maxHeartbeats 1000000 in
-/-- **The walk terminates.** From any witness site, following supply counterparts reaches a site
-    whose read is supplied by the `RegisterBoundary`. The measure is `2 ^ 40 - readTimestamp`, which
-    strictly decreases at every step because each step moves strictly later in time, and which is
-    well-founded because every read timestamp is below `2 ^ 40`. -/
-theorem exists_boundarySuppliedSite_of_fuel
-    {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL) :
+/-- **The walk terminates, and here is the walk.** From any witness site, following supply
+    counterparts produces a finite chain that starts at that site and ends at a site whose read is
+    supplied by the `RegisterBoundary`. Every step of the chain is itself a witness site.
+
+    The measure is `2 ^ 40 - readTimestamp`, which strictly decreases at every step because each
+    step moves strictly later in time, and which is well-founded because every read timestamp is
+    below `2 ^ 40` — from the Main table's own fixed-column capacity, not from a premise about
+    segment length. -/
+theorem exists_boundaryWalk_of_fuel
+    {n : Nat} (trace : AcceptedZiskTrace n) :
     ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
       ∀ (h_component : table.component =
           componentWithRomMemAndOpBus trace.programLength trace.program),
@@ -533,7 +545,14 @@ theorem exists_boundarySuppliedSite_of_fuel
           2 ^ 40 - (s.readTimestamp (eval (table.environment row)
             (componentWithRomMemAndOpBus trace.programLength
               trace.program).rowInputVar)).val ≤ fuel →
-          BoundarySuppliedSite trace multiplicity as := by
+          ∃ path : List RegWalkStep, ∃ last : RegWalkStep,
+            path.head? = some
+                (eval (table.environment row)
+                  (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)
+              ∧ path.getLast? = some last
+              ∧ (∀ q ∈ path, IsActiveWitnessMainRow trace q)
+              ∧ List.IsChain RegWalkStep.SuppliedBy path
+              ∧ BoundarySuppliedAt trace last := by
   intro fuel
   induction fuel with
   | zero =>
@@ -541,33 +560,93 @@ theorem exists_boundarySuppliedSite_of_fuel
       exact absurd (regSlot_timestamp_bound_of_mem h_component h_row s) (by omega)
   | succ fuel ih =>
       intro table h_table h_component row h_row s h_sel h_fuel
-      rcases site_step trace h_table h_component h_row s h_sel
-          (multiplicity := multiplicity) (as := as) with h_boundary | ⟨q, h_q, h_lt⟩
-      · exact ⟨table, h_table, h_component, row, h_row, s, h_sel, h_boundary⟩
+      have h_start := isActiveWitnessMainRow_of_mem trace h_table h_component h_row s h_sel
+      rcases site_step trace h_table h_component h_row s h_sel with
+        h_boundary | ⟨q, h_q, h_sup, h_lt⟩
+      · refine ⟨[(eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)],
+          _, rfl, rfl, ?_, List.isChain_singleton _, h_boundary⟩
+        intro p hp
+        rw [List.mem_singleton] at hp
+        exact hp ▸ h_start
       · obtain ⟨tbl, h_tbl, h_comp, index, h_index, h_rowAt, h_active⟩ := h_q
         have h_get : q.1 = eval (tbl.environment (tbl.table.get ⟨index, h_index⟩))
             (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar := by
           rw [h_rowAt]
           exact mainTableRowAtOrZero_get trace.program tbl ⟨index, h_index⟩
-        refine ih h_tbl h_comp (List.get_mem tbl.table ⟨index, h_index⟩) q.2 ?_ ?_
-        · rw [← h_get]; exact h_active
-        · have h_bound := regSlot_timestamp_bound_of_mem h_comp
-            (List.get_mem tbl.table ⟨index, h_index⟩) q.2
-          rw [← h_get] at h_bound ⊢
-          have : q.timestamp.val = (q.2.readTimestamp q.1).val := rfl
-          omega
+        obtain ⟨path, last, h_head, h_last, h_sites, h_chain, h_bd⟩ :=
+          ih h_tbl h_comp (List.get_mem tbl.table ⟨index, h_index⟩) q.2
+            (by rw [← h_get]; exact h_active)
+            (by
+              have h_bound := regSlot_timestamp_bound_of_mem h_comp
+                (List.get_mem tbl.table ⟨index, h_index⟩) q.2
+              rw [← h_get] at h_bound ⊢
+              have : q.timestamp.val = (q.2.readTimestamp q.1).val := rfl
+              omega)
+        have h_q_eq : (eval (tbl.environment (tbl.table.get ⟨index, h_index⟩))
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, q.2)
+              = q := by
+          rw [← h_get]; rfl
+        rw [h_q_eq] at h_head
+        match path, h_head with
+        | a :: rest, h_head =>
+            have h_a : a = q := by simpa using h_head
+            subst h_a
+            refine ⟨(eval (table.environment row)
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar, s) :: a :: rest,
+              last, rfl, by simpa using h_last, ?_, ?_, h_bd⟩
+            · intro p hp
+              rcases List.mem_cons.mp hp with rfl | hp
+              · exact h_start
+              · exact h_sites p hp
+            · exact List.isChain_cons_cons.mpr ⟨h_sup, h_chain⟩
 
-/-- **Termination, with the measure supplied.** Every witness site's walk reaches the boundary. -/
-theorem exists_boundarySuppliedSite
-    {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL)
+/-- **Termination, with the measure supplied.** Every witness site starts a chain that ends at the
+    boundary. -/
+theorem exists_boundaryWalk
+    {n : Nat} (trace : AcceptedZiskTrace n)
     {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
     (h_component : table.component =
       componentWithRomMemAndOpBus trace.programLength trace.program)
     {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
     (h_sel : s.selector (eval (table.environment row)
       (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
-    BoundarySuppliedSite trace multiplicity as :=
-  exists_boundarySuppliedSite_of_fuel trace multiplicity as (2 ^ 40) h_table h_component h_row s
-    h_sel (by omega)
+    ∃ path : List RegWalkStep, ∃ last : RegWalkStep,
+      path.head? = some
+          (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)
+        ∧ path.getLast? = some last
+        ∧ (∀ q ∈ path, IsActiveWitnessMainRow trace q)
+        ∧ List.IsChain RegWalkStep.SuppliedBy path
+        ∧ BoundarySuppliedAt trace last :=
+  exists_boundaryWalk_of_fuel trace (2 ^ 40) h_table h_component h_row s h_sel (by omega)
+
+/-- The bare existence statement: *some* witness site is boundary-supplied. This is the weak
+    corollary of `exists_boundaryWalk`; prefer the path version, which says that the site you
+    started from is the one traced back. -/
+theorem exists_boundarySuppliedSite
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    ∃ p : RegWalkStep, BoundarySuppliedAt trace p := by
+  obtain ⟨_, last, _, _, _, _, h_bd⟩ :=
+    exists_boundaryWalk trace h_table h_component h_row s h_sel
+  exact ⟨last, h_bd⟩
+
+/-- The chain `exists_boundaryWalk` builds is a genuine walk: its read timestamps do not repeat, so
+    it never revisits a site's read. This is `regSupplies_chain_timestamps_nodup_of_witnessRows`
+    applied to the path, and it is what makes "the walk reaches the boundary" a statement about a
+    finite acyclic path rather than about an arbitrary sequence. -/
+theorem boundaryWalk_timestamps_nodup
+    {n : Nat} (trace : AcceptedZiskTrace n) (path : List RegWalkStep)
+    (h_sites : ∀ q ∈ path, IsActiveWitnessMainRow trace q)
+    (h_chain : List.IsChain RegWalkStep.SuppliedBy path) :
+    (path.map RegWalkStep.timestamp).Nodup :=
+  regSupplies_chain_timestamps_nodup_of_witnessRows trace path h_sites h_chain
 
 end ZiskFv.Compliance

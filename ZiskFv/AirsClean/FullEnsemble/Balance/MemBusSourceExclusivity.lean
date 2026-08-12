@@ -735,39 +735,12 @@ theorem main_not_a_src_mem_and_a_src_reg
   have h_I_mult : I.mult = -2 :=
     main_aMem_mult_eq_neg_two_of_mem_op_four
       (by rw [h_src_mem]; ring) (by rw [h_src_reg]; ring) h_ref_op
-  -- every interaction on that message rides at `-2`
-  have h_all :
-      ∀ i ∈ witness.interactionsWith MemBusChannel.toRaw,
-        i.msg = I.msg → i.mult ≠ 0 → i.mult = -2 := by
-    intro i h_i h_msg _
-    exact memBus_mult_eq_neg_two_of_msg_eq_mem_op_four h_constraints h_specs h_ref_op h_i h_msg
-  have h_balance := memBus_balanced_of_witness witness h_balanced
-  have h_zero := h_balance.2 I.msg
-  rw [balanceOf_eq_of_mult_or_zero h_all] at h_zero
-  set count : ℕ :=
-    (witness.interactionsWith MemBusChannel.toRaw).countP
-      (fun i => i.msg = I.msg && i.mult ≠ 0) with h_count
-  -- the reference interaction itself is counted
-  have h_count_pos : 0 < count := by
-    rw [h_count, List.countP_pos_iff]
-    exact ⟨I, h_I_mem, by simp [h_I_mult]⟩
-  -- and the count is below the characteristic
-  have h_count_lt : count < ringChar FGL ∨ ringChar FGL = 0 := by
-    rcases count_lt_ringChar_of_balancedInteractions (msg := I.msg) h_balance with h | h
-    · exact Or.inl (lt_of_le_of_lt (List.countP_and_left_le _ _ _) h)
-    · exact Or.inr h
-  -- `-2 * count = 0` with `2` invertible forces `count = 0`
-  have h_cast : ((count : ℕ) : FGL) = 0 := by
-    have h2 : (-2 : FGL) ≠ 0 := by decide
-    rcases mul_eq_zero.mp h_zero with h | h
-    · exact absurd h h2
-    · exact h
-  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime] at h_count_lt
-  have h_count_zero : count = 0 := by
-    rcases h_count_lt with h_lt | h_char
-    · exact natCast_eq_zero_of_lt_prime h_lt h_cast
-    · exact absurd h_char (by decide)
-  omega
+  -- every interaction on that message rides at `-2`, so the balance is `-2 * count` with
+  -- `count ≥ 1`, which cannot vanish
+  refine no_balanced_message_with_constant_nonzero_mult h_balanced (m := -2) (by decide)
+    h_I_mem h_I_mult ?_
+  intro i h_i h_msg _
+  exact memBus_mult_eq_neg_two_of_msg_eq_mem_op_four h_constraints h_specs h_ref_op h_i h_msg
 
 
 /-- **A register-reading row does not also read memory on the a side.** Immediate from
