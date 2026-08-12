@@ -151,6 +151,59 @@ theorem rangeTable24_spec_of_registerStepRange_provider_interaction
       Component.rowInputVar] using h_spec
   simpa [h_value'] using h_providerSpec
 
+/-- A field element satisfying `x * (1 - x) = 0` is `0` or `1`. -/
+private theorem eq_zero_or_one_of_boolean {x : FGL} (h : x * (1 - x) = 0) : x = 0 ∨ x = 1 := by
+  rcases mul_eq_zero.mp h with h' | h'
+  · exact Or.inl h'
+  · exact Or.inr (sub_eq_zero.mp h').symm
+
+/-- The multiplicity of an evaluated bus-102 emission is its multiplicity expression, evaluated. -/
+private theorem registerStepRange_emitted_eval_mult
+    (env : Environment FGL) (m : Expression FGL) (msg : SpecifiedRangeMessage (Expression FGL)) :
+    (((RegisterStepRangeChannel.emitted m msg).toRaw).eval env).mult = Expression.eval env m :=
+  rfl
+
+/-- **Main's bus-102 multiplicities are two-valued.** Every emission is `-<selector>`, and the
+selectors are boolean by Main's own constraints, so a Main pull sits at `-1` or `0` -- never at the
+`mult ∉ {0, -1}` a provider push would need. This is what lets `exists_push_of_pull` exclude Main
+as its own counterpart, so the hypothesis no longer has to be assumed by the caller. -/
+theorem main_registerStepRange_mult_cases
+    {length : ℕ} {program : Program length}
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (h_constraints : table.Constraints)
+    {interaction : Interaction FGL}
+    (h_interaction : interaction ∈ table.interactionsWith RegisterStepRangeChannel.toRaw) :
+    interaction.mult = -1 ∨ interaction.mult = 0 := by
+  rw [Table.interactionsWith] at h_interaction
+  rcases List.mem_flatMap.mp h_interaction with ⟨row, h_row, h_mem⟩
+  set env := table.environment row with h_env
+  have h_holds :
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).operations.ConstraintsHold
+        env := by
+    have := h_constraints row h_row
+    rwa [h_component] at this
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, h_a, h_b, h_c⟩ :=
+    ZiskFv.AirsClean.Main.romBoolSpec_of_componentWithRomMemAndOpBus_constraints
+      length program env h_holds
+  rw [h_component, Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_registerStepRange] at h_mem
+  simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at h_mem
+  -- each selector is boolean, so its negation is `0` or `-1`
+  have step : ∀ x : Expression FGL, Expression.eval env (x * (1 - x)) = 0 →
+      Expression.eval env (-x) = -1 ∨ Expression.eval env (-x) = 0 := by
+    intro x hx
+    have hx' : Expression.eval env x * (1 - Expression.eval env x) = 0 := by
+      simpa [Expression.eval, sub_eq_add_neg] using hx
+    rcases eq_zero_or_one_of_boolean hx' with h | h
+    · exact Or.inr (by simp [Expression.eval, h])
+    · exact Or.inl (by simp [Expression.eval, h])
+  rcases h_mem with rfl | rfl | rfl
+  · rw [registerStepRange_emitted_eval_mult]; exact step _ h_a
+  · rw [registerStepRange_emitted_eval_mult]; exact step _ h_b
+  · rw [registerStepRange_emitted_eval_mult]; exact step _ h_c
+
 /-- **Balance turns a bus-102 pull into a provider push.** Every component other than the
 `RegisterStepRangeSlice` provider is silent on bus 102 except Main, and Main only ever emits at
 multiplicity `-a_src_reg` and friends, which `exists_push_of_pull` excludes by returning a
@@ -159,11 +212,7 @@ theorem exists_registerStepRange_provider_of_pull
     {length : Nat} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     (h_balanced : witness.BalancedChannels)
-    (h_mainNonProvider :
-      ∀ table ∈ witness.allTables,
-        table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program →
-          ∀ interaction ∈ table.interactionsWith RegisterStepRangeChannel.toRaw,
-            interaction.mult = -1 ∨ interaction.mult = 0)
+    (h_constraints : witness.Constraints)
     {pullTable : Table FGL}
     (h_pullTable : pullTable ∈ witness.allTables)
     {pull : Interaction FGL}
@@ -221,8 +270,8 @@ theorem exists_registerStepRange_provider_of_pull
   · exact absurd (binaryAdd_table_interactionsWith_registerStepRange_nil h)
       (by intro h_nil; simp [h_nil] at h_providerInteraction)
   · exfalso
-    rcases h_mainNonProvider providerTable h_providerTable h provider h_providerInteraction with
-      h_mult | h_mult
+    rcases main_registerStepRange_mult_cases h (h_constraints providerTable h_providerTable)
+      h_providerInteraction with h_mult | h_mult
     · exact h_nonpull h_mult
     · exact h_nonzero h_mult
 
@@ -235,11 +284,7 @@ theorem rangeTable24_spec_of_registerStepRange_pull
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     (h_balanced : witness.BalancedChannels)
     (h_specs : witness.Spec)
-    (h_mainNonProvider :
-      ∀ table ∈ witness.allTables,
-        table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program →
-          ∀ interaction ∈ table.interactionsWith RegisterStepRangeChannel.toRaw,
-            interaction.mult = -1 ∨ interaction.mult = 0)
+    (h_constraints : witness.Constraints)
     {pullTable : Table FGL}
     (h_pullTable : pullTable ∈ witness.allTables)
     {pull : Interaction FGL}
@@ -250,7 +295,7 @@ theorem rangeTable24_spec_of_registerStepRange_pull
     ZiskFv.AirsClean.RangeTables.rangeTable24.Spec value := by
   obtain ⟨providerTable, h_providerTable, h_providerComponent,
     providerInteraction, h_providerInteraction, h_providerMessage⟩ :=
-    exists_registerStepRange_provider_of_pull h_balanced h_mainNonProvider
+    exists_registerStepRange_provider_of_pull h_balanced h_constraints
       h_pullTable h_pull h_active
   exact rangeTable24_spec_of_registerStepRange_provider_interaction h_specs h_providerTable
     h_providerComponent h_providerInteraction (h_providerMessage.trans h_message)
