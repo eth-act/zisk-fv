@@ -2105,4 +2105,92 @@ theorem registerRead_timestamp_lt_provider_access
   refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound
   simpa [aRegStepDistance, h_prev] using h_descent
 
+/-! ## The register walk, on concrete rows
+
+`registerChain_nodup_of_descent` is the order-theoretic half: it assumes a chain relation on an
+abstract list. What follows states the chain relation on *real Main rows* -- `r₂` supplies `r₁`'s
+a-side register read exactly when `r₂`'s `a_reg_prev_mem_step` is `r₁`'s read timestamp -- and
+derives the strict increase from the bus-102 descent rather than assuming it.
+-/
+
+/-- The a-side read timestamp of a Main row: `a_mem_step = 1 + main_step * 4`. -/
+def aReadTimestamp (row : MainRowWithRom FGL) : FGL :=
+  1 + row.rom.main_step * 4
+
+/-- `provider` supplies `consumer`'s a-side register read: the provider row's register-pre push
+carries the consumer's read timestamp, which is what
+`selfMemProvider_registerPre_timestamp_of_mem_op_three` concludes from balance. -/
+def ARegSupplies (consumer provider : MainRowWithRom FGL) : Prop :=
+  provider.rom.a_reg_prev_mem_step = aReadTimestamp consumer
+
+/-- **One supply step moves strictly later in time.** The provider's own bus-102 pull bounds
+`a_mem_step - a_reg_prev_mem_step - 1`, and the link identifies that predecessor with the
+consumer's read, so the consumer reads strictly before the provider accesses. -/
+theorem aReadTimestamp_lt_of_supplies
+    {consumer provider : MainRowWithRom FGL}
+    (h_supplies : ARegSupplies consumer provider)
+    (h_descent :
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance provider))
+    (h_bound : (aReadTimestamp consumer).val < 2 ^ 40) :
+    (aReadTimestamp consumer).val < (aReadTimestamp provider).val := by
+  refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound
+  simpa [aRegStepDistance, aReadTimestamp, ARegSupplies] using
+    (h_supplies ▸ h_descent : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec
+      (aReadTimestamp provider - aReadTimestamp consumer - 1))
+
+/-- **No row supplies its own register read.** The direct refutation of the shape #342 was opened
+about, at its smallest: a self-loop would make a timestamp strictly precede itself. -/
+theorem not_aRegSupplies_self
+    {row : MainRowWithRom FGL}
+    (h_descent : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance row))
+    (h_bound : (aReadTimestamp row).val < 2 ^ 40) :
+    ¬ ARegSupplies row row := by
+  intro h_supplies
+  exact absurd (aReadTimestamp_lt_of_supplies h_supplies h_descent h_bound) (lt_irrefl _)
+
+/-- **No two-row cycle.** This is exactly the witness in #342's body: two rows on one register
+pointing at each other's timestamps. Each supply step moves strictly later, so a two-cycle would
+put a timestamp strictly before itself. -/
+theorem not_aRegSupplies_two_cycle
+    {r₁ r₂ : MainRowWithRom FGL}
+    (h_descent₁ : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance r₁))
+    (h_descent₂ : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance r₂))
+    (h_bound₁ : (aReadTimestamp r₁).val < 2 ^ 40)
+    (h_bound₂ : (aReadTimestamp r₂).val < 2 ^ 40)
+    (h₁₂ : ARegSupplies r₁ r₂) (h₂₁ : ARegSupplies r₂ r₁) : False := by
+  have h_lt₁ := aReadTimestamp_lt_of_supplies h₁₂ h_descent₂ h_bound₁
+  have h_lt₂ := aReadTimestamp_lt_of_supplies h₂₁ h_descent₁ h_bound₂
+  exact absurd (h_lt₁.trans h_lt₂) (lt_irrefl _)
+
+/-- **No cycle of any length.** A chain of supply steps visits no row timestamp twice, so the
+register partition cannot close a loop. The chain relation here is the concrete one on Main rows,
+and the strict increase at each step comes from that row's own bus-102 descent. -/
+theorem aRegSupplies_chain_timestamps_nodup
+    (rows : List (MainRowWithRom FGL))
+    (h_descent : ∀ r ∈ rows,
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance r))
+    (h_bounds : ∀ r ∈ rows, (aReadTimestamp r).val < 2 ^ 40)
+    (h_chain : List.IsChain ARegSupplies rows) :
+    (rows.map aReadTimestamp).Nodup := by
+  have h_mono : List.IsChain (fun a b => (aReadTimestamp a).val < (aReadTimestamp b).val) rows := by
+    induction rows with
+    | nil => simp
+    | cons a rest ih =>
+        cases rest with
+        | nil => simp
+        | cons b rest' =>
+            rw [List.isChain_cons_cons] at h_chain
+            rw [List.isChain_cons_cons]
+            refine ⟨aReadTimestamp_lt_of_supplies h_chain.1 (h_descent b (by simp))
+                (h_bounds a (by simp)), ?_⟩
+            exact ih (fun r hr => h_descent r (by simp [hr]))
+              (fun r hr => h_bounds r (by simp [hr])) h_chain.2
+  haveI : Trans (fun a b : MainRowWithRom FGL => (aReadTimestamp a).val < (aReadTimestamp b).val)
+      (fun a b : MainRowWithRom FGL => (aReadTimestamp a).val < (aReadTimestamp b).val)
+      (fun a b : MainRowWithRom FGL => (aReadTimestamp a).val < (aReadTimestamp b).val) :=
+    ⟨fun h1 h2 => Nat.lt_trans h1 h2⟩
+  have h_pairwise := h_mono.pairwise
+  rw [List.Nodup, List.pairwise_map]
+  exact h_pairwise.imp (fun {a b} h h_eq => absurd (congrArg Fin.val h_eq) (Nat.ne_of_lt h))
+
 end ZiskFv.Compliance.Instantiation
