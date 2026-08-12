@@ -47,7 +47,7 @@ private theorem divSpinWitness_main_component_cases
   · rw [divSpinWitness_tables] at h_table
     simp [divSpinTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first
       | rfl
@@ -67,7 +67,7 @@ private theorem divSpinWitness_mutable_mem_component_tables_empty
   · rw [divSpinWitness_tables] at h_table
     simp [divSpinTables] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
@@ -77,6 +77,8 @@ private theorem divSpinWitness_mutable_mem_component_tables_empty
     · exact emptyComponentTable_table _
     · exact emptyComponentTable_table _
     · exact emptyComponentTable_table _
+    · exfalso
+      exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
     · exact emptyComponentTable_table _
     · exact emptyComponentTable_table _
     · exfalso

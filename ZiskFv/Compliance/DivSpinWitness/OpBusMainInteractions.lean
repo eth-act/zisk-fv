@@ -60,4 +60,30 @@ theorem divSpinMainTable_opBusInteractions :
       (eval_mainRawRow_materialize 4 emptyData (divSpinJalRow 4) (by rfl) (by rfl))]
   rfl
 
+theorem divSpinMainTable_registerStepRangeInteractions :
+    divSpinMainTable.interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      divSpinMainRows.flatMap (fun row =>
+        [mainARegStepInteraction row, mainBRegStepInteraction row,
+          mainCRegStepInteraction row]) := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun row =>
+    (componentWithRomMemAndOpBus 4 divSpinProgram).operations.interactionValuesWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      (Environment.fromArray row emptyData))
+    (divSpinMainRows.map mainRawRow |>.mapIdx mainFixedColumns.materialize) = _
+  simp only [divSpinMainRows, List.map_cons, List.map_nil, List.mapIdx_cons,
+    List.mapIdx_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  rw [mainRegisterStepInteractionsAt 4 divSpinProgram _ divSpinAddiX1Row
+      (eval_mainRawRow_materialize 0 emptyData divSpinAddiX1Row (by rfl) (by rfl)),
+    mainRegisterStepInteractionsAt 4 divSpinProgram _ divSpinAddiX2Row
+      (eval_mainRawRow_materialize 1 emptyData divSpinAddiX2Row (by rfl) (by rfl)),
+    mainRegisterStepInteractionsAt 4 divSpinProgram _ divSpinDivRow
+      (eval_mainRawRow_materialize 2 emptyData divSpinDivRow (by rfl) (by rfl)),
+    mainRegisterStepInteractionsAt 4 divSpinProgram _ (divSpinJalRow 3)
+      (eval_mainRawRow_materialize 3 emptyData (divSpinJalRow 3) (by rfl) (by rfl)),
+    mainRegisterStepInteractionsAt 4 divSpinProgram _ (divSpinJalRow 4)
+      (eval_mainRawRow_materialize 4 emptyData (divSpinJalRow 4) (by rfl) (by rfl))]
+
+
 end ZiskFv.Compliance.DivSpinWitness

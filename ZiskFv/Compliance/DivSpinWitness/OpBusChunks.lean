@@ -18,6 +18,7 @@ def divSpinOpBusTables1 : List (Table FGL) :=
   [emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component,
     emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component,
     emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+    registerStepRangeRowsTable [2, 6, 5, 2, 10],
     emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component]
 
 def divSpinOpBusTables2 : List (Table FGL) :=
@@ -45,6 +46,7 @@ theorem divSpinOpBusTables1_flatMap :
   simp only [divSpinOpBusTables1, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, divSpinMemAlignRangeSlice_opBus_nil,
     divSpinMemAlignRomSlice_opBus_nil, divSpinMem_opBus_nil,
+    registerStepRangeRowsTable_interactionsWith_opBus_nil,
     divSpinSpecifiedRangesSlice_opBus_nil, List.nil_append]
 
 theorem divSpinOpBusTables2_flatMap :

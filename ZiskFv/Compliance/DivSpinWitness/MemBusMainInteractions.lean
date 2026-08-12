@@ -97,6 +97,7 @@ theorem divSpinWitness_memBusInteractions :
   rw [divSpinWitness_tables]
   simp [divSpinTables, divSpinBoundaryTable_memBusInteractions,
     divSpinMainTable_memBusInteractions, emptyComponentTable_interactionsWith,
-    h_arith, h_remainder, h_binaryAdd]
+    h_arith, h_remainder, h_binaryAdd,
+    registerStepRangeRowsTable_interactionsWith_memBus_nil]
 
 end ZiskFv.Compliance.DivSpinWitness
