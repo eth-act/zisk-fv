@@ -4,7 +4,9 @@ import ZiskFv.Compliance.MemBusSlotSeparation
 /-!
 # Register walk acyclicity (issue #342)
 
-Keeps the axiom closure of the #342 payoff theorems visible to the semantic trust gate.
+Pins the axiom closure of the #342 payoff theorems. V2 check 19 runs this file and *asserts* that
+every `#print axioms` report below stays inside `{propext, Classical.choice, Quot.sound}`; it does
+not merely print them.
 
 `main.pil:333-335`'s bus-102 range check bounds each Main row's register-step distance. Modelling it
 (PR #345) supplies the descent; these theorems consume it. Together they say that on an accepted
@@ -33,8 +35,8 @@ theorem register_walk_no_two_cycle
     {n : Nat} (trace : AcceptedZiskTrace n) (p q : Fin n × RegSlot)
     (h_active_p : p.2.selector (traceWalkStep trace p).1 = 1)
     (h_active_q : q.2.selector (traceWalkStep trace q).1 = 1)
-    (h_pq : (traceWalkStep trace p).Supplies (traceWalkStep trace q))
-    (h_qp : (traceWalkStep trace q).Supplies (traceWalkStep trace p)) : False :=
+    (h_pq : (traceWalkStep trace p).SuppliedBy (traceWalkStep trace q))
+    (h_qp : (traceWalkStep trace q).SuppliedBy (traceWalkStep trace p)) : False :=
   not_traceWalkStep_two_cycle trace p q h_active_p h_active_q h_pq h_qp
 
 /-- The register walk on an accepted trace visits no read timestamp twice, so it has no cycle of
@@ -42,14 +44,14 @@ theorem register_walk_no_two_cycle
 theorem register_walk_timestamps_nodup
     {n : Nat} (trace : AcceptedZiskTrace n) (steps : List (Fin n × RegSlot))
     (h_active : ∀ p ∈ steps, p.2.selector (traceWalkStep trace p).1 = 1)
-    (h_chain : List.IsChain RegWalkStep.Supplies (steps.map (traceWalkStep trace))) :
+    (h_chain : List.IsChain RegWalkStep.SuppliedBy (steps.map (traceWalkStep trace))) :
     ((steps.map (traceWalkStep trace)).map RegWalkStep.timestamp).Nodup :=
   regSupplies_chain_timestamps_nodup_of_trace trace steps h_active h_chain
 
 /-- Non-vacuity: the supply relation holds on a checked witness's real Main row, so the
     implications above are not empty. -/
 theorem register_walk_non_vacuous :
-    List.IsChain RegWalkStep.Supplies
+    List.IsChain RegWalkStep.SuppliedBy
       [(ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.a),
        (ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.b),
        (ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.c)] :=
@@ -60,14 +62,16 @@ theorem register_walk_non_vacuous :
 theorem register_walk_timestamps_nodup_on_witness_rows
     {n : Nat} (trace : AcceptedZiskTrace n) (steps : List RegWalkStep)
     (h_sites : ∀ p ∈ steps, IsActiveWitnessMainRow trace p)
-    (h_chain : List.IsChain RegWalkStep.Supplies steps) :
+    (h_chain : List.IsChain RegWalkStep.SuppliedBy steps) :
     (steps.map RegWalkStep.timestamp).Nodup :=
   regSupplies_chain_timestamps_nodup_of_witnessRows trace steps h_sites h_chain
 
 /-- Termination: from any witness site the walk reaches a site whose register read is supplied by
-    the `RegisterBoundary`. -/
+    the `RegisterBoundary`, and the chain that gets there is part of the statement — it starts at
+    the site you asked about, every step of it is a witness site, and each step is supplied by the
+    next. -/
 theorem register_walk_terminates_at_boundary
-    {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL)
+    {n : Nat} (trace : AcceptedZiskTrace n)
     {table : Air.Flat.Table FGL} (h_table : table ∈ trace.witness.allTables)
     (h_component : table.component =
       ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength trace.program)
@@ -75,8 +79,16 @@ theorem register_walk_terminates_at_boundary
     (h_sel : s.selector (eval (table.environment row)
       (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
         trace.programLength trace.program).rowInputVar) = 1) :
-    BoundarySuppliedSite trace multiplicity as :=
-  exists_boundarySuppliedSite trace multiplicity as h_table h_component h_row s h_sel
+    ∃ path : List RegWalkStep, ∃ last : RegWalkStep,
+      path.head? = some
+          (eval (table.environment row)
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              trace.programLength trace.program).rowInputVar, s)
+        ∧ path.getLast? = some last
+        ∧ (∀ q ∈ path, IsActiveWitnessMainRow trace q)
+        ∧ List.IsChain RegWalkStep.SuppliedBy path
+        ∧ BoundarySuppliedAt trace last :=
+  exists_boundaryWalk trace h_table h_component h_row s h_sel
 
 /-- Source exclusivity, the fact termination rests on: every Main register access is a `-1` pull. -/
 theorem register_access_is_a_pull
@@ -110,7 +122,9 @@ theorem register_access_is_a_pull
 #print axioms register_walk_non_vacuous
 #print axioms ZiskFv.Compliance.addX1Row_walk_timestamps_nodup
 #print axioms ZiskFv.Compliance.registerRead_counterpart_of_witnessTable
-#print axioms ZiskFv.Compliance.registerRead_supplied_by_boundary_or_strictly_later_row
+#print axioms ZiskFv.Compliance.site_step
+#print axioms ZiskFv.Compliance.exists_boundaryWalk
+#print axioms ZiskFv.Compliance.boundaryWalk_timestamps_nodup
 #print axioms ZiskFv.Compliance.regSlot_descent_of_trace
 #print axioms ZiskFv.Compliance.regSlot_timestamp_bound_of_trace
 
