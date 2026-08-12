@@ -762,6 +762,39 @@ theorem staticBinary_table_interactionsWith_registerStepRange_nil
   change "SpecifiedRangesSlice102" = "OperationBus" at h_name
   simp at h_name
 
+/-- `Mem` carries no bus-102 interactions: it uses the memory bus and the 16-bit range slice. -/
+theorem mem_table_interactionsWith_registerStepRange_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus) :
+    table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
+  have h_not :
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+      ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel,
+      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- The static `BinaryExtension` shift table carries no bus-102 interactions. -/
+theorem staticBinaryExtension_table_interactionsWith_registerStepRange_nil
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent) :
+    table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
+  simp only [List.mem_singleton]
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "SpecifiedRangesSlice102" = "OperationBus" at h_name
+  simp at h_name
+
 /-- `BinaryAdd` carries no bus-102 interactions. -/
 theorem binaryAdd_table_interactionsWith_registerStepRange_nil
     {table : Table FGL}

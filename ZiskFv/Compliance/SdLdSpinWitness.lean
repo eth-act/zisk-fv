@@ -892,6 +892,10 @@ def sdLdTables : List (Table FGL) :=
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
   , sdLdTableWithData sdLdMemTable
+  -- bus-102: ten of the twenty-four pulls are active. Row 1's store (2); rows 2 and 3 each
+  -- read a and write c one step on (1 each); row 4's store (14); the SD row's a and b (5, 2);
+  -- the LD row's a and store (3, 22). Both JAL rows emit all three at multiplicity 0.
+  , sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])
   , sdLdSpecifiedRangesTable
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
@@ -907,17 +911,17 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
   same_length := by
     simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
       sdLdTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
-      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+      SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
       sdLdMainTable, sdLdMainTableWithData, sdLdMainTableEmptyData,
       AddSpinWitness.mainRowsTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 14 := by
+    have hi' : i < 15 := by
       simpa [sdLdTables] using hi
     interval_cases i <;>
       simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
         sdLdTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
-        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable,
+        SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         sdLdTableWithData, sdLdBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
         sdLdMemTable, memRowsTable, sdLdSpecifiedRangesTable, sdLdBinaryExtensionTable,
         binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
@@ -930,7 +934,7 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
       sdLdMemTable, memRowsTable, sdLdSpecifiedRangesTable, sdLdBinaryExtensionTable,
       binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
       sdLdMainTable, AddSpinWitness.mainRowsTable] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> rfl
 
 theorem sdLdWitness_tables : sdLdWitness.tables = sdLdTables := rfl
@@ -988,6 +992,18 @@ private theorem sdLdBinaryExtensionTableWithData_constraints :
   simpa [sdLdTableWithData, sdLdBinaryExtensionTable,
     binaryExtensionShiftStaticRowsTable, binaryExtensionRowArray, Table.table,
     Environment.fromInput] using h_component
+
+private theorem sdLdRegisterStepRangeTableWithData_constraints :
+    (sdLdTableWithData
+      (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).Constraints := by
+  have h_range :
+      ∀ v ∈ ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL),
+        ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v := by
+    intro v hv
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+    rcases hv with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+  exact registerStepRangeRowsTableWithData_constraints _ sdLdMemData h_range
 
 private theorem sdLdEmptyTableWithData_constraints (component : Component FGL) :
     (sdLdTableWithData (emptyComponentTable component)).Constraints := by
@@ -1049,7 +1065,7 @@ theorem sdLdWitness_table_constraints :
   intro table h_table
   rw [sdLdWitness_tables] at h_table
   simp [sdLdTables] at h_table
-  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+  rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl
   · exact sdLdBoundaryTableWithData_constraints
   · exact sdLdEmptyTableWithData_constraints _
@@ -1058,6 +1074,7 @@ theorem sdLdWitness_table_constraints :
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdEmptyTableWithData_constraints _
   · simpa [sdLdTableWithData, sdLdMemTable, memRowsTable] using sdLdMemTable_constraints
+  · exact sdLdRegisterStepRangeTableWithData_constraints
   · exact sdLdSpecifiedRangesTable_constraints
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdEmptyTableWithData_constraints _
@@ -1098,7 +1115,7 @@ theorem sdLdWitness_transitions : sdLdWitness.TransitionConstraints := by
     simp [EnsembleWitness.verifierTable]
   · rw [sdLdWitness_tables] at h_table
     simp [sdLdTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
@@ -1110,6 +1127,10 @@ theorem sdLdWitness_transitions : sdLdWitness.TransitionConstraints := by
     · exact sdLdEmptyTableWithData_transitions _
     · exact sdLdEmptyTableWithData_transitions _
     · simpa [sdLdTableWithData, sdLdMemTable, memRowsTable] using sdLdMemTable_transitions
+    · rw [Table.TransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, registerStepRangeRowsTable,
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component]
     · rw [Table.TransitionConstraints]
       intro index
       simp [sdLdSpecifiedRangesTable, ZiskFv.AirsClean.SpecifiedRangesSlice.component]
@@ -1138,7 +1159,7 @@ theorem sdLdWitness_cyclicSuccessorTransitions :
     simp [EnsembleWitness.verifierTable]
   · rw [sdLdWitness_tables] at h_table
     simp [sdLdTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
@@ -1153,6 +1174,10 @@ theorem sdLdWitness_cyclicSuccessorTransitions :
       intro index
       simp [sdLdTableWithData, sdLdMemTable, memRowsTable,
         ZiskFv.AirsClean.Mem.componentWithDualMemBus]
+    · rw [Table.CyclicSuccessorTransitionConstraints]
+      intro index
+      simp [sdLdTableWithData, registerStepRangeRowsTable,
+        ZiskFv.AirsClean.RegisterStepRangeSlice.component]
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
       simp [sdLdSpecifiedRangesTable, ZiskFv.AirsClean.SpecifiedRangesSlice.component]
@@ -1321,7 +1346,8 @@ private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
     (channel : RawChannel FGL)
     (h_mem : channel ≠ MemBusChannel.toRaw)
     (h_op : channel ≠ OpBusChannel.toRaw)
-    (h_range : channel ≠ SpecifiedRangesSliceChannel.toRaw) :
+    (h_range : channel ≠ SpecifiedRangesSliceChannel.toRaw)
+    (h_rsr : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
     sdLdWitness.tables.flatMap (·.interactionsWith channel) = [] := by
   have h_boundary :
       (sdLdTableWithData sdLdBoundaryTable).interactionsWith channel = [] := by
@@ -1352,12 +1378,19 @@ private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
   have h_main :
       (sdLdTableWithData sdLdMainTable).interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw]
+    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw, ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨h_mem, h_op⟩
+    exact ⟨h_mem, h_op, h_rsr⟩
+  have h_stepRange :
+      (sdLdTableWithData
+        (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+          channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simpa using h_rsr
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_memTable, h_rangeTable, h_extension, h_binaryAdd, h_main,
-    emptyComponentTable_interactionsWith]
+    h_stepRange, emptyComponentTable_interactionsWith]
 
 private theorem sdLdBalancedInteractions_nil :
     BalancedInteractions ([] : List (Interaction FGL)) := by
@@ -1408,12 +1441,27 @@ private theorem sdLdWitness_rangeInteractions :
           SpecifiedRangesSliceChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change SpecifiedRangesSliceChannel.toRaw ∉
-      [MemBusChannel.toRaw, OpBusChannel.toRaw]
+      [MemBusChannel.toRaw, OpBusChannel.toRaw, ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨h_ne_mem, h_ne_op⟩
+    refine ⟨h_ne_mem, h_ne_op, ?_⟩
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "SpecifiedRangesSlice103" = "SpecifiedRangesSlice102" at h_name
+    simp at h_name
+  have h_stepRange :
+      (sdLdTableWithData
+        (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+          SpecifiedRangesSliceChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change SpecifiedRangesSliceChannel.toRaw ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "SpecifiedRangesSlice103" = "SpecifiedRangesSlice102" at h_name
+    simp at h_name
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, sdLdMemTable_rangeInteractions,
-    sdLdSpecifiedRangesTable_rangeInteractions, h_extension, h_binaryAdd, h_main]
+    sdLdSpecifiedRangesTable_rangeInteractions, h_extension, h_binaryAdd, h_main, h_stepRange]
 
 theorem sdLdWitness_rangeChannel_balanced :
     BalancedInteractions
@@ -1625,6 +1673,72 @@ private theorem sdLdMainTable_opBusInteractions :
           mainRomFreeColsWithRegisterPrevious]))]
   rfl
 
+theorem sdLdMainTable_registerStepRangeInteractions :
+    (sdLdTableWithData sdLdMainTable).interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      sdLdMainRows.flatMap (fun row =>
+        [mainARegStepInteraction row, mainBRegStepInteraction row,
+          mainCRegStepInteraction row]) := by
+  rw [Table.interactionsWith]
+  change List.flatMap (fun row =>
+    (componentWithRomMemAndOpBus 7 sdLdProgram).operations.interactionValuesWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      (Environment.fromArray row sdLdMemData))
+    (sdLdMainRows.map mainRawRow |>.mapIdx mainFixedColumns.materialize) = _
+  simp only [sdLdMainRows, List.map_cons, List.map_nil, List.mapIdx_cons,
+    List.mapIdx_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  rw [mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdAddiX1A0Row
+      (eval_mainRawRow_materialize 0 sdLdMemData sdLdAddiX1A0Row
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdSlliX1Row
+      (eval_mainRawRow_materialize 1 sdLdMemData sdLdSlliX1Row
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdAddiX1EightRow
+      (eval_mainRawRow_materialize 2 sdLdMemData sdLdAddiX1EightRow
+        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdAddiX2Row
+      (eval_mainRawRow_materialize 3 sdLdMemData sdLdAddiX2Row
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdSdRow
+      (eval_mainRawRow_materialize 4 sdLdMemData sdLdSdRow
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdLdRow
+      (eval_mainRawRow_materialize 5 sdLdMemData sdLdLdRow
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ (sdLdJalRow 6)
+      (eval_mainRawRow_materialize 6 sdLdMemData (sdLdJalRow 6)
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])),
+    mainRegisterStepInteractionsAt 7 sdLdProgram _ (sdLdJalRow 7)
+      (eval_mainRawRow_materialize 7 sdLdMemData (sdLdJalRow 7)
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious])
+        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
+          mainRomFreeColsWithRegisterPrevious]))]
+
+
 private theorem sdLdWitness_opBusInteractions :
     sdLdWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) =
       [ sdLdSlliBinaryExtensionOpBusInteraction
@@ -1656,8 +1770,18 @@ private theorem sdLdWitness_opBusInteractions :
     simp only [List.mem_singleton] at h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     simp [SpecifiedRangesSliceChannel, OpBusChannel, Channel.toRaw] at h_name
+  have h_stepRangeTable :
+      (sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+          OpBusChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change OpBusChannel.toRaw ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "OperationBus" = "SpecifiedRangesSlice102" at h_name
+    simp at h_name
   rw [sdLdWitness_tables]
-  simp [sdLdTables, h_boundary, h_mem, h_ranges,
+  simp [sdLdTables, h_boundary, h_mem, h_ranges, h_stepRangeTable,
     sdLdBinaryExtensionTable_opBusInteractions, sdLdBinaryAddTable_opBusInteractions,
     sdLdBinaryAddRows, sdLdMainTable_opBusInteractions, sdLdMainRows]
 
@@ -1770,10 +1894,20 @@ private theorem sdLdWitness_memBusInteractions :
   have h_add :
       (sdLdTableWithData sdLdBinaryAddTable).interactionsWith MemBusChannel.toRaw = [] :=
     ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil rfl
+  have h_stepRangeTable :
+      (sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+          MemBusChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change MemBusChannel.toRaw ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "MemoryBus" = "SpecifiedRangesSlice102" at h_name
+    simp at h_name
   rw [sdLdWitness_tables]
   simp [sdLdTables, sdLdBoundaryTable_memBusInteractions,
     sdLdMemTable_memBusInteractions, sdLdMainTable_memBusInteractions, h_ranges,
-    h_extension, h_add, sdLdMemBusInteractions]
+    h_extension, h_add, h_stepRangeTable, sdLdMemBusInteractions]
 
 private def sdLdStoreMemBusPair : List (Interaction FGL) :=
   [RegisterMemBusBalance.emittedPulledValue (cMemMessage sdLdSdRow),
@@ -2297,6 +2431,10 @@ theorem sdLdWitness_memAlignRangeChannel_balanced :
   · intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     simp [MemAlignRangeChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "MemAlignRange107" = "SpecifiedRangesSlice102" at h_name
+    simp at h_name
 
 theorem sdLdWitness_memAlignRomChannel_balanced :
     BalancedInteractions
@@ -2313,6 +2451,76 @@ theorem sdLdWitness_memAlignRomChannel_balanced :
   · intro h
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     simp [MemAlignRomChannel, SpecifiedRangesSliceChannel, Channel.toRaw] at h_name
+  · intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "MemAlignRom133" = "SpecifiedRangesSlice102" at h_name
+    simp at h_name
+
+theorem sdLdWitness_registerStepRange_interactions :
+    sdLdWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
+      ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction ++
+        sdLdMainRows.flatMap (fun row =>
+          [mainARegStepInteraction row, mainBRegStepInteraction row,
+            mainCRegStepInteraction row]) := by
+  have h_boundary :
+      (sdLdTableWithData sdLdBoundaryTable).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
+      rfl
+  have h_mem :
+      (sdLdTableWithData sdLdMemTable).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.mem_table_interactionsWith_registerStepRange_nil rfl
+  have h_extension :
+      (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.staticBinaryExtension_table_interactionsWith_registerStepRange_nil
+      rfl
+  have h_add :
+      (sdLdTableWithData sdLdBinaryAddTable).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
+    ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil rfl
+  have h_ranges :
+      sdLdSpecifiedRangesTable.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [SpecifiedRangesSliceChannel.toRaw]
+    simp only [List.mem_singleton]
+    intro h
+    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
+    change "SpecifiedRangesSlice102" = "SpecifiedRangesSlice103" at h_name
+    simp at h_name
+  have h_provider :
+      (sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction := by
+    exact registerStepRangeRowsTableWithData_interactionsWith
+      [2, 1, 1, 1, 1, 14, 5, 2, 3, 22] sdLdMemData
+  rw [sdLdWitness_tables]
+  simp [sdLdTables, h_boundary, h_mem, h_extension, h_add, h_ranges, h_provider,
+    emptyComponentTable_interactionsWith, sdLdMainTable_registerStepRangeInteractions]
+
+set_option maxRecDepth 20000 in
+/-- Bus-102 balance. Ten of the twenty-four pulls are active and the provider supplies exactly
+    those ten distances; the remaining fourteen sit at multiplicity 0 and contribute nothing. -/
+theorem sdLdWitness_registerStepRangeChannel_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+  rw [sdLdWitness_registerStepRange_interactions]
+  refine Air.Flat.balancedInteractions_of_present ?_
+    (([0, 1, 2, 3, 5, 9, 12, 13, 14, 18, 21, 22, 24, 25, 26, 28, 29, 30] : List FGL).map
+      (fun v => (registerStepRangeInteraction v).msg)) ?_ ?_
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide
+  · intro interaction h_interaction
+    revert h_interaction
+    simp only [sdLdMainRows, List.map_cons, List.map_nil, List.flatMap_cons, List.flatMap_nil,
+      List.cons_append, List.nil_append, List.append_nil, List.mem_cons, List.not_mem_nil,
+      or_false]
+    rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl) <;> decide
+  · intro msg h_msg
+    revert h_msg
+    simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
+    rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> decide
 
 theorem sdLdWitness_balancedChannels : sdLdWitness.BalancedChannels := by
   refine sdLdWitness.balancedChannels_of_tables sdLdEnsemble_verifier ?_
@@ -2320,7 +2528,8 @@ theorem sdLdWitness_balancedChannels : sdLdWitness.BalancedChannels := by
   simp [sdLdEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
-  rcases h_channel with rfl | rfl | rfl | rfl | rfl
+  rcases h_channel with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact sdLdWitness_registerStepRangeChannel_balanced
   · exact sdLdWitness_memAlignRangeChannel_balanced
   · exact sdLdWitness_memBusChannel_balanced
   · exact sdLdWitness_opBus_balanced
@@ -2359,7 +2568,7 @@ private theorem sdLdWitness_main_component_cases
     exact not_sdLd_main_component_of_width_ne (by decide) h_component
   · rw [sdLdWitness_tables] at h_table
     simp [sdLdTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl
     all_goals first
       | rfl
@@ -2386,7 +2595,7 @@ private theorem sdLdWitness_mem_component_cases
     exact absurd h_verifier_nil (by simp)
   · rw [sdLdWitness_tables] at h_table
     simp [sdLdTables] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl
     all_goals first
       | rfl
@@ -2426,5 +2635,6 @@ theorem sdLdAcceptedTrace_mainTable_eq :
   exact sdLdWitness_main_component_cases
     (by simpa [sdLdAcceptedTrace] using sdLdAcceptedTrace.mainTable_mem)
     (by simpa [sdLdAcceptedTrace] using sdLdAcceptedTrace.mainTable_component)
+
 
 end ZiskFv.Compliance.SdLdSpinWitness
