@@ -746,6 +746,22 @@ theorem registerBoundary_table_interactionsWith_registerStepRange_nil
   rw [h_component]
   exact h_not
 
+/-- The static `Binary` lookup table carries no bus-102 interactions: it exposes only the
+    operation bus. -/
+theorem staticBinary_table_interactionsWith_registerStepRange_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent) :
+    table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
+  simp only [List.mem_singleton]
+  intro h
+  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
+  change "SpecifiedRangesSlice102" = "OperationBus" at h_name
+  simp at h_name
+
 /-- `BinaryAdd` carries no bus-102 interactions. -/
 theorem binaryAdd_table_interactionsWith_registerStepRange_nil
     {table : Table FGL}
