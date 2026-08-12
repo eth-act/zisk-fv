@@ -206,17 +206,23 @@ theorem main_registerStepRange_mult_cases
 
 /-- **The descent, at the level of natural numbers.** `rangeTable24.Spec (memStep - prev - 1)` is a
 statement about field elements, and field subtraction wraps; on its own it does not order the two
-timestamps. Given that both sit below `2 ^ 32` -- which real row timestamps do, being `k + 4 * i`
-for a step index `i` -- the wrap cannot occur and the range fact becomes a strict inequality:
-`prev.val < memStep.val`.
+timestamps. Once the *predecessor* timestamp is small enough that `prev + d + 1` cannot wrap the
+modulus, the range fact becomes a strict inequality: `prev.val < memStep.val`.
+
+`2 ^ 40` is the bound stated here, with room to spare: `config.pil:1,3` set `MAIN_STEP_BITS = 36`
+and `MEM_STEP_BITS = MAIN_STEP_BITS + 2`, so a real memory timestamp reaches `2 ^ 38`. An earlier
+version of this lemma said `2 ^ 32`, which is below that ceiling and would have been unsatisfiable
+for a full-length segment; it held only because the model currently pins the segment away.
+
+Only the predecessor needs bounding — `memStep` is *derived* here, not assumed, so no hypothesis
+about it is required.
 
 This is the bridge from the bus-102 guarantee to a well-founded order, i.e. the reason the register
 telescope terminates instead of admitting the 2-cycle in #342. -/
 theorem prev_val_lt_of_registerStepSpec
     {memStep prev : FGL}
     (h_spec : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (memStep - prev - 1))
-    (h_mem : memStep.val < 2 ^ 32)
-    (h_prev : prev.val < 2 ^ 32) :
+    (h_prev : prev.val < 2 ^ 40) :
     prev.val < memStep.val := by
   have h_d : (memStep - prev - 1 : FGL).val < 2 ^ 24 := h_spec
   have h_eq : memStep = (memStep - prev - 1) + prev + 1 := by ring
@@ -237,7 +243,7 @@ Each counterpart step carries the earlier access's timestamp into the next row's
 `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`, so the step moves strictly forward in time. -/
 theorem registerChain_strictMono_of_descent
     (timestamps : List FGL)
-    (h_bounds : ∀ t ∈ timestamps, t.val < 2 ^ 32)
+    (h_bounds : ∀ t ∈ timestamps, t.val < 2 ^ 40)
     (h_chain : List.IsChain (fun a b =>
       ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (b - a - 1)) timestamps) :
     List.IsChain (fun a b => a.val < b.val) timestamps := by
@@ -249,17 +255,20 @@ theorem registerChain_strictMono_of_descent
       | cons b rest' =>
           rw [List.isChain_cons_cons] at h_chain
           rw [List.isChain_cons_cons]
-          exact ⟨prev_val_lt_of_registerStepSpec h_chain.1
-              (h_bounds b (by simp)) (h_bounds a (by simp)),
+          exact ⟨prev_val_lt_of_registerStepSpec h_chain.1 (h_bounds a (by simp)),
             ih (fun t ht => h_bounds t (by simp [ht])) h_chain.2⟩
 
-/-- **No register-chain cycle.** A chain of accesses linked by the bus-102 descent visits no
-timestamp twice, so the balanced register partition cannot decompose into the boundary path plus a
-disjoint cycle -- exactly the counterexample #342 was opened about. Strictly increasing timestamps
-cannot return to their start. -/
+/-- A list of timestamps linked by the bus-102 descent has no repeats, because strictly increasing
+values cannot return to their start.
+
+**Scope, stated precisely.** This quantifies over an arbitrary `List FGL` and assumes both the
+chain relation and the bounds. Nothing here builds such a list out of a witness, so this lemma on
+its own does *not* yet establish that an accepted trace's register partition avoids a disjoint
+cycle. It is the order-theoretic half; the walk that extracts the list from the counterpart
+relation is the remaining work on #342. -/
 theorem registerChain_nodup_of_descent
     (timestamps : List FGL)
-    (h_bounds : ∀ t ∈ timestamps, t.val < 2 ^ 32)
+    (h_bounds : ∀ t ∈ timestamps, t.val < 2 ^ 40)
     (h_chain : List.IsChain (fun a b =>
       ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (b - a - 1)) timestamps) :
     timestamps.Nodup := by

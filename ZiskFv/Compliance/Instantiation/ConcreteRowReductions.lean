@@ -2060,30 +2060,49 @@ theorem rangeTable24_spec_cRegStepDistance_of_active
   · simp [mainCRegStepInteraction, h_active]
   · rfl
 
-/-- **One counterpart step moves strictly later in the trace.**
+/-- **One counterpart step moves strictly later in the trace**, composed from the two lemmas that
+supply its inputs rather than taking them as premises.
 
-Composes the three pieces the register walk needs:
+`selfMemProvider_registerPre_timestamp_of_mem_op_three` says the counterpart of a `mem_op = 3`
+register read is a register-pre push carrying the consumer's read timestamp in the provider row's
+`a_reg_prev_mem_step`; `rangeTable24_spec_aRegStepDistance_of_active` bounds that provider row's own
+`a_mem_step - a_reg_prev_mem_step - 1`. Together the read happens strictly before the row that
+supplied it accesses the register itself.
 
-* the counterpart carries the consumer's read timestamp in the provider row's
-  `a_reg_prev_mem_step` (`selfMemProvider_registerPre_timestamp_of_mem_op_three`);
-* that provider row's own bus-102 pull bounds `a_mem_step - a_reg_prev_mem_step - 1`
-  (`rangeTable24_spec_aRegStepDistance_of_active`);
-* and the bound is a genuine order once both timestamps sit below `2 ^ 32`
-  (`prev_val_lt_of_registerStepSpec`).
-
-So the row that supplies a register read performs its own access strictly later. A cycle would
-need a timestamp to increase back to itself, which `registerChain_nodup_of_descent` rules out.
-
-The b-side and store-side twins differ only in which columns they name. -/
+Only the a-side branch is discharged here — the collapse lemma returns a three-way disjunction and
+the b/store twins need their own selector hypotheses. -/
 theorem registerRead_timestamp_lt_provider_access
-    {mainTs : FGL} {providerRow : MainRowWithRom FGL}
-    (h_link : providerRow.rom.a_reg_prev_mem_step = mainTs)
-    (h_descent :
-      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance providerRow))
-    (h_bound_prev : mainTs.val < 2 ^ 32)
-    (h_bound_cur : (1 + providerRow.rom.main_step * 4 : FGL).val < 2 ^ 32) :
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {providerTable : Table FGL}
+    (h_providerTable : providerTable ∈ witness.allTables)
+    {providerRowArray : Array FGL} (h_providerRowArray : providerRowArray ∈ providerTable.table)
+    {providerRow : MainRowWithRom FGL}
+    (h_providerInput :
+      eval (providerTable.environment providerRowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = providerRow)
+    (h_providerComponent :
+      providerTable.component = componentWithRomMemAndOpBus length program)
+    (h_active : providerRow.rom.a_src_reg = 1)
+    {mainTs : FGL}
+    (h_link :
+      (eval (providerTable.environment providerRowArray)
+        (ZiskFv.AirsClean.Main.aRegPreMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)).timestamp = mainTs)
+    (h_bound : mainTs.val < 2 ^ 40) :
     mainTs.val < (1 + providerRow.rom.main_step * 4 : FGL).val := by
-  refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound_cur h_bound_prev
-  simpa [aRegStepDistance, h_link] using h_descent
+  have h_descent :
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance providerRow) :=
+    rangeTable24_spec_aRegStepDistance_of_active h_balanced h_specs h_constraints
+      h_providerTable h_providerRowArray h_providerInput h_providerComponent h_active
+  have h_prev : providerRow.rom.a_reg_prev_mem_step = mainTs := by
+    rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr, h_providerInput] at h_link
+    simpa [ZiskFv.AirsClean.Main.aRegPreMessage] using h_link
+  refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound
+  simpa [aRegStepDistance, h_prev] using h_descent
 
 end ZiskFv.Compliance.Instantiation

@@ -2884,7 +2884,7 @@ theorem not_activeMainSelfCMemProviderRowMatchSpec_of_main_mem_op_three
         mainRow mainInteraction mainMsg multiplicity as := by
   intro h_self
   rcases h_self with
-    ⟨_providerInteraction, _h_provider_witness, h_msg, h_nonpull, _h_nonzero,
+    ⟨providerInteraction, _h_provider_witness, h_msg, h_nonpull, _h_nonzero,
       providerTable, h_providerTable, _h_providerInteraction,
       providerRow, h_providerRow, _h_providerSpec, h_providerComponent,
       h_providerEval, _h_match⟩
@@ -2955,7 +2955,7 @@ theorem not_activeMainSelfCMemProviderRowMatchSpec_of_main_mem_op_three
       (providerTable.environment providerRow)
       (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
         length program).rowInputVar h_mult_row
-  have h_provider_mult : _providerInteraction.mult = -1 := by
+  have h_provider_mult : providerInteraction.mult = -1 := by
     rw [h_providerEval]
     exact h_eval_mult
   exact h_nonpull h_provider_mult
