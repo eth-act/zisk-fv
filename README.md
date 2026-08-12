@@ -183,7 +183,7 @@ side comes from the flake-pinned pilout and generated Lean extraction, wrapped
 by the human-readable AIR and circuit semantics under `ZiskFv/`.
 
 # Bugs Reported
-The following bug fixes were due to disclosures found in the course of building out this formal verification effort:
+The following patches fix bugs that were found in the course of building out zisk-fv:
  1. https://github.com/0xPolygonHermez/zisk/pull/1050
  2. https://github.com/0xPolygonHermez/zisk/pull/1091
  3. https://github.com/0xPolygonHermez/zisk/pull/1143
