@@ -158,42 +158,6 @@ theorem registerBoundaryRowsTable_constraints :
     registerBoundaryRowsTable.Constraints :=
   registerBoundaryRowsTableOf_constraints singleAddBoundaryRows
 
-private theorem registerStepRange_ne (c : RawChannel FGL) (h_name : c.name ≠ "SpecifiedRangesSlice102") :
-    c ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
-  intro h
-  exact h_name (by rw [h]; rfl)
-
-private theorem registerStepRangeRowsTable_interactionsWith_rangeChannel_nil
-    (values : List FGL) :
-    (registerStepRangeRowsTable values).interactionsWith
-      SpecifiedRangesSliceChannel.toRaw = [] :=
-  registerStepRangeRowsTable_interactionsWith_of_ne values _
-    (registerStepRange_ne _ (by decide))
-
-private theorem registerStepRangeRowsTable_interactionsWith_memAlignRangeChannel_nil
-    (values : List FGL) :
-    (registerStepRangeRowsTable values).interactionsWith MemAlignRangeChannel.toRaw = [] :=
-  registerStepRangeRowsTable_interactionsWith_of_ne values _
-    (registerStepRange_ne _ (by decide))
-
-private theorem registerStepRangeRowsTable_interactionsWith_memBus_nil
-    (values : List FGL) :
-    (registerStepRangeRowsTable values).interactionsWith MemBusChannel.toRaw = [] :=
-  registerStepRangeRowsTable_interactionsWith_of_ne values _
-    (registerStepRange_ne _ (by decide))
-
-private theorem registerStepRangeRowsTable_interactionsWith_memAlignRomChannel_nil
-    (values : List FGL) :
-    (registerStepRangeRowsTable values).interactionsWith MemAlignRomChannel.toRaw = [] :=
-  registerStepRangeRowsTable_interactionsWith_of_ne values _
-    (registerStepRange_ne _ (by decide))
-
-private theorem registerStepRangeRowsTable_interactionsWith_opBus_nil
-    (values : List FGL) :
-    (registerStepRangeRowsTable values).interactionsWith OpBusChannel.toRaw = [] :=
-  registerStepRangeRowsTable_interactionsWith_of_ne values _
-    (registerStepRange_ne _ (by decide))
-
 def singleAddTables : List (Table FGL) :=
   [ registerBoundaryRowsTable
   , emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component
