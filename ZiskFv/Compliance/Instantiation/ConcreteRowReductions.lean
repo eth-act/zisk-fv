@@ -2108,72 +2108,147 @@ theorem registerRead_timestamp_lt_provider_access
 /-! ## The register walk, on concrete rows
 
 `registerChain_nodup_of_descent` is the order-theoretic half: it assumes a chain relation on an
-abstract list. What follows states the chain relation on *real Main rows* -- `r₂` supplies `r₁`'s
-a-side register read exactly when `r₂`'s `a_reg_prev_mem_step` is `r₁`'s read timestamp -- and
-derives the strict increase from the bus-102 descent rather than assuming it.
--/
+abstract list. What follows states the chain relation on *real Main rows* -- one row supplies
+another's register read exactly when its free predecessor-step column holds that read's timestamp
+-- and derives the strict increase from the bus-102 descent rather than assuming it.
 
-/-- The a-side read timestamp of a Main row: `a_mem_step = 1 + main_step * 4`. -/
-def aReadTimestamp (row : MainRowWithRom FGL) : FGL :=
-  1 + row.rom.main_step * 4
+All three register slots share one MemBus at `mem_op = 3`, so a supply step may cross slots: row
+`r₁`'s a-side read can be supplied by row `r₂`'s store-side register-pre push. The relation is
+therefore indexed by the slot on each side, and the cycle results below rule out mixed-slot cycles
+as well as same-slot ones. -/
 
-/-- `provider` supplies `consumer`'s a-side register read: the provider row's register-pre push
-carries the consumer's read timestamp, which is what
+/-- One of Main's three register slots. Each owns a memory-bus read timestamp, a free
+predecessor-access witness column, and a selector; `main.pil:333-335` range-checks one distance per
+slot. -/
+inductive RegSlot where
+  | a
+  | b
+  | c
+  deriving DecidableEq, Repr
+
+namespace RegSlot
+
+/-- The slot's memory-bus read timestamp (`Main/Constraints.lean:363,376,389`). -/
+def readTimestamp : RegSlot → MainRowWithRom FGL → FGL
+  | .a, row => 1 + row.rom.main_step * 4
+  | .b, row => 2 + row.rom.main_step * 4
+  | .c, row => 3 + row.rom.main_step * 4
+
+/-- The slot's free predecessor-access witness column, pushed as the register-pre message's
+timestamp (`Main/Constraints.lean:400,411,422`). No constraint in the Main component pins it; that
+is the whole reason #342 exists. -/
+def prevStep : RegSlot → MainRowWithRom FGL → FGL
+  | .a, row => row.rom.a_reg_prev_mem_step
+  | .b, row => row.rom.b_reg_prev_mem_step
+  | .c, row => row.rom.store_reg_prev_mem_step
+
+/-- The slot's register selector, which gates both the `mem_op = 3` memory access and the bus-102
+pull. -/
+def selector : RegSlot → MainRowWithRom FGL → FGL
+  | .a, row => row.rom.a_src_reg
+  | .b, row => row.rom.b_src_reg
+  | .c, row => row.rom.store_reg
+
+/-- The distance `main.pil:333-335` range-checks for this slot. -/
+def distance (s : RegSlot) (row : MainRowWithRom FGL) : FGL :=
+  s.readTimestamp row - s.prevStep row - 1
+
+/-- The memory-bus *read* message this slot emits, at `mem_op = 3` when the slot is a register
+access (`Main/Constraints.lean:359,372,385`). -/
+def memMessageExpr : RegSlot → Var MainRowWithRom FGL →
+    ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)
+  | .a, row => ZiskFv.AirsClean.Main.aMemMessageExpr row
+  | .b, row => ZiskFv.AirsClean.Main.bMemMessageExpr row
+  | .c, row => ZiskFv.AirsClean.Main.cMemMessageExpr row
+
+/-- The read message's timestamp is the slot's read timestamp. -/
+theorem eval_memMessageExpr_timestamp (s : RegSlot) (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    (eval env (s.memMessageExpr row)).timestamp = s.readTimestamp (eval env row) := by
+  cases s
+  · rw [memMessageExpr, ZiskFv.AirsClean.Main.eval_aMemMessageExpr]; rfl
+  · rw [memMessageExpr, ZiskFv.AirsClean.Main.eval_bMemMessageExpr]; rfl
+  · rw [memMessageExpr, ZiskFv.AirsClean.Main.eval_cMemMessageExpr]; rfl
+
+@[simp] theorem distance_a (row : MainRowWithRom FGL) :
+    RegSlot.a.distance row = aRegStepDistance row := rfl
+
+@[simp] theorem distance_b (row : MainRowWithRom FGL) :
+    RegSlot.b.distance row = bRegStepDistance row := rfl
+
+@[simp] theorem distance_c (row : MainRowWithRom FGL) :
+    RegSlot.c.distance row = cRegStepDistance row := rfl
+
+end RegSlot
+
+/-- `(provider, sp)` supplies `(consumer, sc)`'s register read: the provider slot's register-pre
+push carries the consumer slot's read timestamp. This is exactly what
 `selfMemProvider_registerPre_timestamp_of_mem_op_three` concludes from balance. -/
-def ARegSupplies (consumer provider : MainRowWithRom FGL) : Prop :=
-  provider.rom.a_reg_prev_mem_step = aReadTimestamp consumer
+def RegSupplies (sc sp : RegSlot) (consumer provider : MainRowWithRom FGL) : Prop :=
+  sp.prevStep provider = sc.readTimestamp consumer
+
+/-- A step of the walk: one Main row together with the register slot being followed. -/
+abbrev RegWalkStep := MainRowWithRom FGL × RegSlot
+
+/-- The timestamp at which a walk step reads its register. -/
+def RegWalkStep.timestamp (p : RegWalkStep) : FGL := p.2.readTimestamp p.1
+
+/-- The bus-102 distance a walk step's slot range-checks. -/
+def RegWalkStep.distance (p : RegWalkStep) : FGL := p.2.distance p.1
+
+/-- The supply relation lifted to walk steps. -/
+def RegWalkStep.Supplies (p q : RegWalkStep) : Prop := RegSupplies p.2 q.2 p.1 q.1
 
 /-- **One supply step moves strictly later in time.** The provider's own bus-102 pull bounds
-`a_mem_step - a_reg_prev_mem_step - 1`, and the link identifies that predecessor with the
-consumer's read, so the consumer reads strictly before the provider accesses. -/
-theorem aReadTimestamp_lt_of_supplies
-    {consumer provider : MainRowWithRom FGL}
-    (h_supplies : ARegSupplies consumer provider)
+`<slot>_mem_step - <slot>_reg_prev_mem_step - 1`, and the supply link identifies that predecessor
+with the consumer's read, so the consumer reads strictly before the provider accesses. -/
+theorem readTimestamp_lt_of_regSupplies
+    {sc sp : RegSlot} {consumer provider : MainRowWithRom FGL}
+    (h_supplies : RegSupplies sc sp consumer provider)
     (h_descent :
-      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance provider))
-    (h_bound : (aReadTimestamp consumer).val < 2 ^ 40) :
-    (aReadTimestamp consumer).val < (aReadTimestamp provider).val := by
-  refine ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec ?_ h_bound
-  simpa [aRegStepDistance, aReadTimestamp, ARegSupplies] using
-    (h_supplies ▸ h_descent : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec
-      (aReadTimestamp provider - aReadTimestamp consumer - 1))
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (sp.distance provider))
+    (h_bound : (sc.readTimestamp consumer).val < 2 ^ 40) :
+    (sc.readTimestamp consumer).val < (sp.readTimestamp provider).val := by
+  rw [RegSlot.distance, h_supplies] at h_descent
+  exact ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec h_descent h_bound
 
 /-- **No row supplies its own register read.** The direct refutation of the shape #342 was opened
 about, at its smallest: a self-loop would make a timestamp strictly precede itself. -/
-theorem not_aRegSupplies_self
-    {row : MainRowWithRom FGL}
-    (h_descent : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance row))
-    (h_bound : (aReadTimestamp row).val < 2 ^ 40) :
-    ¬ ARegSupplies row row := by
+theorem not_regSupplies_self
+    {s : RegSlot} {row : MainRowWithRom FGL}
+    (h_descent : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (s.distance row))
+    (h_bound : (s.readTimestamp row).val < 2 ^ 40) :
+    ¬ RegSupplies s s row row := by
   intro h_supplies
-  exact absurd (aReadTimestamp_lt_of_supplies h_supplies h_descent h_bound) (lt_irrefl _)
+  exact absurd (readTimestamp_lt_of_regSupplies h_supplies h_descent h_bound) (lt_irrefl _)
 
-/-- **No two-row cycle.** This is exactly the witness in #342's body: two rows on one register
-pointing at each other's timestamps. Each supply step moves strictly later, so a two-cycle would
-put a timestamp strictly before itself. -/
-theorem not_aRegSupplies_two_cycle
-    {r₁ r₂ : MainRowWithRom FGL}
-    (h_descent₁ : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance r₁))
-    (h_descent₂ : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance r₂))
-    (h_bound₁ : (aReadTimestamp r₁).val < 2 ^ 40)
-    (h_bound₂ : (aReadTimestamp r₂).val < 2 ^ 40)
-    (h₁₂ : ARegSupplies r₁ r₂) (h₂₁ : ARegSupplies r₂ r₁) : False := by
-  have h_lt₁ := aReadTimestamp_lt_of_supplies h₁₂ h_descent₂ h_bound₁
-  have h_lt₂ := aReadTimestamp_lt_of_supplies h₂₁ h_descent₁ h_bound₂
+/-- **No two-step cycle.** This is exactly the witness in #342's body: two rows pointing at each
+other's timestamps. Each supply step moves strictly later, so a two-cycle would put a timestamp
+strictly before itself. The slots are independent, so a mixed-slot two-cycle is ruled out too. -/
+theorem not_regSupplies_two_cycle
+    {s₁ s₂ : RegSlot} {r₁ r₂ : MainRowWithRom FGL}
+    (h_descent₁ : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (s₁.distance r₁))
+    (h_descent₂ : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (s₂.distance r₂))
+    (h_bound₁ : (s₁.readTimestamp r₁).val < 2 ^ 40)
+    (h_bound₂ : (s₂.readTimestamp r₂).val < 2 ^ 40)
+    (h₁₂ : RegSupplies s₁ s₂ r₁ r₂) (h₂₁ : RegSupplies s₂ s₁ r₂ r₁) : False := by
+  have h_lt₁ := readTimestamp_lt_of_regSupplies h₁₂ h_descent₂ h_bound₁
+  have h_lt₂ := readTimestamp_lt_of_regSupplies h₂₁ h_descent₁ h_bound₂
   exact absurd (h_lt₁.trans h_lt₂) (lt_irrefl _)
 
-/-- **No cycle of any length.** A chain of supply steps visits no row timestamp twice, so the
-register partition cannot close a loop. The chain relation here is the concrete one on Main rows,
-and the strict increase at each step comes from that row's own bus-102 descent. -/
-theorem aRegSupplies_chain_timestamps_nodup
-    (rows : List (MainRowWithRom FGL))
-    (h_descent : ∀ r ∈ rows,
-      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (aRegStepDistance r))
-    (h_bounds : ∀ r ∈ rows, (aReadTimestamp r).val < 2 ^ 40)
-    (h_chain : List.IsChain ARegSupplies rows) :
-    (rows.map aReadTimestamp).Nodup := by
-  have h_mono : List.IsChain (fun a b => (aReadTimestamp a).val < (aReadTimestamp b).val) rows := by
-    induction rows with
+/-- **No cycle of any length.** A chain of supply steps visits no read timestamp twice, so the
+register partition cannot close a loop. The chain relation is the concrete one on Main rows, and the
+strict increase at each step comes from that step's own bus-102 descent. -/
+theorem regSupplies_chain_timestamps_nodup
+    (steps : List RegWalkStep)
+    (h_descent : ∀ p ∈ steps,
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec p.distance)
+    (h_bounds : ∀ p ∈ steps, p.timestamp.val < 2 ^ 40)
+    (h_chain : List.IsChain RegWalkStep.Supplies steps) :
+    (steps.map RegWalkStep.timestamp).Nodup := by
+  have h_mono : List.IsChain
+      (fun p q : RegWalkStep => p.timestamp.val < q.timestamp.val) steps := by
+    induction steps with
     | nil => simp
     | cons a rest ih =>
         cases rest with
@@ -2181,16 +2256,47 @@ theorem aRegSupplies_chain_timestamps_nodup
         | cons b rest' =>
             rw [List.isChain_cons_cons] at h_chain
             rw [List.isChain_cons_cons]
-            refine ⟨aReadTimestamp_lt_of_supplies h_chain.1 (h_descent b (by simp))
+            refine ⟨readTimestamp_lt_of_regSupplies h_chain.1 (h_descent b (by simp))
                 (h_bounds a (by simp)), ?_⟩
             exact ih (fun r hr => h_descent r (by simp [hr]))
               (fun r hr => h_bounds r (by simp [hr])) h_chain.2
-  haveI : Trans (fun a b : MainRowWithRom FGL => (aReadTimestamp a).val < (aReadTimestamp b).val)
-      (fun a b : MainRowWithRom FGL => (aReadTimestamp a).val < (aReadTimestamp b).val)
-      (fun a b : MainRowWithRom FGL => (aReadTimestamp a).val < (aReadTimestamp b).val) :=
+  haveI : Trans (fun p q : RegWalkStep => p.timestamp.val < q.timestamp.val)
+      (fun p q : RegWalkStep => p.timestamp.val < q.timestamp.val)
+      (fun p q : RegWalkStep => p.timestamp.val < q.timestamp.val) :=
     ⟨fun h1 h2 => Nat.lt_trans h1 h2⟩
   have h_pairwise := h_mono.pairwise
   rw [List.Nodup, List.pairwise_map]
   exact h_pairwise.imp (fun {a b} h h_eq => absurd (congrArg Fin.val h_eq) (Nat.ne_of_lt h))
+
+/-- **The slot-generic descent.** Each slot's active-selector bus-102 pull forces its own distance
+into `rangeTable24`; this collects the three per-slot lemmas into one statement the walk can use
+without case-splitting at every call site. -/
+theorem rangeTable24_spec_distance_of_active
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ mainTable.table)
+    {row : MainRowWithRom FGL}
+    (h_input :
+      eval (mainTable.environment rowArray)
+        (componentWithRomMemAndOpBus length program).rowInputVar = row)
+    (h_component : mainTable.component = componentWithRomMemAndOpBus length program)
+    (s : RegSlot) (h_active : s.selector row = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (s.distance row) := by
+  cases s with
+  | a =>
+      simpa using rangeTable24_spec_aRegStepDistance_of_active h_balanced h_specs h_constraints
+        h_mainTable h_rowArray h_input h_component h_active
+  | b =>
+      simpa using rangeTable24_spec_bRegStepDistance_of_active h_balanced h_specs h_constraints
+        h_mainTable h_rowArray h_input h_component h_active
+  | c =>
+      simpa using rangeTable24_spec_cRegStepDistance_of_active h_balanced h_specs h_constraints
+        h_mainTable h_rowArray h_input h_component h_active
 
 end ZiskFv.Compliance.Instantiation

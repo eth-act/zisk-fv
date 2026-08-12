@@ -72,33 +72,35 @@ run_register_mem_bus_witnesses() {
   return $ok
 }
 
-run "1/19 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
-run "2/19 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
-run "3/19 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
-run "4/19 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
-run "5/19 strong-export axiom closure (V2)" "$dir/check-strong-export-closure.sh"
-run "6/19 strong-export binders + forbidden types (V2)" "$dir/check-strong-export-binders.sh"
-run "7/19 consistency false probe rejected" reject_false_probe
-run "8/19 MemAlign narrow-load lane constraint repro" \
+run "1/20 axiom-deps baseline (V2)"        "$dir/check-axiom-deps.sh"
+run "2/20 forbidden types (V2)"            "$dir/check-no-output-eq-v2.sh"
+run "3/20 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
+run "4/20 global theorem binders (V2)"     "$dir/check-global-theorem-binders.sh"
+run "5/20 strong-export axiom closure (V2)" "$dir/check-strong-export-closure.sh"
+run "6/20 strong-export binders + forbidden types (V2)" "$dir/check-strong-export-binders.sh"
+run "7/20 consistency false probe rejected" reject_false_probe
+run "8/20 MemAlign narrow-load lane constraint repro" \
   run_lean_no_sorry trust/consistency/memalign_narrow_load_lane_defect.lean
-run "9/19 signed-DIV quotient-sign defect repro" \
+run "9/20 signed-DIV quotient-sign defect repro" \
   run_lean_no_sorry trust/consistency/arith_div_quotient_sign_defect.lean
-run "10/19 Sail memory timeline witness" \
+run "10/20 Sail memory timeline witness" \
   run_lean_no_sorry trust/consistency/load_byte_agreement_witness.lean
-run "11/19 memory timeline construction witness" \
+run "11/20 memory timeline construction witness" \
   run_lean_no_sorry trust/consistency/memory_timeline_construction_witness.lean
-run "12/19 memory prefix alignment witness" \
+run "12/20 memory prefix alignment witness" \
   run_lean_no_sorry trust/consistency/memory_prefix_alignment_witness.lean
-run "13/19 SD/LD Mem-prefix constructibility" \
+run "13/20 SD/LD Mem-prefix constructibility" \
   run_lean_no_sorry trust/consistency/memory_prefix_sd_ld_mem_table.lean
-run "14/19 global ADD theorem instantiation" \
+run "14/20 global ADD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_add.lean
-run "15/19 global LD theorem instantiation" \
+run "15/20 global LD theorem instantiation" \
   run_lean_no_sorry trust/consistency/global_theorem_instantiation_ld.lean
-run "16/19 root_soundness instantiation witnesses" run_root_soundness_instantiations
-run "17/19 Clean completeness witnesses" run_witnesses
-run "18/19 register MemBus balance witnesses" run_register_mem_bus_witnesses
-run "19/19 Aeneas extraction-pin raw axiom closure (V2)" \
+run "16/20 root_soundness instantiation witnesses" run_root_soundness_instantiations
+run "17/20 Clean completeness witnesses" run_witnesses
+run "18/20 register MemBus balance witnesses" run_register_mem_bus_witnesses
+run "19/20 register walk acyclicity (#342)" \
+  run_lean_no_sorry trust/consistency/register_walk_acyclic.lean
+run "20/20 Aeneas extraction-pin raw axiom closure (V2)" \
   "$dir/check-extraction-closure.sh"
 
 if [ $overall -eq 0 ]; then

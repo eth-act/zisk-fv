@@ -1,0 +1,326 @@
+import ZiskFv.Compliance.AcceptedZiskTrace.MainTable
+import ZiskFv.Compliance.AcceptedZiskTrace.Spec
+import ZiskFv.Compliance.AcceptedZiskTrace.MemProviders
+import ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridges
+import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
+
+/-!
+# The register walk on an accepted trace
+
+`ZiskFv/Compliance/Instantiation/ConcreteRowReductions.lean` states the supply relation on Main
+rows and proves that one supply step moves strictly later in time, given that step's bus-102
+descent and a no-wrap bound on the consumer's read timestamp. Both of those are hypotheses there.
+
+This module discharges them from an `AcceptedZiskTrace` and nothing else:
+
+* the **descent** comes from `rangeTable24_spec_distance_of_active`, which reads it off the
+  witness's channel balance (`main.pil:333-335`, bus 102);
+* the **no-wrap bound** comes from the Main table's own fixed-column capacity. `main_step` is
+  indexed fixed data of capacity `mainFixedCapacity = 2^22`
+  (`ZiskFv/AirsClean/Main/Circuit.lean:787`), so every read timestamp is below `2^24`. It is
+  **not** a premise about segment length.
+
+The result is `regSupplies_chain_timestamps_nodup_of_trace`: on an accepted trace, a chain of
+register supply steps visits no read timestamp twice. This is the Main-side half of #342. It rules
+out the disjoint cycle that balance alone permits; it does not yet pin the chain's *end* at
+`RegisterBoundary.bootMessage`, which is what `main.pil:447` does and which
+`ZiskFv/AirsClean/RegisterBoundary.lean` still omits.
+-/
+
+namespace ZiskFv.Compliance
+
+open Air.Flat (Table)
+open ZiskFv.AirsClean.FullEnsemble (mainTableRowAtOrZero mainTableRowAtOrZero_get)
+open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.Compliance.Instantiation (RegSlot RegSupplies RegWalkStep
+  rangeTable24_spec_distance_of_active readTimestamp_lt_of_regSupplies not_regSupplies_self
+  not_regSupplies_two_cycle regSupplies_chain_timestamps_nodup)
+
+variable {n : Nat}
+
+/-- Any in-range Main row index is below the component's fixed-column capacity.
+
+    This is `Table.index_lt_fixed_capacity` specialized to Main's indexed fixed schema. The bound is
+    intrinsic to the table carrier, so it costs no premise. -/
+theorem main_index_lt_mainFixedCapacity
+    {length : Nat} {program : Program length} {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {index : Nat} (h_index : index < table.table.length) :
+    index < ZiskFv.AirsClean.Main.mainFixedCapacity := by
+  cases table with
+  | mk component rawRows data raw_uniform_width fixed_domain =>
+    change component =
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program at h_component
+    subst component
+    let table : Table FGL :=
+      { component := ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+        rawRows := rawRows
+        data := data
+        raw_uniform_width := raw_uniform_width
+        fixed_domain := fixed_domain }
+    change index < table.table.length at h_index
+    have h_columns :
+        table.component.fixedColumns = some ZiskFv.AirsClean.Main.mainFixedColumns := by
+      rfl
+    have h_raw_index : index < table.length := by
+      simpa only [Table.table_length] using h_index
+    have h_capacity : index < ZiskFv.AirsClean.Main.mainFixedColumns.capacity :=
+      Table.index_lt_fixed_capacity table ZiskFv.AirsClean.Main.mainFixedColumns h_columns
+        ⟨index, h_raw_index⟩
+    simpa [ZiskFv.AirsClean.Main.mainFixedColumns] using h_capacity
+
+/-- **Every register read timestamp is far below the field's wrap point.**
+
+    `main_step` is the row index, and the Main component's fixed schema caps the index at
+    `mainFixedCapacity = 2^22`, so `k + main_step * 4 < 2^24` for `k ∈ {1, 2, 3}`. The `2^40` form
+    is what `prev_val_lt_of_registerStepSpec` consumes. -/
+theorem readTimestamp_val_lt_of_main_step_eq_index
+    {row : ZiskFv.AirsClean.Main.MainRowWithRom FGL} {index : Nat}
+    (h_step : row.rom.main_step = (index : FGL))
+    (h_index : index < ZiskFv.AirsClean.Main.mainFixedCapacity)
+    (s : RegSlot) :
+    (s.readTimestamp row).val < 2 ^ 40 := by
+  have h_capacity : index < 4194304 := by
+    simpa [ZiskFv.AirsClean.Main.mainFixedCapacity] using h_index
+  have h_prime : GL_prime = 18446744069414584321 := rfl
+  have h_cast : ((index : FGL)).val = index := by
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
+  have h_mul : ((index : FGL) * 4).val = index * 4 := by
+    rw [Fin.val_mul, h_cast]
+    exact Nat.mod_eq_of_lt (by omega)
+  cases s <;>
+    simp only [RegSlot.readTimestamp, h_step, Fin.val_add, h_mul] <;>
+      · rw [Nat.mod_eq_of_lt (by omega)]
+        omega
+
+/-- The bus-102 descent for one slot of one executed step, read off the trace's channel balance. -/
+theorem regSlot_descent_of_trace
+    (trace : AcceptedZiskTrace n) (i : Fin n) (s : RegSlot)
+    (h_active :
+      s.selector (mainTableRowAtOrZero trace.program trace.mainTable i.val) = 1) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec
+      (s.distance (mainTableRowAtOrZero trace.program trace.mainTable i.val)) := by
+  have h_index : i.val < trace.mainTable.table.length := trace.mainTable_index i
+  refine rangeTable24_spec_distance_of_active trace.channels_balanced trace.spec_holds
+    trace.constraints_hold trace.mainTable_mem
+    (List.get_mem trace.mainTable.table ⟨i.val, h_index⟩)
+    ((mainTableRowAtOrZero_get trace.program trace.mainTable ⟨i.val, h_index⟩).symm)
+    trace.mainTable_component s h_active
+
+/-- The no-wrap bound for a trace's Main row, derived from the fixed schema. -/
+theorem regSlot_timestamp_bound_of_trace
+    (trace : AcceptedZiskTrace n) (i : Fin n) (s : RegSlot) :
+    (s.readTimestamp (mainTableRowAtOrZero trace.program trace.mainTable i.val)).val < 2 ^ 40 :=
+  readTimestamp_val_lt_of_main_step_eq_index
+    (trace.mainTable_main_step_index_fixed.main_step_eq_index i)
+    (main_index_lt_mainFixedCapacity trace.mainTable_component (trace.mainTable_index i)) s
+
+/-- A walk step named by an executed step index and a register slot. -/
+noncomputable def traceWalkStep (trace : AcceptedZiskTrace n) (p : Fin n × RegSlot) :
+    RegWalkStep :=
+  (mainTableRowAtOrZero trace.program trace.mainTable p.1.val, p.2)
+
+/-- **One supply step on an accepted trace moves strictly later in time**, with both inputs derived
+    from the trace rather than assumed: the descent from channel balance, the no-wrap bound from the
+    Main table's fixed-column capacity. -/
+theorem traceWalkStep_timestamp_lt_of_supplies
+    (trace : AcceptedZiskTrace n) {p q : Fin n × RegSlot}
+    (h_active : q.2.selector (traceWalkStep trace q).1 = 1)
+    (h_supplies : (traceWalkStep trace p).Supplies (traceWalkStep trace q)) :
+    (traceWalkStep trace p).timestamp.val < (traceWalkStep trace q).timestamp.val :=
+  readTimestamp_lt_of_regSupplies h_supplies
+    (regSlot_descent_of_trace trace q.1 q.2 h_active)
+    (regSlot_timestamp_bound_of_trace trace p.1 p.2)
+
+/-- **No step of an accepted trace supplies its own register read.** The smallest case of #342's
+    witness, refuted with no hypothesis beyond the trace itself and the slot being active. -/
+theorem not_traceWalkStep_supplies_self
+    (trace : AcceptedZiskTrace n) (p : Fin n × RegSlot)
+    (h_active : p.2.selector (traceWalkStep trace p).1 = 1) :
+    ¬ RegSupplies p.2 p.2 (traceWalkStep trace p).1 (traceWalkStep trace p).1 :=
+  not_regSupplies_self (regSlot_descent_of_trace trace p.1 p.2 h_active)
+    (regSlot_timestamp_bound_of_trace trace p.1 p.2)
+
+/-- **#342's concrete witness is impossible on an accepted trace.** Two Main rows whose register-pre
+    pushes carry each other's read timestamps cannot both occur, for any pair of slots. -/
+theorem not_traceWalkStep_two_cycle
+    (trace : AcceptedZiskTrace n) (p q : Fin n × RegSlot)
+    (h_active_p : p.2.selector (traceWalkStep trace p).1 = 1)
+    (h_active_q : q.2.selector (traceWalkStep trace q).1 = 1)
+    (h_pq : (traceWalkStep trace p).Supplies (traceWalkStep trace q))
+    (h_qp : (traceWalkStep trace q).Supplies (traceWalkStep trace p)) : False :=
+  not_regSupplies_two_cycle
+    (regSlot_descent_of_trace trace p.1 p.2 h_active_p)
+    (regSlot_descent_of_trace trace q.1 q.2 h_active_q)
+    (regSlot_timestamp_bound_of_trace trace p.1 p.2)
+    (regSlot_timestamp_bound_of_trace trace q.1 q.2)
+    h_pq h_qp
+
+/-- **The register walk on an accepted trace has no cycle of any length.**
+
+    Quantified over the trace: every hypothesis except the chain itself and the per-step selector is
+    discharged from `AcceptedZiskTrace`. A chain of supply steps visits no read timestamp twice, so
+    the pairing that channel balance certifies cannot decompose into the boundary path plus a
+    disjoint cycle *among Main rows*.
+
+    **What this does not do.** It bounds the chain from below, not from above: nothing here forces
+    the chain to reach `RegisterBoundary.bootMessage`. That anchor is `main.pil:447`, which the
+    modeled `RegisterBoundary` still omits. -/
+theorem regSupplies_chain_timestamps_nodup_of_trace
+    (trace : AcceptedZiskTrace n) (steps : List (Fin n × RegSlot))
+    (h_active : ∀ p ∈ steps, p.2.selector (traceWalkStep trace p).1 = 1)
+    (h_chain : List.IsChain RegWalkStep.Supplies (steps.map (traceWalkStep trace))) :
+    ((steps.map (traceWalkStep trace)).map RegWalkStep.timestamp).Nodup := by
+  refine regSupplies_chain_timestamps_nodup _ ?_ ?_ h_chain
+  · intro w hw
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hw
+    exact regSlot_descent_of_trace trace p.1 p.2 (h_active p hp)
+  · intro w hw
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hw
+    exact regSlot_timestamp_bound_of_trace trace p.1 p.2
+
+/-! ## From balance to the supply relation
+
+Everything above takes the supply relation as given. This last section derives it: on an accepted
+trace, the counterpart of a Main register read is *either* the `RegisterBoundary` (boot or reload)
+*or* another Main row's register-pre push, and in the second case that row's own register access
+happens strictly later. -/
+
+open ZiskFv.AirsClean.FullEnsemble (ActiveMainRegisterBoundaryProviderRowMatchSpec
+  activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three
+  selfMemProvider_registerPre_active_of_mem_op_three)
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
+
+/-- **The counterpart of a register read, classified.** From `channels_balanced` alone: a Main
+    memory-bus pull at `mem_op = 3` is supplied either by the `RegisterBoundary` or by another Main
+    row, and in the second case the supplying row's slot is *active* and its free
+    `<slot>_reg_prev_mem_step` column holds this read's timestamp.
+
+    The activity conjunct is what makes the second branch usable — it is exactly the premise the
+    bus-102 descent needs. -/
+theorem registerRead_counterpart_of_trace
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {mainRow : Array FGL} (h_mainRow : mainRow ∈ trace.mainTable.table)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (trace.mainTable.environment mainRow))
+    (h_pull : mainInteraction.mult = -1)
+    (h_mem_op : (eval (trace.mainTable.environment mainRow) mainMsg).mem_op = 3)
+    {multiplicity as : FGL} :
+    ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness trace.mainTable
+        mainRow mainInteraction mainMsg multiplicity as
+      ∨ ∃ providerTable ∈ trace.witness.allTables, ∃ providerRow ∈ providerTable.table,
+          providerTable.component =
+              ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                trace.programLength trace.program
+            ∧ ∃ sp : RegSlot,
+                sp.selector (eval (providerTable.environment providerRow)
+                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      trace.programLength trace.program).rowInputVar) = 1
+                  ∧ sp.prevStep (eval (providerTable.environment providerRow)
+                      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                        trace.programLength trace.program).rowInputVar)
+                    = (eval (trace.mainTable.environment mainRow) mainMsg).timestamp := by
+  have h_match :=
+    (trace.activeMainMemProviderRowMatchSpec_of_active_main_eval
+      h_mainRow h_mainInteraction h_mainEval h_pull (multiplicity := multiplicity) (as := as)).2
+  rcases activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three
+      h_mainEval h_mem_op h_match with h_self | h_boundary
+  · refine Or.inr ?_
+    obtain ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_providerComponent,
+      h_branch⟩ :=
+      selfMemProvider_registerPre_active_of_mem_op_three h_mainEval h_mem_op
+        trace.constraints_hold h_self
+    refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_providerComponent, ?_⟩
+    rcases h_branch with ⟨h_sel, h_ts⟩ | ⟨h_sel, h_ts⟩ | ⟨h_sel, h_ts⟩
+    · exact ⟨RegSlot.a, h_sel, h_ts⟩
+    · exact ⟨RegSlot.b, h_sel, h_ts⟩
+    · exact ⟨RegSlot.c, h_sel, h_ts⟩
+  · exact Or.inl h_boundary
+
+/-- **The supply step, entirely from the accepted trace.**
+
+    A register read on a Main row is supplied either by the `RegisterBoundary`, or by a Main row
+    whose own register access is at a **strictly later** timestamp. Nothing is assumed: the branch
+    split comes from `channels_balanced`, the provider's slot activity from its counterpart
+    multiplicity plus Main's selector booleanity, the descent from the bus-102 range slice, and the
+    no-wrap bound from the Main table's fixed-column capacity.
+
+    This is what rules out the disjoint register cycle that #342 exhibits. A cycle would be a closed
+    walk of supply steps, and every supply step strictly increases the read timestamp. -/
+theorem registerRead_supplied_by_boundary_or_strictly_later_row
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (i : Fin n) (sc : RegSlot)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+    {mainMult : Expression FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult
+          (sc.memMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              trace.programLength trace.program).rowInputVar)).toRaw).eval
+          (trace.mainTable.environment
+            (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩)))
+    (h_pull : mainInteraction.mult = -1)
+    (h_mem_op :
+      (eval (trace.mainTable.environment
+          (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩))
+        (sc.memMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            trace.programLength trace.program).rowInputVar)).mem_op = 3)
+    {multiplicity as : FGL} :
+    ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness trace.mainTable
+        (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩) mainInteraction
+        (sc.memMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            trace.programLength trace.program).rowInputVar)
+        multiplicity as
+      ∨ ∃ providerTable ∈ trace.witness.allTables, ∃ providerRow ∈ providerTable.table,
+          ∃ _ : providerTable.component =
+              ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                trace.programLength trace.program,
+            ∃ sp : RegSlot,
+              RegSupplies sc sp
+                  (mainTableRowAtOrZero trace.program trace.mainTable i.val)
+                  (eval (providerTable.environment providerRow)
+                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                      trace.programLength trace.program).rowInputVar)
+                ∧ (sc.readTimestamp
+                      (mainTableRowAtOrZero trace.program trace.mainTable i.val)).val
+                    < (sp.readTimestamp
+                      (eval (providerTable.environment providerRow)
+                        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                          trace.programLength trace.program).rowInputVar)).val := by
+  have h_row : mainTableRowAtOrZero trace.program trace.mainTable i.val
+      = eval (trace.mainTable.environment
+          (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.programLength trace.program).rowInputVar :=
+    mainTableRowAtOrZero_get trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
+  rcases registerRead_counterpart_of_trace trace
+      (List.get_mem trace.mainTable.table ⟨i.val, trace.mainTable_index i⟩)
+      h_mainInteraction h_mainEval h_pull h_mem_op (multiplicity := multiplicity) (as := as) with
+    h_boundary | ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_providerComponent, sp, h_sel, h_ts⟩
+  · exact Or.inl h_boundary
+  · refine Or.inr ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      h_providerComponent, sp, ?_, ?_⟩
+    · show sp.prevStep _ = sc.readTimestamp _
+      rw [h_ts, RegSlot.eval_memMessageExpr_timestamp, ← h_row]
+    · refine readTimestamp_lt_of_regSupplies (sc := sc) (sp := sp) ?_ ?_ ?_
+      · show sp.prevStep _ = sc.readTimestamp _
+        rw [h_ts, RegSlot.eval_memMessageExpr_timestamp, ← h_row]
+      · exact rangeTable24_spec_distance_of_active trace.channels_balanced trace.spec_holds
+          trace.constraints_hold h_providerTable h_providerRow rfl h_providerComponent sp h_sel
+      · exact regSlot_timestamp_bound_of_trace trace i sc
+
+end ZiskFv.Compliance
