@@ -3455,4 +3455,224 @@ theorem selfMemProvider_registerPre_timestamp_of_mem_op_three
       (not_activeMainSelfCMemProviderRowMatchSpec_of_main_mem_op_three
         h_constraints h_mainEval h_main_mem_op)
 
+/-! ### The provider's own slot is active
+
+`selfMemProvider_registerPre_timestamp_of_mem_op_three` identifies *which* message supplied the
+read, but the bus-102 descent is only guaranteed for a slot whose selector is `1` -- an inactive
+slot pulls at multiplicity `0` and carries no range fact. The selector is recoverable: a register-pre
+push rides at multiplicity `<slot>_reg`, `exists_push_of_pull` hands back a counterpart with
+`mult ≠ 0`, and Main's own constraints make that selector boolean. -/
+
+private lemma main_rowInput_a_src_reg_eval
+    (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    Expression.eval env row.rom.a_src_reg = (eval env row).rom.a_src_reg := by
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+
+private lemma main_rowInput_b_src_reg_eval
+    (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    Expression.eval env row.rom.b_src_reg = (eval env row).rom.b_src_reg := by
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+
+private lemma main_rowInput_store_reg_eval
+    (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    Expression.eval env row.rom.store_reg = (eval env row).rom.store_reg := by
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+
+/-- A boolean column is `0` or `1`. -/
+private lemma zero_or_one_of_booleanity {col : FGL} (h : col * (1 - col) = 0) :
+    col = 0 ∨ col = 1 := by
+  obtain ⟨d, hd⟩ := bool_of_booleanity h
+  cases d
+  · exact Or.inl (by simpa [ZiskFv.AirsClean.boolF] using hd)
+  · exact Or.inr (by simpa [ZiskFv.AirsClean.boolF] using hd)
+
+/-- The a-side register-pre push rides at multiplicity `a_src_reg`. -/
+private lemma main_a_reg_pre_eval_mult
+    (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    (((MemBusChannel.emitted row.rom.a_src_reg
+      (ZiskFv.AirsClean.Main.aRegPreMessageExpr row)).toRaw).eval env).mult
+      = (eval env row).rom.a_src_reg := by
+  change env row.rom.a_src_reg = (eval env row).rom.a_src_reg
+  exact main_rowInput_a_src_reg_eval env row
+
+/-- The b-side register-pre push rides at multiplicity `b_src_reg`. -/
+private lemma main_b_reg_pre_eval_mult
+    (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    (((MemBusChannel.emitted row.rom.b_src_reg
+      (ZiskFv.AirsClean.Main.bRegPreMessageExpr row)).toRaw).eval env).mult
+      = (eval env row).rom.b_src_reg := by
+  change env row.rom.b_src_reg = (eval env row).rom.b_src_reg
+  exact main_rowInput_b_src_reg_eval env row
+
+/-- The store-side register-pre push rides at multiplicity `store_reg`. -/
+private lemma main_c_reg_pre_eval_mult
+    (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    (((MemBusChannel.emitted row.rom.store_reg
+      (ZiskFv.AirsClean.Main.cRegPreMessageExpr row)).toRaw).eval env).mult
+      = (eval env row).rom.store_reg := by
+  change env row.rom.store_reg = (eval env row).rom.store_reg
+  exact main_rowInput_store_reg_eval env row
+
+/-- Main's three register selectors are boolean at any row satisfying the component's constraints. -/
+private lemma main_reg_selectors_boolean
+    {length : ℕ} {program : Program length}
+    {table : Table FGL} {row : Array FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    (h_constraints : table.Constraints)
+    (h_row : row ∈ table.table) :
+    (eval (table.environment row)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg
+        * (1 - (eval (table.environment row)
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar).rom.a_src_reg) = 0
+      ∧ (eval (table.environment row)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar).rom.b_src_reg
+        * (1 - (eval (table.environment row)
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar).rom.b_src_reg) = 0
+      ∧ (eval (table.environment row)
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar).rom.store_reg
+        * (1 - (eval (table.environment row)
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar).rom.store_reg) = 0 := by
+  have h_holds :
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).operations.ConstraintsHold
+        (table.environment row) := by
+    have := h_constraints row h_row
+    rwa [h_component] at this
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, h_a, h_b, h_c⟩ :=
+    ZiskFv.AirsClean.Main.romBoolSpec_of_componentWithRomMemAndOpBus_constraints
+      length program (table.environment row) h_holds
+  refine ⟨?_, ?_, ?_⟩
+  · simpa [Expression.eval, sub_eq_add_neg, main_rowInput_a_src_reg_eval] using h_a
+  · simpa [Expression.eval, sub_eq_add_neg, main_rowInput_b_src_reg_eval] using h_b
+  · simpa [Expression.eval, sub_eq_add_neg, main_rowInput_store_reg_eval] using h_c
+
+/-- **The supply step, with the provider's slot proved active.**
+
+Strengthens `selfMemProvider_registerPre_timestamp_of_mem_op_three`: besides naming which
+register-pre push supplied the read, it establishes that push's selector is `1`. That is the
+premise `rangeTable24_spec_<slot>RegStepDistance_of_active` needs, so the caller can compose the
+bus-102 descent on the provider row without assuming anything about it.
+
+The selector comes from the counterpart's multiplicity. A register-pre push rides at
+`+<slot>_reg`, `exists_push_of_pull` returns it with `mult ≠ 0`, and Main's constraints make the
+selector boolean -- so it is `1`. -/
+theorem selfMemProvider_registerPre_active_of_mem_op_three
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 3)
+    (h_constraints : witness.Constraints)
+    (h_self : ActiveMainSelfMemProviderRowMatchSpec program witness mainTable
+      mainRow mainInteraction mainMsg multiplicity as) :
+    ∃ providerTable ∈ witness.allTables, ∃ providerRow ∈ providerTable.table,
+      providerTable.component =
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+        ∧ (((eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar).rom.a_src_reg = 1
+            ∧ (eval (providerTable.environment providerRow)
+                (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar).rom.a_reg_prev_mem_step
+              = (eval (mainTable.environment mainRow) mainMsg).timestamp)
+          ∨ ((eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar).rom.b_src_reg = 1
+            ∧ (eval (providerTable.environment providerRow)
+                (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar).rom.b_reg_prev_mem_step
+              = (eval (mainTable.environment mainRow) mainMsg).timestamp)
+          ∨ ((eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar).rom.store_reg = 1
+            ∧ (eval (providerTable.environment providerRow)
+                (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar).rom.store_reg_prev_mem_step
+              = (eval (mainTable.environment mainRow) mainMsg).timestamp)) := by
+  obtain ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerInteraction,
+    providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_match⟩ := h_self
+  obtain ⟨h_bool_a, h_bool_b, h_bool_c⟩ :=
+    main_reg_selectors_boolean h_providerComponent
+      (h_constraints providerTable h_providerTable) h_providerRow
+  refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_providerComponent, ?_⟩
+  rcases h_match with h_a_reg | h_a_mem | h_b_reg | h_b_mem | h_c_reg | h_c_mem
+  · refine Or.inl ⟨?_, ?_⟩
+    · have h_mult : providerInteraction.mult
+          = (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar).rom.a_src_reg := by
+        rw [h_a_reg.1]
+        exact main_a_reg_pre_eval_mult _ _
+      rcases zero_or_one_of_booleanity h_bool_a with h | h
+      · exact absurd (h_mult.trans h) h_nonzero
+      · exact h
+    · have h_ts := (memBusMessage_timestamp_eq_of_entry_match h_a_reg.2).symm
+      rwa [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr,
+        ZiskFv.AirsClean.Main.aRegPreMessage] at h_ts
+  · exact absurd ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_a_mem⟩
+      (not_activeMainSelfAMemProviderRowMatchSpec_of_main_mem_op_three
+        h_constraints h_mainEval h_main_mem_op)
+  · refine Or.inr (Or.inl ⟨?_, ?_⟩)
+    · have h_mult : providerInteraction.mult
+          = (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar).rom.b_src_reg := by
+        rw [h_b_reg.1]
+        exact main_b_reg_pre_eval_mult _ _
+      rcases zero_or_one_of_booleanity h_bool_b with h | h
+      · exact absurd (h_mult.trans h) h_nonzero
+      · exact h
+    · have h_ts := (memBusMessage_timestamp_eq_of_entry_match h_b_reg.2).symm
+      rwa [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr,
+        ZiskFv.AirsClean.Main.bRegPreMessage] at h_ts
+  · exact absurd ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_b_mem⟩
+      (not_activeMainSelfBMemProviderRowMatchSpec_of_main_mem_op_three
+        h_constraints h_mainEval h_main_mem_op)
+  · refine Or.inr (Or.inr ⟨?_, ?_⟩)
+    · have h_mult : providerInteraction.mult
+          = (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar).rom.store_reg := by
+        rw [h_c_reg.1]
+        exact main_c_reg_pre_eval_mult _ _
+      rcases zero_or_one_of_booleanity h_bool_c with h | h
+      · exact absurd (h_mult.trans h) h_nonzero
+      · exact h
+    · have h_ts := (memBusMessage_timestamp_eq_of_entry_match h_c_reg.2).symm
+      rwa [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr,
+        ZiskFv.AirsClean.Main.cRegPreMessage] at h_ts
+  · exact absurd ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_c_mem⟩
+      (not_activeMainSelfCMemProviderRowMatchSpec_of_main_mem_op_three
+        h_constraints h_mainEval h_main_mem_op)
+
 end ZiskFv.AirsClean.FullEnsemble

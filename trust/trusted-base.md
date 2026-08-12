@@ -645,6 +645,42 @@ free witness column. `main.pil:447`'s reload-timestamp check remains **unmodelle
 `registerBoundary_table_interactionsWith_registerStepRange_nil` currently *proves* that
 component silent on bus 102 — so modelling 447 later will require revisiting that lemma
 and the provider case split in `exists_registerStepRange_provider_of_pull`.
+
+**Update (#342, the walk).** The descent is now *consumed*, in
+`ZiskFv/Compliance/RegisterWalk.lean`.
+`registerRead_supplied_by_boundary_or_strictly_later_row` says a Main register read on an
+accepted trace is supplied either by the `RegisterBoundary` or by a Main row whose own
+register access sits at a **strictly later** memory-bus timestamp. Every premise is
+discharged from `AcceptedZiskTrace`: the branch split from `channels_balanced`, the
+supplying row's slot activity from its counterpart multiplicity plus Main's selector
+booleanity, the descent from the bus-102 slice, and the no-wrap bound from the Main
+table's own fixed-column capacity (`mainFixedCapacity = 2^22`) rather than from a
+segment-length assumption. Consequently the supply relation is acyclic
+(`regSupplies_chain_timestamps_nodup_of_trace`), which is what excludes the disjoint
+register cycle #342 exhibits. The relation is slot-indexed on both sides, so mixed-slot
+cycles are excluded too. The chain result is stated over `IsActiveWitnessMainRow` — every Main
+row of the witness, not just the executed prefix — because a provider may be a padding row past
+that prefix, and its no-wrap bound comes from the same fixed-column capacity. V2 check 19 keeps
+the axiom closure visible
+(`trust/consistency/register_walk_acyclic.lean`); it is kernel-only and adds no project
+axioms.
+
+The relation is **not vacuous**: `addX1Row_walk_isChain` exhibits it on the `add x1,x1,x1`
+witness row, whose three slots read at timestamps `1`, `2`, `3` and whose bus-102
+distances are the `[0, 0, 0]` that `singleAddWitness`'s provider list records. Every
+result in `RegisterWalk.lean` is an implication out of `RegSupplies`, so an empty relation
+would make them hold without saying anything about ZisK.
+
+**What this still does not give.** Acyclicity bounds the walk from below, not above. Nothing yet
+forces a register chain to *reach* `RegisterBoundary.bootMessage`, for two separate reasons.
+First, the `main.pil:447` gap above is unchanged, so the boundary can still self-pair at
+timestamp `0`. Second, iterating the supply step needs the supplying row's own access to be a
+`mem_op = 3` **pull**, i.e. `a_src_mem + a_src_reg = 1`, because `exists_push_of_pull` fires only
+at multiplicity exactly `-1`. Main's constraints give **booleanity only**
+(`Main/Constraints.lean:252,259`); no exclusivity constraint exists in the component, so `(1, 1)`
+is admissible in the model and the pull would ride at `-2` with `mem_op = 4`. Ruling that out means
+pinning `rom_flags` to a decoded instruction — the committed-program decode bridge (#172, on top of
+#164's proven decoder), a different axis from this range slice.
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
 `main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope
