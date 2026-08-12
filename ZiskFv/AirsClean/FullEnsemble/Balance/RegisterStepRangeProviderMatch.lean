@@ -204,6 +204,32 @@ theorem main_registerStepRange_mult_cases
   · rw [registerStepRange_emitted_eval_mult]; exact step _ h_b
   · rw [registerStepRange_emitted_eval_mult]; exact step _ h_c
 
+/-- **The descent, at the level of natural numbers.** `rangeTable24.Spec (memStep - prev - 1)` is a
+statement about field elements, and field subtraction wraps; on its own it does not order the two
+timestamps. Given that both sit below `2 ^ 32` -- which real row timestamps do, being `k + 4 * i`
+for a step index `i` -- the wrap cannot occur and the range fact becomes a strict inequality:
+`prev.val < memStep.val`.
+
+This is the bridge from the bus-102 guarantee to a well-founded order, i.e. the reason the register
+telescope terminates instead of admitting the 2-cycle in #342. -/
+theorem prev_val_lt_of_registerStepSpec
+    {memStep prev : FGL}
+    (h_spec : ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (memStep - prev - 1))
+    (h_mem : memStep.val < 2 ^ 32)
+    (h_prev : prev.val < 2 ^ 32) :
+    prev.val < memStep.val := by
+  have h_d : (memStep - prev - 1 : FGL).val < 2 ^ 24 := h_spec
+  have h_eq : memStep = (memStep - prev - 1) + prev + 1 := by ring
+  have h_val : memStep.val
+      = ((memStep - prev - 1).val + prev.val + 1) % GL_prime := by
+    conv_lhs => rw [h_eq]
+    simp [Fin.val_add, Nat.add_mod, Nat.mod_mod_of_dvd]
+  have h_small : (memStep - prev - 1).val + prev.val + 1 < GL_prime := by
+    have : GL_prime = 18446744069414584321 := rfl
+    omega
+  rw [Nat.mod_eq_of_lt h_small] at h_val
+  omega
+
 /-- **Balance turns a bus-102 pull into a provider push.** Every component other than the
 `RegisterStepRangeSlice` provider is silent on bus 102 except Main, and Main only ever emits at
 multiplicity `-a_src_reg` and friends, which `exists_push_of_pull` excludes by returning a
