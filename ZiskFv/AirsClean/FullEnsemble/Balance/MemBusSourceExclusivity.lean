@@ -63,7 +63,7 @@ private lemma zero_or_one_of_val_lt_two {x : FGL} (h : x.val < 2) : x = 0 ∨ x 
   · exact Or.inr (by apply Fin.ext; simp [h_val])
 
 /-- Push `Expression.eval` through a Main row variable's ROM projections. -/
-private lemma main_rom_eval
+theorem main_rom_eval
     (env : Environment FGL) (row : Var MainRowWithRom FGL) :
     Expression.eval env row.rom.a_src_mem = (eval env row).rom.a_src_mem
   ∧ Expression.eval env row.rom.a_src_reg = (eval env row).rom.a_src_reg

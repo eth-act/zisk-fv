@@ -2161,6 +2161,13 @@ def memMessageExpr : RegSlot → Var MainRowWithRom FGL →
   | .b, row => ZiskFv.AirsClean.Main.bMemMessageExpr row
   | .c, row => ZiskFv.AirsClean.Main.cMemMessageExpr row
 
+/-- The multiplicity this slot's current access rides at: the negated sum of its source
+selectors (`Main/Constraints.lean:436,441,446`). Every slot's current access is a pull. -/
+def memMult : RegSlot → Var MainRowWithRom FGL → Expression FGL
+  | .a, row => -(row.rom.a_src_mem + row.rom.a_src_reg)
+  | .b, row => -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg)
+  | .c, row => -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg)
+
 /-- The read message's timestamp is the slot's read timestamp. -/
 theorem eval_memMessageExpr_timestamp (s : RegSlot) (env : Environment FGL)
     (row : Var MainRowWithRom FGL) :

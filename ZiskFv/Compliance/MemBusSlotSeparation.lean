@@ -316,4 +316,258 @@ theorem main_store_mem_and_ind_zero_of_store_reg
   · exact absurd (main_not_store_mem_and_store_ind_and_store_reg h_balanced h_constraints h_specs
       h_table h_component h_row h_m h_i h_reg) (by simp)
 
+
+/-! ## Every register access is a pull
+
+The payoff of exclusivity, stated uniformly over the three slots: a row whose slot selector is set
+emits that slot's current access at multiplicity exactly `-1` and opcode exactly `3`. That is what
+Clean's `exists_push_of_pull` consumes, so the register walk can step from such a row rather than
+stopping at it. -/
+
+open ZiskFv.Compliance.Instantiation (RegSlot)
+
+set_option maxHeartbeats 1000000 in
+/-- **A register access is a `-1` pull at `mem_op = 3`, on every slot.** -/
+theorem regSlot_mem_pull_of_selector
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table)
+    (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar) = 1) :
+    (((MemBusChannel.emitted
+      (s.memMult (componentWithRomMemAndOpBus length program).rowInputVar)
+      (s.memMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row)).mult = -1
+    ∧ (eval (table.environment row)
+        (s.memMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).mem_op = 3 := by
+  cases s
+  · exact main_aMem_pull_of_a_src_reg h_balanced h_constraints h_specs h_table h_component h_row
+      h_sel
+  · have h_sel' : (eval (table.environment row)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg = 1 := h_sel
+    obtain ⟨h_m, h_i⟩ := main_b_src_mem_and_ind_zero_of_b_src_reg h_balanced h_constraints h_specs
+      h_table h_component h_row h_sel'
+    obtain ⟨-, -, e_b_mem, e_b_ind, e_b_reg, -⟩ :=
+      main_rom_eval (table.environment row)
+        (componentWithRomMemAndOpBus length program).rowInputVar
+    constructor
+    · rw [RegSlot.memMult, memBus_emitted_eval_mult]
+      have h_eval :
+          Expression.eval (table.environment row)
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
+          = -((eval (table.environment row)
+                (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_mem
+              + (eval (table.environment row)
+                (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_ind
+              + (eval (table.environment row)
+                (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg) := by
+        simp only [Expression.eval, e_b_mem, e_b_ind, e_b_reg]; ring
+      rw [h_eval, h_m, h_i, h_sel']; norm_num
+    · rw [RegSlot.memMessageExpr, ZiskFv.AirsClean.Main.eval_bMemMessageExpr]
+      change ((eval (table.environment row)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_mem
+        + (eval (table.environment row)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_ind)
+        + 3 * (eval (table.environment row)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg = 3
+      rw [h_m, h_i, h_sel']; norm_num
+  · have h_sel' : (eval (table.environment row)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg = 1 := h_sel
+    obtain ⟨h_m, h_i⟩ := main_store_mem_and_ind_zero_of_store_reg h_balanced h_constraints h_specs
+      h_table h_component h_row h_sel'
+    obtain ⟨-, -, -, -, -, e_c_mem, e_c_ind, e_c_reg⟩ :=
+      main_rom_eval (table.environment row)
+        (componentWithRomMemAndOpBus length program).rowInputVar
+    constructor
+    · rw [RegSlot.memMult, memBus_emitted_eval_mult]
+      have h_eval :
+          Expression.eval (table.environment row)
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg))
+          = -((eval (table.environment row)
+                (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_mem
+              + (eval (table.environment row)
+                (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_ind
+              + (eval (table.environment row)
+                (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg) := by
+        simp only [Expression.eval, e_c_mem, e_c_ind, e_c_reg]; ring
+      rw [h_eval, h_m, h_i, h_sel']; norm_num
+    · rw [RegSlot.memMessageExpr, ZiskFv.AirsClean.Main.eval_cMemMessageExpr]
+      change 2 * ((eval (table.environment row)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_mem
+        + (eval (table.environment row)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_ind)
+        + 3 * (eval (table.environment row)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg = 3
+      rw [h_m, h_i, h_sel']; norm_num
+
+
+/-! ## One step of the walk, between witness sites -/
+
+open ZiskFv.Compliance.Instantiation (RegSupplies RegWalkStep readTimestamp_lt_of_regSupplies)
+
+/-- A slot's current access really is one of its table's memory-bus interactions. -/
+theorem regSlot_mem_interaction_mem_table
+    {length : ℕ} {program : Program length} {table : Table FGL}
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot) :
+    (((MemBusChannel.emitted
+      (s.memMult (componentWithRomMemAndOpBus length program).rowInputVar)
+      (s.memMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row))
+      ∈ table.interactionsWith MemBusChannel.toRaw := by
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ⟨row, h_row, ?_⟩
+  rw [Operations.interactionValuesWith_eq_map, h_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  cases s <;> simp [RegSlot.memMult, RegSlot.memMessageExpr]
+
+/-- The no-wrap bound for a row given by membership rather than index. -/
+theorem regSlot_timestamp_bound_of_mem
+    {length : ℕ} {program : Program length} {table : Table FGL}
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot) :
+    (s.readTimestamp (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar)).val < 2 ^ 40 := by
+  obtain ⟨index, h_index, h_rowAt⟩ := exists_index_of_mem_mainTable h_component h_row
+  rw [h_rowAt]
+  exact regSlot_timestamp_bound_of_mainTable h_component h_index s
+
+/-- **One step of the register walk, between witness sites.**
+
+    A row whose slot selector is set has its register read supplied either by the
+    `RegisterBoundary`, or by another witness site whose own read happens **strictly later**. Every
+    input is discharged: the `-1` pull shape from source exclusivity, the branch split from
+    `channels_balanced`, the descent from the bus-102 slice, and the no-wrap bound from the Main
+    table's fixed-column capacity. -/
+theorem site_step
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1)
+    {multiplicity as : FGL} :
+    ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness table row
+        (((MemBusChannel.emitted
+          (s.memMult
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+          (s.memMessageExpr
+            (componentWithRomMemAndOpBus trace.programLength
+              trace.program).rowInputVar)).toRaw).eval (table.environment row))
+        (s.memMessageExpr
+          (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+        multiplicity as
+      ∨ ∃ q : RegWalkStep, IsActiveWitnessMainRow trace q
+          ∧ (s.readTimestamp (eval (table.environment row)
+              (componentWithRomMemAndOpBus trace.programLength
+                trace.program).rowInputVar)).val < q.timestamp.val := by
+  obtain ⟨h_pull, h_op⟩ := regSlot_mem_pull_of_selector trace.channels_balanced
+    trace.constraints_hold trace.spec_holds h_table h_component h_row s h_sel
+  rcases registerRead_counterpart_of_witnessTable trace h_table h_row
+      (regSlot_mem_interaction_mem_table h_component h_row s) rfl h_pull h_op
+      (multiplicity := multiplicity) (as := as) with h_boundary | ⟨q, h_q, h_ts⟩
+  · exact Or.inl h_boundary
+  · refine Or.inr ⟨q, h_q, ?_⟩
+    have h_supplies :
+        RegSupplies s q.2 (eval (table.environment row)
+          (componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar) q.1 := by
+      show q.2.prevStep q.1 = s.readTimestamp _
+      rw [h_ts, RegSlot.eval_memMessageExpr_timestamp]
+    exact readTimestamp_lt_of_regSupplies h_supplies
+      (regSlot_descent_of_witnessMainRow trace h_q)
+      (regSlot_timestamp_bound_of_mem h_component h_row s)
+
+
+/-! ## Termination: the walk ends at the `RegisterBoundary`
+
+Each supply step strictly increases the read timestamp, and every read timestamp is below `2^40`.
+So following the counterparts cannot go on forever: after finitely many steps the counterpart is no
+longer another Main row, and the only remaining memory-bus provider at `mem_op = 3` is the
+`RegisterBoundary`. -/
+
+/-- A witness site whose own register read is supplied by the `RegisterBoundary`. -/
+def BoundarySuppliedSite {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL) : Prop :=
+  ∃ table ∈ trace.witness.allTables,
+    ∃ _h_comp : table.component =
+        componentWithRomMemAndOpBus trace.programLength trace.program,
+      ∃ row ∈ table.table, ∃ s : RegSlot,
+        s.selector (eval (table.environment row)
+          (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1
+        ∧ ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness table row
+            (((MemBusChannel.emitted
+              (s.memMult
+                (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+              (s.memMessageExpr
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar)).toRaw).eval (table.environment row))
+            (s.memMessageExpr
+              (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+            multiplicity as
+
+set_option maxHeartbeats 1000000 in
+/-- **The walk terminates.** From any witness site, following supply counterparts reaches a site
+    whose read is supplied by the `RegisterBoundary`. The measure is `2 ^ 40 - readTimestamp`, which
+    strictly decreases at every step because each step moves strictly later in time, and which is
+    well-founded because every read timestamp is below `2 ^ 40`. -/
+theorem exists_boundarySuppliedSite_of_fuel
+    {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL) :
+    ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
+      ∀ (h_component : table.component =
+          componentWithRomMemAndOpBus trace.programLength trace.program),
+        ∀ {row : Array FGL}, row ∈ table.table → ∀ (s : RegSlot),
+          s.selector (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1 →
+          2 ^ 40 - (s.readTimestamp (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength
+              trace.program).rowInputVar)).val ≤ fuel →
+          BoundarySuppliedSite trace multiplicity as := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro table h_table h_component row h_row s h_sel h_fuel
+      exact absurd (regSlot_timestamp_bound_of_mem h_component h_row s) (by omega)
+  | succ fuel ih =>
+      intro table h_table h_component row h_row s h_sel h_fuel
+      rcases site_step trace h_table h_component h_row s h_sel
+          (multiplicity := multiplicity) (as := as) with h_boundary | ⟨q, h_q, h_lt⟩
+      · exact ⟨table, h_table, h_component, row, h_row, s, h_sel, h_boundary⟩
+      · obtain ⟨tbl, h_tbl, h_comp, index, h_index, h_rowAt, h_active⟩ := h_q
+        have h_get : q.1 = eval (tbl.environment (tbl.table.get ⟨index, h_index⟩))
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar := by
+          rw [h_rowAt]
+          exact mainTableRowAtOrZero_get trace.program tbl ⟨index, h_index⟩
+        refine ih h_tbl h_comp (List.get_mem tbl.table ⟨index, h_index⟩) q.2 ?_ ?_
+        · rw [← h_get]; exact h_active
+        · have h_bound := regSlot_timestamp_bound_of_mem h_comp
+            (List.get_mem tbl.table ⟨index, h_index⟩) q.2
+          rw [← h_get] at h_bound ⊢
+          have : q.timestamp.val = (q.2.readTimestamp q.1).val := rfl
+          omega
+
+/-- **Termination, with the measure supplied.** Every witness site's walk reaches the boundary. -/
+theorem exists_boundarySuppliedSite
+    {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    BoundarySuppliedSite trace multiplicity as :=
+  exists_boundarySuppliedSite_of_fuel trace multiplicity as (2 ^ 40) h_table h_component h_row s
+    h_sel (by omega)
+
 end ZiskFv.Compliance
