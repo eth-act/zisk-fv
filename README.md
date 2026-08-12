@@ -181,3 +181,12 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 The Sail side comes from the flake-pinned Sail and sail-riscv sources. The ZisK
 side comes from the flake-pinned pilout and generated Lean extraction, wrapped
 by the human-readable AIR and circuit semantics under `ZiskFv/`.
+
+# Bugs Reported
+The following bug fixes were due to disclosures found in the course of building out this formal verification effort:
+ 1. https://github.com/0xPolygonHermez/zisk/pull/1050
+ 2. https://github.com/0xPolygonHermez/zisk/pull/1091
+ 3. https://github.com/0xPolygonHermez/zisk/pull/1143
+ 4. https://github.com/0xPolygonHermez/zisk/pull/1217
+ 5. https://github.com/0xPolygonHermez/zisk/pull/1228
+
