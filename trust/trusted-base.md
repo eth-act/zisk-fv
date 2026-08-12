@@ -647,10 +647,10 @@ component silent on bus 102 — so modelling 447 later will require revisiting t
 and the provider case split in `exists_registerStepRange_provider_of_pull`.
 
 **Update (#342, the walk).** The descent is now *consumed*, in
-`ZiskFv/Compliance/RegisterWalk.lean`.
-`registerRead_supplied_by_boundary_or_strictly_later_row` says a Main register read on an
-accepted trace is supplied either by the `RegisterBoundary` or by a Main row whose own
-register access sits at a **strictly later** memory-bus timestamp. Every premise is
+`ZiskFv/Compliance/RegisterWalk.lean` and `ZiskFv/Compliance/MemBusSlotSeparation.lean`.
+`site_step` says a Main register read on an accepted trace is supplied either by the
+`RegisterBoundary` or by a Main row that supplies it and whose own register access sits at
+a **strictly later** memory-bus timestamp. Every premise is
 discharged from `AcceptedZiskTrace`: the branch split from `channels_balanced`, the
 supplying row's slot activity from its counterpart multiplicity plus Main's selector
 booleanity, the descent from the bus-102 slice, and the no-wrap bound from the Main
@@ -660,8 +660,8 @@ segment-length assumption. Consequently the supply relation is acyclic
 register cycle #342 exhibits. The relation is slot-indexed on both sides, so mixed-slot
 cycles are excluded too. The chain result is stated over `IsActiveWitnessMainRow` — every Main
 row of the witness, not just the executed prefix — because a provider may be a padding row past
-that prefix, and its no-wrap bound comes from the same fixed-column capacity. V2 check 19 keeps
-the axiom closure visible
+that prefix, and its no-wrap bound comes from the same fixed-column capacity. V2 check 19 asserts
+the axiom closure of these theorems, not only their compilation
 (`trust/consistency/register_walk_acyclic.lean`); it is kernel-only and adds no project
 axioms.
 
@@ -692,8 +692,12 @@ register-reading row's a-side access is a genuine `-1` pull at `mem_op = 3`, whi
 `main_not_store_mem_and_store_ind_and_store_reg`. No new premise, no decode fact; axiom closure is
 the three standard axioms.
 
-**What this still does not give.** Acyclicity bounds the walk from below, not above, and two things
-still stand between that and termination at `RegisterBoundary.bootMessage`.
+**Scope of the count argument.** It is a *closed-world* argument over the modeled ensemble:
+`memBus_mult_eq_of_msg_eq_mem_op_high` case-splits over the sixteen components of
+`component_mem_fullRv64im_cases` and shows none of the others reaches the offending opcode. It is
+therefore exactly as strong as the ensemble's completeness with respect to the real circuit's
+memory-bus emitters. That is the standing extraction-fidelity boundary recorded elsewhere in this
+ledger, not a new assumption — but this is the first result whose whole content rests on it.
 
 **Update (all three slots).** `ZiskFv/Compliance/MemBusSlotSeparation.lean` finishes the argument.
 The remaining b-side and store-side combinations land at `mem_op = 5`, where the multiplicity is
@@ -707,17 +711,22 @@ constant once the reference slot is fixed, giving
 
 So **every** Main register access is a genuine `-1` pull at `mem_op = 3`.
 
-**Update (termination).** The walk now provably ends at the boundary.
-`exists_boundarySuppliedSite`: from any witness site — a Main row with an active register slot —
-following supply counterparts reaches a site whose own register read is supplied by
-`RegisterBoundary`.
+**Update (termination).** The walk now provably ends at the boundary, and the **path** is part of
+the statement. `exists_boundaryWalk`: from any witness site — a Main row with an active register
+slot — following supply counterparts produces a finite list of walk steps that begins at *that*
+site, in which every step is itself a witness site, each step is supplied by the next, and whose
+last step's register read is supplied by `RegisterBoundary`. `boundaryWalk_timestamps_nodup` says
+that path visits no read timestamp twice. The bare existential — *some* site is boundary-supplied —
+survives as the weak corollary `exists_boundarySuppliedSite`; it is not the statement to build on,
+because it does not connect the boundary to the read you started from, and transporting a register
+value along the telescope needs the intermediate steps.
 
 Three things make it go through. `regSlot_mem_pull_of_selector` turns source exclusivity into the
 `-1`-pull shape on all three slots, so the counterpart classification applies to a *supplying* row
 in turn and not only to the consumer. `registerRead_counterpart_of_witnessTable` restates that
 classification over any witness table carrying Main's component — the underlying ensemble lemma
 already quantified over an arbitrary table, so no uniqueness-of-the-Main-table argument is needed.
-And `exists_boundarySuppliedSite_of_fuel` is an induction on `2 ^ 40 - readTimestamp`: the measure
+And `exists_boundaryWalk_of_fuel` is an induction on `2 ^ 40 - readTimestamp`: the measure
 strictly decreases because each supply step moves strictly later in time, and it is well-founded
 because every read timestamp is below `2 ^ 40` — from the Main table's own fixed-column capacity,
 not from a premise about segment length.
@@ -729,7 +738,8 @@ three standard axioms.
 is free, so the boundary can self-pair at timestamp `0`. Termination says the walk *reaches* the
 boundary; pinning **which** boundary message it lands on — and so anchoring the value telescope at
 `bootMessage`'s literal `(ts 0, value 0)` — is that separate gap, and it is what #330 Phase 4 needs
-next.
+next. It is tracked as #348.
+
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
 `main.pil:454`'s `sel:(1-main_last_segment)` continuation pull) are out of scope

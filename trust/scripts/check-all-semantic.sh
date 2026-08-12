@@ -45,6 +45,37 @@ run_lean_no_sorry() {
   fi
 }
 
+# Same as `run_lean_no_sorry`, and additionally *asserts* the `#print axioms` reports rather than
+# only printing them: every reported closure must sit inside the three standard Lean axioms.
+run_lean_no_sorry_std_axioms() {
+  local output status flat reports offenders
+  output="$(lake env lean "$@" 2>&1)"
+  status=$?
+  if [ -n "$output" ]; then
+    printf '%s\n' "$output"
+  fi
+  if [ "$status" -ne 0 ]; then
+    return "$status"
+  fi
+  if grep -q 'uses `sorry`' <<<"$output"; then
+    echo "Lean file unexpectedly contains sorry: $*"
+    return 1
+  fi
+  # Lean wraps long `#print axioms` reports over several lines; flatten before matching.
+  flat="$(tr '\n' ' ' <<<"$output" | tr -s ' ')"
+  reports="$(grep -oE "depends on axioms: \[[^]]*\]" <<<"$flat")"
+  if [ -z "$reports" ]; then
+    echo "No '#print axioms' report found in: $*"
+    return 1
+  fi
+  offenders="$(grep -vE "^depends on axioms: \[(propext|Classical\.choice|Quot\.sound)(, (propext|Classical\.choice|Quot\.sound))*\]$" <<<"$reports")"
+  if [ -n "$offenders" ]; then
+    echo "Axiom closure outside {propext, Classical.choice, Quot.sound} in: $*"
+    printf '%s\n' "$offenders"
+    return 1
+  fi
+}
+
 run_witnesses() {
   local ok=0
   for f in trust/consistency/completeness_witness_*.lean; do
@@ -98,8 +129,8 @@ run "15/20 global LD theorem instantiation" \
 run "16/20 root_soundness instantiation witnesses" run_root_soundness_instantiations
 run "17/20 Clean completeness witnesses" run_witnesses
 run "18/20 register MemBus balance witnesses" run_register_mem_bus_witnesses
-run "19/20 register walk acyclicity (#342)" \
-  run_lean_no_sorry trust/consistency/register_walk_acyclic.lean
+run "19/20 register walk acyclicity + termination (#342)" \
+  run_lean_no_sorry_std_axioms trust/consistency/register_walk_acyclic.lean
 run "20/20 Aeneas extraction-pin raw axiom closure (V2)" \
   "$dir/check-extraction-closure.sh"
 
