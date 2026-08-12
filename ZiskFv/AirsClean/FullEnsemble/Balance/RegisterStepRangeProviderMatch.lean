@@ -151,4 +151,108 @@ theorem rangeTable24_spec_of_registerStepRange_provider_interaction
       Component.rowInputVar] using h_spec
   simpa [h_value'] using h_providerSpec
 
+/-- **Balance turns a bus-102 pull into a provider push.** Every component other than the
+`RegisterStepRangeSlice` provider is silent on bus 102 except Main, and Main only ever emits at
+multiplicity `-a_src_reg` and friends, which `exists_push_of_pull` excludes by returning a
+counterpart with `mult ≠ -1` and `mult ≠ 0` -- so the counterpart is the provider. -/
+theorem exists_registerStepRange_provider_of_pull
+    {length : Nat} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_mainNonProvider :
+      ∀ table ∈ witness.allTables,
+        table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program →
+          ∀ interaction ∈ table.interactionsWith RegisterStepRangeChannel.toRaw,
+            interaction.mult = -1 ∨ interaction.mult = 0)
+    {pullTable : Table FGL}
+    (h_pullTable : pullTable ∈ witness.allTables)
+    {pull : Interaction FGL}
+    (h_pull : pull ∈ pullTable.interactionsWith RegisterStepRangeChannel.toRaw)
+    (h_active : pull.mult = -1) :
+    ∃ providerTable ∈ witness.allTables,
+      providerTable.component = ZiskFv.AirsClean.RegisterStepRangeSlice.component
+        ∧ ∃ providerInteraction ∈ providerTable.interactionsWith RegisterStepRangeChannel.toRaw,
+          providerInteraction.msg = pull.msg := by
+  have h_pullWitness : pull ∈ witness.interactionsWith RegisterStepRangeChannel.toRaw := by
+    rw [EnsembleWitness.mem_interactionsWith]
+    exact ⟨pullTable, h_pullTable, h_pull⟩
+  obtain ⟨provider, h_providerWitness, h_message, h_nonzero, h_nonpull⟩ :=
+    exists_push_of_pull (witness.interactionsWith RegisterStepRangeChannel.toRaw)
+      (registerStepRange_balanced_of_witness witness h_balanced) pull h_pullWitness h_active
+  rw [EnsembleWitness.mem_interactionsWith] at h_providerWitness
+  obtain ⟨providerTable, h_providerTable, h_providerInteraction⟩ := h_providerWitness
+  have h_componentMem :
+      providerTable.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
+    EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
+  rcases component_mem_fullRv64im_cases h_componentMem with
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  · exfalso
+    have h_nil : providerTable.interactionsWith RegisterStepRangeChannel.toRaw = [] := by
+      apply Table.interactionsWith_nil_of_channel_not_mem
+      rw [h]
+      change RegisterStepRangeChannel.toRaw ∉ []
+      simp
+    simp [h_nil] at h_providerInteraction
+  · exact absurd (registerBoundary_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (memAlignReadByte_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (memAlignByte_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (memAlign_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (memAlignRangeSlice_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (memAlignRomSlice_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (mem_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (specifiedRangesSlice_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact ⟨providerTable, h_providerTable, h, provider, h_providerInteraction, h_message⟩
+  · exact absurd (arithDiv_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (arithMul_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (staticBinaryExtension_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (staticBinary_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact absurd (binaryAdd_table_interactionsWith_registerStepRange_nil h)
+      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exfalso
+    rcases h_mainNonProvider providerTable h_providerTable h provider h_providerInteraction with
+      h_mult | h_mult
+    · exact h_nonpull h_mult
+    · exact h_nonzero h_mult
+
+/-- **The register-step descent, from balance alone.** A Main pull on bus 102 carrying `value`
+forces `rangeTable24.Spec value`. This is the fact that closes #342's cycle hole: the pulled
+distance `<slot>_mem_step - <slot>_reg_prev_mem_step - 1` is a genuine 24-bit number, so
+`<slot>_reg_prev_mem_step` is strictly below the row's own timestamp. -/
+theorem rangeTable24_spec_of_registerStepRange_pull
+    {length : Nat} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    (h_mainNonProvider :
+      ∀ table ∈ witness.allTables,
+        table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program →
+          ∀ interaction ∈ table.interactionsWith RegisterStepRangeChannel.toRaw,
+            interaction.mult = -1 ∨ interaction.mult = 0)
+    {pullTable : Table FGL}
+    (h_pullTable : pullTable ∈ witness.allTables)
+    {pull : Interaction FGL}
+    (h_pull : pull ∈ pullTable.interactionsWith RegisterStepRangeChannel.toRaw)
+    (h_active : pull.mult = -1)
+    {value : FGL}
+    (h_message : pull.msg = (toElements (registerStepMessage value)).toArray) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec value := by
+  obtain ⟨providerTable, h_providerTable, h_providerComponent,
+    providerInteraction, h_providerInteraction, h_providerMessage⟩ :=
+    exists_registerStepRange_provider_of_pull h_balanced h_mainNonProvider
+      h_pullTable h_pull h_active
+  exact rangeTable24_spec_of_registerStepRange_provider_interaction h_specs h_providerTable
+    h_providerComponent h_providerInteraction (h_providerMessage.trans h_message)
+
 end ZiskFv.AirsClean.FullEnsemble
