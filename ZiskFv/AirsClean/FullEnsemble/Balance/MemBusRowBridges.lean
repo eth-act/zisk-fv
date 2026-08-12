@@ -3372,4 +3372,87 @@ theorem activeMainMemProviderRowMatchSpec_of_active_main_eval
       h_mainEval h_active (multiplicity := multiplicity) (as := as)
 
 
+/-- **The counterpart step, read off as a timestamp equality.** Two memory-bus messages whose
+entries match carry the same timestamp -- `matches_memory_entry` has a timestamp component and
+`toEntry` passes it through unchanged.
+
+This is the piece the register walk needs from the counterpart machinery. When a Main register read
+is supplied by another Main row's register-pre push, that push carries the consumer's read
+timestamp in its `<slot>_reg_prev_mem_step`; composed with the bus-102 descent on the provider row
+(which bounds `<slot>_mem_step - <slot>_reg_prev_mem_step - 1`), the step moves strictly later in
+the trace, which is what rules out the register cycle in #342.
+
+Stated on the entry match rather than on `ActiveMainSelfMemProviderRowMatchSpec` itself, because
+that spec is a six-way disjunction over which of Main's memory-bus emissions supplied the read; the
+caller picks the branch and applies this to it. -/
+theorem memBusMessage_timestamp_eq_of_entry_match
+    {msg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage FGL}
+    {multiplicity as : FGL}
+    (h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry msg multiplicity as)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry providerMsg multiplicity as)) :
+    msg.timestamp = providerMsg.timestamp := by
+  simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_entry.2.2.2.2.2
+
+/-- **The Main-self counterpart of a register read is a register-pre push.** At `mem_op = 3` the
+three current-memory branches are impossible -- each would put the provider at multiplicity `-1` --
+so the branch is one of the three register-pre pushes, and each carries the consumer's read
+timestamp in its `<slot>_reg_prev_mem_step`.
+
+Composed with the bus-102 descent on the provider row, this is the step that moves strictly later
+in the trace, and hence what rules out the register cycle in #342. -/
+theorem selfMemProvider_registerPre_timestamp_of_mem_op_three
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {mainTable : Table FGL}
+    {mainRow : Array FGL}
+    {mainInteraction : Interaction FGL}
+    {mainMult : Expression FGL}
+    {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {multiplicity as : FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          (mainTable.environment mainRow))
+    (h_main_mem_op :
+      (eval (mainTable.environment mainRow) mainMsg).mem_op = 3)
+    (h_constraints : witness.Constraints)
+    (h_self : ActiveMainSelfMemProviderRowMatchSpec program witness mainTable
+      mainRow mainInteraction mainMsg multiplicity as) :
+    ∃ providerTable ∈ witness.allTables, ∃ providerRow ∈ providerTable.table,
+      providerTable.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+        ∧ ((eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.aRegPreMessageExpr (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar)).timestamp
+            = (eval (mainTable.environment mainRow) mainMsg).timestamp
+          ∨ (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.bRegPreMessageExpr (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar)).timestamp
+            = (eval (mainTable.environment mainRow) mainMsg).timestamp
+          ∨ (eval (providerTable.environment providerRow)
+              (ZiskFv.AirsClean.Main.cRegPreMessageExpr (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar)).timestamp
+            = (eval (mainTable.environment mainRow) mainMsg).timestamp) := by
+  obtain ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+    providerTable, h_providerTable, h_providerInteraction,
+    providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_match⟩ := h_self
+  refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_providerComponent, ?_⟩
+  rcases h_match with h_a_reg | h_a_mem | h_b_reg | h_b_mem | h_c_reg | h_c_mem
+  · exact Or.inl (memBusMessage_timestamp_eq_of_entry_match h_a_reg.2).symm
+  · exact absurd ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_a_mem⟩
+      (not_activeMainSelfAMemProviderRowMatchSpec_of_main_mem_op_three
+        h_constraints h_mainEval h_main_mem_op)
+  · exact Or.inr (Or.inl (memBusMessage_timestamp_eq_of_entry_match h_b_reg.2).symm)
+  · exact absurd ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_b_mem⟩
+      (not_activeMainSelfBMemProviderRowMatchSpec_of_main_mem_op_three
+        h_constraints h_mainEval h_main_mem_op)
+  · exact Or.inr (Or.inr (memBusMessage_timestamp_eq_of_entry_match h_c_reg.2).symm)
+  · exact absurd ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction,
+      providerRow, h_providerRow, h_providerSpec, h_providerComponent, h_c_mem⟩
+      (not_activeMainSelfCMemProviderRowMatchSpec_of_main_mem_op_three
+        h_constraints h_mainEval h_main_mem_op)
+
 end ZiskFv.AirsClean.FullEnsemble
