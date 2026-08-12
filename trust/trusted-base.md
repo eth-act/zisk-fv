@@ -695,12 +695,26 @@ the three standard axioms.
 **What this still does not give.** Acyclicity bounds the walk from below, not above, and two things
 still stand between that and termination at `RegisterBoundary.bootMessage`.
 
-First, the remaining b-side and store-side flag combinations land at `mem_op = 5`, where the
-multiplicity is not constant across slots — a b-side current rides at `-3`, a store-side current at
-`-2` — so the classification above does not apply as stated. The message **timestamp** separates
-them: the three slots sit at `1, 2, 3 + 4 * main_step`, `main_step` is the row index, and the Main
-table's own fixed-column capacity caps it at `2^22`, so no wraparound can move between residue
-classes mod `4`. That instance is not yet built.
+**Update (all three slots).** `ZiskFv/Compliance/MemBusSlotSeparation.lean` finishes the argument.
+The remaining b-side and store-side combinations land at `mem_op = 5`, where the multiplicity is
+*not* constant across slots — a b-side current rides at `-3`, a store-side current at `-2` — so the
+classification does not apply directly. The message **timestamp** separates them
+(`cMem_message_ne_bMem_message`): the three slots access at `1, 2, 3 + 4 * main_step`, `main_step`
+is the row index, and the Main table's own fixed-column capacity caps it at `2^22`, so nothing wraps
+and the residue mod `4` is an invariant of the slot. With the slots separated the multiplicity is
+constant once the reference slot is fixed, giving
+`main_b_src_mem_and_ind_zero_of_b_src_reg` and `main_store_mem_and_ind_zero_of_store_reg`.
+
+So **every** Main register access is a genuine `-1` pull at `mem_op = 3`.
+
+**What this still does not give.** Termination remains open, for two reasons.
+
+First, `registerRead_counterpart_of_trace` is stated on `trace.mainTable`, while the provider it
+returns is any witness table carrying Main's component. Iterating the walk therefore needs
+*uniqueness* of the Main table in the witness. That is derivable in principle —
+`EnsembleWitness.allTables_map_component` pins the component list — but it requires distinguishing
+Main from the other fifteen components, which are structure values with no cheap decidable equality.
+It is **not** proved yet, and it is not an assumption anywhere.
 
 Second, the `main.pil:447` gap above is unchanged, so the boundary can still self-pair at
 timestamp `0`.
