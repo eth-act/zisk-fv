@@ -47,7 +47,7 @@ theorem memBus_emitted_eval_mult
   rfl
 
 /-- A boolean column is `0` or `1`. -/
-private lemma zero_or_one_of_bool {col : FGL} (h : col * (1 - col) = 0) : col = 0 ∨ col = 1 := by
+theorem zero_or_one_of_bool {col : FGL} (h : col * (1 - col) = 0) : col = 0 ∨ col = 1 := by
   rcases mul_eq_zero.mp h with h0 | h1
   · exact Or.inl h0
   · refine Or.inr ?_
@@ -279,31 +279,82 @@ theorem memBus_mult_eq_of_msg_eq_mem_op_high
     {k m : FGL} (h_k1 : k ≠ 1) (h_k2 : k ≠ 2) (h_k3 : k ≠ 3)
     {refEnv : Environment FGL} {refMult : Expression FGL}
     {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
-    (h_slot_a : ∀ {env : Environment FGL} {row : Var MainRowWithRom FGL},
-      (eval env row).rom.a_src_mem * (1 - (eval env row).rom.a_src_mem) = 0 →
-      (eval env row).rom.a_src_reg * (1 - (eval env row).rom.a_src_reg) = 0 →
-      (eval env (ZiskFv.AirsClean.Main.aMemMessageExpr row)).mem_op = k →
-      eval env (ZiskFv.AirsClean.Main.aMemMessageExpr row) = eval refEnv refMsg →
-      (((MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
-        (ZiskFv.AirsClean.Main.aMemMessageExpr row)).toRaw).eval env).mult = m)
-    (h_slot_b : ∀ {env : Environment FGL} {row : Var MainRowWithRom FGL},
-      (eval env row).rom.b_src_mem * (1 - (eval env row).rom.b_src_mem) = 0 →
-      (eval env row).rom.b_src_ind * (1 - (eval env row).rom.b_src_ind) = 0 →
-      (eval env row).rom.b_src_reg * (1 - (eval env row).rom.b_src_reg) = 0 →
-      (eval env (ZiskFv.AirsClean.Main.bMemMessageExpr row)).mem_op = k →
-      eval env (ZiskFv.AirsClean.Main.bMemMessageExpr row) = eval refEnv refMsg →
+    (h_slot_a : ∀ {tbl : Table FGL} {r : Array FGL},
+      tbl ∈ witness.allTables →
+      tbl.component = componentWithRomMemAndOpBus length program →
+      r ∈ tbl.table →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_mem
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_mem) = 0 →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg) = 0 →
+      (eval (tbl.environment r) (ZiskFv.AirsClean.Main.aMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).mem_op = k →
+      eval (tbl.environment r) (ZiskFv.AirsClean.Main.aMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar) = eval refEnv refMsg →
       (((MemBusChannel.emitted
-        (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
-        (ZiskFv.AirsClean.Main.bMemMessageExpr row)).toRaw).eval env).mult = m)
-    (h_slot_c : ∀ {env : Environment FGL} {row : Var MainRowWithRom FGL},
-      (eval env row).rom.store_mem * (1 - (eval env row).rom.store_mem) = 0 →
-      (eval env row).rom.store_ind * (1 - (eval env row).rom.store_ind) = 0 →
-      (eval env row).rom.store_reg * (1 - (eval env row).rom.store_reg) = 0 →
-      (eval env (ZiskFv.AirsClean.Main.cMemMessageExpr row)).mem_op = k →
-      eval env (ZiskFv.AirsClean.Main.cMemMessageExpr row) = eval refEnv refMsg →
+        (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
+          + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
+        (ZiskFv.AirsClean.Main.aMemMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (tbl.environment r)).mult = m)
+    (h_slot_b : ∀ {tbl : Table FGL} {r : Array FGL},
+      tbl ∈ witness.allTables →
+      tbl.component = componentWithRomMemAndOpBus length program →
+      r ∈ tbl.table →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_mem
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_mem) = 0 →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_ind
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_ind) = 0 →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg) = 0 →
+      (eval (tbl.environment r) (ZiskFv.AirsClean.Main.bMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).mem_op = k →
+      eval (tbl.environment r) (ZiskFv.AirsClean.Main.bMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar) = eval refEnv refMsg →
       (((MemBusChannel.emitted
-        (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
-        (ZiskFv.AirsClean.Main.cMemMessageExpr row)).toRaw).eval env).mult = m)
+        (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
+          + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
+          + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
+        (ZiskFv.AirsClean.Main.bMemMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (tbl.environment r)).mult = m)
+    (h_slot_c : ∀ {tbl : Table FGL} {r : Array FGL},
+      tbl ∈ witness.allTables →
+      tbl.component = componentWithRomMemAndOpBus length program →
+      r ∈ tbl.table →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_mem
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_mem) = 0 →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_ind
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_ind) = 0 →
+      (eval (tbl.environment r)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg
+        * (1 - (eval (tbl.environment r)
+          (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg) = 0 →
+      (eval (tbl.environment r) (ZiskFv.AirsClean.Main.cMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).mem_op = k →
+      eval (tbl.environment r) (ZiskFv.AirsClean.Main.cMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar) = eval refEnv refMsg →
+      (((MemBusChannel.emitted
+        (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
+          + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
+          + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg))
+        (ZiskFv.AirsClean.Main.cMemMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (tbl.environment r)).mult = m)
     (h_ref_op : (eval refEnv refMsg).mem_op = k)
     {j : Interaction FGL} (h_j : j ∈ witness.interactionsWith MemBusChannel.toRaw)
     (h_msg : j.msg = (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg) :
@@ -530,7 +581,8 @@ theorem memBus_mult_eq_of_msg_eq_mem_op_high
         simpa [ZiskFv.AirsClean.Main.aRegPreMessage] using h_op
       exact h_k3 h_lit.symm
     · rw [h_eval]
-      exact h_slot_a b_a_mem b_a_reg (h_op_of_emitted h_eval) (h_full_of_emitted h_eval)
+      exact h_slot_a h_table h_main h_row b_a_mem b_a_reg (h_op_of_emitted h_eval)
+        (h_full_of_emitted h_eval)
     · exfalso
       have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr] at h_op
@@ -538,7 +590,8 @@ theorem memBus_mult_eq_of_msg_eq_mem_op_high
         simpa [ZiskFv.AirsClean.Main.bRegPreMessage] using h_op
       exact h_k3 h_lit.symm
     · rw [h_eval]
-      exact h_slot_b b_b_mem b_b_ind b_b_reg (h_op_of_emitted h_eval) (h_full_of_emitted h_eval)
+      exact h_slot_b h_table h_main h_row b_b_mem b_b_ind b_b_reg (h_op_of_emitted h_eval)
+        (h_full_of_emitted h_eval)
     · exfalso
       have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr] at h_op
@@ -546,7 +599,8 @@ theorem memBus_mult_eq_of_msg_eq_mem_op_high
         simpa [ZiskFv.AirsClean.Main.cRegPreMessage] using h_op
       exact h_k3 h_lit.symm
     · rw [h_eval]
-      exact h_slot_c b_c_mem b_c_ind b_c_reg (h_op_of_emitted h_eval) (h_full_of_emitted h_eval)
+      exact h_slot_c h_table h_main h_row b_c_mem b_c_ind b_c_reg (h_op_of_emitted h_eval)
+        (h_full_of_emitted h_eval)
 
 
 /-- The `mem_op = 4` instance: all three Main current accesses ride at `-2` there. -/
@@ -562,9 +616,9 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
     j.mult = -2 :=
   memBus_mult_eq_of_msg_eq_mem_op_high h_constraints h_specs
     (by decide) (by decide) (by decide)
-    (fun h1 h2 h3 _ => main_aMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3)
-    (fun h1 h2 h3 h4 _ => main_bMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3 h4)
-    (fun h1 h2 h3 h4 _ => main_cMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3 h4)
+    (fun _ _ _ h1 h2 h3 _ => main_aMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3)
+    (fun _ _ _ h1 h2 h3 h4 _ => main_bMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3 h4)
+    (fun _ _ _ h1 h2 h3 h4 _ => main_cMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3 h4)
     h_ref_op h_j h_msg
 
 /-! ## The exclusivity, from balance -/
@@ -865,9 +919,9 @@ theorem memBus_mult_eq_neg_three_of_msg_eq_mem_op_seven
     j.mult = -3 :=
   memBus_mult_eq_of_msg_eq_mem_op_high h_constraints h_specs
     (by decide) (by decide) (by decide)
-    (fun h1 h2 h3 _ => main_aMem_mult_of_mem_op_seven h1 h2 h3)
-    (fun h1 h2 h3 h4 _ => main_bMem_mult_of_mem_op_seven h1 h2 h3 h4)
-    (fun h1 h2 h3 h4 _ => main_cMem_mult_of_mem_op_seven h1 h2 h3 h4)
+    (fun _ _ _ h1 h2 h3 _ => main_aMem_mult_of_mem_op_seven h1 h2 h3)
+    (fun _ _ _ h1 h2 h3 h4 _ => main_bMem_mult_of_mem_op_seven h1 h2 h3 h4)
+    (fun _ _ _ h1 h2 h3 h4 _ => main_cMem_mult_of_mem_op_seven h1 h2 h3 h4)
     h_ref_op h_j h_msg
 
 
@@ -931,5 +985,103 @@ theorem main_not_store_mem_and_store_ind_and_store_reg
       (by rw [h_store_mem]; ring) (by rw [h_store_ind]; ring) (by rw [h_store_reg]; ring) h_ref_op
   · intro i h_i h_msg _
     exact memBus_mult_eq_neg_three_of_msg_eq_mem_op_seven h_constraints h_specs h_ref_op h_i h_msg
+
+
+/-! ## `mem_op = 5`: reachable by the b-side and the store-side, at different multiplicities -/
+
+/-- The a-side current access cannot reach `mem_op = 5`: `a_src_mem + 3 * a_src_reg` tops out at
+`4`. -/
+theorem main_aMem_mem_op_ne_five
+    {env : Environment FGL} {row : Var MainRowWithRom FGL}
+    (h_mem : (eval env row).rom.a_src_mem * (1 - (eval env row).rom.a_src_mem) = 0)
+    (h_reg : (eval env row).rom.a_src_reg * (1 - (eval env row).rom.a_src_reg) = 0)
+    (h_op : (eval env (ZiskFv.AirsClean.Main.aMemMessageExpr row)).mem_op = 5) :
+    False := by
+  rw [ZiskFv.AirsClean.Main.eval_aMemMessageExpr] at h_op
+  change (eval env row).rom.a_src_mem + 3 * (eval env row).rom.a_src_reg = 5 at h_op
+  rcases zero_or_one_of_bool h_mem with h1 | h1 <;>
+    rcases zero_or_one_of_bool h_reg with h2 | h2 <;>
+      rw [h1, h2] at h_op <;> norm_num at h_op <;> exact absurd h_op (by decide)
+
+/-- The b-side current access rides at `-3` when its `mem_op` is `5`. -/
+theorem main_bMem_mult_of_mem_op_five
+    {env : Environment FGL} {row : Var MainRowWithRom FGL}
+    (h_mem : (eval env row).rom.b_src_mem * (1 - (eval env row).rom.b_src_mem) = 0)
+    (h_ind : (eval env row).rom.b_src_ind * (1 - (eval env row).rom.b_src_ind) = 0)
+    (h_reg : (eval env row).rom.b_src_reg * (1 - (eval env row).rom.b_src_reg) = 0)
+    (h_op : (eval env (ZiskFv.AirsClean.Main.bMemMessageExpr row)).mem_op = 5) :
+    (((MemBusChannel.emitted
+      (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+      (ZiskFv.AirsClean.Main.bMemMessageExpr row)).toRaw).eval env).mult = -3 := by
+  rw [ZiskFv.AirsClean.Main.eval_bMemMessageExpr] at h_op
+  change ((eval env row).rom.b_src_mem + (eval env row).rom.b_src_ind)
+    + 3 * (eval env row).rom.b_src_reg = 5 at h_op
+  obtain ⟨-, -, h_b_mem, h_b_ind, h_b_reg, -⟩ := main_rom_eval env row
+  rw [memBus_emitted_eval_mult]
+  have h_eval :
+      Expression.eval env (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+      = -((eval env row).rom.b_src_mem + (eval env row).rom.b_src_ind
+          + (eval env row).rom.b_src_reg) := by
+    simp only [Expression.eval, h_b_mem, h_b_ind, h_b_reg]; ring
+  rw [h_eval]
+  rcases zero_or_one_of_bool h_mem with h1 | h1 <;>
+    rcases zero_or_one_of_bool h_ind with h2 | h2 <;>
+      rcases zero_or_one_of_bool h_reg with h3 | h3 <;>
+        rw [h1, h2, h3] at h_op ⊢ <;> norm_num at h_op ⊢ <;>
+          first
+            | rfl
+            | exact absurd h_op (by decide)
+
+/-- The store-side current access rides at `-2` when its `mem_op` is `5`. -/
+theorem main_cMem_mult_of_mem_op_five
+    {env : Environment FGL} {row : Var MainRowWithRom FGL}
+    (h_mem : (eval env row).rom.store_mem * (1 - (eval env row).rom.store_mem) = 0)
+    (h_ind : (eval env row).rom.store_ind * (1 - (eval env row).rom.store_ind) = 0)
+    (h_reg : (eval env row).rom.store_reg * (1 - (eval env row).rom.store_reg) = 0)
+    (h_op : (eval env (ZiskFv.AirsClean.Main.cMemMessageExpr row)).mem_op = 5) :
+    (((MemBusChannel.emitted
+      (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+      (ZiskFv.AirsClean.Main.cMemMessageExpr row)).toRaw).eval env).mult = -2 := by
+  rw [ZiskFv.AirsClean.Main.eval_cMemMessageExpr] at h_op
+  change 2 * ((eval env row).rom.store_mem + (eval env row).rom.store_ind)
+    + 3 * (eval env row).rom.store_reg = 5 at h_op
+  obtain ⟨-, -, -, -, -, h_c_mem, h_c_ind, h_c_reg⟩ := main_rom_eval env row
+  rw [memBus_emitted_eval_mult]
+  have h_eval :
+      Expression.eval env (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+      = -((eval env row).rom.store_mem + (eval env row).rom.store_ind
+          + (eval env row).rom.store_reg) := by
+    simp only [Expression.eval, h_c_mem, h_c_ind, h_c_reg]; ring
+  rw [h_eval]
+  rcases zero_or_one_of_bool h_mem with h1 | h1 <;>
+    rcases zero_or_one_of_bool h_ind with h2 | h2 <;>
+      rcases zero_or_one_of_bool h_reg with h3 | h3 <;>
+        rw [h1, h2, h3] at h_op ⊢ <;> norm_num at h_op ⊢ <;>
+          first
+            | rfl
+            | exact absurd h_op (by decide)
+
+/-- A Main row's b-side current access is one of the witness's memory-bus interactions. -/
+theorem main_bMem_interaction_mem_witness
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
+        + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
+        + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
+      (ZiskFv.AirsClean.Main.bMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row))
+      ∈ witness.interactionsWith MemBusChannel.toRaw := by
+  rw [EnsembleWitness.mem_interactionsWith]
+  refine ⟨table, h_table, ?_⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ⟨row, h_row, ?_⟩
+  rw [Operations.interactionValuesWith_eq_map, h_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  simp
 
 end ZiskFv.AirsClean.FullEnsemble
