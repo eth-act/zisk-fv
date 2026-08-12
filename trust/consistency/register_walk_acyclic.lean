@@ -53,6 +53,16 @@ theorem register_walk_non_vacuous :
        (ZiskFv.Compliance.RegisterMemBusBalance.addX1Row, RegSlot.c)] :=
   addX1Row_walk_isChain
 
+/-- The chain result stated over exactly the rows the counterpart classification produces —
+    every Main row of the witness, not only the executed prefix. -/
+theorem register_walk_timestamps_nodup_on_witness_rows
+    {n : Nat} (trace : AcceptedZiskTrace n) (steps : List RegWalkStep)
+    (h_sites : ∀ p ∈ steps, IsActiveWitnessMainRow trace p)
+    (h_chain : List.IsChain RegWalkStep.Supplies steps) :
+    (steps.map RegWalkStep.timestamp).Nodup :=
+  regSupplies_chain_timestamps_nodup_of_witnessRows trace steps h_sites h_chain
+
+#print axioms register_walk_timestamps_nodup_on_witness_rows
 #print axioms register_walk_no_two_cycle
 #print axioms register_walk_timestamps_nodup
 #print axioms register_walk_non_vacuous

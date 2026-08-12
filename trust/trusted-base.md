@@ -658,7 +658,10 @@ table's own fixed-column capacity (`mainFixedCapacity = 2^22`) rather than from 
 segment-length assumption. Consequently the supply relation is acyclic
 (`regSupplies_chain_timestamps_nodup_of_trace`), which is what excludes the disjoint
 register cycle #342 exhibits. The relation is slot-indexed on both sides, so mixed-slot
-cycles are excluded too. V2 check 19 keeps the axiom closure visible
+cycles are excluded too. The chain result is stated over `IsActiveWitnessMainRow` — every Main
+row of the witness, not just the executed prefix — because a provider may be a padding row past
+that prefix, and its no-wrap bound comes from the same fixed-column capacity. V2 check 19 keeps
+the axiom closure visible
 (`trust/consistency/register_walk_acyclic.lean`); it is kernel-only and adds no project
 axioms.
 

@@ -109,13 +109,42 @@ theorem regSlot_descent_of_trace
     ((mainTableRowAtOrZero_get trace.program trace.mainTable ⟨i.val, h_index⟩).symm)
     trace.mainTable_component s h_active
 
-/-- The no-wrap bound for a trace's Main row, derived from the fixed schema. -/
+/-- **The no-wrap bound for any in-range Main row**, not only the executed steps.
+
+    The walk's providers come out of `witness.allTables` and need not be indexed by `Fin n` — a
+    padding row can carry a register-pre push exactly as an executed row can. So the bound has to
+    cover every row of a Main-component table, and it does: `main_step` is indexed fixed data and
+    the table's own `fixed_domain` caps the index at `mainFixedCapacity = 2^22`. -/
+theorem regSlot_timestamp_bound_of_mainTable
+    {length : Nat} {program : Program length} {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {index : Nat} (h_index : index < table.table.length) (s : RegSlot) :
+    (s.readTimestamp (mainTableRowAtOrZero program table index)).val < 2 ^ 40 :=
+  readTimestamp_val_lt_of_main_step_eq_index
+    ((mainStepIndexFixedFacts_of_component_fixedColumns
+      (numInstructions := table.table.length) program table h_component
+      (fun i => i.isLt)).main_step_eq_index ⟨index, h_index⟩)
+    (main_index_lt_mainFixedCapacity h_component h_index) s
+
+/-- The no-wrap bound at an executed step, the special case the trace-indexed results use. -/
 theorem regSlot_timestamp_bound_of_trace
     (trace : AcceptedZiskTrace n) (i : Fin n) (s : RegSlot) :
     (s.readTimestamp (mainTableRowAtOrZero trace.program trace.mainTable i.val)).val < 2 ^ 40 :=
-  readTimestamp_val_lt_of_main_step_eq_index
-    (trace.mainTable_main_step_index_fixed.main_step_eq_index i)
-    (main_index_lt_mainFixedCapacity trace.mainTable_component (trace.mainTable_index i)) s
+  regSlot_timestamp_bound_of_mainTable trace.mainTable_component (trace.mainTable_index i) s
+
+/-- **A walk step that really occurs in the witness**: some Main-component table of the witness, an
+    in-range row of it, and a slot whose register selector is set.
+
+    This is the shape the counterpart classification below *produces*, so it is the shape the chain
+    results must consume. Indexing walk steps by `Fin n` would only cover executed steps, while a
+    provider may be any row of the table — including a padding row past the executed prefix. -/
+def IsActiveWitnessMainRow (trace : AcceptedZiskTrace n) (p : RegWalkStep) : Prop :=
+  ∃ table ∈ trace.witness.allTables,
+    table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength trace.program
+      ∧ ∃ index, ∃ _h : index < table.table.length,
+          p.1 = mainTableRowAtOrZero trace.program table index ∧ p.2.selector p.1 = 1
 
 /-- A walk step named by an executed step index and a register slot. -/
 noncomputable def traceWalkStep (trace : AcceptedZiskTrace n) (p : Fin n × RegSlot) :
@@ -181,6 +210,27 @@ theorem regSupplies_chain_timestamps_nodup_of_trace
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hw
     exact regSlot_timestamp_bound_of_trace trace p.1 p.2
 
+/-- The descent for any active in-range row of any Main-component table of the witness. -/
+theorem regSlot_descent_of_witnessMainRow
+    (trace : AcceptedZiskTrace n) {p : RegWalkStep} (h_site : IsActiveWitnessMainRow trace p) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec p.distance := by
+  obtain ⟨table, h_table, h_component, index, h_index, h_row, h_active⟩ := h_site
+  show ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (p.2.distance p.1)
+  rw [h_row] at h_active ⊢
+  exact rangeTable24_spec_distance_of_active trace.channels_balanced trace.spec_holds
+    trace.constraints_hold h_table (List.get_mem table.table ⟨index, h_index⟩)
+    ((mainTableRowAtOrZero_get trace.program table ⟨index, h_index⟩).symm)
+    h_component p.2 h_active
+
+/-- The no-wrap bound for any in-range row of any Main-component table of the witness. -/
+theorem regSlot_timestamp_bound_of_witnessMainRow
+    (trace : AcceptedZiskTrace n) {p : RegWalkStep} (h_site : IsActiveWitnessMainRow trace p) :
+    p.timestamp.val < 2 ^ 40 := by
+  obtain ⟨table, h_table, h_component, index, h_index, h_row, h_active⟩ := h_site
+  show (p.2.readTimestamp p.1).val < 2 ^ 40
+  rw [h_row]
+  exact regSlot_timestamp_bound_of_mainTable h_component h_index p.2
+
 /-! ## From balance to the supply relation
 
 Everything above takes the supply relation as given. This last section derives it: on an accepted
@@ -192,6 +242,22 @@ open ZiskFv.AirsClean.FullEnsemble (ActiveMainRegisterBoundaryProviderRowMatchSp
   activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three
   selfMemProvider_registerPre_active_of_mem_op_three)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+
+/-- A member row of a Main-component table is that table's `mainTableRowAtOrZero` at some in-range
+    index. The classification returns rows by membership; `IsActiveWitnessMainRow` names them by
+    index, and this is the bridge. -/
+theorem exists_index_of_mem_mainTable
+    {length : Nat} {program : Program length} {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    ∃ index, ∃ _h : index < table.table.length,
+      eval (table.environment row)
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar
+        = mainTableRowAtOrZero program table index := by
+  obtain ⟨⟨index, h_index⟩, h_get⟩ := List.get_of_mem h_row
+  refine ⟨index, h_index, ?_⟩
+  rw [mainTableRowAtOrZero_get program table ⟨index, h_index⟩, h_get]
 
 /-- **The counterpart of a register read, classified.** From `channels_balanced` alone: a Main
     memory-bus pull at `mem_op = 3` is supplied either by the `RegisterBoundary` or by another Main
@@ -217,18 +283,8 @@ theorem registerRead_counterpart_of_trace
     {multiplicity as : FGL} :
     ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness trace.mainTable
         mainRow mainInteraction mainMsg multiplicity as
-      ∨ ∃ providerTable ∈ trace.witness.allTables, ∃ providerRow ∈ providerTable.table,
-          providerTable.component =
-              ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                trace.programLength trace.program
-            ∧ ∃ sp : RegSlot,
-                sp.selector (eval (providerTable.environment providerRow)
-                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                      trace.programLength trace.program).rowInputVar) = 1
-                  ∧ sp.prevStep (eval (providerTable.environment providerRow)
-                      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                        trace.programLength trace.program).rowInputVar)
-                    = (eval (trace.mainTable.environment mainRow) mainMsg).timestamp := by
+      ∨ ∃ p : RegWalkStep, IsActiveWitnessMainRow trace p
+          ∧ p.2.prevStep p.1 = (eval (trace.mainTable.environment mainRow) mainMsg).timestamp := by
   have h_match :=
     (trace.activeMainMemProviderRowMatchSpec_of_active_main_eval
       h_mainRow h_mainInteraction h_mainEval h_pull (multiplicity := multiplicity) (as := as)).2
@@ -239,11 +295,19 @@ theorem registerRead_counterpart_of_trace
       h_branch⟩ :=
       selfMemProvider_registerPre_active_of_mem_op_three h_mainEval h_mem_op
         trace.constraints_hold h_self
-    refine ⟨providerTable, h_providerTable, providerRow, h_providerRow, h_providerComponent, ?_⟩
-    rcases h_branch with ⟨h_sel, h_ts⟩ | ⟨h_sel, h_ts⟩ | ⟨h_sel, h_ts⟩
-    · exact ⟨RegSlot.a, h_sel, h_ts⟩
-    · exact ⟨RegSlot.b, h_sel, h_ts⟩
-    · exact ⟨RegSlot.c, h_sel, h_ts⟩
+    obtain ⟨index, h_index, h_rowAt⟩ :=
+      exists_index_of_mem_mainTable h_providerComponent h_providerRow
+    refine
+      match h_branch with
+      | Or.inl ⟨h_sel, h_ts⟩ =>
+          ⟨(_, RegSlot.a), ⟨providerTable, h_providerTable, h_providerComponent, index, h_index,
+            h_rowAt, h_sel⟩, h_ts⟩
+      | Or.inr (Or.inl ⟨h_sel, h_ts⟩) =>
+          ⟨(_, RegSlot.b), ⟨providerTable, h_providerTable, h_providerComponent, index, h_index,
+            h_rowAt, h_sel⟩, h_ts⟩
+      | Or.inr (Or.inr ⟨h_sel, h_ts⟩) =>
+          ⟨(_, RegSlot.c), ⟨providerTable, h_providerTable, h_providerComponent, index, h_index,
+            h_rowAt, h_sel⟩, h_ts⟩
   · exact Or.inl h_boundary
 
 /-- **The supply step, entirely from the accepted trace.**
@@ -285,22 +349,11 @@ theorem registerRead_supplied_by_boundary_or_strictly_later_row
           (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
             trace.programLength trace.program).rowInputVar)
         multiplicity as
-      ∨ ∃ providerTable ∈ trace.witness.allTables, ∃ providerRow ∈ providerTable.table,
-          ∃ _ : providerTable.component =
-              ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                trace.programLength trace.program,
-            ∃ sp : RegSlot,
-              RegSupplies sc sp
-                  (mainTableRowAtOrZero trace.program trace.mainTable i.val)
-                  (eval (providerTable.environment providerRow)
-                    (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                      trace.programLength trace.program).rowInputVar)
-                ∧ (sc.readTimestamp
-                      (mainTableRowAtOrZero trace.program trace.mainTable i.val)).val
-                    < (sp.readTimestamp
-                      (eval (providerTable.environment providerRow)
-                        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-                          trace.programLength trace.program).rowInputVar)).val := by
+      ∨ ∃ p : RegWalkStep, IsActiveWitnessMainRow trace p
+          ∧ RegSupplies sc p.2 (mainTableRowAtOrZero trace.program trace.mainTable i.val) p.1
+          ∧ (sc.readTimestamp
+                (mainTableRowAtOrZero trace.program trace.mainTable i.val)).val
+              < p.timestamp.val := by
   have h_row : mainTableRowAtOrZero trace.program trace.mainTable i.val
       = eval (trace.mainTable.environment
           (trace.mainTable.table.get ⟨i.val, trace.mainTable_index i⟩))
@@ -310,19 +363,38 @@ theorem registerRead_supplied_by_boundary_or_strictly_later_row
   rcases registerRead_counterpart_of_trace trace
       (List.get_mem trace.mainTable.table ⟨i.val, trace.mainTable_index i⟩)
       h_mainInteraction h_mainEval h_pull h_mem_op (multiplicity := multiplicity) (as := as) with
-    h_boundary | ⟨providerTable, h_providerTable, providerRow, h_providerRow,
-      h_providerComponent, sp, h_sel, h_ts⟩
+    h_boundary | ⟨p, h_site, h_ts⟩
   · exact Or.inl h_boundary
-  · refine Or.inr ⟨providerTable, h_providerTable, providerRow, h_providerRow,
-      h_providerComponent, sp, ?_, ?_⟩
-    · show sp.prevStep _ = sc.readTimestamp _
+  · have h_supplies :
+        RegSupplies sc p.2 (mainTableRowAtOrZero trace.program trace.mainTable i.val) p.1 := by
+      show p.2.prevStep p.1 = sc.readTimestamp _
       rw [h_ts, RegSlot.eval_memMessageExpr_timestamp, ← h_row]
-    · refine readTimestamp_lt_of_regSupplies (sc := sc) (sp := sp) ?_ ?_ ?_
-      · show sp.prevStep _ = sc.readTimestamp _
-        rw [h_ts, RegSlot.eval_memMessageExpr_timestamp, ← h_row]
-      · exact rangeTable24_spec_distance_of_active trace.channels_balanced trace.spec_holds
-          trace.constraints_hold h_providerTable h_providerRow rfl h_providerComponent sp h_sel
-      · exact regSlot_timestamp_bound_of_trace trace i sc
+    exact Or.inr ⟨p, h_site, h_supplies,
+      readTimestamp_lt_of_regSupplies h_supplies
+        (regSlot_descent_of_witnessMainRow trace h_site)
+        (regSlot_timestamp_bound_of_trace trace i sc)⟩
+
+/-! ## The chain result, on the rows the classification actually produces
+
+`regSupplies_chain_timestamps_nodup_of_trace` above is indexed by `Fin n`, so it only speaks about
+executed steps. `registerRead_counterpart_of_trace` produces providers out of `witness.allTables`,
+which may be padding rows past the executed prefix. This section states the chain result over
+`IsActiveWitnessMainRow`, the shape the classification returns, so the two compose. -/
+
+/-- **No cycle, over exactly the rows the counterpart classification produces.**
+
+    Both hypotheses of the row-local no-cycle theorem are discharged from the trace, and the walk
+    steps range over every Main row of the witness rather than only the executed prefix. This is the
+    form that composes with `registerRead_supplied_by_boundary_or_strictly_later_row`. -/
+theorem regSupplies_chain_timestamps_nodup_of_witnessRows
+    (trace : AcceptedZiskTrace n) (steps : List RegWalkStep)
+    (h_sites : ∀ p ∈ steps, IsActiveWitnessMainRow trace p)
+    (h_chain : List.IsChain RegWalkStep.Supplies steps) :
+    (steps.map RegWalkStep.timestamp).Nodup :=
+  regSupplies_chain_timestamps_nodup steps
+    (fun p hp => regSlot_descent_of_witnessMainRow trace (h_sites p hp))
+    (fun p hp => regSlot_timestamp_bound_of_witnessMainRow trace (h_sites p hp))
+    h_chain
 
 /-! ## Non-vacuity
 
