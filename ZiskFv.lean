@@ -195,6 +195,7 @@ import ZiskFv.Compliance.RegisterMemBusBalance
 import ZiskFv.AirsClean.FullEnsemble.Balance.MemBusSourceExclusivity
 import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
 import ZiskFv.Compliance.RegisterWalk
+import ZiskFv.Compliance.MemBusSlotSeparation
 import ZiskFv.Compliance.SingleAddWitness
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.Compliance.AddSpinRootSoundness
