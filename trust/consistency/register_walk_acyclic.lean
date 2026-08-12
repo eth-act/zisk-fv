@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.RegisterWalk
+import ZiskFv.Compliance.MemBusSlotSeparation
 
 /-!
 # Register walk acyclicity (issue #342)
@@ -25,6 +26,7 @@ namespace ZiskFv.TrustConsistency
 
 open ZiskFv.Compliance
 open ZiskFv.Compliance.Instantiation (RegSlot RegSupplies RegWalkStep)
+open Air.Flat
 
 /-- #342's concrete two-row witness is impossible on an accepted trace. -/
 theorem register_walk_no_two_cycle
@@ -62,12 +64,52 @@ theorem register_walk_timestamps_nodup_on_witness_rows
     (steps.map RegWalkStep.timestamp).Nodup :=
   regSupplies_chain_timestamps_nodup_of_witnessRows trace steps h_sites h_chain
 
+/-- Termination: from any witness site the walk reaches a site whose register read is supplied by
+    the `RegisterBoundary`. -/
+theorem register_walk_terminates_at_boundary
+    {n : Nat} (trace : AcceptedZiskTrace n) (multiplicity as : FGL)
+    {table : Air.Flat.Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        trace.programLength trace.program).rowInputVar) = 1) :
+    BoundarySuppliedSite trace multiplicity as :=
+  exists_boundarySuppliedSite trace multiplicity as h_table h_component h_row s h_sel
+
+/-- Source exclusivity, the fact termination rests on: every Main register access is a `-1` pull. -/
+theorem register_access_is_a_pull
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {table : Air.Flat.Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component =
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar) = 1) :
+    (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+      (s.memMult (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program).rowInputVar)
+      (s.memMessageExpr
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          length program).rowInputVar)).toRaw).eval (table.environment row)).mult = -1
+    ∧ (eval (table.environment row)
+        (s.memMessageExpr
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            length program).rowInputVar)).mem_op = 3 :=
+  regSlot_mem_pull_of_selector h_balanced h_constraints h_specs h_table h_component h_row s h_sel
+
+#print axioms register_walk_terminates_at_boundary
+#print axioms register_access_is_a_pull
 #print axioms register_walk_timestamps_nodup_on_witness_rows
 #print axioms register_walk_no_two_cycle
 #print axioms register_walk_timestamps_nodup
 #print axioms register_walk_non_vacuous
 #print axioms ZiskFv.Compliance.addX1Row_walk_timestamps_nodup
-#print axioms ZiskFv.Compliance.registerRead_counterpart_of_trace
+#print axioms ZiskFv.Compliance.registerRead_counterpart_of_witnessTable
 #print axioms ZiskFv.Compliance.registerRead_supplied_by_boundary_or_strictly_later_row
 #print axioms ZiskFv.Compliance.regSlot_descent_of_trace
 #print axioms ZiskFv.Compliance.regSlot_timestamp_bound_of_trace

@@ -266,28 +266,30 @@ theorem exists_index_of_mem_mainTable
 
     The activity conjunct is what makes the second branch usable — it is exactly the premise the
     bus-102 descent needs. -/
-theorem registerRead_counterpart_of_trace
+theorem registerRead_counterpart_of_witnessTable
     {n : Nat} (trace : AcceptedZiskTrace n)
-    {mainRow : Array FGL} (h_mainRow : mainRow ∈ trace.mainTable.table)
+    {mainTable : Table FGL} (h_mainTable : mainTable ∈ trace.witness.allTables)
+    {mainRow : Array FGL} (h_mainRow : mainRow ∈ mainTable.table)
     {mainInteraction : Interaction FGL}
     (h_mainInteraction :
-      mainInteraction ∈ trace.mainTable.interactionsWith MemBusChannel.toRaw)
+      mainInteraction ∈ mainTable.interactionsWith MemBusChannel.toRaw)
     {mainMult : Expression FGL}
     {mainMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
     (h_mainEval :
       mainInteraction =
         ((MemBusChannel.emitted mainMult mainMsg).toRaw).eval
-          (trace.mainTable.environment mainRow))
+          (mainTable.environment mainRow))
     (h_pull : mainInteraction.mult = -1)
-    (h_mem_op : (eval (trace.mainTable.environment mainRow) mainMsg).mem_op = 3)
+    (h_mem_op : (eval (mainTable.environment mainRow) mainMsg).mem_op = 3)
     {multiplicity as : FGL} :
-    ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness trace.mainTable
+    ActiveMainRegisterBoundaryProviderRowMatchSpec trace.program trace.witness mainTable
         mainRow mainInteraction mainMsg multiplicity as
       ∨ ∃ p : RegWalkStep, IsActiveWitnessMainRow trace p
-          ∧ p.2.prevStep p.1 = (eval (trace.mainTable.environment mainRow) mainMsg).timestamp := by
+          ∧ p.2.prevStep p.1 = (eval (mainTable.environment mainRow) mainMsg).timestamp := by
   have h_match :=
-    (trace.activeMainMemProviderRowMatchSpec_of_active_main_eval
-      h_mainRow h_mainInteraction h_mainEval h_pull (multiplicity := multiplicity) (as := as)).2
+    (ZiskFv.AirsClean.FullEnsemble.activeMainMemProviderRowMatchSpec_of_active_main_eval
+      trace.witness trace.channels_balanced trace.spec_holds h_mainTable h_mainRow
+      h_mainInteraction h_mainEval h_pull (multiplicity := multiplicity) (as := as)).2
   rcases activeMainRegisterProviderRowMatchSpec_of_main_mem_op_three
       h_mainEval h_mem_op h_match with h_self | h_boundary
   · refine Or.inr ?_
@@ -360,7 +362,7 @@ theorem registerRead_supplied_by_boundary_or_strictly_later_row
         (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
           trace.programLength trace.program).rowInputVar :=
     mainTableRowAtOrZero_get trace.program trace.mainTable ⟨i.val, trace.mainTable_index i⟩
-  rcases registerRead_counterpart_of_trace trace
+  rcases registerRead_counterpart_of_witnessTable trace trace.mainTable_mem
       (List.get_mem trace.mainTable.table ⟨i.val, trace.mainTable_index i⟩)
       h_mainInteraction h_mainEval h_pull h_mem_op (multiplicity := multiplicity) (as := as) with
     h_boundary | ⟨p, h_site, h_ts⟩
