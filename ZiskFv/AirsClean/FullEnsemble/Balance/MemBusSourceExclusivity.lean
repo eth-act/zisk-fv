@@ -604,4 +604,74 @@ theorem main_not_a_src_mem_and_a_src_reg
     · exact absurd h_char (by decide)
   omega
 
+
+/-- **A register-reading row does not also read memory on the a side.** Immediate from
+    `main_not_a_src_mem_and_a_src_reg` plus booleanity. -/
+theorem main_a_src_mem_eq_zero_of_a_src_reg
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table)
+    (h_src_reg : (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg = 1) :
+    (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_mem = 0 := by
+  obtain ⟨b_a_mem, -⟩ := main_source_flags_boolean h_component (h_constraints table h_table) h_row
+  rcases zero_or_one_of_bool b_a_mem with h | h
+  · exact h
+  · exact absurd (main_not_a_src_mem_and_a_src_reg h_balanced h_constraints h_specs h_table
+      h_component h_row h h_src_reg) (by simp)
+
+/-- **The a-side access of a register-reading row is a genuine `-1` pull at `mem_op = 3`.**
+
+    This is the shape Clean's `exists_push_of_pull` consumes, so it is what lets the register walk
+    take another step from a supplying row rather than stopping there. Both halves come from
+    exclusivity: the multiplicity is `-(0 + 1)` and the opcode is `0 + 3 * 1`. -/
+theorem main_aMem_pull_of_a_src_reg
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table)
+    (h_src_reg : (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg = 1) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
+        + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
+      (ZiskFv.AirsClean.Main.aMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row)).mult = -1
+    ∧ (eval (table.environment row)
+        (ZiskFv.AirsClean.Main.aMemMessageExpr
+          (componentWithRomMemAndOpBus length program).rowInputVar)).mem_op = 3 := by
+  have h_src_mem := main_a_src_mem_eq_zero_of_a_src_reg h_balanced h_constraints h_specs
+    h_table h_component h_row h_src_reg
+  obtain ⟨e_a_mem, e_a_reg, -⟩ :=
+    main_rom_eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar
+  constructor
+  · rw [memBus_emitted_eval_mult]
+    have h_eval :
+        Expression.eval (table.environment row)
+          (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
+            + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
+        = -((eval (table.environment row)
+              (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_mem
+            + (eval (table.environment row)
+              (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg) := by
+      simp only [Expression.eval, e_a_mem, e_a_reg]; ring
+    rw [h_eval, h_src_mem, h_src_reg]
+    norm_num
+  · rw [ZiskFv.AirsClean.Main.eval_aMemMessageExpr]
+    change (eval (table.environment row)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_mem
+      + 3 * (eval (table.environment row)
+        (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg = 3
+    rw [h_src_mem, h_src_reg]
+    norm_num
+
 end ZiskFv.AirsClean.FullEnsemble
