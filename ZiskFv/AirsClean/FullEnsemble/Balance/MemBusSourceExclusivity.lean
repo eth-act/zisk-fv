@@ -56,6 +56,12 @@ private lemma zero_or_one_of_bool {col : FGL} (h : col * (1 - col) = 0) : col = 
       simpa [sub_eq_add_neg] using hneg
     linear_combination this
 
+/-- A field element whose `val` is below `2` is `0` or `1`. -/
+private lemma zero_or_one_of_val_lt_two {x : FGL} (h : x.val < 2) : x = 0 ∨ x = 1 := by
+  interval_cases h_val : x.val
+  · exact Or.inl (by apply Fin.ext; simp [h_val])
+  · exact Or.inr (by apply Fin.ext; simp [h_val])
+
 /-- Push `Expression.eval` through a Main row variable's ROM projections. -/
 private lemma main_rom_eval
     (env : Environment FGL) (row : Var MainRowWithRom FGL) :
@@ -266,16 +272,39 @@ whose `mem_op` is `4` rides at multiplicity `-2`.
 This is the whole content of the exclusivity argument. The reference is a Main a-side current access
 on a row that sets both `a_src_mem` and `a_src_reg`; the conclusion says nothing else in the
 ensemble can offset it. -/
-theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
+theorem memBus_mult_eq_of_msg_eq_mem_op_high
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {k m : FGL} (h_k1 : k ≠ 1) (h_k2 : k ≠ 2) (h_k3 : k ≠ 3)
+    (h_slot_a : ∀ {env : Environment FGL} {row : Var MainRowWithRom FGL},
+      (eval env row).rom.a_src_mem * (1 - (eval env row).rom.a_src_mem) = 0 →
+      (eval env row).rom.a_src_reg * (1 - (eval env row).rom.a_src_reg) = 0 →
+      (eval env (ZiskFv.AirsClean.Main.aMemMessageExpr row)).mem_op = k →
+      (((MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
+        (ZiskFv.AirsClean.Main.aMemMessageExpr row)).toRaw).eval env).mult = m)
+    (h_slot_b : ∀ {env : Environment FGL} {row : Var MainRowWithRom FGL},
+      (eval env row).rom.b_src_mem * (1 - (eval env row).rom.b_src_mem) = 0 →
+      (eval env row).rom.b_src_ind * (1 - (eval env row).rom.b_src_ind) = 0 →
+      (eval env row).rom.b_src_reg * (1 - (eval env row).rom.b_src_reg) = 0 →
+      (eval env (ZiskFv.AirsClean.Main.bMemMessageExpr row)).mem_op = k →
+      (((MemBusChannel.emitted
+        (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+        (ZiskFv.AirsClean.Main.bMemMessageExpr row)).toRaw).eval env).mult = m)
+    (h_slot_c : ∀ {env : Environment FGL} {row : Var MainRowWithRom FGL},
+      (eval env row).rom.store_mem * (1 - (eval env row).rom.store_mem) = 0 →
+      (eval env row).rom.store_ind * (1 - (eval env row).rom.store_ind) = 0 →
+      (eval env row).rom.store_reg * (1 - (eval env row).rom.store_reg) = 0 →
+      (eval env (ZiskFv.AirsClean.Main.cMemMessageExpr row)).mem_op = k →
+      (((MemBusChannel.emitted
+        (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+        (ZiskFv.AirsClean.Main.cMemMessageExpr row)).toRaw).eval env).mult = m)
     {refEnv : Environment FGL} {refMult : Expression FGL}
     {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
-    (h_ref_op : (eval refEnv refMsg).mem_op = 4)
+    (h_ref_op : (eval refEnv refMsg).mem_op = k)
     {j : Interaction FGL} (h_j : j ∈ witness.interactionsWith MemBusChannel.toRaw)
     (h_msg : j.msg = (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg) :
-    j.mult = -2 := by
+    j.mult = m := by
   rw [EnsembleWitness.mem_interactionsWith] at h_j
   obtain ⟨table, h_table, h_mem_table⟩ := h_j
   have h_component_mem :
@@ -287,7 +316,7 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       ∀ {env : Environment FGL} {m : Expression FGL}
         {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
         j = ((MemBusChannel.emitted m msg).toRaw).eval env →
-          (eval env msg).mem_op = 4 := by
+          (eval env msg).mem_op = k := by
     intro env m msg h_eval
     have h_raw :
         (((MemBusChannel.emitted m msg).toRaw).eval env).msg =
@@ -299,7 +328,7 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       ∀ {env : Environment FGL}
         {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
         j = ((MemBusChannel.pushed msg).toRaw).eval env →
-          (eval env msg).mem_op = 4 := by
+          (eval env msg).mem_op = k := by
     intro env msg h_eval
     have h_raw :
         (((MemBusChannel.pushed msg).toRaw).eval env).msg =
@@ -311,7 +340,7 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       ∀ {env : Environment FGL}
         {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
         j = ((MemBusChannel.pulled msg).toRaw).eval env →
-          (eval env msg).mem_op = 4 := by
+          (eval env msg).mem_op = k := by
     intro env msg h_eval
     have h_raw :
         (((MemBusChannel.pulled msg).toRaw).eval env).msg =
@@ -337,14 +366,14 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       ⟨row, _h_row, h_eval⟩ | ⟨row, _h_row, h_eval⟩
     · have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.RegisterBoundary.eval_bootMessageExpr] at h_op
-      have h_lit : (3 : FGL) = 4 := by
+      have h_lit : (3 : FGL) = k := by
         simpa [ZiskFv.AirsClean.RegisterBoundary.bootMessage] using h_op
-      exact absurd h_lit (by decide)
+      exact h_k3 h_lit.symm
     · have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.RegisterBoundary.eval_reloadMessageExpr] at h_op
-      have h_lit : (3 : FGL) = 4 := by
+      have h_lit : (3 : FGL) = k := by
         simpa [ZiskFv.AirsClean.RegisterBoundary.reloadMessage] using h_op
-      exact absurd h_lit (by decide)
+      exact h_k3 h_lit.symm
   -- MemAlignReadByte: both emissions carry the literal `1`.
   · exfalso
     rcases exists_memBus_row_eval_of_pair_interactionsWith
@@ -354,14 +383,14 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       ⟨row, _h_row, h_eval⟩ | ⟨row, _h_row, h_eval⟩
     · have h_op := h_op_of_pulled h_eval
       rw [memBusMessage_eval_mem_op] at h_op
-      have h_lit : (1 : FGL) = 4 := by
+      have h_lit : (1 : FGL) = k := by
         simpa [ZiskFv.AirsClean.MemAlignReadByte.memReadMessageExpr, Expression.eval] using h_op
-      exact absurd h_lit (by decide)
+      exact h_k1 h_lit.symm
     · have h_op := h_op_of_pushed h_eval
       rw [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr] at h_op
-      have h_lit : (1 : FGL) = 4 := by
+      have h_lit : (1 : FGL) = k := by
         simpa [ZiskFv.AirsClean.MemAlignReadByte.memBusMessage] using h_op
-      exact absurd h_lit (by decide)
+      exact h_k1 h_lit.symm
   -- MemAlignByte: the read carries `1`, the write-back `1 + is_write` for a bounded `is_write`.
   · exfalso
     have h_rowSpec := h_specs table h_table
@@ -372,21 +401,24 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       ⟨row, h_row, h_eval⟩ | ⟨row, h_row, h_eval⟩
     · have h_op := h_op_of_pulled h_eval
       rw [memBusMessage_eval_mem_op] at h_op
-      have h_lit : (1 : FGL) = 4 := by
+      have h_lit : (1 : FGL) = k := by
         simpa [ZiskFv.AirsClean.MemAlignByte.memReadMessageExpr, Expression.eval] using h_op
-      exact absurd h_lit (by decide)
+      exact h_k1 h_lit.symm
     · have h_spec := h_rowSpec row h_row
       rw [h_mab, ZiskFv.AirsClean.MemAlignByte.component_spec,
         component_rowInput_eq_eval_rowInputVar] at h_spec
       have h_isw := h_spec.2.2.2.2.2.2.2
       have h_op := h_op_of_pushed h_eval
       rw [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr] at h_op
-      have h_isw_three :
-          (eval (table.environment row)
-            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = 3 := by
-        linear_combination h_op
-      rw [h_isw_three] at h_isw
-      exact absurd h_isw (by decide)
+      change 1 + (eval (table.environment row)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = k at h_op
+      rcases zero_or_one_of_val_lt_two (by simpa using h_isw) with h0 | h1
+      · rw [h0] at h_op
+        have h_lit : (1 : FGL) = k := by rw [← h_op]; ring
+        exact h_k1 h_lit.symm
+      · rw [h1] at h_op
+        have h_lit : (2 : FGL) = k := by rw [← h_op]; norm_num
+        exact h_k2 h_lit.symm
   -- MemAlign: `mem_op = wr + 1` with `wr` boolean.
   · exfalso
     have h_rowSpec := h_specs table h_table
@@ -401,12 +433,15 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
     have h_wr := h_spec.1
     have h_op := h_op_of_emitted h_eval
     rw [ZiskFv.AirsClean.MemAlign.eval_memBusMessageExpr] at h_op
-    have h_wr_three :
-        (eval (table.environment row)
-          ZiskFv.AirsClean.MemAlign.component.rowInputVar).wr = 3 := by
-      linear_combination h_op
-    rw [h_wr_three] at h_wr
-    exact absurd h_wr (by decide)
+    change (eval (table.environment row)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).wr + 1 = k at h_op
+    rcases zero_or_one_of_bool h_wr with h0 | h1
+    · rw [h0] at h_op
+      have h_lit : (1 : FGL) = k := by rw [← h_op]; ring
+      exact h_k1 h_lit.symm
+    · rw [h1] at h_op
+      have h_lit : (2 : FGL) = k := by rw [← h_op]; norm_num
+      exact h_k2 h_lit.symm
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
       memAlignRangeSlice_table_interactionsWith_memBus_nil h_memAlignRange
@@ -430,17 +465,20 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
       have h_wr := h_rowSpec'.2.2.2.2.1
       have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr] at h_op
-      have h_wr_three :
-          (eval (table.environment row)
-            ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr = 3 := by
-        linear_combination h_op
-      rw [h_wr_three] at h_wr
-      exact absurd h_wr (by decide)
+      change (eval (table.environment row)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr + 1 = k at h_op
+      rcases zero_or_one_of_bool h_wr with h0 | h1
+      · rw [h0] at h_op
+        have h_lit : (1 : FGL) = k := by rw [← h_op]; ring
+        exact h_k1 h_lit.symm
+      · rw [h1] at h_op
+        have h_lit : (2 : FGL) = k := by rw [← h_op]; norm_num
+        exact h_k2 h_lit.symm
     · have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_op
-      have h_lit : (1 : FGL) = 4 := by
+      have h_lit : (1 : FGL) = k := by
         simpa [ZiskFv.AirsClean.Mem.memBusDualMessage] using h_op
-      exact absurd h_lit (by decide)
+      exact h_k1 h_lit.symm
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
       specifiedRangesSlice_table_interactionsWith_memBus_nil h_ranges
@@ -476,27 +514,49 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
     obtain ⟨b_a_mem, b_a_reg, b_b_mem, b_b_ind, b_b_reg, b_c_mem, b_c_ind, b_c_reg⟩ :=
       main_source_flags_boolean h_main (h_constraints table h_table) h_row
     rcases h_branch with h_eval | h_eval | h_eval | h_eval | h_eval | h_eval
-    · exact absurd (by
-        have h_op := h_op_of_emitted h_eval
-        rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr] at h_op
-        simpa [ZiskFv.AirsClean.Main.aRegPreMessage] using h_op : (3 : FGL) = 4) (by decide)
+    · exfalso
+      have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr] at h_op
+      have h_lit : (3 : FGL) = k := by
+        simpa [ZiskFv.AirsClean.Main.aRegPreMessage] using h_op
+      exact h_k3 h_lit.symm
     · rw [h_eval]
-      exact main_aMem_mult_eq_neg_two_of_mem_op_four b_a_mem b_a_reg (h_op_of_emitted h_eval)
-    · exact absurd (by
-        have h_op := h_op_of_emitted h_eval
-        rw [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr] at h_op
-        simpa [ZiskFv.AirsClean.Main.bRegPreMessage] using h_op : (3 : FGL) = 4) (by decide)
+      exact h_slot_a b_a_mem b_a_reg (h_op_of_emitted h_eval)
+    · exfalso
+      have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr] at h_op
+      have h_lit : (3 : FGL) = k := by
+        simpa [ZiskFv.AirsClean.Main.bRegPreMessage] using h_op
+      exact h_k3 h_lit.symm
     · rw [h_eval]
-      exact main_bMem_mult_eq_neg_two_of_mem_op_four b_b_mem b_b_ind b_b_reg
-        (h_op_of_emitted h_eval)
-    · exact absurd (by
-        have h_op := h_op_of_emitted h_eval
-        rw [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr] at h_op
-        simpa [ZiskFv.AirsClean.Main.cRegPreMessage] using h_op : (3 : FGL) = 4) (by decide)
+      exact h_slot_b b_b_mem b_b_ind b_b_reg (h_op_of_emitted h_eval)
+    · exfalso
+      have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr] at h_op
+      have h_lit : (3 : FGL) = k := by
+        simpa [ZiskFv.AirsClean.Main.cRegPreMessage] using h_op
+      exact h_k3 h_lit.symm
     · rw [h_eval]
-      exact main_cMem_mult_eq_neg_two_of_mem_op_four b_c_mem b_c_ind b_c_reg
-        (h_op_of_emitted h_eval)
+      exact h_slot_c b_c_mem b_c_ind b_c_reg (h_op_of_emitted h_eval)
 
+
+/-- The `mem_op = 4` instance: all three Main current accesses ride at `-2` there. -/
+theorem memBus_mult_eq_neg_two_of_msg_eq_mem_op_four
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {refEnv : Environment FGL} {refMult : Expression FGL}
+    {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_ref_op : (eval refEnv refMsg).mem_op = 4)
+    {j : Interaction FGL} (h_j : j ∈ witness.interactionsWith MemBusChannel.toRaw)
+    (h_msg : j.msg = (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg) :
+    j.mult = -2 :=
+  memBus_mult_eq_of_msg_eq_mem_op_high h_constraints h_specs
+    (by decide) (by decide) (by decide)
+    (fun h1 h2 h3 => main_aMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3)
+    (fun h1 h2 h3 h4 => main_bMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3 h4)
+    (fun h1 h2 h3 h4 => main_cMem_mult_eq_neg_two_of_mem_op_four h1 h2 h3 h4)
+    h_ref_op h_j h_msg
 
 /-! ## The exclusivity, from balance -/
 
@@ -506,6 +566,48 @@ private lemma natCast_eq_zero_of_lt_prime {c : ℕ} (h_lt : c < GL_prime) (h : (
     c = 0 := by
   have h_dvd : GL_prime ∣ c := (ZMod.natCast_eq_zero_iff c GL_prime).mp h
   exact Nat.eq_zero_of_dvd_of_lt h_dvd h_lt
+
+
+/-- **A message whose every interaction rides at one nonzero multiplicity cannot balance.**
+
+    The balance at that message is `m * count`; `count` is at least one because the witnessing
+    interaction is itself counted, and below the modulus because the whole interaction list is. With
+    `m` invertible that product cannot vanish. -/
+theorem no_balanced_message_with_constant_nonzero_mult
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    {m : FGL} (h_m : m ≠ 0)
+    {I : Interaction FGL} (h_I : I ∈ witness.interactionsWith MemBusChannel.toRaw)
+    (h_I_mult : I.mult = m)
+    (h_all : ∀ i ∈ witness.interactionsWith MemBusChannel.toRaw,
+      i.msg = I.msg → i.mult ≠ 0 → i.mult = m) :
+    False := by
+  have h_balance := memBus_balanced_of_witness witness h_balanced
+  have h_zero := h_balance.2 I.msg
+  rw [balanceOf_eq_of_mult_or_zero h_all] at h_zero
+  set count : ℕ :=
+    (witness.interactionsWith MemBusChannel.toRaw).countP
+      (fun i => i.msg = I.msg && i.mult ≠ 0) with h_count
+  have h_count_pos : 0 < count := by
+    rw [h_count, List.countP_pos_iff]
+    exact ⟨I, h_I, by simp [h_I_mult, h_m]⟩
+  have h_count_lt : count < ringChar FGL ∨ ringChar FGL = 0 := by
+    rcases count_lt_ringChar_of_balancedInteractions (msg := I.msg) h_balance with h | h
+    · exact Or.inl (lt_of_le_of_lt (List.countP_and_left_le _ _ _) h)
+    · exact Or.inr h
+  have h_cast : ((count : ℕ) : FGL) = 0 := by
+    rcases mul_eq_zero.mp h_zero with h | h
+    · exact absurd h h_m
+    · exact h
+  rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime] at h_count_lt
+  have h_count_zero : count = 0 := by
+    rcases h_count_lt with h_lt | h_char
+    · exact natCast_eq_zero_of_lt_prime h_lt h_cast
+    · exact absurd h_char (by decide)
+  omega
+
+
 
 
 /-- A Main row's a-side current access really is one of the witness's memory-bus interactions. -/
@@ -673,5 +775,90 @@ theorem main_aMem_pull_of_a_src_reg
         (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg = 3
     rw [h_src_mem, h_src_reg]
     norm_num
+
+
+/-! ## `mem_op = 7`: only the store-side current access can reach it
+
+`a_src_mem + 3 * a_src_reg` tops out at `4` and `(b_src_mem + b_src_ind) + 3 * b_src_reg` at `5`, so
+at `7` the a- and b-side hypotheses are vacuous. The store side reaches `7` only at
+`store_mem = store_ind = 1, store_reg = 1`, where its multiplicity is `-3`. -/
+
+theorem main_aMem_mult_of_mem_op_seven
+    {env : Environment FGL} {row : Var MainRowWithRom FGL}
+    (h_mem : (eval env row).rom.a_src_mem * (1 - (eval env row).rom.a_src_mem) = 0)
+    (h_reg : (eval env row).rom.a_src_reg * (1 - (eval env row).rom.a_src_reg) = 0)
+    (h_op : (eval env (ZiskFv.AirsClean.Main.aMemMessageExpr row)).mem_op = 7) :
+    (((MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
+      (ZiskFv.AirsClean.Main.aMemMessageExpr row)).toRaw).eval env).mult = -3 := by
+  exfalso
+  rw [ZiskFv.AirsClean.Main.eval_aMemMessageExpr] at h_op
+  change (eval env row).rom.a_src_mem + 3 * (eval env row).rom.a_src_reg = 7 at h_op
+  rcases zero_or_one_of_bool h_mem with h1 | h1 <;>
+    rcases zero_or_one_of_bool h_reg with h2 | h2 <;>
+      rw [h1, h2] at h_op <;> norm_num at h_op <;> exact absurd h_op (by decide)
+
+theorem main_bMem_mult_of_mem_op_seven
+    {env : Environment FGL} {row : Var MainRowWithRom FGL}
+    (h_mem : (eval env row).rom.b_src_mem * (1 - (eval env row).rom.b_src_mem) = 0)
+    (h_ind : (eval env row).rom.b_src_ind * (1 - (eval env row).rom.b_src_ind) = 0)
+    (h_reg : (eval env row).rom.b_src_reg * (1 - (eval env row).rom.b_src_reg) = 0)
+    (h_op : (eval env (ZiskFv.AirsClean.Main.bMemMessageExpr row)).mem_op = 7) :
+    (((MemBusChannel.emitted
+      (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+      (ZiskFv.AirsClean.Main.bMemMessageExpr row)).toRaw).eval env).mult = -3 := by
+  exfalso
+  rw [ZiskFv.AirsClean.Main.eval_bMemMessageExpr] at h_op
+  change ((eval env row).rom.b_src_mem + (eval env row).rom.b_src_ind)
+    + 3 * (eval env row).rom.b_src_reg = 7 at h_op
+  rcases zero_or_one_of_bool h_mem with h1 | h1 <;>
+    rcases zero_or_one_of_bool h_ind with h2 | h2 <;>
+      rcases zero_or_one_of_bool h_reg with h3 | h3 <;>
+        rw [h1, h2, h3] at h_op <;> norm_num at h_op <;> exact absurd h_op (by decide)
+
+theorem main_cMem_mult_of_mem_op_seven
+    {env : Environment FGL} {row : Var MainRowWithRom FGL}
+    (h_mem : (eval env row).rom.store_mem * (1 - (eval env row).rom.store_mem) = 0)
+    (h_ind : (eval env row).rom.store_ind * (1 - (eval env row).rom.store_ind) = 0)
+    (h_reg : (eval env row).rom.store_reg * (1 - (eval env row).rom.store_reg) = 0)
+    (h_op : (eval env (ZiskFv.AirsClean.Main.cMemMessageExpr row)).mem_op = 7) :
+    (((MemBusChannel.emitted
+      (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+      (ZiskFv.AirsClean.Main.cMemMessageExpr row)).toRaw).eval env).mult = -3 := by
+  rw [ZiskFv.AirsClean.Main.eval_cMemMessageExpr] at h_op
+  change 2 * ((eval env row).rom.store_mem + (eval env row).rom.store_ind)
+    + 3 * (eval env row).rom.store_reg = 7 at h_op
+  obtain ⟨-, -, -, -, -, h_c_mem, h_c_ind, h_c_reg⟩ := main_rom_eval env row
+  rw [memBus_emitted_eval_mult]
+  have h_eval :
+      Expression.eval env (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+      = -((eval env row).rom.store_mem + (eval env row).rom.store_ind
+          + (eval env row).rom.store_reg) := by
+    simp only [Expression.eval, h_c_mem, h_c_ind, h_c_reg]; ring
+  rw [h_eval]
+  rcases zero_or_one_of_bool h_mem with h1 | h1 <;>
+    rcases zero_or_one_of_bool h_ind with h2 | h2 <;>
+      rcases zero_or_one_of_bool h_reg with h3 | h3 <;>
+        rw [h1, h2, h3] at h_op ⊢ <;> norm_num at h_op ⊢ <;>
+          first
+            | rfl
+            | exact absurd h_op (by decide)
+
+/-- The `mem_op = 7` instance of the classification. -/
+theorem memBus_mult_eq_neg_three_of_msg_eq_mem_op_seven
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {refEnv : Environment FGL} {refMult : Expression FGL}
+    {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_ref_op : (eval refEnv refMsg).mem_op = 7)
+    {j : Interaction FGL} (h_j : j ∈ witness.interactionsWith MemBusChannel.toRaw)
+    (h_msg : j.msg = (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg) :
+    j.mult = -3 :=
+  memBus_mult_eq_of_msg_eq_mem_op_high h_constraints h_specs
+    (by decide) (by decide) (by decide)
+    (fun h1 h2 h3 => main_aMem_mult_of_mem_op_seven h1 h2 h3)
+    (fun h1 h2 h3 h4 => main_bMem_mult_of_mem_op_seven h1 h2 h3 h4)
+    (fun h1 h2 h3 h4 => main_cMem_mult_of_mem_op_seven h1 h2 h3 h4)
+    h_ref_op h_j h_msg
 
 end ZiskFv.AirsClean.FullEnsemble
