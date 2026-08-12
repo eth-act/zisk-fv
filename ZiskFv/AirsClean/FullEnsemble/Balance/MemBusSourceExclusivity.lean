@@ -861,4 +861,66 @@ theorem memBus_mult_eq_neg_three_of_msg_eq_mem_op_seven
     (fun h1 h2 h3 h4 => main_cMem_mult_of_mem_op_seven h1 h2 h3 h4)
     h_ref_op h_j h_msg
 
+
+/-- A Main row's store-side current access is one of the witness's memory-bus interactions. -/
+theorem main_cMem_interaction_mem_witness
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    (((MemBusChannel.emitted
+      (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
+        + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
+        + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg))
+      (ZiskFv.AirsClean.Main.cMemMessageExpr
+        (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row))
+      ∈ witness.interactionsWith MemBusChannel.toRaw := by
+  rw [EnsembleWitness.mem_interactionsWith]
+  refine ⟨table, h_table, ?_⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ⟨row, h_row, ?_⟩
+  rw [Operations.interactionValuesWith_eq_map, h_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  simp
+
+set_option maxHeartbeats 1000000 in
+/-- **A store-side register write is not also an indirect memory store.** The three store selectors
+    cannot all be set: that row would emit its store-side access at `mem_op = 7`, and by the
+    classification every interaction on that message rides at `-3`, so the balance there is
+    `-3 * count` with `count ≥ 1`. -/
+theorem main_not_store_mem_and_store_ind_and_store_reg
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels)
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table)
+    (h_store_mem : (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_mem = 1)
+    (h_store_ind : (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_ind = 1)
+    (h_store_reg : (eval (table.environment row)
+      (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg = 1) :
+    False := by
+  set env := table.environment row with h_env
+  set rowVar := (componentWithRomMemAndOpBus length program).rowInputVar with h_rowVar
+  set refMult : Expression FGL :=
+    -(rowVar.rom.store_mem + rowVar.rom.store_ind + rowVar.rom.store_reg) with h_refMult
+  set refMsg := ZiskFv.AirsClean.Main.cMemMessageExpr rowVar with h_refMsg
+  have h_ref_op : (eval env refMsg).mem_op = 7 := by
+    rw [h_refMsg, ZiskFv.AirsClean.Main.eval_cMemMessageExpr]
+    change 2 * ((eval env rowVar).rom.store_mem + (eval env rowVar).rom.store_ind)
+      + 3 * (eval env rowVar).rom.store_reg = 7
+    rw [h_store_mem, h_store_ind, h_store_reg]
+    norm_num
+  refine no_balanced_message_with_constant_nonzero_mult h_balanced (m := -3) (by decide)
+    (main_cMem_interaction_mem_witness h_table h_component h_row) ?_ ?_
+  · exact main_cMem_mult_of_mem_op_seven
+      (by rw [h_store_mem]; ring) (by rw [h_store_ind]; ring) (by rw [h_store_reg]; ring) h_ref_op
+  · intro i h_i h_msg _
+    exact memBus_mult_eq_neg_three_of_msg_eq_mem_op_seven h_constraints h_specs h_ref_op h_i h_msg
+
 end ZiskFv.AirsClean.FullEnsemble
