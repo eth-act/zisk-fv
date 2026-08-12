@@ -34,20 +34,35 @@
       flake = false;
     };
     clean-src = {
-      # Public fork codygunton/clean: a squashed snapshot of upstream
-      # Verified-zkEVM/clean @ 95c8cc2e (= upstream main HEAD; Lean/Mathlib
-      # v4.28.0, matches zisk-fv) plus zisk-fv integration patches:
-      # namespace hygiene (Fin.foldl_eq_foldl_finRange →
-      # Clean.Fin.foldl_eq_foldl_finRange, so Clean.Air.* can be imported
-      # alongside Mathlib/Batteries), the C7
-      # `exists_nonzero_push_of_pull` balance strengthening, the D1 all-row
-      # predecessor/current transition, D2 canonical component-owned indexed
-      # fixed-column materialization, and D3 cyclic successor transitions
-      # (fork main @ 8edf71f8; see docs/clean-fork-divergences.md).
+      # Public fork codygunton/clean, branch `port-zero-mult-gating`: four
+      # zisk-fv commits on top of upstream Verified-zkEVM/clean @ 2c20f7f0
+      # (the merge of upstream PR #398, "fix zero-multiplicity channels" —
+      # the newest upstream commit still on Lean/Mathlib v4.28.0, which is
+      # what zisk-fv pins; upstream main has since moved to v4.32.2 through
+      # three toolchain bumps).
+      #
+      # Remaining fork patches, all `Clean.Air.Flat` and all upstream
+      # candidates (see docs/clean-fork-divergences.md):
+      #   1fed1463  additive adjacent-row transition constraints (zisk-fv #100)
+      #   f587e0e0  materialize indexed fixed table columns
+      #   6700061c  cyclic successor transitions
+      #   bf5e40ed  structure-instance notation in the *_mk lemmas
+      #
+      # Two earlier fork patches are now gone because upstream absorbed or
+      # obviated them: the namespace-hygiene rename of
+      # `Fin.foldl_eq_foldl_finRange`, and the C7 balance strengthening —
+      # upstream's own `exists_push_of_pull` now carries the strengthened
+      # `mult ≠ 0 ∧ mult ≠ -1` conclusion the fork's
+      # `exists_nonzero_push_of_pull` used to add.
+      #
+      # #398 also reshaped the circuit API: `ElaboratedCircuit` is a class
+      # indexed by `main`, the interface fields moved to `FormalCircuitBase`,
+      # and channels gained `pulledIf`/`pushedIf`.
+      #
       # To be upstreamed; re-point at Verified-zkEVM/clean once all merge.
       # Pinned by rev so the lock is immutable; fetched over HTTPS so CI needs
       # no SSH key.
-      url = "github:codygunton/clean/8edf71f8";
+      url = "github:codygunton/clean/bf5e40ed";
       flake = false;
     };
 

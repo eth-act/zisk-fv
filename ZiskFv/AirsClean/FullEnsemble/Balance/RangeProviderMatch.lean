@@ -120,8 +120,8 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
       memInteraction ∈ witness.interactionsWith SpecifiedRangesSliceChannel.toRaw := by
     rw [EnsembleWitness.mem_interactionsWith]
     exact ⟨memTable, h_memTable, h_memInteraction⟩
-  obtain ⟨providerInteraction, h_providerWitness, h_message, h_nonpull, h_nonzero⟩ :=
-    exists_nonzero_push_of_pull
+  obtain ⟨providerInteraction, h_providerWitness, h_message, h_nonzero, h_nonpull⟩ :=
+    exists_push_of_pull
       (witness.interactionsWith SpecifiedRangesSliceChannel.toRaw)
       (specifiedRangesSlice_balanced_of_witness witness h_balanced)
       memInteraction h_memWitness h_active
@@ -303,7 +303,7 @@ theorem rangeTable16_spec_of_specifiedRangesSlice_provider_interaction
     simpa [Component.Spec, Component.rowInput,
       ZiskFv.AirsClean.SpecifiedRangesSlice.component,
       ZiskFv.AirsClean.SpecifiedRangesSlice.circuit,
-      ZiskFv.AirsClean.SpecifiedRangesSlice.elaborated] using h_spec
+      Component.rowInputVar] using h_spec
   simpa [h_value'] using h_providerSpec
 
 end ZiskFv.AirsClean.FullEnsemble

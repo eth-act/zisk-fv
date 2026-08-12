@@ -494,7 +494,8 @@ private theorem divSpinEvalRowInput :
     Eval.eval divSpinArithEnv
       ZiskFv.AirsClean.ArithMul.componentComplete.rowInputVar =
         divSpinArithRow := by
-  simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     divSpinComponentRowInput
 
 private theorem divSpinEvalArithRow (env : Environment FGL)

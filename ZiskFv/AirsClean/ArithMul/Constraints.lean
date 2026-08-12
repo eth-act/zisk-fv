@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.ArithMul.Spec
 import ZiskFv.AirsClean.ArithTable
 import ZiskFv.AirsClean.RangeTables
 import Clean.Circuit.Basic
+import Clean.Circuit.Formal
 import ZiskFv.Channels.OperationBus
 
 /-!
@@ -354,63 +355,29 @@ def mainWithSignedCarryRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := 
   lookup (Table.fromStatic signedCarryRangeTable) row.carries.carry_6
 
 
-/-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
-    separate from `arithMulElaborated` so existing carry-chain consumers do
-    not acquire a new caller-supplied lookup promise before Compliance has
-    a global source for it. -/
-@[reducible] def arithMulWithArithTableElaborated :
-    ElaboratedCircuit FGL ArithMulRow unit where
-  name := "ArithMulWithArithTable"
-  main := mainWithArithTable
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-
 /-- Lookup-aware elaboration exposing the chunk-column range lookups from
     `mainWithChunkRanges`. Kept out of the base carry-chain component so no
     existing theorem gains a new premise implicitly. -/
 @[reducible] def arithMulWithChunkRangesElaborated :
-    ElaboratedCircuit FGL ArithMulRow unit where
+    FormalCircuitBase FGL ArithMulRow unit where
   name := "ArithMulWithChunkRanges"
   main := mainWithChunkRanges
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
 
 /-- Lookup-aware elaboration exposing unsigned carry range lookups. Kept
-    separate from `arithMulElaborated` and chunk ranges so consumers opt in
+    separate from `ArithMul.circuit` and chunk ranges so consumers opt in
     only when replacing a concrete legacy range-bus dependency. -/
 @[reducible] def arithMulWithUnsignedCarryRangesElaborated :
-    ElaboratedCircuit FGL ArithMulRow unit where
+    FormalCircuitBase FGL ArithMulRow unit where
   name := "ArithMulWithUnsignedCarryRanges"
   main := mainWithUnsignedCarryRanges
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
 
 /-- Lookup-aware elaboration exposing signed/W carry range lookups. -/
 @[reducible] def arithMulWithSignedCarryRangesElaborated :
-    ElaboratedCircuit FGL ArithMulRow unit where
+    FormalCircuitBase FGL ArithMulRow unit where
   name := "ArithMulWithSignedCarryRanges"
   main := mainWithSignedCarryRanges
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
-
-
-/-- The elaborated circuit for ArithMul's `main` — 11 `assertZero`
-    carry-chain constraints + the op-bus push, no fresh witnesses
-    (`localLength = 0`, `unit` output). Lives here (next to `main`) so
-    the `Circuit.lean` wrapper can reuse it without an import cycle. -/
-@[reducible] def arithMulElaborated : ElaboratedCircuit FGL ArithMulRow unit where
-  name := "ArithMul"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, main, primaryOpBusMessageExpr, OpBusChannel]
 
 end ZiskFv.AirsClean.ArithMul

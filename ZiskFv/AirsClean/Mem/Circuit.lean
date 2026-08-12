@@ -29,7 +29,7 @@ namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
-open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
+open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel memDistanceMessage)
 open Air.Flat
 
 /-- Honest `read_same_addr` column for Mem. -/
@@ -71,8 +71,9 @@ lemma memRowOf_constraintsHold (sel selDual wr addrChanges : Bool)
     simp [Spec, memRowOf, memReadSameAddrOf, memValueOf, boolF] at h_selDual h_wr ⊢
 
 /-- Mem as a Clean `GeneralFormalCircuit`. -/
-def circuit : GeneralFormalCircuit FGL MemRow unit :=
-  { memElaborated with
+def circuit : GeneralFormalCircuit FGL MemRow unit where
+    name := "Mem"
+    main := main
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers rows built by `memRowOf`; the two selector
@@ -108,21 +109,26 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
       simpa only [Spec, memRowOf, memReadSameAddrOf, memValueOf, sub_eq_add_neg] using
         memRowOf_constraintsHold sel selDual wr addrChanges
           addr step stepDual previousStep increment_0 increment_1 value_0 value_1
-          h_selDual h_wr }
+          h_selDual h_wr
 
 /-- Mem as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
 
 /-! ## Mem-with-MemBus Component
 
-`circuitWithMemBus` wraps `memWithMemBusElaborated` (Mem's per-row
-constraints + the memory-bus provider emission) as a Clean
-`GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
+`circuitWithMemBus` bundles Mem's per-row constraints and the memory-bus
+provider emission as a Clean `GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
 the channel emission adds no per-row soundness obligation; the soundness
 proof mirrors the base component. -/
 
-def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
-  { memWithMemBusElaborated with
+def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit where
+    name := "MemWithMemBus"
+    main := memWithMemBus
+    channelsWithRequirements := [MemBusChannel.toRaw]
+    exposedChannels row _ :=
+      expose MemBusChannel [MemBusChannel.emitted row.sel (memBusMessageExpr row)]
+    exposedChannels_eq := by
+      simp only [circuit_norm, memWithMemBus, main, memBusMessageExpr, MemBusChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers the same honest rows as `circuit`; the memory-bus
@@ -148,7 +154,7 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h7
               , by simpa only [sub_eq_add_neg] using h8 ⟩
       · intro _
-        trivial
+        simp [MemBusChannel]
     completeness := by
       circuit_proof_start [MemBusChannel]
       obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
@@ -161,7 +167,7 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
       simpa only [Spec, memRowOf, memReadSameAddrOf, memValueOf, sub_eq_add_neg] using
         memRowOf_constraintsHold sel selDual wr addrChanges
           addr step stepDual previousStep increment_0 increment_1 value_0 value_1
-          h_selDual h_wr }
+          h_selDual h_wr
 
 /-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
     provider emission. Used by Clean memory-bus component assembly. -/
@@ -171,8 +177,37 @@ def componentWithMemBus : Air.Flat.Component FGL := { circuit := circuitWithMemB
     the primary row gated by `sel` and the dual read row gated by `sel_dual`.
     It is kept separate from `componentWithMemBus` while the FullEnsemble
     balance layer still expects the primary-only compatibility component. -/
-def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
-  { memWithDualMemBusAndRangeElaborated with
+def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit where
+    name := "MemWithDualMemBusAndRange"
+    main := memWithDualMemBusAndRange
+    -- `elaborate_circuit` cannot derive this: the gated `sel_dual` range lookup has
+    -- no `ExplicitCircuit` instance. These are the same two values the pre-migration
+    -- `ElaboratedCircuit` stated by hand.
+    elaborated :=
+      { localLength _ := 0
+        output _ _ := () }
+    channelsWithRequirements := [MemBusChannel.toRaw, SpecifiedRangesSliceChannel.toRaw]
+    exposedChannels row _ :=
+      expose MemBusChannel
+        [ MemBusChannel.emitted row.sel (memBusMessageExpr row)
+        , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ] ++
+      expose SpecifiedRangesSliceChannel
+        [ SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase0Expr)
+        , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase1Expr)
+        , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd0Expr)
+        , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd1Expr) ]
+    -- Two `expose` blocks appended, so `exposedChannelsLawful_expose` cannot
+    -- fire on the whole list; split the membership first.
+    exposedChannels_eq := by
+      intro input offset exposed h_mem
+      simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
+        List.not_mem_nil, or_false] at h_mem
+      rcases h_mem with rfl | rfl <;>
+        simp [circuit_norm, memWithDualMemBusAndRange, memWithDualMemBus, main,
+          rowRangeLookups, gatedDualStepDeltaRangeLookup, memBusMessageExpr,
+          memBusDualMessageExpr, memDistanceMessage, memDistanceBase0Expr,
+          memDistanceBase1Expr, memDistanceEnd0Expr, memDistanceEnd1Expr,
+          MemBusChannel, SpecifiedRangesSliceChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers honest Mem rows with the PIL's own range inputs;
@@ -201,7 +236,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
               , by simpa only [sub_eq_add_neg] using h6
               , by simpa only [sub_eq_add_neg] using h7
               , by simpa only [sub_eq_add_neg] using h8 ⟩
-      · exact ⟨by intro _; trivial, by intro _; trivial⟩
+      · exact ⟨by intro _; simp [MemBusChannel], by intro _; simp [MemBusChannel]⟩
     completeness := by
       circuit_proof_start [MemBusChannel, SpecifiedRangesSliceChannel, Lookup.completeness_def]
       obtain ⟨sel, selDual, wr, addrChanges, addr, step, stepDual, previousStep,
@@ -244,7 +279,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit :=
             ZiskFv.AirsClean.RangeTables.rangeStaticTable]
         | true =>
           simpa [boolF, sub_eq_add_neg, ZiskFv.AirsClean.RangeTables.rangeTable24,
-            ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_delta (by simp [boolF]) }
+            ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_delta (by simp [boolF])
 
 /-- Mem as a Clean `Air.Flat.Component` exposing both primary and dual
     memory-bus provider emissions. -/
@@ -260,7 +295,8 @@ theorem componentWithDualMemBus_rowInput_materialize
     (index : Nat) (data : ProverData FGL) (row : MemRow FGL) :
     componentWithDualMemBus.rowInput
       (Environment.fromArray (memFixedColumns.materialize index (memRawRow row)) data) = row := by
-  simpa only [Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Component.rowInput, Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     eval_memRawRow_materialize index data row
 
 /-- Project the live dual-Mem static lookups to the row-level range facts they
@@ -370,7 +406,7 @@ theorem componentWithMemBus_interactionsWith_memBus :
       [((MemBusChannel.emitted componentWithMemBus.rowInputVar.sel
           (memBusMessageExpr componentWithMemBus.rowInputVar)).toRaw)]⟩ ∈
     componentWithMemBus.exposedChannels
-  simp only [componentWithMemBus, circuitWithMemBus, memWithMemBusElaborated,
+  simp only [componentWithMemBus, circuitWithMemBus,
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 
@@ -387,7 +423,7 @@ theorem componentWithDualMemBus_interactionsWith_memBus :
         , ((MemBusChannel.emitted componentWithDualMemBus.rowInputVar.sel_dual
             (memBusDualMessageExpr componentWithDualMemBus.rowInputVar)).toRaw) ]⟩ ∈
     componentWithDualMemBus.exposedChannels
-  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusAndRangeElaborated,
+  simp only [componentWithDualMemBus, circuitWithDualMemBus,
     Component.exposedChannels, expose, List.mem_append, List.mem_singleton, List.map_cons,
     List.map_nil]
   exact Or.inl trivial
@@ -415,7 +451,7 @@ theorem componentWithDualMemBus_interactionsWith_rangeChannel :
       , ((SpecifiedRangesSliceChannel.emitted (-1)
             (ZiskFv.Channels.SpecifiedRanges.memDistanceMessage memDistanceEnd1Expr)).toRaw) ]⟩ ∈
       componentWithDualMemBus.exposedChannels
-  simp only [componentWithDualMemBus, circuitWithDualMemBus, memWithDualMemBusAndRangeElaborated,
+  simp only [componentWithDualMemBus, circuitWithDualMemBus,
     Component.exposedChannels, expose, List.mem_append, List.mem_singleton, List.map_cons,
     List.map_nil, or_true]
 
@@ -470,7 +506,7 @@ theorem spec_via_component (row : MemRow FGL)
     (h_constraints : Spec row) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, memElaborated,
+  simp only [GeneralFormalCircuit.Soundness, circuit,
     circuit_norm] at hsound
   refine hsound (Environment.fromInput row (fun _ n => (#[] : Array (Vector FGL n))))
     { addr := .const row.addr

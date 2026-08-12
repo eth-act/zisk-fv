@@ -172,403 +172,417 @@ abbrev StaticBinaryExtensionTableSpecFacts
           c_hi_byte := row.cColsHi.free_in_c_15
           op_is_shift := row.flags.op_is_shift }
 
-def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
-  { binaryExtensionWithStaticTableElaborated with
-    exposedChannels row _ :=
-      expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-    channelsLawful := by
-      simp only [circuit_norm, mainWithStaticBinaryExtensionTable, main,
-        opBusMessageExpr, aLo, aHi, OpBusChannel]
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => Spec row ∧ StaticBinaryExtensionTableSpecFacts row
-    -- Completeness covers index-route rows: lookup tuple columns are copied
-    -- from BinaryExtensionTable indices, and shared slots are tied by
-    -- semantic consistency facts between those table entries.
-    ProverAssumptions := fun row _ _ =>
-      ∃ i0 i1 i2 i3 i4 i5 i6 i7 b0 b1,
-        (binaryExtensionTableRow i0).byte_index = 0 ∧
-        (binaryExtensionTableRow i1).byte_index = 1 ∧
-        (binaryExtensionTableRow i1).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i1).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i1).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i2).byte_index = 2 ∧
-        (binaryExtensionTableRow i2).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i2).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i2).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i3).byte_index = 3 ∧
-        (binaryExtensionTableRow i3).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i3).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i3).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i4).byte_index = 4 ∧
-        (binaryExtensionTableRow i4).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i4).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i4).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i5).byte_index = 5 ∧
-        (binaryExtensionTableRow i5).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i5).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i5).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i6).byte_index = 6 ∧
-        (binaryExtensionTableRow i6).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i6).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i6).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i7).byte_index = 7 ∧
-        (binaryExtensionTableRow i7).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i7).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i7).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        row = binaryExtensionStaticRowOf i0 i1 i2 i3 i4 i5 i6 i7 b0 b1
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h_holds
-        exact ⟨
-          by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h0,
+def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  where
+  name := "BinaryExtensionWithStaticTable"
+  main := mainWithStaticBinaryExtensionTable
+  -- `elaborate_circuit` times out on the eight static table lookups. These are the
+  -- same two values the pre-migration `ElaboratedCircuit` stated by hand.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  exposedChannels_eq := by
+    simp only [circuit_norm, mainWithStaticBinaryExtensionTable, main,
+      opBusMessageExpr, aLo, aHi, OpBusChannel]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row ∧ StaticBinaryExtensionTableSpecFacts row
+  -- Completeness covers index-route rows: lookup tuple columns are copied
+  -- from BinaryExtensionTable indices, and shared slots are tied by
+  -- semantic consistency facts between those table entries.
+  ProverAssumptions := fun row _ _ =>
+    ∃ i0 i1 i2 i3 i4 i5 i6 i7 b0 b1,
+      (binaryExtensionTableRow i0).byte_index = 0 ∧
+      (binaryExtensionTableRow i1).byte_index = 1 ∧
+      (binaryExtensionTableRow i1).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i1).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i1).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i2).byte_index = 2 ∧
+      (binaryExtensionTableRow i2).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i2).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i2).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i3).byte_index = 3 ∧
+      (binaryExtensionTableRow i3).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i3).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i3).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i4).byte_index = 4 ∧
+      (binaryExtensionTableRow i4).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i4).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i4).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i5).byte_index = 5 ∧
+      (binaryExtensionTableRow i5).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i5).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i5).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i6).byte_index = 6 ∧
+      (binaryExtensionTableRow i6).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i6).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i6).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i7).byte_index = 7 ∧
+      (binaryExtensionTableRow i7).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i7).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i7).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      row = binaryExtensionStaticRowOf i0 i1 i2 i3 i4 i5 i6 i7 b0 b1
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h_holds
+      exact ⟨
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h0,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h1,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h2,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h3,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h4,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h5,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h6,
+        by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩
+    · intro _
+      simp [OpBusChannel]
+  completeness := by
+    circuit_proof_start [OpBusChannel, Lookup.completeness_def]
+    obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, b0, b1,
+      h0_byte,
+      h1_byte, h1_op, h1_shift, h1_opShift,
+      h2_byte, h2_op, h2_shift, h2_opShift,
+      h3_byte, h3_op, h3_shift, h3_opShift,
+      h4_byte, h4_op, h4_shift, h4_opShift,
+      h5_byte, h5_op, h5_shift, h5_opShift,
+      h6_byte, h6_op, h6_shift, h6_opShift,
+      h7_byte, h7_op, h7_shift, h7_opShift, hrow⟩ := h_assumptions
+    injection hrow with h_aCols h_cColsLo h_cColsHi h_flags
+    injection h_aCols with h_a0 h_a1 h_a2 h_a3 h_a4 h_a5 h_a6 h_a7
+    injection h_cColsLo with h_c0 h_c1 h_c2 h_c3 h_c4 h_c5 h_c6 h_c7
+    injection h_cColsHi with h_c8 h_c9 h_c10 h_c11 h_c12 h_c13 h_c14 h_c15
+    injection h_flags with h_op h_freeInB h_opIsShift h_b0 h_b1
+    subst_vars
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · exact ⟨i0, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 0
+            a_byte := (binaryExtensionTableRow i0).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i0).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i0).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i0
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i0)
+          (binaryExtensionTableRow i0).op 0 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift rfl h0_byte rfl rfl⟩
+    · exact ⟨i1, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 1
+            a_byte := (binaryExtensionTableRow i1).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i1).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i1).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i1
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i1)
+          (binaryExtensionTableRow i0).op 1 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h1_op h1_byte h1_shift h1_opShift⟩
+    · exact ⟨i2, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 2
+            a_byte := (binaryExtensionTableRow i2).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i2).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i2).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i2
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i2)
+          (binaryExtensionTableRow i0).op 2 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h2_op h2_byte h2_shift h2_opShift⟩
+    · exact ⟨i3, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 3
+            a_byte := (binaryExtensionTableRow i3).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i3).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i3).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i3
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i3)
+          (binaryExtensionTableRow i0).op 3 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h3_op h3_byte h3_shift h3_opShift⟩
+    · exact ⟨i4, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 4
+            a_byte := (binaryExtensionTableRow i4).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i4).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i4).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i4
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i4)
+          (binaryExtensionTableRow i0).op 4 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h4_op h4_byte h4_shift h4_opShift⟩
+    · exact ⟨i5, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 5
+            a_byte := (binaryExtensionTableRow i5).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i5).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i5).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i5
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i5)
+          (binaryExtensionTableRow i0).op 5 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h5_op h5_byte h5_shift h5_opShift⟩
+    · exact ⟨i6, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 6
+            a_byte := (binaryExtensionTableRow i6).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i6).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i6).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i6
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i6)
+          (binaryExtensionTableRow i0).op 6 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h6_op h6_byte h6_shift h6_opShift⟩
+    · exact ⟨i7, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 7
+            a_byte := (binaryExtensionTableRow i7).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i7).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i7).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i7
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i7)
+          (binaryExtensionTableRow i0).op 7 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h7_op h7_byte h7_shift h7_opShift⟩
+
+def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  where
+  name := "BinaryExtensionWithStaticTableAndShiftRange"
+  main := mainWithStaticBinaryExtensionTableAndShiftRange
+  -- `elaborate_circuit` times out on the eight static table lookups. These are the
+  -- same two values the pre-migration `ElaboratedCircuit` stated by hand.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  exposedChannels_eq := by
+    simp only [circuit_norm, mainWithStaticBinaryExtensionTableAndShiftRange,
+      mainWithStaticBinaryExtensionTable, main, opBusMessageExpr, aLo, aHi,
+      OpBusChannel]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ =>
+    Spec row ∧ StaticBinaryExtensionTableSpecFacts row ∧ ShiftB0RangeSpecFact row
+  -- Completeness covers the same index-route rows as `staticLookupCircuit`,
+  -- with an additional semantic range fact for the selected shift operand.
+  ProverAssumptions := fun row _ _ =>
+    ∃ i0 i1 i2 i3 i4 i5 i6 i7 b0 b1,
+      (binaryExtensionTableRow i0).byte_index = 0 ∧
+      (binaryExtensionTableRow i1).byte_index = 1 ∧
+      (binaryExtensionTableRow i1).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i1).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i1).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i2).byte_index = 2 ∧
+      (binaryExtensionTableRow i2).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i2).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i2).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i3).byte_index = 3 ∧
+      (binaryExtensionTableRow i3).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i3).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i3).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i4).byte_index = 4 ∧
+      (binaryExtensionTableRow i4).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i4).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i4).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i5).byte_index = 5 ∧
+      (binaryExtensionTableRow i5).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i5).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i5).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i6).byte_index = 6 ∧
+      (binaryExtensionTableRow i6).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i6).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i6).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      (binaryExtensionTableRow i7).byte_index = 7 ∧
+      (binaryExtensionTableRow i7).op = (binaryExtensionTableRow i0).op ∧
+      (binaryExtensionTableRow i7).shift_amount =
+        (binaryExtensionTableRow i0).shift_amount ∧
+      (binaryExtensionTableRow i7).op_is_shift =
+        (binaryExtensionTableRow i0).op_is_shift ∧
+      b0.val < 2 ^ 24 ∧
+      row = binaryExtensionStaticRowOf i0 i1 i2 i3 i4 i5 i6 i7 b0 b1
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h_b0⟩ := h_holds
+      exact ⟨
+        ⟨ by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h0,
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h1,
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h2,
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h3,
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h4,
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h5,
           by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h6,
-          by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩
-      · intro _
-        trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel, Lookup.completeness_def]
-      obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, b0, b1,
-        h0_byte,
-        h1_byte, h1_op, h1_shift, h1_opShift,
-        h2_byte, h2_op, h2_shift, h2_opShift,
-        h3_byte, h3_op, h3_shift, h3_opShift,
-        h4_byte, h4_op, h4_shift, h4_opShift,
-        h5_byte, h5_op, h5_shift, h5_opShift,
-        h6_byte, h6_op, h6_shift, h6_opShift,
-        h7_byte, h7_op, h7_shift, h7_opShift, hrow⟩ := h_assumptions
-      injection hrow with h_aCols h_cColsLo h_cColsHi h_flags
-      injection h_aCols with h_a0 h_a1 h_a2 h_a3 h_a4 h_a5 h_a6 h_a7
-      injection h_cColsLo with h_c0 h_c1 h_c2 h_c3 h_c4 h_c5 h_c6 h_c7
-      injection h_cColsHi with h_c8 h_c9 h_c10 h_c11 h_c12 h_c13 h_c14 h_c15
-      injection h_flags with h_op h_freeInB h_opIsShift h_b0 h_b1
-      subst_vars
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · exact ⟨i0, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 0
-              a_byte := (binaryExtensionTableRow i0).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i0).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i0).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i0
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i0)
-            (binaryExtensionTableRow i0).op 0 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift rfl h0_byte rfl rfl⟩
-      · exact ⟨i1, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 1
-              a_byte := (binaryExtensionTableRow i1).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i1).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i1).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i1
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i1)
-            (binaryExtensionTableRow i0).op 1 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h1_op h1_byte h1_shift h1_opShift⟩
-      · exact ⟨i2, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 2
-              a_byte := (binaryExtensionTableRow i2).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i2).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i2).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i2
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i2)
-            (binaryExtensionTableRow i0).op 2 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h2_op h2_byte h2_shift h2_opShift⟩
-      · exact ⟨i3, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 3
-              a_byte := (binaryExtensionTableRow i3).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i3).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i3).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i3
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i3)
-            (binaryExtensionTableRow i0).op 3 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h3_op h3_byte h3_shift h3_opShift⟩
-      · exact ⟨i4, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 4
-              a_byte := (binaryExtensionTableRow i4).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i4).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i4).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i4
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i4)
-            (binaryExtensionTableRow i0).op 4 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h4_op h4_byte h4_shift h4_opShift⟩
-      · exact ⟨i5, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 5
-              a_byte := (binaryExtensionTableRow i5).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i5).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i5).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i5
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i5)
-            (binaryExtensionTableRow i0).op 5 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h5_op h5_byte h5_shift h5_opShift⟩
-      · exact ⟨i6, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 6
-              a_byte := (binaryExtensionTableRow i6).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i6).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i6).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i6
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i6)
-            (binaryExtensionTableRow i0).op 6 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h6_op h6_byte h6_shift h6_opShift⟩
-      · exact ⟨i7, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 7
-              a_byte := (binaryExtensionTableRow i7).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i7).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i7).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i7
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i7)
-            (binaryExtensionTableRow i0).op 7 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h7_op h7_byte h7_shift h7_opShift⟩ }
-
-def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
-  { binaryExtensionWithStaticTableAndShiftRangeElaborated with
-    exposedChannels row _ :=
-      expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-    channelsLawful := by
-      simp only [circuit_norm, mainWithStaticBinaryExtensionTableAndShiftRange,
-        mainWithStaticBinaryExtensionTable, main, opBusMessageExpr, aLo, aHi,
-        OpBusChannel]
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ =>
-      Spec row ∧ StaticBinaryExtensionTableSpecFacts row ∧ ShiftB0RangeSpecFact row
-    -- Completeness covers the same index-route rows as `staticLookupCircuit`,
-    -- with an additional semantic range fact for the selected shift operand.
-    ProverAssumptions := fun row _ _ =>
-      ∃ i0 i1 i2 i3 i4 i5 i6 i7 b0 b1,
-        (binaryExtensionTableRow i0).byte_index = 0 ∧
-        (binaryExtensionTableRow i1).byte_index = 1 ∧
-        (binaryExtensionTableRow i1).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i1).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i1).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i2).byte_index = 2 ∧
-        (binaryExtensionTableRow i2).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i2).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i2).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i3).byte_index = 3 ∧
-        (binaryExtensionTableRow i3).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i3).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i3).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i4).byte_index = 4 ∧
-        (binaryExtensionTableRow i4).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i4).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i4).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i5).byte_index = 5 ∧
-        (binaryExtensionTableRow i5).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i5).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i5).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i6).byte_index = 6 ∧
-        (binaryExtensionTableRow i6).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i6).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i6).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        (binaryExtensionTableRow i7).byte_index = 7 ∧
-        (binaryExtensionTableRow i7).op = (binaryExtensionTableRow i0).op ∧
-        (binaryExtensionTableRow i7).shift_amount =
-          (binaryExtensionTableRow i0).shift_amount ∧
-        (binaryExtensionTableRow i7).op_is_shift =
-          (binaryExtensionTableRow i0).op_is_shift ∧
-        b0.val < 2 ^ 24 ∧
-        row = binaryExtensionStaticRowOf i0 i1 i2 i3 i4 i5 i6 i7 b0 b1
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h_b0⟩ := h_holds
-        exact ⟨
-          ⟨ by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h0,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h1,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h2,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h3,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h4,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h5,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h6,
-            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩,
-          by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩
-      · intro _
-        trivial
-    completeness := by
-      circuit_proof_start [OpBusChannel, Lookup.completeness_def]
-      obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, b0, b1,
-        h0_byte,
-        h1_byte, h1_op, h1_shift, h1_opShift,
-        h2_byte, h2_op, h2_shift, h2_opShift,
-        h3_byte, h3_op, h3_shift, h3_opShift,
-        h4_byte, h4_op, h4_shift, h4_opShift,
-        h5_byte, h5_op, h5_shift, h5_opShift,
-        h6_byte, h6_op, h6_shift, h6_opShift,
-        h7_byte, h7_op, h7_shift, h7_opShift, h_b0Range, hrow⟩ := h_assumptions
-      injection hrow with h_aCols h_cColsLo h_cColsHi h_flags
-      injection h_aCols with h_a0 h_a1 h_a2 h_a3 h_a4 h_a5 h_a6 h_a7
-      injection h_cColsLo with h_c0 h_c1 h_c2 h_c3 h_c4 h_c5 h_c6 h_c7
-      injection h_cColsHi with h_c8 h_c9 h_c10 h_c11 h_c12 h_c13 h_c14 h_c15
-      injection h_flags with h_op h_freeInB h_opIsShift h_b0 h_b1
-      subst_vars
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · exact ⟨i0, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 0
-              a_byte := (binaryExtensionTableRow i0).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i0).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i0).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i0
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i0)
-            (binaryExtensionTableRow i0).op 0 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift rfl h0_byte rfl rfl⟩
-      · exact ⟨i1, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 1
-              a_byte := (binaryExtensionTableRow i1).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i1).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i1).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i1
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i1)
-            (binaryExtensionTableRow i0).op 1 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h1_op h1_byte h1_shift h1_opShift⟩
-      · exact ⟨i2, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 2
-              a_byte := (binaryExtensionTableRow i2).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i2).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i2).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i2
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i2)
-            (binaryExtensionTableRow i0).op 2 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h2_op h2_byte h2_shift h2_opShift⟩
-      · exact ⟨i3, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 3
-              a_byte := (binaryExtensionTableRow i3).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i3).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i3).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i3
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i3)
-            (binaryExtensionTableRow i0).op 3 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h3_op h3_byte h3_shift h3_opShift⟩
-      · exact ⟨i4, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 4
-              a_byte := (binaryExtensionTableRow i4).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i4).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i4).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i4
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i4)
-            (binaryExtensionTableRow i0).op 4 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h4_op h4_byte h4_shift h4_opShift⟩
-      · exact ⟨i5, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 5
-              a_byte := (binaryExtensionTableRow i5).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i5).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i5).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i5
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i5)
-            (binaryExtensionTableRow i0).op 5 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h5_op h5_byte h5_shift h5_opShift⟩
-      · exact ⟨i6, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 6
-              a_byte := (binaryExtensionTableRow i6).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i6).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i6).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i6
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i6)
-            (binaryExtensionTableRow i0).op 6 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h6_op h6_byte h6_shift h6_opShift⟩
-      · exact ⟨i7, by
-          change
-            { op := (binaryExtensionTableRow i0).op
-              byte_index := 7
-              a_byte := (binaryExtensionTableRow i7).a_byte
-              shift_amount := (binaryExtensionTableRow i0).shift_amount
-              c_lo_byte := (binaryExtensionTableRow i7).c_lo_byte
-              c_hi_byte := (binaryExtensionTableRow i7).c_hi_byte
-              op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
-              binaryExtensionTableRow i7
-          exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i7)
-            (binaryExtensionTableRow i0).op 7 (binaryExtensionTableRow i0).shift_amount
-            (binaryExtensionTableRow i0).op_is_shift h7_op h7_byte h7_shift h7_opShift⟩
-      · exact h_b0Range }
+          by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩,
+        by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩
+    · intro _
+      simp [OpBusChannel]
+  completeness := by
+    circuit_proof_start [OpBusChannel, Lookup.completeness_def]
+    obtain ⟨i0, i1, i2, i3, i4, i5, i6, i7, b0, b1,
+      h0_byte,
+      h1_byte, h1_op, h1_shift, h1_opShift,
+      h2_byte, h2_op, h2_shift, h2_opShift,
+      h3_byte, h3_op, h3_shift, h3_opShift,
+      h4_byte, h4_op, h4_shift, h4_opShift,
+      h5_byte, h5_op, h5_shift, h5_opShift,
+      h6_byte, h6_op, h6_shift, h6_opShift,
+      h7_byte, h7_op, h7_shift, h7_opShift, h_b0Range, hrow⟩ := h_assumptions
+    injection hrow with h_aCols h_cColsLo h_cColsHi h_flags
+    injection h_aCols with h_a0 h_a1 h_a2 h_a3 h_a4 h_a5 h_a6 h_a7
+    injection h_cColsLo with h_c0 h_c1 h_c2 h_c3 h_c4 h_c5 h_c6 h_c7
+    injection h_cColsHi with h_c8 h_c9 h_c10 h_c11 h_c12 h_c13 h_c14 h_c15
+    injection h_flags with h_op h_freeInB h_opIsShift h_b0 h_b1
+    subst_vars
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · exact ⟨i0, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 0
+            a_byte := (binaryExtensionTableRow i0).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i0).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i0).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i0
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i0)
+          (binaryExtensionTableRow i0).op 0 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift rfl h0_byte rfl rfl⟩
+    · exact ⟨i1, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 1
+            a_byte := (binaryExtensionTableRow i1).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i1).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i1).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i1
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i1)
+          (binaryExtensionTableRow i0).op 1 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h1_op h1_byte h1_shift h1_opShift⟩
+    · exact ⟨i2, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 2
+            a_byte := (binaryExtensionTableRow i2).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i2).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i2).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i2
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i2)
+          (binaryExtensionTableRow i0).op 2 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h2_op h2_byte h2_shift h2_opShift⟩
+    · exact ⟨i3, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 3
+            a_byte := (binaryExtensionTableRow i3).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i3).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i3).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i3
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i3)
+          (binaryExtensionTableRow i0).op 3 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h3_op h3_byte h3_shift h3_opShift⟩
+    · exact ⟨i4, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 4
+            a_byte := (binaryExtensionTableRow i4).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i4).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i4).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i4
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i4)
+          (binaryExtensionTableRow i0).op 4 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h4_op h4_byte h4_shift h4_opShift⟩
+    · exact ⟨i5, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 5
+            a_byte := (binaryExtensionTableRow i5).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i5).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i5).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i5
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i5)
+          (binaryExtensionTableRow i0).op 5 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h5_op h5_byte h5_shift h5_opShift⟩
+    · exact ⟨i6, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 6
+            a_byte := (binaryExtensionTableRow i6).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i6).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i6).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i6
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i6)
+          (binaryExtensionTableRow i0).op 6 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h6_op h6_byte h6_shift h6_opShift⟩
+    · exact ⟨i7, by
+        change
+          { op := (binaryExtensionTableRow i0).op
+            byte_index := 7
+            a_byte := (binaryExtensionTableRow i7).a_byte
+            shift_amount := (binaryExtensionTableRow i0).shift_amount
+            c_lo_byte := (binaryExtensionTableRow i7).c_lo_byte
+            c_hi_byte := (binaryExtensionTableRow i7).c_hi_byte
+            op_is_shift := (binaryExtensionTableRow i0).op_is_shift } =
+            binaryExtensionTableRow i7
+        exact binaryExtensionTableMessage_eq_of_shared (binaryExtensionTableRow i7)
+          (binaryExtensionTableRow i0).op 7 (binaryExtensionTableRow i0).shift_amount
+          (binaryExtensionTableRow i0).op_is_shift h7_op h7_byte h7_shift h7_opShift⟩
+    · exact h_b0Range
 
 def staticLookupComponent : Air.Flat.Component FGL := { circuit := staticLookupCircuit }
 
@@ -582,7 +596,7 @@ theorem staticLookupComponent_interactionsWith_opBus :
       [((OpBusChannel.pushed (opBusMessageExpr staticLookupComponent.rowInputVar)).toRaw)]⟩ ∈
     staticLookupComponent.exposedChannels
   simp only [staticLookupComponent, staticLookupCircuit,
-    binaryExtensionWithStaticTableElaborated, Component.exposedChannels,
+    Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 theorem shiftStaticLookupComponent_interactionsWith_opBus :
@@ -594,7 +608,6 @@ theorem shiftStaticLookupComponent_interactionsWith_opBus :
         (opBusMessageExpr shiftStaticLookupComponent.rowInputVar)).toRaw)]⟩ ∈
     shiftStaticLookupComponent.exposedChannels
   simp only [shiftStaticLookupComponent, shiftStaticLookupCircuit,
-    binaryExtensionWithStaticTableAndShiftRangeElaborated,
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 

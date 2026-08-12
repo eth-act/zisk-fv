@@ -28,38 +28,31 @@ def main (message : MemAlignRangeMessage (Expression FGL)) : Circuit FGL Unit :=
   lookup (Table.fromStatic rangeTable8) message.value
   MemAlignRangeChannel.push message
 
-@[reducible]
-def elaborated : ElaboratedCircuit FGL MemAlignRangeMessage unit where
-  name := "MemAlignRangeSlice107"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [MemAlignRangeChannel.toRaw]
-  exposedChannels message _ :=
-    expose MemAlignRangeChannel [MemAlignRangeChannel.pushed message]
-  channelsLawful := by
-    simp only [circuit_norm, main, MemAlignRangeChannel]
 
 /-- The bounded provider derives exact byte membership locally.  Its one
     completeness-side premise constructs the static-table witness; it is not
     a consumer or accepted-trace assumption. -/
-def circuit : GeneralFormalCircuit FGL MemAlignRangeMessage unit :=
-  { elaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun message _ _ => rangeTable8.Spec message.value
-    ProverAssumptions := fun message _ _ => rangeTable8.Spec message.value
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
-      refine ⟨?_, ?_⟩
-      · simpa only [Table.fromStatic, StaticTable.toTable, rangeTable8,
-          rangeStaticTable] using h_holds
-      · intro _
-        trivial
-    completeness := by
-      circuit_proof_start [Lookup.completeness_def]
-      simpa only [Table.fromStatic, StaticTable.toTable, rangeTable8,
-        rangeStaticTable] using h_assumptions }
+def circuit : GeneralFormalCircuit FGL MemAlignRangeMessage unit  where
+  name := "MemAlignRangeSlice107"
+  main := main
+  channelsWithRequirements := [MemAlignRangeChannel.toRaw]
+  exposedChannels message _ :=
+    expose MemAlignRangeChannel [MemAlignRangeChannel.pushed message]
+  Assumptions := fun _ _ => True
+  Spec := fun message _ _ => rangeTable8.Spec message.value
+  ProverAssumptions := fun message _ _ => rangeTable8.Spec message.value
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · simpa only [Table.fromStatic, StaticTable.toTable, rangeTable8,
+        rangeStaticTable] using h_holds
+    · intro _
+      simp [MemAlignRangeChannel]
+  completeness := by
+    circuit_proof_start [Lookup.completeness_def]
+    simpa only [Table.fromStatic, StaticTable.toTable, rangeTable8,
+      rangeStaticTable] using h_assumptions
 
 /-- The bus-107 static provider component for the full ensemble. -/
 def component : Component FGL := { circuit }
@@ -71,7 +64,7 @@ theorem component_interactionsWith_memAlignRangeChannel :
   change ⟨MemAlignRangeChannel.toRaw,
       [((MemAlignRangeChannel.pushed component.rowInputVar).toRaw)]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, elaborated, Component.exposedChannels, expose,
+  simp only [component, circuit, Component.exposedChannels, expose,
     List.mem_singleton, List.map_cons, List.map_nil]
 
 end ZiskFv.AirsClean.MemAlignRangeSlice

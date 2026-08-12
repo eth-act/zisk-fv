@@ -141,8 +141,8 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
       memAlignInteraction ∈ witness.interactionsWith MemAlignRangeChannel.toRaw := by
     rw [EnsembleWitness.mem_interactionsWith]
     exact ⟨memAlignTable, h_memAlignTable, h_memAlignInteraction⟩
-  obtain ⟨providerInteraction, h_providerWitness, h_message, h_nonpull, h_nonzero⟩ :=
-    exists_nonzero_push_of_pull
+  obtain ⟨providerInteraction, h_providerWitness, h_message, h_nonzero, h_nonpull⟩ :=
+    exists_push_of_pull
       (witness.interactionsWith MemAlignRangeChannel.toRaw)
       (memAlignRange_balanced_of_witness witness h_balanced)
       memAlignInteraction h_memWitness h_active
@@ -301,7 +301,7 @@ theorem memAlignRangeTable_spec_of_memAlignRangeSlice_provider_row
   simpa only [Component.Spec, Component.rowInput, eval_varFromOffset_valueFromOffset,
     ZiskFv.AirsClean.MemAlignRangeSlice.component,
     ZiskFv.AirsClean.MemAlignRangeSlice.circuit,
-    ZiskFv.AirsClean.MemAlignRangeSlice.elaborated] using h_spec
+    Component.rowInputVar] using h_spec
 
 /-- Raw finished-channel equality restores equality of the one-slot typed
     provider and consumer messages. -/

@@ -9,9 +9,8 @@ import Clean.Utils.Tactics
 
 Packages ZisK's MemAlignReadByte AIR as a Clean `Air.Flat.Component`:
 
-* `memAlignReadByteElaborated` — the `ElaboratedCircuit` over `main` —
-  lives in `Constraints.lean`.
-  Its `main` emits the 4 `assertZero` algebraic constraints and the
+* `main` — lives in `Constraints.lean`.
+  It emits the 4 `assertZero` algebraic constraints and the
   memory-bus proves-side `push`.
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` for
   soundness; completeness is proved for honest rows built from Boolean byte
@@ -73,58 +72,80 @@ set_option maxHeartbeats 1000000 in
     `a + -b` form) directly, with the range clause fed from static lookup
     soundness. The three boolean selector constraints (0, 1, 2)
     are unused. -/
-def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
-  { memAlignReadByteElaborated with
-    Assumptions := fun _ _ => True
-    Spec := fun row _ _ => Spec row
-    -- Completeness covers rows built by `memAlignReadByteRowOf`; fields not
-    -- constrained by this slice remain free operands.
-    ProverAssumptions := fun row _ _ =>
-      ∃ sel_high_4b sel_high_2b sel_high_b byteVal
-        direct_value value_16b value_8b addr_w step,
-        byteVal < 2 ^ 8 ∧ value_16b.val < 2 ^ 16 ∧ value_8b.val < 2 ^ 8 ∧
-          row = memAlignReadByteRowOf sel_high_4b sel_high_2b sel_high_b
-            byteVal direct_value value_16b value_8b addr_w step
-    ProverSpec := fun _ _ _ => True
-    soundness := by
-      circuit_proof_start
+def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit  where
+  name := "MemAlignReadByte"
+  main := main
+  -- This circuit `pull`s from MemBus, so `elaborate_circuit` would derive
+  -- `channelsWithGuarantees := [MemBusChannel.toRaw]`. That is the eager syntactic
+  -- list, not the minimal one: `MemBusChannel.Guarantees` is `True`, so the pull
+  -- assumes nothing and `ChannelsLawful main []` holds. `[]` is therefore the
+  -- STRONGER declaration, and it is discharged — not defaulted — by the autoParam
+  -- on `ElaboratedCircuit.channelsLawful` (`Clean/Circuit/Basic.lean:247-254`),
+  -- which must close `ChannelsLawful main channelsWithGuarantees` for the
+  -- `elaborated` instance below to elaborate at all. If `MemBusChannel.Guarantees`
+  -- ever stops being `True`, this stops compiling; it cannot silently weaken.
+  -- Keeping it `[]` is also required for `SoundEnsemble.addTable`, whose
+  -- `channelsWithGuarantees ⊆ finished` obligation orders a table after every
+  -- channel it genuinely relies on.
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := ()
+      channelsWithGuarantees := [] }
+  channelsWithRequirements := [MemBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [ MemBusChannel.pulled (memReadMessageExpr row)
+      , MemBusChannel.pushed (memBusMessageExpr row) ]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row
+  -- Completeness covers rows built by `memAlignReadByteRowOf`; fields not
+  -- constrained by this slice remain free operands.
+  ProverAssumptions := fun row _ _ =>
+    ∃ sel_high_4b sel_high_2b sel_high_b byteVal
+      direct_value value_16b value_8b addr_w step,
+      byteVal < 2 ^ 8 ∧ value_16b.val < 2 ^ 16 ∧ value_8b.val < 2 ^ 8 ∧
+        row = memAlignReadByteRowOf sel_high_4b sel_high_2b sel_high_b
+          byteVal direct_value value_16b value_8b addr_w step
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · -- the MemAlignReadByte algebraic relation: the definitional
+      -- `composed_value` constraint implies the algebraic Spec clause;
+      -- the `bits(8)` range clause comes from the static range lookup
+      -- prepended to `main`. The 3 boolean constraints (0, 1, 2) are
+      -- unused.
+      obtain ⟨h_byte_range, _h_value16_range, _h_dual_byte_range,
+        _h0, _h1, _h2, h_composed, _h_aligned_read⟩ := h_holds
+      simp only [byte_value_factor, value_8b_factor, value_16b_factor]
       refine ⟨?_, ?_⟩
-      · -- the MemAlignReadByte algebraic relation: the definitional
-        -- `composed_value` constraint implies the algebraic Spec clause;
-        -- the `bits(8)` range clause comes from the static range lookup
-        -- prepended to `main`. The 3 boolean constraints (0, 1, 2) are
-        -- unused.
-        obtain ⟨h_byte_range, _h_value16_range, _h_dual_byte_range,
-          _h0, _h1, _h2, h_composed, _h_aligned_read⟩ := h_holds
-        simp only [byte_value_factor, value_8b_factor, value_16b_factor]
-        refine ⟨?_, ?_⟩
-        · linear_combination h_composed
-        · exact h_byte_range
-      · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
-        -- is `True`.
-        intro _
-        trivial
-    completeness := by
-      circuit_proof_start [MemBusChannel, Lookup.completeness_def]
-      obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, byteVal,
-        direct_value, value_16b, value_8b, addr_w, step, h_byte, h_value16,
-        h_value8, hrow⟩ :=
-        h_assumptions
-      injection hrow with h_sel_high_4b h_sel_high_2b h_sel_high_b h_direct_value
-        h_composed_value h_value_16b h_value_8b h_byte_value h_addr_w h_step
-      subst_vars
-      simp [memAlignReadByteComposedValueOf, byte_value_factor, value_8b_factor,
-        value_16b_factor] at h_input ⊢
-      refine ⟨?_, ?_, ?_, ?_⟩
-      · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
-        exact fgl_natCast_val_lt_of_lt (by decide) h_byte
-      · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
-        exact h_value16
-      · simpa [Lookup.Completeness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
-          RangeTables.dualByteTable, h_input] using
-          (show ((byteVal : FGL).val < 2 ^ 8 ∧ value_8b.val < 2 ^ 8) from
-            ⟨fgl_natCast_val_lt_of_lt (by decide) h_byte, h_value8⟩)
-      · ring }
+      · linear_combination h_composed
+      · exact h_byte_range
+    · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
+      -- is `True`.
+      intro _
+      simp [MemBusChannel]
+  completeness := by
+    circuit_proof_start [MemBusChannel, Lookup.completeness_def]
+    obtain ⟨sel_high_4b, sel_high_2b, sel_high_b, byteVal,
+      direct_value, value_16b, value_8b, addr_w, step, h_byte, h_value16,
+      h_value8, hrow⟩ :=
+      h_assumptions
+    injection hrow with h_sel_high_4b h_sel_high_2b h_sel_high_b h_direct_value
+      h_composed_value h_value_16b h_value_8b h_byte_value h_addr_w h_step
+    subst_vars
+    simp [memAlignReadByteComposedValueOf, byte_value_factor, value_8b_factor,
+      value_16b_factor] at h_input ⊢
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
+      exact fgl_natCast_val_lt_of_lt (by decide) h_byte
+    · simp only [RangeTables.rangeTable16, RangeTables.rangeStaticTable]
+      exact h_value16
+    · simpa [Lookup.Completeness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+        RangeTables.dualByteTable, h_input] using
+        (show ((byteVal : FGL).val < 2 ^ 8 ∧ value_8b.val < 2 ^ 8) from
+          ⟨fgl_natCast_val_lt_of_lt (by decide) h_byte, h_value8⟩)
+    · ring
 
 /-- MemAlignReadByte as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := { circuit := circuit }
@@ -144,8 +165,7 @@ theorem component_interactionsWith_memBus :
       [ ((MemBusChannel.pulled (memReadMessageExpr component.rowInputVar)).toRaw)
       , ((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw) ]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, memAlignReadByteElaborated,
-    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 
 set_option maxHeartbeats 1000000 in
@@ -173,8 +193,7 @@ theorem spec_via_component (row : MemAlignReadByteRow FGL)
     (h_value8_range : row.value_8b.val < 2 ^ 8) :
     Spec row := by
   have hsound := circuit.soundness
-  simp only [GeneralFormalCircuit.Soundness, circuit, memAlignReadByteElaborated,
-    circuit_norm] at hsound
+  simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   -- The `circuit_norm`-normalized constraint goals are in `a + -b`
   -- form; re-express the caller's `a - b` hypotheses to match.
   simp only [byte_value_factor, value_8b_factor, value_16b_factor,

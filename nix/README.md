@@ -22,11 +22,14 @@ works as usual. The Clean dep is pulled as a *source* tree (no
 pre-built oleans inside Nix — Lake compiles it as part of the main
 build using the shared Mathlib v4.28.0 pin).
 
-For Project Closeout S2/S4, `flake.lock` pins the immutable
-`codygunton/clean@8edf71f8023dbe70d07004bd081a913be41e2af0` fork input. It
-provides all-row predecessor/current transitions, canonical component-owned
-indexed fixed-column materialization, and intrinsic cyclic successor
-transitions for the MemAlign bus-133 route. The associated build-input trust
+`flake.lock` pins the immutable
+`codygunton/clean@bf5e40ed455613687385e8828cba68b2a438b992` fork input (branch
+`port-zero-mult-gating`, Lean 4.28.0). It provides all-row predecessor/current
+transitions, canonical component-owned indexed fixed-column materialization,
+intrinsic cyclic successor transitions for the MemAlign bus-133 route, and —
+from upstream PR #398, which the fork is rebased onto — `Channel.pulledIf` /
+`pushedIf` plus a `Requirements` obligation gated on `mult ≠ 0`, so a
+selector-gated interaction no longer owes a guarantee at multiplicity zero. The associated build-input trust
 note is maintained in `trust/trusted-base.md`; the pin is a source dependency,
 not an accepted-trace certificate.
 

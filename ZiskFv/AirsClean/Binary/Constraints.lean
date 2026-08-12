@@ -154,17 +154,6 @@ def main (row : Var BinaryRow FGL) : Circuit FGL Unit := do
     - row.mode.mode32 * row.mode.c_is_signed)
   OpBusChannel.push (opBusMessageExpr row)
 
-@[reducible] def binaryElaborated :
-    ElaboratedCircuit FGL BinaryRow unit where
-  name := "Binary"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, main, opBusMessageExpr, OpBusChannel]
 
 /-- BinaryTable consumer path. This emits the eight per-byte table tuples
     with negative multiplicity after the algebraic constraints and op-bus
@@ -182,29 +171,6 @@ def mainWithBinaryTable (row : Var BinaryRow FGL) : Circuit FGL Unit := do
   BinaryTableChannel.emit (-1) (lookupMessage6 row)
   BinaryTableChannel.emit (-1) (lookupMessage7 row)
 
-@[reducible] def binaryWithBinaryTableElaborated :
-    ElaboratedCircuit FGL BinaryRow unit where
-  name := "BinaryWithBinaryTable"
-  main := mainWithBinaryTable
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw, BinaryTableChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)] ++
-    expose BinaryTableChannel
-      [ BinaryTableChannel.emitted (-1) (lookupMessage0 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage1 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage2 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage3 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage4 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage5 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage6 row)
-      , BinaryTableChannel.emitted (-1) (lookupMessage7 row) ]
-  channelsLawful := by
-    simp [circuit_norm, mainWithBinaryTable, main, opBusMessageExpr,
-      lookupMessage0, lookupMessage1, lookupMessage2, lookupMessage3,
-      lookupMessage4, lookupMessage5, lookupMessage6, lookupMessage7,
-      OpBusChannel, BinaryTableChannel]
 
 /-- Static-provider lookup-aware Binary circuit path. This is the same eight
     BinaryTable rows as `mainWithBinaryTable`, but expressed as direct Clean
@@ -234,17 +200,5 @@ def mainWithStaticBinaryTable (row : Var BinaryRow FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
     (lookupMessage7 row)
 
-@[reducible] def binaryWithStaticBinaryTableElaborated :
-    ElaboratedCircuit FGL BinaryRow unit where
-  name := "BinaryWithStaticBinaryTable"
-  main := mainWithStaticBinaryTable
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-  exposedChannels row _ :=
-    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
-  channelsLawful := by
-    simp only [circuit_norm, mainWithStaticBinaryTable, main, opBusMessageExpr,
-      OpBusChannel]
 
 end ZiskFv.AirsClean.Binary

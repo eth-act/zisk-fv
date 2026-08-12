@@ -153,6 +153,7 @@ private theorem component_constraintsHold_of_proverAssumptions_at
     rw [component.circuit.localLength_eq]
     exact h_localLength
   have h_input' : Eval.eval proverEnv component.rowInputVar = row := by
+    unfold Component.rowInputVar at h_input ⊢
     rw [ProvableType.eval_varFromOffset_prover]
     rw [← h_input]
     rw [ProvableType.eval_varFromOffset]
@@ -187,6 +188,7 @@ theorem component_constraintsHold_of_proverAssumptions_at_data
     rw [component.circuit.localLength_eq]
     exact h_localLength
   have h_input' : Eval.eval proverEnv component.rowInputVar = row := by
+    unfold Component.rowInputVar at h_input ⊢
     rw [ProvableType.eval_varFromOffset_prover]
     rw [← h_input]
     rw [ProvableType.eval_varFromOffset]
@@ -799,8 +801,6 @@ theorem binaryAddRowsTable_constraints_of_proverAssumptions
   have h_localLength :
       ZiskFv.AirsClean.BinaryAdd.component.circuit.localLength
         ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated.localLength
-        ZiskFv.AirsClean.BinaryAdd.component.rowInputVar = 0
     rfl
   rw [Table.Constraints]
   intro arr h_arr
@@ -965,8 +965,6 @@ theorem binarySingleRowTable_constraints_of_proverAssumptions
   have h_localLength :
       ZiskFv.AirsClean.Binary.staticLookupComponent.circuit.localLength
         ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated.localLength
-        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar = 0
     rfl
   have h_component :
       ZiskFv.AirsClean.Binary.staticLookupComponent.operations.ConstraintsHold
@@ -1078,7 +1076,8 @@ theorem memRowsTable_rowInput
       (Environment.fromArray
         (ZiskFv.AirsClean.Mem.memFixedColumns.materialize index
           (ZiskFv.AirsClean.Mem.memRawRowWithProverData data row)) data) = row := by
-  simpa only [Air.Flat.Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     ZiskFv.AirsClean.Mem.eval_memRawRowWithProverData_materialize index data row
 
 /-- Row-local Mem constraints for a bounded concrete table follow from each
@@ -1612,8 +1611,6 @@ theorem registerBoundarySingleRowTable_constraints
   have h_localLength :
       ZiskFv.AirsClean.RegisterBoundary.component.circuit.localLength
         ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated.localLength
-        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0
     rfl
   have h_component :
       ZiskFv.AirsClean.RegisterBoundary.component.operations.ConstraintsHold
@@ -1633,8 +1630,6 @@ theorem registerBoundaryRowsTableOf_constraints
   have h_localLength :
       ZiskFv.AirsClean.RegisterBoundary.component.circuit.localLength
         ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0 := by
-    change ZiskFv.AirsClean.RegisterBoundary.registerBoundaryElaborated.localLength
-        ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = 0
     rfl
   rw [Table.Constraints, registerBoundaryRowsTableOf_effectiveRows]
   intro arr h_arr

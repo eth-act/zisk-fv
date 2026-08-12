@@ -4,6 +4,7 @@ import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.MemoryBus
 import ZiskFv.Channels.ZiskRomBus
 import Clean.Circuit.Basic
+import Clean.Circuit.Formal
 import Clean.Circuit.Lookup
 
 /-!
@@ -63,14 +64,12 @@ def mainWithOpBus (row : Var MainRow FGL) : Circuit FGL Unit := do
   OpBusChannel.emit (-row.is_external_op) (opBusMessageExpr row)
 
 @[reducible] def mainWithOpBusElaborated :
-    ElaboratedCircuit FGL MainRow unit where
+    FormalCircuitBase FGL MainRow unit where
   main := mainWithOpBus
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose OpBusChannel [OpBusChannel.emitted (-row.is_external_op) (opBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithOpBus, main, opBusMessageExpr, OpBusChannel]
 
 /-! ## T4.0 — ROM lookup extension
@@ -277,13 +276,11 @@ def mainWithRom (length : ℕ) (program : Program length)
     structure but on `MainRowWithRom` and with the ROM lookup wired
     via the static-table `Table.fromStatic` consumer path. -/
 @[reducible] def mainWithRomElaborated (length : ℕ) (program : Program length) :
-    ElaboratedCircuit FGL MainRowWithRom unit where
+    FormalCircuitBase FGL MainRowWithRom unit where
   main := mainWithRom length program
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := []
   exposedChannels _ _ := []
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithRom, main, romMessageExpr,
       romFlagsExpr, romStaticTable]
 
@@ -452,12 +449,15 @@ def mainWithRomAndMemBus (length : ℕ) (program : Program length)
     mem-bus interactions as channel emissions; the ROM lookup is an
     internal `Table.fromStatic` consumer push and does not surface as
     a channel interaction. -/
+instance mainWithRomAndMemBusElaboratedInstance
+    (length : ℕ) (program : Program length) :
+    ElaboratedCircuit FGL MainRowWithRom unit (mainWithRomAndMemBus length program) := by
+  elaborate_circuit
+
 @[reducible] def mainWithRomAndMemBusElaborated
     (length : ℕ) (program : Program length) :
-    ElaboratedCircuit FGL MainRowWithRom unit where
+    FormalCircuitBase FGL MainRowWithRom unit where
   main := mainWithRomAndMemBus length program
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
@@ -473,7 +473,7 @@ def mainWithRomAndMemBus (length : ℕ) (program : Program length)
           (cRegPreMessageExpr row)
       , MemBusChannel.emitted (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
           (cMemMessageExpr row) ]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithRomAndMemBus, mainWithRom, main,
       romMessageExpr, romFlagsExpr, romStaticTable,
       aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
@@ -504,12 +504,15 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
   OpBusChannel.emit (-row.core.is_external_op) (opBusMessageExpr row.core)
 
 /-- Elaborated unified Main circuit for the full Clean ensemble. -/
+instance mainWithRomMemAndOpBusElaboratedInstance
+    (length : ℕ) (program : Program length) :
+    ElaboratedCircuit FGL MainRowWithRom unit (mainWithRomMemAndOpBus length program) := by
+  elaborate_circuit
+
 @[reducible] def mainWithRomMemAndOpBusElaborated
     (length : ℕ) (program : Program length) :
-    ElaboratedCircuit FGL MainRowWithRom unit where
+    FormalCircuitBase FGL MainRowWithRom unit where
   main := mainWithRomMemAndOpBus length program
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
@@ -528,13 +531,19 @@ def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
     ++ expose OpBusChannel
       [ OpBusChannel.emitted (-row.core.is_external_op)
           (opBusMessageExpr row.core) ]
-  channelsLawful := by
-    simp [circuit_norm, mainWithRomMemAndOpBus, mainWithRomAndMemBus,
-      mainWithRom, main, romMessageExpr, romFlagsExpr, romStaticTable,
-      aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
-      aRegPreMessageExpr, bRegPreMessageExpr, cRegPreMessageExpr,
-      aMemOpExpr, bMemOpExpr, cMemOpExpr,
-      storeValueLoExpr, storeValueHiExpr, opBusMessageExpr,
-      MemBusChannel, OpBusChannel]
+  -- Two `expose` blocks appended, so `exposedChannelsLawful_expose` cannot fire
+  -- on the whole list; split the membership first.
+  exposedChannels_eq := by
+    intro input offset exposed h_mem
+    simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at h_mem
+    rcases h_mem with rfl | rfl <;>
+      simp [circuit_norm, mainWithRomMemAndOpBus, mainWithRomAndMemBus,
+        mainWithRom, main, romMessageExpr, romFlagsExpr, romStaticTable,
+        aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
+        aRegPreMessageExpr, bRegPreMessageExpr, cRegPreMessageExpr,
+        aMemOpExpr, bMemOpExpr, cMemOpExpr,
+        storeValueLoExpr, storeValueHiExpr, opBusMessageExpr,
+        MemBusChannel, OpBusChannel]
 
 end ZiskFv.AirsClean.Main

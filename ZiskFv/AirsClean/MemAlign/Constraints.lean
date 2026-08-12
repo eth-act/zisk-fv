@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.MemAlign.Spec
 import Clean.Circuit.Basic
+import Clean.Circuit.Formal
 import ZiskFv.Channels.MemoryBus
 import ZiskFv.Channels.MemAlignRom
 import ZiskFv.Channels.MemAlignRanges
@@ -146,44 +147,15 @@ def mainWithMemBusAndMemAlignRomAndRanges (row : Var MemAlignRow FGL) : Circuit 
   MemAlignRangeChannel.emit (-1) (memAlignRangeMessageExpr row.reg_7)
 
 @[reducible] def memAlignWithMemBusElaborated :
-    ElaboratedCircuit FGL MemAlignRow unit where
+    FormalCircuitBase FGL MemAlignRow unit where
   name := "MemAlignWithMemBus"
   main := mainWithMemBus
-  localLength _ := 0
-  output _ _ := ()
   channelsWithRequirements := [MemBusChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [MemBusChannel.emitted (row.sel_prove - selAssumeExpr row) (memBusMessageExpr row)]
-  channelsLawful := by
+  exposedChannels_eq := by
     simp only [circuit_norm, mainWithMemBus, main, selAssumeExpr,
       memBusMessageExpr, MemBusChannel]
-
-@[reducible] def memAlignWithMemBusAndMemAlignRomAndRangesElaborated :
-    ElaboratedCircuit FGL MemAlignRow unit where
-  name := "MemAlignWithMemBusAndMemAlignRomAndRanges"
-  main := mainWithMemBusAndMemAlignRomAndRanges
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [MemBusChannel.toRaw, MemAlignRomChannel.toRaw,
-    MemAlignRangeChannel.toRaw]
-  exposedChannels row _ :=
-    expose MemBusChannel
-      [MemBusChannel.emitted (row.sel_prove - selAssumeExpr row) (memBusMessageExpr row)] ++
-    expose MemAlignRomChannel
-      [MemAlignRomChannel.emitted (-1) (memAlignRomMessageExpr row)] ++
-    expose MemAlignRangeChannel
-      [ MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_0)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_1)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_2)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_3)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_4)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_5)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_6)
-      , MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr row.reg_7) ]
-  channelsLawful := by
-    simp [circuit_norm, mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main,
-      selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
-      memAlignRangeMessageExpr, MemBusChannel, MemAlignRomChannel, MemAlignRangeChannel]
 
 end ZiskFv.AirsClean.MemAlign

@@ -1077,8 +1077,9 @@ LeanZKCircuit, the Sail-to-Lean compiler output, or flake-pinned upstream
 inputs. Their audit surface is the Lake/Nix configuration and `flake.lock`,
 not `generated/baseline-axioms.txt`.
 
-Project Closeout S2/S4 pins the immutable
-`codygunton/clean@8edf71f8023dbe70d07004bd081a913be41e2af0` source input.
+The build pins the immutable
+`codygunton/clean@bf5e40ed455613687385e8828cba68b2a438b992` source input
+(branch `port-zero-mult-gating`, Lean 4.28.0), rebased onto upstream PR #398.
 It provides D1's all-row predecessor/current transition contract, D2's
 canonical component-owned indexed fixed-column materialization, and D3's
 intrinsic cyclic current/successor transition surface. D1 remains inert to
@@ -1090,3 +1091,39 @@ the verifier-checked `cyclic_successor_transitions_hold` accepted-trace
 certificate, never by a caller assumption. The structural fixed-domain/no-wrap
 bound and cyclic successor indexing belong to `Air.Flat.Table`, not to a
 caller-supplied promise hypothesis.
+
+The `bf5e40ed` repoint additionally brings upstream's `Channel.pulledIf` /
+`pushedIf` and its `Requirements` obligation gated on `mult ≠ 0`. That closes
+the Clean-side limitation recorded as #337: previously `Requirements` fired at
+every `mult ≠ -1`, including `0`, so a selector-gated push owed a guarantee
+about unconstrained witness values. This is a build-input change, not an
+accepted-trace fact; it *weakens* the obligation the project must discharge,
+which is upstream's choice and is why the affected proof sites now close with
+`intro _; simp [<Channel>]` rather than `intro _; trivial`.
+
+**Be precise about what the weakening costs.** It weakens a stated *obligation*,
+not a derivable *conclusion*. Clean transfers a requirement to a guarantee at
+`Clean/Air/Balance.lean:206`, and applies that step only to the counterpart
+produced by `exists_push_of_pull`, which concludes `b.mult ≠ 0 ∧ b.mult ≠ -1`
+(`Balance.lean:155-156`). Both the old and the new definition agree on that
+range. The case the new definition drops, `mult = 0`, is therefore never
+consumed, so nothing derivable from the stronger form is lost. Today the point
+is moot twice over: every channel we declare sets `Guarantees := True`, which
+makes both forms trivial.
+
+Two caveats a later reader must not lose:
+
+* **That argument is human-made, not machine-checked.** It comes from reading
+  `Balance.lean`, not from a Lean theorem. No gate enforces "our `Requirements`
+  are only consumed via `exists_push_of_pull`". Writing one was considered and
+  declined: the machinery costs more than the risk, given the `Guarantees :=
+  True` situation above.
+* **It is contingent on upstream.** If a later Clean revision consumes
+  `Requirements` at `mult = 0`, the weaker form starts to matter and this
+  paragraph stops being true. Re-read it on the next `clean-src` bump.
+
+The gating first becomes load-bearing in #342, which gives a channel a
+non-trivial `Guarantees` for the first time: Main's three bus-102 emissions then
+produce obligations of exactly the gated shape
+`¬(sel = 1) → ¬(sel = 0) → Guarantees …`, vacuous under selector booleanity.
+Without the gating those would be range obligations Main cannot discharge.

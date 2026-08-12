@@ -143,7 +143,7 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
               , by simpa [sub_eq_add_neg] using h7
               , by simpa [sub_eq_add_neg] using h8 ⟩
       · intro _
-        trivial
+        simp [OpBusChannel]
     completeness := by
       circuit_proof_start_core
       simp only [mainWithOpBus, main, circuit_norm, opBusMessageExpr,
@@ -362,8 +362,8 @@ def RomBoolSpec (row : MainRowWithRom FGL) : Prop :=
 /-- Soundness wrapper for Main plus ROM lookup plus memory-bus consumer
     emissions. -/
 theorem mainWithRomAndMemBus_soundness (length : ℕ) (program : Program length) :
-    GeneralFormalCircuit.Soundness FGL
-      (mainWithRomAndMemBusElaborated length program)
+    GeneralFormalCircuit.Soundness FGL (Input := MainRowWithRom) (Output := unit)
+      (mainWithRomAndMemBus length program)
       (fun _ _ => True)
       (fun row _ _ => Spec row.core) := by
   circuit_proof_start
@@ -546,8 +546,8 @@ set_option maxHeartbeats 800000 in
     whose packed value equals that entry's ROM `flags`, choose a coherent local
     Main execution shape, and otherwise fill only unconstrained runtime columns. -/
 theorem mainWithRomAndMemBus_completeness (length : ℕ) (program : Program length) :
-    GeneralFormalCircuit.Completeness FGL
-      (mainWithRomAndMemBusElaborated length program)
+    GeneralFormalCircuit.Completeness FGL (Input := MainRowWithRom) (Output := unit)
+      (mainWithRomAndMemBus length program)
       (fun row _ _ =>
         ∃ i bits kind free,
           (program i).flags = packFlags bits
@@ -642,8 +642,8 @@ def componentWithRomAndMemBus
     Main constraint; the row-local Main/ROM/memory soundness is inherited
     from `mainWithRomAndMemBus_soundness`. -/
 theorem mainWithRomMemAndOpBus_soundness (length : ℕ) (program : Program length) :
-    GeneralFormalCircuit.Soundness FGL
-      (mainWithRomMemAndOpBusElaborated length program)
+    GeneralFormalCircuit.Soundness FGL (Input := MainRowWithRom) (Output := unit)
+      (mainWithRomMemAndOpBus length program)
       (fun _ _ => True)
       (fun row _ _ => Spec row.core) := by
   intro offset env input_var input h_input h_assumptions h_holds
@@ -660,8 +660,8 @@ theorem mainWithRomMemAndOpBus_soundness (length : ℕ) (program : Program lengt
     The added operation-bus emission has a trivial channel guarantee, so the
     ROM/memory constructibility theorem supplies the row-local work. -/
 theorem mainWithRomMemAndOpBus_completeness (length : ℕ) (program : Program length) :
-    GeneralFormalCircuit.Completeness FGL
-      (mainWithRomMemAndOpBusElaborated length program)
+    GeneralFormalCircuit.Completeness FGL (Input := MainRowWithRom) (Output := unit)
+      (mainWithRomMemAndOpBus length program)
       (fun row _ _ =>
         ∃ i bits kind free,
           (program i).flags = packFlags bits
@@ -962,7 +962,8 @@ theorem componentWithRomMemAndOpBus_rowInput_materialize
     (h_main_step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
     (componentWithRomMemAndOpBus length program).rowInput
       (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) data) = row := by
-  simpa only [Component.rowInput, eval_varFromOffset_valueFromOffset] using
+  simpa only [Component.rowInput, Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
     eval_mainRawRow_materialize index data row h_segment_l1 h_main_step
 
 /-- Project the generic Clean component `Spec` for the unified

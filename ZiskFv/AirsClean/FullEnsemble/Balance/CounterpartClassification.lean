@@ -32,9 +32,11 @@ theorem exists_matching_nonzero_nonpull_of_active_main_op_interaction
       providerInteraction.msg = mainInteraction.msg
         ∧ providerInteraction.mult ≠ -1
         ∧ providerInteraction.mult ≠ 0 := by
-  exact exists_nonzero_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
-    (opBus_balanced_of_witness witness h_balanced)
-    mainInteraction h_mem h_active
+  obtain ⟨provider, h_provider, h_msg, h_ne_zero, h_ne_neg_one⟩ :=
+    exists_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
+      (opBus_balanced_of_witness witness h_balanced)
+      mainInteraction h_mem h_active
+  exact ⟨provider, h_provider, h_msg, h_ne_neg_one, h_ne_zero⟩
 
 /-- A constrained unified Main table can only contribute operation-bus
     interactions with multiplicity `-1` (active row) or `0` (inactive row). -/
@@ -255,9 +257,11 @@ theorem exists_matching_nonzero_nonpull_of_active_main_mem_interaction
       providerInteraction.msg = mainInteraction.msg
         ∧ providerInteraction.mult ≠ -1
         ∧ providerInteraction.mult ≠ 0 := by
-  exact exists_nonzero_push_of_pull (witness.interactionsWith MemBusChannel.toRaw)
-    (memBus_balanced_of_witness witness h_balanced)
-    mainInteraction h_mem h_active
+  obtain ⟨provider, h_provider, h_msg, h_ne_zero, h_ne_neg_one⟩ :=
+    exists_push_of_pull (witness.interactionsWith MemBusChannel.toRaw)
+      (memBus_balanced_of_witness witness h_balanced)
+      mainInteraction h_mem h_active
+  exact ⟨provider, h_provider, h_msg, h_ne_neg_one, h_ne_zero⟩
 
 /-- Classify the balanced same-message memory-bus counterpart in the full
     ensemble after excluding verifier and components that expose no
