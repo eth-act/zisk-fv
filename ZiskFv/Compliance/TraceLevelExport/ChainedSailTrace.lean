@@ -17,12 +17,19 @@ This module builds the trace instead of assuming it. `chainedSailStates` runs
 
 It settles the shape: a trace generated this way satisfies `retire` definitionally, so a caller that
 supplies one is supplying an actual Sail execution rather than an arbitrary family of states with a
-promise attached.
+promise attached. `root_soundness` consumes it — that theorem takes an initial state, builds the
+trace here, and no longer carries a `SegmentPcChain` binder.
 
-It does not by itself migrate `root_soundness`. `SailTrace` is referenced by all 63 `StepSound`
-arms, every `Inputs_<op>`, and all seven accepted-trace witnesses; repointing them is the rest of
-#343. Nothing here changes a protected interface — the definitions are additive, and the existing
-`SailTrace` abbreviation is untouched.
+`stepSound_of_programDecodes` still takes an arbitrary `SailTrace`, so the five multi-step
+accepted-trace witnesses keep their hand-built state families.
+
+**Nothing below is exercised by a checked-in witness yet — say so plainly.** The two witnesses that
+instantiate `root_soundness` run at `numInstructions = 1` and `0`. `chainedSailStates … 0` is `init`
+by `rfl`, so index `0` is the caller's own state and no witness reaches index `≥ 1`. `retirePC` and
+`sailStepPost` are therefore never applied in the checked-in tree, and
+`chainedSailTrace_retireChain` is proved but never *used* by a witness. The premise reduction on
+`root_soundness` is real regardless — it is a statement-level fact — but the claim that the trace is
+"harder to inhabit" is not yet demonstrated by an instantiation that has to run Sail.
 -/
 
 namespace ZiskFv.Compliance
@@ -30,7 +37,15 @@ namespace ZiskFv.Compliance
 variable {numInstructions : ℕ}
 
 /-- **Sail's retire step, as a state function.** Copy `nextPC` into `PC`. This is the transition the
-    old `SegmentPcChain.retire` field asserted; here it is performed. -/
+    old `SegmentPcChain.retire` field asserted; here it is performed.
+
+    **The `none` branch erases `PC`, and that is a coverage cliff, not a soundness hole.** Erasing
+    makes both sides of `retire` equal to `none`, which is what lets `chainedSailTrace_retireChain`
+    hold with no side condition — the alternative needs a fact about all 63 `execute` arms. The cost
+    is that a step which leaves `nextPC` unset produces a state with no `PC` at all, and every
+    `Inputs_<op>`'s `h_input_pc` demands `.some`. So such a step makes `inputsAgree` *unsatisfiable*
+    from there on: the theorem becomes uninstantiable rather than silently matching `.elim 0`'s
+    zero. Nothing is proved about a state that never arises; a real trace is simply lost. -/
 noncomputable def retirePC
     (s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
     PreSail.SequentialState RegisterType Sail.trivialChoiceSource :=
@@ -39,7 +54,13 @@ noncomputable def retirePC
   | some v =>
       { s with regs := s.regs.insert Register.PC (cast (by simp [RegisterType]) v) }
 
-/-- The post-state of one Sail step, error branches kept total by staying put. -/
+/-- The post-state of one Sail step.
+
+    **Both branches return `post`**, the state the step ended in — including the error branch, where
+    `post` is the trap's post-state, not the pre-state. So a trapping step advances the chain from
+    wherever Sail left it. That is what makes this total, and it is the honest reading: the retire
+    law says nothing about a trapping step because `chainedSailTrace_retireChain`'s hypothesis is an
+    `.ok`. An earlier docstring here claimed the error branch "stays put"; it does not. -/
 noncomputable def sailStepPost
     (instr : instruction)
     (s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :

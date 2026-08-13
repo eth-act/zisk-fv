@@ -167,17 +167,28 @@ theorem stepSound_of_programDecodes
     THE SAIL SIDE IS GENERATED, NOT SUPPLIED (#343). This theorem does not take a
     `SailTrace`. It takes the initial Sail state `init` and builds the trace itself
     with `chainedSailTrace`, which runs `execute_instruction` at each step and then
-    performs Sail's retire (copy `nextPC` into `PC`). Two consequences:
+    performs Sail's retire (copy `nextPC` into `PC`). Three consequences, and the
+    third is a cost:
 
-      * The old `pcChain : SegmentPcChain …` premise is gone. Its `retire` half is now
-        the theorem `chainedSailTrace_retireChain`, applied below; only its `boot` half
-        survives, as `pcBoot`. That is a premise leaving the statement, not a premise
-        being renamed — `sailRetireChain_of_inputsAgree`'s converse no longer applies,
-        because there is nothing left to derive.
+      * The `retire` OBLIGATION left the statement; the binder did not. `pcChain :
+        SegmentPcChain …` was *replaced* by `pcBoot`, which carries only the `boot`
+        equation — the binder count is unchanged (16, per
+        `trust/generated/baseline-strong-export-binders.txt`). What is gone is
+        `SegmentPcChain`'s `retire` field, supplied below by the hypothesis-free
+        theorem `chainedSailTrace_retireChain`. `sailRetireChain_of_inputsAgree`'s
+        converse no longer applies, because there is nothing left to derive.
       * A caller can no longer choose the Sail states. Supplying `init` and then
         `inputsAgree` at `chainedSailTrace ziskStep init` means agreeing with the
         states Sail actually reaches, which is the guardrail #343 asks for: the trace
-        has to be *harder* to inhabit, not merely repackaged.
+        has to be *harder* to inhabit, not merely repackaged. Note that no checked-in
+        witness yet pays that cost — both instantiations run at `numInstructions ≤ 1`,
+        where `chainedSailStates … 0` is `init` by `rfl`, so neither reaches a chain
+        step. See `trust/trusted-base.md`.
+      * This statement is an INSTANCE of the old one, at
+        `sailTrace := chainedSailTrace ziskStep init`. So the edit both drops an
+        obligation and specializes the conclusion: a caller who wants `StepSound` at a
+        trace of their own choosing can no longer get it here. That is the intended
+        direction, but it is a specialization, not a free strengthening.
 
     `stepSound_of_programDecodes` keeps taking a `SailTrace` and a full
     `SegmentPcChain`, because the five multi-step accepted-trace witnesses target it
