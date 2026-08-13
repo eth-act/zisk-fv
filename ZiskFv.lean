@@ -197,6 +197,7 @@ import ZiskFv.Compliance.Instantiation.ConcreteRowReductions
 import ZiskFv.Compliance.RegisterWalk
 import ZiskFv.Compliance.MemBusSlotSeparation
 import ZiskFv.Compliance.RegisterBoundaryAnchor
+import ZiskFv.Compliance.RegisterBoundaryAnchorNonvacuity
 import ZiskFv.Compliance.SingleAddWitness
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.Compliance.AddSpinRootSoundness

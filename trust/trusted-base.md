@@ -762,8 +762,15 @@ boundary row's `reloadValue` columns are the values the read returned
 (`boundarySuppliedAt_reload_values`). That is the agreement half, and #330 Phase 4's value telescope
 consumes it directly.
 
-**#348's premise was wrong, and this corrects the record.** That issue, and the paragraph above it in
-this ledger, said `main.pil:447` is what rules the self-pairing out. It is not.
+All three results are conditional on `BoundarySuppliedAt`, so the hypothesis is discharged on a
+concrete trace rather than left possibly-uninhabited: `exists_boundarySuppliedAt_addFaithful` exhibits
+a boundary-supplied site on `addFaithfulAcceptedTrace`, the same two-row `add x1,x1,x1` trace that
+witnesses `root_soundness`'s non-vacuity. V2 check 19 asserts it as
+`register_walk_boundary_reached`.
+
+**#348's premise was wrong for the first segment, which is the case the model is in, and this
+corrects the record.** That issue, and the paragraph above it in this ledger, said `main.pil:447` is
+what rules the self-pairing out. There it does not.
 `main_step_to_special_mem_step(step) = 1 + 4 * step + 3`, so
 `last_segment_reg_mem_step = 4 * (main_segment + 1) * N` (`main.pil:439`). At `main_segment = 0` and
 `N = mainFixedCapacity = 2^22` that is `2^24`, and at `reloadTimestamp = 0` the expression `447`
