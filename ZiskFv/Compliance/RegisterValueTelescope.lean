@@ -297,4 +297,55 @@ theorem memBus_mem_op_three_counterpart
     · exact absurd (h_regPre RegSlot.c h_eval) not_false
     · exact Or.inl ⟨table, h_table, h_main, r, h_r, RegSlot.c, h_eval⟩
 
+
+/-! ## The backward step
+
+A register-pre push is answered by an earlier read or by `bootMessage`. When it is a read, that
+read's own slot is active — `mem_op = 3` forces it — so the walk can take its register-pre push in
+turn, and the timestamp strictly **decreases** because the bus-102 descent puts a row's predecessor
+below its own access. -/
+
+/-- A current access at `mem_op = 3` has its register selector set. For the a side that is
+`a_src_mem + 3 * a_src_reg = 3` with both flags boolean, which forces `a_src_reg = 1`. -/
+theorem regSlot_selector_of_mem_op_three
+    {length : ℕ} {program : Program length} {table : Table FGL} {row : Array FGL}
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    (h_constraints : table.Constraints) (h_row : row ∈ table.table) (s : RegSlot)
+    (h_op : (eval (table.environment row) (s.memMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).mem_op = 3) :
+    s.selector (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar) = 1 := by
+  obtain ⟨b_a_mem, b_a_reg, b_b_mem, b_b_ind, b_b_reg, b_c_mem, b_c_ind, b_c_reg⟩ :=
+    main_source_flags_boolean h_component h_constraints h_row
+  cases s
+  · rw [RegSlot.memMessageExpr, ZiskFv.AirsClean.Main.eval_aMemMessageExpr] at h_op
+    change (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_mem
+      + 3 * (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg = 3 at h_op
+    show (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.a_src_reg = 1
+    rcases zero_or_one_of_bool b_a_reg with h2 | h2
+    · exfalso
+      rcases zero_or_one_of_bool b_a_mem with h1 | h1 <;>
+        rw [h1, h2] at h_op <;> exact absurd h_op (by decide)
+    · exact h2
+  · rw [RegSlot.memMessageExpr, ZiskFv.AirsClean.Main.eval_bMemMessageExpr] at h_op
+    change ((eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_mem
+      + (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_ind)
+      + 3 * (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg = 3 at h_op
+    show (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.b_src_reg = 1
+    rcases zero_or_one_of_bool b_b_reg with h3 | h3
+    · exfalso
+      rcases zero_or_one_of_bool b_b_mem with h1 | h1 <;>
+        rcases zero_or_one_of_bool b_b_ind with h2 | h2 <;>
+          rw [h1, h2, h3] at h_op <;> exact absurd h_op (by decide)
+    · exact h3
+  · rw [RegSlot.memMessageExpr, ZiskFv.AirsClean.Main.eval_cMemMessageExpr] at h_op
+    change 2 * ((eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_mem
+      + (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_ind)
+      + 3 * (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg = 3 at h_op
+    show (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar).rom.store_reg = 1
+    rcases zero_or_one_of_bool b_c_reg with h3 | h3
+    · exfalso
+      rcases zero_or_one_of_bool b_c_mem with h1 | h1 <;>
+        rcases zero_or_one_of_bool b_c_ind with h2 | h2 <;>
+          rw [h1, h2, h3] at h_op <;> exact absurd h_op (by decide)
+    · exact h3
+
 end ZiskFv.Compliance
