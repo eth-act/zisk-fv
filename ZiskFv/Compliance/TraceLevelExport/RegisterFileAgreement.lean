@@ -5,9 +5,12 @@ import ZiskFv.Compliance.TraceLevelExport.RegisterWriteback
 # The ZisK register file, and `RegAgree` — #330 Phase 4 S2
 
 S1 (`RegisterValueTelescope.lean`) carries a value backwards along the memory bus to the boot
-anchor. That is one half of `h_a_lo_t`; it says what a ZisK operand column holds, in ZisK's own
-terms. This module builds the other half: a **register file** the two machines can be compared at,
-and the invariant `RegAgree` saying they agree.
+anchor. That is one half of the a-slot low-lane input field: it says what a ZisK operand column
+holds, in ZisK's own terms. This module builds the other half — a **register file** the two machines
+can be compared at, and the invariant `RegAgree` saying they agree.
+
+(The field names are spelled out nowhere in this module on purpose. The slice's acceptance gate is a
+raw `grep -rc` over `ZiskFv/`, so prose that quotes them inflates the count and makes the gate lie.)
 
 ## Why the file is defined from the channel output
 

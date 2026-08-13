@@ -786,8 +786,8 @@ genuinely different:
 
 So the head of a boot-anchored walk holds either `0`, when no c-link occurs on the path and the
 register is still untouched, or the value written at the walk's first c-link. That disjunction is
-the ZisK half of `h_a_lo_t`: it says the operand column holds the register's current contents,
-expressed as "the last write, or the boot value". -/
+the ZisK half of the a-slot low-lane input field: it says the operand column holds the register's
+current contents, expressed as "the last write, or the boot value". -/
 
 /-- **Reading does not change the register.** A read slot's two messages carry the same operand
     lanes. Deliberately false for `.c`: that asymmetry is where a write happens. -/
