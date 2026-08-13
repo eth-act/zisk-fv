@@ -771,4 +771,113 @@ theorem bootAnchored_values_zero
   obtain ⟨btbl, h_btbl, h_bcomp, br, h_br, h_eq⟩ := h
   exact regPre_values_zero_of_boot trace s h_eq
 
+/-! ## S1 — the value the walk carries
+
+A link `p.AnswersRegPre q` is a full `MemBusMessage` equality, so it pins `p`'s pushed value to
+`q`'s read value. What happens to that value next is decided by `q`'s slot, and the two cases are
+genuinely different:
+
+* an a- or b-slot **reads**. `aMemMessage` and `aRegPreMessage` carry the *same* operand columns
+  (`Main/Bridge.lean:165,195`), so what `q` pulls is what `q` pushes and the value passes straight
+  through to the next link.
+* a c-slot **writes**. `cMemMessage.value_0` is the store value, while `cRegPreMessage.value_0` is
+  `store_reg_prev_value_0` (`Main/Bridge.lean:184,213`) — two different columns. The carried value
+  stops there, holding exactly what that row wrote.
+
+So the head of a boot-anchored walk holds either `0`, when no c-link occurs on the path and the
+register is still untouched, or the value written at the walk's first c-link. That disjunction is
+the ZisK half of `h_a_lo_t`: it says the operand column holds the register's current contents,
+expressed as "the last write, or the boot value". -/
+
+/-- **Reading does not change the register.** A read slot's two messages carry the same operand
+    lanes. Deliberately false for `.c`: that asymmetry is where a write happens. -/
+theorem readMessage_value_eq_regPre_of_ne_c {s : RegSlot} (h_ne : s ≠ RegSlot.c)
+    (row : ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
+    (s.readMessage row).value_0 = (s.regPreMessage row).value_0
+      ∧ (s.readMessage row).value_1 = (s.regPreMessage row).value_1 := by
+  cases s
+  · exact ⟨rfl, rfl⟩
+  · exact ⟨rfl, rfl⟩
+  · exact absurd rfl h_ne
+
+/-- **The value at the head of a boot-anchored walk.** Either the register was never written and
+    the head's pushed value is `0`, or the path contains a c-slot — a write — and the head's pushed
+    value is exactly what that row's write message carried.
+
+    The induction is over the path: each non-`c` link passes the value through unchanged, the first
+    `c` link stops it, and a path that reaches the anchor without one lands on `bootMessage`'s
+    literal zero. -/
+theorem bootWalk_head_value {n : Nat} (trace : AcceptedZiskTrace n) :
+    ∀ (path : List RegWalkStep) (p last : RegWalkStep),
+      path.head? = some p → path.getLast? = some last →
+      List.IsChain RegWalkStep.AnswersRegPre path →
+      BootAnchoredStep trace last →
+      ((p.2.regPreMessage p.1).value_0 = 0 ∧ (p.2.regPreMessage p.1).value_1 = 0)
+        ∨ ∃ q ∈ path, q.2 = RegSlot.c
+            ∧ (p.2.regPreMessage p.1).value_0 = (q.2.readMessage q.1).value_0
+            ∧ (p.2.regPreMessage p.1).value_1 = (q.2.readMessage q.1).value_1 := by
+  intro path
+  induction path with
+  | nil => intro p last h_head; simp at h_head
+  | cons a rest ih =>
+      intro p last h_head h_last h_chain h_boot
+      have h_p : a = p := by simpa using h_head
+      subst h_p
+      match rest with
+      | [] =>
+          have h_last' : a = last := by simpa using h_last
+          subst h_last'
+          obtain ⟨btbl, _h_btbl, _h_bcomp, br, _h_br, h_eq⟩ := h_boot
+          exact Or.inl ⟨congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_eq,
+            congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_eq⟩
+      | b :: rest' =>
+          obtain ⟨h_link, h_chain'⟩ := List.isChain_cons_cons.mp h_chain
+          have h_link' : b.2.readMessage b.1 = a.2.regPreMessage a.1 := h_link
+          by_cases h_c : b.2 = RegSlot.c
+          · exact Or.inr ⟨b, List.mem_cons_of_mem _ List.mem_cons_self, h_c,
+              (congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_link').symm,
+              (congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_link').symm⟩
+          · obtain ⟨h_v0, h_v1⟩ := readMessage_value_eq_regPre_of_ne_c h_c b.1
+            have h_a0 : (a.2.regPreMessage a.1).value_0 = (b.2.regPreMessage b.1).value_0 := by
+              rw [← h_v0, ← congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_link']
+            have h_a1 : (a.2.regPreMessage a.1).value_1 = (b.2.regPreMessage b.1).value_1 := by
+              rw [← h_v1, ← congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_link']
+            rcases ih b last rfl (by simpa using h_last) h_chain' h_boot with
+              ⟨h0, h1⟩ | ⟨q, h_q, h_qc, h_q0, h_q1⟩
+            · exact Or.inl ⟨h_a0.trans h0, h_a1.trans h1⟩
+            · exact Or.inr ⟨q, List.mem_cons_of_mem _ h_q, h_qc,
+                h_a0.trans h_q0, h_a1.trans h_q1⟩
+
+/-- **S1, on the a-slot's columns.** From any active a-slot of any witness Main row, the operand
+    columns `a_0` / `a_1` hold either `0` or the value written by an active c-slot of a witness Main
+    row — the write the walk lands on.
+
+    Both alternatives name real witness rows, which is what makes this usable: the c-branch's `q` is
+    an `IsActiveWitnessMainRow`, so a later step can apply the step soundness of *that* row. -/
+theorem a_columns_of_bootWalk {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table)
+    (h_sel : RegSlot.a.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    (eval (table.environment row)
+        (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar).core.a_0 = 0
+      ∧ (eval (table.environment row)
+        (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar).core.a_1 = 0
+    ∨ ∃ q : RegWalkStep, IsActiveWitnessMainRow trace q ∧ q.2 = RegSlot.c
+        ∧ (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar).core.a_0
+          = (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0
+        ∧ (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar).core.a_1
+          = (ZiskFv.AirsClean.Main.cMemMessage q.1).value_1 := by
+  obtain ⟨path, last, h_head, h_last, h_sites, h_chain, h_boot⟩ :=
+    exists_bootWalk trace h_table h_component h_row RegSlot.a h_sel
+  rcases bootWalk_head_value trace path _ last h_head h_last h_chain h_boot with
+    ⟨h0, h1⟩ | ⟨q, h_q, h_qc, h_q0, h_q1⟩
+  · exact Or.inl ⟨h0, h1⟩
+  · rw [h_qc] at h_q0 h_q1
+    exact Or.inr ⟨q, h_sites q h_q, h_qc, h_q0, h_q1⟩
+
 end ZiskFv.Compliance
