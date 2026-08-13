@@ -261,6 +261,52 @@ theorem two_le_witness_pushCount {length : ℕ} {program : Program length}
       exact two_le_row_memBus_pushCount _ h_slots h_s h_s_msg h_t h_t_msg
   omega
 
+/-! ## The pull side: at most one position
+
+The push side counts *up* — two witnesses give two positions. The pull side has to count *down*:
+no message may be pulled twice. Both conditions are needed, and they are proved by opposite
+arguments, so the bookkeeping is separate. This is the general form; the register instance supplies
+its two hypotheses from `readMessage_inj` (only one row can pull a given read message) and from the
+three slots' timestamps differing within a row. -/
+
+private theorem countP_le_one_flatMap {α β : Type _} (P : β → Bool) (f : α → List β) :
+    ∀ (l : List α), (∀ x ∈ l, (f x).countP P ≤ 1) →
+      (∀ i j, ∀ (hi : i < l.length) (hj : j < l.length),
+        0 < (f l[i]).countP P → 0 < (f l[j]).countP P → i = j) →
+      (l.flatMap f).countP P ≤ 1 := by
+  intro l
+  induction l with
+  | nil => intro _ _; simp
+  | cons a t ih =>
+      intro h_row h_uniq
+      rw [List.flatMap_cons, List.countP_append]
+      have h_a : (f a).countP P ≤ 1 := h_row a List.mem_cons_self
+      by_cases h_pos : 0 < (f a).countP P
+      · have h_tail_zero : (t.flatMap f).countP P = 0 := by
+          by_contra h_c
+          obtain ⟨b, hb, hPb⟩ := List.countP_pos_iff.mp (Nat.pos_of_ne_zero h_c)
+          obtain ⟨x, hx, hbx⟩ := List.mem_flatMap.mp hb
+          obtain ⟨k, h_k⟩ := List.mem_iff_getElem?.mp hx
+          have h_k_lt : k < t.length := by
+            by_contra h_ge
+            rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h_k
+            simp at h_k
+          have h_get : t[k] = x := by
+            have := h_k
+            rw [List.getElem?_eq_getElem h_k_lt] at this
+            exact Option.some.inj this
+          have := h_uniq 0 (k + 1) (by simp) (by simpa using h_k_lt) (by simpa using h_pos)
+            (by simpa [h_get] using List.countP_pos_iff.mpr ⟨b, hbx, hPb⟩)
+          omega
+        omega
+      · have h_a_zero : (f a).countP P = 0 := by omega
+        have := ih (fun x hx => h_row x (List.mem_cons_of_mem _ hx))
+          (fun i j hi hj h_i h_j => by
+            have := h_uniq (i + 1) (j + 1) (by simpa using hi) (by simpa using hj)
+              (by simpa using h_i) (by simpa using h_j)
+            omega)
+        omega
+
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
