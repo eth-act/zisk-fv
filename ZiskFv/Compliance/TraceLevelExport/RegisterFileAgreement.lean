@@ -29,6 +29,16 @@ stated. Nothing is hidden by the choice made here: `stepRegWrite` reads the entr
 same class as `SegmentPcSeed.boot` and `BootSegmentMemorySeed`. Phase 4 is a real reduction only if
 the 116 per-row `h_[ab]_[lo|hi]_t` fields go away against it; carrying both would be a strict loss.
 That accounting is the slice's gate, not this module's.
+
+## Where `RegAgree` has to be carried, and why it is not circular
+
+`regAgree_succ` consumes `StepSound` at step `j`. `StepSound` at step `j` is in turn what an
+`InputsCore_<op>`'s register fields feed — so once those fields are *derived* from `RegAgree`
+instead of assumed, the two look circular. They are not: `RegAgree (j + 1)` needs `StepSound` only
+at steps `≤ j`, and `StepSound j` needs `RegAgree` only at `j`. That is a single well-founded
+interleaved induction on the step index, and Phase 7 already installed exactly that skeleton in
+`stepSound_of_programDecodes`, carrying per-row PC agreement. `RegAgree` widens the invariant it
+carries; it must not be derived *after* the fact from `∀ i, StepSound i`, which would be circular.
 -/
 
 namespace ZiskFv.Compliance
@@ -417,5 +427,71 @@ theorem post_regs_eq_of_stepChannelOutput
       · rw [post_eq_of_busEffect_ok_three_load _ _ _ _ _ _ _ h_len h_ex0 h_ex1 h_m0 h_a0 h_m1
           h_a1 h_m2 h_a2 h_z h_ok]
         simp [stepRegWrite, h_shape, h_a2, h_z]
+
+/-! ## The inductive step
+
+With the register effect in hand the step is short, and — this is the point of #343 — it needs the
+trace to be *chained*. On a bare `Fin n → SequentialState` there is no equation relating step
+`j + 1` to step `j`'s post-state, so `RegAgree j → RegAgree (j + 1)` could not even be stated
+without assuming one, which is the swap the anti-laundering rule forbids. -/
+
+/-- **Writeback preservation.** If the register files agree before a step, they agree after it.
+
+    Sail's side: the post-state's registers are the pre-state's with the write entry applied
+    (`post_regs_eq_of_stepChannelOutput`), and retire moves only `PC`
+    (`chainedSailStates_regs_of_ne_pc`). ZisK's side: `ziskRegFile` applies the same entry, by
+    construction. So the two updates are the same update. -/
+theorem regAgree_succ
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (h : j < ziskTrace.numInstructions)
+    (h_sound : StepSound ziskTrace (chainedSailTrace ziskStep init) ⟨j, h⟩ (ziskStep ⟨j, h⟩)
+      (rowDecode ⟨j, h⟩))
+    (h_prev : RegAgree ziskStep rowDecode init j) :
+    RegAgree ziskStep rowDecode init (j + 1) := by
+  intro k h_k
+  obtain ⟨result, post, h_ok⟩ :=
+    stepChannelOutput_busEffect_ok (⟨j, h⟩ : Fin ziskTrace.numInstructions) (ziskStep ⟨j, h⟩)
+      (rowDecode ⟨j, h⟩) (chainedSailStates ziskStep init j)
+  have h_exec : execute_instruction (sailInstructionOf ⟨j, h⟩ (ziskStep ⟨j, h⟩))
+      (chainedSailStates ziskStep init j) = .ok result post :=
+    ((stepSound_iff ⟨j, h⟩ (ziskStep ⟨j, h⟩) (rowDecode ⟨j, h⟩)).mp h_sound).trans h_ok
+  have h_post : sailStepPost (sailInstructionOf ⟨j, h⟩ (ziskStep ⟨j, h⟩))
+      (chainedSailStates ziskStep init j) = post := by
+    rw [sailStepPost, h_exec]
+  have h_regs : (chainedSailStates ziskStep init (j + 1)).regs.get? (reg_of_fin k)
+      = post.regs.get? (reg_of_fin k) := by
+    rw [chainedSailStates_regs_of_ne_pc ziskStep init j h (reg_of_fin k) (reg_of_fin_neq_pc k),
+      h_post]
+  obtain ⟨v, h_post_regs⟩ :=
+    post_regs_eq_of_stepChannelOutput ⟨j, h⟩ (ziskStep ⟨j, h⟩) (rowDecode ⟨j, h⟩)
+      (chainedSailStates ziskStep init j) post result h_ok
+  rw [h_regs, h_post_regs, ziskRegFile, dif_pos h]
+  have h_nextPC : reg_of_fin k ≠ Register.nextPC := reg_of_fin_neq_nextPC
+  rw [Std.ExtDHashMap.get?_insert,
+    dif_neg (by simp only [beq_iff_eq, ne_eq]; exact Ne.symm h_nextPC)]
+  cases h_w : stepRegWrite (stepChannelOutput (⟨j, h⟩ : Fin ziskTrace.numInstructions)
+      (ziskStep ⟨j, h⟩) (rowDecode ⟨j, h⟩)) with
+  | none => exact h_prev k h_k
+  | some e =>
+      by_cases h_eq : Transpiler.wrap_to_regidx e.ptr = k
+      · have h_nz : Transpiler.wrap_to_regidx e.ptr ≠ 0 := by rw [h_eq]; exact h_k
+        subst h_eq
+        dsimp only
+        rw [if_neg h_nz, if_pos rfl, Std.ExtDHashMap.get?_insert,
+          dif_pos (by simp only [beq_self_eq_true])]
+        simp
+      · by_cases h_z : Transpiler.wrap_to_regidx e.ptr = 0
+        · dsimp only
+          rw [if_pos h_z, if_neg h_eq]
+          exact h_prev k h_k
+        · have h_ne : reg_of_fin (Transpiler.wrap_to_regidx e.ptr) ≠ reg_of_fin k := fun hc =>
+            h_eq (reg_of_fin_injective h_z h_k hc)
+          dsimp only
+          rw [if_neg h_z, if_neg h_eq, Std.ExtDHashMap.get?_insert,
+            dif_neg (by simp only [beq_iff_eq, ne_eq]; exact h_ne)]
+          exact h_prev k h_k
 
 end ZiskFv.Compliance
