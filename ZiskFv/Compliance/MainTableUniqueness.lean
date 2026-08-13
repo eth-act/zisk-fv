@@ -131,4 +131,59 @@ theorem rawWidth_binaryAdd :
   simp only [BinaryAdd.component, GeneralFormalCircuit.size_eq, circuit_norm, BinaryAdd.circuit]
   norm_num
 
+/-! ## The ensemble's width profile, and what it pins -/
+
+/-- **The ensemble's raw widths, in table order.** Only the numerals are rewritten here; the
+    circuit-level work is in the sixteen lemmas above. -/
+theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
+    ((fullRv64imEnsemble length program).ensemble.allTables.map (·.rawWidth))
+      = [0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] := by
+  simp only [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
+    Ensemble.allTables, SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables,
+    List.map_cons, List.map_nil, SoundEnsemble.empty, Ensemble.verifierTable,
+    rawWidth_main, rawWidth_registerBoundary, rawWidth_memAlignReadByte, rawWidth_memAlignByte,
+    rawWidth_memAlign, rawWidth_memAlignRangeSlice, rawWidth_memAlignRomSlice, rawWidth_mem,
+    rawWidth_registerStepRangeSlice, rawWidth_specifiedRangesSlice, rawWidth_arithDiv,
+    rawWidth_arithMul, rawWidth_shiftStaticLookup, rawWidth_binaryStaticLookup,
+    rawWidth_binaryAdd]
+  rfl
+
+/-- A witness table carrying the Main component sits at index `15`, because that is the only place
+    the ensemble's width profile shows `41`. -/
+theorem main_table_index {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {t : Table FGL} (h_mem : t ∈ witness.allTables)
+    (h_component : t.component = Main.componentWithRomMemAndOpBus length program) :
+    witness.allTables[15]? = some t := by
+  obtain ⟨i, h_i⟩ := List.mem_iff_getElem?.mp h_mem
+  have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[i]?
+      = some (Main.componentWithRomMemAndOpBus length program) := by
+    rw [← witness.allTables_map_component, List.getElem?_map, h_i, Option.map_some,
+      h_component]
+  have h_width : ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+      = some 41 := by
+    rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some,
+      rawWidth_main]
+  have h_lt : i < 16 := by
+    by_contra h_ge
+    rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h_width
+    simp at h_width
+  interval_cases i <;> simp_all
+
+/-- **At most one witness table carries the Main component.**
+
+    This is what turns the register telescope's counting argument into a real bound: with a single
+    Main table, two interactions carrying the same `mem_op = 3` read message would have to be the
+    same row, because equal messages force equal timestamps and a timestamp names the slot and the
+    row index. -/
+theorem main_table_unique {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {t₁ t₂ : Table FGL}
+    (h₁ : t₁ ∈ witness.allTables) (h₂ : t₂ ∈ witness.allTables)
+    (hc₁ : t₁.component = Main.componentWithRomMemAndOpBus length program)
+    (hc₂ : t₂.component = Main.componentWithRomMemAndOpBus length program) :
+    t₁ = t₂ :=
+  Option.some.inj
+    ((main_table_index witness h₁ hc₁).symm.trans (main_table_index witness h₂ hc₂))
+
 end ZiskFv.Compliance
