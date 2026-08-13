@@ -1,0 +1,99 @@
+import ZiskFv.Compliance.TraceLevelExport.SailRetireChain
+
+/-!
+# A `SailTrace` that Sail's own semantics generates — #343
+
+`SailTrace n` is `Fin n → PreSail.SequentialState`: a *family* of states with no relation between
+indices. Because nothing links step `j` to step `j + 1`, every cross-step law has to be **assumed**.
+`SegmentPcChain` assumes `retire`, and `SailRetireChain.lean:789` says what that costs — Phase 7 is
+a restructure, not a logical-strength reduction. #330 Phase 4 hits the same wall: `RegAgree`'s
+inductive step has nothing to stand on.
+
+This module builds the trace instead of assuming it. `chainedSailStates` runs
+`execute_instruction` at each step from an initial state and then performs Sail's **retire**: copy
+`nextPC` into `PC`. `chainedSailStates_retire` is then true **by construction**, not by hypothesis.
+
+## What this does and does not settle
+
+It settles the shape: a trace generated this way satisfies `retire` definitionally, so a caller that
+supplies one is supplying an actual Sail execution rather than an arbitrary family of states with a
+promise attached.
+
+It does not by itself migrate `root_soundness`. `SailTrace` is referenced by all 63 `StepSound`
+arms, every `Inputs_<op>`, and all seven accepted-trace witnesses; repointing them is the rest of
+#343. Nothing here changes a protected interface — the definitions are additive, and the existing
+`SailTrace` abbreviation is untouched.
+-/
+
+namespace ZiskFv.Compliance
+
+variable {numInstructions : ℕ}
+
+/-- **Sail's retire step, as a state function.** Copy `nextPC` into `PC`. This is the transition the
+    old `SegmentPcChain.retire` field asserted; here it is performed. -/
+noncomputable def retirePC
+    (s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    PreSail.SequentialState RegisterType Sail.trivialChoiceSource :=
+  match s.regs.get? Register.nextPC with
+  | none => s
+  | some v =>
+      { s with regs := s.regs.insert Register.PC (cast (by simp [RegisterType]) v) }
+
+/-- The post-state of one Sail step, error branches kept total by staying put. -/
+noncomputable def sailStepPost
+    (instr : instruction)
+    (s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    PreSail.SequentialState RegisterType Sail.trivialChoiceSource :=
+  match execute_instruction instr s with
+  | .ok _ post => post
+  | .error _ post => post
+
+
+/-- **The trace Sail's semantics generates.** Step `0` is the given initial state; step `j + 1` is
+    the post-state of executing step `j`'s instruction, followed by Sail's retire — copy `nextPC`
+    into `PC`.
+
+    Out-of-range indices stay put, which keeps the recursion total without affecting any index the
+    trace is used at. -/
+noncomputable def chainedSailStates
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    ℕ → PreSail.SequentialState RegisterType Sail.trivialChoiceSource
+  | 0 => init
+  | j + 1 =>
+      if h : j < ziskTrace.numInstructions then
+        retirePC (sailStepPost (sailInstructionOf ⟨j, h⟩ (ziskStep ⟨j, h⟩))
+          (chainedSailStates ziskStep init j))
+      else
+        chainedSailStates ziskStep init j
+
+/-- The chained states, packaged as a `SailTrace`. -/
+noncomputable def chainedSailTrace
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    SailTrace ziskTrace.numInstructions :=
+  fun i => chainedSailStates ziskStep init i.val
+
+/-- **`retire` holds by construction.** For a chained trace the PC at step `j + 1` *is* the `nextPC`
+    the step at `j` wrote, because `chainedSailStates` performs the copy rather than assuming it.
+
+    This is the whole point of #343. `SegmentPcChain.retire` is a hypothesis precisely because
+    `SailTrace` is an arbitrary family of states; on a trace Sail actually generated there is nothing
+    left to assume. -/
+theorem chainedSailStates_retire
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (h : j < ziskTrace.numInstructions)
+    (v : RegisterType Register.nextPC)
+    (h_next : (sailStepPost (sailInstructionOf ⟨j, h⟩ (ziskStep ⟨j, h⟩))
+        (chainedSailStates ziskStep init j)).regs.get? Register.nextPC = some v) :
+    (chainedSailStates ziskStep init (j + 1)).regs.get? Register.PC
+      = some (cast (by simp [RegisterType]) v) := by
+  rw [chainedSailStates, dif_pos h, retirePC]
+  rw [h_next]
+  simp [Std.ExtDHashMap.get?_insert]
+
+end ZiskFv.Compliance
