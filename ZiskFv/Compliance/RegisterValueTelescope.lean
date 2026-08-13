@@ -585,7 +585,12 @@ theorem exists_bootAnchored_of_fuel
         omega
 
 /-- **Termination, with the measure supplied.** Every active register slot of the witness traces
-    back to a slot anchored at `bootMessage`. -/
+    back to a slot anchored at `bootMessage`.
+
+    **This is the WEAK corollary — prefer `exists_bootWalk`.** The `tbl / r / t` bound here are
+    fresh: the statement says a boot-anchored slot *exists*, not that the slot you started from is
+    the one traced back, and it carries no value. It stands in the same relation to
+    `exists_bootWalk` as `exists_boundarySuppliedSite` does to `exists_boundaryWalk`. -/
 theorem exists_bootAnchored
     {n : Nat} (trace : AcceptedZiskTrace n)
     {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
@@ -601,6 +606,124 @@ theorem exists_bootAnchored
           ∧ BootAnchoredAt trace tbl r t :=
   exists_bootAnchored_of_fuel trace
     (s.readTimestamp (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val
+    h_table h_component h_row s h_sel (by omega)
+
+/-- **The anchor, as a predicate on a walk step.** Same content as `BootAnchoredAt`, phrased on the
+    evaluated `RegWalkStep` so a path can end in it. -/
+def BootAnchoredStep {n : Nat} (trace : AcceptedZiskTrace n) (p : RegWalkStep) : Prop :=
+  ∃ btbl ∈ trace.witness.allTables,
+    ∃ _h : btbl.component = ZiskFv.AirsClean.RegisterBoundary.component,
+      ∃ br ∈ btbl.table,
+        p.2.regPreMessage p.1
+          = ZiskFv.AirsClean.RegisterBoundary.bootMessage
+            (eval (btbl.environment br)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)
+
+theorem bootAnchoredStep_iff {n : Nat} (trace : AcceptedZiskTrace n)
+    (table : Table FGL) (row : Array FGL) (s : RegSlot) :
+    BootAnchoredAt trace table row s
+      ↔ BootAnchoredStep trace
+          (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s) :=
+  Iff.rfl
+
+/-- **One backward link, as a relation on walk steps.** `p.AnswersRegPre q` says `q`'s read message
+    *is* `p`'s register-pre message.
+
+    This is the relation that carries the **value**: both sides are full `MemBusMessage`s, so the
+    equality pins the operand lanes as well as the timestamp. Along an a- or b-side chain the value
+    is therefore constant — correct, since reads do not write — and the store side is where it
+    steps, because `cRegPreMessage` carries `store_reg_prev_value` while `cMemMessage` carries the
+    new one. -/
+def RegWalkStep.AnswersRegPre (p q : RegWalkStep) : Prop :=
+  q.2.readMessage q.1 = p.2.regPreMessage p.1
+
+/-- **The backward walk, recording its path.** From any active slot of any witness Main row,
+    following register-pre pushes back produces a finite path whose head is *that* slot, whose
+    every element is an active witness row, whose consecutive steps are linked by
+    `AnswersRegPre`, and whose last step is anchored at `bootMessage`.
+
+    This is the backward analogue of `exists_boundaryWalk`, and it exists for the same reason #349
+    added the path there: `exists_bootAnchored` produces a boot-anchored slot *somewhere*, with no
+    stated relation to the slot the walk started from, which is not enough to carry a value.
+
+    The measure is the read timestamp, which `backward_step_lt` strictly decreases. -/
+theorem exists_bootWalk_of_fuel
+    {n : Nat} (trace : AcceptedZiskTrace n) :
+    ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
+      ∀ (h_component : table.component =
+          componentWithRomMemAndOpBus trace.programLength trace.program),
+        ∀ {row : Array FGL}, row ∈ table.table → ∀ (s : RegSlot),
+          s.selector (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1 →
+          (s.readTimestamp (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val
+              ≤ fuel →
+          ∃ path : List RegWalkStep, ∃ last : RegWalkStep,
+            path.head? = some
+                (eval (table.environment row)
+                  (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)
+              ∧ path.getLast? = some last
+              ∧ (∀ q ∈ path, IsActiveWitnessMainRow trace q)
+              ∧ List.IsChain RegWalkStep.AnswersRegPre path
+              ∧ BootAnchoredStep trace last := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro table h_table h_component row h_row s h_sel _h_fuel
+      exact absurd (readTimestamp_val_pos h_component h_row s) (by omega)
+  | succ fuel ih =>
+      intro table h_table h_component row h_row s h_sel h_fuel
+      have h_start := isActiveWitnessMainRow_of_mem trace h_table h_component h_row s h_sel
+      rcases backward_step trace h_table h_component h_row s h_sel with
+        h_boot | ⟨tbl, h_tbl, h_comp, r, h_r, t, h_tsel, h_eq⟩
+      · exact ⟨[(eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)],
+          _, rfl, rfl,
+          (by intro p hp; rw [List.mem_singleton] at hp; exact hp ▸ h_start),
+          List.isChain_singleton _, h_boot⟩
+      · have h_lt := backward_step_lt trace h_table h_component h_row s h_sel h_tbl h_comp h_r t h_eq
+        obtain ⟨path, last, h_head, h_last, h_sites, h_chain, h_bd⟩ :=
+          ih h_tbl h_comp h_r t h_tsel (by omega)
+        match path, h_head with
+        | a :: rest, h_head =>
+            have h_a : a = (eval (tbl.environment r)
+                (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, t) := by
+              simpa using h_head
+            refine ⟨(eval (table.environment row)
+                (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)
+                  :: a :: rest,
+              last, rfl, by simpa using h_last, ?_, ?_, h_bd⟩
+            · intro p hp
+              rcases List.mem_cons.mp hp with rfl | hp
+              · exact h_start
+              · exact h_sites p hp
+            · refine List.isChain_cons_cons.mpr ⟨?_, h_chain⟩
+              show a.2.readMessage a.1 = _
+              rw [h_a]
+              exact h_eq
+
+/-- **The backward walk, with the measure supplied.** Every active register slot of the witness
+    starts a path that ends anchored at `bootMessage`. -/
+theorem exists_bootWalk
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    ∃ path : List RegWalkStep, ∃ last : RegWalkStep,
+      path.head? = some
+          (eval (table.environment row)
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar, s)
+        ∧ path.getLast? = some last
+        ∧ (∀ q ∈ path, IsActiveWitnessMainRow trace q)
+        ∧ List.IsChain RegWalkStep.AnswersRegPre path
+        ∧ BootAnchoredStep trace last :=
+  exists_bootWalk_of_fuel trace
+    (s.readTimestamp (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val
     h_table h_component h_row s h_sel (by omega)
 
 /-- **The anchor, unpacked.** A boot-anchored slot's operand values are `0` and its predecessor
