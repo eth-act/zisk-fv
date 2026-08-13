@@ -198,6 +198,7 @@ import ZiskFv.Compliance.RegisterWalk
 import ZiskFv.Compliance.MemBusSlotSeparation
 import ZiskFv.Compliance.RegisterBoundaryAnchor
 import ZiskFv.Compliance.RegisterValueTelescope
+import ZiskFv.Compliance.TraceLevelExport.ChainedSailTrace
 import ZiskFv.Compliance.SingleAddWitness
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.Compliance.AddSpinRootSoundness
