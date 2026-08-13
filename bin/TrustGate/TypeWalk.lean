@@ -11,9 +11,22 @@ underlying forbidden Name surfaces.
 We avoid `MetaM` reduction here — naive `whnfR`-recursion explodes
 on the deeply-elaborated Sail/circuit types in `equiv_<OP>` binders.
 Instead we do an environment-side static closure: for each const
-appearing in the binder type, if its definition is `abbrev` or has
-`reducible` reducibility hint, we unfold by descending into its
+appearing in the binder type, if the environment reports it
+`@[reducible]` (which `abbrev` sets), we unfold by descending into its
 value's syntactic constants. Bounded by the env's const count.
+
+SCOPE, stated exactly, because the previous wording did not match the
+code and that mismatch cost a review round. The closure follows
+REDUCIBLE definitions only. A forbidden Name reachable from a binder
+type solely through ORDINARY (`semireducible`) definitions is not
+reported. That is deliberate: unfolding ordinary definitions makes the
+walk flag any binder mentioning anything that eventually calls the Sail
+entry points — including a premise that merely talks ABOUT a Sail-
+generated state, which is the opposite of the OUTPUT-EQ leak this
+catalog exists to catch. Direct syntactic occurrences are still caught
+by `gatherConsts` with no unfolding at all, so the aliasing dodge this
+layer was built for (`abbrev S := LeanRV64D.Functions.execute`) remains
+closed. See `trust/trusted-base.md`, "TypeWalk coverage".
 -/
 import Lean
 
@@ -39,15 +52,22 @@ partial def gatherConsts (e : Expr) (acc : NameSet) : NameSet :=
   | _               => acc
 
 /-- True iff this constant should be transparently unfolded for the
-const-closure walk: definitions whose body is itself part of the
-"shape" reviewers see. Catches `abbrev` and `@[reducible] def`. -/
-def shouldUnfold (ci : ConstantInfo) : Bool :=
+const-closure walk: definitions the elaborator itself unfolds at reducible
+transparency, which is exactly what `abbrev` and `@[reducible] def` produce.
+
+We ask the environment for the declaration's reducibility status. Reading
+`ConstantInfo.hints` instead does NOT work: `ReducibilityHints.regular n` carries a
+definition's *height*, which is positive for ordinary `def`s too, so a hints-based
+test unfolds essentially every non-recursive definition. That is far wider than
+this walk's contract — it flags a binder whose only path to a forbidden Name runs
+through ordinary, non-reducible definitions, which is not aliasing and not the
+OUTPUT-EQ class. See the coverage note in `trust/trusted-base.md`. -/
+def shouldUnfold (env : Environment) (declName : Name) (ci : ConstantInfo) : Bool :=
   match ci with
-  | .defnInfo d =>
-    match d.hints with
-    | .abbrev => true
-    | .regular n => n > 0  -- @[reducible] sets a positive depth hint
-    | .opaque => false
+  | .defnInfo _ =>
+    match getReducibilityStatusCore env declName with
+    | .reducible => true
+    | _ => false
   | _ => false
 
 /-- Compute the closure of `init` Names under reducible-definition
@@ -67,7 +87,7 @@ where
         match env.find? n with
         | none => go acc rest visited'
         | some ci =>
-          if shouldUnfold ci then
+          if shouldUnfold env n ci then
             -- Pull defn body's consts into the closure.
             let body := match ci with | .defnInfo d => d.value | _ => default
             let bodyConsts := gatherConsts body {}

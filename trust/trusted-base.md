@@ -563,20 +563,113 @@ What it does change, and why the change is worth having:
   It binds only at steps that have a successor, so a trailing unaligned JALR — the
   shape `jalrSpinRootSoundness` uses — discharges it vacuously.
 
-**What would be a real strength reduction, and is not done.** `SailTrace` is a bare
-`Fin n → SailState` (`ZiskFv/Compliance/SailTrace.lean`) with no chaining, so
-*something* must say the Sail states form an execution — exactly the reason
-`bootSeed` is irreducible at the single-segment level. Defining `SailTrace` as the
-sequence Sail's own semantics generates from an initial state would make `retire`
-definitional and leave `boot` alone. That is a change to a protected interface used
-by all 63 arms, and it remains the open #330 follow-on.
+**The strength reduction, now done at the root — #343.** The paragraph that used to
+sit here said a real reduction would come from defining the trace as the sequence
+Sail's own semantics generates, and that it was not done. It is done, at
+`root_soundness`.
 
-**Non-vacuity.** All seven accepted-trace witnesses supply both binders and still
-instantiate `root_soundness` / `stepSound_of_programDecodes`. They build `retire`
-through `sailRetireChain_of_inputsAgree` from the per-row `InputsAgree` family they
-already prove — no witness evaluates a Sail execution by hand. The
-empty-execution memory witness and the degenerate probe get vacuous ones, as their
-`bootSeed`s already are.
+`root_soundness` no longer takes a `SailTrace` at all. It takes
+`init : PreSail.SequentialState …` and builds the trace itself with
+`chainedSailTrace` (`ZiskFv/Compliance/TraceLevelExport/ChainedSailTrace.lean`),
+which runs `execute_instruction` at each step and then performs Sail's retire —
+copy `nextPC` into `PC`. Consequently:
+
+* **The `retire` obligation left the statement; the binder did not.** State this
+  carefully, because "the `pcChain` binder is gone" reads as a shorter premise list
+  and the audit surface says otherwise. `pcChain : SegmentPcChain …` was *replaced*
+  by `pcBoot`, which carries only the `boot` equation; the binder **count is
+  unchanged** (`trust/generated/baseline-strong-export-binders.txt`, 16 entries
+  before and after). What actually left is `SegmentPcChain`'s `retire` field,
+  supplied inside the theorem by `chainedSailTrace_retireChain`, a theorem with no
+  hypotheses. The frozen statement snapshot in `ZiskFv/Audit.lean` records the shape.
+* **The edit does two things, and both belong on the record.** It drops an
+  obligation, *and* it specializes the conclusion to chained traces: the new
+  statement is an **instance** of the old one, obtained by instantiating `sailTrace`
+  at `chainedSailTrace ziskStep init`. A caller who wants `StepSound` at a trace of
+  their own choosing can no longer get it from this theorem. That is the intended
+  direction — the states are now Sail's, not the caller's — but it is a
+  specialization, not a free strengthening.
+* **The inter-derivability caveat does not rescue the old premise here.**
+  `sailRetireChain_of_inputsAgree` derives `retire` from the old per-row bundle; that
+  matters when `retire` is something a caller must supply. At the root there is
+  nothing to supply, so there is nothing to derive. The caveat still applies to
+  `stepSound_of_programDecodes`, which deliberately keeps taking a `SailTrace` and a
+  full `SegmentPcChain`.
+* **The guardrail #343 asks for is met at the level of the statement, and NOT yet
+  demonstrated by a witness.** A caller can no longer choose the Sail states:
+  `inputsAgree` is demanded at `chainedSailTrace ziskStep init`. But see
+  "Non-vacuity" below — no checked-in instantiation actually runs a chain step, so
+  "harder to inhabit" is so far a property of the statement rather than something an
+  instantiation has had to pay for.
+
+`retirePC`'s `nextPC`-absent branch **erases** `PC`, so both sides of the retire law
+are `none` there and the law needs no side condition about the 63 `execute` arms.
+That is a coverage cliff, not a soundness hole: every `Inputs_<op>`'s `h_input_pc`
+demands `.some`, so a step leaving `nextPC` unset makes `inputsAgree` unsatisfiable
+from there on — the theorem becomes uninstantiable rather than silently matching
+`.elim 0`'s zero. Nothing is proved about a state that never arises; a real trace
+would simply be lost. Ruling that out is exactly the 63-arm fact the erase branch
+avoids needing.
+
+Nothing was added to the trust boundary: the new declarations close over
+`[propext, Classical.choice, Quot.sound]`, and the ones mentioning `execute_instruction`
+close over the pre-existing Sail base (`cancel_reservation`, `riscv_f*`, …) that the
+endpoint already carried.
+
+**Non-vacuity — and the limit on it, stated plainly.** `root_soundness` has exactly
+two instantiations, and both were migrated with it: `addFaithfulPaddedRawRootSoundness`
+(`numInstructions = 1`) and `memoryRawRootSoundness` (`numInstructions = 0`). Each now
+supplies an initial state, and `addFaithfulSailTrace` is the generated trace rather
+than a hand-written family of states. Their axiom closures are unchanged.
+
+**No checked-in witness reaches index `≥ 1`.** `chainedSailStates … 0` is `init` by
+`rfl`, so at `n ≤ 1` the only state either witness ever names is its own initial
+state. `addFaithfulInputsAgree` is therefore textually unchanged by the migration —
+only `addFaithfulInputsAgreeCore` moved, and only by gaining `noncomputable`.
+Consequently `retirePC` and `sailStepPost` are **never applied** anywhere in the
+checked-in tree, and `chainedSailTrace_retireChain` is proved but never *used* by a
+witness. The premise reduction is real regardless, being a fact about the statement;
+what is not yet shown is an instantiation that had to run Sail to satisfy
+`inputsAgree`.
+
+The other five witnesses (`addSpin`, `addAddiSpin`, `divSpin`, `jalrSpin`, `sdLdSpin`)
+target `stepSound_of_programDecodes`, keep their hand-built traces, and still build
+`retire` through `sailRetireChain_of_inputsAgree`. Migrating them — 13 chain steps —
+is what would exercise the chain, and it is not claimed here.
+
+**Scope of what #343 did NOT change.** `stepSound_of_programDecodes` keeps its
+signature, so the register fields and every other per-row premise are untouched. The
+reduction is one obligation, at one theorem.
+
+### TypeWalk coverage — deliberate narrowing, #343
+
+`bin/TrustGate/TypeWalk.lean`'s `shouldUnfold` decided which definitions the
+forbidden-Name closure walks through. It tested `ConstantInfo.hints`, treating
+`ReducibilityHints.regular n` with `n > 0` as "reducible". That is wrong: `regular n`
+carries a definition's *height*, which is positive for ordinary `def`s too, so the
+walk unfolded essentially **every** non-recursive definition — far wider than the
+module's documented contract ("`abbrev` / `@[reducible] def` chains") and wider than
+the OUTPUT-EQ policy it serves.
+
+It now asks the environment via `getReducibilityStatusCore` and unfolds only genuinely
+`@[reducible]` declarations. Both docstrings were corrected; the stated/actual gap is
+what turned an implementation bug into an apparent policy question.
+
+**This is a coverage reduction, recorded as such.** Measured, not asserted:
+
+| declaration | status | walk |
+|---|---|---|
+| `abbrev SneakySpec := LeanRV64D.Functions.execute` | reducible | unfolds — **dodge still closed** |
+| `def SneakyOrdinary := LeanRV64D.Functions.execute` | semireducible | stops — **newly missed** |
+| `ZiskFv.Compliance.SailTrace` (`abbrev`) | reducible | unfolds |
+| `chainedSailTrace` / `chainedSailStates` | semireducible | stops |
+
+So the aliasing dodge the V2 layer was built for (`abbrev S := <forbidden>`) remains
+closed, and direct syntactic occurrences never needed unfolding at all. What is newly
+missed is an *ordinary-`def`* alias of a Sail entry point used in a binder type. No
+past result is invalidated: the old behaviour over-flagged, never under-flagged.
+`trust/forbidden-types.txt` is untouched, and check 2 still passes on all 63
+canonical `equiv_<OP>` theorems.
 
 **Scope.** The PC arm only. The register fields (`h_a_*_t` / `h_b_*_t`, 116
 occurrences) stay assumed; they go through the MemBus and are the separate

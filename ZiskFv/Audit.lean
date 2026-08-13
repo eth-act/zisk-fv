@@ -65,21 +65,23 @@ deliberately changes what an endpoint states. -/
 open ZiskFv.Compliance in
 /--
 info: root_soundness : ∀ (numInstructions rawLength : ℕ) (ziskTrace : AcceptedZiskTrace numInstructions)
-  (sailTrace : SailTrace numInstructions) (ziskStep : (i : Fin numInstructions) → ZiskStep ziskTrace i)
-  (start : Fin rawLength → Fin ziskTrace.programLength) (addr : Fin rawLength → Fin 18446744069414584321)
-  (rawProgram : Fin rawLength → BitVec 32)
+  (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+  (ziskStep : (i : Fin numInstructions) → ZiskStep ziskTrace i) (start : Fin rawLength → Fin ziskTrace.programLength)
+  (addr : Fin rawLength → Fin 18446744069414584321) (rawProgram : Fin rawLength → BitVec 32)
   (programBinding : RawProgramBinding.ProgramRowsBinding ziskTrace start addr rawProgram)
   (rawProgramDecodes : (i : Fin numInstructions) → RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram)
-  (inputsAgree : (i : Fin numInstructions) → InputsAgreeCore ziskTrace sailTrace i (ziskStep i)),
-  SegmentPcChain ziskTrace sailTrace ziskStep →
+  (inputsAgree : (i : Fin numInstructions) → InputsAgreeCore ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)),
+  (0 < numInstructions →
+      ↑((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc 0) =
+        (init.regs.get? Register.PC).elim 0 BitVec.toNat) →
     (StepRowsAligned ziskTrace ziskStep fun i ↦
         rowDecode_of_programDecode ziskTrace i
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
             (rawProgramDecodes i))) →
-      ∀ (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep),
+      ∀ (bootSeed : BootSegmentMemorySeed ziskTrace (chainedSailTrace ziskStep init) ziskStep),
         (∀ (i : Fin numInstructions), RowOutsideDefectRegion ziskTrace i (ziskStep i)) →
           ∀ (i : Fin numInstructions),
-            StepSound ziskTrace sailTrace i (ziskStep i)
+            StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
               (rowDecode_of_programDecode ziskTrace i
                 (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
                   (rawProgramDecodes i)))

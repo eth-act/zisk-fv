@@ -54,8 +54,12 @@ def addFaithfulState (pc : BitVec 64) :
     regs := addFaithfulRegs pc
     mem := {} }
 
-def addFaithfulSailTrace : SailTrace 1
-  | ⟨0, _⟩ => addFaithfulState (0#64)
+/-- The Sail side of this witness (#343). Not a hand-written family of states: the execution Sail's
+    own semantics generates from `addFaithfulState (0#64)`. A one-instruction execution has no chain
+    step, so it reduces to the initial state at its single index — but it is now the *generated*
+    trace, which is what `root_soundness` consumes. -/
+noncomputable def addFaithfulSailTrace : SailTrace 1 :=
+  chainedSailTrace addFaithfulZiskStep (addFaithfulState (0#64))
 
 theorem addFaithfulRowsOf_empty_readSound :
     MemoryBusRowsPrefixReadSound
@@ -205,7 +209,7 @@ def addFaithfulInputsAgree :
 def addFaithfulPcSeed : SegmentPcSeed addFaithfulAcceptedTrace addFaithfulSailTrace :=
   pcSeed_of_inputsAgree addFaithfulInputsAgree
 
-def addFaithfulInputsAgreeCore :
+noncomputable def addFaithfulInputsAgreeCore :
     ∀ i : Fin 1,
       InputsAgreeCore addFaithfulAcceptedTrace addFaithfulSailTrace i (addFaithfulZiskStep i) :=
   fun i => inputsAgreeCore_of_inputsAgree i (addFaithfulZiskStep i) (addFaithfulInputsAgree i)
@@ -267,15 +271,14 @@ def addFaithfulRowsAligned :
   have h' : j + 1 < 1 := h
   omega
 
-/-- The two root PC premises: boot agreement, and the Sail-internal retire law. `retire` is vacuous
-    on a one-instruction execution; `boot` is the witness's own row-0 PC agreement. -/
-def addFaithfulPcChain :
-    SegmentPcChain addFaithfulAcceptedTrace addFaithfulSailTrace addFaithfulZiskStep where
-  retire := by
-    intro j h
-    have h' : j + 1 < 1 := h
-    omega
-  boot := (pcSeed_of_inputsAgree addFaithfulInputsAgree).boot
+/-- The single root PC premise (#343): boot agreement at row `0`. The retire law that used to sit
+    beside it is no longer a premise — `root_soundness` gets it from
+    `chainedSailTrace_retireChain`. -/
+def addFaithfulPcBoot : ∀ (_ : 0 < 1),
+    ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
+        addFaithfulAcceptedTrace.mainTable).pc 0).val
+      = ((addFaithfulState (0#64)).regs.get? Register.PC).elim 0 BitVec.toNat :=
+  (pcSeed_of_inputsAgree addFaithfulInputsAgree).boot
 
 open ZiskFv.Compliance.RawProgramBinding in
 theorem addFaithfulPaddedRawRootSoundness :
@@ -285,9 +288,9 @@ theorem addFaithfulPaddedRawRootSoundness :
           (programDecode_of_rawProgramDecode addFaithfulAcceptedTrace i (addFaithfulZiskStep i)
             addFaithfulStart addFaithfulAddr addFaithfulRawProgram
             addFaithfulProgramRowsBinding (addFaithfulRawProgramDecodes i))) :=
-  root_soundness 1 2 addFaithfulAcceptedTrace addFaithfulSailTrace addFaithfulZiskStep
+  root_soundness 1 2 addFaithfulAcceptedTrace (addFaithfulState (0#64)) addFaithfulZiskStep
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
-    addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcChain
+    addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcBoot
     addFaithfulRowsAligned addFaithfulBootSeed addFaithfulOutsideDefectRegion
 
 #print axioms addFaithfulPaddedRawRootSoundness
