@@ -532,4 +532,87 @@ theorem regPre_values_zero_of_boot
   · have := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_eq
     rwa [RegSlot.regPreMessage_timestamp] at this
 
+
+/-! ## The backward walk reaches `bootMessage`
+
+Each step moves to an earlier read, and read timestamps are natural numbers, so the descent cannot
+continue forever. The measure is the read timestamp itself — decreasing, unlike the forward walk's
+`2 ^ 40 - readTimestamp`. -/
+
+/-- A slot of a witness row whose predecessor access is the boot pull, so whose operand values are
+    the register's untouched `0`. -/
+def BootAnchoredAt {n : Nat} (trace : AcceptedZiskTrace n)
+    (table : Table FGL) (row : Array FGL) (s : RegSlot) : Prop :=
+  ∃ btbl ∈ trace.witness.allTables,
+    ∃ _h : btbl.component = ZiskFv.AirsClean.RegisterBoundary.component,
+      ∃ br ∈ btbl.table,
+        s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+          = ZiskFv.AirsClean.RegisterBoundary.bootMessage
+            (eval (btbl.environment br)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)
+
+set_option maxHeartbeats 1000000 in
+/-- **The backward walk terminates at `bootMessage`.** From any active slot of any witness Main row,
+    following register-pre pushes back reaches a slot anchored at the boot pull.
+
+    The measure is the read timestamp, which `backward_step_lt` strictly decreases at every step. -/
+theorem exists_bootAnchored_of_fuel
+    {n : Nat} (trace : AcceptedZiskTrace n) :
+    ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
+      ∀ (h_component : table.component =
+          componentWithRomMemAndOpBus trace.programLength trace.program),
+        ∀ {row : Array FGL}, row ∈ table.table → ∀ (s : RegSlot),
+          s.selector (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1 →
+          (s.readTimestamp (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val ≤ fuel →
+          ∃ tbl ∈ trace.witness.allTables,
+            ∃ _h : tbl.component =
+                componentWithRomMemAndOpBus trace.programLength trace.program,
+              ∃ r ∈ tbl.table, ∃ t : RegSlot,
+                t.selector (eval (tbl.environment r) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1
+                ∧ BootAnchoredAt trace tbl r t := by
+  intro fuel
+  induction fuel with
+  | zero =>
+      intro table h_table h_component row h_row s h_sel h_fuel
+      exact absurd (readTimestamp_val_pos h_component h_row s) (by omega)
+  | succ fuel ih =>
+      intro table h_table h_component row h_row s h_sel h_fuel
+      rcases backward_step trace h_table h_component h_row s h_sel with
+        h_boot | ⟨tbl, h_tbl, h_comp, r, h_r, t, h_tsel, h_eq⟩
+      · exact ⟨table, h_table, h_component, row, h_row, s, h_sel, h_boot⟩
+      · refine ih h_tbl h_comp h_r t h_tsel ?_
+        have h_lt := backward_step_lt trace h_table h_component h_row s h_sel h_tbl h_comp h_r t h_eq
+        omega
+
+/-- **Termination, with the measure supplied.** Every active register slot of the witness traces
+    back to a slot anchored at `bootMessage`. -/
+theorem exists_bootAnchored
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    ∃ tbl ∈ trace.witness.allTables,
+      ∃ _h : tbl.component =
+          componentWithRomMemAndOpBus trace.programLength trace.program,
+        ∃ r ∈ tbl.table, ∃ t : RegSlot,
+          t.selector (eval (tbl.environment r) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1
+          ∧ BootAnchoredAt trace tbl r t :=
+  exists_bootAnchored_of_fuel trace
+    (s.readTimestamp (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val
+    h_table h_component h_row s h_sel (by omega)
+
+/-- **The anchor, unpacked.** A boot-anchored slot's operand values are `0` and its predecessor
+    timestamp is `0`: the register is untouched. -/
+theorem bootAnchored_values_zero
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} {row : Array FGL} {s : RegSlot}
+    (h : BootAnchoredAt trace table row s) :
+    (s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).value_0 = 0
+      ∧ (s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).value_1 = 0
+      ∧ s.prevStep (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 0 := by
+  obtain ⟨btbl, h_btbl, h_bcomp, br, h_br, h_eq⟩ := h
+  exact regPre_values_zero_of_boot trace s h_eq
+
 end ZiskFv.Compliance
