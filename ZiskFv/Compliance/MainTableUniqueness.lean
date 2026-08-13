@@ -149,6 +149,32 @@ theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
     rawWidth_binaryAdd]
   rfl
 
+/-- **A witness table sits where the width profile says it does.** Generic over the width, so both
+    the Main table (`41` at index `15`) and the `RegisterBoundary` table (`4` at index `1`) use it.
+    The caller supplies the uniqueness of its width in the profile. -/
+theorem table_index_of_rawWidth {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {t : Table FGL} (h_mem : t ∈ witness.allTables) {w idx : ℕ}
+    (h_width : t.component.rawWidth = w)
+    (h_unique : ∀ i, ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+      = some w → i = idx) :
+    witness.allTables[idx]? = some t := by
+  obtain ⟨i, h_i⟩ := List.mem_iff_getElem?.mp h_mem
+  have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[i]? = some t.component := by
+    rw [← witness.allTables_map_component, List.getElem?_map, h_i, Option.map_some]
+  have h_prof : ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+      = some w := by
+    rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some, h_width]
+  rw [← h_unique i h_prof]
+  exact h_i
+
+private lemma index_lt_sixteen_of_profile {i w : ℕ}
+    (h : ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]? = some w) :
+    i < 16 := by
+  by_contra h_ge
+  rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h
+  simp at h
+
 /-- A witness table carrying the Main component sits at index `15`, because that is the only place
     the ensemble's width profile shows `41`. -/
 theorem main_table_index {length : ℕ} {program : Program length}
@@ -156,20 +182,35 @@ theorem main_table_index {length : ℕ} {program : Program length}
     {t : Table FGL} (h_mem : t ∈ witness.allTables)
     (h_component : t.component = Main.componentWithRomMemAndOpBus length program) :
     witness.allTables[15]? = some t := by
-  obtain ⟨i, h_i⟩ := List.mem_iff_getElem?.mp h_mem
-  have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[i]?
-      = some (Main.componentWithRomMemAndOpBus length program) := by
-    rw [← witness.allTables_map_component, List.getElem?_map, h_i, Option.map_some,
-      h_component]
-  have h_width : ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
-      = some 41 := by
-    rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some,
-      rawWidth_main]
-  have h_lt : i < 16 := by
-    by_contra h_ge
-    rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h_width
-    simp at h_width
+  refine table_index_of_rawWidth (w := 41) witness h_mem
+    (by rw [h_component]; exact rawWidth_main program) (fun i h => ?_)
+  have h_lt := index_lt_sixteen_of_profile h
   interval_cases i <;> simp_all
+
+/-- A witness table carrying the `RegisterBoundary` component sits at index `1`: the profile shows
+    `4` only there. The boot pull that answers a register-pre message at timestamp `0` lives in this
+    table, so the pull count needs its uniqueness exactly as it needs Main's. -/
+theorem registerBoundary_table_index {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {t : Table FGL} (h_mem : t ∈ witness.allTables)
+    (h_component : t.component = RegisterBoundary.component) :
+    witness.allTables[1]? = some t := by
+  refine table_index_of_rawWidth (w := 4) witness h_mem
+    (by rw [h_component]; exact rawWidth_registerBoundary) (fun i h => ?_)
+  have h_lt := index_lt_sixteen_of_profile h
+  interval_cases i <;> simp_all
+
+/-- **At most one witness table carries the `RegisterBoundary` component.** -/
+theorem registerBoundary_table_unique {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {t₁ t₂ : Table FGL}
+    (h₁ : t₁ ∈ witness.allTables) (h₂ : t₂ ∈ witness.allTables)
+    (hc₁ : t₁.component = RegisterBoundary.component)
+    (hc₂ : t₂.component = RegisterBoundary.component) :
+    t₁ = t₂ :=
+  Option.some.inj
+    ((registerBoundary_table_index witness h₁ hc₁).symm.trans
+      (registerBoundary_table_index witness h₂ hc₂))
 
 /-- **At most one witness table carries the Main component.**
 
