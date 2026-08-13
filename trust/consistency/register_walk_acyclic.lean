@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.RegisterWalk
 import ZiskFv.Compliance.MemBusSlotSeparation
+import ZiskFv.Compliance.RegisterBoundaryAnchor
 
 /-!
 # Register walk acyclicity (issue #342)
@@ -114,6 +115,19 @@ theorem register_access_is_a_pull
             length program).rowInputVar)).mem_op = 3 :=
   regSlot_mem_pull_of_selector h_balanced h_constraints h_specs h_table h_component h_row s h_sel
 
+/-- The walk lands on the reload, and that reload timestamp is a real read timestamp — so the
+    boundary cannot answer its own boot pull. -/
+theorem register_walk_boundary_is_reload
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h : BoundarySuppliedAt trace p) :
+    ∃ boundaryTable ∈ trace.witness.allTables,
+      ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
+        ∃ boundaryRow ∈ boundaryTable.table,
+          (eval (boundaryTable.environment boundaryRow)
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadTimestamp ≠ 0 :=
+  boundary_reload_ne_boot trace h
+
+#print axioms register_walk_boundary_is_reload
 #print axioms register_walk_terminates_at_boundary
 #print axioms register_access_is_a_pull
 #print axioms register_walk_timestamps_nodup_on_witness_rows

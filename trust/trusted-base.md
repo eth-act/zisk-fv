@@ -738,7 +738,33 @@ three standard axioms.
 is free, so the boundary can self-pair at timestamp `0`. Termination says the walk *reaches* the
 boundary; pinning **which** boundary message it lands on — and so anchoring the value telescope at
 `bootMessage`'s literal `(ts 0, value 0)` — is that separate gap, and it is what #330 Phase 4 needs
-next. It is tracked as #348.
+next.
+
+**Update (#348, the landing point).** "The walk ends at the boundary" left open *which* boundary
+message it ends at. It is the **reload**, and no new constraint was needed to see it:
+`RegisterBoundary` emits its boot pull at multiplicity `-1` and its reload push at `+1`
+(`RegisterBoundary.lean:126-128`), while `ActiveMainRegisterBoundaryProviderRowMatchSpec` — the
+shape `exists_push_of_pull` returns — carries `mult ≠ -1`, which excludes the boot pull by
+construction (`boundarySuppliedAt_reload_timestamp`).
+
+Consequently the reload's free `reloadTimestamp` column **equals a real Main read timestamp**, and
+every such timestamp is `k + 4 * index` with `k ∈ {1, 2, 3}`, hence positive
+(`readTimestamp_val_pos`). So the boundary cannot self-pair — its boot pull cannot be answered by its
+own reload push — whenever any register read occurs (`boundary_reload_ne_boot`).
+
+**#348's premise was wrong, and this corrects the record.** That issue, and the paragraph above it in
+this ledger, said `main.pil:447` is what rules the self-pairing out. It is not.
+`main_step_to_special_mem_step(step) = 1 + 4 * step + 3`, so
+`last_segment_reg_mem_step = 4 * N`; with `N = mainFixedCapacity = 2^22` that is `2^24`, and at
+`reloadTimestamp = 0` the expression `447` range-checks is `2^24 - 1` — *inside* `rangeTable24`.
+`447` admits `0`.
+
+`447` remains genuinely unmodelled and is still an extraction-fidelity gap: it would give an **upper**
+bound `reloadTimestamp ≤ 2^24 - 1`. Nothing in the development consumes that bound today, and the
+backward walk to `bootMessage` will not consume it either — the reload is a push, so it is never the
+target of a backward step. Modelling it would make `RegisterBoundary` a bus-102 consumer, which
+deletes `registerBoundary_table_interactionsWith_registerStepRange_nil`, changes the provider case
+split, and adds one provider row per register to all seven witnesses.
 
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and
