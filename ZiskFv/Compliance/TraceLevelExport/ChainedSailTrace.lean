@@ -35,7 +35,7 @@ noncomputable def retirePC
     (s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
     PreSail.SequentialState RegisterType Sail.trivialChoiceSource :=
   match s.regs.get? Register.nextPC with
-  | none => s
+  | none => { s with regs := s.regs.erase Register.PC }
   | some v =>
       { s with regs := s.regs.insert Register.PC (cast (by simp [RegisterType]) v) }
 
@@ -113,7 +113,7 @@ theorem retirePC_regs_of_ne
     (retirePC s).regs.get? r = s.regs.get? r := by
   rw [retirePC]
   cases h_next : s.regs.get? Register.nextPC with
-  | none => rfl
+  | none => simp [Std.ExtDHashMap.get?_erase, h_r.symm]
   | some v => simp [Std.ExtDHashMap.get?_insert, h_r.symm]
 
 /-- **The general registers at step `j + 1` are the post-state's.**
@@ -134,5 +134,33 @@ theorem chainedSailStates_regs_of_ne_pc
           (chainedSailStates ziskStep init j)).regs.get? r := by
   rw [chainedSailStates, dif_pos h]
   exact retirePC_regs_of_ne _ r h_r
+
+
+/-! ## The decisive consequence: `retire` stops being a premise
+
+`SailRetireChain.retire` is the per-step law `SegmentPcChain` assumes. On a chained trace it is a
+theorem. A caller that supplies an initial state instead of a `SailTrace` therefore owes one premise
+fewer — and this is what makes the PC arm a *reduction* rather than a restructure. -/
+
+/-- **`SailRetireChain` holds for a chained trace.** No hypothesis: the trace performs the retire. -/
+theorem chainedSailTrace_retireChain
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    SailRetireChain ziskTrace (chainedSailTrace ziskStep init) ziskStep := by
+  constructor
+  intro j h result post h_step
+  have h_post : sailStepPost (sailInstructionOf ⟨j, Nat.lt_of_succ_lt h⟩
+      (ziskStep ⟨j, Nat.lt_of_succ_lt h⟩)) (chainedSailStates ziskStep init j) = post := by
+    rw [sailStepPost]
+    rw [show execute_instruction (sailInstructionOf ⟨j, Nat.lt_of_succ_lt h⟩
+      (ziskStep ⟨j, Nat.lt_of_succ_lt h⟩)) (chainedSailStates ziskStep init j)
+        = .ok result post from h_step]
+  show (chainedSailStates ziskStep init (j + 1)).regs.get? Register.PC
+    = post.regs.get? Register.nextPC
+  rw [chainedSailStates, dif_pos (Nat.lt_of_succ_lt h), h_post, retirePC]
+  cases h_next : post.regs.get? Register.nextPC with
+  | none => simp [Std.ExtDHashMap.get?_erase, h_next]
+  | some v => simp [Std.ExtDHashMap.get?_insert]
 
 end ZiskFv.Compliance
