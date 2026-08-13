@@ -2200,6 +2200,28 @@ theorem eval_regPreMessageExpr_mem_op (s : RegSlot) (env : Environment FGL)
   · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr]
   · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr]
 
+/-- The whole value-level register-pre message of a slot. Its value lanes are the row's **own**
+operand values, which is why matching it against `bootMessage` pins those values to `0`. -/
+def regPreMessage : RegSlot → MainRowWithRom FGL →
+    ZiskFv.Channels.MemoryBus.MemBusMessage FGL
+  | .a, row => ZiskFv.AirsClean.Main.aRegPreMessage row
+  | .b, row => ZiskFv.AirsClean.Main.bRegPreMessage row
+  | .c, row => ZiskFv.AirsClean.Main.cRegPreMessage row
+
+/-- Evaluating a slot's register-pre message gives that slot's value-level message. -/
+theorem eval_regPreMessageExpr (s : RegSlot) (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    eval env (s.regPreMessageExpr row) = s.regPreMessage (eval env row) := by
+  cases s
+  · rw [regPreMessageExpr, regPreMessage, ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr]
+  · rw [regPreMessageExpr, regPreMessage, ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr]
+  · rw [regPreMessageExpr, regPreMessage, ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr]
+
+/-- The register-pre message's own `timestamp` field is the slot's predecessor column. -/
+@[simp] theorem regPreMessage_timestamp (s : RegSlot) (row : MainRowWithRom FGL) :
+    (s.regPreMessage row).timestamp = s.prevStep row := by
+  cases s <;> rfl
+
 /-- The whole value-level read message of a slot. Keeping it as one object means a consumer that
 needs the *values* — the register telescope — does not have to re-derive them field by field. -/
 def readMessage : RegSlot → MainRowWithRom FGL →

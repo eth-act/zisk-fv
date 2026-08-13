@@ -348,4 +348,188 @@ theorem regSlot_selector_of_mem_op_three
           rw [h1, h2, h3] at h_op <;> exact absurd h_op (by decide)
     · exact h3
 
+
+/-- A slot's register-pre push really is one of the witness's memory-bus interactions. -/
+theorem regSlot_regPre_interaction_mem_witness
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot) :
+    (((MemBusChannel.emitted (s.selectorExpr (componentWithRomMemAndOpBus length program).rowInputVar) (s.regPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row)) ∈ witness.interactionsWith MemBusChannel.toRaw := by
+  rw [EnsembleWitness.mem_interactionsWith]
+  refine ⟨table, h_table, ?_⟩
+  rw [Table.interactionsWith]
+  refine List.mem_flatMap.mpr ⟨row, h_row, ?_⟩
+  rw [Operations.interactionValuesWith_eq_map, h_component,
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  cases s <;> simp [RegSlot.selectorExpr, RegSlot.regPreMessageExpr]
+
+/-- An active slot's register-pre push rides at `+1`. -/
+theorem regSlot_regPre_mult_one
+    {length : ℕ} {program : Program length}
+    {table : Table FGL} {row : Array FGL}
+    (s : RegSlot) (h_sel : s.selector (eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar) = 1) :
+    (((MemBusChannel.emitted (s.selectorExpr (componentWithRomMemAndOpBus length program).rowInputVar) (s.regPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row)).mult = 1 := by
+  obtain ⟨-, e_a_reg, -, -, e_b_reg, -, -, e_c_reg⟩ :=
+    main_rom_eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar
+  rw [memBus_emitted_eval_mult]
+  cases s
+  · rw [RegSlot.selectorExpr, e_a_reg]; exact h_sel
+  · rw [RegSlot.selectorExpr, e_b_reg]; exact h_sel
+  · rw [RegSlot.selectorExpr, e_c_reg]; exact h_sel
+
+/-- **One backward step.** An active slot's register-pre push is answered either by
+    `bootMessage` — which pins that slot's predecessor timestamp *and its operand values* to `0` —
+    or by an earlier register read, whose own slot is active and whose read timestamp is the
+    predecessor timestamp, hence **strictly below** this row's own access.
+
+    The strict decrease is the bus-102 descent, so the measure that terminates the backward walk is
+    the read timestamp itself. -/
+theorem backward_step
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row)
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1) :
+    (∃ btbl ∈ trace.witness.allTables,
+        ∃ _h : btbl.component = ZiskFv.AirsClean.RegisterBoundary.component,
+          ∃ br ∈ btbl.table,
+            s.regPreMessage (eval (table.environment row)
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar)
+              = ZiskFv.AirsClean.RegisterBoundary.bootMessage
+                (eval (btbl.environment br)
+                  ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar))
+      ∨ (∃ tbl ∈ trace.witness.allTables,
+          ∃ _h : tbl.component =
+              componentWithRomMemAndOpBus trace.programLength trace.program,
+            ∃ r ∈ tbl.table, ∃ t : RegSlot,
+              t.selector (eval (tbl.environment r)
+                  (componentWithRomMemAndOpBus trace.programLength
+                    trace.program).rowInputVar) = 1
+              ∧ t.readMessage (eval (tbl.environment r)
+                  (componentWithRomMemAndOpBus trace.programLength
+                    trace.program).rowInputVar)
+                = s.regPreMessage (eval (table.environment row)
+                  (componentWithRomMemAndOpBus trace.programLength
+                    trace.program).rowInputVar)) := by
+  have h_mem := regSlot_regPre_interaction_mem_witness h_table h_component h_row s
+  have h_mult := regSlot_regPre_mult_one (table := table) (row := row) s h_sel
+  obtain ⟨b, h_b, h_bmsg, h_b0, h_b1⟩ :=
+    exists_pull_of_push_memBus trace.channels_balanced h_mem h_mult
+  have h_ref_op : (eval (table.environment row) (s.regPreMessageExpr
+      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).mem_op = 3 :=
+    RegSlot.eval_regPreMessageExpr_mem_op s _ _
+  rcases memBus_mem_op_three_counterpart trace.constraints_hold trace.spec_holds h_ref_op h_b
+      h_bmsg h_b0 h_b1 with
+    ⟨tbl, h_tbl, h_comp, r, h_r, t, h_eval⟩ | ⟨btbl, h_btbl, h_bcomp, br, h_br, h_eval⟩
+  · refine Or.inr ⟨tbl, h_tbl, h_comp, r, h_r, t, ?_, ?_⟩
+    · refine regSlot_selector_of_mem_op_three h_comp (trace.constraints_hold tbl h_tbl) h_r t ?_
+      have h_raw :
+          (((MemBusChannel.emitted (t.memMult
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+            (t.memMessageExpr
+              (componentWithRomMemAndOpBus trace.programLength
+                trace.program).rowInputVar)).toRaw).eval (tbl.environment r)).msg
+          = (((MemBusChannel.emitted (s.selectorExpr
+              (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+              (s.regPreMessageExpr
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar)).toRaw).eval (table.environment row)).msg := by
+        rw [← h_eval]; exact h_bmsg
+      rw [memBusMessage_mem_op_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)]
+      exact h_ref_op
+    · have h_raw :
+          (((MemBusChannel.emitted (t.memMult
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+            (t.memMessageExpr
+              (componentWithRomMemAndOpBus trace.programLength
+                trace.program).rowInputVar)).toRaw).eval (tbl.environment r)).msg
+          = (((MemBusChannel.emitted (s.selectorExpr
+              (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+              (s.regPreMessageExpr
+                (componentWithRomMemAndOpBus trace.programLength
+                  trace.program).rowInputVar)).toRaw).eval (table.environment row)).msg := by
+        rw [← h_eval]; exact h_bmsg
+      have h_full := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+      rwa [RegSlot.eval_memMessageExpr, RegSlot.eval_regPreMessageExpr] at h_full
+  · refine Or.inl ⟨btbl, h_btbl, h_bcomp, br, h_br, ?_⟩
+    have h_raw :
+        (((MemBusChannel.emitted (-1)
+          (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+          (btbl.environment br)).msg
+        = (((MemBusChannel.emitted (s.selectorExpr
+            (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+            (s.regPreMessageExpr
+              (componentWithRomMemAndOpBus trace.programLength
+                trace.program).rowInputVar)).toRaw).eval (table.environment row)).msg := by
+      rw [← h_eval]; exact h_bmsg
+    have h_full := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
+    rw [ZiskFv.AirsClean.RegisterBoundary.eval_bootMessageExpr,
+      RegSlot.eval_regPreMessageExpr] at h_full
+    exact h_full.symm
+
+
+/-- **The backward step strictly decreases the read timestamp.**
+
+    The predecessor column is a free witness column, so nothing bounds it *a priori* — the bound
+    arrives with the step. Once the answering read is identified, its own timestamp is `k + 4 * index`
+    and so below `2 ^ 40`, and the bus-102 descent then puts it strictly below this row's access.
+    That is the measure the backward walk terminates on. -/
+theorem backward_step_lt
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      componentWithRomMemAndOpBus trace.programLength trace.program)
+    {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
+    (h_sel : s.selector (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1)
+    {tbl : Table FGL} (h_tbl : tbl ∈ trace.witness.allTables)
+    (h_comp : tbl.component = componentWithRomMemAndOpBus trace.programLength trace.program)
+    {r : Array FGL} (h_r : r ∈ tbl.table) (t : RegSlot)
+    (h_eq : t.readMessage (eval (tbl.environment r) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+      = s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)) :
+    (t.readTimestamp (eval (tbl.environment r) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val
+      < (s.readTimestamp (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val := by
+  have h_ts : t.readTimestamp (eval (tbl.environment r) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+      = s.prevStep (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) := by
+    have := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_eq
+    rwa [RegSlot.readMessage_timestamp, RegSlot.regPreMessage_timestamp] at this
+  have h_bound : (s.prevStep (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val < 2 ^ 40 := by
+    rw [← h_ts]
+    exact regSlot_timestamp_bound_of_mem h_comp h_r t
+  have h_descent :
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec
+        (s.distance (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)) :=
+    ZiskFv.Compliance.Instantiation.rangeTable24_spec_distance_of_active trace.channels_balanced trace.spec_holds
+      trace.constraints_hold h_table h_row rfl h_component s h_sel
+  rw [h_ts]
+  exact ZiskFv.AirsClean.FullEnsemble.prev_val_lt_of_registerStepSpec h_descent h_bound
+
+/-- **The boot branch pins the operand values to zero.** A register-pre message's value lanes are
+    the row's *own* operand values, and `bootMessage` carries `(0, 0)`. So a slot whose predecessor
+    access is the boot pull reads a register that still holds `0` — the anchor the value telescope
+    descends to. -/
+theorem regPre_values_zero_of_boot
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} {row : Array FGL} (s : RegSlot)
+    {btbl : Table FGL} {br : Array FGL}
+    (h_eq : s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
+      = ZiskFv.AirsClean.RegisterBoundary.bootMessage
+        (eval (btbl.environment br)
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)) :
+    (s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).value_0 = 0
+      ∧ (s.regPreMessage (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).value_1 = 0
+      ∧ s.prevStep (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 0 := by
+  refine ⟨?_, ?_, ?_⟩
+  · exact congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_eq
+  · exact congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_eq
+  · have := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_eq
+    rwa [RegSlot.regPreMessage_timestamp] at this
+
 end ZiskFv.Compliance
