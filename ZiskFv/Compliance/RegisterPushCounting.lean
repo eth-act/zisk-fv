@@ -26,6 +26,8 @@ namespace ZiskFv.Compliance
 open Air.Flat
 open ZiskFv.AirsClean.FullEnsemble
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+open ZiskFv.AirsClean
+open ZiskFv.Compliance.Instantiation (RegSlot)
 
 /-- On a memory-bus message every Main interaction rides at `0`, `+1` or `-1`, so the balance splits
     into a push count minus a pull count. Both counts are positions in the interaction list. -/
@@ -86,6 +88,84 @@ private theorem two_le_countP_flatMap {α β : Type _} (P : β → Bool) (f : α
           have := ih k m (by simpa using hi) (by simpa using hj) (by omega)
             (by simpa using h_i) (by simpa using h_j)
           omega
+
+private theorem two_le_countP_of_two_indices {β : Type _} (P : β → Bool) :
+    ∀ (l : List β) (i j : ℕ) (hi : i < l.length) (hj : j < l.length), i ≠ j →
+      P l[i] = true → P l[j] = true → 2 ≤ l.countP P := by
+  intro l
+  induction l with
+  | nil => intro i j hi; simp at hi
+  | cons a t ih =>
+      intro i j hi hj h_ne h_i h_j
+      rw [List.countP_cons]
+      match i, j with
+      | 0, 0 => exact absurd rfl h_ne
+      | 0, (k + 1) =>
+          have h_k : k < t.length := by simpa using hj
+          have h_tail : 1 ≤ t.countP P :=
+            List.countP_pos_iff.mpr ⟨t[k], List.getElem_mem h_k, by simpa using h_j⟩
+          have h_head : P a = true := by simpa using h_i
+          simp only [h_head, cond_true, if_true]
+          omega
+      | (k + 1), 0 =>
+          have h_k : k < t.length := by simpa using hi
+          have h_tail : 1 ≤ t.countP P :=
+            List.countP_pos_iff.mpr ⟨t[k], List.getElem_mem h_k, by simpa using h_i⟩
+          have h_head : P a = true := by simpa using h_j
+          simp only [h_head, cond_true, if_true]
+          omega
+      | (k + 1), (m + 1) =>
+          have := ih k m (by simpa using hi) (by simpa using hj) (by omega)
+            (by simpa using h_i) (by simpa using h_j)
+          omega
+
+/-- **Two slots of one row contribute two positions.** Main's memory-bus emission list is six
+    entries — the a/b/c register-pre pushes at positions `0`, `2`, `4` and the a/b/c current pulls
+    at `1`, `3`, `5` (`Main/Circuit.lean:1025`). Distinct slots therefore push at distinct
+    positions, which is the half of the push count `two_le_countP_flatMap` cannot reach: it
+    separates rows, not slots within a row. -/
+theorem two_le_row_memBus_pushCount {length : ℕ} {program : Program length}
+    (env : Environment FGL) {msg : Array FGL} {s t : RegSlot} (h_ne : s ≠ t)
+    (h_s : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval env).mult = 1)
+    (h_s_msg : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval env).msg = msg)
+    (h_t : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (t.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (t.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval env).mult = 1)
+    (h_t_msg : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (t.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (t.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval env).msg
+      = msg) :
+    2 ≤ (((Main.componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw env)).countP
+      (fun i => decide (i.mult = 1) && decide (i.msg = msg)) := by
+  rw [Operations.interactionValuesWith_eq_map,
+    Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  simp only [RegSlot.selectorExpr, RegSlot.regPreMessageExpr] at h_s h_s_msg h_t h_t_msg
+  simp only [List.map_cons, List.map_nil]
+  cases s <;> cases t
+  · exact absurd rfl h_ne
+  · exact two_le_countP_of_two_indices _ _ 0 2 (by simp) (by simp) (by omega)
+      (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
+  · exact two_le_countP_of_two_indices _ _ 0 4 (by simp) (by simp) (by omega)
+      (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
+  · exact two_le_countP_of_two_indices _ _ 2 0 (by simp) (by simp) (by omega)
+      (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
+  · exact absurd rfl h_ne
+  · exact two_le_countP_of_two_indices _ _ 2 4 (by simp) (by simp) (by omega)
+      (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
+  · exact two_le_countP_of_two_indices _ _ 4 0 (by simp) (by simp) (by omega)
+      (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
+  · exact two_le_countP_of_two_indices _ _ 4 2 (by simp) (by simp) (by omega)
+      (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
+  · exact absurd rfl h_ne
 
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
