@@ -57,7 +57,7 @@ theorem zero_or_one_of_bool {col : FGL} (h : col * (1 - col) = 0) : col = 0 ∨ 
     linear_combination this
 
 /-- A field element whose `val` is below `2` is `0` or `1`. -/
-private lemma zero_or_one_of_val_lt_two {x : FGL} (h : x.val < 2) : x = 0 ∨ x = 1 := by
+theorem zero_or_one_of_val_lt_two {x : FGL} (h : x.val < 2) : x = 0 ∨ x = 1 := by
   interval_cases h_val : x.val
   · exact Or.inl (by apply Fin.ext; simp [h_val])
   · exact Or.inr (by apply Fin.ext; simp [h_val])

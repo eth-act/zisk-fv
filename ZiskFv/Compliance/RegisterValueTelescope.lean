@@ -76,4 +76,225 @@ theorem main_regPre_mult_zero_or_one
   · rw [RegSlot.selectorExpr, e_b_reg]; exact zero_or_one_of_bool b_b_reg
   · rw [RegSlot.selectorExpr, e_c_reg]; exact zero_or_one_of_bool b_c_reg
 
+
+/-- **What answers a register-pre push.** Every memory-bus interaction of the witness that carries a
+`mem_op = 3` message at a multiplicity outside `{0, 1}` is either a Main *current* access or the
+`RegisterBoundary` boot pull.
+
+The exclusions, in the order the case split meets them: ten components emit nothing on this bus;
+`MemAlignReadByte`, `MemAlignByte`, `MemAlign` and `Mem` carry `mem_op ∈ {1, 2}`; the boundary reload
+rides at `+1`; and Main's three register-pre pushes ride at their own selector, which is `0` or `1`.
+That last one is why `mult ≠ 0` matters as much as `mult ≠ 1`. -/
+theorem memBus_mem_op_three_counterpart
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {refEnv : Environment FGL} {refMult : Expression FGL}
+    {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_ref_op : (eval refEnv refMsg).mem_op = 3)
+    {j : Interaction FGL} (h_j : j ∈ witness.interactionsWith MemBusChannel.toRaw)
+    (h_msg : j.msg = (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg)
+    (h_ne0 : j.mult ≠ 0) (h_ne1 : j.mult ≠ 1) :
+    (∃ tbl ∈ witness.allTables,
+        ∃ _h : tbl.component = componentWithRomMemAndOpBus length program,
+          ∃ r ∈ tbl.table, ∃ t : RegSlot,
+            j = ((MemBusChannel.emitted (t.memMult (componentWithRomMemAndOpBus length program).rowInputVar) (t.memMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+              (tbl.environment r))
+      ∨ (∃ btbl ∈ witness.allTables,
+          ∃ _h : btbl.component = ZiskFv.AirsClean.RegisterBoundary.component,
+            ∃ br ∈ btbl.table,
+              j = ((MemBusChannel.emitted (-1)
+                (ZiskFv.AirsClean.RegisterBoundary.bootMessageExpr
+                  ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)).toRaw).eval
+                (btbl.environment br)) := by
+  rw [EnsembleWitness.mem_interactionsWith] at h_j
+  obtain ⟨table, h_table, h_mem_table⟩ := h_j
+  have h_component_mem :
+      table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
+    EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
+  have h_op_of_emitted :
+      ∀ {env : Environment FGL} {mm : Expression FGL}
+        {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
+        j = ((MemBusChannel.emitted mm msg).toRaw).eval env →
+          (eval env msg).mem_op = 3 := by
+    intro env mm msg h_eval
+    have h_raw :
+        (((MemBusChannel.emitted mm msg).toRaw).eval env).msg =
+          (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    rw [memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw), h_ref_op]
+  have h_op_of_pushed :
+      ∀ {env : Environment FGL}
+        {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
+        j = ((MemBusChannel.pushed msg).toRaw).eval env →
+          (eval env msg).mem_op = 3 := by
+    intro env msg h_eval
+    have h_raw :
+        (((MemBusChannel.pushed msg).toRaw).eval env).msg =
+          (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    rw [memBusMessage_mem_op_eq_of_eval_pushed_provider_msg_eq (h_msg := h_raw), h_ref_op]
+  have h_op_of_pulled :
+      ∀ {env : Environment FGL}
+        {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
+        j = ((MemBusChannel.pulled msg).toRaw).eval env →
+          (eval env msg).mem_op = 3 := by
+    intro env msg h_eval
+    have h_raw :
+        (((MemBusChannel.pulled msg).toRaw).eval env).msg =
+          (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    rw [memBusMessage_mem_op_eq_of_eval_pulled_provider_msg_eq (h_msg := h_raw), h_ref_op]
+  rcases component_mem_fullRv64im_cases h_component_mem with
+    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom |
+    h_mem | h_ranges | h_regRange | h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd |
+    h_main
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      have h_ops_nil :
+          table.component.operations.interactionsWith MemBusChannel.toRaw = [] := by
+        simpa [h_verifier] using verifierTable_interactionsWith_memBus_nil length program
+      simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map, h_ops_nil]
+    simp [h_nil] at h_mem_table
+  -- RegisterBoundary: boot survives, reload rides at `+1`.
+  · rcases exists_registerBoundary_mem_row_eval_of_interaction_mem h_regBoundary h_mem_table with
+      ⟨br, h_br, h_eval⟩ | ⟨br, h_br, h_eval⟩
+    · exact Or.inr ⟨table, h_table, h_regBoundary, br, h_br, h_eval⟩
+    · exact absurd (by rw [h_eval, memBus_emitted_eval_mult]; simp [Expression.eval]) h_ne1
+  -- MemAlignReadByte carries `1`.
+  · exfalso
+    rcases exists_memBus_row_eval_of_pair_interactionsWith
+        (by simpa [h_marb] using
+          ZiskFv.AirsClean.MemAlignReadByte.component_interactionsWith_memBus)
+        h_mem_table with ⟨r, h_r, h_eval⟩ | ⟨r, h_r, h_eval⟩
+    · have h_op := h_op_of_pulled h_eval
+      rw [memBusMessage_eval_mem_op] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.MemAlignReadByte.memReadMessageExpr, Expression.eval] using h_op
+      exact absurd h_lit (by decide)
+    · have h_op := h_op_of_pushed h_eval
+      rw [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.MemAlignReadByte.memBusMessage] using h_op
+      exact absurd h_lit (by decide)
+  -- MemAlignByte carries `1` or `1 + is_write`.
+  · exfalso
+    have h_rowSpec := h_specs table h_table
+    rcases exists_memBus_row_eval_of_pair_interactionsWith
+        (by simpa [h_mab] using
+          ZiskFv.AirsClean.MemAlignByte.component_interactionsWith_memBus)
+        h_mem_table with ⟨r, h_r, h_eval⟩ | ⟨r, h_r, h_eval⟩
+    · have h_op := h_op_of_pulled h_eval
+      rw [memBusMessage_eval_mem_op] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.MemAlignByte.memReadMessageExpr, Expression.eval] using h_op
+      exact absurd h_lit (by decide)
+    · have h_spec := h_rowSpec r h_r
+      rw [h_mab, ZiskFv.AirsClean.MemAlignByte.component_spec,
+        component_rowInput_eq_eval_rowInputVar] at h_spec
+      have h_isw := h_spec.2.2.2.2.2.2.2
+      have h_op := h_op_of_pushed h_eval
+      rw [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr] at h_op
+      change 1 + (eval (table.environment r)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = 3 at h_op
+      rcases zero_or_one_of_val_lt_two (by simpa using h_isw) with h0 | h1
+      · rw [h0] at h_op; exact absurd (by rw [← h_op]; ring : (1 : FGL) = 3) (by decide)
+      · rw [h1] at h_op; exact absurd (by rw [← h_op]; norm_num : (2 : FGL) = 3) (by decide)
+  -- MemAlign carries `wr + 1`.
+  · exfalso
+    have h_rowSpec := h_specs table h_table
+    obtain ⟨r, h_r, h_eval⟩ :=
+      exists_memBus_row_eval_of_singleton_interactionsWith
+        (by simpa [h_memAlign] using
+          ZiskFv.AirsClean.MemAlign.component_interactionsWith_memBus)
+        h_mem_table
+    have h_spec := h_rowSpec r h_r
+    rw [h_memAlign, ZiskFv.AirsClean.MemAlign.component_spec,
+      component_rowInput_eq_eval_rowInputVar] at h_spec
+    have h_wr := h_spec.1
+    have h_op := h_op_of_emitted h_eval
+    rw [ZiskFv.AirsClean.MemAlign.eval_memBusMessageExpr] at h_op
+    change (eval (table.environment r)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).wr + 1 = 3 at h_op
+    rcases zero_or_one_of_bool h_wr with h0 | h1
+    · rw [h0] at h_op; exact absurd (by rw [← h_op]; ring : (1 : FGL) = 3) (by decide)
+    · rw [h1] at h_op; exact absurd (by rw [← h_op]; norm_num : (2 : FGL) = 3) (by decide)
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      memAlignRangeSlice_table_interactionsWith_memBus_nil h_memAlignRange
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      memAlignRomSlice_table_interactionsWith_memBus_nil h_memAlignRom
+    simp [h_nil] at h_mem_table
+  -- Mem carries `wr + 1` and `1`.
+  · exfalso
+    have h_rowSpec := h_specs table h_table
+    rcases exists_memBus_row_eval_of_pair_interactionsWith
+        (by simpa [h_mem] using
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus)
+        h_mem_table with ⟨r, h_r, h_eval⟩ | ⟨r, h_r, h_eval⟩
+    · have h_spec := h_rowSpec r h_r
+      rw [h_mem] at h_spec
+      have h_rowSpec' := ZiskFv.AirsClean.Mem.spec_of_componentWithDualMemBus_spec _ h_spec
+      rw [component_rowInput_eq_eval_rowInputVar] at h_rowSpec'
+      have h_wr := h_rowSpec'.2.2.2.2.1
+      have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr] at h_op
+      change (eval (table.environment r)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr + 1 = 3 at h_op
+      rcases zero_or_one_of_bool h_wr with h0 | h1
+      · rw [h0] at h_op; exact absurd (by rw [← h_op]; ring : (1 : FGL) = 3) (by decide)
+      · rw [h1] at h_op; exact absurd (by rw [← h_op]; norm_num : (2 : FGL) = 3) (by decide)
+    · have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.Mem.memBusDualMessage] using h_op
+      exact absurd h_lit (by decide)
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      specifiedRangesSlice_table_interactionsWith_memBus_nil h_ranges
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      registerStepRangeSlice_table_interactionsWith_memBus_nil h_regRange
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      arithDiv_table_interactionsWith_memBus_nil h_arithDiv
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      arithMul_table_interactionsWith_memBus_nil h_arithMul
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      staticBinaryExtension_table_interactionsWith_memBus_nil h_binExt
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      staticBinary_table_interactionsWith_memBus_nil h_binary
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      binaryAdd_table_interactionsWith_memBus_nil h_binaryAdd
+    simp [h_nil] at h_mem_table
+  -- Main: the three register-pre pushes ride at their selector, in `{0, 1}`; the three current
+  -- accesses survive.
+  · obtain ⟨r, h_r, h_branch⟩ := exists_main_mem_row_eval_of_interaction_mem h_main h_mem_table
+    have h_regPre : ∀ t : RegSlot,
+        j = ((MemBusChannel.emitted (t.selectorExpr (componentWithRomMemAndOpBus length program).rowInputVar)
+          (t.regPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval (table.environment r) → False := by
+      intro t h_eval
+      rcases main_regPre_mult_zero_or_one h_main (h_constraints table h_table) h_r t with h0 | h1
+      · exact h_ne0 (by rw [h_eval]; exact h0)
+      · exact h_ne1 (by rw [h_eval]; exact h1)
+    rcases h_branch with h_eval | h_eval | h_eval | h_eval | h_eval | h_eval
+    · exact absurd (h_regPre RegSlot.a h_eval) not_false
+    · exact Or.inl ⟨table, h_table, h_main, r, h_r, RegSlot.a, h_eval⟩
+    · exact absurd (h_regPre RegSlot.b h_eval) not_false
+    · exact Or.inl ⟨table, h_table, h_main, r, h_r, RegSlot.b, h_eval⟩
+    · exact absurd (h_regPre RegSlot.c h_eval) not_false
+    · exact Or.inl ⟨table, h_table, h_main, r, h_r, RegSlot.c, h_eval⟩
+
 end ZiskFv.Compliance
