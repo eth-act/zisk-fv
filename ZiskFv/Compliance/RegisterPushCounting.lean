@@ -307,6 +307,101 @@ private theorem countP_le_one_flatMap {α β : Type _} (P : β → Bool) (f : α
             omega)
         omega
 
+private theorem countP_le_one_of_unique_index {β : Type _} (P : β → Bool) :
+    ∀ (l : List β), (∀ i j, ∀ (hi : i < l.length) (hj : j < l.length),
+      P l[i] = true → P l[j] = true → i = j) → l.countP P ≤ 1 := by
+  intro l
+  induction l with
+  | nil => intro _; simp
+  | cons a t ih =>
+      intro h_uniq
+      rw [List.countP_cons]
+      by_cases h_a : P a = true
+      · have h_tail : t.countP P = 0 := by
+          by_contra h_c
+          obtain ⟨b, hb, hPb⟩ := List.countP_pos_iff.mp (Nat.pos_of_ne_zero h_c)
+          obtain ⟨k, h_k⟩ := List.mem_iff_getElem?.mp hb
+          have h_k_lt : k < t.length := by
+            by_contra h_ge
+            rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h_k
+            simp at h_k
+          have h_get : t[k] = b := by
+            have h' := h_k
+            rw [List.getElem?_eq_getElem h_k_lt] at h'
+            exact Option.some.inj h'
+          have := h_uniq 0 (k + 1) (by simp) (by simpa using h_k_lt) (by simpa using h_a)
+            (by simpa [h_get] using hPb)
+          omega
+        simp [h_a, h_tail]
+      · have := ih (fun i j hi hj h_i h_j => by
+          have := h_uniq (i + 1) (j + 1) (by simpa using hi) (by simpa using hj)
+            (by simpa using h_i) (by simpa using h_j)
+          omega)
+        simp only [Bool.not_eq_true] at h_a
+        simp [h_a] <;> omega
+
+/-- **One row pulls a given message at most once.** Of Main's six memory-bus emissions the three
+    register-pre pushes ride at a boolean selector, so never at `-1`; the three current accesses
+    carry timestamps `1 + 4k`, `2 + 4k`, `3 + 4k`, so at most one can match a fixed message. This
+    is the first of `countP_le_one_flatMap`'s two hypotheses, at the register instance. -/
+theorem row_memBus_pullCount_le_one {length : ℕ} {program : Program length} {table : Table FGL}
+    (h_component : table.component = Main.componentWithRomMemAndOpBus length program)
+    (h_constraints : table.Constraints) {row : Array FGL} (h_row : row ∈ table.table)
+    {msg : Array FGL} :
+    ((Main.componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw (table.environment row)).countP
+      (fun i => decide (i.mult = -1) && decide (i.msg = msg)) ≤ 1 := by
+  have h_push : ∀ s : RegSlot,
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment row)).mult ≠ -1 := by
+    intro s h_c
+    rcases main_regPre_mult_zero_or_one h_component h_constraints h_row s with h | h <;>
+      · rw [h] at h_c
+        revert h_c
+        decide
+  have h_pull_ne : ∀ s t : RegSlot, s ≠ t →
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+          (s.memMult (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+          (s.memMessageExpr
+            (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment row)).msg
+      ≠ (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+          (t.memMult (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+          (t.memMessageExpr
+            (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment row)).msg := by
+    intro s t h_st h_c
+    have h_eq := memBusMessage_eq_of_eval_emitted_provider_msg_eq h_c
+    rw [RegSlot.eval_memMessageExpr, RegSlot.eval_memMessageExpr] at h_eq
+    have h_ts := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_eq
+    rw [RegSlot.readMessage_timestamp, RegSlot.readMessage_timestamp] at h_ts
+    obtain ⟨index, h_index, h_step⟩ := exists_main_step_index_of_mem h_component h_row
+    refine h_st (slotOffset_inj ?_)
+    rw [readTimestamp_eq_offset_of_main_step h_step s,
+      readTimestamp_eq_offset_of_main_step h_step t] at h_ts
+    have hv := congrArg Fin.val h_ts
+    rw [slot_timestamp_val (slotOffset_le_three s) h_index,
+      slot_timestamp_val (slotOffset_le_three t) h_index] at hv
+    omega
+  have h_a := h_push RegSlot.a
+  have h_b := h_push RegSlot.b
+  have h_c := h_push RegSlot.c
+  have h_ab := h_pull_ne RegSlot.a RegSlot.b (by decide)
+  have h_ac := h_pull_ne RegSlot.a RegSlot.c (by decide)
+  have h_bc := h_pull_ne RegSlot.b RegSlot.c (by decide)
+  simp only [RegSlot.selectorExpr, RegSlot.regPreMessageExpr] at h_a h_b h_c
+  simp only [RegSlot.memMult, RegSlot.memMessageExpr] at h_ab h_ac h_bc
+  rw [Operations.interactionValuesWith_eq_map,
+    Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  refine countP_le_one_of_unique_index _ _ ?_
+  intro i j hi hj h_i h_j
+  simp only [List.length_map, List.length_cons, List.length_nil] at hi hj
+  interval_cases i <;> interval_cases j <;>
+    simp_all [Bool.and_eq_true, decide_eq_true_iff]
+
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
