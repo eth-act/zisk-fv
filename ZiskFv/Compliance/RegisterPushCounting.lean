@@ -167,6 +167,100 @@ theorem two_le_row_memBus_pushCount {length : ℕ} {program : Program length}
       (by simp [h_s, h_s_msg]) (by simp [h_t, h_t_msg])
   · exact absurd rfl h_ne
 
+private theorem countP_le_countP_flatMap {α β : Type _} (P : β → Bool) (f : α → List β)
+    {l : List α} {x : α} (hx : x ∈ l) : (f x).countP P ≤ (l.flatMap f).countP P := by
+  induction l with
+  | nil => simp at hx
+  | cons a t ih =>
+      rw [List.flatMap_cons, List.countP_append]
+      rcases List.mem_cons.mp hx with rfl | hx'
+      · omega
+      · have := ih hx'
+        omega
+
+private theorem one_le_countP_of_index {β : Type _} (P : β → Bool) (l : List β) (i : ℕ)
+    (hi : i < l.length) (h : P l[i] = true) : 0 < l.countP P :=
+  List.countP_pos_iff.mpr ⟨l[i], List.getElem_mem hi, h⟩
+
+/-- One active slot pushes at one position of its row's emission list. -/
+theorem one_le_row_memBus_pushCount {length : ℕ} {program : Program length}
+    (env : Environment FGL) {msg : Array FGL} (s : RegSlot)
+    (h_s : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval env).mult = 1)
+    (h_s_msg : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval env).msg
+      = msg) :
+    0 < (((Main.componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw env)).countP
+      (fun i => decide (i.mult = 1) && decide (i.msg = msg)) := by
+  rw [Operations.interactionValuesWith_eq_map,
+    Main.componentWithRomMemAndOpBus_interactionsWith_memBus]
+  simp only [List.map_cons, List.map_nil]
+  cases s
+  · simp only [RegSlot.selectorExpr, RegSlot.regPreMessageExpr] at h_s h_s_msg
+    exact one_le_countP_of_index _ _ 0 (by simp) (by simp [h_s, h_s_msg])
+  · simp only [RegSlot.selectorExpr, RegSlot.regPreMessageExpr] at h_s h_s_msg
+    exact one_le_countP_of_index _ _ 2 (by simp) (by simp [h_s, h_s_msg])
+  · simp only [RegSlot.selectorExpr, RegSlot.regPreMessageExpr] at h_s h_s_msg
+    exact one_le_countP_of_index _ _ 4 (by simp) (by simp [h_s, h_s_msg])
+
+/-- **Two distinct active register slots of the witness push at two distinct positions.**
+
+    The two halves meet here: different rows are separated by `two_le_countP_flatMap`, two slots of
+    one row by `two_le_row_memBus_pushCount`, and `countP_le_countP_flatMap` lifts a single table's
+    count to the whole witness. -/
+theorem two_le_witness_pushCount {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = Main.componentWithRomMemAndOpBus length program)
+    {i j : ℕ} (hi : i < table.table.length) (hj : j < table.table.length)
+    {s t : RegSlot} (h_ne : i ≠ j ∨ (i = j ∧ s ≠ t)) {msg : Array FGL}
+    (h_s : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment table.table[i])).mult = 1)
+    (h_s_msg : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment table.table[i])).msg = msg)
+    (h_t : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (t.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (t.regPreMessageExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment table.table[j])).mult = 1)
+    (h_t_msg : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (t.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (t.regPreMessageExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment table.table[j])).msg = msg) :
+    2 ≤ (witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun k => decide (k.mult = 1) && decide (k.msg = msg)) := by
+  have h_lift : (table.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun k => decide (k.mult = 1) && decide (k.msg = msg))
+      ≤ (witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+        (fun k => decide (k.mult = 1) && decide (k.msg = msg)) := by
+    rw [EnsembleWitness.interactionsWith]
+    exact countP_le_countP_flatMap (fun k => decide (k.mult = 1) && decide (k.msg = msg))
+      (fun x => x.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw) h_table
+  have h_table_count : 2 ≤ (table.interactionsWith
+      ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun k => decide (k.mult = 1) && decide (k.msg = msg)) := by
+    rw [Table.interactionsWith, h_component]
+    rcases h_ne with h_rows | ⟨h_ij, h_slots⟩
+    · exact two_le_countP_flatMap _ _ table.table i j hi hj h_rows
+        (one_le_row_memBus_pushCount _ s h_s h_s_msg)
+        (one_le_row_memBus_pushCount _ t h_t h_t_msg)
+    · subst h_ij
+      refine le_trans ?_ (countP_le_countP_flatMap
+        (fun k => decide (k.mult = 1) && decide (k.msg = msg))
+        (fun row => (Main.componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+          ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw (table.environment row))
+        (List.getElem_mem hi))
+      exact two_le_row_memBus_pushCount _ h_slots h_s h_s_msg h_t h_t_msg
+  omega
+
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
