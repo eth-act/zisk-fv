@@ -2168,6 +2168,38 @@ def memMult : RegSlot → Var MainRowWithRom FGL → Expression FGL
   | .b, row => -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg)
   | .c, row => -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg)
 
+/-- The slot's register-pre *push* message — the one that answers an earlier access
+(`Main/Constraints.lean:396,407,418`). The backward walk follows these. -/
+def regPreMessageExpr : RegSlot → Var MainRowWithRom FGL →
+    ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)
+  | .a, row => ZiskFv.AirsClean.Main.aRegPreMessageExpr row
+  | .b, row => ZiskFv.AirsClean.Main.bRegPreMessageExpr row
+  | .c, row => ZiskFv.AirsClean.Main.cRegPreMessageExpr row
+
+/-- The multiplicity the slot's register-pre push rides at: its own selector. -/
+def selectorExpr : RegSlot → Var MainRowWithRom FGL → Expression FGL
+  | .a, row => row.rom.a_src_reg
+  | .b, row => row.rom.b_src_reg
+  | .c, row => row.rom.store_reg
+
+/-- The register-pre message's timestamp is the slot's free predecessor column. -/
+theorem eval_regPreMessageExpr_timestamp (s : RegSlot) (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    (eval env (s.regPreMessageExpr row)).timestamp = s.prevStep (eval env row) := by
+  cases s
+  · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr]; rfl
+  · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr]; rfl
+  · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr]; rfl
+
+/-- Every register-pre message carries `mem_op = 3`; the literal is in the emission itself. -/
+theorem eval_regPreMessageExpr_mem_op (s : RegSlot) (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    (eval env (s.regPreMessageExpr row)).mem_op = 3 := by
+  cases s
+  · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_aRegPreMessageExpr]
+  · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_bRegPreMessageExpr]
+  · rw [regPreMessageExpr, ZiskFv.AirsClean.Main.eval_cRegPreMessageExpr]
+
 /-- The whole value-level read message of a slot. Keeping it as one object means a consumer that
 needs the *values* — the register telescope — does not have to re-derive them field by field. -/
 def readMessage : RegSlot → MainRowWithRom FGL →
