@@ -127,6 +127,23 @@ theorem register_walk_boundary_is_reload
             ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadTimestamp ≠ 0 :=
   boundary_reload_ne_boot trace h
 
+/-- Non-vacuity for `BoundarySuppliedAt`'s payload: the reload of a register that *is* read carries
+    that read's values, which is the fact the value telescope consumes. -/
+theorem register_walk_boundary_carries_values
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h : BoundarySuppliedAt trace p) :
+    ∃ boundaryTable ∈ trace.witness.allTables,
+      ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
+        ∃ boundaryRow ∈ boundaryTable.table,
+          (eval (boundaryTable.environment boundaryRow)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadValue_0
+              = (p.2.readMessage p.1).value_0
+            ∧ (eval (boundaryTable.environment boundaryRow)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadValue_1
+              = (p.2.readMessage p.1).value_1 :=
+  boundarySuppliedAt_reload_values trace h
+
+#print axioms register_walk_boundary_carries_values
 #print axioms register_walk_boundary_is_reload
 #print axioms register_walk_terminates_at_boundary
 #print axioms register_access_is_a_pull

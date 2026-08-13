@@ -749,15 +749,29 @@ construction (`boundarySuppliedAt_reload_timestamp`).
 
 Consequently the reload's free `reloadTimestamp` column **equals a real Main read timestamp**, and
 every such timestamp is `k + 4 * index` with `k ∈ {1, 2, 3}`, hence positive
-(`readTimestamp_val_pos`). So the boundary cannot self-pair — its boot pull cannot be answered by its
-own reload push — whenever any register read occurs (`boundary_reload_ne_boot`).
+(`readTimestamp_val_pos`). So that boundary row cannot self-pair — its boot pull cannot be answered
+by its own reload push (`boundary_reload_ne_boot`).
+
+This is **per register, not global**. A register never read keeps a boundary row whose reload sits at
+timestamp `0` and does self-pair — `boundaryRowIdle` is exactly that, and `AddFaithfulPaddedWitness`
+puts thirty of them in an accepted witness beside a real read on `x1`. Those rows carry nothing and
+nothing depends on them.
+
+Balance also equates the reload's **whole** message with the read's, not only its timestamp, so the
+boundary row's `reloadValue` columns are the values the read returned
+(`boundarySuppliedAt_reload_values`). That is the agreement half, and #330 Phase 4's value telescope
+consumes it directly.
 
 **#348's premise was wrong, and this corrects the record.** That issue, and the paragraph above it in
 this ledger, said `main.pil:447` is what rules the self-pairing out. It is not.
 `main_step_to_special_mem_step(step) = 1 + 4 * step + 3`, so
-`last_segment_reg_mem_step = 4 * N`; with `N = mainFixedCapacity = 2^22` that is `2^24`, and at
-`reloadTimestamp = 0` the expression `447` range-checks is `2^24 - 1` — *inside* `rangeTable24`.
-`447` admits `0`.
+`last_segment_reg_mem_step = 4 * (main_segment + 1) * N` (`main.pil:439`). At `main_segment = 0` and
+`N = mainFixedCapacity = 2^22` that is `2^24`, and at `reloadTimestamp = 0` the expression `447`
+range-checks is `2^24 - 1` — equal to `MAX_RANGE` exactly, so it is admitted with **zero margin**.
+
+The qualification matters: at `main_segment ≥ 1` the same expression is at least `2^25 - 1`, outside
+`MAX_RANGE`, so `447` *does* exclude `0` in every later segment. The Lean model is single-segment, so
+the conclusion holds where it is used, but the PIL-level fact is segment-dependent.
 
 `447` remains genuinely unmodelled and is still an extraction-fidelity gap: it would give an **upper**
 bound `reloadTimestamp ≤ 2^24 - 1`. Nothing in the development consumes that bound today, and the

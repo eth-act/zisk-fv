@@ -13,17 +13,30 @@ carries `mult ≠ -1`. The boot pull is excluded by construction.
 
 The consequence is worth stating on its own: the reload's free `reloadTimestamp` column **equals a
 real Main read timestamp**, which is `k + 4 * main_step` for `k ∈ {1, 2, 3}` and therefore never `0`.
-So the boundary cannot self-pair — its boot pull cannot be answered by its own reload push —
-whenever any register read occurs.
+So that boundary row cannot self-pair — its boot pull cannot be answered by its own reload push.
+
+**This is per register, not global.** A register that is never read keeps a boundary row whose
+reload sits at timestamp `0` and *does* self-pair; `boundaryRowIdle`
+(`RegisterMemBusBalance.lean:298`) is exactly that, and `AddFaithfulPaddedWitness` puts thirty of
+them in an accepted witness beside a real read on `x1`. Those rows carry no information and nothing
+depends on them. The claim here is about the boundary row that answers a read.
 
 ## On #348
 
-That issue was opened on the belief that `main.pil:447` is what rules the self-pairing out. It is
-not. `447` range-checks `last_segment_reg_mem_step - last_reg_mem_step - 1`, and
-`main_step_to_special_mem_step(step) = 1 + 4 * step + 3` makes `last_segment_reg_mem_step = 4 * N`
-for a segment of `N` rows. With `N = mainFixedCapacity = 2^22` that is `2^24`, so at
-`reloadTimestamp = 0` the checked expression is `2^24 - 1`, which is *inside* `rangeTable24`. `447`
-admits `0`.
+That issue was opened on the belief that `main.pil:447` is what rules the self-pairing out. **In the
+first segment it does not**, which is the case the model is in.
+
+`447` range-checks `last_segment_reg_mem_step - last_reg_mem_step - 1` against
+`MAX_RANGE = 2^24 - 1`, and `main_step_to_special_mem_step(step) = 1 + 4 * step + 3`, so
+`last_segment_reg_mem_step = 4 * (main_segment + 1) * N` (`main.pil:439`). At `main_segment = 0` and
+`N = mainFixedCapacity = 2^22` that is `2^24`, so `reloadTimestamp = 0` makes the checked expression
+`2^24 - 1` — equal to `MAX_RANGE` exactly, admitted with **zero margin** rather than comfortably
+inside.
+
+At `main_segment ≥ 1` the expression at `reloadTimestamp = 0` is at least `2^25 - 1`, which is
+outside `MAX_RANGE`, so `447` *does* exclude `0` in every later segment. The Lean model is
+single-segment, so the conclusion above holds where it is used — but the PIL-level statement is
+segment-dependent and must not be quoted unqualified.
 
 The exclusion comes from the multiplicity ledger instead — the same place operand-source exclusivity
 came from. `447` is still a real unmodelled constraint, and it still buys something (an upper bound
@@ -53,15 +66,16 @@ theorem registerBoundary_boot_eval_mult (env : Environment FGL)
 
     `RegisterBoundary` emits exactly two messages; the counterpart shape carries `mult ≠ -1`, which
     is precisely the boot pull's multiplicity. So the surviving branch is the reload push. -/
-theorem boundarySuppliedAt_reload_timestamp
+theorem boundarySuppliedAt_reload_message
     {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
     (h : BoundarySuppliedAt trace p) :
     ∃ boundaryTable ∈ trace.witness.allTables,
       ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
         ∃ boundaryRow ∈ boundaryTable.table,
-          (eval (boundaryTable.environment boundaryRow)
-            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadTimestamp
-            = p.2.readTimestamp p.1 := by
+          ZiskFv.AirsClean.RegisterBoundary.reloadMessage
+              (eval (boundaryTable.environment boundaryRow)
+                ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)
+            = p.2.readMessage p.1 := by
   obtain ⟨table, h_table, h_comp, row, h_row, h_p1, h_sel, h_spec⟩ := h
   obtain ⟨pi, h_pw, h_msg, h_nonpull, h_nonzero, bt, h_bt, h_pi, h_bc⟩ := h_spec
   refine ⟨bt, h_bt, h_bc, ?_⟩
@@ -82,12 +96,48 @@ theorem boundarySuppliedAt_reload_timestamp
                 trace.program).rowInputVar)).toRaw).eval (table.environment row)).msg := by
       rw [← h_eval]; exact h_msg
     have h_full := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw)
-    have h_ts := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_full
     rw [ZiskFv.AirsClean.RegisterBoundary.eval_reloadMessageExpr,
-      RegSlot.eval_memMessageExpr_timestamp] at h_ts
+      RegSlot.eval_memMessageExpr] at h_full
     rw [h_p1]
-    exact h_ts
+    exact h_full
 
+
+/-- The reload's timestamp is the read's timestamp — the projection the walk uses. -/
+theorem boundarySuppliedAt_reload_timestamp
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h : BoundarySuppliedAt trace p) :
+    ∃ boundaryTable ∈ trace.witness.allTables,
+      ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
+        ∃ boundaryRow ∈ boundaryTable.table,
+          (eval (boundaryTable.environment boundaryRow)
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadTimestamp
+            = p.2.readTimestamp p.1 := by
+  obtain ⟨bt, h_bt, h_bc, br, h_br, h_msg⟩ := boundarySuppliedAt_reload_message trace h
+  refine ⟨bt, h_bt, h_bc, br, h_br, ?_⟩
+  have h := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_msg
+  rw [RegSlot.readMessage_timestamp] at h
+  exact h
+
+/-- **The reload carries the read's values.** Ordering is not agreement, and this is the half that
+    is about agreement: balance equates the whole message, so the boundary row's `reloadValue`
+    columns are the values the register read returned. #330 Phase 4's value telescope consumes this;
+    it is one projection away from the message equality and should not be re-derived there. -/
+theorem boundarySuppliedAt_reload_values
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h : BoundarySuppliedAt trace p) :
+    ∃ boundaryTable ∈ trace.witness.allTables,
+      ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
+        ∃ boundaryRow ∈ boundaryTable.table,
+          (eval (boundaryTable.environment boundaryRow)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadValue_0
+              = (p.2.readMessage p.1).value_0
+            ∧ (eval (boundaryTable.environment boundaryRow)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadValue_1
+              = (p.2.readMessage p.1).value_1 := by
+  obtain ⟨bt, h_bt, h_bc, br, h_br, h_msg⟩ := boundarySuppliedAt_reload_message trace h
+  exact ⟨bt, h_bt, h_bc, br, h_br,
+    congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_msg,
+    congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_msg⟩
 
 /-- Every Main register read happens at a **positive** timestamp: the slot offsets are `1`, `2`, `3`
 and `main_step` is the row index, so the read timestamp is `k + 4 * index` with `k ≥ 1`, below
@@ -122,10 +172,8 @@ theorem boundary_reload_ne_boot
         ∃ boundaryRow ∈ boundaryTable.table,
           (eval (boundaryTable.environment boundaryRow)
             ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadTimestamp ≠ 0 := by
-  obtain ⟨table, h_table, h_comp, row, h_row, h_p1, h_sel, h_spec⟩ := h
-  obtain ⟨bt, h_bt, h_bc, br, h_br, h_ts⟩ :=
-    boundarySuppliedAt_reload_timestamp trace
-      ⟨table, h_table, h_comp, row, h_row, h_p1, h_sel, h_spec⟩
+  obtain ⟨bt, h_bt, h_bc, br, h_br, h_ts⟩ := boundarySuppliedAt_reload_timestamp trace h
+  obtain ⟨table, h_table, h_comp, row, h_row, h_p1, h_sel, -⟩ := h
   refine ⟨bt, h_bt, h_bc, br, h_br, ?_⟩
   rw [h_ts, h_p1]
   intro h_zero
