@@ -738,7 +738,54 @@ three standard axioms.
 is free, so the boundary can self-pair at timestamp `0`. Termination says the walk *reaches* the
 boundary; pinning **which** boundary message it lands on — and so anchoring the value telescope at
 `bootMessage`'s literal `(ts 0, value 0)` — is that separate gap, and it is what #330 Phase 4 needs
-next. It is tracked as #348.
+next.
+
+**Update (#348, the landing point).** "The walk ends at the boundary" left open *which* boundary
+message it ends at. It is the **reload**, and no new constraint was needed to see it:
+`RegisterBoundary` emits its boot pull at multiplicity `-1` and its reload push at `+1`
+(`RegisterBoundary.lean:126-128`), while `ActiveMainRegisterBoundaryProviderRowMatchSpec` — the
+shape `exists_push_of_pull` returns — carries `mult ≠ -1`, which excludes the boot pull by
+construction (`boundarySuppliedAt_reload_timestamp`).
+
+Consequently the reload's free `reloadTimestamp` column **equals a real Main read timestamp**, and
+every such timestamp is `k + 4 * index` with `k ∈ {1, 2, 3}`, hence positive
+(`readTimestamp_val_pos`). So that boundary row cannot self-pair — its boot pull cannot be answered
+by its own reload push (`boundary_reload_ne_boot`).
+
+This is **per register, not global**. A register never read keeps a boundary row whose reload sits at
+timestamp `0` and does self-pair — `boundaryRowIdle` is exactly that, and `AddFaithfulPaddedWitness`
+puts thirty of them in an accepted witness beside a real read on `x1`. Those rows carry nothing and
+nothing depends on them.
+
+Balance also equates the reload's **whole** message with the read's, not only its timestamp, so the
+boundary row's `reloadValue` columns are the values the read returned
+(`boundarySuppliedAt_reload_values`). That is the agreement half, and #330 Phase 4's value telescope
+consumes it directly.
+
+All three results are conditional on `BoundarySuppliedAt`, so the hypothesis is discharged on a
+concrete trace rather than left possibly-uninhabited: `exists_boundarySuppliedAt_addFaithful` exhibits
+a boundary-supplied site on `addFaithfulAcceptedTrace`, the same two-row `add x1,x1,x1` trace that
+witnesses `root_soundness`'s non-vacuity. V2 check 19 asserts it as
+`register_walk_boundary_reached`.
+
+**#348's premise was wrong for the first segment, which is the case the model is in, and this
+corrects the record.** That issue, and the paragraph above it in this ledger, said `main.pil:447` is
+what rules the self-pairing out. There it does not.
+`main_step_to_special_mem_step(step) = 1 + 4 * step + 3`, so
+`last_segment_reg_mem_step = 4 * (main_segment + 1) * N` (`main.pil:439`). At `main_segment = 0` and
+`N = mainFixedCapacity = 2^22` that is `2^24`, and at `reloadTimestamp = 0` the expression `447`
+range-checks is `2^24 - 1` — equal to `MAX_RANGE` exactly, so it is admitted with **zero margin**.
+
+The qualification matters: at `main_segment ≥ 1` the same expression is at least `2^25 - 1`, outside
+`MAX_RANGE`, so `447` *does* exclude `0` in every later segment. The Lean model is single-segment, so
+the conclusion holds where it is used, but the PIL-level fact is segment-dependent.
+
+`447` remains genuinely unmodelled and is still an extraction-fidelity gap: it would give an **upper**
+bound `reloadTimestamp ≤ 2^24 - 1`. Nothing in the development consumes that bound today, and the
+backward walk to `bootMessage` will not consume it either — the reload is a push, so it is never the
+target of a backward step. Modelling it would make `RegisterBoundary` a bus-102 consumer, which
+deletes `registerBoundary_table_interactionsWith_registerStepRange_nil`, changes the provider case
+split, and adds one provider row per register to all seven witnesses.
 
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and

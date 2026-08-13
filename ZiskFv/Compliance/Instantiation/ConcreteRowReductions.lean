@@ -2168,6 +2168,28 @@ def memMult : RegSlot → Var MainRowWithRom FGL → Expression FGL
   | .b, row => -(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg)
   | .c, row => -(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg)
 
+/-- The whole value-level read message of a slot. Keeping it as one object means a consumer that
+needs the *values* — the register telescope — does not have to re-derive them field by field. -/
+def readMessage : RegSlot → MainRowWithRom FGL →
+    ZiskFv.Channels.MemoryBus.MemBusMessage FGL
+  | .a, row => ZiskFv.AirsClean.Main.aMemMessage row
+  | .b, row => ZiskFv.AirsClean.Main.bMemMessage row
+  | .c, row => ZiskFv.AirsClean.Main.cMemMessage row
+
+/-- Evaluating a slot's read message gives that slot's value-level read message. -/
+theorem eval_memMessageExpr (s : RegSlot) (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    eval env (s.memMessageExpr row) = s.readMessage (eval env row) := by
+  cases s
+  · rw [memMessageExpr, readMessage, ZiskFv.AirsClean.Main.eval_aMemMessageExpr]
+  · rw [memMessageExpr, readMessage, ZiskFv.AirsClean.Main.eval_bMemMessageExpr]
+  · rw [memMessageExpr, readMessage, ZiskFv.AirsClean.Main.eval_cMemMessageExpr]
+
+/-- The read message's own `timestamp` field is the slot's read timestamp. -/
+@[simp] theorem readMessage_timestamp (s : RegSlot) (row : MainRowWithRom FGL) :
+    (s.readMessage row).timestamp = s.readTimestamp row := by
+  cases s <;> rfl
+
 /-- The read message's timestamp is the slot's read timestamp. -/
 theorem eval_memMessageExpr_timestamp (s : RegSlot) (env : Environment FGL)
     (row : Var MainRowWithRom FGL) :

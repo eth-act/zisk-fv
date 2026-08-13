@@ -1,5 +1,7 @@
 import ZiskFv.Compliance.RegisterWalk
 import ZiskFv.Compliance.MemBusSlotSeparation
+import ZiskFv.Compliance.RegisterBoundaryAnchor
+import ZiskFv.Compliance.RegisterBoundaryAnchorNonvacuity
 
 /-!
 # Register walk acyclicity (issue #342)
@@ -114,6 +116,47 @@ theorem register_access_is_a_pull
             length program).rowInputVar)).mem_op = 3 :=
   regSlot_mem_pull_of_selector h_balanced h_constraints h_specs h_table h_component h_row s h_sel
 
+/-- The walk lands on the reload, and that reload timestamp is a real read timestamp — so the
+    boundary cannot answer its own boot pull. -/
+theorem register_walk_boundary_is_reload
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h : BoundarySuppliedAt trace p) :
+    ∃ boundaryTable ∈ trace.witness.allTables,
+      ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
+        ∃ boundaryRow ∈ boundaryTable.table,
+          (eval (boundaryTable.environment boundaryRow)
+            ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadTimestamp ≠ 0 :=
+  boundary_reload_ne_boot trace h
+
+/-- The reload carries the read's **values**, not only its timestamp: balance equates the whole
+    message. This is the agreement half of the anchor, and the fact #330 Phase 4's value telescope
+    consumes. Like the two results above it is conditional on `BoundarySuppliedAt`;
+    `register_walk_boundary_reached` exhibits an inhabitant. -/
+theorem register_walk_boundary_carries_values
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h : BoundarySuppliedAt trace p) :
+    ∃ boundaryTable ∈ trace.witness.allTables,
+      ∃ _h_comp : boundaryTable.component = ZiskFv.AirsClean.RegisterBoundary.component,
+        ∃ boundaryRow ∈ boundaryTable.table,
+          (eval (boundaryTable.environment boundaryRow)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadValue_0
+              = (p.2.readMessage p.1).value_0
+            ∧ (eval (boundaryTable.environment boundaryRow)
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reloadValue_1
+              = (p.2.readMessage p.1).value_1 :=
+  boundarySuppliedAt_reload_values trace h
+
+/-- Non-vacuity for the landing point: `BoundarySuppliedAt` is inhabited on the faithful two-row
+    `add x1,x1,x1` accepted trace, so the three results above are not true for want of an instance.
+    This is the boundary-side counterpart of `register_walk_non_vacuous`. -/
+theorem register_walk_boundary_reached :
+    ∃ p : RegWalkStep,
+      BoundarySuppliedAt ZiskFv.Compliance.AddFaithfulPaddedWitness.addFaithfulAcceptedTrace p :=
+  exists_boundarySuppliedAt_addFaithful
+
+#print axioms register_walk_boundary_reached
+#print axioms register_walk_boundary_carries_values
+#print axioms register_walk_boundary_is_reload
 #print axioms register_walk_terminates_at_boundary
 #print axioms register_access_is_a_pull
 #print axioms register_walk_timestamps_nodup_on_witness_rows
