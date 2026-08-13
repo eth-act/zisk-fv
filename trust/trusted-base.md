@@ -563,20 +563,55 @@ What it does change, and why the change is worth having:
   It binds only at steps that have a successor, so a trailing unaligned JALR — the
   shape `jalrSpinRootSoundness` uses — discharges it vacuously.
 
-**What would be a real strength reduction, and is not done.** `SailTrace` is a bare
-`Fin n → SailState` (`ZiskFv/Compliance/SailTrace.lean`) with no chaining, so
-*something* must say the Sail states form an execution — exactly the reason
-`bootSeed` is irreducible at the single-segment level. Defining `SailTrace` as the
-sequence Sail's own semantics generates from an initial state would make `retire`
-definitional and leave `boot` alone. That is a change to a protected interface used
-by all 63 arms, and it remains the open #330 follow-on.
+**The strength reduction, now done at the root — #343.** The paragraph that used to
+sit here said a real reduction would come from defining the trace as the sequence
+Sail's own semantics generates, and that it was not done. It is done, at
+`root_soundness`.
 
-**Non-vacuity.** All seven accepted-trace witnesses supply both binders and still
-instantiate `root_soundness` / `stepSound_of_programDecodes`. They build `retire`
-through `sailRetireChain_of_inputsAgree` from the per-row `InputsAgree` family they
-already prove — no witness evaluates a Sail execution by hand. The
-empty-execution memory witness and the degenerate probe get vacuous ones, as their
-`bootSeed`s already are.
+`root_soundness` no longer takes a `SailTrace` at all. It takes
+`init : PreSail.SequentialState …` and builds the trace itself with
+`chainedSailTrace` (`ZiskFv/Compliance/TraceLevelExport/ChainedSailTrace.lean`),
+which runs `execute_instruction` at each step and then performs Sail's retire —
+copy `nextPC` into `PC`. Consequently:
+
+* **`pcChain : SegmentPcChain …` is no longer a binder of `root_soundness`.** Its
+  `retire` half is supplied inside the theorem by `chainedSailTrace_retireChain`, a
+  theorem with no hypotheses. Its `boot` half survives as the binder `pcBoot`, now
+  stated directly about `init`. The frozen statement snapshot in `ZiskFv/Audit.lean`
+  records the change.
+* **The inter-derivability caveat does not rescue the old premise here.**
+  `sailRetireChain_of_inputsAgree` derives `retire` from the old per-row bundle; that
+  matters when `retire` is something a caller must supply. At the root there is
+  nothing to supply, so there is nothing to derive. The caveat still applies to
+  `stepSound_of_programDecodes`, which deliberately keeps taking a `SailTrace` and a
+  full `SegmentPcChain`.
+* **The guardrail #343 asks for is met.** A caller can no longer choose the Sail
+  states. Supplying `init` and then `inputsAgree` at `chainedSailTrace ziskStep init`
+  means agreeing with the states Sail actually reaches. The trace became harder to
+  inhabit rather than merely repackaged — which is the test that separates this from
+  the Phase 5/6/7 restructurings above.
+
+`retirePC`'s `nextPC`-absent branch **erases** `PC`, so both sides of the retire law
+are `none` there and the law needs no side condition about the 63 `execute` arms.
+Nothing was added to the trust boundary: the new declarations close over
+`[propext, Classical.choice, Quot.sound]`, and the ones mentioning `execute_instruction`
+close over the pre-existing Sail base (`cancel_reservation`, `riscv_f*`, …) that the
+endpoint already carried.
+
+**Non-vacuity.** `root_soundness` has exactly two instantiations, and both were
+migrated with it: `addFaithfulPaddedRawRootSoundness` (one instruction) and
+`memoryRawRootSoundness` (empty execution). Each now supplies an initial state, and
+`addFaithfulSailTrace` is the generated trace rather than a hand-written family of
+states. Their axiom closures are unchanged. The other five witnesses
+(`addSpin`, `addAddiSpin`, `divSpin`, `jalrSpin`, `sdLdSpin`) target
+`stepSound_of_programDecodes`, keep their hand-built traces, and still build `retire`
+through `sailRetireChain_of_inputsAgree` — no witness evaluates a Sail execution by
+hand. Migrating those five means deriving each hand-written state by running Sail,
+which is real work and is not claimed here.
+
+**Scope of what #343 did NOT change.** `stepSound_of_programDecodes` keeps its
+signature, so the register fields and every other per-row premise are untouched. The
+reduction is one premise, at one theorem.
 
 **Scope.** The PC arm only. The register fields (`h_a_*_t` / `h_b_*_t`, 116
 occurrences) stay assumed; they go through the MemBus and are the separate

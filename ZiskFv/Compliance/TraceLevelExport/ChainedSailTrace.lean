@@ -76,6 +76,19 @@ noncomputable def chainedSailTrace
     SailTrace ziskTrace.numInstructions :=
   fun i => chainedSailStates ziskStep init i.val
 
+@[simp] theorem chainedSailStates_zero
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) :
+    chainedSailStates ziskStep init 0 = init := rfl
+
+@[simp] theorem chainedSailTrace_apply
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (i : Fin ziskTrace.numInstructions) :
+    chainedSailTrace ziskStep init i = chainedSailStates ziskStep init i.val := rfl
+
 /-- **`retire` holds by construction.** For a chained trace the PC at step `j + 1` *is* the `nextPC`
     the step at `j` wrote, because `chainedSailStates` performs the copy rather than assuming it.
 
