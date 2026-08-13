@@ -44,4 +44,36 @@ theorem exists_pull_of_push_memBus
   exact no_balanced_message_with_constant_nonzero_mult h_balanced (m := 1) one_ne_zero h_a h_push
     (fun i h_i h_msg h_ne => h_none i h_i h_msg h_ne)
 
+
+/-! ## What answers a register-pre push
+
+At `mem_op = 3` the memory bus carries six shapes: Main's three current accesses (pulls), Main's
+three register-pre pushes, and the `RegisterBoundary` boot pull and reload push. A counterpart with
+`mult ∉ {0, 1}` can only be one of the two pulls.
+
+The `mult ≠ 0` clause is not decoration. A register-pre push on an **inactive** slot rides at
+multiplicity `0` — it is a phantom emission that carries a message but contributes nothing to the
+balance — and idle slots are everywhere in the witnesses. `mult ≠ 0` is what stops such a phantom
+from answering a read, exactly as `mult ≠ -1` stopped the boot pull in the forward direction. -/
+
+/-- Main's register-pre push rides at its own selector, which booleanity pins to `0` or `1`. -/
+theorem main_regPre_mult_zero_or_one
+    {length : ℕ} {program : Program length}
+    {table : Table FGL} {row : Array FGL}
+    (h_component : table.component = componentWithRomMemAndOpBus length program)
+    (h_constraints : table.Constraints) (h_row : row ∈ table.table) (s : RegSlot) :
+    (((MemBusChannel.emitted (s.selectorExpr (componentWithRomMemAndOpBus length program).rowInputVar) (s.regPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row)).mult = 0
+    ∨ (((MemBusChannel.emitted (s.selectorExpr (componentWithRomMemAndOpBus length program).rowInputVar) (s.regPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+      (table.environment row)).mult = 1 := by
+  obtain ⟨b_a_mem, b_a_reg, b_b_mem, b_b_ind, b_b_reg, b_c_mem, b_c_ind, b_c_reg⟩ :=
+    main_source_flags_boolean h_component h_constraints h_row
+  obtain ⟨e_a_mem, e_a_reg, e_b_mem, e_b_ind, e_b_reg, e_c_mem, e_c_ind, e_c_reg⟩ :=
+    main_rom_eval (table.environment row) (componentWithRomMemAndOpBus length program).rowInputVar
+  rw [memBus_emitted_eval_mult]
+  cases s
+  · rw [RegSlot.selectorExpr, e_a_reg]; exact zero_or_one_of_bool b_a_reg
+  · rw [RegSlot.selectorExpr, e_b_reg]; exact zero_or_one_of_bool b_b_reg
+  · rw [RegSlot.selectorExpr, e_c_reg]; exact zero_or_one_of_bool b_c_reg
+
 end ZiskFv.Compliance
