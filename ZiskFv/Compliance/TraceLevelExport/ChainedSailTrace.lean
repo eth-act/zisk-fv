@@ -96,4 +96,43 @@ theorem chainedSailStates_retire
   rw [h_next]
   simp [Std.ExtDHashMap.get?_insert]
 
+
+/-! ## Why this unblocks `RegAgree`
+
+The retire step touches `PC` and nothing else. So on a chained trace the *general* registers at step
+`j + 1` are exactly the post-state's — which is what `RegisterWriteback.lean`'s
+`regs_write_of_busEffect_ok_three` and `regs_preserved_of_busEffect_ok_three` describe.
+
+That is the link `RegAgree j → RegAgree (j + 1)` was missing. On a bare `Fin n → State` there is no
+such equation to state, let alone prove. -/
+
+/-- **Retire moves `PC` and leaves every other register alone.** -/
+theorem retirePC_regs_of_ne
+    (s : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r : Register) (h_r : r ≠ Register.PC) :
+    (retirePC s).regs.get? r = s.regs.get? r := by
+  rw [retirePC]
+  cases h_next : s.regs.get? Register.nextPC with
+  | none => rfl
+  | some v => simp [Std.ExtDHashMap.get?_insert, h_r.symm]
+
+/-- **The general registers at step `j + 1` are the post-state's.**
+
+    This is the equation `RegAgree`'s inductive step needs, and the equation a bare
+    `Fin n → SequentialState` cannot even state. Compose it with
+    `regs_write_of_busEffect_ok_three` (the destination register takes the write entry's lanes) and
+    `regs_preserved_of_busEffect_ok_three` (every other register is untouched), and the Sail side of
+    the step is complete; #330 Phase 4's `exists_bootAnchored` supplies the ZisK side. -/
+theorem chainedSailStates_regs_of_ne_pc
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (h : j < ziskTrace.numInstructions)
+    (r : Register) (h_r : r ≠ Register.PC) :
+    (chainedSailStates ziskStep init (j + 1)).regs.get? r
+      = (sailStepPost (sailInstructionOf ⟨j, h⟩ (ziskStep ⟨j, h⟩))
+          (chainedSailStates ziskStep init j)).regs.get? r := by
+  rw [chainedSailStates, dif_pos h]
+  exact retirePC_regs_of_ne _ r h_r
+
 end ZiskFv.Compliance
