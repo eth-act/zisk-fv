@@ -42,8 +42,47 @@ def addFaithfulZiskStep : ∀ i : Fin 1, ZiskStep addFaithfulAcceptedTrace i
 
 def addFaithfulMisa : RegisterType Register.misa := 0#64
 
+/-- **Every general register boots at zero**, which is what `main.pil:535-537` does: a
+    compile-time loop emits `global_init_mem(sel: 1, addr: ireg + REGS_IN_MAIN_FROM, value: zeros)`
+    for every register. The witness previously set only `x1`, the one register this trace reads, so
+    the others read back `none` rather than `0` — under-specified against the boot semantics rather
+    than wrong about anything the old proofs used. `x1` stays in the outermost insert below so the
+    existing lookups are unchanged. -/
+def addFaithfulZeroRegs : Std.ExtDHashMap Register RegisterType :=
+  (default : PreSail.SequentialState RegisterType Sail.trivialChoiceSource).regs
+    |>.insert Register.x2 (0#64)
+    |>.insert Register.x3 (0#64)
+    |>.insert Register.x4 (0#64)
+    |>.insert Register.x5 (0#64)
+    |>.insert Register.x6 (0#64)
+    |>.insert Register.x7 (0#64)
+    |>.insert Register.x8 (0#64)
+    |>.insert Register.x9 (0#64)
+    |>.insert Register.x10 (0#64)
+    |>.insert Register.x11 (0#64)
+    |>.insert Register.x12 (0#64)
+    |>.insert Register.x13 (0#64)
+    |>.insert Register.x14 (0#64)
+    |>.insert Register.x15 (0#64)
+    |>.insert Register.x16 (0#64)
+    |>.insert Register.x17 (0#64)
+    |>.insert Register.x18 (0#64)
+    |>.insert Register.x19 (0#64)
+    |>.insert Register.x20 (0#64)
+    |>.insert Register.x21 (0#64)
+    |>.insert Register.x22 (0#64)
+    |>.insert Register.x23 (0#64)
+    |>.insert Register.x24 (0#64)
+    |>.insert Register.x25 (0#64)
+    |>.insert Register.x26 (0#64)
+    |>.insert Register.x27 (0#64)
+    |>.insert Register.x28 (0#64)
+    |>.insert Register.x29 (0#64)
+    |>.insert Register.x30 (0#64)
+    |>.insert Register.x31 (0#64)
+
 def addFaithfulRegs (pc : BitVec 64) : Std.ExtDHashMap Register RegisterType :=
-  let regs0 := (default : PreSail.SequentialState RegisterType Sail.trivialChoiceSource).regs
+  let regs0 := addFaithfulZeroRegs
   let regs1 := regs0.insert Register.PC pc
   let regs2 := regs1.insert Register.misa addFaithfulMisa
   regs2.insert (reg_of_fin (regidx_to_fin x1)) (0#64)
@@ -279,6 +318,25 @@ def addFaithfulPcBoot : ∀ (_ : 0 < 1),
         addFaithfulAcceptedTrace.mainTable).pc 0).val
       = ((addFaithfulState (0#64)).regs.get? Register.PC).elim 0 BitVec.toNat :=
   (pcSeed_of_inputsAgree addFaithfulInputsAgree).boot
+
+open ZiskFv.Compliance.RawProgramBinding in
+/-- **S2's boot instantiation.** `RegAgree` at step `0` for this witness: every general register
+    starts at `0`. This is the premise Phase 4 will put on `root_soundness`, and it is satisfiable —
+    demonstrated here rather than asserted. It does not depend on the coverage argument, so it lands
+    independently of S3's blocker. -/
+theorem addFaithfulRegAgreeBoot :
+    RegAgree addFaithfulZiskStep
+      (fun i => rowDecode_of_programDecode addFaithfulAcceptedTrace i
+        (programDecode_of_rawProgramDecode
+          addFaithfulAcceptedTrace i (addFaithfulZiskStep i)
+          addFaithfulStart addFaithfulAddr addFaithfulRawProgram
+          addFaithfulProgramRowsBinding (addFaithfulRawProgramDecodes i)))
+      (addFaithfulState (0#64)) 0 := by
+  intro k hk
+  simp only [chainedSailStates_zero, ziskRegFile_zero, addFaithfulState, addFaithfulRegs,
+    addFaithfulZeroRegs]
+  fin_cases k <;>
+    simp_all [reg_of_fin, regidx_to_fin, x1, Std.ExtDHashMap.get?_insert]
 
 open ZiskFv.Compliance.RawProgramBinding in
 theorem addFaithfulPaddedRawRootSoundness :
