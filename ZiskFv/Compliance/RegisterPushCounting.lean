@@ -48,6 +48,45 @@ theorem sum_mult_eq_pushCount_sub_pullCount {l : List (Interaction FGL)}
         simp [List.countP_cons, h_a, h_zero_one, h_zero_neg, h_one_neg, h_neg_one, ih h_t] <;>
         ring
 
+/-! ## Two rows contribute two positions
+
+`witness.interactionsWith` is a `flatMap` over tables, and each table's is a `flatMap` over its rows,
+so an emission by row `i` and an emission by row `j ≠ i` land in *different* summands. These two
+lemmas are the position-level bookkeeping that turns "two rows emit this message" into
+"the count is at least two" — the step a value-level reading of the interaction list cannot make. -/
+
+private theorem one_le_countP_flatMap {α β : Type _} (P : β → Bool) (f : α → List β)
+    {l : List α} {x : α} (hx : x ∈ l) (h : 0 < (f x).countP P) :
+    1 ≤ (l.flatMap f).countP P := by
+  obtain ⟨b, hb, hPb⟩ := List.countP_pos_iff.mp h
+  exact List.countP_pos_iff.mpr ⟨b, List.mem_flatMap.mpr ⟨x, hx, hb⟩, hPb⟩
+
+private theorem two_le_countP_flatMap {α β : Type _} (P : β → Bool) (f : α → List β) :
+    ∀ (l : List α) (i j : ℕ) (hi : i < l.length) (hj : j < l.length), i ≠ j →
+      0 < (f l[i]).countP P → 0 < (f l[j]).countP P → 2 ≤ (l.flatMap f).countP P := by
+  intro l
+  induction l with
+  | nil => intro i j hi; simp at hi
+  | cons a t ih =>
+      intro i j hi hj h_ne h_i h_j
+      rw [List.flatMap_cons, List.countP_append]
+      match i, j with
+      | 0, 0 => exact absurd rfl h_ne
+      | 0, (k + 1) =>
+          have h_k : k < t.length := by simpa using hj
+          have h_tail := one_le_countP_flatMap P f (List.getElem_mem h_k) (by simpa using h_j)
+          have h_head : 1 ≤ (f a).countP P := by simpa using h_i
+          omega
+      | (k + 1), 0 =>
+          have h_k : k < t.length := by simpa using hi
+          have h_tail := one_le_countP_flatMap P f (List.getElem_mem h_k) (by simpa using h_i)
+          have h_head : 1 ≤ (f a).countP P := by simpa using h_j
+          omega
+      | (k + 1), (m + 1) =>
+          have := ih k m (by simpa using hi) (by simpa using hj) (by omega)
+            (by simpa using h_i) (by simpa using h_j)
+          omega
+
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
