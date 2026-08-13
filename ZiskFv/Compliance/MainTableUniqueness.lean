@@ -196,15 +196,15 @@ determines the walk step that emitted it — which is what makes the register-pr
 unique. -/
 
 /-- Which of the three access slots a timestamp offset names. -/
-private def slotOffset : RegSlot → ℕ
+def slotOffset : RegSlot → ℕ
   | RegSlot.a => 1
   | RegSlot.b => 2
   | RegSlot.c => 3
 
-private lemma slotOffset_le_three (s : RegSlot) : slotOffset s ≤ 3 := by
+theorem slotOffset_le_three (s : RegSlot) : slotOffset s ≤ 3 := by
   cases s <;> decide
 
-private lemma slotOffset_inj {s₁ s₂ : RegSlot} (h : slotOffset s₁ = slotOffset s₂) : s₁ = s₂ := by
+theorem slotOffset_inj {s₁ s₂ : RegSlot} (h : slotOffset s₁ = slotOffset s₂) : s₁ = s₂ := by
   cases s₁ <;> cases s₂ <;> simp_all [slotOffset]
 
 /-- **`main_step` is the row's own index**, for any in-range row of any Main-component table — not
@@ -217,6 +217,13 @@ theorem mainRowAt_main_step {length : ℕ} {program : Program length} {table : T
   (mainStepIndexFixedFacts_of_component_fixedColumns
     (numInstructions := table.table.length) program table h_component
     (fun i => i.isLt)).main_step_eq_index ⟨index, h_index⟩
+
+/-- The read timestamp in offset form, for any row whose `main_step` is known. -/
+theorem readTimestamp_eq_offset_of_main_step
+    {r : ZiskFv.AirsClean.Main.MainRowWithRom FGL} {index : ℕ}
+    (h_step : r.rom.main_step = (index : FGL)) (s : RegSlot) :
+    s.readTimestamp r = ((slotOffset s : ℕ) : FGL) + ((index : ℕ) : FGL) * 4 := by
+  cases s <;> simp [RegSlot.readTimestamp, h_step, slotOffset]
 
 private lemma readTimestamp_eq_offset {length : ℕ} {program : Program length} {table : Table FGL}
     (h_component : table.component = Main.componentWithRomMemAndOpBus length program)
