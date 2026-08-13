@@ -726,6 +726,39 @@ theorem exists_bootWalk
       (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).val
     h_table h_component h_row s h_sel (by omega)
 
+/-! ## S1 — the anchor pins the operand COLUMN, not just the message
+
+`aRegPreMessage.value_0` is *definitionally* `row.core.a_0` (`AirsClean/Main/Bridge.lean:200`), and
+likewise for `a_1` / the b-slot. So a boot-anchored slot does not merely carry a zero in its message:
+the Main row's operand column itself is `0`. That is the first statement in this development that
+constrains a column an `Inputs_<op>` field talks about, which is why the Phase 4 slice starts here.
+
+The c-slot is deliberately absent. `cRegPreMessage.value_0` is `store_reg_prev_value_0`, a *different*
+column from `cMemMessage`'s write value — that asymmetry is exactly where a write happens, and it is
+why the chain's value steps at c-links and is constant at a- and b-links. -/
+
+/-- **A boot-anchored a-slot reads a register that still holds `0`, in the `a_0` / `a_1` columns.** -/
+theorem a_columns_zero_of_bootAnchoredStep
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h_slot : p.2 = RegSlot.a) (h : BootAnchoredStep trace p) :
+    p.1.core.a_0 = 0 ∧ p.1.core.a_1 = 0 := by
+  obtain ⟨row, slot⟩ := p
+  subst h_slot
+  obtain ⟨btbl, _h_btbl, _h_bcomp, br, _h_br, h_eq⟩ := h
+  exact ⟨congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_eq,
+    congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_eq⟩
+
+/-- **A boot-anchored b-slot reads a register that still holds `0`, in the `b_0` / `b_1` columns.** -/
+theorem b_columns_zero_of_bootAnchoredStep
+    {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
+    (h_slot : p.2 = RegSlot.b) (h : BootAnchoredStep trace p) :
+    p.1.core.b_0 = 0 ∧ p.1.core.b_1 = 0 := by
+  obtain ⟨row, slot⟩ := p
+  subst h_slot
+  obtain ⟨btbl, _h_btbl, _h_bcomp, br, _h_br, h_eq⟩ := h
+  exact ⟨congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_eq,
+    congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_eq⟩
+
 /-- **The anchor, unpacked.** A boot-anchored slot's operand values are `0` and its predecessor
     timestamp is `0`: the register is untouched. -/
 theorem bootAnchored_values_zero
