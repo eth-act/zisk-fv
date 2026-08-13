@@ -101,7 +101,6 @@ theorem boundarySuppliedAt_reload_message
     rw [h_p1]
     exact h_full
 
-
 /-- The reload's timestamp is the read's timestamp — the projection the walk uses. -/
 theorem boundarySuppliedAt_reload_timestamp
     {n : Nat} (trace : AcceptedZiskTrace n) {p : RegWalkStep}
