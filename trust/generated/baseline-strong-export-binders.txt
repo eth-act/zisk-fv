@@ -1,16 +1,16 @@
 0 :: numInstructions :: Nat
 1 :: rawLength :: Nat
 2 :: ziskTrace :: ZiskFv.Compliance.AcceptedZiskTrace numInstructions
-3 :: sailTrace :: ZiskFv.Compliance.SailTrace numInstructions
+3 :: init :: PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 4 :: ziskStep :: (i : Fin numInstructions) → ZiskFv.Compliance.ZiskStep ziskTrace i
 5 :: start :: Fin rawLength → Fin ziskTrace.programLength
 6 :: addr :: Fin rawLength → Fin 18446744069414584321
 7 :: rawProgram :: Fin rawLength → BitVec 32
 8 :: programBinding :: ZiskFv.Compliance.RawProgramBinding.ProgramRowsBinding ziskTrace start addr rawProgram
 9 :: rawProgramDecodes :: (i : Fin numInstructions) → ZiskFv.Compliance.RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram
-10 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgreeCore ziskTrace sailTrace i (ziskStep i)
-11 :: pcChain :: ZiskFv.Compliance.SegmentPcChain ziskTrace sailTrace ziskStep
+10 :: inputsAgree :: (i : Fin numInstructions) → ZiskFv.Compliance.InputsAgreeCore ziskTrace (ZiskFv.Compliance.chainedSailTrace ziskStep init) i (ziskStep i)
+11 :: pcBoot :: instLTNat.lt 0 numInstructions → Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc 0).val ((init.regs.get? Register.PC).elim 0 BitVec.toNat)
 12 :: rowsAligned :: ZiskFv.Compliance.StepRowsAligned ziskTrace ziskStep fun i => ZiskFv.Compliance.rowDecode_of_programDecode ziskTrace i (ZiskFv.Compliance.programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding (rawProgramDecodes i))
-13 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace sailTrace ziskStep
+13 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace (ZiskFv.Compliance.chainedSailTrace ziskStep init) ziskStep
 14 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
 15 :: i :: Fin numInstructions

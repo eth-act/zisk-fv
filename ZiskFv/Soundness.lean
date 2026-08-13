@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.TraceLevelExport
+import ZiskFv.Compliance.TraceLevelExport.ChainedSailTrace
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 
@@ -74,11 +75,14 @@ namespace ZiskFv.Compliance
     content collapses to `boot` alone, the other two premises are each one-sided, and
     `rowsAligned` — which the old `succ` silently did without — is now visible.
 
-    `retire` is irreducible at *this* layer for the same reason `bootSeed` is:
-    `SailTrace` is a bare `Fin n → SailState` (`Compliance/SailTrace.lean`) with no
-    chaining, so *something* must say the Sail states form an execution.  Defining
-    `SailTrace` as the sequence Sail's own semantics generates would make `retire`
-    definitional — a real strength reduction, tracked as #343.
+    `retire` is irreducible at *this* layer because `sailTrace` is an arbitrary
+    `Fin n → SailState` (`Compliance/SailTrace.lean`) with no chaining, so *something*
+    must say the Sail states form an execution.  It is **not** irreducible at the root:
+    `root_soundness` below takes an initial state instead of a trace, generates the
+    trace with `chainedSailTrace`, and obtains `retire` from
+    `chainedSailTrace_retireChain` — a theorem, not a premise (#343).  This layer keeps
+    the trace parametric because the five multi-step accepted-trace witnesses target it
+    directly with hand-built traces.
 
     `bootSeed` is the single named **cross-row memory seed** premise: the segment's
     initial memory state at segment entry, together with the one consistent
@@ -160,6 +164,25 @@ theorem stepSound_of_programDecodes
     #172; and identifying `rawProgram` with the intended compiled binary is the
     external compile/commitment boundary.
 
+    THE SAIL SIDE IS GENERATED, NOT SUPPLIED (#343). This theorem does not take a
+    `SailTrace`. It takes the initial Sail state `init` and builds the trace itself
+    with `chainedSailTrace`, which runs `execute_instruction` at each step and then
+    performs Sail's retire (copy `nextPC` into `PC`). Two consequences:
+
+      * The old `pcChain : SegmentPcChain …` premise is gone. Its `retire` half is now
+        the theorem `chainedSailTrace_retireChain`, applied below; only its `boot` half
+        survives, as `pcBoot`. That is a premise leaving the statement, not a premise
+        being renamed — `sailRetireChain_of_inputsAgree`'s converse no longer applies,
+        because there is nothing left to derive.
+      * A caller can no longer choose the Sail states. Supplying `init` and then
+        `inputsAgree` at `chainedSailTrace ziskStep init` means agreeing with the
+        states Sail actually reaches, which is the guardrail #343 asks for: the trace
+        has to be *harder* to inhabit, not merely repackaged.
+
+    `stepSound_of_programDecodes` keeps taking a `SailTrace` and a full
+    `SegmentPcChain`, because the five multi-step accepted-trace witnesses target it
+    directly with hand-built traces.
+
     NON-VACUITY (#320): witnessed. `addFaithfulPaddedRawRootSoundness`
     (`Compliance/AddFaithfulPaddedRootSoundness.lean`) instantiates this theorem on a
     one-instruction execution with the proved `addFaithfulProgramRowsBinding` and real
@@ -167,13 +190,13 @@ theorem stepSound_of_programDecodes
     `memoryRawRootSoundness` supplies a second real `ProgramRowsBinding`, on an
     empty execution. The other instantiations (`addSpin`, `addAddiSpin`, `divSpin`,
     `jalrSpin`, `sdLdSpin`) discharge the premises this theorem SHARES with
-    `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `pcChain`, `rowsAligned`,
+    `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `rowsAligned`,
     `bootSeed`, `hAvoidKnownBugs` — but satisfy `ProgramDecode` directly, so they
     provide no evidence for `programBinding` / `rawProgramDecodes`. -/
 theorem root_soundness
     (numInstructions rawLength : Nat)
     (ziskTrace : AcceptedZiskTrace numInstructions)
-    (sailTrace : SailTrace numInstructions)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
     (start : Fin rawLength → Fin ziskTrace.programLength)
     (addr : Fin rawLength → FGL)
@@ -183,23 +206,28 @@ theorem root_soundness
     (rawProgramDecodes : ∀ i : Fin numInstructions,
       RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram)
     (inputsAgree : ∀ i : Fin numInstructions,
-      InputsAgreeCore ziskTrace sailTrace i (ziskStep i))
-    (pcChain : SegmentPcChain ziskTrace sailTrace ziskStep)
+      InputsAgreeCore ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i))
+    (pcBoot : ∀ (_ : 0 < numInstructions),
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc 0).val
+        = (init.regs.get? Register.PC).elim 0 BitVec.toNat)
     (rowsAligned : StepRowsAligned ziskTrace ziskStep
       (fun i => rowDecode_of_programDecode ziskTrace i
         (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
           start addr rawProgram programBinding (rawProgramDecodes i))))
-    (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
+    (bootSeed : BootSegmentMemorySeed ziskTrace (chainedSailTrace ziskStep init) ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions,
-      StepSound ziskTrace sailTrace i (ziskStep i)
+      StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
             start addr rawProgram programBinding (rawProgramDecodes i))) :=
-  stepSound_of_programDecodes numInstructions ziskTrace sailTrace ziskStep
+  stepSound_of_programDecodes numInstructions ziskTrace (chainedSailTrace ziskStep init) ziskStep
     (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
       start addr rawProgram programBinding (rawProgramDecodes i))
-    inputsAgree pcChain rowsAligned bootSeed hAvoidKnownBugs
+    inputsAgree
+    { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
+      boot := pcBoot }
+    rowsAligned bootSeed hAvoidKnownBugs
 
 end ZiskFv.Compliance
