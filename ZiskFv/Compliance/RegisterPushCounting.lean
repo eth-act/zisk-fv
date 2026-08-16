@@ -402,6 +402,82 @@ theorem row_memBus_pullCount_le_one {length : ℕ} {program : Program length} {t
   interval_cases i <;> interval_cases j <;>
     simp_all [Bool.and_eq_true, decide_eq_true_iff]
 
+/-- **A pull in a Main row is one of the three current accesses.** The three register-pre pushes
+    ride at a boolean selector, so a `-1` interaction can only be a current access. This is the
+    extraction step the table-level bound needs: it turns "some position matched" into "this slot's
+    read message is the message". -/
+theorem exists_regSlot_of_row_pull {length : ℕ} {program : Program length} {table : Table FGL}
+    (h_component : table.component = Main.componentWithRomMemAndOpBus length program)
+    (h_constraints : table.Constraints) {row : Array FGL} (h_row : row ∈ table.table)
+    {msg : Array FGL}
+    (h_pos : 0 < ((Main.componentWithRomMemAndOpBus length program).operations.interactionValuesWith
+        ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw (table.environment row)).countP
+      (fun i => decide (i.mult = -1) && decide (i.msg = msg))) :
+    ∃ s : RegSlot,
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+          (s.memMult (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+          (s.memMessageExpr
+            (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment row)).msg = msg := by
+  have h_push : ∀ s : RegSlot,
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus length program).rowInputVar)
+        (s.regPreMessageExpr
+          (Main.componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval
+        (table.environment row)).mult ≠ -1 := by
+    intro s h_c
+    rcases main_regPre_mult_zero_or_one h_component h_constraints h_row s with h | h <;>
+      · rw [h] at h_c
+        revert h_c
+        decide
+  rw [Operations.interactionValuesWith_eq_map,
+    Main.componentWithRomMemAndOpBus_interactionsWith_memBus] at h_pos
+  have h_a := h_push RegSlot.a
+  have h_b := h_push RegSlot.b
+  have h_c := h_push RegSlot.c
+  simp only [RegSlot.selectorExpr, RegSlot.regPreMessageExpr] at h_a h_b h_c
+  obtain ⟨x, h_x, h_px⟩ := List.countP_pos_iff.mp h_pos
+  simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at h_x
+  simp only [Bool.and_eq_true, decide_eq_true_iff] at h_px
+  rcases h_x with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact absurd h_px.1 h_a
+  · exact ⟨RegSlot.a, h_px.2⟩
+  · exact absurd h_px.1 h_b
+  · exact ⟨RegSlot.b, h_px.2⟩
+  · exact absurd h_px.1 h_c
+  · exact ⟨RegSlot.c, h_px.2⟩
+
+/-- **The Main table pulls a given message at most once.** Row-level from
+    `row_memBus_pullCount_le_one`; across rows because equal read messages force equal timestamps,
+    and a timestamp names the row index (`slot_index_eq_of_readTimestamp_eq`). -/
+theorem mainTable_pullCount_le_one {n : ℕ} (trace : AcceptedZiskTrace n) {table : Table FGL}
+    (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      Main.componentWithRomMemAndOpBus trace.programLength trace.program)
+    {msg : Array FGL} :
+    (table.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun i => decide (i.mult = -1) && decide (i.msg = msg)) ≤ 1 := by
+  have h_constraints := trace.constraints_hold table h_table
+  rw [Table.interactionsWith, h_component]
+  refine countP_le_one_flatMap _ _ table.table (fun arr h_arr => ?_) (fun i j hi hj h_i h_j => ?_)
+  · exact row_memBus_pullCount_le_one h_component h_constraints h_arr
+  · have h_i_lt : i < table.table.length := by simpa using hi
+    have h_j_lt : j < table.table.length := by simpa using hj
+    obtain ⟨s, h_s⟩ :=
+      exists_regSlot_of_row_pull h_component h_constraints (List.getElem_mem h_i_lt) h_i
+    obtain ⟨t, h_t⟩ :=
+      exists_regSlot_of_row_pull h_component h_constraints (List.getElem_mem h_j_lt) h_j
+    have h_raw := h_s.trans h_t.symm
+    have h_eq := memBusMessage_eq_of_eval_emitted_provider_msg_eq h_raw
+    rw [RegSlot.eval_memMessageExpr, RegSlot.eval_memMessageExpr] at h_eq
+    have h_ts := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h_eq
+    rw [RegSlot.readMessage_timestamp, RegSlot.readMessage_timestamp] at h_ts
+    have h_ri := mainTableRowAtOrZero_get trace.program table ⟨i, h_i_lt⟩
+    have h_rj := mainTableRowAtOrZero_get trace.program table ⟨j, h_j_lt⟩
+    simp only [List.get_eq_getElem] at h_ri h_rj
+    rw [← h_ri, ← h_rj] at h_ts
+    exact (slot_index_eq_of_readTimestamp_eq h_component h_i_lt h_j_lt h_ts).2
+
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
