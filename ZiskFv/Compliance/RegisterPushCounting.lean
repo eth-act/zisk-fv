@@ -587,6 +587,27 @@ theorem registerBoundaryTable_pullCount_le_one
     have h_nat := nat_eq_of_cast_eq (a := i + 1) (b := j + 1) (by omega) (by omega) h_ptr
     omega
 
+/-- **A Main current access is never the boundary boot pull.** The boot sits at timestamp `0`; a
+    Main read sits at `offset + 4 * index` with `offset ∈ {1, 2, 3}`, so its `val` is at least one.
+    This is what stops the Main and boundary tables from both contributing a pull at one message. -/
+theorem mainRead_ne_boot {length : ℕ} {program : Program length} {table : Table FGL}
+    (h_component : table.component = Main.componentWithRomMemAndOpBus length program)
+    {index : ℕ} (h_index : index < table.table.length) (s : RegSlot)
+    (row : RegisterBoundary.RegisterBoundaryRow FGL)
+    (h : s.readMessage (mainTableRowAtOrZero program table index)
+      = RegisterBoundary.bootMessage row) :
+    False := by
+  have h_ts := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.timestamp h
+  rw [RegSlot.readMessage_timestamp] at h_ts
+  have h_step := mainRowAt_main_step h_component h_index
+  rw [readTimestamp_eq_offset_of_main_step h_step s] at h_ts
+  have h_val := congrArg Fin.val h_ts
+  rw [slot_timestamp_val (slotOffset_le_three s)
+    (main_index_lt_mainFixedCapacity h_component h_index)] at h_val
+  have h_pos : 1 ≤ slotOffset s := by cases s <;> decide
+  simp only [RegisterBoundary.bootMessage] at h_val
+  omega
+
 /-- **As many pushes as pulls, at every memory-bus message whose interactions ride at `0`, `±1`.**
 
     This is the two-sided count `no_balanced_message_with_constant_nonzero_mult` cannot express: it
