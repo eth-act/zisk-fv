@@ -774,4 +774,111 @@ theorem witness_pullCount_le_one {n : ℕ} (trace : AcceptedZiskTrace n)
     · rw [allTables_index_eq_registerBoundary trace.witness ha h_ba,
         allTables_index_eq_registerBoundary trace.witness hb h_bb]
 
+/-- **Every interaction at a `mem_op = 3` message rides at `0`, `+1` or `-1`.** The side condition
+    `pushCount_eq_pullCount_of_balanced` asks for. Anything outside `{0, 1}` is, by the
+    classification, a Main current access or the boot pull — and `mem_op = 3` forces the Main slot's
+    selector, hence its `-1`. -/
+theorem memBus_memOp3_mult_trichotomy {n : ℕ} (trace : AcceptedZiskTrace n)
+    {refEnv : Environment FGL} {refMult : Expression FGL}
+    {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_ref_op : (eval refEnv refMsg).mem_op = 3)
+    {i : Interaction FGL}
+    (h_i : i ∈ trace.witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw)
+    (h_msg : i.msg = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted refMult
+      refMsg).toRaw).eval refEnv).msg) :
+    i.mult = 0 ∨ i.mult = 1 ∨ i.mult = -1 := by
+  by_cases h0 : i.mult = 0
+  · exact Or.inl h0
+  by_cases h1 : i.mult = 1
+  · exact Or.inr (Or.inl h1)
+  refine Or.inr (Or.inr ?_)
+  rcases memBus_mem_op_three_counterpart trace.constraints_hold trace.spec_holds h_ref_op h_i
+      h_msg h0 h1 with
+    ⟨tbl, h_tbl, h_comp, r, h_r, t, h_eval⟩ | ⟨btbl, h_btbl, h_bcomp, br, h_br, h_eval⟩
+  · have h_raw : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (t.memMult (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)
+        (t.memMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)).toRaw).eval (tbl.environment r)).msg
+        = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted refMult refMsg).toRaw).eval
+          refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    have h_meq := memBusMessage_eq_of_eval_emitted_provider_msg_eq h_raw
+    have h_op : (eval (tbl.environment r)
+        (t.memMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)).mem_op = 3 := by
+      rw [h_meq]; exact h_ref_op
+    have h_sel := regSlot_selector_of_mem_op_three h_comp
+      (trace.constraints_hold tbl h_tbl) h_r t h_op
+    rw [h_eval]
+    exact (regSlot_mem_pull_of_selector trace.channels_balanced trace.constraints_hold
+      trace.spec_holds h_tbl h_comp h_r t h_sel).1
+  · rw [h_eval]; rfl
+
+/-- **Push-injectivity: two distinct active register slots cannot share a register-pre message.**
+
+    Balance forces as many pushes as pulls at that message
+    (`pushCount_eq_pullCount_of_balanced`); two distinct slots would give two push positions
+    (`two_le_witness_pushCount`); and there is at most one pull position
+    (`witness_pullCount_le_one`). So `2 ≤ 1`.
+
+    This is the fact the register telescope's chain merge rests on: `pred` — the slot whose read
+    answers a given register-pre push — is injective, so two access chains for one register cannot
+    stay disjoint. -/
+theorem regPreMessage_inj {n : ℕ} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      Main.componentWithRomMemAndOpBus trace.programLength trace.program)
+    {i j : ℕ} (hi : i < table.table.length) (hj : j < table.table.length) {s t : RegSlot}
+    (h_sel_i : s.selector (eval (table.environment (table.table[i]'hi))
+      (Main.componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1)
+    (h_sel_j : t.selector (eval (table.environment (table.table[j]'hj))
+      (Main.componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1)
+    (h_msg : (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (s.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)
+        (s.regPreMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)).toRaw).eval (table.environment (table.table[i]'hi))).msg
+      = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+        (t.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)
+        (t.regPreMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar)).toRaw).eval (table.environment (table.table[j]'hj))).msg) :
+    i = j ∧ s = t := by
+  by_contra h_ne
+  have h_ne' : i ≠ j ∨ (i = j ∧ s ≠ t) := by
+    by_cases h_ij : i = j
+    · exact Or.inr ⟨h_ij, fun h_st => h_ne ⟨h_ij, h_st⟩⟩
+    · exact Or.inl h_ij
+  have h_mult_i := regSlot_regPre_mult_one (table := table)
+    (row := table.table[i]'hi) s h_sel_i
+  have h_mult_j := regSlot_regPre_mult_one (table := table)
+    (row := table.table[j]'hj) t h_sel_j
+  have h_ref_op : (eval (table.environment (table.table[i]'hi))
+      (s.regPreMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+        trace.program).rowInputVar)).mem_op = 3 :=
+    RegSlot.eval_regPreMessageExpr_mem_op s _ _
+  have h_two := two_le_witness_pushCount h_table h_component hi hj h_ne'
+    h_mult_i rfl h_mult_j h_msg.symm
+  have h_eq := pushCount_eq_pullCount_of_balanced (witness := trace.witness)
+    trace.channels_balanced
+    ((((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+      (s.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+        trace.program).rowInputVar)
+      (s.regPreMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+        trace.program).rowInputVar)).toRaw).eval (table.environment (table.table[i]'hi))).msg)
+    (fun k h_k h_kmsg => memBus_memOp3_mult_trichotomy trace
+      (refEnv := table.environment (table.table[i]'hi))
+      (refMult := s.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+        trace.program).rowInputVar)
+      (refMsg := s.regPreMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+        trace.program).rowInputVar) h_ref_op h_k h_kmsg)
+  have h_one := witness_pullCount_le_one trace
+    (refEnv := table.environment (table.table[i]'hi))
+    (refMult := s.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+      trace.program).rowInputVar)
+    (refMsg := s.regPreMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+      trace.program).rowInputVar) h_ref_op
+  omega
+
 end ZiskFv.Compliance
