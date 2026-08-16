@@ -478,32 +478,114 @@ theorem mainTable_pullCount_le_one {n : ℕ} (trace : AcceptedZiskTrace n) {tabl
     rw [← h_ri, ← h_rj] at h_ts
     exact (slot_index_eq_of_readTimestamp_eq h_component h_i_lt h_j_lt h_ts).2
 
-/-! ## The boundary side of the pull count — NOT YET PROVED
-
-`mainTable_pullCount_le_one` is the Main half. The boundary half needs the same bound on a
-`RegisterBoundary` table, and the fidelity repair supplies its mathematical content:
-`RegisterBoundary.reg_of_materialize` says the register index of row `k` is the fixed cell, so two
-boot pulls carrying the same message are the same row.
-
-What did not converge is the Lean plumbing, not the argument. `Table.table` is a `match` on
-`component.fixedColumns`, so rewriting with `h_component : table.component = …` hits "motive is not
-type correct", and threading `table.table[k] = materialize k table.rawRows[k]` through a dependent
-`getElem` proof fights the elaborator. The route that works elsewhere in this tree is to
-`cases table with | mk component rawRows data _ _ => change component = … at h_component; subst
-component`, as `mainTableRowAtOrZero_segment_l1_eq_fixedAt` does — destructure first, then
-`Table.table` computes and no rewrite under a dependent motive is needed.
-
-Then: zero for every other component (the classification in `memBus_mem_op_three_counterpart`
-already rules them out), the Main-vs-boundary exclusion by timestamp — a boot pull sits at `0`, a
-Main read at `offset + 4 * index ≥ 1` — and `pushCount_eq_pullCount_of_balanced` closes
-push-injectivity at `2 ≤ 1`. -/
-
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
     (h : ((a : ℕ) : FGL) = ((b : ℕ) : FGL)) : a = b := by
   have h_val := congrArg Fin.val h
   rwa [Fin.val_natCast, Fin.val_natCast, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at h_val
+
+/-- **The boundary table pulls a given message at most once.** Each row emits one pull, the boot,
+    and one push, the reload. Two boot pulls carrying the same message name the same register — and
+    since the fidelity repair the register *is* the row index, so they are the same row.
+
+    This half was false before `reg` became component-owned data: two boundary rows could then carry
+    the same register, and one message could be pulled twice.
+
+    The table is destructured up front. `Table.table` is a `match` on `component.fixedColumns`, so
+    rewriting with `h_component` under it hits "motive is not type correct"; after `subst` the match
+    computes and the effective rows are `rfl`. Same pattern as
+    `mainTableRowAtOrZero_segment_l1_eq_fixedAt`. -/
+theorem registerBoundaryTable_pullCount_le_one
+    {table : Table FGL} (h_component : table.component = RegisterBoundary.component)
+    {msg : Array FGL} :
+    (table.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun i => decide (i.mult = -1) && decide (i.msg = msg)) ≤ 1 := by
+  cases table with
+  | mk component rawRows data raw_uniform_width fixed_domain =>
+  change component = RegisterBoundary.component at h_component
+  subst component
+  have h_rowList : ∀ env : Environment FGL,
+      RegisterBoundary.component.operations.interactionValuesWith
+          ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw env
+        = [ (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted (-1)
+              (RegisterBoundary.bootMessageExpr
+                RegisterBoundary.component.rowInputVar)).toRaw).eval env)
+          , (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted 1
+              (RegisterBoundary.reloadMessageExpr
+                RegisterBoundary.component.rowInputVar)).toRaw).eval env) ] := by
+    intro env
+    rw [Operations.interactionValuesWith_eq_map,
+      RegisterBoundary.component_interactionsWith_memBus]
+    rfl
+  have h_reload_mult : ∀ env : Environment FGL,
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted 1
+        (RegisterBoundary.reloadMessageExpr
+          RegisterBoundary.component.rowInputVar)).toRaw).eval env).mult = 1 := fun _ => rfl
+  have h_tableRows :
+      (Table.table ⟨RegisterBoundary.component, rawRows, data, raw_uniform_width, fixed_domain⟩)
+        = rawRows.mapIdx
+          (fun idx raw => RegisterBoundary.registerBoundaryFixedColumns.materialize idx raw) := rfl
+  rw [Table.interactionsWith]
+  refine countP_le_one_flatMap _ _ _ (fun arr _ => ?_) (fun i j hi hj h_i h_j => ?_)
+  · rw [h_rowList]
+    refine countP_le_one_of_unique_index _ _ (fun a b ha hb h_a h_b => ?_)
+    have h2a : a < 2 := by simpa using ha
+    have h2b : b < 2 := by simpa using hb
+    interval_cases a <;> interval_cases b <;>
+      first
+        | rfl
+        | (exfalso
+           simp only [List.getElem_cons_zero, List.getElem_cons_succ, Bool.and_eq_true,
+             decide_eq_true_iff] at h_a h_b
+           first
+             | exact absurd (h_b.1.symm.trans (h_reload_mult _)) (by decide)
+             | exact absurd (h_a.1.symm.trans (h_reload_mult _)) (by decide))
+  · have h_boot : ∀ (k : ℕ) (hk : k < rawRows.length),
+        0 < (RegisterBoundary.component.operations.interactionValuesWith
+              ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw
+              (Environment.fromArray
+                (RegisterBoundary.registerBoundaryFixedColumns.materialize k rawRows[k]) data)).countP
+            (fun i => decide (i.mult = -1) && decide (i.msg = msg)) →
+          (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted (-1)
+            (RegisterBoundary.bootMessageExpr
+              RegisterBoundary.component.rowInputVar)).toRaw).eval
+            (Environment.fromArray
+              (RegisterBoundary.registerBoundaryFixedColumns.materialize k rawRows[k]) data)).msg
+            = msg := by
+      intro k hk h_pos
+      rw [h_rowList] at h_pos
+      obtain ⟨x, h_x, h_px⟩ := List.countP_pos_iff.mp h_pos
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at h_x
+      simp only [Bool.and_eq_true, decide_eq_true_iff] at h_px
+      rcases h_x with rfl | rfl
+      · exact h_px.2
+      · exact absurd (h_px.1.symm.trans (h_reload_mult _)) (by decide)
+    simp only [h_tableRows, List.length_mapIdx] at hi hj
+    simp only [h_tableRows, List.getElem_mapIdx] at h_i h_j
+    have h_i_lt : i < rawRows.length := hi
+    have h_j_lt : j < rawRows.length := hj
+    have h_bi := h_boot i h_i_lt h_i
+    have h_bj := h_boot j h_j_lt h_j
+    have h_eq := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_bi.trans h_bj.symm)
+    rw [RegisterBoundary.eval_bootMessageExpr, RegisterBoundary.eval_bootMessageExpr] at h_eq
+    have h_ptr := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.ptr h_eq
+    simp only [RegisterBoundary.bootMessage] at h_ptr
+    rw [RegisterBoundary.reg_of_materialize, RegisterBoundary.reg_of_materialize] at h_ptr
+    have h_cap : rawRows.length ≤ RegisterBoundary.registerBoundaryCapacity :=
+      fixed_domain RegisterBoundary.registerBoundaryFixedColumns rfl
+    have h_i31 : i < 31 := by
+      simp only [RegisterBoundary.registerBoundaryCapacity] at h_cap; omega
+    have h_j31 : j < 31 := by
+      simp only [RegisterBoundary.registerBoundaryCapacity] at h_cap; omega
+    simp only [IndexedFixedColumns.fixedAt,
+      RegisterBoundary.registerBoundaryFixedColumns,
+      RegisterBoundary.registerBoundaryFixedValues,
+      RegisterBoundary.registerBoundaryCapacity, Nat.mod_eq_of_lt h_i31,
+      Nat.mod_eq_of_lt h_j31, dif_pos] at h_ptr
+    have h_prime : GL_prime = 18446744069414584321 := rfl
+    have h_nat := nat_eq_of_cast_eq (a := i + 1) (b := j + 1) (by omega) (by omega) h_ptr
+    omega
 
 /-- **As many pushes as pulls, at every memory-bus message whose interactions ride at `0`, `±1`.**
 

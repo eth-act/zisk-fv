@@ -238,22 +238,6 @@ theorem eval_rawRow_materialize (index : Nat) (data : ProverData FGL)
       (varFromOffset (F := FGL) RegisterBoundaryRow 0) = row := by
   rw [eval_rawRow_materialize_reg, ← h_reg]
 
-/-- **The register index of a materialized row, for an arbitrary raw row.** Slot `0` is the fixed
-    cell, so this holds whatever the prover put in the witness cells — it does not need the raw row
-    to have come from a `RegisterBoundaryRow`. -/
-theorem reg_of_materialize (index : Nat) (raw : Array FGL) (data : ProverData FGL) :
-    (Eval.eval
-      (Environment.fromArray (registerBoundaryFixedColumns.materialize index raw) data)
-      (varFromOffset (F := FGL) RegisterBoundaryRow 0)).reg
-      = registerBoundaryFixedColumns.fixedAt 0 index := by
-  simp [registerBoundaryFixedColumns, IndexedFixedColumns.materialize,
-    registerBoundaryFixedLayout, Environment.fromArray,
-    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-    ProvableStruct.varFromOffset_eq_varFromOffset, ProvableType.eval_field,
-    ProvableStruct.varFromOffset, ProvableStruct.fromComponents, ProvableStruct.components,
-    ProvableStruct.toComponents, ProvableStruct.eval.go, Expression.eval,
-    ProvableStruct.varFromOffset.go, explicit_provable_type, circuit_norm]
-
 /-- **Each register has exactly one boundary row.** Row `i` carries register `x(i+1)`, so two rows
     carrying the same register are the same row.
 
@@ -292,6 +276,24 @@ def component : Air.Flat.Component FGL :=
   { circuit := circuit
     rawWidth := 3
     fixedColumns := some registerBoundaryFixedColumns }
+
+/-- **The register index of a materialized row, for an arbitrary raw row.** Slot `0` is the fixed
+    cell, so this holds whatever the prover put in the witness cells — it does not need the raw row
+    to have come from a `RegisterBoundaryRow`. -/
+theorem reg_of_materialize (index : Nat) (raw : Array FGL) (data : ProverData FGL) :
+    (Eval.eval
+      (Environment.fromArray (registerBoundaryFixedColumns.materialize index raw) data)
+      component.rowInputVar).reg
+      = registerBoundaryFixedColumns.fixedAt 0 index := by
+  simp [Air.Flat.Component.rowInputVar, component,
+    registerBoundaryFixedColumns, IndexedFixedColumns.materialize,
+    registerBoundaryFixedLayout, Environment.fromArray,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.varFromOffset_eq_varFromOffset, ProvableType.eval_field,
+    ProvableStruct.varFromOffset, ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go, Expression.eval,
+    ProvableStruct.varFromOffset.go, explicit_provable_type, circuit_norm]
+
 
 /-- Project the generic component `Spec` to the trivial RegisterBoundary `Spec`. -/
 theorem component_spec (env : Environment FGL) :
