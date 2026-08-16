@@ -147,8 +147,60 @@ def circuit : GeneralFormalCircuit FGL RegisterBoundaryRow unit  where
   completeness := by
     circuit_proof_start [MemBusChannel]
 
+/-! ## The component-owned register enumeration
+
+`reg` used to be a free witness cell. That was looser than ZisK in a way that matters: the register
+address is a **compile-time constant** there, and a prover has no say in it.
+
+* PIL: `main.pil:535-537` boots each register with
+  `global_init_mem(sel: 1, addr: ireg + REGS_IN_MAIN_FROM, value: zeros)` inside a compile-time
+  `for` loop, and `main.pil:445-450` reloads each with `reg_pre_load(addr: ireg + REGS_IN_MAIN_FROM,
+  ...)` in the same loop. `std_direct.pil`'s `direct_initial_checks` rejects any expression of
+  degree > 0 in a direct update, so the address cannot be witness data at all.
+* Extraction, which is what this proof consumes: `build/extraction/Extraction/Main.lean` carries
+  exactly **62** `mem_op = 3` memory-bus direct terms, at literal addresses **1 through 31, each
+  twice** — the boot pull and the reload push for `x1` .. `x31`.
+
+So the register index is component-owned data, not prover data, and it belongs in the fixed schema.
+Pinning it costs no trust: it *reduces* what a prover may supply, which is the safe direction for a
+provider. It also gives the row count for free — `Table.fixed_domain` bounds any materialized
+prefix by `capacity`, so a witness cannot carry a 32nd boundary row.
+
+What this repairs, concretely: two rows could previously carry the same `reg`, so one register could
+have two boot anchors and its accesses could split into two disjoint chains. The register telescope
+cannot close over that. -/
+
+/-- `REGS_IN_MAIN` (`main.pil:15-17`): the registers `x1` .. `x31` that Main tracks. -/
+def registerBoundaryCapacity : Nat := 31
+
+/-- The four effective `RegisterBoundaryRow` slots map to three raw witness cells plus the one
+    component-owned `reg` column. `ProvableStruct` order puts `reg` at slot `0`. -/
+private def registerBoundaryFixedLayout (slot : Fin 4) : Sum (Fin 3) (Fin 1) :=
+  if h_reg : slot.val = 0 then
+    .inr ⟨0, by omega⟩
+  else
+    .inl ⟨slot.val - 1, by have := slot.isLt; omega⟩
+
+/-- Register `x(i+1)` at physical row `i`, mirroring `ireg + REGS_IN_MAIN_FROM` with
+    `REGS_IN_MAIN_FROM = 1`. -/
+private def registerBoundaryFixedValues (_slot : Fin 1)
+    (row : Fin registerBoundaryCapacity) : FGL :=
+  ((row.val + 1 : ℕ) : FGL)
+
+/-- Component-owned RegisterBoundary fixed schema. -/
+def registerBoundaryFixedColumns : IndexedFixedColumns FGL 3 where
+  capacity := registerBoundaryCapacity
+  capacity_pos := by decide
+  effectiveWidth := 4
+  fixedWidth := 1
+  layout := registerBoundaryFixedLayout
+  values := registerBoundaryFixedValues
+
 /-- RegisterBoundary as a Clean `Air.Flat.Component`. -/
-def component : Air.Flat.Component FGL := { circuit := circuit }
+def component : Air.Flat.Component FGL :=
+  { circuit := circuit
+    rawWidth := 3
+    fixedColumns := some registerBoundaryFixedColumns }
 
 /-- Project the generic component `Spec` to the trivial RegisterBoundary `Spec`. -/
 theorem component_spec (env : Environment FGL) :

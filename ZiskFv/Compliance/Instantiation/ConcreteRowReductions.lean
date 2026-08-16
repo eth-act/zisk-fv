@@ -1727,10 +1727,15 @@ example :
   rw [memSingleRowTable_interactionsWith_memBus]
   decide
 
+/-- The raw witness cells of a boundary row. `reg` is **absent**: it is component-owned fixed data
+    now (`RegisterBoundary.registerBoundaryFixedColumns`), mirroring the literal addresses the
+    extraction carries. Same shape as `mainRawRow`, which omits `SEGMENT_L1` and `main_step`. -/
 def registerBoundaryRowArray (row : RegisterBoundaryRow FGL) : Array FGL :=
-  (toElements row).toArray
+  #[row.reloadTimestamp, row.reloadValue_0, row.reloadValue_1]
 
-def registerBoundaryRowsTableOf (rows : List (RegisterBoundaryRow FGL)) : Table FGL where
+def registerBoundaryRowsTableOf (rows : List (RegisterBoundaryRow FGL))
+    (h_len : rows.length ≤ ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity) :
+    Table FGL where
   component := ZiskFv.AirsClean.RegisterBoundary.component
   rawRows := rows.map registerBoundaryRowArray
   data := emptyData
@@ -1738,16 +1743,17 @@ def registerBoundaryRowsTableOf (rows : List (RegisterBoundaryRow FGL)) : Table 
     intro arr h_arr
     simp [registerBoundaryRowArray] at h_arr
     rcases h_arr with ⟨row, _h_row, rfl⟩
-    change size RegisterBoundaryRow = ZiskFv.AirsClean.RegisterBoundary.circuit.size
-    rw [GeneralFormalCircuit.size_eq]
     rfl
   fixed_domain := by
     intro columns h_columns
-    simp [ZiskFv.AirsClean.RegisterBoundary.component] at h_columns
+    simp only [ZiskFv.AirsClean.RegisterBoundary.component, Option.some.injEq] at h_columns
+    subst h_columns
+    simpa using h_len
 
 private theorem registerBoundaryRowsTableOf_effectiveRows
-    (rows : List (RegisterBoundaryRow FGL)) :
-    (registerBoundaryRowsTableOf rows).table = rows.map registerBoundaryRowArray := by
+    (rows : List (RegisterBoundaryRow FGL))
+    (h_len : rows.length ≤ ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity) :
+    (registerBoundaryRowsTableOf rows h_len).table = rows.map registerBoundaryRowArray := by
   simp [registerBoundaryRowsTableOf, Table.table, registerBoundaryRowArray,
     ZiskFv.AirsClean.RegisterBoundary.component]
 
@@ -1759,12 +1765,12 @@ def registerBoundarySingleRowTable (row : RegisterBoundaryRow FGL) : Table FGL w
     intro arr h_arr
     simp [registerBoundaryRowArray] at h_arr
     subst arr
-    change size RegisterBoundaryRow = ZiskFv.AirsClean.RegisterBoundary.circuit.size
-    rw [GeneralFormalCircuit.size_eq]
     rfl
   fixed_domain := by
     intro columns h_columns
-    simp [ZiskFv.AirsClean.RegisterBoundary.component] at h_columns
+    simp only [ZiskFv.AirsClean.RegisterBoundary.component, Option.some.injEq] at h_columns
+    subst h_columns
+    simp [ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
 
 private theorem registerBoundarySingleRowTable_effectiveRows
     (row : RegisterBoundaryRow FGL) :
