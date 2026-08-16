@@ -478,6 +478,26 @@ theorem mainTable_pullCount_le_one {n : ℕ} (trace : AcceptedZiskTrace n) {tabl
     rw [← h_ri, ← h_rj] at h_ts
     exact (slot_index_eq_of_readTimestamp_eq h_component h_i_lt h_j_lt h_ts).2
 
+/-! ## The boundary side of the pull count — NOT YET PROVED
+
+`mainTable_pullCount_le_one` is the Main half. The boundary half needs the same bound on a
+`RegisterBoundary` table, and the fidelity repair supplies its mathematical content:
+`RegisterBoundary.reg_of_materialize` says the register index of row `k` is the fixed cell, so two
+boot pulls carrying the same message are the same row.
+
+What did not converge is the Lean plumbing, not the argument. `Table.table` is a `match` on
+`component.fixedColumns`, so rewriting with `h_component : table.component = …` hits "motive is not
+type correct", and threading `table.table[k] = materialize k table.rawRows[k]` through a dependent
+`getElem` proof fights the elaborator. The route that works elsewhere in this tree is to
+`cases table with | mk component rawRows data _ _ => change component = … at h_component; subst
+component`, as `mainTableRowAtOrZero_segment_l1_eq_fixedAt` does — destructure first, then
+`Table.table` computes and no rewrite under a dependent motive is needed.
+
+Then: zero for every other component (the classification in `memBus_mem_op_three_counterpart`
+already rules them out), the Main-vs-boundary exclusion by timestamp — a boot pull sits at `0`, a
+Main read at `offset + 4 * index ≥ 1` — and `pushCount_eq_pullCount_of_balanced` closes
+push-injectivity at `2 ≤ 1`. -/
+
 /-- Casting is injective below the modulus, which is how a field-level count equality becomes a
     `ℕ` one. -/
 private lemma nat_eq_of_cast_eq {a b : ℕ} (ha : a < GL_prime) (hb : b < GL_prime)
