@@ -151,12 +151,26 @@ theorem addX1BinaryAddTable_constraints :
 def singleAddBoundaryRows : List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
   boundaryRowX1 :: (List.range 30).map (fun i => boundaryRowIdle ((i + 2 : Nat) : FGL))
 
+/-- 31 rows, one per tracked register, within the component's fixed capacity. -/
+theorem singleAddBoundaryRows_length :
+    singleAddBoundaryRows.length ≤
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity := by
+  simp [singleAddBoundaryRows, ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+
+/-- Row `i` carries register `x(i+1)`, matching the component's fixed `reg` column. -/
+theorem singleAddBoundaryRows_enumerated :
+    RegisterBoundaryRowsEnumerated singleAddBoundaryRows := by
+  intro i h_i
+  have h_lt : i < 31 := by simpa [singleAddBoundaryRows] using h_i
+  interval_cases i <;> rfl
+
 def registerBoundaryRowsTable : Table FGL :=
-  registerBoundaryRowsTableOf singleAddBoundaryRows
+  registerBoundaryRowsTableOf singleAddBoundaryRows singleAddBoundaryRows_length
 
 theorem registerBoundaryRowsTable_constraints :
     registerBoundaryRowsTable.Constraints :=
   registerBoundaryRowsTableOf_constraints singleAddBoundaryRows
+    singleAddBoundaryRows_length singleAddBoundaryRows_enumerated
 
 def singleAddTables : List (Table FGL) :=
   [ registerBoundaryRowsTable
@@ -535,6 +549,7 @@ theorem singleAddWitness_memBus_interactions :
         singleAddBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
     simpa [registerBoundaryRowsTable] using
       registerBoundaryRowsTableOf_interactionsWith_memBus singleAddBoundaryRows
+        singleAddBoundaryRows_length singleAddBoundaryRows_enumerated
   have h_binaryAdd :
       (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemBusChannel.toRaw = [] := by
     exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil

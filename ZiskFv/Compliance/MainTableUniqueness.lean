@@ -20,7 +20,7 @@ witness table's component by index, so uniqueness is a fact about the ensemble r
 property a prover must be trusted to supply. The discriminator is `rawWidth`, measured here:
 
 ```
-verifier 0, RegisterBoundary 4, MemAlignReadByte 10, MemAlignByte 16, MemAlign 30,
+verifier 0, RegisterBoundary 3, MemAlignReadByte 10, MemAlignByte 16, MemAlign 30,
 MemAlignRangeSlice 1, MemAlignRomSlice 6, Mem 17, RegisterStepRangeSlice 1,
 SpecifiedRangesSlice 1, ArithDiv 43, ArithMul 44, BinaryExtension.shiftStaticLookup 29,
 Binary.staticLookup 39, BinaryAdd 10, Main 41
@@ -56,11 +56,11 @@ theorem rawWidth_main {length : ℕ} (program : Program length) :
     (Main.componentWithRomMemAndOpBus length program).rawWidth = 41 := by
   simp only [Main.componentWithRomMemAndOpBus]
 
+/-- `3`, not `4`: `reg` left the raw encoding for the component's fixed schema when the register
+    index was pinned. -/
 theorem rawWidth_registerBoundary :
-    (RegisterBoundary.component : Component FGL).rawWidth = 4 := by
-  simp only [RegisterBoundary.component, GeneralFormalCircuit.size_eq, circuit_norm,
-    RegisterBoundary.circuit]
-  norm_num
+    (RegisterBoundary.component : Component FGL).rawWidth = 3 := by
+  simp only [RegisterBoundary.component]
 
 theorem rawWidth_memAlignReadByte :
     (MemAlignReadByte.component : Component FGL).rawWidth = 10 := by
@@ -138,7 +138,7 @@ theorem rawWidth_binaryAdd :
     circuit-level work is in the sixteen lemmas above. -/
 theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
     ((fullRv64imEnsemble length program).ensemble.allTables.map (·.rawWidth))
-      = [0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] := by
+      = [0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] := by
   simp only [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
     Ensemble.allTables, SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables,
     List.map_cons, List.map_nil, SoundEnsemble.empty, Ensemble.verifierTable,
@@ -150,26 +150,26 @@ theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
   rfl
 
 /-- **A witness table sits where the width profile says it does.** Generic over the width, so both
-    the Main table (`41` at index `15`) and the `RegisterBoundary` table (`4` at index `1`) use it.
+    the Main table (`41` at index `15`) and the `RegisterBoundary` table (`3` at index `1`) use it.
     The caller supplies the uniqueness of its width in the profile. -/
 theorem table_index_of_rawWidth {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
     {t : Table FGL} (h_mem : t ∈ witness.allTables) {w idx : ℕ}
     (h_width : t.component.rawWidth = w)
-    (h_unique : ∀ i, ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+    (h_unique : ∀ i, ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
       = some w → i = idx) :
     witness.allTables[idx]? = some t := by
   obtain ⟨i, h_i⟩ := List.mem_iff_getElem?.mp h_mem
   have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[i]? = some t.component := by
     rw [← witness.allTables_map_component, List.getElem?_map, h_i, Option.map_some]
-  have h_prof : ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+  have h_prof : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
       = some w := by
     rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some, h_width]
   rw [← h_unique i h_prof]
   exact h_i
 
 private lemma index_lt_sixteen_of_profile {i w : ℕ}
-    (h : ([0, 4, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]? = some w) :
+    (h : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]? = some w) :
     i < 16 := by
   by_contra h_ge
   rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h
@@ -188,14 +188,14 @@ theorem main_table_index {length : ℕ} {program : Program length}
   interval_cases i <;> simp_all
 
 /-- A witness table carrying the `RegisterBoundary` component sits at index `1`: the profile shows
-    `4` only there. The boot pull that answers a register-pre message at timestamp `0` lives in this
+    `3` only there. The boot pull that answers a register-pre message at timestamp `0` lives in this
     table, so the pull count needs its uniqueness exactly as it needs Main's. -/
 theorem registerBoundary_table_index {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
     {t : Table FGL} (h_mem : t ∈ witness.allTables)
     (h_component : t.component = RegisterBoundary.component) :
     witness.allTables[1]? = some t := by
-  refine table_index_of_rawWidth (w := 4) witness h_mem
+  refine table_index_of_rawWidth (w := 3) witness h_mem
     (by rw [h_component]; exact rawWidth_registerBoundary) (fun i h => ?_)
   have h_lt := index_lt_sixteen_of_profile h
   interval_cases i <;> simp_all

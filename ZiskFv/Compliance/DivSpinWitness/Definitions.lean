@@ -348,9 +348,23 @@ def divSpinBoundaryRows :
     (List.range 28).map (fun i =>
       ZiskFv.Compliance.RegisterMemBusBalance.boundaryRowIdle ((i + 4 : Nat) : FGL))
 
+/-- 31 rows, one per tracked register, within the component's fixed capacity. -/
+theorem divSpinBoundaryRows_length :
+    divSpinBoundaryRows.length ≤
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity := by
+  simp [divSpinBoundaryRows, ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+
+/-- Row `i` carries register `x(i+1)`, matching the component's fixed `reg` column. -/
+theorem divSpinBoundaryRows_enumerated :
+    RegisterBoundaryRowsEnumerated divSpinBoundaryRows := by
+  intro i h_i
+  have h_lt : i < 31 := by simpa [divSpinBoundaryRows] using h_i
+  interval_cases i <;> rfl
+
+
 def divSpinBoundaryTable : Table FGL :=
   ZiskFv.Compliance.Instantiation.registerBoundaryRowsTableOf
-    divSpinBoundaryRows
+    divSpinBoundaryRows divSpinBoundaryRows_length
 
 def divSpinBinaryAddRows : List (ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL) :=
   [ ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 6

@@ -121,11 +121,25 @@ def addFaithfulBoundaryRows :
     List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
   addFaithfulBoundaryRowX1 :: (List.range 30).map (fun i => boundaryRowIdle ((i + 2 : Nat) : FGL))
 
+/-- 31 rows, one per tracked register, within the component's fixed capacity. -/
+theorem addFaithfulBoundaryRows_length :
+    addFaithfulBoundaryRows.length ≤
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity := by
+  simp [addFaithfulBoundaryRows, ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+
+/-- Row `i` carries register `x(i+1)`, matching the component's fixed `reg` column. -/
+theorem addFaithfulBoundaryRows_enumerated :
+    RegisterBoundaryRowsEnumerated addFaithfulBoundaryRows := by
+  intro i h_i
+  have h_lt : i < 31 := by simpa [addFaithfulBoundaryRows] using h_i
+  interval_cases i <;> rfl
+
+
 def addFaithfulBoundaryTable : Table FGL :=
-  registerBoundaryRowsTableOf addFaithfulBoundaryRows
+  registerBoundaryRowsTableOf addFaithfulBoundaryRows addFaithfulBoundaryRows_length
 
 theorem addFaithfulBoundaryTable_constraints : addFaithfulBoundaryTable.Constraints :=
-  registerBoundaryRowsTableOf_constraints addFaithfulBoundaryRows
+  registerBoundaryRowsTableOf_constraints addFaithfulBoundaryRows addFaithfulBoundaryRows_length addFaithfulBoundaryRows_enumerated
 
 /-! ## Main's per-row prover assumptions -/
 
@@ -831,7 +845,7 @@ theorem addFaithfulMemBus_interactions :
         addFaithfulBoundaryTable.interactionsWith MemBusChannel.toRaw =
           addFaithfulBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
       simpa [addFaithfulBoundaryTable] using
-        registerBoundaryRowsTableOf_interactionsWith_memBus addFaithfulBoundaryRows
+        registerBoundaryRowsTableOf_interactionsWith_memBus addFaithfulBoundaryRows addFaithfulBoundaryRows_length addFaithfulBoundaryRows_enumerated
     have h_binaryAdd :
         addFaithfulBinaryAddTable.interactionsWith MemBusChannel.toRaw = [] := by
       exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil

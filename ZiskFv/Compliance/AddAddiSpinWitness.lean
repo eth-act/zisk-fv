@@ -137,8 +137,22 @@ def addAddiSpinBoundaryRows :
   addAddiSpinBoundaryRowX1 ::
     (List.range 30).map (fun i => boundaryRowIdle ((i + 2 : Nat) : FGL))
 
+/-- 31 rows, one per tracked register, within the component's fixed capacity. -/
+theorem addAddiSpinBoundaryRows_length :
+    addAddiSpinBoundaryRows.length ≤
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity := by
+  simp [addAddiSpinBoundaryRows, ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+
+/-- Row `i` carries register `x(i+1)`, matching the component's fixed `reg` column. -/
+theorem addAddiSpinBoundaryRows_enumerated :
+    RegisterBoundaryRowsEnumerated addAddiSpinBoundaryRows := by
+  intro i h_i
+  have h_lt : i < 31 := by simpa [addAddiSpinBoundaryRows] using h_i
+  interval_cases i <;> rfl
+
+
 def addAddiSpinBoundaryTable : Table FGL :=
-  registerBoundaryRowsTableOf addAddiSpinBoundaryRows
+  registerBoundaryRowsTableOf addAddiSpinBoundaryRows addAddiSpinBoundaryRows_length
 
 def addAddiSpinBinaryAddTable : Table FGL :=
   binaryAddRowsTable addAddiSpinBinaryAddRows
@@ -354,7 +368,7 @@ theorem addAddiSpinBinaryAddTable_constraints : addAddiSpinBinaryAddTable.Constr
   exact ⟨0, 0, by decide, by decide, rfl⟩
 
 theorem addAddiSpinBoundaryTable_constraints : addAddiSpinBoundaryTable.Constraints :=
-  registerBoundaryRowsTableOf_constraints addAddiSpinBoundaryRows
+  registerBoundaryRowsTableOf_constraints addAddiSpinBoundaryRows addAddiSpinBoundaryRows_length addAddiSpinBoundaryRows_enumerated
 
 def addAddiSpinEnsemble : Ensemble FGL unit :=
   (fullRv64imEnsemble 3 addAddiSpinProgram).ensemble
@@ -1464,7 +1478,7 @@ private theorem addAddiSpinBoundaryTableMemBusInteractions_eq_rows :
     addAddiSpinBoundaryTable.interactionsWith MemBusChannel.toRaw =
       addAddiSpinBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
   unfold addAddiSpinBoundaryTable
-  exact registerBoundaryRowsTableOf_interactionsWith_memBus addAddiSpinBoundaryRows
+  exact registerBoundaryRowsTableOf_interactionsWith_memBus addAddiSpinBoundaryRows addAddiSpinBoundaryRows_length addAddiSpinBoundaryRows_enumerated
 
 private theorem addAddiSpinBinaryAddTableMemBusInteractions_eq_nil :
     addAddiSpinBinaryAddTable.interactionsWith MemBusChannel.toRaw = [] := by

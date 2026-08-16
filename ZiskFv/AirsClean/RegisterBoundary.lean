@@ -175,7 +175,7 @@ def registerBoundaryCapacity : Nat := 31
 
 /-- The four effective `RegisterBoundaryRow` slots map to three raw witness cells plus the one
     component-owned `reg` column. `ProvableStruct` order puts `reg` at slot `0`. -/
-private def registerBoundaryFixedLayout (slot : Fin 4) : Sum (Fin 3) (Fin 1) :=
+def registerBoundaryFixedLayout (slot : Fin 4) : Sum (Fin 3) (Fin 1) :=
   if h_reg : slot.val = 0 then
     .inr ⟨0, by omega⟩
   else
@@ -183,7 +183,7 @@ private def registerBoundaryFixedLayout (slot : Fin 4) : Sum (Fin 3) (Fin 1) :=
 
 /-- Register `x(i+1)` at physical row `i`, mirroring `ireg + REGS_IN_MAIN_FROM` with
     `REGS_IN_MAIN_FROM = 1`. -/
-private def registerBoundaryFixedValues (_slot : Fin 1)
+def registerBoundaryFixedValues (_slot : Fin 1)
     (row : Fin registerBoundaryCapacity) : FGL :=
   ((row.val + 1 : ℕ) : FGL)
 
@@ -195,6 +195,81 @@ def registerBoundaryFixedColumns : IndexedFixedColumns FGL 3 where
   fixedWidth := 1
   layout := registerBoundaryFixedLayout
   values := registerBoundaryFixedValues
+
+/-- The three raw witness cells of a boundary row, in `ProvableStruct` order minus `reg`. -/
+def rawRow (row : RegisterBoundaryRow FGL) : Array FGL :=
+  #[row.reloadTimestamp, row.reloadValue_0, row.reloadValue_1]
+
+/-- Materialization of a boundary row, as a literal: the fixed `reg` cell then the three raw
+    cells. `Array.ofFn` over the literal width `4` reduces definitionally. -/
+theorem materialize_rawRow (index : ℕ) (row : RegisterBoundaryRow FGL) :
+    registerBoundaryFixedColumns.materialize index (rawRow row)
+      = #[registerBoundaryFixedColumns.fixedAt 0 index,
+          row.reloadTimestamp, row.reloadValue_0, row.reloadValue_1] := by
+  rfl
+
+/-- **What materialization actually does to a boundary row: it overwrites `reg`.**
+
+    The decoded row keeps the three witness cells and takes its register index from the
+    component's fixed schema, *whatever the prover wrote*. This is the repair, stated:
+    the register index is component-owned data, so it is not a degree of freedom. -/
+theorem eval_rawRow_materialize_reg (index : Nat) (data : ProverData FGL)
+    (row : RegisterBoundaryRow FGL) :
+    Eval.eval
+      (Environment.fromArray (registerBoundaryFixedColumns.materialize index (rawRow row)) data)
+      (varFromOffset (F := FGL) RegisterBoundaryRow 0)
+      = { row with reg := registerBoundaryFixedColumns.fixedAt 0 index } := by
+  cases row
+  simp_all [registerBoundaryFixedColumns, IndexedFixedColumns.materialize,
+    IndexedFixedColumns.fixedAt, registerBoundaryFixedLayout, registerBoundaryFixedValues,
+    rawRow, Environment.fromArray, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.varFromOffset_eq_varFromOffset, ProvableType.eval_field,
+    ProvableStruct.varFromOffset, ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go, Expression.eval,
+    ProvableStruct.varFromOffset.go, explicit_provable_type, circuit_norm]
+
+/-- **A materialized boundary row decodes back to itself, once `reg` agrees with the fixed cell.**
+    The mirror of Main's `eval_mainRawRow_materialize`. -/
+theorem eval_rawRow_materialize (index : Nat) (data : ProverData FGL)
+    (row : RegisterBoundaryRow FGL)
+    (h_reg : row.reg = registerBoundaryFixedColumns.fixedAt 0 index) :
+    Eval.eval
+      (Environment.fromArray (registerBoundaryFixedColumns.materialize index (rawRow row)) data)
+      (varFromOffset (F := FGL) RegisterBoundaryRow 0) = row := by
+  rw [eval_rawRow_materialize_reg, ← h_reg]
+
+/-- **Each register has exactly one boundary row.** Row `i` carries register `x(i+1)`, so two rows
+    carrying the same register are the same row.
+
+    This is what the fidelity repair buys, and what the register telescope's coverage argument
+    needs: the boot pull for a register is unique, so that register's accesses cannot split into
+    two disjoint chains. Before the repair `reg` was a free witness cell and this was false. -/
+theorem materialized_reg_eq (index : Nat) (h_lt : index < registerBoundaryCapacity)
+    (data : ProverData FGL) (row : RegisterBoundaryRow FGL) :
+    (Eval.eval
+      (Environment.fromArray (registerBoundaryFixedColumns.materialize index (rawRow row)) data)
+      (varFromOffset (F := FGL) RegisterBoundaryRow 0)).reg = ((index + 1 : ℕ) : FGL) := by
+  rw [eval_rawRow_materialize_reg]
+  simp [IndexedFixedColumns.fixedAt, registerBoundaryFixedColumns, registerBoundaryFixedValues,
+    Nat.mod_eq_of_lt h_lt]
+
+/-- Two boundary rows carrying the same register sit at the same index. -/
+theorem materialized_index_unique {i j : Nat}
+    (h_i : i < registerBoundaryCapacity) (h_j : j < registerBoundaryCapacity)
+    (data : ProverData FGL) (rowI rowJ : RegisterBoundaryRow FGL)
+    (h : (Eval.eval
+            (Environment.fromArray (registerBoundaryFixedColumns.materialize i (rawRow rowI)) data)
+            (varFromOffset (F := FGL) RegisterBoundaryRow 0)).reg
+        = (Eval.eval
+            (Environment.fromArray (registerBoundaryFixedColumns.materialize j (rawRow rowJ)) data)
+            (varFromOffset (F := FGL) RegisterBoundaryRow 0)).reg) :
+    i = j := by
+  rw [materialized_reg_eq i h_i, materialized_reg_eq j h_j] at h
+  have h_val := congrArg Fin.val h
+  rw [Fin.val_natCast, Fin.val_natCast,
+    Nat.mod_eq_of_lt (by simp [registerBoundaryCapacity] at h_i ⊢; omega),
+    Nat.mod_eq_of_lt (by simp [registerBoundaryCapacity] at h_j ⊢; omega)] at h_val
+  omega
 
 /-- RegisterBoundary as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL :=
