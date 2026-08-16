@@ -881,4 +881,75 @@ theorem regPreMessage_inj {n : ℕ} (trace : AcceptedZiskTrace n)
       trace.program).rowInputVar) h_ref_op
   omega
 
+/-! ## The chain merge
+
+`readMessage_inj` makes `pred` deterministic and `regPreMessage_inj` makes it injective. Two walks
+for one register therefore cannot stay disjoint: reversed, both start at the same boot anchor and
+each step is then *functional*, so one reversed walk is a prefix of the other.
+
+These two lemmas are the generic list content, stated without reference to the bus. -/
+
+/-- Two chains of a functional relation that start at the same element: one is a prefix of the
+    other. Functional means the successor is determined, so the chain is determined by its head. -/
+theorem prefix_of_head_eq_of_functional {α : Type _} {S : α → α → Prop}
+    (h_fun : ∀ a b c, S a b → S a c → b = c) :
+    ∀ (l₁ l₂ : List α), List.IsChain S l₁ → List.IsChain S l₂ →
+      l₁.head? = l₂.head? → l₁ <+: l₂ ∨ l₂ <+: l₁ := by
+  intro l₁
+  induction l₁ with
+  | nil => intro l₂ _ _ _; exact Or.inl (List.nil_prefix)
+  | cons a t₁ ih =>
+      intro l₂ h₁ h₂ h_head
+      match l₂ with
+      | [] => exact Or.inr List.nil_prefix
+      | b :: t₂ =>
+          have h_ab : a = b := by simpa using h_head
+          subst h_ab
+          match t₁, t₂ with
+          | [], _ => exact Or.inl (by simp)
+          | _ :: _, [] => exact Or.inr (by simp)
+          | c :: r₁, d :: r₂ =>
+              have hc := (List.isChain_cons_cons.mp h₁).1
+              have hd := (List.isChain_cons_cons.mp h₂).1
+              have h_cd : c = d := h_fun a c d hc hd
+              subst h_cd
+              rcases ih (c :: r₂) (List.isChain_cons_cons.mp h₁).2
+                (List.isChain_cons_cons.mp h₂).2 rfl with h | h
+              · exact Or.inl (List.cons_prefix_cons.mpr ⟨rfl, h⟩)
+              · exact Or.inr (List.cons_prefix_cons.mpr ⟨rfl, h⟩)
+
+/-- **Two chains ending at the same element merge.** With the links injective, the shorter chain's
+    head lies on the longer chain. This is the abstract form of "two access chains for one register
+    cannot stay disjoint". -/
+theorem mem_of_chains_getLast_eq {α : Type _} {R : α → α → Prop}
+    (h_inj : ∀ a b c, R a c → R b c → a = b)
+    {l₁ l₂ : List α} (h₁ : List.IsChain R l₁) (h₂ : List.IsChain R l₂)
+    {z : α} (hz₁ : l₁.getLast? = some z) (hz₂ : l₂.getLast? = some z)
+    (h_len : l₂.length ≤ l₁.length) {x : α} (hx : l₂.head? = some x) :
+    x ∈ l₁ := by
+  have h₁' : List.IsChain (fun a b => R b a) l₁.reverse := by
+    rw [List.isChain_reverse]
+    simpa using h₁
+  have h₂' : List.IsChain (fun a b => R b a) l₂.reverse := by
+    rw [List.isChain_reverse]
+    simpa using h₂
+  have h_heads : l₁.reverse.head? = l₂.reverse.head? := by
+    rw [List.head?_reverse, List.head?_reverse, hz₁, hz₂]
+  have h_fun : ∀ a b c, (fun a b => R b a) a b → (fun a b => R b a) a c → b = c :=
+    fun a b c hb hc => h_inj b c a hb hc
+  have h_mem : x ∈ l₂ := List.mem_of_mem_head? hx
+  rcases prefix_of_head_eq_of_functional h_fun _ _ h₁' h₂' h_heads with h | h
+  · have h_len' : l₁.length ≤ l₂.length := by
+      simpa using h.length_le
+    have h_eq : l₁.reverse = l₂.reverse :=
+      h.eq_of_length (by simp; omega)
+    have : l₁ = l₂ := by
+      have := congrArg List.reverse h_eq
+      simpa using this
+    rw [this]
+    exact h_mem
+  · have h_sub : l₂.reverse ⊆ l₁.reverse := h.subset
+    have : x ∈ l₂.reverse := by simpa using h_mem
+    simpa using h_sub this
+
 end ZiskFv.Compliance
