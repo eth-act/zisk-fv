@@ -587,6 +587,68 @@ theorem registerBoundaryTable_pullCount_le_one
     have h_nat := nat_eq_of_cast_eq (a := i + 1) (b := j + 1) (by omega) (by omega) h_ptr
     omega
 
+/-- A Main table with a pull at a message has a row and slot whose current access carries it. -/
+theorem exists_mainRead_of_table_pull {n : ℕ} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_table : table ∈ trace.witness.allTables)
+    (h_component : table.component =
+      Main.componentWithRomMemAndOpBus trace.programLength trace.program)
+    {msg : Array FGL}
+    (h_pos : 0 < (table.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun i => decide (i.mult = -1) && decide (i.msg = msg))) :
+    ∃ (index : ℕ), ∃ h : index < table.table.length, ∃ s : RegSlot,
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted
+          (s.memMult (Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar)
+          (s.memMessageExpr (Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar)).toRaw).eval
+        (table.environment (table.table[index]'h))).msg = msg := by
+  rw [Table.interactionsWith, h_component] at h_pos
+  obtain ⟨x, h_x, h_px⟩ := List.countP_pos_iff.mp h_pos
+  obtain ⟨arr, h_arr, h_xarr⟩ := List.mem_flatMap.mp h_x
+  obtain ⟨index, h_index, rfl⟩ := List.getElem_of_mem h_arr
+  refine ⟨index, h_index, ?_⟩
+  exact exists_regSlot_of_row_pull h_component (trace.constraints_hold table h_table)
+    (List.getElem_mem h_index)
+    (List.countP_pos_iff.mpr ⟨x, h_xarr, h_px⟩)
+
+/-- A boundary table with a pull at a message has a row whose boot carries it. -/
+theorem exists_boot_of_table_pull {n : ℕ} (trace : AcceptedZiskTrace n)
+    {table : Table FGL} (h_component : table.component = RegisterBoundary.component)
+    {msg : Array FGL}
+    (h_pos : 0 < (table.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun i => decide (i.mult = -1) && decide (i.msg = msg))) :
+    ∃ (index : ℕ), ∃ h : index < table.table.length,
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted (-1)
+          (RegisterBoundary.bootMessageExpr
+            RegisterBoundary.component.rowInputVar)).toRaw).eval
+        (table.environment (table.table[index]'h))).msg = msg := by
+  have h_rowList : ∀ env : Environment FGL,
+      RegisterBoundary.component.operations.interactionValuesWith
+          ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw env
+        = [ (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted (-1)
+              (RegisterBoundary.bootMessageExpr
+                RegisterBoundary.component.rowInputVar)).toRaw).eval env)
+          , (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted 1
+              (RegisterBoundary.reloadMessageExpr
+                RegisterBoundary.component.rowInputVar)).toRaw).eval env) ] := by
+    intro env
+    rw [Operations.interactionValuesWith_eq_map,
+      RegisterBoundary.component_interactionsWith_memBus]
+    rfl
+  rw [Table.interactionsWith, h_component] at h_pos
+  obtain ⟨x, h_x, h_px⟩ := List.countP_pos_iff.mp h_pos
+  obtain ⟨arr, h_arr, h_xarr⟩ := List.mem_flatMap.mp h_x
+  obtain ⟨index, h_index, rfl⟩ := List.getElem_of_mem h_arr
+  refine ⟨index, h_index, ?_⟩
+  rw [h_rowList] at h_xarr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at h_xarr
+  simp only [Bool.and_eq_true, decide_eq_true_iff] at h_px
+  rcases h_xarr with rfl | rfl
+  · exact h_px.2
+  · exfalso
+    have h_one : (1 : FGL) = -1 := h_px.1
+    exact absurd h_one (by decide)
+
 /-- **A Main current access is never the boundary boot pull.** The boot sits at timestamp `0`; a
     Main read sits at `offset + 4 * index` with `offset ∈ {1, 2, 3}`, so its `val` is at least one.
     This is what stops the Main and boundary tables from both contributing a pull at one message. -/
@@ -645,5 +707,71 @@ theorem pushCount_eq_pullCount_of_balanced
       simpa using (Bool.and_eq_true _ _ |>.mp h_a).2
     · exact absurd (h.symm.trans (ringChar.eq FGL GL_prime)) (by decide)
   exact nat_eq_of_cast_eq (h_bound _) (h_bound _) h_cast
+
+/-- **The witness pulls a `mem_op = 3` message at most once.**
+
+    Every table contributes at most one: Main and `RegisterBoundary` by their own bounds, every
+    other component nothing at all (`memBus_mem_op_three_table_component`). And no two tables both
+    contribute — two Mains or two boundaries are the same position in `allTables` by the width
+    profile, and a Main and a boundary cannot both match because a boot pull sits at timestamp `0`
+    while a Main read sits at `offset + 4 * index`.
+
+    This is the bound push-injectivity consumes: a register-pre push rides at `+1`, balance forces
+    as many pulls as pushes, and there is at most one pull. -/
+theorem witness_pullCount_le_one {n : ℕ} (trace : AcceptedZiskTrace n)
+    {refEnv : Environment FGL} {refMult : Expression FGL}
+    {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_ref_op : (eval refEnv refMsg).mem_op = 3) :
+    (trace.witness.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+      (fun i => decide (i.mult = -1) &&
+        decide (i.msg = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted refMult
+          refMsg).toRaw).eval refEnv).msg)) ≤ 1 := by
+  set msg := (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted refMult refMsg).toRaw).eval
+    refEnv).msg with h_msgdef
+  have h_cls : ∀ tbl ∈ trace.witness.allTables,
+      0 < (tbl.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+        (fun i => decide (i.mult = -1) && decide (i.msg = msg)) →
+      tbl.component = Main.componentWithRomMemAndOpBus trace.programLength trace.program
+        ∨ tbl.component = RegisterBoundary.component := by
+    intro tbl h_tbl h_pos
+    obtain ⟨x, h_x, h_px⟩ := List.countP_pos_iff.mp h_pos
+    simp only [Bool.and_eq_true, decide_eq_true_iff] at h_px
+    refine memBus_mem_op_three_table_component trace.constraints_hold trace.spec_holds h_ref_op
+      h_tbl h_x h_px.2 ?_ ?_
+    · rw [h_px.1]; decide
+    · rw [h_px.1]; decide
+  rw [EnsembleWitness.interactionsWith]
+  refine countP_le_one_flatMap _ _ trace.witness.allTables (fun tbl h_tbl => ?_)
+    (fun a b ha hb h_a h_b => ?_)
+  · by_cases h_pos : 0 < (tbl.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP
+        (fun i => decide (i.mult = -1) && decide (i.msg = msg))
+    · rcases h_cls tbl h_tbl h_pos with h_main | h_bd
+      · exact mainTable_pullCount_le_one trace h_tbl h_main
+      · exact registerBoundaryTable_pullCount_le_one h_bd
+    · omega
+  · rcases h_cls _ (List.getElem_mem ha) h_a with h_ma | h_ba <;>
+      rcases h_cls _ (List.getElem_mem hb) h_b with h_mb | h_bb
+    · rw [allTables_index_eq_main trace.witness ha h_ma,
+        allTables_index_eq_main trace.witness hb h_mb]
+    · exfalso
+      obtain ⟨ia, hia, s, h_sa⟩ := exists_mainRead_of_table_pull trace (List.getElem_mem ha) h_ma h_a
+      obtain ⟨ib, hib, h_sb⟩ := exists_boot_of_table_pull trace h_bb h_b
+      have h_eq := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_sa.trans h_sb.symm)
+      rw [RegSlot.eval_memMessageExpr, RegisterBoundary.eval_bootMessageExpr] at h_eq
+      have h_ri := mainTableRowAtOrZero_get trace.program _ ⟨ia, hia⟩
+      simp only [List.get_eq_getElem] at h_ri
+      rw [← h_ri] at h_eq
+      exact mainRead_ne_boot h_ma hia s _ h_eq
+    · exfalso
+      obtain ⟨ib, hib, s, h_sb⟩ := exists_mainRead_of_table_pull trace (List.getElem_mem hb) h_mb h_b
+      obtain ⟨ia, hia, h_sa⟩ := exists_boot_of_table_pull trace h_ba h_a
+      have h_eq := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_sb.trans h_sa.symm)
+      rw [RegSlot.eval_memMessageExpr, RegisterBoundary.eval_bootMessageExpr] at h_eq
+      have h_ri := mainTableRowAtOrZero_get trace.program _ ⟨ib, hib⟩
+      simp only [List.get_eq_getElem] at h_ri
+      rw [← h_ri] at h_eq
+      exact mainRead_ne_boot h_mb hib s _ h_eq
+    · rw [allTables_index_eq_registerBoundary trace.witness ha h_ba,
+        allTables_index_eq_registerBoundary trace.witness hb h_bb]
 
 end ZiskFv.Compliance
