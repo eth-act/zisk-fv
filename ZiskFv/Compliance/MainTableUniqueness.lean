@@ -168,12 +168,54 @@ theorem table_index_of_rawWidth {length : ℕ} {program : Program length}
   rw [← h_unique i h_prof]
   exact h_i
 
-private lemma index_lt_sixteen_of_profile {i w : ℕ}
+theorem index_lt_sixteen_of_profile {i w : ℕ}
     (h : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]? = some w) :
     i < 16 := by
   by_contra h_ge
   rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h
   simp at h
+
+/-- **The index version.** A position in `witness.allTables` whose table has width `w` is the
+    position the profile assigns to `w`. This is what a position-level count needs: it fixes the
+    *index*, not just the table. -/
+theorem allTables_index_of_rawWidth {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {a : ℕ} (ha : a < witness.allTables.length) {w idx : ℕ}
+    (h_width : (witness.allTables[a]).component.rawWidth = w)
+    (h_unique : ∀ i, ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+      = some w → i = idx) :
+    a = idx := by
+  have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[a]?
+      = some (witness.allTables[a]).component := by
+    rw [← witness.allTables_map_component, List.getElem?_map,
+      List.getElem?_eq_getElem ha, Option.map_some]
+  have h_prof : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[a]?
+      = some w := by
+    rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some, h_width]
+  exact h_unique a h_prof
+
+/-- The Main table's index, at a position. -/
+theorem allTables_index_eq_main {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {a : ℕ} (ha : a < witness.allTables.length)
+    (h_component : (witness.allTables[a]).component
+      = Main.componentWithRomMemAndOpBus length program) :
+    a = 15 := by
+  refine allTables_index_of_rawWidth (w := 41) witness ha
+    (by rw [h_component]; exact rawWidth_main program) (fun i h => ?_)
+  have h_lt := index_lt_sixteen_of_profile h
+  interval_cases i <;> simp_all
+
+/-- The `RegisterBoundary` table's index, at a position. -/
+theorem allTables_index_eq_registerBoundary {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    {a : ℕ} (ha : a < witness.allTables.length)
+    (h_component : (witness.allTables[a]).component = RegisterBoundary.component) :
+    a = 1 := by
+  refine allTables_index_of_rawWidth (w := 3) witness ha
+    (by rw [h_component]; exact rawWidth_registerBoundary) (fun i h => ?_)
+  have h_lt := index_lt_sixteen_of_profile h
+  interval_cases i <;> simp_all
 
 /-- A witness table carrying the Main component sits at index `15`, because that is the only place
     the ensemble's width profile shows `41`. -/

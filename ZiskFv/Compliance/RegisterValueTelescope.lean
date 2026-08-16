@@ -305,6 +305,221 @@ read's own slot is active — `mem_op = 3` forces it — so the walk can take it
 turn, and the timestamp strictly **decreases** because the bus-102 descent puts a row's predecessor
 below its own access. -/
 
+
+/-- **Which component can carry a `mem_op = 3` interaction at a multiplicity outside `{0, 1}`.**
+    Only Main and `RegisterBoundary`. Same case analysis as
+    `memBus_mem_op_three_counterpart`, but concluding about the *table the interaction came from*
+    rather than about the interaction's value — which is what a position-level count needs, since
+    two tables could in principle carry equal interaction values. -/
+theorem memBus_mem_op_three_table_component
+    {length : ℕ} {program : Program length}
+    {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
+    (h_constraints : witness.Constraints) (h_specs : witness.Spec)
+    {refEnv : Environment FGL} {refMult : Expression FGL}
+    {refMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h_ref_op : (eval refEnv refMsg).mem_op = 3)
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    {j : Interaction FGL} (h_mem_table : j ∈ table.interactionsWith MemBusChannel.toRaw)
+    (h_msg : j.msg = (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg)
+    (h_ne0 : j.mult ≠ 0) (h_ne1 : j.mult ≠ 1) :
+    table.component = componentWithRomMemAndOpBus length program
+      ∨ table.component = ZiskFv.AirsClean.RegisterBoundary.component := by
+  have h_component_mem :
+      table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
+    EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
+  have h_op_of_emitted :
+      ∀ {env : Environment FGL} {mm : Expression FGL}
+        {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
+        j = ((MemBusChannel.emitted mm msg).toRaw).eval env →
+          (eval env msg).mem_op = 3 := by
+    intro env mm msg h_eval
+    have h_raw :
+        (((MemBusChannel.emitted mm msg).toRaw).eval env).msg =
+          (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    rw [memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_msg := h_raw), h_ref_op]
+  have h_op_of_pushed :
+      ∀ {env : Environment FGL}
+        {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
+        j = ((MemBusChannel.pushed msg).toRaw).eval env →
+          (eval env msg).mem_op = 3 := by
+    intro env msg h_eval
+    have h_raw :
+        (((MemBusChannel.pushed msg).toRaw).eval env).msg =
+          (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    rw [memBusMessage_mem_op_eq_of_eval_pushed_provider_msg_eq (h_msg := h_raw), h_ref_op]
+  have h_op_of_pulled :
+      ∀ {env : Environment FGL}
+        {msg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)},
+        j = ((MemBusChannel.pulled msg).toRaw).eval env →
+          (eval env msg).mem_op = 3 := by
+    intro env msg h_eval
+    have h_raw :
+        (((MemBusChannel.pulled msg).toRaw).eval env).msg =
+          (((MemBusChannel.emitted refMult refMsg).toRaw).eval refEnv).msg := by
+      rw [← h_eval]; exact h_msg
+    rw [memBusMessage_mem_op_eq_of_eval_pulled_provider_msg_eq (h_msg := h_raw), h_ref_op]
+  rcases component_mem_fullRv64im_cases h_component_mem with
+    h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom |
+    h_mem | h_ranges | h_regRange | h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd |
+    h_main
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      have h_ops_nil :
+          table.component.operations.interactionsWith MemBusChannel.toRaw = [] := by
+        simpa [h_verifier] using verifierTable_interactionsWith_memBus_nil length program
+      simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map, h_ops_nil]
+    simp [h_nil] at h_mem_table
+  -- RegisterBoundary: boot survives, reload rides at `+1`.
+  · rcases exists_registerBoundary_mem_row_eval_of_interaction_mem h_regBoundary h_mem_table with
+      ⟨br, h_br, h_eval⟩ | ⟨br, h_br, h_eval⟩
+    · exact Or.inr h_regBoundary
+    · exact absurd (by rw [h_eval, memBus_emitted_eval_mult]; simp [Expression.eval]) h_ne1
+  -- MemAlignReadByte carries `1`.
+  · exfalso
+    rcases exists_memBus_row_eval_of_pair_interactionsWith
+        (by simpa [h_marb] using
+          ZiskFv.AirsClean.MemAlignReadByte.component_interactionsWith_memBus)
+        h_mem_table with ⟨r, h_r, h_eval⟩ | ⟨r, h_r, h_eval⟩
+    · have h_op := h_op_of_pulled h_eval
+      rw [memBusMessage_eval_mem_op] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.MemAlignReadByte.memReadMessageExpr, Expression.eval] using h_op
+      exact absurd h_lit (by decide)
+    · have h_op := h_op_of_pushed h_eval
+      rw [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.MemAlignReadByte.memBusMessage] using h_op
+      exact absurd h_lit (by decide)
+  -- MemAlignByte carries `1` or `1 + is_write`.
+  · exfalso
+    have h_rowSpec := h_specs table h_table
+    rcases exists_memBus_row_eval_of_pair_interactionsWith
+        (by simpa [h_mab] using
+          ZiskFv.AirsClean.MemAlignByte.component_interactionsWith_memBus)
+        h_mem_table with ⟨r, h_r, h_eval⟩ | ⟨r, h_r, h_eval⟩
+    · have h_op := h_op_of_pulled h_eval
+      rw [memBusMessage_eval_mem_op] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.MemAlignByte.memReadMessageExpr, Expression.eval] using h_op
+      exact absurd h_lit (by decide)
+    · have h_spec := h_rowSpec r h_r
+      rw [h_mab, ZiskFv.AirsClean.MemAlignByte.component_spec,
+        component_rowInput_eq_eval_rowInputVar] at h_spec
+      have h_isw := h_spec.2.2.2.2.2.2.2
+      have h_op := h_op_of_pushed h_eval
+      rw [ZiskFv.AirsClean.MemAlignByte.eval_memBusMessageExpr] at h_op
+      change 1 + (eval (table.environment r)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar).is_write = 3 at h_op
+      rcases zero_or_one_of_val_lt_two (by simpa using h_isw) with h0 | h1
+      · rw [h0] at h_op; exact absurd (by rw [← h_op]; ring : (1 : FGL) = 3) (by decide)
+      · rw [h1] at h_op; exact absurd (by rw [← h_op]; norm_num : (2 : FGL) = 3) (by decide)
+  -- MemAlign carries `wr + 1`.
+  · exfalso
+    have h_rowSpec := h_specs table h_table
+    obtain ⟨r, h_r, h_eval⟩ :=
+      exists_memBus_row_eval_of_singleton_interactionsWith
+        (by simpa [h_memAlign] using
+          ZiskFv.AirsClean.MemAlign.component_interactionsWith_memBus)
+        h_mem_table
+    have h_spec := h_rowSpec r h_r
+    rw [h_memAlign, ZiskFv.AirsClean.MemAlign.component_spec,
+      component_rowInput_eq_eval_rowInputVar] at h_spec
+    have h_wr := h_spec.1
+    have h_op := h_op_of_emitted h_eval
+    rw [ZiskFv.AirsClean.MemAlign.eval_memBusMessageExpr] at h_op
+    change (eval (table.environment r)
+      ZiskFv.AirsClean.MemAlign.component.rowInputVar).wr + 1 = 3 at h_op
+    rcases zero_or_one_of_bool h_wr with h0 | h1
+    · rw [h0] at h_op; exact absurd (by rw [← h_op]; ring : (1 : FGL) = 3) (by decide)
+    · rw [h1] at h_op; exact absurd (by rw [← h_op]; norm_num : (2 : FGL) = 3) (by decide)
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      memAlignRangeSlice_table_interactionsWith_memBus_nil h_memAlignRange
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      memAlignRomSlice_table_interactionsWith_memBus_nil h_memAlignRom
+    simp [h_nil] at h_mem_table
+  -- Mem carries `wr + 1` and `1`.
+  · exfalso
+    have h_rowSpec := h_specs table h_table
+    rcases exists_memBus_row_eval_of_pair_interactionsWith
+        (by simpa [h_mem] using
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus)
+        h_mem_table with ⟨r, h_r, h_eval⟩ | ⟨r, h_r, h_eval⟩
+    · have h_spec := h_rowSpec r h_r
+      rw [h_mem] at h_spec
+      have h_rowSpec' := ZiskFv.AirsClean.Mem.spec_of_componentWithDualMemBus_spec _ h_spec
+      rw [component_rowInput_eq_eval_rowInputVar] at h_rowSpec'
+      have h_wr := h_rowSpec'.2.2.2.2.1
+      have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr] at h_op
+      change (eval (table.environment r)
+        ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar).wr + 1 = 3 at h_op
+      rcases zero_or_one_of_bool h_wr with h0 | h1
+      · rw [h0] at h_op; exact absurd (by rw [← h_op]; ring : (1 : FGL) = 3) (by decide)
+      · rw [h1] at h_op; exact absurd (by rw [← h_op]; norm_num : (2 : FGL) = 3) (by decide)
+    · have h_op := h_op_of_emitted h_eval
+      rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_op
+      have h_lit : (1 : FGL) = 3 := by
+        simpa [ZiskFv.AirsClean.Mem.memBusDualMessage] using h_op
+      exact absurd h_lit (by decide)
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      specifiedRangesSlice_table_interactionsWith_memBus_nil h_ranges
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      registerStepRangeSlice_table_interactionsWith_memBus_nil h_regRange
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      arithDiv_table_interactionsWith_memBus_nil h_arithDiv
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      arithMul_table_interactionsWith_memBus_nil h_arithMul
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      staticBinaryExtension_table_interactionsWith_memBus_nil h_binExt
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      staticBinary_table_interactionsWith_memBus_nil h_binary
+    simp [h_nil] at h_mem_table
+  · exfalso
+    have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
+      binaryAdd_table_interactionsWith_memBus_nil h_binaryAdd
+    simp [h_nil] at h_mem_table
+  -- Main: the three register-pre pushes ride at their selector, in `{0, 1}`; the three current
+  -- accesses survive.
+  · obtain ⟨r, h_r, h_branch⟩ := exists_main_mem_row_eval_of_interaction_mem h_main h_mem_table
+    have h_regPre : ∀ t : RegSlot,
+        j = ((MemBusChannel.emitted (t.selectorExpr (componentWithRomMemAndOpBus length program).rowInputVar)
+          (t.regPreMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw).eval (table.environment r) → False := by
+      intro t h_eval
+      rcases main_regPre_mult_zero_or_one h_main (h_constraints table h_table) h_r t with h0 | h1
+      · exact h_ne0 (by rw [h_eval]; exact h0)
+      · exact h_ne1 (by rw [h_eval]; exact h1)
+    rcases h_branch with h_eval | h_eval | h_eval | h_eval | h_eval | h_eval
+    · exact absurd (h_regPre RegSlot.a h_eval) not_false
+    · exact Or.inl h_main
+    · exact absurd (h_regPre RegSlot.b h_eval) not_false
+    · exact Or.inl h_main
+    · exact absurd (h_regPre RegSlot.c h_eval) not_false
+    · exact Or.inl h_main
+
+
+/-! ## The backward step
+
+A register-pre push is answered by an earlier read or by `bootMessage`. When it is a read, that
+read's own slot is active — `mem_op = 3` forces it — so the walk can take its register-pre push in
+turn, and the timestamp strictly **decreases** because the bus-102 descent puts a row's predecessor
+below its own access. -/
+
 /-- A current access at `mem_op = 3` has its register selector set. For the a side that is
 `a_src_mem + 3 * a_src_reg = 3` with both flags boolean, which forces `a_src_reg = 1`. -/
 theorem regSlot_selector_of_mem_op_three
