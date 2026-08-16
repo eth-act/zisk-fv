@@ -27,7 +27,7 @@ open Air.Flat
 open ZiskFv.AirsClean.FullEnsemble
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean
-open ZiskFv.Compliance.Instantiation (RegSlot)
+open ZiskFv.Compliance.Instantiation (RegSlot RegWalkStep)
 
 /-- On a memory-bus message every Main interaction rides at `0`, `+1` or `-1`, so the balance splits
     into a push count minus a pull count. Both counts are positions in the interaction list. -/
@@ -951,5 +951,128 @@ theorem mem_of_chains_getLast_eq {α : Type _} {R : α → α → Prop}
   · have h_sub : l₂.reverse ⊆ l₁.reverse := h.subset
     have : x ∈ l₂.reverse := by simpa using h_mem
     simpa using h_sub this
+
+/-! ## The merge, at the register walk
+
+`mem_of_chains_getLast_eq` wants the link relation injective *unconditionally*, while
+`regPreMessage_inj` needs both endpoints to be active witness rows. Carrying the activeness inside
+the relation reconciles the two: a boot walk is a chain for the restricted relation because every
+one of its steps is active. -/
+
+/-- Lift a value-level `MemBusMessage` equality to the raw-message equality the counting lemmas are
+    stated over. The raw message of an emitted interaction is the element vector of the evaluated
+    message, so this is `congrArg` under `toElements`. -/
+theorem emitted_raw_msg_eq_of_message_eq
+    {env₁ env₂ : Environment FGL} {m₁ m₂ : Expression FGL}
+    {msg₁ msg₂ : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    (h : eval env₁ msg₁ = eval env₂ msg₂) :
+    (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted m₁ msg₁).toRaw).eval env₁).msg
+      = (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted m₂ msg₂).toRaw).eval env₂).msg := by
+  show (Vector.map (fun x => Expression.eval env₁ x) (toElements msg₁)).toArray
+      = (Vector.map (fun x => Expression.eval env₂ x) (toElements msg₂)).toArray
+  rw [Vector.toArray_map, Vector.toArray_map,
+    Instantiation.toElements_eval_toArray, Instantiation.toElements_eval_toArray, h]
+
+/-- **Push-injectivity, on walk steps.** The `RegWalkStep` form of `regPreMessage_inj`, matching
+    `readMessage_inj`'s shape so both can drive the chain lemmas. -/
+theorem regPreMessage_inj_step {n : ℕ} (trace : AcceptedZiskTrace n) {p q : RegWalkStep}
+    (h_p : IsActiveWitnessMainRow trace p) (h_q : IsActiveWitnessMainRow trace q)
+    (h : p.2.regPreMessage p.1 = q.2.regPreMessage q.1) :
+    p = q := by
+  obtain ⟨rp, sp⟩ := p
+  obtain ⟨rq, sq⟩ := q
+  obtain ⟨tp, h_tp, h_cp, ip, h_ip, h_rp, h_selp⟩ := h_p
+  obtain ⟨tq, h_tq, h_cq, iq, h_iq, h_rq, h_selq⟩ := h_q
+  subst h_rp
+  subst h_rq
+  have h_tables : tp = tq := main_table_unique trace.witness h_tp h_tq h_cp h_cq
+  subst h_tables
+  have h_gp : mainTableRowAtOrZero trace.program tp ip
+      = eval (tp.environment (tp.table[ip]'h_ip))
+        (Main.componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar := by
+    have := mainTableRowAtOrZero_get trace.program tp ⟨ip, h_ip⟩
+    simpa using this
+  have h_gq : mainTableRowAtOrZero trace.program tp iq
+      = eval (tp.environment (tp.table[iq]'h_iq))
+        (Main.componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar := by
+    have := mainTableRowAtOrZero_get trace.program tp ⟨iq, h_iq⟩
+    simpa using this
+  rw [h_gp] at h_selp
+  rw [h_gq] at h_selq
+  rw [h_gp, h_gq] at h
+  have h_msg := emitted_raw_msg_eq_of_message_eq
+    (env₁ := tp.environment (tp.table[ip]'h_ip))
+    (env₂ := tp.environment (tp.table[iq]'h_iq))
+    (m₁ := sp.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+      trace.program).rowInputVar)
+    (m₂ := sq.selectorExpr (Main.componentWithRomMemAndOpBus trace.programLength
+      trace.program).rowInputVar)
+    (by rw [RegSlot.eval_regPreMessageExpr, RegSlot.eval_regPreMessageExpr]; exact h)
+  obtain ⟨h_idx, h_slot⟩ :=
+    regPreMessage_inj trace h_tp h_cp h_ip h_iq h_selp h_selq h_msg
+  subst h_idx
+  subst h_slot
+  rfl
+
+/-- `AnswersRegPre`, with activeness carried in the relation, is injective: two active slots whose
+    register-pre pushes are answered by the *same* read are the same slot. -/
+theorem answersRegPre_inj_active {n : ℕ} (trace : AcceptedZiskTrace n) :
+    ∀ a b c : RegWalkStep,
+      (IsActiveWitnessMainRow trace a ∧ RegWalkStep.AnswersRegPre a c) →
+      (IsActiveWitnessMainRow trace b ∧ RegWalkStep.AnswersRegPre b c) → a = b := by
+  rintro a b c ⟨ha, hac⟩ ⟨hb, hbc⟩
+  exact regPreMessage_inj_step trace ha hb (hac.symm.trans hbc)
+
+/-- A boot walk is a chain for the activeness-restricted relation. -/
+theorem isChain_active_of_isChain {n : ℕ} (trace : AcceptedZiskTrace n) :
+    ∀ (l : List RegWalkStep), (∀ q ∈ l, IsActiveWitnessMainRow trace q) →
+      List.IsChain RegWalkStep.AnswersRegPre l →
+      List.IsChain (fun a b => IsActiveWitnessMainRow trace a ∧ RegWalkStep.AnswersRegPre a b) l := by
+  intro l
+  induction l with
+  | nil => intro _ _; exact List.isChain_nil
+  | cons a t ih =>
+      intro h_act h_chain
+      match t with
+      | [] => exact List.isChain_singleton _
+      | b :: r =>
+          rw [List.isChain_cons_cons] at h_chain ⊢
+          exact ⟨⟨h_act a List.mem_cons_self, h_chain.1⟩,
+            ih (fun q hq => h_act q (List.mem_cons_of_mem a hq)) h_chain.2⟩
+
+/-- **The chain merge, at the register walk.** Two boot walks that end at the same anchored slot
+    merge: the head of the shorter one lies on the longer one.
+
+    This is coverage step 4. It is what rules out a register's accesses splitting into two disjoint
+    chains, which is exactly what the offline-memory-checking argument must exclude. -/
+theorem bootWalk_merge {n : ℕ} (trace : AcceptedZiskTrace n)
+    {path₁ path₂ : List RegWalkStep}
+    (h_act₁ : ∀ q ∈ path₁, IsActiveWitnessMainRow trace q)
+    (h_act₂ : ∀ q ∈ path₂, IsActiveWitnessMainRow trace q)
+    (h_ch₁ : List.IsChain RegWalkStep.AnswersRegPre path₁)
+    (h_ch₂ : List.IsChain RegWalkStep.AnswersRegPre path₂)
+    {z : RegWalkStep} (hz₁ : path₁.getLast? = some z) (hz₂ : path₂.getLast? = some z)
+    (h_len : path₂.length ≤ path₁.length)
+    {x : RegWalkStep} (hx : path₂.head? = some x) :
+    x ∈ path₁ :=
+  mem_of_chains_getLast_eq (answersRegPre_inj_active trace)
+    (isChain_active_of_isChain trace path₁ h_act₁ h_ch₁)
+    (isChain_active_of_isChain trace path₂ h_act₂ h_ch₂) hz₁ hz₂ h_len hx
+
+/-- **The boot anchor is unique per register.** Two boot-anchored active slots whose register-pre
+    pushes name the same register are the same slot, because `bootMessage` is determined by `reg`:
+    every other field is a literal. This is what lets two walks for one register be fed to
+    `bootWalk_merge` with a common `z`. -/
+theorem bootAnchoredStep_unique {n : ℕ} (trace : AcceptedZiskTrace n) {p q : RegWalkStep}
+    (h_p : IsActiveWitnessMainRow trace p) (h_q : IsActiveWitnessMainRow trace q)
+    (h_bp : BootAnchoredStep trace p) (h_bq : BootAnchoredStep trace q)
+    (h_ptr : (p.2.regPreMessage p.1).ptr = (q.2.regPreMessage q.1).ptr) :
+    p = q := by
+  obtain ⟨btp, -, -, brp, -, h_ep⟩ := h_bp
+  obtain ⟨btq, -, -, brq, -, h_eq⟩ := h_bq
+  refine regPreMessage_inj_step trace h_p h_q ?_
+  rw [h_ep, h_eq] at h_ptr ⊢
+  simp only [ZiskFv.AirsClean.RegisterBoundary.bootMessage] at h_ptr ⊢
+  rw [h_ptr]
 
 end ZiskFv.Compliance
