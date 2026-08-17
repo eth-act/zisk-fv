@@ -576,4 +576,56 @@ theorem ziskRegFile_eq_of_no_writes_between
         subst this
         rfl
 
+/-! ## Lane decomposition of `entryRegValue`
+
+The register fields (`h_a_lo_t`, `h_a_hi_t`, …) equate a Main-table column to
+`lane_lo`/`lane_hi` of a Sail register. `entryRegValue` is a `BitVec 64` built
+from byte projections of a `MemoryBusEntry`. These two lemmas say that splitting
+it into lanes recovers the entry's chunk fields, so the register-file invariant
+can replace the per-row assumptions. -/
+
+open ZiskFv.Airs.MemoryBus in
+lemma lane_lo_entryRegValue (e : Interaction.MemoryBusEntry FGL)
+    (h_range : memory_entry_chunks_in_range e)
+    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    ZiskFv.Trusted.lane_lo (entryRegValue e) = e.value_0 := by
+  have h_bridge := memory_entry_toField_eq_toBV_toNat e h_range h_no_wrap
+  unfold entryRegValue
+  rw [h_bridge]
+  obtain ⟨h_v0, h_v1⟩ := h_range
+  simp only [memory_entry_packed_no_wrap] at h_no_wrap
+  have h_lit : ((4294967296 : FGL) : Fin GL_prime).val = 4294967296 :=
+    Nat.mod_eq_of_lt (by decide)
+  have h_val : (memory_entry_toField e).val = e.value_0.val + e.value_1.val * 4294967296 := by
+    simp only [memory_entry_toField, Fin.val_add, Fin.val_mul, h_lit,
+      Nat.mod_eq_of_lt (show e.value_1.val * 4294967296 < GL_prime by omega),
+      Nat.mod_eq_of_lt h_no_wrap]
+  have h_lt64 : e.value_0.val + e.value_1.val * 4294967296 < 2 ^ 64 := by omega
+  simp only [ZiskFv.Trusted.lane_lo, BitVec.toNat_ofNat, h_val]
+  refine Fin.ext ?_
+  simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_mod_self_right,
+    Nat.mod_eq_of_lt h_v0]
+
+open ZiskFv.Airs.MemoryBus in
+lemma lane_hi_entryRegValue (e : Interaction.MemoryBusEntry FGL)
+    (h_range : memory_entry_chunks_in_range e)
+    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    ZiskFv.Trusted.lane_hi (entryRegValue e) = e.value_1 := by
+  have h_bridge := memory_entry_toField_eq_toBV_toNat e h_range h_no_wrap
+  unfold entryRegValue
+  rw [h_bridge]
+  obtain ⟨h_v0, h_v1⟩ := h_range
+  simp only [memory_entry_packed_no_wrap] at h_no_wrap
+  have h_lit : ((4294967296 : FGL) : Fin GL_prime).val = 4294967296 :=
+    Nat.mod_eq_of_lt (by decide)
+  have h_val : (memory_entry_toField e).val = e.value_0.val + e.value_1.val * 4294967296 := by
+    simp only [memory_entry_toField, Fin.val_add, Fin.val_mul, h_lit,
+      Nat.mod_eq_of_lt (show e.value_1.val * 4294967296 < GL_prime by omega),
+      Nat.mod_eq_of_lt h_no_wrap]
+  have h_lt64 : e.value_0.val + e.value_1.val * 4294967296 < 2 ^ 64 := by omega
+  simp only [ZiskFv.Trusted.lane_hi, BitVec.toNat_ofNat, h_val]
+  refine Fin.ext ?_
+  simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_div_right _ _ (by omega : 0 < 4294967296),
+    Nat.div_eq_of_lt h_v0, Nat.zero_add, Nat.mod_eq_of_lt h_v1]
+
 end ZiskFv.Compliance
