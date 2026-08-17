@@ -497,4 +497,83 @@ theorem regAgree_succ
             dif_neg (by simp only [beq_iff_eq, ne_eq]; exact h_ne)]
           exact h_prev k h_k
 
+/-! ## The register file as "the last write"
+
+`ziskRegFile` is a recursion over step indices. The register telescope produces a *walk* instead: a
+c-slot somewhere in the witness whose message the operand column carries. To join them, state
+`ziskRegFile` in the form the walk speaks — "the value written by the last step that targeted this
+register, or zero if no step did".
+
+These three lemmas are pure unfolding of the recursion. They carry no bus content. -/
+
+/-- **Step `j` writes register `k`.** The step is in range, its channel output has a register-write
+    entry, and that entry's address names `k`. -/
+def StepWritesReg
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (j : ℕ) (k : Fin 32) : Prop :=
+  ∃ (h : j < ziskTrace.numInstructions) (e : Interaction.MemoryBusEntry FGL),
+    stepRegWrite (stepChannelOutput ⟨j, h⟩ (ziskStep ⟨j, h⟩) (rowDecode ⟨j, h⟩)) = some e
+      ∧ Transpiler.wrap_to_regidx e.ptr = k
+
+/-- A step that does not write `k` leaves `k` alone. -/
+theorem ziskRegFile_succ_of_not_writes
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (j : ℕ) (k : Fin 32) (h_no : ¬ StepWritesReg ziskStep rowDecode j k) :
+    ziskRegFile ziskStep rowDecode (j + 1) k = ziskRegFile ziskStep rowDecode j k := by
+  rw [ziskRegFile]
+  split
+  · next h =>
+      split
+      · next e he =>
+          split
+          · next heq => exact absurd ⟨h, e, he, heq⟩ h_no
+          · rfl
+      · rfl
+  · rfl
+
+/-- A step that writes `k` sets it to that entry's value. -/
+theorem ziskRegFile_succ_of_writes
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (j : ℕ) (k : Fin 32) (h : j < ziskTrace.numInstructions)
+    (e : Interaction.MemoryBusEntry FGL)
+    (he : stepRegWrite (stepChannelOutput ⟨j, h⟩ (ziskStep ⟨j, h⟩) (rowDecode ⟨j, h⟩)) = some e)
+    (heq : Transpiler.wrap_to_regidx e.ptr = k) :
+    ziskRegFile ziskStep rowDecode (j + 1) k = entryRegValue e := by
+  rw [ziskRegFile, dif_pos h, he]
+  dsimp only
+  exact if_pos heq
+
+/-- **No write between two points means no change.** This is the form coverage feeds: the walk says
+    nothing wrote `k` after its link, and this turns that into an equality of register files. -/
+theorem ziskRegFile_eq_of_no_writes_between
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (k : Fin 32) (j : ℕ) :
+    ∀ j' : ℕ, j ≤ j' →
+      (∀ m, j ≤ m → m < j' → ¬ StepWritesReg ziskStep rowDecode m k) →
+      ziskRegFile ziskStep rowDecode j' k = ziskRegFile ziskStep rowDecode j k := by
+  intro j'
+  induction j' with
+  | zero =>
+      intro h_le _
+      have h_j : j = 0 := Nat.le_zero.mp h_le
+      subst h_j
+      rfl
+  | succ m ih =>
+      intro h_le h_no
+      rcases Nat.lt_or_ge j (m + 1) with h_lt | h_ge
+      · have h_jm : j ≤ m := by omega
+        rw [ziskRegFile_succ_of_not_writes ziskStep rowDecode m k (h_no m h_jm (by omega))]
+        exact ih h_jm (fun p hp hp' => h_no p hp (by omega))
+      · have : j = m + 1 := by omega
+        subst this
+        rfl
+
 end ZiskFv.Compliance
