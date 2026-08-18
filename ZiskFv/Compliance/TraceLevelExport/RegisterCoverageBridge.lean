@@ -265,6 +265,7 @@ theorem bootWalk_supplier_value_eq_ziskRegFile
     (h_regAgree : RegAgree ziskStep rowDecodes init k) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
+  obtain ⟨index, h_index, h_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
   sorry
 
 theorem bootWalk_zero_eq_ziskRegFile
