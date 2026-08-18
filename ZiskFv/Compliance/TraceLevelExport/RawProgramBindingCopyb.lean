@@ -874,6 +874,9 @@ noncomputable def ProgramDecode_add_from_rawProgram {n rawLength : Nat}
       h_bits_store_reg := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_true hstoreReg
+      h_bits_a_src_reg := by
+        simp only [romFlagBitsOfExtract]
+        sorry
       h_prog := ?_ }
   intro j hline
   obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline

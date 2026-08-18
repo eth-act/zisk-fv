@@ -256,7 +256,9 @@ theorem root_soundness
             ZiskFv.Trusted.lane_lo
               ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sailTrace ⟨k, hk⟩)).xreg
                 (regidx_to_fin c.r1)) :=
-    fun k hk h_ra c _hc => by
+    fun k hk h_ra c hc => by
+      have pd : RomDecodeBinding.ProgramDecode_add ziskTrace ⟨k, hk⟩ c :=
+        cast (by simp only [ProgramDecode, hc]) (programDecodes ⟨k, hk⟩)
       have h_sail := sail_xreg_eq_ziskRegFile ziskStep rowDecodes init k
         (regidx_to_fin c.r1)
       by_cases h_r1 : regidx_to_fin c.r1 = (0 : Fin 32)

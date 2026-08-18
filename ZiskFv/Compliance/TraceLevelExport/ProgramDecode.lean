@@ -481,6 +481,7 @@ structure ProgramDecode_add {numInstructions : Nat}
   h_bits_store_pc : bits.store_pc = false
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = true
+  h_bits_a_src_reg : bits.a_src_reg = true
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →

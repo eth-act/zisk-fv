@@ -186,6 +186,7 @@ def addAddiSpinAddProgramDecode :
   h_bits_store_pc := by simp [addAddiSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addAddiSpinAddBits, addX1RomFlagBits]
   h_bits_store_reg := by simp [addAddiSpinAddBits, addX1RomFlagBits]
+  h_bits_a_src_reg := by sorry
   h_prog := by
     intro j hline
     change Fin 3 at j

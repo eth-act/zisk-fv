@@ -155,6 +155,7 @@ def addSpinAddProgramDecode :
   h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_reg := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_a_src_reg := by sorry
   h_prog := by
     intro j hline
     change Fin 2 at j
@@ -476,6 +477,7 @@ def addPaddedAddProgramDecode :
   h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_reg := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_a_src_reg := by sorry
   h_prog := by
     intro j hline
     change Fin 2 at j
