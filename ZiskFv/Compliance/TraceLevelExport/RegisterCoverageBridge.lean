@@ -1,6 +1,7 @@
 import ZiskFv.Compliance.RegisterPushCounting
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.RomDecodeBinding
+import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 
 /-!
 # The register coverage bridge — #330 S3
@@ -136,9 +137,25 @@ For register k ≠ 0, any step whose `stepRegWrite` returns `some entry` with
 Loads to x0 have `store_reg = 0` yet `stepRegWrite = some` with ptr targeting x0,
 so the k ≠ 0 hypothesis is essential. -/
 
+private theorem store_reg_one_of_bits_true
+    {numInstructions : Nat}
+    (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (bits : ZiskFv.AirsClean.Main.RomFlagBits)
+    (h_bits : bits.store_reg = true)
+    (h_flags : ZiskFv.AirsClean.Main.romFlags
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val)
+      = ZiskFv.AirsClean.Main.packFlags bits) :
+    (mainRowWithRomSub trace i).rom.store_reg = 1 := by
+  have h_lt := trace.mainTable_index i
+  obtain ⟨_, _, p_store_reg⟩ :=
+    RomDecodeBinding.mainSelectorColumns_of_packFlags trace i h_lt bits h_flags
+  simpa [mainRowWithRomSub, h_bits, ZiskFv.AirsClean.boolF_true] using p_store_reg
+
 theorem store_reg_one_of_stepRegWrite_some_ne_zero
     {ziskTrace : AcceptedZiskTrace numInstructions}
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (pd : ZiskFv.Compliance.ProgramDecode ziskTrace i zs)
     (rd : RowDecode ziskTrace i zs)
     {e : Interaction.MemoryBusEntry FGL}
     (he : stepRegWrite (stepChannelOutput i zs rd) = some e)
@@ -148,5 +165,28 @@ theorem store_reg_one_of_stepRegWrite_some_ne_zero
     first
       | exact rd.h_store_reg
       | (rw [rd.h_store_reg]; split_ifs with h_rd0 <;> [exact absurd (by sorry) hk; rfl])
+      | (have h_lt := ziskTrace.mainTable_index i
+         obtain ⟨j, hline, _, _, _, _, hflags⟩ :=
+           RomDecodeBinding.mainRomColumns_at_eq_program ziskTrace ⟨i.val, h_lt⟩
+         have hpf := pd.h_prog j hline
+         have hpf_flags : (ziskTrace.program j).flags
+             = ZiskFv.AirsClean.Main.packFlags pd.bits := by
+           first | exact hpf.2.2.2 | exact hpf.2.2.2.2 | exact hpf.2.2.2.2.2
+         have h_romflags := hflags.symm.trans hpf_flags
+         exact store_reg_one_of_bits_true ziskTrace i pd.bits
+           (pd.h_bits_store_reg (by sorry)) h_romflags)
+      | (match pd with
+         | .aligned p =>
+           have h_lt := ziskTrace.mainTable_index i
+           obtain ⟨j, hline, _, _, _, _, hflags⟩ :=
+             RomDecodeBinding.mainRomColumns_at_eq_program ziskTrace ⟨i.val, h_lt⟩
+           have hpf := p.h_prog j hline
+           have hpf_flags : (ziskTrace.program j).flags
+               = ZiskFv.AirsClean.Main.packFlags p.bits := by
+             first | exact hpf.2.2.2 | exact hpf.2.2.2.2 | exact hpf.2.2.2.2.2
+           have h_romflags := hflags.symm.trans hpf_flags
+           exact store_reg_one_of_bits_true ziskTrace i p.bits
+             (p.h_bits_store_reg (by sorry)) h_romflags
+         | .unaligned p => sorry)
 
 end ZiskFv.Compliance
