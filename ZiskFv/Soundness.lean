@@ -256,7 +256,14 @@ theorem root_soundness
             ZiskFv.Trusted.lane_lo
               ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sailTrace ⟨k, hk⟩)).xreg
                 (regidx_to_fin c.r1)) :=
-    fun _ _ _ _ _ => by sorry
+    fun k hk h_ra c _hc => by
+      have h_sail := sail_xreg_eq_ziskRegFile ziskStep rowDecodes init k
+        (regidx_to_fin c.r1)
+      by_cases h_r1 : regidx_to_fin c.r1 = (0 : Fin 32)
+      · sorry
+      · rw [show sailTrace ⟨k, hk⟩ = chainedSailStates ziskStep init k from rfl,
+          h_sail h_r1 h_ra]
+        sorry
   have key : ∀ (k : ℕ) (hk : k < numInstructions),
       StepSound ziskTrace sailTrace ⟨k, hk⟩ (ziskStep ⟨k, hk⟩) (rowDecodes ⟨k, hk⟩)
       ∧ RegAgree ziskStep rowDecodes init (k + 1) := by
