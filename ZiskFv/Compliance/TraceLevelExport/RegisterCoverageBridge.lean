@@ -137,6 +137,43 @@ For register k ≠ 0, any step whose `stepRegWrite` returns `some entry` with
 Loads to x0 have `store_reg = 0` yet `stepRegWrite = some` with ptr targeting x0,
 so the k ≠ 0 hypothesis is essential. -/
 
+private theorem cMem_ptr_eq_ind
+    {numInstructions : Nat}
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {rd : Fin 32}
+    (h_store_ind : (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_ind = 0)
+    (h_store_offset : (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_offset = Transpiler.ind rd)
+    {e : Interaction.MemoryBusEntry FGL}
+    (he : (ZiskFv.AirsClean.Main.cMemMessage
+      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1 = e) :
+    e.ptr = Transpiler.ind rd := by
+  have h_addr_spec :=
+    (RomDecodeBinding.mainAddressSpec_at ziskTrace ⟨i.val, ziskTrace.mainTable_index i⟩).2.2.1
+  have h_addr2 : (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.addr2
+      = Transpiler.ind rd := by
+    rw [h_addr_spec, h_store_offset, h_store_ind]; ring
+  rw [← he]; simp [ZiskFv.AirsClean.Main.cMemMessage,
+    ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry, h_addr2]
+
+private theorem regidx_ne_zero_of_cMem_wrap
+    {numInstructions : Nat}
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (i : Fin ziskTrace.numInstructions)
+    {rd : Fin 32}
+    (h_store_ind : (mainRowWithRomSub ziskTrace i).rom.store_ind = 0)
+    (h_store_offset : (mainRowWithRomSub ziskTrace i).rom.store_offset = Transpiler.ind rd)
+    {e : Interaction.MemoryBusEntry FGL}
+    (he : (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSub ziskTrace i)).toEntry 1 1 = e)
+    (hk : Transpiler.wrap_to_regidx e.ptr ≠ 0) :
+    rd.val ≠ 0 := by
+  have h_eptr := cMem_ptr_eq_ind ziskTrace i
+    (by simpa [mainRowWithRomSub] using h_store_ind)
+    (by simpa [mainRowWithRomSub] using h_store_offset)
+    (by simpa [mainRowWithRomSub] using he)
+  rw [h_eptr, Transpiler.wrap_to_regidx_ind] at hk
+  exact fun h => hk (Fin.ext h)
+
 private theorem store_reg_one_of_bits_true
     {numInstructions : Nat}
     (trace : AcceptedZiskTrace numInstructions)
@@ -164,7 +201,6 @@ theorem store_reg_one_of_stepRegWrite_some_ne_zero
   cases zs <;> simp_all [stepRegWrite, stepChannelOutput] <;>
     first
       | exact rd.h_store_reg
-      | (rw [rd.h_store_reg]; split_ifs with h_rd0 <;> [exact absurd (by sorry) hk; rfl])
       | (have h_lt := ziskTrace.mainTable_index i
          obtain ⟨j, hline, _, _, _, _, hflags⟩ :=
            RomDecodeBinding.mainRomColumns_at_eq_program ziskTrace ⟨i.val, h_lt⟩
@@ -172,9 +208,32 @@ theorem store_reg_one_of_stepRegWrite_some_ne_zero
          have hpf_flags : (ziskTrace.program j).flags
              = ZiskFv.AirsClean.Main.packFlags pd.bits := by
            first | exact hpf.2.2.2 | exact hpf.2.2.2.2 | exact hpf.2.2.2.2.2
+                 | exact hpf.2.2.2.2.2.2
+         have h_romflags := hflags.symm.trans hpf_flags
+         have h_eptr := cMem_ptr_eq_ind ziskTrace i
+           (by simpa [mainRowWithRomLd] using rd.h_store_ind)
+           (by simpa [mainRowWithRomLd] using rd.h_store_offset)
+           (by simpa [mainRowWithRomLd] using he)
+         have hrd_ne : Transpiler.wrap_to_regidx (Transpiler.ind
+             (Transpiler.regidxOfBitVec5 _)) ≠ 0 := by rwa [h_eptr] at hk
+         rw [Transpiler.wrap_to_regidx_ind] at hrd_ne
+         have h_bits : pd.bits.store_reg = true := by
+           rw [pd.h_bits_store_reg]
+           exact decide_eq_true (by rwa [Transpiler.regidxOfBitVec5_eq_zero_iff] at hrd_ne)
+         exact store_reg_one_of_bits_true ziskTrace i pd.bits h_bits h_romflags)
+      | (have h_lt := ziskTrace.mainTable_index i
+         obtain ⟨j, hline, _, _, _, _, hflags⟩ :=
+           RomDecodeBinding.mainRomColumns_at_eq_program ziskTrace ⟨i.val, h_lt⟩
+         have hpf := pd.h_prog j hline
+         have hpf_flags : (ziskTrace.program j).flags
+             = ZiskFv.AirsClean.Main.packFlags pd.bits := by
+           first | exact hpf.2.2.2 | exact hpf.2.2.2.2 | exact hpf.2.2.2.2.2
+                 | exact hpf.2.2.2.2.2.2
          have h_romflags := hflags.symm.trans hpf_flags
          exact store_reg_one_of_bits_true ziskTrace i pd.bits
-           (pd.h_bits_store_reg (by sorry)) h_romflags)
+           (pd.h_bits_store_reg
+             (regidx_ne_zero_of_cMem_wrap ziskTrace i rd.h_store_ind rd.h_store_offset he hk))
+           h_romflags)
       | (match pd with
          | .aligned p =>
            have h_lt := ziskTrace.mainTable_index i
@@ -184,9 +243,10 @@ theorem store_reg_one_of_stepRegWrite_some_ne_zero
            have hpf_flags : (ziskTrace.program j).flags
                = ZiskFv.AirsClean.Main.packFlags p.bits := by
              first | exact hpf.2.2.2 | exact hpf.2.2.2.2 | exact hpf.2.2.2.2.2
+                 | exact hpf.2.2.2.2.2.2
            have h_romflags := hflags.symm.trans hpf_flags
            exact store_reg_one_of_bits_true ziskTrace i p.bits
-             (p.h_bits_store_reg (by sorry)) h_romflags
+             (p.h_bits_store_reg (by sorry)) h_romflags  -- JALR aligned: needs addr2 bridge for the AND row
          | .unaligned p => sorry)
 
 end ZiskFv.Compliance
