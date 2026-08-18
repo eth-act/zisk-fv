@@ -244,4 +244,35 @@ theorem isActiveWitnessMainRow_eq_mainTableRow {n : Nat} (trace : AcceptedZiskTr
   subst h_same
   exact ⟨index, h_index, h_eq⟩
 
+/-! ## Boot-walk value = register file value
+
+The boot walk's supplier value at slot c equals the register file value. This
+is the fundamental theorem connecting the circuit-level boot walk to the
+step-level register file. -/
+
+theorem bootWalk_supplier_value_eq_ziskRegFile
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (k : ℕ) (hk : k < n)
+    (r : Fin 32) (hr : r ≠ 0)
+    (q : RegWalkStep) (h_active : IsActiveWitnessMainRow trace q)
+    (h_slot_c : q.2 = Instantiation.RegSlot.c)
+    (h_regAgree : RegAgree ziskStep rowDecodes init k) :
+    (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
+      ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
+  sorry
+
+theorem bootWalk_zero_eq_ziskRegFile
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (k : ℕ) (hk : k < n)
+    (r : Fin 32) (hr : r ≠ 0)
+    (h_regAgree : RegAgree ziskStep rowDecodes init k) :
+    (0 : FGL) = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
+  sorry
+
 end ZiskFv.Compliance

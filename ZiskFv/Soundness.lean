@@ -292,8 +292,12 @@ theorem root_soundness
           simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
             ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt']
         rcases h_boot_walk with ⟨h0, _⟩ | ⟨q, h_active, h_slot_c, h_val0, _⟩
-        · rw [h_a0_eq]; convert h0.symm ▸ (by sorry : 0 = Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k (regidx_to_fin c.r1)))
-        · rw [h_a0_eq]; convert h_val0.symm ▸ (by sorry : (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 = Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k (regidx_to_fin c.r1)))
+        · rw [h_a0_eq]; convert h0.symm ▸
+            (bootWalk_zero_eq_ziskRegFile ziskTrace ziskStep rowDecodes init k hk
+              (regidx_to_fin c.r1) h_r1 h_ra)
+        · rw [h_a0_eq]; convert h_val0.symm ▸
+            (bootWalk_supplier_value_eq_ziskRegFile ziskTrace ziskStep rowDecodes init k hk
+              (regidx_to_fin c.r1) h_r1 q h_active h_slot_c h_ra)
   have key : ∀ (k : ℕ) (hk : k < numInstructions),
       StepSound ziskTrace sailTrace ⟨k, hk⟩ (ziskStep ⟨k, hk⟩) (rowDecodes ⟨k, hk⟩)
       ∧ RegAgree ziskStep rowDecodes init (k + 1) := by
