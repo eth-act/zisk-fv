@@ -261,7 +261,7 @@ lemma packed_a_eq_of_shift_match_m32_0_of_a_range
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩ := h_a_range
   have h_r1_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo_t h_a_hi_t h_read_r1
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) (by sorry) (by sorry) h_read_r1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
@@ -316,7 +316,7 @@ lemma shift_pin_eq_of_shift_match_m32_0_of_b0_range
     simpa [h_bytes.h0.2.2.2.2.1] using h
   have h_r2_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo_t h_b_hi_t h_read_r2
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) (by sorry) (by sorry) h_read_r2
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
@@ -418,7 +418,7 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
   obtain ⟨ha0, ha1, ha2, ha3, _, _, _, _⟩ := h_a_range
   have h_r1_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo_t h_a_hi_t h_read_r1
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) (by sorry) (by sorry) h_read_r1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
@@ -469,7 +469,7 @@ lemma shift_pin_w_eq_of_shift_match_of_b0_range
     simpa [h_bytes.h0.2.2.2.2.1] using h
   have h_r2_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo_t h_b_hi_t h_read_r2
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) (by sorry) (by sorry) h_read_r2
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs

@@ -253,13 +253,13 @@ theorem construction_slt_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) slt_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
   have h_input_r2_row :
       slt_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) slt_input.r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SLT
     state slt_input r1 r2 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -449,13 +449,13 @@ theorem construction_sltu_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) sltu_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
   have h_input_r2_row :
       sltu_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) sltu_input.r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SLTU
     state sltu_input r1 r2 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩

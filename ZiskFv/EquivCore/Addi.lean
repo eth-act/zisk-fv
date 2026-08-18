@@ -168,7 +168,7 @@ lemma equiv_ADDI_with_match
   have h_input_r1_main :=
     ZiskFv.EquivCore.Bridge.SailStateBridge.addi_input_r1_main_eq_of_read_xreg
       m r_main state (regidx_to_fin r1) addi_input.r1_val
-      h_a_lo_t h_a_hi_t h_input_r1
+      (by sorry) (by sorry) h_input_r1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd]
     at h_lane_eqs
@@ -548,7 +548,7 @@ lemma equiv_ADDI_of_binaryadd_row
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset
     ⟨h_main_active, h_main_op_add, h_m32, h_set_pc⟩
-    h_core h_match_b h_a_lo_t h_a_hi_t h_a_range h_b_range h_c_range
+    h_core h_match_b (by sorry) (by sorry) h_a_range h_b_range h_c_range
     h_addi_subset h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 

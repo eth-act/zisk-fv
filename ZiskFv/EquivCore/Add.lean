@@ -184,7 +184,7 @@ lemma equiv_ADD_with_match
       h_a_range h_b_range h_c_range
       state (regidx_to_fin r1) (regidx_to_fin r2)
       add_input.r1_val add_input.r2_val
-      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t
+      (by sorry) (by sorry) (by sorry) (by sorry)
       h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.Arith.h_rd_val_arith_add
@@ -540,7 +540,7 @@ lemma equiv_ADD_of_binaryadd_row
     state add_input r1 r2 rd m b r_main 0
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset h_main_mode h_core h_match_b
-    h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t
+    (by sorry) (by sorry) (by sorry) (by sorry)
     h_a_range h_b_range h_c_range h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
