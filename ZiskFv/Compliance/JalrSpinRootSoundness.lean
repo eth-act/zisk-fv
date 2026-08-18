@@ -345,6 +345,7 @@ def setupProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := by intro h; first | rfl | exact absurd (by decide) h
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline

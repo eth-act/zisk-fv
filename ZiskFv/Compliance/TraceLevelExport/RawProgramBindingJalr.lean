@@ -509,6 +509,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
             h_bits_set_pc := ?_
             h_bits_store_pc := ?_
             h_bits_store_ind := ?_
+            h_bits_store_reg := ?_
             h_prog := ?_ }
       · exact hieo
       · exact hm32
@@ -545,6 +546,14 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
           exact decide_eq_false (by
             rw [hnonzero.2.1]
             simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
+      · intro hrd0
+        unfold JalrDestinationPins at hdest
+        rcases hdest with hzero | hnonzero
+        · change input.rd = 0#u32 ∧ _ at hzero
+          exact absurd (by rw [← show input.rd.val = (regidx_to_fin c.rd).val by simpa [rd] using hrd]; exact congrArg UScalar.val hzero.1) hrd0
+        · change input.rd ≠ 0#u32 ∧ rows.last_row.store = zisk_inst.STORE_REG ∧ _ at hnonzero
+          simp only [bits, romFlagBitsOfExtract]
+          exact decide_eq_true hnonzero.2.1
       · intro j hline
         obtain ⟨k, hk, haddr, hraw⟩ := hLine j hline
         have hprimary := primary_row_of_programRowsBinding hbind

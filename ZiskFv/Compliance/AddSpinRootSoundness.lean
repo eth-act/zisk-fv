@@ -154,6 +154,7 @@ def addSpinAddProgramDecode :
   h_bits_set_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_store_reg := by simp [addSpinAddBits, addX1RomFlagBits]
   h_prog := by
     intro j hline
     change Fin 2 at j
@@ -189,6 +190,7 @@ def addSpinJalProgramDecode :
   h_bits_set_pc := by rfl
   h_bits_store_pc := by rfl
   h_bits_store_ind := by rfl
+  h_bits_store_reg := by intro h; exact absurd (by decide : (regidx_to_fin x0).val = 0) h
   h_prog := by
     intro j hline
     change Fin 2 at j
@@ -480,6 +482,7 @@ def addPaddedAddProgramDecode :
   h_bits_set_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
+  h_bits_store_reg := by simp [addSpinAddBits, addX1RomFlagBits]
   h_prog := by
     intro j hline
     change Fin 2 at j

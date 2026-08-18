@@ -473,7 +473,7 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_sub rd rs1 rs2 (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
   obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-      hstoreOffset, hstoreInd, _⟩ :=
+      hstoreOffset, hstoreInd, hstoreReg⟩ :=
     (transpile_sub rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
   refine
@@ -484,6 +484,7 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
       h_bits_set_pc := ?_
       h_bits_store_pc := ?_
       h_bits_store_ind := ?_
+      h_bits_store_reg := ?_
       h_prog := ?_ }
   · simpa only [ext, romFlagBitsOfExtract] using hieo
   · simpa only [ext, romFlagBitsOfExtract] using hm32
@@ -491,6 +492,9 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
   · simpa only [ext, romFlagBitsOfExtract] using hstorepc
   · simp only [romFlagBitsOfExtract]
     exact decide_eq_false hstoreInd
+  · intro hrd0
+    simp only [romFlagBitsOfExtract]
+    exact decide_eq_true (hstoreReg hrd0)
   · intro j hline
     obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
     have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
@@ -568,7 +572,7 @@ local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term :
     let ext := ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd, _⟩ :=
+        hstoreOffset, hstoreInd, hstoreReg⟩ :=
       ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
     refine
@@ -579,6 +583,7 @@ local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term :
         h_bits_set_pc := ?_
         h_bits_store_pc := ?_
         h_bits_store_ind := ?_
+        h_bits_store_reg := ?_
         h_prog := ?_ }
     · simpa only [ext, romFlagBitsOfExtract] using hieo
     · simpa only [ext, romFlagBitsOfExtract] using hm32
@@ -586,6 +591,9 @@ local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term :
     · simpa only [ext, romFlagBitsOfExtract] using hstorepc
     · simp only [romFlagBitsOfExtract]
       exact decide_eq_false hstoreInd
+    · intro hrd0
+      simp only [romFlagBitsOfExtract]
+      exact decide_eq_true (hstoreReg hrd0)
     · intro j hline
       obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
       have hprimary := primary_row_at_architectural_line hbind j k haddr.symm

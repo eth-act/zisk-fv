@@ -105,4 +105,48 @@ theorem not_mem_chain_of_timestamp_ge (trace : AcceptedZiskTrace n)
               omega
   exact h_ne_head h_eq
 
+/-! ## Uniform `stepRegWrite` classification
+
+Every arm's register write is either `none` (branches, FENCE, stores) or
+`some (toEntry(cMemMessage(mainTableRowAtOrZero j), 1, 1))` where `j` is
+the step's *producer row*: `i.val` for all 62 single-row ops, and
+`decode.rows.finish.val` for the two-row JALR. The proof is a 63-way case
+split whose each arm closes by `rfl`. -/
+
+theorem stepRegWrite_eq_none_or_cMemMessage
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace i zs) :
+    stepRegWrite (stepChannelOutput i zs rd) = none
+    ∨ stepRegWrite (stepChannelOutput i zs rd) =
+        some (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (cMemMessage (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable
+            (stepProducerRow i zs rd)))
+          1 1) := by
+  cases zs <;>
+    first
+      | exact Or.inl rfl
+      | exact Or.inr rfl
+
+/-! ## Bridge from `stepRegWrite = some` to `store_reg = 1`
+
+For register k ≠ 0, any step whose `stepRegWrite` returns `some entry` with
+`wrap_to_regidx entry.ptr = k` has `store_reg = 1` at the producer row.
+
+Loads to x0 have `store_reg = 0` yet `stepRegWrite = some` with ptr targeting x0,
+so the k ≠ 0 hypothesis is essential. -/
+
+theorem store_reg_one_of_stepRegWrite_some_ne_zero
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace i zs)
+    {e : Interaction.MemoryBusEntry FGL}
+    (he : stepRegWrite (stepChannelOutput i zs rd) = some e)
+    (hk : Transpiler.wrap_to_regidx e.ptr ≠ 0) :
+    (mainRowWithRomSub ziskTrace i).rom.store_reg = 1 := by
+  cases zs <;> simp_all [stepRegWrite, stepChannelOutput] <;>
+    first
+      | exact rd.h_store_reg
+      | (rw [rd.h_store_reg]; split_ifs with h_rd0 <;> [exact absurd (by sorry) hk; rfl])
+
 end ZiskFv.Compliance

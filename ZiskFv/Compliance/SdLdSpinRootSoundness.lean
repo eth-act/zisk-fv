@@ -232,6 +232,7 @@ def sdLdAddiA0ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := by intro h; first | rfl | exact absurd (by decide) h
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline
@@ -266,6 +267,7 @@ def sdLdSlliProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := by intro h; first | rfl | exact absurd (by decide) h
   h_prog := by
     intro j hline
     have hj : j = ⟨1, by decide⟩ := sdLdProgramIndex_eq sdLdSlliIndex j hline
@@ -287,6 +289,7 @@ def sdLdAddiEightProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := by intro h; first | rfl | exact absurd (by decide) h
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline
@@ -309,6 +312,7 @@ def sdLdAddiX2ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := by intro h; first | rfl | exact absurd (by decide) h
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline
@@ -372,6 +376,7 @@ def sdLdJalProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := by intro h; first | rfl | exact absurd (by decide) h
   h_prog := by
     intro j hline
     have hj : j = ⟨6, by decide⟩ := sdLdProgramIndex_eq sdLdJalIndex j hline
