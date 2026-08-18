@@ -107,16 +107,6 @@ structure InputsCore_sub (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok sub_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC
   h_input_rd : sub_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_sub` carries on top of `InputsCore_sub`.
 
@@ -198,16 +188,6 @@ structure InputsCore_and (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok and_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some and_input.PC
   h_input_rd : and_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_and` carries on top of `InputsCore_and`.
 
@@ -283,16 +263,6 @@ structure InputsCore_or (trace : AcceptedZiskTrace numInstructions) (binding : S
       = EStateM.Result.ok or_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some or_input.PC
   h_input_rd : or_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_or` carries on top of `InputsCore_or`.
 
@@ -368,16 +338,6 @@ structure InputsCore_xor (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok xor_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some xor_input.PC
   h_input_rd : xor_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_xor` carries on top of `InputsCore_xor`.
 
@@ -453,16 +413,6 @@ structure InputsCore_slt (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok slt_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some slt_input.PC
   h_input_rd : slt_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_slt` carries on top of `InputsCore_slt`.
 
@@ -538,16 +488,6 @@ structure InputsCore_sltu (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok sltu_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some sltu_input.PC
   h_input_rd : sltu_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_sltu` carries on top of `InputsCore_sltu`.
 
@@ -1023,16 +963,6 @@ structure InputsCore_sll (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok sll_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some sll_input.PC
   h_input_rd : sll_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_sll` carries on top of `InputsCore_sll`.
 
@@ -1108,16 +1038,6 @@ structure InputsCore_srl (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok srl_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some srl_input.PC
   h_input_rd : srl_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_srl` carries on top of `InputsCore_srl`.
 
@@ -1193,16 +1113,6 @@ structure InputsCore_sra (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok sra_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some sra_input.PC
   h_input_rd : sra_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_sra` carries on top of `InputsCore_sra`.
 
@@ -1506,16 +1416,6 @@ structure InputsCore_sllw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok sllw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some sllw_input.PC
   h_input_rd : sllw_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_sllw` carries on top of `InputsCore_sllw`.
 
@@ -1591,16 +1491,6 @@ structure InputsCore_srlw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok srlw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some srlw_input.PC
   h_input_rd : srlw_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_srlw` carries on top of `InputsCore_srlw`.
 
@@ -1676,16 +1566,6 @@ structure InputsCore_sraw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok sraw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some sraw_input.PC
   h_input_rd : sraw_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_sraw` carries on top of `InputsCore_sraw`.
 
@@ -1757,9 +1637,6 @@ structure InputsCore_slliw (trace : AcceptedZiskTrace numInstructions) (binding 
       = EStateM.Result.ok c.slliw_input.r1_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some c.slliw_input.PC
   h_input_rd : c.slliw_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_w_b_lo c.slliw_input.shamt
 
 /-- The PC agreement `Inputs_slliw` carries on top of `InputsCore_slliw`.
 
@@ -1831,9 +1708,6 @@ structure InputsCore_srliw (trace : AcceptedZiskTrace numInstructions) (binding 
       = EStateM.Result.ok c.srliw_input.r1_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some c.srliw_input.PC
   h_input_rd : c.srliw_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_w_b_lo c.srliw_input.shamt
 
 /-- The PC agreement `Inputs_srliw` carries on top of `InputsCore_srliw`.
 
@@ -1905,9 +1779,6 @@ structure InputsCore_sraiw (trace : AcceptedZiskTrace numInstructions) (binding 
       = EStateM.Result.ok c.sraiw_input.r1_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some c.sraiw_input.PC
   h_input_rd : c.sraiw_input.rd = regidx_to_fin c.rd
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_w_b_lo c.sraiw_input.shamt
 
 /-- The PC agreement `Inputs_sraiw` carries on top of `InputsCore_sraiw`.
 
