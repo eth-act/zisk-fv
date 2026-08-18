@@ -1356,7 +1356,12 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
     (memEv : MemoryOpEvidenceFor ziskTrace sailTrace i zs)
-    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs) :
+    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs)
+    (h_add_a_lo : ∀ (c : Claim_add ziskTrace i), zs = .add c →
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).a_0 i.val =
+        ZiskFv.Trusted.lane_lo
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sailTrace i)).xreg
+            (regidx_to_fin c.r1))) :
     StepSound ziskTrace sailTrace i zs rd := by
   cases zs with
   | sub c =>
@@ -1412,7 +1417,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | add c =>
       exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia)
-        (by sorry)
+        (h_add_a_lo c rfl)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | addi c =>
       exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia)

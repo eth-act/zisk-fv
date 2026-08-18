@@ -816,6 +816,7 @@ theorem sailRetireChain_of_inputsAgree
     have h_step := stepSound_of_evidence ziskTrace binding ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
       (rowDecodes ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩)
       (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
+      (fun _ _ => by sorry)
     have h_iff :=
       (stepSound_iff (binding := binding) ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).mp h_step
     have h_ok :

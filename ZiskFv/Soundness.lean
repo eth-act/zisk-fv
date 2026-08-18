@@ -134,12 +134,14 @@ theorem stepSound_of_programDecodes
           (stepSound_of_evidence ziskTrace sailTrace ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
             (rowDecode_of_programDecode ziskTrace ⟨j, hj⟩ (programDecodes ⟨j, hj⟩))
             (inputsAgree_of_pcBridge ⟨j, hj⟩ (ih hj) (ziskStep ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩))
-            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩))
+            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
+            (fun _ _ => by sorry))
   intro i
   exact stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
     (rowDecode_of_programDecode ziskTrace i (programDecodes i))
     (inputsAgree_of_pcBridge i (key i.val i.isLt) (ziskStep i) (inputsAgree i))
     (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
+    (fun _ _ => by sorry)
 
 /-- **The root soundness theorem — the entrypoint for an audit of this project's
     soundness claim.** The entire compliance statement is reachable from here:
