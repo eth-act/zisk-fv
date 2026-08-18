@@ -249,4 +249,19 @@ theorem store_reg_one_of_stepRegWrite_some_ne_zero
              (p.h_bits_store_reg (by sorry)) h_romflags  -- JALR aligned: needs addr2 bridge for the AND row
          | .unaligned p => sorry)
 
+/-! ## Step-index bridge for the boot walk
+
+`IsActiveWitnessMainRow trace q` gives a row in SOME Main table. By `main_table_unique`,
+that table is `trace.mainTable`. The row's index gives a step index. -/
+
+theorem isActiveWitnessMainRow_eq_mainTableRow {n : Nat} (trace : AcceptedZiskTrace n)
+    {q : RegWalkStep} (h : IsActiveWitnessMainRow trace q) :
+    ∃ index : ℕ, index < trace.mainTable.table.length ∧
+      q.1 = mainTableRowAtOrZero trace.program trace.mainTable index := by
+  obtain ⟨table, h_table, h_component, index, h_index, h_eq, _⟩ := h
+  have h_same : table = trace.mainTable :=
+    main_table_unique trace.witness h_table trace.mainTable_mem h_component trace.mainTable_component
+  subst h_same
+  exact ⟨index, h_index, h_eq⟩
+
 end ZiskFv.Compliance
