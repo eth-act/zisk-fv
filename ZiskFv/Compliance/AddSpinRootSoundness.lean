@@ -396,7 +396,7 @@ theorem addSpinRootSoundness :
       (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
     addSpinProgramDecodes addSpinInputsAgreeCore addSpinPcChain addSpinRowsAligned
-    addSpinBootSeed addSpinOutsideDefectRegion
+    addSpinBootSeed addSpinOutsideDefectRegion (fun _ _ _ => by sorry)
 
 theorem addSpinAddStepSound :
     StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
@@ -647,7 +647,7 @@ theorem addPaddedRootSoundness :
       (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
   stepSound_of_programDecodes 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
     addPaddedProgramDecodes addPaddedInputsAgreeCore addPaddedPcChain addPaddedRowsAligned
-    addPaddedBootSeed addPaddedOutsideDefectRegion
+    addPaddedBootSeed addPaddedOutsideDefectRegion (fun _ _ _ => by sorry)
 
 theorem addPaddedAddStepSound :
     StepSound addPaddedAcceptedTrace addPaddedSailTrace addPaddedAddIndex

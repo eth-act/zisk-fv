@@ -113,7 +113,13 @@ theorem stepSound_of_programDecodes
       (fun i => rowDecode_of_programDecode ziskTrace i (programDecodes i)))
     (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
+      RowOutsideDefectRegion ziskTrace i (ziskStep i))
+    (h_add_a_lo : ∀ (i : Fin numInstructions) (c : Claim_add ziskTrace i),
+      ziskStep i = .add c →
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).a_0 i.val =
+        ZiskFv.Trusted.lane_lo
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sailTrace i)).xreg
+            (regidx_to_fin c.r1))) :
     ∀ i : Fin numInstructions,
       StepSound ziskTrace sailTrace i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i (programDecodes i)) := by
@@ -135,13 +141,13 @@ theorem stepSound_of_programDecodes
             (rowDecode_of_programDecode ziskTrace ⟨j, hj⟩ (programDecodes ⟨j, hj⟩))
             (inputsAgree_of_pcBridge ⟨j, hj⟩ (ih hj) (ziskStep ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩))
             (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
-            (fun _ _ => by sorry))
+            (fun c hc => h_add_a_lo ⟨j, hj⟩ c (by rw [hc])))
   intro i
   exact stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
     (rowDecode_of_programDecode ziskTrace i (programDecodes i))
     (inputsAgree_of_pcBridge i (key i.val i.isLt) (ziskStep i) (inputsAgree i))
     (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
-    (fun _ _ => by sorry)
+    (fun c hc => h_add_a_lo i c hc)
 
 /-- **The root soundness theorem — the entrypoint for an audit of this project's
     soundness claim.** The entire compliance statement is reachable from here:
@@ -242,5 +248,6 @@ theorem root_soundness
     { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
       boot := pcBoot }
     rowsAligned bootSeed hAvoidKnownBugs
+    (fun _ _ _ => by sorry)
 
 end ZiskFv.Compliance

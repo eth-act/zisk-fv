@@ -527,6 +527,7 @@ theorem jalrSpinRootSoundness :
         (rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i)) :=
   stepSound_of_programDecodes 2 jalrAcceptedTrace sailTrace jalrSpinZiskStep
     programDecodes inputsAgreeCore jalrPcChain jalrRowsAligned bootSeed outsideDefectRegion
+    (fun _ _ _ => by sorry)
 
 theorem jalrStepSound :
     StepSound jalrAcceptedTrace sailTrace jalrIndex

@@ -31,7 +31,7 @@ theorem divSpinRootSoundness :
         (rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 4 divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep
     divSpinProgramDecodes divSpinInputsAgreeCore divSpinPcChain divSpinRowsAligned
-    divSpinBootSeed divSpinOutsideDefectRegion
+    divSpinBootSeed divSpinOutsideDefectRegion (fun _ _ _ => by sorry)
 
 theorem divSpinAddiX1StepSound :
     StepSound divSpinAcceptedTrace divSpinSailTrace divSpinAddiX1Index

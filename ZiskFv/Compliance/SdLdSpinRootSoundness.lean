@@ -1057,7 +1057,7 @@ theorem sdLdRootSoundness :
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
   stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
     sdLdProgramDecodes sdLdInputsAgreeCore sdLdPcChain sdLdRowsAligned
-    sdLdBootSeed sdLdOutsideDefectRegion
+    sdLdBootSeed sdLdOutsideDefectRegion (fun _ _ _ => by sorry)
 
 theorem sdLdAddiA0StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index

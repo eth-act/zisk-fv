@@ -525,6 +525,7 @@ theorem addAddiSpinRootSoundness :
   stepSound_of_programDecodes 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
     addAddiSpinProgramDecodes addAddiSpinInputsAgreeCore addAddiSpinPcChain
     addAddiSpinRowsAligned addAddiSpinBootSeed addAddiSpinOutsideDefectRegion
+    (fun _ _ _ => by sorry)
 
 theorem addAddiSpinAddStepSound :
     StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinAddIndex
