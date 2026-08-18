@@ -689,7 +689,7 @@ local macro "shift_program_decode" nm:ident "," upper:term "," f3:term "," opw:t
       (i : Fin trace.numInstructions) (c : $claimName trace i)
       (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32) where
     h_idx : i.val + 1 < trace.mainTable.table.length
-    h_b_lo_t :
+    h_b_lo_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.shamt_b_lo c.shamt
     hLine : ∀ j : Fin trace.programLength,
@@ -724,8 +724,8 @@ local macro "shift_program_decode" nm:ident "," upper:term "," f3:term "," opw:t
         (regidx_to_fin c.r1).isLt hsh).choose_spec
     refine
       { h_idx := rawDecode.h_idx
-        h_b_lo_t := by
-          exact rawDecode.h_b_lo_t
+        h_b_lo_reg := by
+          exact rawDecode.h_b_lo_reg
         bits := romFlagBitsOfExtract ext.row
         h_bits_ieo := ?_
         h_bits_m32 := ?_

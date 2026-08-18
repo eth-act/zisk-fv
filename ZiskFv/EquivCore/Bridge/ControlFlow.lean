@@ -56,8 +56,8 @@ open ZiskFv.EquivCore.Bridge.SailStateBridge
 
 /-- **Branch-shape input bridges (r1 + r2 in one call).** Given the
     a and b lane conjuncts already projected from a branch
-    per-op row-shape contract axiom application (`h_a_lo_t`, `h_a_hi_t`,
-    `h_b_lo_t`, `h_b_hi_t`), plus the Sail `read_xreg` facts the
+    per-op row-shape contract axiom application (`h_a_lo_reg`, `h_a_hi_reg`,
+    `h_b_lo_reg`, `h_b_hi_reg`), plus the Sail `read_xreg` facts the
     caller already carries for `equiv_<BRANCH>_sail`, deliver the
     packed-lane equations for both r1_val and r2_val.
 

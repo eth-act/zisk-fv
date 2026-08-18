@@ -96,13 +96,13 @@ lemma add_discharge_with_match
     (h_c_range : c_chunks_in_range b r_binary)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
-    (h_a_lo_t : m.a_0 r_main =
+    (h_a_lo_reg : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
-    (h_a_hi_t : m.a_1 r_main =
+    (h_a_hi_reg : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
-    (h_b_lo_t : m.b_0 r_main =
+    (h_b_lo_reg : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
-    (h_b_hi_t : m.b_1 r_main =
+    (h_b_hi_reg : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :

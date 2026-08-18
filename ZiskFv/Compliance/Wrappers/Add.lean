@@ -101,19 +101,19 @@ lemma equiv_ADD_via_binaryadd
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.BinaryAdd.opBusMessage p.rowInput) 1))
     (h_main_subset : ZiskFv.Airs.Main.add_subset_holds m r_main)
-    (h_a_lo_t : m.a_0 r_main =
+    (h_a_lo_reg : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
-    (h_a_hi_t : m.a_1 r_main =
+    (h_a_hi_reg : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
-    (h_b_lo_t : m.b_0 r_main =
+    (h_b_lo_reg : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r2)))
-    (h_b_hi_t : m.b_1 r_main =
+    (h_b_hi_reg : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r2)))
@@ -131,7 +131,7 @@ lemma equiv_ADD_via_binaryadd
     state add_input r1 r2 rd m p.rowInput r_main bus promises pins h_match
     (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts
       p.rowInput h_facts)
-    h_main_subset h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t h_m32
+    h_main_subset h_a_lo_reg h_a_hi_reg h_b_lo_reg h_b_hi_reg h_m32
     (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts
       p.rowInput h_facts)
     (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts

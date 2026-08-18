@@ -251,7 +251,7 @@ def sdLdSlliProgramDecode :
     change 1 + 1 < (sdLdTableWithData sdLdMainTable).table.length
     norm_num [sdLdTableWithData, sdLdMainTable, sdLdMainTableWithData,
       sdLdMainTableEmptyData, AddSpinWitness.mainRowsTable, sdLdMainRows]
-  h_b_lo_t := by
+  h_b_lo_reg := by
     rw [sdLdAcceptedTrace_mainTable_eq,
       ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
     change

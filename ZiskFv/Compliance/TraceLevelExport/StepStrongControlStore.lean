@@ -506,22 +506,22 @@ theorem branch_flag_ltu_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_LTU)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    (h_a_lo_t :
+    (h_a_lo_reg :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi_reg :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_reg :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi_reg :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -578,13 +578,13 @@ theorem branch_flag_ltu_provided
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo_reg h_a_hi_reg h_match h_input_r1
   have h_input_r2_row :
       r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero h_b_lo_reg h_b_hi_reg h_match h_input_r2
   exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_ltu_of_static_row
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row
@@ -604,22 +604,22 @@ theorem branch_flag_lt_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_LT)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    (h_a_lo_t :
+    (h_a_lo_reg :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi_reg :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_reg :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi_reg :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -676,13 +676,13 @@ theorem branch_flag_lt_provided
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo_reg h_a_hi_reg h_match h_input_r1
   have h_input_r2_row :
       r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero h_b_lo_reg h_b_hi_reg h_match h_input_r2
   exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_lt_of_static_row
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row
@@ -702,22 +702,22 @@ theorem branch_flag_eq_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_EQ)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    (h_a_lo_t :
+    (h_a_lo_reg :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi_reg :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_reg :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi_reg :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -774,13 +774,13 @@ theorem branch_flag_eq_provided
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo_reg h_a_hi_reg h_match h_input_r1
   have h_input_r2_row :
       r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero h_b_lo_reg h_b_hi_reg h_match h_input_r2
   exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_eq_of_static_row
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row

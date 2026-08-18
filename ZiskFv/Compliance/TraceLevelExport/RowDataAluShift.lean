@@ -1161,7 +1161,7 @@ structure Decode_slli (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_b_lo_t :
+  h_b_lo_reg :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo c.shamt
   h_idx : i.val + 1 < trace.mainTable.table.length
@@ -1237,7 +1237,7 @@ structure Decode_srli (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_b_lo_t :
+  h_b_lo_reg :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo c.shamt
   h_idx : i.val + 1 < trace.mainTable.table.length
@@ -1313,7 +1313,7 @@ structure Decode_srai (trace : AcceptedZiskTrace numInstructions)
   h_store_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).store_pc
       i.val = 0
-  h_b_lo_t :
+  h_b_lo_reg :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo c.shamt
   h_idx : i.val + 1 < trace.mainTable.table.length

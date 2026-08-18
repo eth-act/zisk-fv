@@ -302,7 +302,7 @@ theorem main_add_packed_result_of_binaryadd_provider
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
+    * (b) lane bridges (4): `h_a_lo_reg`, `h_a_hi_reg`, `h_b_lo_reg`, `h_b_hi_reg`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder. -/
@@ -335,22 +335,22 @@ theorem construction_add_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some add_input.PC)
     (h_input_rd : add_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (h_a_lo_t :
+    (h_a_lo_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -514,7 +514,7 @@ theorem construction_add_sound_claimed_dead
     equality `h_input_imm`, the immediate routing pin `h_addi_subset`, and the
     BinaryAdd-arm `h_set_pc` pin are added.
 
-    Residual budget = ADD's, minus the 2 r2 lane bridges (`h_b_lo_t`/`h_b_hi_t`)
+    Residual budget = ADD's, minus the 2 r2 lane bridges (`h_b_lo_reg`/`h_b_hi_reg`)
     and `h_input_r2`, plus `imm`, `h_input_imm`, `h_addi_subset`, `h_set_pc`. -/
 theorem construction_addi_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
@@ -547,12 +547,12 @@ theorem construction_addi_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some addi_input.PC)
     (h_input_rd : addi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (h_a_lo_t :
+    (h_a_lo_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg

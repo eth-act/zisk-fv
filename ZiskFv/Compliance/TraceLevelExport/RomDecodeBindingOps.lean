@@ -1355,7 +1355,7 @@ def Decode_slli_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_slli trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_b_lo_t :
+    (h_b_lo_reg :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo c.shamt)
     (bits : RomFlagBits)
@@ -1404,7 +1404,7 @@ def Decode_slli_of_program
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
       h_idx := h_idx
-      h_b_lo_t := h_b_lo_t }
+      h_b_lo_reg := h_b_lo_reg }
 
 /-- `Decode_srli` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1415,7 +1415,7 @@ def Decode_srli_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_srli trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_b_lo_t :
+    (h_b_lo_reg :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo c.shamt)
     (bits : RomFlagBits)
@@ -1464,7 +1464,7 @@ def Decode_srli_of_program
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
       h_idx := h_idx
-      h_b_lo_t := h_b_lo_t }
+      h_b_lo_reg := h_b_lo_reg }
 
 /-- `Decode_srai` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1475,7 +1475,7 @@ def Decode_srai_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_srai trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_b_lo_t :
+    (h_b_lo_reg :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       shamt_b_lo c.shamt)
     (bits : RomFlagBits)
@@ -1524,7 +1524,7 @@ def Decode_srai_of_program
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
       h_idx := h_idx
-      h_b_lo_t := h_b_lo_t }
+      h_b_lo_reg := h_b_lo_reg }
 
 
 /-! ## Family: W-ALU and W-shifts -/

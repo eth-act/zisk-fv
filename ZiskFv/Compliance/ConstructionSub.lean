@@ -35,7 +35,7 @@ ensemble (channels = OpBus + MemBus only; per-row component model):
   - decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
   - Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
     `h_input_rd`, `h_rd_idx`
-  - lane bridges (4): `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
+  - lane bridges (4): `h_a_lo_reg`, `h_a_hi_reg`, `h_b_lo_reg`, `h_b_hi_reg`
   - control-flow next-PC (1): `h_nextPC_matches`
     (blocked by the cross-row Clean-model ceiling — filed prerequisite #1).
 
@@ -149,7 +149,7 @@ noncomputable def busSub
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
+    * (b) lane bridges (4): `h_a_lo_reg`, `h_a_hi_reg`, `h_b_lo_reg`, `h_b_hi_reg`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder (NOT construction-chosen, so the hypotheses are
@@ -187,22 +187,22 @@ theorem construction_sub_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC)
     (h_input_rd : sub_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (h_a_lo_t :
+    (h_a_lo_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi_reg :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
