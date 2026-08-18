@@ -284,7 +284,10 @@ theorem bootWalk_supplier_value_eq_ziskRegFile
   have h_lane : ZiskFv.Trusted.lane_lo (entryRegValue
       ((ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1))
     = (ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).value_0 := by
-    sorry
+    have := lane_lo_entryRegValue
+      ((ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
+      (by sorry) (by sorry)
+    simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using this
   rw [h_cMem_eq, ← h_lane, ← h_regFile_succ, ← h_no_writes]
 
 theorem bootWalk_zero_eq_ziskRegFile
