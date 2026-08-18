@@ -859,6 +859,7 @@ def Decode_add_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = true)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -882,7 +883,8 @@ def Decode_add_of_program
     ∧ (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4
     ∧ (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind = 0
     ∧ (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_offset =
-        Transpiler.ind (regidx_to_fin c.rd) := by
+        Transpiler.ind (regidx_to_fin c.rd)
+    ∧ (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 := by
     obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
     have hline :
         (trace.program j).line =
@@ -915,12 +917,12 @@ def Decode_add_of_program
       romFlagColumns_of_romFlags_eq_packFlags
         (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
         (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) hrom
-    obtain ⟨p_store_ind, _p_b_src_ind, _p_store_reg⟩ :=
+    obtain ⟨p_store_ind, _p_b_src_ind, p_store_reg⟩ :=
       romSelectorColumns_of_romFlags_eq_packFlags
         (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
         (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) hrom
     refine ⟨hop.symm.trans hpo, ?_, ?_, ?_, ?_,
-      hjmp1.symm.trans hpj1, hjmp2.symm.trans hpj2, ?_, ?_⟩
+      hjmp1.symm.trans hpj1, hjmp2.symm.trans hpj2, ?_, ?_, ?_⟩
     · simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable_is_external_op]
       rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true]
     · simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable_m32]
@@ -931,6 +933,7 @@ def Decode_add_of_program
       rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false]
     · rw [p_store_ind, h_bits_store_ind, ZiskFv.AirsClean.boolF_false]
     · exact hstore.symm.trans hp_store_offset
+    · rw [p_store_reg, h_bits_store_reg, ZiskFv.AirsClean.boolF_true]
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -941,6 +944,7 @@ def Decode_add_of_program
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
-      h_store_offset := key.2.2.2.2.2.2.2.2 }
+      h_store_offset := key.2.2.2.2.2.2.2.2.1
+      h_store_reg := key.2.2.2.2.2.2.2.2.2 }
 
 end ZiskFv.Compliance.RomDecodeBinding

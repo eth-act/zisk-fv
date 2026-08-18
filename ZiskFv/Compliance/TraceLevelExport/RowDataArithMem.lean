@@ -167,6 +167,8 @@ structure Decode_add (trace : AcceptedZiskTrace numInstructions)
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 1
 
 structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_add trace i) : Type where

@@ -234,7 +234,7 @@ private theorem immediate_op_typed_store_pins
     obtain ⟨hb0, hb1⟩ := src_b_imm_pres_store _ _ _ h2
     obtain ⟨ho0, ho1⟩ := op_zisk_pres_store _ _ _ h3
     exact ⟨ho0.trans (hb0.trans ha0), ho1.trans (hb1.trans ha1)⟩
-  obtain ⟨hso, hst⟩ := store_reg_raw_index_pins z3 z4 i.rd hrd h30.1 h30.2 h4
+  obtain ⟨hso, hst, _⟩ := store_reg_raw_index_pins z3 z4 i.rd hrd h30.1 h30.2 h4
   obtain ⟨hjso, hjst⟩ := j_pres_store _ _ _ _ h5
   have hz65 := ZiskFv.Compliance.Extraction.build_eq _ _ h6
   refine ⟨z6, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
