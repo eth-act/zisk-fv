@@ -184,6 +184,9 @@ theorem a_src_reg_one_of_bits_true
         (mainTableRowAtOrZero trace.program trace.mainTable i.val)
       = ZiskFv.AirsClean.Main.packFlags bits) :
     (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_reg = 1 := by
+  have h_lt := trace.mainTable_index i
+  obtain ⟨_, _, p_a_src_reg⟩ :=
+    RomDecodeBinding.mainSelectorColumns_of_packFlags trace i h_lt bits h_flags
   sorry
 
 private theorem store_reg_one_of_bits_true
