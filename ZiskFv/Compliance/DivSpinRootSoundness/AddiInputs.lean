@@ -30,15 +30,6 @@ private def divSpinAddiInput
   h_input_imm := h_imm
   h_input_pc := h_pc
   h_input_rd := h_rd
-  h_a_hi_t := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
-    change
-      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-        divSpinAcceptedTrace.program divSpinAcceptedTrace.mainTable index.val).core.a_1 = _
-    rw [congrArg (fun row => row.core.a_1) (divSpinAcceptedMainRowAt index)]
-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-      (divSpinSailTrace index) (regidx_to_fin claim.r1) input.r1_val h_read]
-    exact h_a1
   h_pc_bridge := by
     rw [divSpinMainPc]
     exact h_pc_bridge

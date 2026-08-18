@@ -261,13 +261,6 @@ def addSpinAddInputs :
       regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_hi_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
-          addSpinAcceptedTrace.mainTable).a_1 addSpinAddIndex.val =
-        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
-    exact addSpinAddLaneHi (fun m i => m.a_1 i)
-      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
   h_b_lo_t := by
     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
           addSpinAcceptedTrace.mainTable).b_0 addSpinAddIndex.val =
@@ -567,13 +560,6 @@ def addPaddedAddInputs :
       regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_hi_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
-          addPaddedAcceptedTrace.mainTable).a_1 addPaddedAddIndex.val =
-        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addPaddedSailTrace addPaddedAddIndex)).xreg (regidx_to_fin x1))
-    exact addPaddedAddLaneHi (fun m i => m.a_1 i)
-      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
   h_b_lo_t := by
     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
           addPaddedAcceptedTrace.mainTable).b_0 addPaddedAddIndex.val =

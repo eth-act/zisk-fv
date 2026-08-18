@@ -398,16 +398,6 @@ def setupInputs :
     simp [setupInput, sailTrace, setupIndex, state, regs, x1, x2,
       regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := rfl
-  h_a_hi_t := by
-    simp only [setupClaim]
-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-      (sailTrace setupIndex) (regidx_to_fin x0) (0#64) readX0_setup]
-    simp [setupIndex, setupInput, ZiskFv.AirsClean.FullEnsemble.mainOfTable,
-      mainAt_setup, jalrMainRows, jalrSetupRow, jalrSetupRowWithLast,
-      jalrSetupRowTemplate, jalrSetupProgramRow, jalrSetupBits,
-      ZiskFv.AirsClean.Main.mainRomRowOf, sailTrace, state, regs, x0, x1, x2,
-      regidx_to_fin, reg_of_fin, Sail.readReg, Std.ExtDHashMap.get?_insert,
-      lane_hi]
   h_pc_bridge := by
     norm_num [setupIndex, setupMainPc, setupInput]
 

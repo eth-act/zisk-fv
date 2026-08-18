@@ -181,11 +181,6 @@ structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok add_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some add_input.PC
   h_input_rd : add_input.rd = regidx_to_fin c.rd
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
@@ -276,11 +271,6 @@ structure InputsCore_addi (trace : AcceptedZiskTrace numInstructions) (binding :
   h_input_imm : addi_input.imm = c.imm
   h_input_pc : (binding i).regs.get? Register.PC = .some addi_input.PC
   h_input_rd : addi_input.rd = regidx_to_fin c.rd
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
 
 /-- The PC agreement `Inputs_addi` carries on top of `InputsCore_addi`.
 
@@ -356,11 +346,6 @@ structure InputsCore_subw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok subw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some subw_input.PC
   h_input_rd : subw_input.rd = regidx_to_fin c.rd
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
@@ -446,11 +431,6 @@ structure InputsCore_addw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok addw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some addw_input.PC
   h_input_rd : addw_input.rd = regidx_to_fin c.rd
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
   h_b_lo_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
       ZiskFv.Trusted.lane_lo
@@ -541,11 +521,6 @@ structure InputsCore_addiw (trace : AcceptedZiskTrace numInstructions) (binding 
   h_input_imm : addiw_input.imm = c.imm
   h_input_pc : (binding i).regs.get? Register.PC = .some addiw_input.PC
   h_input_rd : addiw_input.rd = regidx_to_fin c.rd
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
 
 /-- The PC agreement `Inputs_addiw` carries on top of `InputsCore_addiw`.
 

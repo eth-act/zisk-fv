@@ -348,10 +348,6 @@ def addAddiSpinAddInputs :
       Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_hi_t := by
-    exact addAddiSpinLaneHi addAddiSpinAddIndex (fun m i => m.a_1 i)
-      (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
-        addAddiSpinAddRow, addX1Row])
   h_b_lo_t := by
     exact addAddiSpinLaneLo addAddiSpinAddIndex (fun m i => m.b_0 i)
       (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
@@ -382,11 +378,6 @@ def addAddiSpinAddiInputs :
       Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_hi_t := by
-    exact addAddiSpinLaneHi addAddiSpinAddiIndex (fun m i => m.a_1 i)
-      (by simp [addAddiSpinAddiIndex, addAddiSpinMainRowAt_one,
-        addAddiSpinAddiRow, addAddiSpinAddiProgramRow, addAddiSpinAddiBits,
-        addAddiSpinAddiFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf])
   h_pc_bridge := by
     rw [addAddiSpinAcceptedTrace_mainTable_eq]
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinProgram
