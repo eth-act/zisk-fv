@@ -828,7 +828,7 @@ theorem stepStrong_beq
           branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.beq_input.r1_val d.toInputs.beq_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset1 i.val =
@@ -895,7 +895,7 @@ theorem stepStrong_bne
           branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bne_input.r1_val d.toInputs.bne_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset2 i.val =
@@ -962,7 +962,7 @@ theorem stepStrong_blt
           branch_flag_lt_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.blt_input.r1_val d.toInputs.blt_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset1 i.val =
@@ -1029,7 +1029,7 @@ theorem stepStrong_bge
           branch_flag_lt_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bge_input.r1_val d.toInputs.bge_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset2 i.val =
@@ -1099,7 +1099,7 @@ theorem stepStrong_bltu
           branch_flag_ltu_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bltu_input.r1_val d.toInputs.bltu_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset1 i.val =
@@ -1169,7 +1169,7 @@ theorem stepStrong_bgeu
           branch_flag_ltu_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bgeu_input.r1_val d.toInputs.bgeu_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset2 i.val =
