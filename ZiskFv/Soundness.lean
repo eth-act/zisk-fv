@@ -231,7 +231,10 @@ theorem root_soundness
           start addr rawProgram programBinding (rawProgramDecodes i))))
     (bootSeed : BootSegmentMemorySeed ziskTrace (chainedSailTrace ziskStep init) ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
+      RowOutsideDefectRegion ziskTrace i (ziskStep i))
+    (regBoot : ∀ (r : Fin 32), r ≠ 0 →
+      init.regs.get? (reg_of_fin r) =
+        some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64))) :
     ∀ i : Fin numInstructions,
       StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i
@@ -265,7 +268,7 @@ theorem root_soundness
         have h_regAgree_zero : RegAgree ziskStep rowDecodes init 0 := by
           intro r hr
           simp [ziskRegFile, chainedSailStates]
-          sorry
+          exact regBoot r hr
         have h_step := stepSound_of_evidence ziskTrace sailTrace ⟨0, hk⟩ (ziskStep ⟨0, hk⟩)
           (rowDecodes ⟨0, hk⟩)
           (inputsAgree_of_pcBridge ⟨0, hk⟩ h_pc (ziskStep ⟨0, hk⟩) (inputsAgree ⟨0, hk⟩))

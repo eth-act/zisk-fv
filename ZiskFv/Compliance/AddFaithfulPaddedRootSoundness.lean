@@ -343,6 +343,7 @@ theorem addFaithfulPaddedRawRootSoundness :
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
     addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcBoot
     addFaithfulRowsAligned addFaithfulBootSeed addFaithfulOutsideDefectRegion
+    (fun _ _ => by sorry)
 
 #print axioms addFaithfulPaddedRawRootSoundness
 
