@@ -123,10 +123,6 @@ theorem stepSound_of_programDecodes
     ∀ i : Fin numInstructions,
       StepSound ziskTrace sailTrace i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i (programDecodes i)) := by
-  -- Per-row PC agreement, by strong induction on the step index. Row `0` is `pcChain.boot`; each
-  -- later row comes from the previous row's own `StepSound` via `pcBridge_succ_of_stepSound`. This
-  -- is the #330 Phase 7 restructure: the per-`i` map became an induction so that `succ` could stop
-  -- being a premise.
   have key : ∀ (k : ℕ) (hk : k < numInstructions),
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc k).val
         = ((sailTrace ⟨k, hk⟩).regs.get? Register.PC).elim 0 BitVec.toNat := by
@@ -240,14 +236,57 @@ theorem root_soundness
       StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-            start addr rawProgram programBinding (rawProgramDecodes i))) :=
-  stepSound_of_programDecodes numInstructions ziskTrace (chainedSailTrace ziskStep init) ziskStep
-    (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-      start addr rawProgram programBinding (rawProgramDecodes i))
-    inputsAgree
+            start addr rawProgram programBinding (rawProgramDecodes i))) := by
+  let sailTrace := chainedSailTrace ziskStep init
+  let programDecodes := fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+      start addr rawProgram programBinding (rawProgramDecodes i)
+  let rowDecodes := fun i => rowDecode_of_programDecode ziskTrace i (programDecodes i)
+  let pcChain : SegmentPcChain ziskTrace sailTrace ziskStep :=
     { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
       boot := pcBoot }
-    rowsAligned bootSeed hAvoidKnownBugs
-    (fun _ _ _ => by sorry)
+  have h_add_a_lo_of_regAgree :
+      ∀ (k : ℕ) (hk : k < numInstructions),
+        RegAgree ziskStep rowDecodes init k →
+        ∀ (c : Claim_add ziskTrace ⟨k, hk⟩),
+          ziskStep ⟨k, hk⟩ = .add c →
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).a_0 k =
+            ZiskFv.Trusted.lane_lo
+              ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sailTrace ⟨k, hk⟩)).xreg
+                (regidx_to_fin c.r1)) :=
+    fun _ _ _ _ _ => by sorry
+  have key : ∀ (k : ℕ) (hk : k < numInstructions),
+      StepSound ziskTrace sailTrace ⟨k, hk⟩ (ziskStep ⟨k, hk⟩) (rowDecodes ⟨k, hk⟩)
+      ∧ RegAgree ziskStep rowDecodes init (k + 1) := by
+    intro k
+    induction k with
+    | zero =>
+        intro hk
+        have h_pc := pcChain.boot hk
+        have h_regAgree_zero : RegAgree ziskStep rowDecodes init 0 := by
+          intro r hr
+          simp [ziskRegFile, chainedSailStates]
+          sorry
+        have h_step := stepSound_of_evidence ziskTrace sailTrace ⟨0, hk⟩ (ziskStep ⟨0, hk⟩)
+          (rowDecodes ⟨0, hk⟩)
+          (inputsAgree_of_pcBridge ⟨0, hk⟩ h_pc (ziskStep ⟨0, hk⟩) (inputsAgree ⟨0, hk⟩))
+          (memEvidence_of_bootSeed bootSeed ⟨0, hk⟩) (hAvoidKnownBugs ⟨0, hk⟩)
+          (fun c hc => h_add_a_lo_of_regAgree 0 hk h_regAgree_zero c hc)
+        exact ⟨h_step, regAgree_succ ziskStep rowDecodes init 0 hk h_step h_regAgree_zero⟩
+    | succ j ih =>
+        intro hk
+        have hj : j < numInstructions := Nat.lt_of_succ_lt hk
+        obtain ⟨h_prev_step, h_regAgree_succ⟩ := ih hj
+        have h_pc : ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
+            ziskTrace.program ziskTrace.mainTable).pc (j + 1)).val
+          = ((sailTrace ⟨j + 1, hk⟩).regs.get? Register.PC).elim 0 BitVec.toNat :=
+          pcBridge_succ_of_stepSound pcChain.toSailRetireChain rowsAligned j hk h_prev_step
+        have h_step := stepSound_of_evidence ziskTrace sailTrace ⟨j + 1, hk⟩ (ziskStep ⟨j + 1, hk⟩)
+          (rowDecodes ⟨j + 1, hk⟩)
+          (inputsAgree_of_pcBridge ⟨j + 1, hk⟩ h_pc (ziskStep ⟨j + 1, hk⟩) (inputsAgree ⟨j + 1, hk⟩))
+          (memEvidence_of_bootSeed bootSeed ⟨j + 1, hk⟩) (hAvoidKnownBugs ⟨j + 1, hk⟩)
+          (fun c hc => h_add_a_lo_of_regAgree (j + 1) hk h_regAgree_succ c hc)
+        exact ⟨h_step, regAgree_succ ziskStep rowDecodes init (j + 1) hk h_step h_regAgree_succ⟩
+  intro i
+  exact (key i.val i.isLt).1
 
 end ZiskFv.Compliance
