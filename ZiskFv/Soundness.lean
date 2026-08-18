@@ -277,13 +277,23 @@ theorem root_soundness
         a_src_reg_one_of_bits_true ziskTrace ⟨k, hk⟩ pd.bits pd.h_bits_a_src_reg hflags_eq
       by_cases h_r1 : regidx_to_fin c.r1 = (0 : Fin 32)
       · rw [h_r1]
-        sorry
+        have h_boot_walk_x0 := ZiskFv.Compliance.a_columns_of_bootWalk ziskTrace
+          ziskTrace.mainTable_mem ziskTrace.mainTable_component
+          (List.getElem_mem (ziskTrace.mainTable_index ⟨k, hk⟩))
+          (by unfold ZiskFv.Compliance.Instantiation.RegSlot.selector
+              simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero,
+                dif_pos h_lt'] at h_a_src_reg ⊢
+              exact h_a_src_reg)
+        sorry  -- x0 case: a_0 = lane_lo(sail xreg 0). Both sides are 0.
       · rw [show sailTrace ⟨k, hk⟩ = chainedSailStates ziskStep init k from rfl,
           h_sail h_r1 h_ra]
         have h_boot_walk := ZiskFv.Compliance.a_columns_of_bootWalk ziskTrace
           ziskTrace.mainTable_mem ziskTrace.mainTable_component
           (List.getElem_mem (ziskTrace.mainTable_index ⟨k, hk⟩))
-          (by sorry)
+          (by unfold ZiskFv.Compliance.Instantiation.RegSlot.selector
+              simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero,
+                dif_pos h_lt'] at h_a_src_reg ⊢
+              exact h_a_src_reg)
         have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
               ziskTrace.program ziskTrace.mainTable).a_0 k
             = (eval (ziskTrace.mainTable.environment
