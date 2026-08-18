@@ -276,7 +276,8 @@ theorem root_soundness
       have h_a_src_reg : (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable k).rom.a_src_reg = 1 :=
         a_src_reg_one_of_bits_true ziskTrace ⟨k, hk⟩ pd.bits pd.h_bits_a_src_reg hflags_eq
       by_cases h_r1 : regidx_to_fin c.r1 = (0 : Fin 32)
-      · sorry
+      · rw [h_r1]
+        sorry
       · rw [show sailTrace ⟨k, hk⟩ = chainedSailStates ziskStep init k from rfl,
           h_sail h_r1 h_ra]
         have h_boot_walk := ZiskFv.Compliance.a_columns_of_bootWalk ziskTrace
