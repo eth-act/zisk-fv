@@ -3189,6 +3189,11 @@ theorem stepStrong_sraiw
 theorem stepStrong_add
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_add trace binding i)
+    (h_a_lo_t :
+      (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
+        ZiskFv.Trusted.lane_lo
+          ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+            (regidx_to_fin d.toClaim.r1)))
     (h_domain : SequentialPcDomain d.toInputs.add_input.PC) :
     (do
       Sail.writeReg Register.nextPC
@@ -3301,7 +3306,7 @@ theorem stepStrong_add
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
           m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.add_input.r1_val
-          h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+          h_matches h_m32_zero h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
     have h_input_r2_row :
         d.toInputs.add_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
@@ -3324,11 +3329,11 @@ theorem stepStrong_add
     let env : OpEnvelope state m i.val :=
       OpEnvelope.add_via_binaryadd d.toInputs.add_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        h_add_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
+        h_add_subset h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
         h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _ ∧ _ ∧ _ ∧ _
-      exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
+      exact ⟨h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
       noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial

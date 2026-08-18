@@ -1412,6 +1412,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | add c =>
       exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia)
+        (by sorry)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | addi c =>
       exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia)

@@ -181,11 +181,6 @@ structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok add_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some add_input.PC
   h_input_rd : add_input.rd = regidx_to_fin c.rd
-  h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
   h_a_hi_t :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
       ZiskFv.Trusted.lane_hi

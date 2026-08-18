@@ -347,10 +347,6 @@ def addAddiSpinAddInputs :
       Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_lo_t := by
-    exact addAddiSpinLaneLo addAddiSpinAddIndex (fun m i => m.a_0 i)
-      (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
-        addAddiSpinAddRow, addX1Row])
   h_a_hi_t := by
     exact addAddiSpinLaneHi addAddiSpinAddIndex (fun m i => m.a_1 i)
       (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
