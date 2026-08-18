@@ -283,7 +283,17 @@ theorem root_soundness
           ziskTrace.mainTable_mem ziskTrace.mainTable_component
           (List.getElem_mem (ziskTrace.mainTable_index ⟨k, hk⟩))
           (by sorry)
-        sorry
+        have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+              ziskTrace.program ziskTrace.mainTable).a_0 k
+            = (eval (ziskTrace.mainTable.environment
+                (ziskTrace.mainTable.table.get ⟨k, h_lt'⟩))
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                ziskTrace.programLength ziskTrace.program).rowInputVar).core.a_0 := by
+          simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
+            ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt']
+        rcases h_boot_walk with ⟨h0, _⟩ | ⟨q, h_active, h_slot_c, h_val0, _⟩
+        · rw [h_a0_eq]; convert h0.symm ▸ (by sorry : 0 = Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k (regidx_to_fin c.r1)))
+        · rw [h_a0_eq]; convert h_val0.symm ▸ (by sorry : (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 = Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k (regidx_to_fin c.r1)))
   have key : ∀ (k : ℕ) (hk : k < numInstructions),
       StepSound ziskTrace sailTrace ⟨k, hk⟩ (ziskStep ⟨k, hk⟩) (rowDecodes ⟨k, hk⟩)
       ∧ RegAgree ziskStep rowDecodes init (k + 1) := by
