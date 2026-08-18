@@ -268,14 +268,17 @@ theorem bootWalk_supplier_value_eq_ziskRegFile
   obtain ⟨j, h_j_lt_table, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
   have h_j_lt_n : j < n := by sorry
   have h_cMem_eq : (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0
-      = (ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).value_0 := by
-    rw [h_row_eq]
+      = (ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).value_0 :=
+    congrArg (fun x => (ZiskFv.AirsClean.Main.cMemMessage x).value_0) h_row_eq
   have h_write : stepRegWrite (stepChannelOutput ⟨j, h_j_lt_n⟩ (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩))
       = some ((ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
     sorry
-  have h_regFile_succ : ziskRegFile ziskStep rowDecodes (j + 1) r
-      = entryRegValue ((ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
+  have h_ptr_eq_r : Transpiler.wrap_to_regidx
+      ((ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
     sorry
+  have h_regFile_succ : ziskRegFile ziskStep rowDecodes (j + 1) r
+      = entryRegValue ((ZiskFv.AirsClean.Main.cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) :=
+    ziskRegFile_succ_of_writes ziskStep rowDecodes j r h_j_lt_n _ h_write h_ptr_eq_r
   have h_no_writes : ziskRegFile ziskStep rowDecodes k r = ziskRegFile ziskStep rowDecodes (j + 1) r := by
     sorry
   have h_lane : ZiskFv.Trusted.lane_lo (entryRegValue
