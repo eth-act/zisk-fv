@@ -2,6 +2,9 @@ import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance.TraceLevelExport.ChainedSailTrace
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
+import ZiskFv.Compliance.RegisterValueTelescope
+import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
+import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
 
 /-!
 # Root soundness
@@ -261,10 +264,25 @@ theorem root_soundness
         cast (by simp only [ProgramDecode, hc]) (programDecodes ⟨k, hk⟩)
       have h_sail := sail_xreg_eq_ziskRegFile ziskStep rowDecodes init k
         (regidx_to_fin c.r1)
+      have h_lt' := ziskTrace.mainTable_index ⟨k, hk⟩
+      obtain ⟨j_rom, hline_rom, _, _, _, _, hflags_rom⟩ :=
+        RomDecodeBinding.mainRomColumns_at_eq_program ziskTrace ⟨k, h_lt'⟩
+      have hpf_rom := pd.h_prog j_rom hline_rom
+      have hflags_eq : ZiskFv.AirsClean.Main.romFlags
+          (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable k)
+        = ZiskFv.AirsClean.Main.packFlags pd.bits := by
+        first | exact hflags_rom.symm.trans hpf_rom.2.2.2.2
+              | exact hflags_rom.symm.trans hpf_rom.2.2.2.2.2
+      have h_a_src_reg : (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable k).rom.a_src_reg = 1 :=
+        a_src_reg_one_of_bits_true ziskTrace ⟨k, hk⟩ pd.bits pd.h_bits_a_src_reg hflags_eq
       by_cases h_r1 : regidx_to_fin c.r1 = (0 : Fin 32)
       · sorry
       · rw [show sailTrace ⟨k, hk⟩ = chainedSailStates ziskStep init k from rfl,
           h_sail h_r1 h_ra]
+        have h_boot_walk := ZiskFv.Compliance.a_columns_of_bootWalk ziskTrace
+          ziskTrace.mainTable_mem ziskTrace.mainTable_component
+          (List.getElem_mem (ziskTrace.mainTable_index ⟨k, hk⟩))
+          (by sorry)
         sorry
   have key : ∀ (k : ℕ) (hk : k < numInstructions),
       StepSound ziskTrace sailTrace ⟨k, hk⟩ (ziskStep ⟨k, hk⟩) (rowDecodes ⟨k, hk⟩)
