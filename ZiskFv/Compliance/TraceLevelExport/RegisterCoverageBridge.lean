@@ -187,7 +187,7 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     rcases stepRegWrite_eq_none_or_cMemMessage ⟨j, h_j_lt_n⟩
       (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | h_some
     · sorry  -- contradicts h_slot_c: the c-slot is active so stepRegWrite ≠ none
-    · convert h_some using 2; sorry  -- stepProducerRow = j for single-row ops
+    · sorry  -- stepProducerRow = j (holds for 62/63 ops; JALR needs rows.finish = i)
   have h_ptr_eq : Transpiler.wrap_to_regidx
       ((ZiskFv.AirsClean.Main.cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
@@ -295,10 +295,7 @@ theorem a_column_eq_lane_lo_sail_xreg
     have h_a0_val : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
           trace.program trace.mainTable).a_0 k
         = (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 := by
-      -- h_q0 gives the full value chain through regPreMessage/readMessage
-      -- regPreMessage .a (row) = aRegPreMessage row, and aRegPreMessage.value_0 = row.core.a_0
-      -- readMessage .c (row) = cMemMessage row
-      sorry
+      rw [h_a0_eq]; convert h_q0; rw [h_qc]; rfl
     rw [h_a0_val]
     exact cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
       k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt
