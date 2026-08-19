@@ -168,7 +168,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       h_input_r1_row h_input_imm_row h_lane_rd promises
   | addi_via_binaryadd addi_input r1 rd imm bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
-      h_addi_subset (by sorry) (by sorry) h_m32 h_set_pc h_lane_rd promises =>
+      h_addi_subset _ _ h_m32 h_set_pc h_lane_rd promises =>
     change
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)

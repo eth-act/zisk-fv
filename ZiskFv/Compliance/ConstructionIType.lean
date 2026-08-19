@@ -151,12 +151,12 @@ theorem construction_andi_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some andi_input.PC)
     (h_input_rd : andi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -342,12 +342,12 @@ theorem construction_ori_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some ori_input.PC)
     (h_input_rd : ori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -524,12 +524,12 @@ theorem construction_xori_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some xori_input.PC)
     (h_input_rd : xori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -707,12 +707,12 @@ theorem construction_slti_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some slti_input.PC)
     (h_input_rd : slti_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -883,12 +883,12 @@ theorem construction_sltiu_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sltiu_input.PC)
     (h_input_rd : sltiu_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg

@@ -134,22 +134,22 @@ theorem construction_and_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some and_input.PC)
     (h_input_rd : and_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    ((by sorry) :
+    (_ :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg

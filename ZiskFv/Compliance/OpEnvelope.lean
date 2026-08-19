@@ -475,19 +475,19 @@ inductive OpEnvelope
           (ZiskFv.AirsClean.BinaryAdd.component.rowInput
             (providerTable.environment providerRow))) 1))
     (h_main_subset : ZiskFv.Airs.Main.add_subset_holds m r_main)
-    ((by sorry) : m.a_0 r_main =
+    (_ : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
-    ((by sorry) : m.a_1 r_main =
+    (_ : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
-    ((by sorry) : m.b_0 r_main =
+    (_ : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r2)))
-    ((by sorry) : m.b_1 r_main =
+    (_ : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r2)))
@@ -547,11 +547,11 @@ inductive OpEnvelope
             (providerTable.environment providerRow))) 1))
     (h_main_subset : ZiskFv.Airs.Main.add_subset_holds m r_main)
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
-    ((by sorry) : m.a_0 r_main =
+    (_ : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
-    ((by sorry) : m.a_1 r_main =
+    (_ : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))

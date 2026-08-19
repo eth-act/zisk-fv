@@ -506,22 +506,22 @@ theorem branch_flag_ltu_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_LTU)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -604,22 +604,22 @@ theorem branch_flag_lt_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_LT)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -702,22 +702,22 @@ theorem branch_flag_eq_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_EQ)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg

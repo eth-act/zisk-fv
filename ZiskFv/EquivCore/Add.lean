@@ -156,13 +156,13 @@ lemma equiv_ADD_with_match
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
-    ((by sorry) : m.a_0 r_main =
+    (_ : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    ((by sorry) : m.a_1 r_main =
+    (_ : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    ((by sorry) : m.b_0 r_main =
+    (_ : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
-    ((by sorry) : m.b_1 r_main =
+    (_ : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
     (h_a_range : a_chunks_in_range b r_binary)
     (h_b_range : b_chunks_in_range b r_binary)
@@ -493,13 +493,13 @@ lemma equiv_ADD_of_binaryadd_row
     (h_core : ZiskFv.Airs.BinaryAdd.core_every_row
       (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_main_subset : add_subset_holds m r_main)
-    ((by sorry) : m.a_0 r_main =
+    (_ : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    ((by sorry) : m.a_1 r_main =
+    (_ : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    ((by sorry) : m.b_0 r_main =
+    (_ : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
-    ((by sorry) : m.b_1 r_main =
+    (_ : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
     (h_m32 : m.m32 r_main = 0)
     (h_a_range : a_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)

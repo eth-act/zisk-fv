@@ -403,22 +403,22 @@ theorem construction_sub_sound'
     (h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC)
     (h_input_rd : sub_input.rd = regidx_to_fin rd)
     -- lane bridges (unchanged)
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    ((by sorry) :
+    (_ :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg

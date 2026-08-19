@@ -1403,7 +1403,7 @@ def Decode_slli_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx
+      h_idx := h_idx }
 
 /-- `Decode_srli` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1462,7 +1462,7 @@ def Decode_srli_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx
+      h_idx := h_idx }
 
 /-- `Decode_srai` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1521,7 +1521,7 @@ def Decode_srai_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx
+      h_idx := h_idx }
 
 
 /-! ## Family: W-ALU and W-shifts -/
