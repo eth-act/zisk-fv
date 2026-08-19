@@ -108,22 +108,22 @@ theorem construction_slt_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some slt_input.PC)
     (h_input_rd : slt_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (_ :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -253,13 +253,13 @@ theorem construction_slt_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) slt_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_row :
       slt_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) slt_input.r2_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r2
+        h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SLT
     state slt_input r1 r2 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -304,22 +304,22 @@ theorem construction_sltu_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sltu_input.PC)
     (h_input_rd : sltu_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (_ :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -449,13 +449,13 @@ theorem construction_sltu_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) sltu_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_row :
       sltu_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) sltu_input.r2_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r2
+        h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SLTU
     state sltu_input r1 r2 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩

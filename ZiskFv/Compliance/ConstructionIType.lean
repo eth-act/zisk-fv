@@ -151,12 +151,12 @@ theorem construction_andi_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some andi_input.PC)
     (h_input_rd : andi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -290,7 +290,7 @@ theorem construction_andi_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) andi_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   -- Immediate routing: DERIVE the 8-byte Binary-row form from the named Main-form
   -- pin + the in-body byte-match fact + `m32 = 0` + the provider match.
   have h_input_imm_row :
@@ -342,12 +342,12 @@ theorem construction_ori_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some ori_input.PC)
     (h_input_rd : ori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -472,7 +472,7 @@ theorem construction_ori_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) ori_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_imm_row :
       BitVec.signExtend 64 ori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
@@ -524,12 +524,12 @@ theorem construction_xori_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some xori_input.PC)
     (h_input_rd : xori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -654,7 +654,7 @@ theorem construction_xori_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) xori_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_imm_row :
       BitVec.signExtend 64 xori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
@@ -707,12 +707,12 @@ theorem construction_slti_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some slti_input.PC)
     (h_input_rd : slti_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -837,7 +837,7 @@ theorem construction_slti_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) slti_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTI
     state slti_input r1 rd imm m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -883,12 +883,12 @@ theorem construction_sltiu_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sltiu_input.PC)
     (h_input_rd : sltiu_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -1013,7 +1013,7 @@ theorem construction_sltiu_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) sltiu_input.r1_val
-        h_matches h_m32_zero (by sorry) (by sorry) h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTIU
     state sltiu_input r1 rd imm m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩

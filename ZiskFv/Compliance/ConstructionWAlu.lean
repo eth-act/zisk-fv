@@ -107,22 +107,22 @@ theorem construction_subw_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some subw_input.PC)
     (h_input_rd : subw_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (_ :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -242,14 +242,14 @@ theorem construction_subw_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) subw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match h_input_r1
+        ha0 ha1 ha2 ha3 h_m32_one h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_extract :
       (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin r2) subw_input.r2_val
-        hb0 hb1 hb2 hb3 h_m32_one (by sorry) (by sorry) h_match h_input_r2
+        hb0 hb1 hb2 hb3 h_m32_one h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.Compliance.equiv_SUBW
     state subw_input r1 r2 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -285,22 +285,22 @@ theorem construction_addw_sound_claimed_dead
         = EStateM.Result.ok addw_input.r2_val (binding i))
     (h_input_pc : (binding i).regs.get? Register.PC = .some addw_input.PC)
     (h_input_rd : addw_input.rd = regidx_to_fin rd)
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (_ :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -416,14 +416,14 @@ theorem construction_addw_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) addw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match h_input_r1
+        ha0 ha1 ha2 ha3 h_m32_one h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_extract :
       (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32 providerInput % 2^32 := by
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin r2) addw_input.r2_val
-        hb0 hb1 hb2 hb3 h_m32_one (by sorry) (by sorry) h_match h_input_r2
+        hb0 hb1 hb2 hb3 h_m32_one h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.Compliance.equiv_ADDW
     state addw_input r1 r2 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -464,12 +464,12 @@ theorem construction_addiw_sound_claimed_dead
     (h_input_imm : addiw_input.imm = imm)
     (h_input_pc : (binding i).regs.get? Register.PC = .some addiw_input.PC)
     (h_input_rd : addiw_input.rd = regidx_to_fin rd)
-    (_ :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -577,7 +577,7 @@ theorem construction_addiw_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) addiw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match h_input_r1
+        ha0 ha1 ha2 ha3 h_m32_one h_a_lo h_a_hi h_match h_input_r1
   exact ZiskFv.Compliance.equiv_ADDIW
     state addiw_input r1 rd imm m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩

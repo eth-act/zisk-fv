@@ -2,6 +2,8 @@ import ZiskFv.Compliance.TraceLevelExport
 import ZiskFv.Compliance.TraceLevelExport.ChainedSailTrace
 import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
+import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
+import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
 
 /-!
 # Root soundness
@@ -226,19 +228,45 @@ theorem root_soundness
         (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
           start addr rawProgram programBinding (rawProgramDecodes i))))
     (bootSeed : BootSegmentMemorySeed ziskTrace (chainedSailTrace ziskStep init) ziskStep)
+    (regBoot : ∀ k : Fin 32, k ≠ 0 →
+      init.regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)))
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions,
       StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-            start addr rawProgram programBinding (rawProgramDecodes i))) :=
-  stepSound_of_programDecodes numInstructions ziskTrace (chainedSailTrace ziskStep init) ziskStep
+            start addr rawProgram programBinding (rawProgramDecodes i))) := by
+  let rowDecodes := fun i => rowDecode_of_programDecode ziskTrace i
+    (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+      start addr rawProgram programBinding (rawProgramDecodes i))
+  have regKey : ∀ (k : ℕ) (hk : k < numInstructions),
+      RegAgree ziskStep rowDecodes init k := by
+    intro k
+    induction k with
+    | zero => intro _; exact regAgree_zero ziskStep rowDecodes init regBoot
+    | succ j ih =>
+        intro hk
+        have hj : j < numInstructions := Nat.lt_of_succ_lt hk
+        exact regAgree_succ ziskStep rowDecodes init j hj
+          (stepSound_of_programDecodes numInstructions ziskTrace
+            (chainedSailTrace ziskStep init) ziskStep
+            (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+              start addr rawProgram programBinding (rawProgramDecodes i))
+            inputsAgree
+            { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
+              boot := pcBoot }
+            rowsAligned bootSeed hAvoidKnownBugs ⟨j, hj⟩)
+          (ih hj)
+  intro i
+  exact stepSound_of_programDecodes numInstructions ziskTrace
+    (chainedSailTrace ziskStep init) ziskStep
     (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
       start addr rawProgram programBinding (rawProgramDecodes i))
     inputsAgree
     { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
       boot := pcBoot }
-    rowsAligned bootSeed hAvoidKnownBugs
+    rowsAligned bootSeed hAvoidKnownBugs i
 
 end ZiskFv.Compliance

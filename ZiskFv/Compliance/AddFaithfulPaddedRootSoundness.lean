@@ -310,6 +310,15 @@ theorem addFaithfulRegAgreeBoot :
   fin_cases k <;>
     simp_all [reg_of_fin, regidx_to_fin, x1, Std.ExtDHashMap.get?_insert]
 
+theorem addFaithfulRegBoot :
+    ∀ k : Fin 32, k ≠ 0 →
+      (addFaithfulState (0#64)).regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)) := by
+  intro k hk
+  fin_cases k <;>
+    simp_all [addFaithfulState, addFaithfulRegs, addFaithfulZeroRegs, reg_of_fin,
+      regidx_to_fin, x1, Std.ExtDHashMap.get?_insert]
+
 open ZiskFv.Compliance.RawProgramBinding in
 theorem addFaithfulPaddedRawRootSoundness :
     ∀ i : Fin 1,
@@ -321,7 +330,8 @@ theorem addFaithfulPaddedRawRootSoundness :
   root_soundness 1 2 addFaithfulAcceptedTrace (addFaithfulState (0#64)) addFaithfulZiskStep
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
     addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcBoot
-    addFaithfulRowsAligned addFaithfulBootSeed addFaithfulOutsideDefectRegion
+    addFaithfulRowsAligned addFaithfulBootSeed addFaithfulRegBoot
+    addFaithfulOutsideDefectRegion
 
 #print axioms addFaithfulPaddedRawRootSoundness
 

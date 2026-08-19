@@ -1758,4 +1758,77 @@ theorem b_column_eq_lane_hi_sail_xreg
       k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt h_no_writes_above
       h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range
 
+/-! ## LaneBridge — the per-step bundle of register-column lane equalities
+
+`LaneBridge` packages the four universally quantified lane equalities (a_0/a_1/b_0/b_1)
+at a single step `k`. Each equality fires only when the ROM says the corresponding
+source channel reads from a nonzero register. `stepStrong_<op>` instantiates with
+the specific register from its claim/decode data. -/
+
+structure LaneBridge {n : Nat} (trace : AcceptedZiskTrace n)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) (k : ℕ) : Prop where
+  a_lo : ∀ (r : Fin 32), r ≠ 0 →
+    (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_src_reg = 1 →
+    Transpiler.wrap_to_regidx
+      (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 = r →
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 k =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r)
+  a_hi : ∀ (r : Fin 32), r ≠ 0 →
+    (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_src_reg = 1 →
+    Transpiler.wrap_to_regidx
+      (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 = r →
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 k =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r)
+  b_lo : ∀ (r : Fin 32), r ≠ 0 →
+    (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_src_reg = 1 →
+    Transpiler.wrap_to_regidx
+      (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_offset_imm0 = r →
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 k =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r)
+  b_hi : ∀ (r : Fin 32), r ≠ 0 →
+    (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_src_reg = 1 →
+    Transpiler.wrap_to_regidx
+      (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_offset_imm0 = r →
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 k =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r)
+
+theorem laneBridge_of_regAgree
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (k : ℕ) (hk : k < n)
+    (h_regAgree : RegAgree ziskStep rowDecodes init k)
+    (h_stepRegWrite_consistent : ∀ (i : Fin n),
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
+    (h_stepRegWrite_converse : ∀ (i : Fin n),
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none →
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
+    (h_entry_range : ∀ (i : Fin n),
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
+          = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
+        ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
+        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
+          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
+    LaneBridge trace (chainedSailStates ziskStep init k) k where
+  a_lo r hr h_src h_ptr :=
+    a_column_eq_lane_lo_sail_xreg trace ziskStep rowDecodes init k hk r hr
+      h_regAgree h_src h_ptr h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range
+  a_hi r hr h_src h_ptr :=
+    a_column_eq_lane_hi_sail_xreg trace ziskStep rowDecodes init k hk r hr
+      h_regAgree h_src h_ptr h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range
+  b_lo r hr h_src h_ptr :=
+    b_column_eq_lane_lo_sail_xreg trace ziskStep rowDecodes init k hk r hr
+      h_regAgree h_src h_ptr h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range
+  b_hi r hr h_src h_ptr :=
+    b_column_eq_lane_hi_sail_xreg trace ziskStep rowDecodes init k hk r hr
+      h_regAgree h_src h_ptr h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range
+
 end ZiskFv.Compliance
