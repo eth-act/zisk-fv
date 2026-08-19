@@ -314,8 +314,22 @@ def sdLdBoundaryRows :
   [sdLdBoundaryRowX1, sdLdBoundaryRowX2, sdLdBoundaryRowX3] ++
     (List.range 28).map (fun i => boundaryRowIdle ((i + 4 : Nat) : FGL))
 
+/-- 31 rows, one per tracked register, within the component's fixed capacity. -/
+theorem sdLdBoundaryRows_length :
+    sdLdBoundaryRows.length ≤
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity := by
+  simp [sdLdBoundaryRows, ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+
+/-- Row `i` carries register `x(i+1)`, matching the component's fixed `reg` column. -/
+theorem sdLdBoundaryRows_enumerated :
+    RegisterBoundaryRowsEnumerated sdLdBoundaryRows := by
+  intro i h_i
+  have h_lt : i < 31 := by simpa [sdLdBoundaryRows] using h_i
+  interval_cases i <;> rfl
+
+
 def sdLdBoundaryTable : Air.Flat.Table FGL :=
-  registerBoundaryRowsTableOf sdLdBoundaryRows
+  registerBoundaryRowsTableOf sdLdBoundaryRows sdLdBoundaryRows_length
 
 def sdLdMainTableEmptyData : Air.Flat.Table FGL :=
   AddSpinWitness.mainRowsTable 7 sdLdProgram sdLdMainRows sdLdMainRows_fixed_domain
@@ -1826,9 +1840,12 @@ private theorem sdLdBoundaryMemBus_row
   rw [Operations.interactionValuesWith_eq_map,
     ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus]
   simp only [registerBoundaryMemBusInteractions, List.map_cons, List.map_nil]
+  have h_input : eval (Environment.fromInput row sdLdMemData)
+      ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = row :=
+    ProvableType.eval_fromInput_varFromOffset_zero row sdLdMemData
   exact congrArg₂ (fun boot reload => [boot, reload])
-    (registerBoundaryBootInteraction_eval_fromInput row sdLdMemData)
-    (registerBoundaryReloadInteraction_eval_fromInput row sdLdMemData)
+    (registerBoundaryBootInteraction_eval_of_rowInput row _ h_input)
+    (registerBoundaryReloadInteraction_eval_of_rowInput row _ h_input)
 
 private theorem sdLdBoundaryTable_memBusInteractions :
     (sdLdTableWithData sdLdBoundaryTable).interactionsWith MemBusChannel.toRaw =

@@ -210,7 +210,7 @@ theorem divSpinMainTable_constraints : divSpinMainTable.Constraints := by
       (divSpinJalMain_proverAssumptions 4)
 
 theorem divSpinBoundaryTable_constraints : divSpinBoundaryTable.Constraints :=
-  registerBoundaryRowsTableOf_constraints divSpinBoundaryRows
+  registerBoundaryRowsTableOf_constraints divSpinBoundaryRows divSpinBoundaryRows_length divSpinBoundaryRows_enumerated
 
 @[simp] theorem divSpinMainTable_length : divSpinMainTable.length = 5 := rfl
 

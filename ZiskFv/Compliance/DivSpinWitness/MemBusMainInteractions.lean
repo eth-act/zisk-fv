@@ -26,9 +26,12 @@ private theorem divSpinBoundaryMemBus_row
   rw [Operations.interactionValuesWith_eq_map,
     ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_memBus]
   simp only [registerBoundaryMemBusInteractions, List.map_cons, List.map_nil]
+  have h_input : eval (Environment.fromInput row emptyData)
+      ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = row :=
+    ProvableType.eval_fromInput_varFromOffset_zero row emptyData
   exact congrArg₂ (fun boot reload => [boot, reload])
-    (registerBoundaryBootInteraction_eval_fromInput row emptyData)
-    (registerBoundaryReloadInteraction_eval_fromInput row emptyData)
+    (registerBoundaryBootInteraction_eval_of_rowInput row _ h_input)
+    (registerBoundaryReloadInteraction_eval_of_rowInput row _ h_input)
 
 theorem divSpinBoundaryTable_memBusInteractions :
     divSpinBoundaryTable.interactionsWith MemBusChannel.toRaw =

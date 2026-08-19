@@ -590,10 +590,10 @@ theorem mainRegisterInteractionsFromTable_eq_mainRegisterInteractions :
     addX1MainCRegPreInteraction_eval, addX1MainCMemInteraction_eval⟩
 
 theorem registerBoundary_interactionsWith_memBus_eq_boundaryInteractions
-    (row : RegisterBoundaryRow FGL) :
+    (row : RegisterBoundaryRow FGL) (h_reg : row.reg = 1) :
     (registerBoundarySingleRowTable row).interactionsWith MemBusChannel.toRaw =
       boundaryInteractions row := by
-  rw [registerBoundarySingleRowTable_interactionsWith_memBus]
+  rw [registerBoundarySingleRowTable_interactionsWith_memBus row h_reg]
   rfl
 
 /-! ## The register consistency equalities (the telescoping content)

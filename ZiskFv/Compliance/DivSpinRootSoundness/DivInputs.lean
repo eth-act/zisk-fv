@@ -28,7 +28,7 @@ theorem divSpinArithProviderTable_eq
     have h_width := congrArg Air.Flat.Component.rawWidth h_component
     first
     | change (0 : Nat) = 44 at h_width
-    | change (4 : Nat) = 44 at h_width
+    | change (3 : Nat) = 44 at h_width
     | change (10 : Nat) = 44 at h_width
     | change (16 : Nat) = 44 at h_width
     | change (30 : Nat) = 44 at h_width

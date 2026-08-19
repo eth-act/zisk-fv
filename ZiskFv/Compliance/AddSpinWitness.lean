@@ -1153,6 +1153,7 @@ theorem addSpinMemBus_interactions :
           singleAddBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
       simpa [registerBoundaryRowsTable] using
         registerBoundaryRowsTableOf_interactionsWith_memBus singleAddBoundaryRows
+          singleAddBoundaryRows_length singleAddBoundaryRows_enumerated
     have h_binaryAdd :
         (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemBusChannel.toRaw = [] := by
       exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil

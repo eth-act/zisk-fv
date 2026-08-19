@@ -259,8 +259,22 @@ def jalrBoundaryRows :
   [jalrBoundaryRowX1, jalrBoundaryRowX2] ++
     (List.range 29).map (fun i => boundaryRowIdle ((i + 3 : Nat) : FGL))
 
+/-- 31 rows, one per tracked register, within the component's fixed capacity. -/
+theorem jalrBoundaryRows_length :
+    jalrBoundaryRows.length ≤
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity := by
+  simp [jalrBoundaryRows, ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+
+/-- Row `i` carries register `x(i+1)`, matching the component's fixed `reg` column. -/
+theorem jalrBoundaryRows_enumerated :
+    RegisterBoundaryRowsEnumerated jalrBoundaryRows := by
+  intro i h_i
+  have h_lt : i < 31 := by simpa [jalrBoundaryRows] using h_i
+  interval_cases i <;> rfl
+
+
 def jalrBoundaryTable : Table FGL :=
-  registerBoundaryRowsTableOf jalrBoundaryRows
+  registerBoundaryRowsTableOf jalrBoundaryRows jalrBoundaryRows_length
 
 def jalrSetupBinaryAddRow : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL :=
   ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 0 2
@@ -473,7 +487,7 @@ theorem jalrBinaryAndTable_constraints : jalrBinaryAndTable.Constraints := by
     ZiskFv.AirsClean.BinaryTable.fullBlockSize]
 
 theorem jalrBoundaryTable_constraints : jalrBoundaryTable.Constraints :=
-  registerBoundaryRowsTableOf_constraints jalrBoundaryRows
+  registerBoundaryRowsTableOf_constraints jalrBoundaryRows jalrBoundaryRows_length jalrBoundaryRows_enumerated
 
 @[simp] theorem jalrMainTable_length : jalrMainTable.length = 4 := rfl
 
@@ -855,7 +869,7 @@ theorem jalrWitness_memBus_interactions :
       jalrBoundaryTable.interactionsWith MemBusChannel.toRaw =
         jalrBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
     simpa [jalrBoundaryTable] using
-      registerBoundaryRowsTableOf_interactionsWith_memBus jalrBoundaryRows
+      registerBoundaryRowsTableOf_interactionsWith_memBus jalrBoundaryRows jalrBoundaryRows_length jalrBoundaryRows_enumerated
   have h_binary :
       jalrBinaryAndTable.interactionsWith MemBusChannel.toRaw = [] := by
     exact
