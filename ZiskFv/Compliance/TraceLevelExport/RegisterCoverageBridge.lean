@@ -478,6 +478,183 @@ theorem bootWalk_head_value_strong {n : Nat} (trace : AcceptedZiskTrace n) :
                     · exact absurd (h_q'b ▸ h_c') h_c
                     · exact h_max q' (List.mem_cons_of_mem _ h_deeper) h_q'b h_c'⟩
 
+/-- A boot-anchored step's `regPreMessage.ptr` has `.val < 32`, because the
+    RegisterBoundary fixed column `reg` is `natF(index + 1)` with `index < 31`. -/
+private theorem bootAnchoredStep_ptr_val_lt {n : Nat} (trace : AcceptedZiskTrace n)
+    {p : RegWalkStep} (h : BootAnchoredStep trace p) :
+    (p.2.regPreMessage p.1).ptr.val < 32 := by
+  obtain ⟨btbl, h_btbl, h_bcomp, br, h_br, h_eq⟩ := h
+  rw [h_eq]
+  simp only [ZiskFv.AirsClean.RegisterBoundary.bootMessage]
+  -- Destructure btbl and subst the component (same pattern as pullCount proof)
+  cases btbl with
+  | mk component rawRows data raw_uniform_width fixed_domain =>
+  change component = ZiskFv.AirsClean.RegisterBoundary.component at h_bcomp
+  subst component
+  -- Now the table reduces definitionally
+  have h_tableRows : (Air.Flat.Table.table ⟨ZiskFv.AirsClean.RegisterBoundary.component,
+      rawRows, data, raw_uniform_width, fixed_domain⟩) =
+    rawRows.mapIdx fun idx raw =>
+      ZiskFv.AirsClean.RegisterBoundary.registerBoundaryFixedColumns.materialize idx raw := rfl
+  rw [h_tableRows] at h_br
+  obtain ⟨idx, h_idx_lt, h_br_eq⟩ := List.mem_mapIdx.mp h_br
+  -- The environment reduces too
+  show (eval (Environment.fromArray br data)
+    ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar).reg.val < 32
+  rw [show br = ZiskFv.AirsClean.RegisterBoundary.registerBoundaryFixedColumns.materialize idx
+      rawRows[idx] from h_br_eq.symm]
+  rw [ZiskFv.AirsClean.RegisterBoundary.reg_of_materialize]
+  -- Goal: (registerBoundaryFixedColumns.fixedAt 0 idx).val < 32
+  simp only [Air.Flat.IndexedFixedColumns.fixedAt,
+    ZiskFv.AirsClean.RegisterBoundary.registerBoundaryFixedColumns,
+    ZiskFv.AirsClean.RegisterBoundary.registerBoundaryFixedValues,
+    ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity]
+  simp only [show (0 : ℕ) < 1 from by omega, dite_true]
+  rw [Fin.val_natCast]
+  have : (idx % 31 + 1) % 18446744069414584321 = idx % 31 + 1 := Nat.mod_eq_of_lt (by omega)
+  rw [this]; omega
+
+/-- The register-pre ptr is constant along an `AnswersRegPre` chain of active
+    witness rows. For the head the claim is trivial. For every later element,
+    `readMessage = prev.regPreMessage` (which has `mem_op = 3`), so
+    `readMessage_ptr_eq_regPreMessage_ptr_of_memop3` gives `readMessage.ptr =
+    regPreMessage.ptr`, and the chain link gives `readMessage.ptr =
+    prev.regPreMessage.ptr`. -/
+private theorem regPreMessage_ptr_const_along_chain {n : Nat} (trace : AcceptedZiskTrace n) :
+    ∀ (path : List RegWalkStep) (p : RegWalkStep),
+      path.head? = some p →
+      List.IsChain RegWalkStep.AnswersRegPre path →
+      (∀ q ∈ path, IsActiveWitnessMainRow trace q) →
+      ∀ q ∈ path,
+        (q.2.regPreMessage q.1).ptr = (p.2.regPreMessage p.1).ptr := by
+  intro path
+  induction path with
+  | nil => intro _ h; simp at h
+  | cons a rest ih =>
+    intro p h_head h_chain h_sites q h_q
+    have h_p : a = p := by simpa using h_head
+    subst h_p
+    rcases List.mem_cons.mp h_q with rfl | h_rest
+    · rfl
+    · cases rest with
+      | nil => exact absurd h_rest List.not_mem_nil
+      | cons b rest' =>
+        obtain ⟨h_link, h_chain'⟩ := List.isChain_cons_cons.mp h_chain
+        -- b.readMessage = a.regPreMessage (from chain link)
+        have h_link' : b.2.readMessage b.1 = a.2.regPreMessage a.1 := h_link
+        -- b.readMessage.mem_op = 3 (since a.regPreMessage.mem_op = 3)
+        have h_b_memop : (b.2.readMessage b.1).mem_op = 3 := by
+          rw [congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.mem_op h_link]
+          cases a.2 <;> rfl
+        -- b.readMessage.ptr = b.regPreMessage.ptr
+        have h_b_inner := readMessage_ptr_eq_regPreMessage_ptr_of_memop3 trace
+          (h_sites b (List.mem_cons_of_mem _ List.mem_cons_self)) h_b_memop
+        -- b.regPreMessage.ptr = a.regPreMessage.ptr
+        have h_b_eq : (b.2.regPreMessage b.1).ptr = (a.2.regPreMessage a.1).ptr :=
+          h_b_inner ▸ congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.ptr h_link'
+        -- Induction: q.regPreMessage.ptr = b.regPreMessage.ptr
+        have h_ih := ih b rfl h_chain'
+          (fun r hr => h_sites r (List.mem_cons_of_mem _ hr)) q h_rest
+        exact h_ih.trans h_b_eq
+
+set_option maxHeartbeats 800000 in
+/-- When `stepRegWrite ≠ none` at step `i`, the Main row's `store_ind = 0`.
+    Proved by case-splitting on `ZiskStep`: non-register-writing variants give
+    `stepRegWrite = none` (contradiction), and all register-writing decode
+    structures carry `h_store_ind`. -/
+theorem store_ind_eq_zero_of_stepRegWrite_ne_none
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (h_stepRegWrite_consistent : ∀ (i : Fin n),
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
+    (i : Fin n)
+    (h_ne : stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none)
+    (h_sr : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind = 0 := by
+  have h_pr := (h_stepRegWrite_consistent i h_sr).2
+  revert h_ne h_pr
+  match ziskStep i, rowDecodes i with
+  -- Register-writing ALU/shift/immediate opcodes: rd.h_store_ind directly
+  | .sub _, rd => intros; exact rd.h_store_ind
+  | .and _, rd => intros; exact rd.h_store_ind
+  | .or _, rd => intros; exact rd.h_store_ind
+  | .xor _, rd => intros; exact rd.h_store_ind
+  | .slt _, rd => intros; exact rd.h_store_ind
+  | .sltu _, rd => intros; exact rd.h_store_ind
+  | .andi _, rd => intros; exact rd.h_store_ind
+  | .ori _, rd => intros; exact rd.h_store_ind
+  | .xori _, rd => intros; exact rd.h_store_ind
+  | .slti _, rd => intros; exact rd.h_store_ind
+  | .sltiu _, rd => intros; exact rd.h_store_ind
+  | .sll _, rd => intros; exact rd.h_store_ind
+  | .srl _, rd => intros; exact rd.h_store_ind
+  | .sra _, rd => intros; exact rd.h_store_ind
+  | .slli _, rd => intros; exact rd.h_store_ind
+  | .srli _, rd => intros; exact rd.h_store_ind
+  | .srai _, rd => intros; exact rd.h_store_ind
+  | .add _, rd => intros; exact rd.h_store_ind
+  | .addi _, rd => intros; exact rd.h_store_ind
+  | .subw _, rd => intros; exact rd.h_store_ind
+  | .addw _, rd => intros; exact rd.h_store_ind
+  | .addiw _, rd => intros; exact rd.h_store_ind
+  | .sllw _, rd => intros; exact rd.h_store_ind
+  | .srlw _, rd => intros; exact rd.h_store_ind
+  | .sraw _, rd => intros; exact rd.h_store_ind
+  | .slliw _, rd => intros; exact rd.h_store_ind
+  | .srliw _, rd => intros; exact rd.h_store_ind
+  | .sraiw _, rd => intros; exact rd.h_store_ind
+  -- Arith opcodes
+  | .mul _, rd => intros; exact rd.h_store_ind
+  | .mulh _, rd => intros; exact rd.h_store_ind
+  | .mulhsu _, rd => intros; exact rd.h_store_ind
+  | .mulw _, rd => intros; exact rd.h_store_ind
+  | .mulhu _, rd => intros; exact rd.h_store_ind
+  | .div _, rd => intros; exact rd.h_store_ind
+  | .rem _, rd => intros; exact rd.h_store_ind
+  | .divw _, rd => intros; exact rd.h_store_ind
+  | .remw _, rd => intros; exact rd.h_store_ind
+  | .divu _, rd => intros; exact rd.h_store_ind
+  | .divuw _, rd => intros; exact rd.h_store_ind
+  | .remu _, rd => intros; exact rd.h_store_ind
+  | .remuw _, rd => intros; exact rd.h_store_ind
+  -- Control flow: LUI, AUIPC
+  | .lui _, rd => intros; exact rd.h_store_ind
+  | .auipc _, rd => intros; exact rd.h_store_ind
+  -- JAL: store_ind for the step row (stepProducerRow = i.val)
+  | .jal _, rd => intros; exact rd.h_store_ind
+  -- JALR: rd.h_store_ind is for rows.finish; bridge via stepProducerRow = i.val
+  | .jalr _, rd =>
+      intro _ h_pr
+      have h_finish : rd.rows.finish.val = i.val := h_pr
+      have h_si := rd.h_store_ind
+      -- h_si : (mainRowWithRomAt trace rd.rows.finish).rom.store_ind = 0
+      -- mainRowWithRomAt trace j = mainTableRowAtOrZero trace.program trace.mainTable j.val
+      show (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind = 0
+      rw [← h_finish]; exact h_si
+  -- Load opcodes
+  | .ld _, rd => intros; exact rd.h_store_ind
+  | .lbu _, rd => intros; exact rd.h_store_ind
+  | .lhu _, rd => intros; exact rd.h_store_ind
+  | .lwu _, rd => intros; exact rd.h_store_ind
+  | .lb _, rd => intros; exact rd.h_store_ind
+  | .lh _, rd => intros; exact rd.h_store_ind
+  | .lw _, rd => intros; exact rd.h_store_ind
+  -- Non-register-writing: stepRegWrite = none, contradiction
+  | .beq _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bne _, _ => intro h_ne; exact absurd rfl h_ne
+  | .blt _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bge _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bltu _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bgeu _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sb _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sh _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sw _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sd _, _ => intro h_ne; exact absurd rfl h_ne
+  | .fence _, _ => intro h_ne; exact absurd rfl h_ne
+
 /-! ## Chain completeness — a write to register r appears on the boot walk
 
 If step m writes register r and its c-slot is active (`store_reg = 1`), the c-slot
@@ -538,15 +715,194 @@ theorem stepWritesReg_cslot_on_bootWalk
   obtain ⟨path_m, last_m, h_head_m, h_last_m, h_sites_m, h_chain_m, h_boot_m⟩ :=
     exists_bootWalk trace trace.mainTable_mem trace.mainTable_component
       (List.getElem_mem h_m_lt_table) Instantiation.RegSlot.c h_sel_c
-  -- Step 5: both walks' last elements are boot-anchored for register r
-  -- Their regPre ptrs match because both target register r.
-  -- By bootAnchoredStep_unique, last = last_m.
-  -- Step 6: by bootWalk_merge, head(shorter walk) ∈ longer walk.
-  -- The c-slot walk's head has timestamp 3+4m, a-slot walk's head has timestamp 1+4k.
-  -- Since m < k, 3+4m < 1+4k. If a-slot head were on c-slot walk,
-  -- its timestamp ≤ c-slot head's timestamp = 3+4m, contradiction.
-  -- So c-slot head ∈ a-slot walk (our path).
-  sorry
+  -- Step 5: regPreMessage.ptr is constant along an AnswersRegPre chain.
+  -- For any non-head element, readMessage = prev.regPreMessage (mem_op = 3), so
+  -- readMessage.ptr = regPreMessage.ptr by readMessage_ptr_eq_regPreMessage_ptr_of_memop3.
+  -- For the head: trivial. Hence last.regPreMessage.ptr = head.regPreMessage.ptr.
+  have h_last_ptr : (last.2.regPreMessage last.1).ptr =
+      (Instantiation.RegSlot.a.regPreMessage
+        (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar)).ptr := by
+    have h_ne' : path ≠ [] := List.ne_nil_of_mem (List.mem_of_getLast? h_last)
+    have h_head_some := List.head?_eq_some_head h_ne'
+    rw [h_head] at h_head_some
+    have h_head_id := Option.some.inj h_head_some.symm
+    exact regPreMessage_ptr_const_along_chain trace path _ (List.head?_eq_some_head h_ne')
+      h_chain h_sites last (List.mem_of_getLast? h_last)
+      |>.trans (by rw [h_head_id])
+  have h_last_m_ptr : (last_m.2.regPreMessage last_m.1).ptr =
+      (Instantiation.RegSlot.c.regPreMessage
+        (eval (trace.mainTable.environment trace.mainTable.table[m])
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar)).ptr := by
+    have h_ne' : path_m ≠ [] := List.ne_nil_of_mem (List.mem_of_getLast? h_last_m)
+    have h_head_some := List.head?_eq_some_head h_ne'
+    rw [h_head_m] at h_head_some
+    have h_head_id := Option.some.inj h_head_some.symm
+    exact regPreMessage_ptr_const_along_chain trace path_m _ (List.head?_eq_some_head h_ne')
+      h_chain_m h_sites_m last_m (List.mem_of_getLast? h_last_m)
+      |>.trans (by rw [h_head_id])
+  -- Step 5b: Both ptrs encode register r, so they are equal.
+  -- head.regPreMessage.ptr = a_offset_imm0(row_k), head_m.regPreMessage.ptr = store_offset(row_m).
+  -- From store_ind = 0 (extracted from RowDecode) and AddressSpec, addr2 = store_offset.
+  -- Then wrap_to_regidx(store_offset) = r (from heq). Both are boot boundary reg values
+  -- in {natF(1),...,natF(31)}, so wrap_to_regidx injectivity gives equality.
+  have h_ptr_eq : (last.2.regPreMessage last.1).ptr =
+      (last_m.2.regPreMessage last_m.1).ptr := by
+    rw [h_last_ptr, h_last_m_ptr]
+    -- Goal: aRegPreMessage(row_k).ptr = cRegPreMessage(row_m).ptr
+    -- i.e., a_offset_imm0(row_k) = store_offset(row_m)
+    -- Step A: derive wrap_to_regidx(store_offset(row_m)) = r
+    --   via addr2 = store_offset (AddressSpec + store_ind = 0) + heq
+    have h_store_ind : (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_ind = 0 :=
+      store_ind_eq_zero_of_stepRegWrite_ne_none trace ziskStep rowDecodes h_stepRegWrite_consistent
+        ⟨m, h_m_lt⟩ (he ▸ Option.some_ne_none _) h_sr
+    have h_addr_spec := RomDecodeBinding.mainAddressSpec_at trace ⟨m, h_m_lt_table⟩
+    have h_e_eq : e = (ZiskFv.AirsClean.Main.cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable m)).toEntry 1 1 := by
+      rcases stepRegWrite_eq_none_or_cMemMessage ⟨m, h_m_lt⟩
+        (ziskStep ⟨m, h_m_lt⟩) (rowDecodes ⟨m, h_m_lt⟩) with h_none | h_some
+      · exact absurd (he ▸ h_none) (Option.some_ne_none _)
+      · have h_pr := (h_stepRegWrite_consistent ⟨m, h_m_lt⟩ h_sr).2
+        rw [h_pr] at h_some; exact Option.some.inj (he.symm.trans h_some)
+    have h_so_r : Transpiler.wrap_to_regidx
+        (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_offset = r := by
+      have h_e_ptr : e.ptr =
+          (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_offset := by
+        rw [h_e_eq]
+        show (ZiskFv.AirsClean.Main.cMemMessage _).ptr = _
+        simp only [ZiskFv.AirsClean.Main.cMemMessage]
+        rw [h_addr_spec.2.2.1, h_store_ind, zero_mul, add_zero]
+      rw [← h_e_ptr]; exact heq
+    -- Step B: Both sides are boot boundary reg values with .val < 32, both
+    -- map to r under wrap_to_regidx. wrap_to_regidx is injective on {.val < 32}.
+    -- Use the boot anchors to get .val < 32, then Fin.val equality from wrap_to_regidx.
+    have h_val_lt_a : (last.2.regPreMessage last.1).ptr.val < 32 :=
+      bootAnchoredStep_ptr_val_lt trace h_boot
+    have h_val_lt_m : (last_m.2.regPreMessage last_m.1).ptr.val < 32 :=
+      bootAnchoredStep_ptr_val_lt trace h_boot_m
+    -- Chain propagation + boot anchor: the head ptrs have .val < 32 too
+    rw [h_last_ptr] at h_val_lt_a; rw [h_last_m_ptr] at h_val_lt_m
+    -- Both wrap_to_regidx map to r: h_a_ptr and h_so_r (after bridging eval ↔ mainTableRowAtOrZero)
+    -- h_a_ptr : wrap_to_regidx(mainTableRowAtOrZero k .a_offset_imm0) = r
+    -- h_so_r  : wrap_to_regidx(mainTableRowAtOrZero m .store_offset) = r
+    -- The goal after rw [h_last_ptr, h_last_m_ptr]:
+    --   aRegPreMessage(eval row_k).ptr = cRegPreMessage(eval row_m).ptr
+    -- aRegPreMessage.ptr = .rom.a_offset_imm0, cRegPreMessage.ptr = .rom.store_offset
+    -- show a_offset_imm0 = store_offset via Fin.ext from .val equality
+    simp only [Instantiation.RegSlot.regPreMessage, ZiskFv.AirsClean.Main.aRegPreMessage,
+      ZiskFv.AirsClean.Main.cRegPreMessage] at h_val_lt_a h_val_lt_m ⊢
+    -- Goal: (eval row_k).rom.a_offset_imm0 = (eval row_m).rom.store_offset (with table[m] notation)
+    -- Bridge h_a_ptr and h_so_r from mainTableRowAtOrZero to eval rows
+    have h_eq_k := mainTableRowAtOrZero_get trace.program trace.mainTable ⟨k, h_lt⟩
+    have h_eq_m' := mainTableRowAtOrZero_get trace.program trace.mainTable ⟨m, h_m_lt_table⟩
+    have h_wrap_a : Transpiler.wrap_to_regidx
+        (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar).rom.a_offset_imm0 = r := by
+      rw [← h_eq_k]; exact h_a_ptr
+    have h_wrap_c : Transpiler.wrap_to_regidx
+        (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨m, h_m_lt_table⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar).rom.store_offset = r := by
+      rw [← h_eq_m']; exact h_so_r
+    -- Fin.ext: both .val = r.val from wrap_to_regidx + .val < 32
+    have h_a_val := congrArg Fin.val h_wrap_a
+    have h_m_val := congrArg Fin.val h_wrap_c
+    simp only [Transpiler.wrap_to_regidx, Fin.val_mk] at h_a_val h_m_val
+    rw [Nat.mod_eq_of_lt h_val_lt_a] at h_a_val
+    -- h_m_val uses table.get ⟨m, _⟩ while h_val_lt_m uses table[m]; unify
+    have h_val_lt_m' : (eval (trace.mainTable.environment
+        (trace.mainTable.table.get ⟨m, h_m_lt_table⟩))
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+        trace.program).rowInputVar).rom.store_offset.val < 32 := h_val_lt_m
+    rw [Nat.mod_eq_of_lt h_val_lt_m'] at h_m_val
+    -- h_a_val : a_offset_imm0.val = r.val, h_m_val : store_offset.val = r.val
+    -- Goal still has table[m] vs table.get mismatch; convert via Fin.val ext
+    have h_goal_val : (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar).rom.a_offset_imm0.val =
+      (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨m, h_m_lt_table⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar).rom.store_offset.val := by omega
+    have h_goal := Fin.ext h_goal_val
+    exact h_goal
+  -- Step 5c: boot anchor uniqueness
+  have h_last_active : IsActiveWitnessMainRow trace last := by
+    exact h_sites last (List.mem_of_getLast? h_last)
+  have h_last_m_active : IsActiveWitnessMainRow trace last_m := by
+    exact h_sites_m last_m (List.mem_of_getLast? h_last_m)
+  have h_last_eq : last = last_m :=
+    bootAnchoredStep_unique trace h_last_active h_last_m_active h_boot h_boot_m h_ptr_eq
+  -- Step 6: chain merge — c-slot head lands on the a-slot path
+  have h_ne_path : path ≠ [] := List.ne_nil_of_mem (List.mem_of_getLast? h_last)
+  have h_ne_path_m : path_m ≠ [] := List.ne_nil_of_mem (List.mem_of_getLast? h_last_m)
+  by_cases h_len : path_m.length ≤ path.length
+  · -- path_m.length ≤ path.length: bootWalk_merge gives head_m ∈ path
+    have h_head_m_mem : (eval (trace.mainTable.environment trace.mainTable.table[m])
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar, Instantiation.RegSlot.c) ∈ path :=
+      bootWalk_merge trace h_sites h_sites_m h_chain h_chain_m
+        (h_last_eq ▸ h_last) h_last_m h_len h_head_m
+    exact ⟨_, h_head_m_mem, rfl,
+      (mainTableRowAtOrZero_get trace.program trace.mainTable ⟨m, h_m_lt_table⟩).symm⟩
+  · -- path.length < path_m.length: bootWalk_merge gives head ∈ path_m
+    -- But head's timestamp = 1+4k ≥ head_m's timestamp = 3+4m (since m < k)
+    -- so head ∉ path_m by not_mem_chain_of_timestamp_ge — contradiction.
+    have h_head_mem : (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar, Instantiation.RegSlot.a) ∈ path_m :=
+      bootWalk_merge trace h_sites_m h_sites h_chain_m h_chain
+        h_last_m (h_last_eq ▸ h_last) (by omega) h_head
+    exfalso
+    set head_k : Instantiation.RegWalkStep :=
+      (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar, Instantiation.RegSlot.a)
+    have h_ne_head : head_k ≠ path_m.head h_ne_path_m := by
+      intro heq_head
+      have h_head_m_id := List.head?_eq_some_head h_ne_path_m
+      rw [h_head_m] at h_head_m_id
+      have h_snd := congrArg Prod.snd (heq_head.trans (Option.some.inj h_head_m_id.symm))
+      show False
+      cases h_snd
+    have h_ts_ge : (path_m.head h_ne_path_m).timestamp.val ≤
+        head_k.timestamp.val := by
+      -- head_k.timestamp = a-slot at step k = 1 + 4*k
+      -- path_m.head.timestamp = c-slot at step m = 3 + 4*m
+      -- Since m < k: 3 + 4*m ≤ 4*k + 1 = 1 + 4*k
+      have h_head_m_id := List.head?_eq_some_head h_ne_path_m
+      rw [h_head_m] at h_head_m_id
+      have h_head_m_eq := Option.some.inj h_head_m_id.symm
+      have h_ms_k := mainRowAt_main_step trace.mainTable_component h_lt
+      have h_cap_k := main_index_lt_mainFixedCapacity trace.mainTable_component h_lt
+      have h_ms_m := mainRowAt_main_step trace.mainTable_component h_m_lt_table
+      have h_cap_m := main_index_lt_mainFixedCapacity trace.mainTable_component h_m_lt_table
+      have h_k_ts : head_k.timestamp = (1 : FGL) + (↑k : FGL) * 4 := by
+        show Instantiation.RegSlot.a.readTimestamp _ = _
+        simp only [Instantiation.RegSlot.readTimestamp]
+        have h_ms_k' : head_k.1.rom.main_step = (↑k : FGL) := by
+          simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt] at h_ms_k
+          exact h_ms_k
+        rw [h_ms_k']
+      have h_k_val : head_k.timestamp.val = 1 + 4 * k :=
+        h_k_ts ▸ slot_timestamp_val (by norm_num : (1 : ℕ) ≤ 3) h_cap_k
+      have h_m_ts : (path_m.head h_ne_path_m).timestamp = (3 : FGL) + (↑m : FGL) * 4 := by
+        rw [h_head_m_eq]
+        show Instantiation.RegSlot.c.readTimestamp _ = _
+        simp only [Instantiation.RegSlot.readTimestamp]
+        have h_ms_m' : (eval (trace.mainTable.environment trace.mainTable.table[m])
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+              trace.program).rowInputVar).rom.main_step = (↑m : FGL) := by
+          simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_m_lt_table] at h_ms_m
+          exact h_ms_m
+        rw [h_ms_m']
+      have h_m_val : (path_m.head h_ne_path_m).timestamp.val = 3 + 4 * m :=
+        h_m_ts ▸ slot_timestamp_val (by norm_num : (3 : ℕ) ≤ 3) h_cap_m
+      omega
+    exact not_mem_chain_of_timestamp_ge trace h_ne_path_m h_sites_m h_chain_m
+      h_ne_head h_ts_ge h_head_mem
 
 /-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
 
