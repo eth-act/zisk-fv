@@ -126,6 +126,20 @@ theorem stepRegWrite_eq_none_or_cMemMessage
       | exact Or.inl rfl
       | exact Or.inr rfl
 
+theorem stepRegWrite_eq_none_or_cMemMessage_at_i
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace i zs) :
+    stepRegWrite (stepChannelOutput i zs rd) = none
+    ∨ ∃ j, stepRegWrite (stepChannelOutput i zs rd) =
+        some (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (cMemMessage (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable j))
+          1 1)
+      ∧ (j = i.val ∨ j = stepProducerRow i zs rd) := by
+  cases zs with
+  | jalr c => exact Or.inr ⟨_, rfl, Or.inr rfl⟩
+  | _ => first | exact Or.inl rfl | exact Or.inr ⟨_, rfl, Or.inl rfl⟩
+
 /-! ## Step-index bridge
 
 `IsActiveWitnessMainRow trace q` gives a row in SOME Main table. By `main_table_unique`,
@@ -190,10 +204,12 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
       (rowDecodes ⟨j, h_j_lt_n⟩))
     = some ((ZiskFv.AirsClean.Main.cMemMessage
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
-    rcases stepRegWrite_eq_none_or_cMemMessage ⟨j, h_j_lt_n⟩
-      (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | h_some
+    rcases stepRegWrite_eq_none_or_cMemMessage_at_i ⟨j, h_j_lt_n⟩
+      (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | ⟨j', h_some, h_j'⟩
     · sorry  -- contradicts h_slot_c: the c-slot is active so stepRegWrite ≠ none
-    · sorry  -- stepProducerRow = j (holds for 62/63 ops; JALR needs rows.finish = i)
+    · rcases h_j' with rfl | rfl
+      · exact h_some
+      · sorry  -- JALR: stepProducerRow = j (rows.finish = ⟨j, _⟩)
   have h_ptr_eq : Transpiler.wrap_to_regidx
       ((ZiskFv.AirsClean.Main.cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
