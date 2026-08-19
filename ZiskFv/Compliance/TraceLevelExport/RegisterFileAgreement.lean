@@ -438,6 +438,18 @@ trace to be *chained*. On a bare `Fin n → SequentialState` there is no equatio
 `j + 1` to step `j`'s post-state, so `RegAgree j → RegAgree (j + 1)` could not even be stated
 without assuming one, which is the swap the anti-laundering rule forbids. -/
 
+theorem regAgree_zero
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_boot : ∀ k : Fin 32, k ≠ 0 →
+      init.regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64))) :
+    RegAgree ziskStep rowDecode init 0 := by
+  intro k hk
+  rw [chainedSailStates, h_boot k hk, ziskRegFile_zero]
+
 /-- **Writeback preservation.** If the register files agree before a step, they agree after it.
 
     Sail's side: the post-state's registers are the pre-state's with the write entry applied

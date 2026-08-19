@@ -101,11 +101,11 @@ lemma equiv_ADDI_via_binaryadd
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
-    (_ : m.a_0 r_main =
+    (h_a_lo : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
-    (_ : m.a_1 r_main =
+    (h_a_hi : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg
           (regidx_to_fin r1)))
@@ -128,7 +128,7 @@ lemma equiv_ADDI_via_binaryadd
     state addi_input r1 rd imm m p.rowInput r_main bus promises pins h_match
     (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts
       p.rowInput h_facts)
-    h_main_subset (by sorry) (by sorry)
+    h_main_subset h_a_lo h_a_hi
     (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts
       p.rowInput h_facts)
     (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts

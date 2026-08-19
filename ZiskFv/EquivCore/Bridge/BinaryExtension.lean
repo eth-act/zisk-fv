@@ -242,8 +242,8 @@ lemma packed_a_eq_of_shift_match_m32_0_of_a_range
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
-    (_ : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
-    (_ : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_lo : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -261,7 +261,7 @@ lemma packed_a_eq_of_shift_match_m32_0_of_a_range
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩ := h_a_range
   have h_r1_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) (by sorry) (by sorry) h_read_r1
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
@@ -301,8 +301,8 @@ lemma shift_pin_eq_of_shift_match_m32_0_of_b0_range
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (_h_m32 : m.m32 r_main = 0)
-    (_ : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
-    (_ : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_lo : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -316,7 +316,7 @@ lemma shift_pin_eq_of_shift_match_m32_0_of_b0_range
     simpa [h_bytes.h0.2.2.2.2.1] using h
   have h_r2_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) (by sorry) (by sorry) h_read_r2
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo h_b_hi h_read_r2
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
@@ -404,8 +404,8 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (_h_m32 : m.m32 r_main = 1)
-    (_ : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
-    (_ : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_lo : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -418,7 +418,7 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
   obtain ⟨ha0, ha1, ha2, ha3, _, _, _, _⟩ := h_a_range
   have h_r1_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) (by sorry) (by sorry) h_read_r1
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
@@ -453,8 +453,8 @@ lemma shift_pin_w_eq_of_shift_match_of_b0_range
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
-    (_ : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
-    (_ : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_lo : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -469,7 +469,7 @@ lemma shift_pin_w_eq_of_shift_match_of_b0_range
     simpa [h_bytes.h0.2.2.2.2.1] using h
   have h_r2_main :=
     SailStateBridge.packed_lane_eq_of_read_xreg
-      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) (by sorry) (by sorry) h_read_r2
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo h_b_hi h_read_r2
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
   obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs

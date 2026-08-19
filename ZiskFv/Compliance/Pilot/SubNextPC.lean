@@ -403,22 +403,22 @@ theorem construction_sub_sound'
     (h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC)
     (h_input_rd : sub_input.rd = regidx_to_fin rd)
     -- lane bridges (unchanged)
-    (_ :
+    (h_a_lo :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_a_hi :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (_ :
+    (h_b_lo :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (_ :
+    (h_b_hi :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -451,7 +451,7 @@ theorem construction_sub_sound'
     trace binding i sub_input r1 r2 rd
     h_main_op h_main_active h_m32 h_store_pc
     h_input_r1 h_input_r2 h_input_pc h_input_rd
-    (by sorry) (by sorry) (by sorry) (by sorry)
+    h_a_lo h_a_hi h_b_lo h_b_hi
     (execRowOf trace i)
     -- exec artifacts: now `rfl` (execRowOf is a concrete two-entry list)
     rfl rfl rfl

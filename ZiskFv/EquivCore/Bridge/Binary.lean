@@ -3058,8 +3058,8 @@ lemma input_r1_packed_a
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
-    (_ : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
-    (_ : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
     (h_ranges : byte_ranges_at v r_binary)
@@ -3077,7 +3077,7 @@ lemma input_r1_packed_a
      _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩
   have h_r1_main :=
     packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
-      (by sorry) (by sorry) h_input_r1
+      h_a_lo h_a_hi h_input_r1
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
   obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_match
   rw [h_m32] at h_a_hi_m
@@ -3127,8 +3127,8 @@ lemma input_r2_packed_b
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
-    (_ : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
-    (_ : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
+    (h_b_lo : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
     (h_ranges : byte_ranges_at v r_binary)
@@ -3147,7 +3147,7 @@ lemma input_r2_packed_b
      _, _, _, _, _, _, _, _⟩
   have h_r2_main :=
     packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
-      (by sorry) (by sorry) h_input_r2
+      h_b_lo h_b_hi h_input_r2
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
   obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match
   rw [h_m32] at h_b_hi_m
@@ -3203,8 +3203,8 @@ lemma input_r1_packed_a_row
     (r_main : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_matches : all_byte_matches_wf_at_row row op_val)
     (h_m32 : m.m32 r_main = 0)
-    (_ : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
-    (_ : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
@@ -3232,7 +3232,7 @@ lemma input_r1_packed_a_row
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
   have h_r1_main :=
     packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
-      (by sorry) (by sorry) h_input_r1
+      h_a_lo h_a_hi h_input_r1
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
   obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_match'
   rw [h_m32] at h_a_hi_m
@@ -3282,8 +3282,8 @@ lemma input_r2_packed_b_row
     (r_main : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_matches : all_byte_matches_wf_at_row row op_val)
     (h_m32 : m.m32 r_main = 0)
-    (_ : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
-    (_ : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
+    (h_b_lo : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
@@ -3311,7 +3311,7 @@ lemma input_r2_packed_b_row
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
   have h_r2_main :=
     packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
-      (by sorry) (by sorry) h_input_r2
+      h_b_lo h_b_hi h_input_r2
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
   obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match'
   rw [h_m32] at h_b_hi_m
@@ -3566,8 +3566,8 @@ lemma input_r1_packed_a32_row
     (ha2 : (row.aBytes.free_in_a_2).val < 256)
     (ha3 : (row.aBytes.free_in_a_3).val < 256)
     (_h_m32 : m.m32 r_main = 1)
-    (_ : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
-    (_ : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_a_lo : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
@@ -3582,7 +3582,7 @@ lemma input_r1_packed_a32_row
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
   have h_r1_main :=
     packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
-      (by sorry) (by sorry) h_input_r1
+      h_a_lo h_a_hi h_input_r1
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
   obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_match'
   -- low-half binding: `m.a_0` packs the 4 low a-bytes (m32 does not enter `a_lo`)
@@ -3632,8 +3632,8 @@ lemma input_r2_packed_b32_row
     (hb2 : (row.bBytes.free_in_b_2).val < 256)
     (hb3 : (row.bBytes.free_in_b_3).val < 256)
     (_h_m32 : m.m32 r_main = 1)
-    (_ : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
-    (_ : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
+    (h_b_lo : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
@@ -3648,7 +3648,7 @@ lemma input_r2_packed_b32_row
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
   have h_r2_main :=
     packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
-      (by sorry) (by sorry) h_input_r2
+      h_b_lo h_b_hi h_input_r2
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
   obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_match'
   have h_b0_val : (m.b_0 r_main).val =
