@@ -237,7 +237,11 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     (h_ptr : Transpiler.wrap_to_regidx (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr = r)
     (h_timestamp_lt : q.timestamp.val < (3 + 4 * k : ℕ))
     (h_no_writes_above : ∀ m, q.timestamp.val < 3 + 4 * m → m < k →
-      ¬ StepWritesReg ziskStep rowDecodes m r) :
+      ¬ StepWritesReg ziskStep rowDecodes m r)
+    (h_stepRegWrite_consistent : ∀ (i : Fin n),
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
   obtain ⟨j, h_j_lt_table, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
@@ -257,10 +261,23 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
     rcases stepRegWrite_eq_none_or_cMemMessage_at_i ⟨j, h_j_lt_n⟩
       (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | ⟨j', h_some, h_j'⟩
-    · sorry  -- contradicts h_slot_c: the c-slot is active so stepRegWrite ≠ none
-    · rcases h_j' with rfl | rfl
+    · -- Derive store_reg = 1 from the active c-slot, then contradict h_none.
+      have h_sr : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_reg = 1 := by
+        obtain ⟨_, _, _, _, _, h_eq_row, h_sel⟩ := h_active
+        rw [h_slot_c] at h_sel
+        simp only [Instantiation.RegSlot.selector] at h_sel
+        rwa [← h_row_eq]
+      exact absurd h_none (h_stepRegWrite_consistent ⟨j, h_j_lt_n⟩ h_sr).1
+    · -- Both sub-cases reduce to stepProducerRow = j via h_stepRegWrite_consistent.
+      have h_sr : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_reg = 1 := by
+        obtain ⟨_, _, _, _, _, h_eq_row, h_sel⟩ := h_active
+        rw [h_slot_c] at h_sel
+        simp only [Instantiation.RegSlot.selector] at h_sel
+        rwa [← h_row_eq]
+      have h_pr := (h_stepRegWrite_consistent ⟨j, h_j_lt_n⟩ h_sr).2
+      rcases h_j' with rfl | rfl
       · exact h_some
-      · sorry  -- JALR: stepProducerRow = j (rows.finish = ⟨j, _⟩)
+      · rw [h_pr] at h_some; exact h_some
   have h_ptr_eq : Transpiler.wrap_to_regidx
       ((ZiskFv.AirsClean.Main.cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
@@ -409,7 +426,11 @@ theorem a_column_eq_lane_lo_sail_xreg
       (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_src_reg = 1)
     (h_a_ptr :
       Transpiler.wrap_to_regidx
-        (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 = r) :
+        (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 = r)
+    (h_stepRegWrite_consistent : ∀ (i : Fin n),
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 k =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
@@ -528,5 +549,6 @@ theorem a_column_eq_lane_lo_sail_xreg
     rw [h_a0_val]
     exact cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
       k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt h_no_writes_above
+      h_stepRegWrite_consistent
 
 end ZiskFv.Compliance
