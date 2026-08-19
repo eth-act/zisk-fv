@@ -141,6 +141,50 @@ theorem isActiveWitnessMainRow_eq_mainTableRow {n : Nat} (trace : AcceptedZiskTr
   subst h_same
   exact ⟨index, h_index, h_eq⟩
 
+/-! ## No-writes lemma from boot walk
+
+If the boot walk for register `r` at step `k` produced no Main-row c-slot
+supplier (the head's value is zero — boot-anchored), then no step between
+0 and k wrote to register `r`. The proof uses channel balance + push/pull
+injectivity: a write would create a register-pre push that the balanced
+channel forces into the walk, contradicting the boot-anchored conclusion. -/
+
+theorem not_stepWritesReg_of_bootAnchored_walk
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (k : ℕ) (hk : k < n)
+    (r : Fin 32) (hr : r ≠ 0)
+    (h_boot_walk_zero :
+      (eval (trace.mainTable.environment
+          (trace.mainTable.table.get ⟨k, trace.mainTable_index ⟨k, hk⟩⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.programLength trace.program).rowInputVar).core.a_0 = 0) :
+    ∀ m, m < k → ¬ StepWritesReg ziskStep rowDecodes m r := by
+  sorry
+
+/-! ## No-writes lemma: supplier case
+
+If the boot walk for register `r` at step `k` found supplier `q` (at
+slot c), then no step between the supplier's index and `k` wrote to `r`.
+Same proof structure as the boot-anchored case. -/
+
+theorem not_stepWritesReg_between_supplier_and_reader
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (k : ℕ) (hk : k < n)
+    (r : Fin 32) (hr : r ≠ 0)
+    (q : RegWalkStep) (h_active : IsActiveWitnessMainRow trace q)
+    (h_slot_c : q.2 = Instantiation.RegSlot.c) :
+    ∃ (j : ℕ) (hj : j < n),
+      q.1 = mainTableRowAtOrZero trace.program trace.mainTable j
+      ∧ stepRegWrite (stepChannelOutput ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩))
+          = some ((ZiskFv.AirsClean.Main.cMemMessage
+            (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
+      ∧ (∀ m, j < m → m < k → ¬ StepWritesReg ziskStep rowDecodes m r) := by
+  sorry
+
 /-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
 
 Given that the a-slot at step `k` reads register `r` (selector active, ptr = ind r),
@@ -193,11 +237,40 @@ theorem a_column_eq_lane_lo_sail_xreg
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
   rcases h_boot_walk with ⟨h0, _⟩ | ⟨q, h_active, h_slot_c, h_val0, _⟩
   · -- Boot-anchored: a_0 = 0, need ziskRegFile k r = 0
-    rw [h_a0_eq]; convert h0.symm ▸ (by sorry :
+    rw [h_a0_eq]; convert h0.symm ▸ (by
+      have h_no_writes := not_stepWritesReg_of_bootAnchored_walk trace ziskStep rowDecodes
+        k hk r hr h0
+      have h_reg_zero : ziskRegFile ziskStep rowDecodes k r = 0 := by
+        have := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r 0 k (Nat.zero_le k)
+          (fun m _ hm => h_no_writes m hm)
+        simp [this]
+      rw [h_reg_zero]; simp [ZiskFv.Trusted.lane_lo] :
         (0 : FGL) = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
   · -- Supplier: a_0 = cMemMessage(q).value_0, need it = lane_lo(ziskRegFile k r)
-    rw [h_a0_eq]; convert h_val0.symm ▸ (by sorry :
-      (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
-        ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
+    rw [h_a0_eq]; convert h_val0.symm ▸ (by
+      obtain ⟨j, hj, h_row_eq, h_write, h_no_writes⟩ :=
+        not_stepWritesReg_between_supplier_and_reader trace ziskStep rowDecodes
+          k hk r hr q h_active h_slot_c
+      have h_ptr_eq : Transpiler.wrap_to_regidx
+          ((ZiskFv.AirsClean.Main.cMemMessage
+            (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
+        sorry
+      have h_regFile_succ := ziskRegFile_succ_of_writes ziskStep rowDecodes j r hj _ h_write h_ptr_eq
+      have h_regFile_k : ziskRegFile ziskStep rowDecodes k r =
+          ziskRegFile ziskStep rowDecodes (j + 1) r := by
+        exact ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r (j + 1) k
+          (by sorry) (fun m hm hm' => h_no_writes m (by omega) hm')
+      have h_lane := lane_lo_entryRegValue
+        ((ZiskFv.AirsClean.Main.cMemMessage
+          (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
+        (by sorry) (by sorry)
+      rw [h_row_eq]
+      show (ZiskFv.AirsClean.Main.cMemMessage
+            (mainTableRowAtOrZero trace.program trace.mainTable j)).value_0
+        = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r)
+      rw [h_regFile_k, h_regFile_succ]
+      simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_lane.symm :
+        (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
+          ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
 
 end ZiskFv.Compliance
