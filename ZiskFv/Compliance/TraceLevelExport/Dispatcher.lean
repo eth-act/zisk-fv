@@ -1460,17 +1460,17 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
         (by sorry) (by sorry) (by sorry) (by sorry)
   | slliw c =>
+      have h_domain : SequentialPcDomain c.slliw_input.PC := hAvoidKnownBugs
       exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia)
-        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
-        (by sorry) (by sorry) (by sorry)
+        h_domain (by sorry) (by sorry) (by sorry)
   | srliw c =>
+      have h_domain : SequentialPcDomain c.srliw_input.PC := hAvoidKnownBugs
       exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia)
-        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
-        (by sorry) (by sorry) (by sorry)
+        h_domain (by sorry) (by sorry) (by sorry)
   | sraiw c =>
+      have h_domain : SequentialPcDomain c.sraiw_input.PC := hAvoidKnownBugs
       exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia)
-        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
-        (by sorry) (by sorry) (by sorry)
+        h_domain (by sorry) (by sorry) (by sorry)
   | mul c =>
       exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
