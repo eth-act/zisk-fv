@@ -295,6 +295,9 @@ theorem a_column_eq_lane_lo_sail_xreg
     have h_a0_val : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
           trace.program trace.mainTable).a_0 k
         = (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 := by
+      -- h_q0 gives the full value chain through regPreMessage/readMessage
+      -- regPreMessage .a (row) = aRegPreMessage row, and aRegPreMessage.value_0 = row.core.a_0
+      -- readMessage .c (row) = cMemMessage row
       sorry
     rw [h_a0_val]
     exact cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
