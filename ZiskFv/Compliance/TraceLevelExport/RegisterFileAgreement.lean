@@ -628,4 +628,38 @@ lemma lane_hi_entryRegValue (e : Interaction.MemoryBusEntry FGL)
   simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_div_right _ _ (by omega : 0 < 4294967296),
     Nat.div_eq_of_lt h_v0, Nat.zero_add, Nat.mod_eq_of_lt h_v1]
 
+/-! ## Sail-side bridge: `RegAgree → sail_to_rv64.xreg = ziskRegFile`
+
+Given `RegAgree j`, the Sail state's register value (via `read_xreg` and `sail_to_rv64`)
+equals the ZisK register file. The cast between `RegisterType (reg_of_fin k)` and
+`BitVec 64` cancels by `register_type_reg_of_fin_equiv`. -/
+
+theorem read_xreg_of_regAgree
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (k : Fin 32) (h_k : k ≠ 0)
+    (h_ra : RegAgree ziskStep rowDecode init j) :
+    read_xreg k (chainedSailStates ziskStep init j) =
+      EStateM.Result.ok (ziskRegFile ziskStep rowDecode j k)
+        (chainedSailStates ziskStep init j) := by
+  have h_get := h_ra k h_k
+  set state := chainedSailStates ziskStep init j with hstate
+  set v := ziskRegFile ziskStep rowDecode j k with hv
+  fin_cases k <;> simp_all [read_xreg, Sail.readReg, PreSail.readReg, reg_of_fin]
+
+theorem sail_xreg_eq_ziskRegFile
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (k : Fin 32) (h_k : k ≠ 0)
+    (h_ra : RegAgree ziskStep rowDecode init j) :
+    (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+      (chainedSailStates ziskStep init j)).xreg k =
+      ziskRegFile ziskStep rowDecode j k :=
+  ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg _ k _
+    (read_xreg_of_regAgree ziskStep rowDecode init j k h_k h_ra)
+
 end ZiskFv.Compliance

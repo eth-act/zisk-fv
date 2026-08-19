@@ -105,4 +105,76 @@ theorem not_mem_chain_of_timestamp_ge (trace : AcceptedZiskTrace n)
               omega
   exact h_ne_head h_eq
 
+/-! ## Step-index bridge
+
+`IsActiveWitnessMainRow trace q` gives a row in SOME Main table. By `main_table_unique`,
+that table is `trace.mainTable`. The row's index gives a step index. -/
+
+theorem isActiveWitnessMainRow_eq_mainTableRow {n : Nat} (trace : AcceptedZiskTrace n)
+    {q : RegWalkStep} (h : IsActiveWitnessMainRow trace q) :
+    ∃ index : ℕ, index < trace.mainTable.table.length ∧
+      q.1 = mainTableRowAtOrZero trace.program trace.mainTable index := by
+  obtain ⟨table, h_table, h_component, index, h_index, h_eq, _⟩ := h
+  have h_same : table = trace.mainTable :=
+    main_table_unique trace.witness h_table trace.mainTable_mem h_component trace.mainTable_component
+  subst h_same
+  exact ⟨index, h_index, h_eq⟩
+
+/-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
+
+Given that the a-slot at step `k` reads register `r` (selector active, ptr = ind r),
+and `RegAgree k` holds, the a-column equals the Sail register via the register file.
+
+This theorem combines the boot walk (circuit-level value chain) with RegAgree
+(register file = Sail state). The proof uses `exists_bootWalk` for the circuit
+chain and `sail_xreg_eq_ziskRegFile` for the Sail bridge.
+
+The boot walk gives either:
+- boot-anchored: a_0 = 0, and ziskRegFile k r = 0 (no writes to r)
+- supplier q: a_0 = cMemMessage(q).value_0, and the supplier's write value
+  equals ziskRegFile k r (q is the latest writer to r)
+
+Both cases close with the same conclusion: a_0 = lane_lo(ziskRegFile k r). -/
+
+theorem a_column_eq_lane_lo_sail_xreg
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (k : ℕ) (hk : k < n)
+    (r : Fin 32) (hr : r ≠ 0)
+    (h_regAgree : RegAgree ziskStep rowDecodes init k)
+    (h_a_src_reg :
+      (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_src_reg = 1)
+    (h_a_ptr :
+      Transpiler.wrap_to_regidx
+        (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 = r) :
+    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 k =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (chainedSailStates ziskStep init k)).xreg r) := by
+  rw [ZiskFv.Compliance.sail_xreg_eq_ziskRegFile ziskStep rowDecodes init k r hr h_regAgree]
+  have h_lt := trace.mainTable_index ⟨k, hk⟩
+  have h_boot_walk := a_columns_of_bootWalk trace
+    trace.mainTable_mem trace.mainTable_component
+    (List.getElem_mem h_lt)
+    (by unfold ZiskFv.Compliance.Instantiation.RegSlot.selector
+        simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero,
+          dif_pos h_lt] at h_a_src_reg ⊢
+        exact h_a_src_reg)
+  have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+        trace.program trace.mainTable).a_0 k
+      = (eval (trace.mainTable.environment
+          (trace.mainTable.table.get ⟨k, h_lt⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+          trace.programLength trace.program).rowInputVar).core.a_0 := by
+    simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
+      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
+  rcases h_boot_walk with ⟨h0, _⟩ | ⟨q, h_active, h_slot_c, h_val0, _⟩
+  · rw [h_a0_eq]; convert h0.symm ▸ (by sorry :
+      (0 : FGL) = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
+  · rw [h_a0_eq]; convert h_val0.symm ▸ (by sorry :
+      (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
+        ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
+
 end ZiskFv.Compliance
