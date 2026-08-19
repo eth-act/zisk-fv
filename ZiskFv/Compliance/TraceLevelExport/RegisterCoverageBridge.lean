@@ -241,7 +241,10 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     (h_stepRegWrite_consistent : ∀ (i : Fin n),
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
-        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val) :
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
+    (h_stepRegWrite_converse : ∀ (i : Fin n),
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none →
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
   obtain ⟨j, h_j_lt_table, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
@@ -398,6 +401,153 @@ theorem bootWalk_head_ptr {n : Nat} (trace : AcceptedZiskTrace n) :
             (fun r hr => h_sites r (List.mem_cons_of_mem _ hr))
             q (List.mem_cons_of_mem _ h_deeper) h_eq_b).trans h_b_eq
 
+/-! ## Strengthened boot walk head value
+
+`bootWalk_head_value` gives two cases but does not say whether the first case excludes
+c-slots from the path or whether the second case's q is the first c-slot. This
+strengthened version adds those facts, which the chain-completeness argument needs. -/
+
+/-- In the first case, no element after the head has slot `.c`. In the second case,
+    every c-slot on the path (other than the head) has timestamp ≤ q's timestamp,
+    making q the closest c-slot to the head. -/
+theorem bootWalk_head_value_strong {n : Nat} (trace : AcceptedZiskTrace n) :
+    ∀ (path : List RegWalkStep) (p last : RegWalkStep),
+      path.head? = some p → path.getLast? = some last →
+      (∀ q ∈ path, IsActiveWitnessMainRow trace q) →
+      List.IsChain RegWalkStep.AnswersRegPre path →
+      BootAnchoredStep trace last →
+      ((p.2.regPreMessage p.1).value_0 = 0 ∧ (p.2.regPreMessage p.1).value_1 = 0
+          ∧ ∀ q ∈ path, q ≠ p → q.2 ≠ RegSlot.c)
+        ∨ ∃ q ∈ path, q.2 = RegSlot.c
+            ∧ (p.2.regPreMessage p.1).value_0 = (q.2.readMessage q.1).value_0
+            ∧ (p.2.regPreMessage p.1).value_1 = (q.2.readMessage q.1).value_1
+            ∧ ∀ q' ∈ path, q' ≠ p → q'.2 = RegSlot.c →
+                q'.timestamp.val ≤ q.timestamp.val := by
+  intro path
+  induction path with
+  | nil => intro p last h_head; simp at h_head
+  | cons a rest ih =>
+      intro p last h_head h_last h_sites h_chain h_boot
+      have h_p : a = p := by simpa using h_head
+      subst h_p
+      match rest with
+      | [] =>
+          have h_last' : a = last := by simpa using h_last
+          subst h_last'
+          obtain ⟨btbl, _h_btbl, _h_bcomp, br, _h_br, h_eq⟩ := h_boot
+          exact Or.inl ⟨congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_eq,
+            congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_eq,
+            fun q hq h_ne => absurd (List.mem_singleton.mp hq) h_ne⟩
+      | b :: rest' =>
+          obtain ⟨h_link, h_chain'⟩ := List.isChain_cons_cons.mp h_chain
+          have h_link' : b.2.readMessage b.1 = a.2.regPreMessage a.1 := h_link
+          have h_sites_rest : ∀ q ∈ (b :: rest'), IsActiveWitnessMainRow trace q :=
+            fun q hq => h_sites q (List.mem_cons_of_mem _ hq)
+          by_cases h_c : b.2 = RegSlot.c
+          · -- b is the first c-slot: return second case with b
+            refine Or.inr ⟨b, List.mem_cons_of_mem _ List.mem_cons_self, h_c,
+              (congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_link').symm,
+              (congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_link').symm,
+              fun q' h_q' h_ne' h_c' => ?_⟩
+            rcases List.mem_cons.mp h_q' with rfl | h_rest
+            · exact absurd rfl h_ne'
+            · exact timestamp_val_le_head_of_mem_chain trace (List.cons_ne_nil b rest')
+                h_sites_rest h_chain' h_rest
+          · obtain ⟨h_v0, h_v1⟩ := readMessage_value_eq_regPre_of_ne_c h_c b.1
+            have h_a0 : (a.2.regPreMessage a.1).value_0 = (b.2.regPreMessage b.1).value_0 := by
+              rw [← h_v0, ← congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_0 h_link']
+            have h_a1 : (a.2.regPreMessage a.1).value_1 = (b.2.regPreMessage b.1).value_1 := by
+              rw [← h_v1, ← congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.value_1 h_link']
+            rcases ih b last rfl (by simpa using h_last) h_sites_rest h_chain' h_boot with
+              ⟨h0, h1, h_nc⟩ | ⟨q, h_q, h_qc, h_q0, h_q1, h_max⟩
+            · exact Or.inl ⟨h_a0.trans h0, h_a1.trans h1, fun q hq h_ne => by
+                rcases List.mem_cons.mp hq with rfl | h_rest
+                · exact absurd rfl h_ne
+                · rcases List.mem_cons.mp h_rest with rfl | h_deeper
+                  · exact h_c
+                  · by_cases h_qb : q = b
+                    · exact h_qb ▸ h_c
+                    · exact h_nc q (List.mem_cons_of_mem _ h_deeper) h_qb⟩
+            · exact Or.inr ⟨q, List.mem_cons_of_mem _ h_q, h_qc,
+                h_a0.trans h_q0, h_a1.trans h_q1, fun q' h_q' h_ne' h_c' => by
+                rcases List.mem_cons.mp h_q' with rfl | h_rest
+                · exact absurd rfl h_ne'
+                · rcases List.mem_cons.mp h_rest with rfl | h_deeper
+                  · exact absurd h_c' h_c
+                  · by_cases h_q'b : q' = b
+                    · exact absurd (h_q'b ▸ h_c') h_c
+                    · exact h_max q' (List.mem_cons_of_mem _ h_deeper) h_q'b h_c'⟩
+
+/-! ## Chain completeness — a write to register r appears on the boot walk
+
+If step m writes register r and its c-slot is active (`store_reg = 1`), the c-slot
+appears on the boot walk chain from any later a-slot reading register r. The proof
+constructs a second boot walk from the c-slot, matches the boot anchors via
+`bootAnchoredStep_unique`, and uses `bootWalk_merge` to place the c-slot on the
+original path (the alternative — the a-slot on the c-slot's path — gives a timestamp
+contradiction since step k's a-slot has a strictly higher timestamp). -/
+
+/-- **Step m's c-slot is on the boot walk.** Given `StepWritesReg m r` with `m < k`, the
+    premise `h_stepRegWrite_converse` gives `store_reg = 1`, which makes the c-slot active.
+    Then `exists_bootWalk` gives a chain from the c-slot to a boot anchor. By
+    `bootAnchoredStep_unique` (matching ptr) both walks end at the same anchor, and
+    `bootWalk_merge` puts the c-slot on the original path. -/
+theorem stepWritesReg_cslot_on_bootWalk
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (h_stepRegWrite_converse : ∀ (i : Fin n),
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none →
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
+    (h_stepRegWrite_consistent : ∀ (i : Fin n),
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
+    {k : ℕ} (hk : k < n) (r : Fin 32)
+    (h_a_ptr : Transpiler.wrap_to_regidx
+        (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 = r)
+    (h_lt : (⟨k, hk⟩ : Fin n).val < trace.mainTable.table.length)
+    {path : List RegWalkStep} {last : RegWalkStep}
+    (h_head : path.head? = some
+        (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar, Instantiation.RegSlot.a))
+    (h_last : path.getLast? = some last)
+    (h_sites : ∀ q ∈ path, IsActiveWitnessMainRow trace q)
+    (h_chain : List.IsChain RegWalkStep.AnswersRegPre path)
+    (h_boot : BootAnchoredStep trace last)
+    {m : ℕ} (hm : m < k)
+    (h_wr : StepWritesReg ziskStep rowDecodes m r) :
+    ∃ w ∈ path, w.2 = Instantiation.RegSlot.c
+      ∧ w.1 = mainTableRowAtOrZero trace.program trace.mainTable m := by
+  -- Step 1: store_reg = 1 from StepWritesReg
+  obtain ⟨h_m_lt, e, he, heq⟩ := h_wr
+  have h_sr := h_stepRegWrite_converse ⟨m, h_m_lt⟩ (he ▸ Option.some_ne_none _)
+  -- Step 2: table length bound
+  have h_m_lt_table : m < trace.mainTable.table.length :=
+    trace.mainTable_index ⟨m, h_m_lt⟩
+  -- Step 3: c-slot selector in eval form
+  have h_sel_c : Instantiation.RegSlot.c.selector
+      (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨m, h_m_lt_table⟩))
+        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+          trace.program).rowInputVar) = 1 := by
+    unfold Instantiation.RegSlot.selector
+    have h_eq := mainTableRowAtOrZero_get trace.program trace.mainTable ⟨m, h_m_lt_table⟩
+    rw [← h_eq]; exact h_sr
+  -- Step 4: boot walk from the c-slot
+  obtain ⟨path_m, last_m, h_head_m, h_last_m, h_sites_m, h_chain_m, h_boot_m⟩ :=
+    exists_bootWalk trace trace.mainTable_mem trace.mainTable_component
+      (List.getElem_mem h_m_lt_table) Instantiation.RegSlot.c h_sel_c
+  -- Step 5: both walks' last elements are boot-anchored for register r
+  -- Their regPre ptrs match because both target register r.
+  -- By bootAnchoredStep_unique, last = last_m.
+  -- Step 6: by bootWalk_merge, head(shorter walk) ∈ longer walk.
+  -- The c-slot walk's head has timestamp 3+4m, a-slot walk's head has timestamp 1+4k.
+  -- Since m < k, 3+4m < 1+4k. If a-slot head were on c-slot walk,
+  -- its timestamp ≤ c-slot head's timestamp = 3+4m, contradiction.
+  -- So c-slot head ∈ a-slot walk (our path).
+  sorry
+
 /-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
 
 Given that the a-slot at step `k` reads register `r` (selector active, ptr = ind r),
@@ -430,7 +580,10 @@ theorem a_column_eq_lane_lo_sail_xreg
     (h_stepRegWrite_consistent : ∀ (i : Fin n),
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
-        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val) :
+        ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
+    (h_stepRegWrite_converse : ∀ (i : Fin n),
+        stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none →
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 k =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
@@ -448,8 +601,8 @@ theorem a_column_eq_lane_lo_sail_xreg
           exact h_a_src_reg)
   -- The chain gives both the value and the ordering.
   -- bootWalk_head_value extracts the value from the chain.
-  rcases bootWalk_head_value trace path _ last h_head h_last h_chain h_boot with
-    ⟨h0, h1⟩ | ⟨q, h_q, h_qc, h_q0, h_q1⟩
+  rcases bootWalk_head_value_strong trace path _ last h_head h_last h_sites h_chain h_boot with
+    ⟨h0, h1, h_no_cslot⟩ | ⟨q, h_q, h_qc, h_q0, h_q1, h_max_ts⟩
   · -- Boot-anchored: a_0 = 0
     have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
           trace.program trace.mainTable).a_0 k
@@ -460,7 +613,17 @@ theorem a_column_eq_lane_lo_sail_xreg
       simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
     have h_no_writes : ∀ m, m < k → ¬ StepWritesReg ziskStep rowDecodes m r := by
-      sorry -- chain completeness: boot-anchored walk has no c-slot, so no writes to r
+      intro m hm h_wr
+      obtain ⟨w, h_w_mem, h_wc, _⟩ := stepWritesReg_cslot_on_bootWalk trace ziskStep rowDecodes
+        h_stepRegWrite_converse h_stepRegWrite_consistent hk r h_a_ptr h_lt
+        h_head h_last h_sites h_chain h_boot hm h_wr
+      have h_ne : w ≠ (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar, Instantiation.RegSlot.a) := by
+        intro heq
+        have := congrArg Prod.snd heq
+        simp only [h_wc] at this; exact absurd this (by decide)
+      exact absurd h_wc (h_no_cslot w h_w_mem (by convert h_ne))
     rw [h_a0_eq]
     have h_zero := ziskRegFile_eq_lane_lo_of_bootWalk_zero trace ziskStep rowDecodes
       k hk r hr h_no_writes
@@ -545,10 +708,34 @@ theorem a_column_eq_lane_lo_sail_xreg
       rw [h_a0_eq]; convert h_q0; rw [h_qc]; rfl
     have h_no_writes_above : ∀ m, q.timestamp.val < 3 + 4 * m → m < k →
         ¬ StepWritesReg ziskStep rowDecodes m r := by
-      sorry -- chain completeness: q is the first c-slot, so no writes after q
+      intro m h_ts_lt hm h_wr
+      obtain ⟨w, h_w_mem, h_wc, h_w_row⟩ := stepWritesReg_cslot_on_bootWalk trace ziskStep
+        rowDecodes h_stepRegWrite_converse h_stepRegWrite_consistent hk r h_a_ptr h_lt
+        h_head h_last h_sites h_chain h_boot hm h_wr
+      -- w is on the path, w.2 = .c, w.1 = mainTableRowAtOrZero m
+      -- w's timestamp = 3 + 4 * m (c-slot timestamp)
+      -- By h_max_ts: w.timestamp ≤ q.timestamp
+      have h_ne_head : w ≠ (eval (trace.mainTable.environment (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus trace.programLength
+            trace.program).rowInputVar, Instantiation.RegSlot.a) := by
+        intro heq; have := congrArg Prod.snd heq; simp only [h_wc] at this; exact absurd this (by decide)
+      have h_w_ts_le := h_max_ts w h_w_mem (by convert h_ne_head) h_wc
+      -- w's timestamp = 3 + 4 * m (from c-slot at row m)
+      have h_m_lt_n : m < n := Nat.lt_trans hm hk
+      have h_lt_m : m < trace.mainTable.table.length := by
+        have := trace.mainTable_index ⟨m, h_m_lt_n⟩; omega
+      have h_w_ts_val : w.timestamp.val = 3 + 4 * m := by
+        have h_ms := mainRowAt_main_step trace.mainTable_component h_lt_m
+        have h_cap := main_index_lt_mainFixedCapacity trace.mainTable_component h_lt_m
+        have : w.timestamp = (3 : FGL) + (↑m : FGL) * 4 := by
+          simp only [Instantiation.RegWalkStep.timestamp, h_wc,
+            Instantiation.RegSlot.readTimestamp, h_w_row, h_ms]
+        rw [this]
+        exact slot_timestamp_val (by norm_num : (3 : ℕ) ≤ 3) h_cap
+      omega
     rw [h_a0_val]
     exact cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
       k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt h_no_writes_above
-      h_stepRegWrite_consistent
+      h_stepRegWrite_consistent h_stepRegWrite_converse
 
 end ZiskFv.Compliance
