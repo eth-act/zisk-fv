@@ -186,12 +186,13 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
     rcases stepRegWrite_eq_none_or_cMemMessage ⟨j, h_j_lt_n⟩
       (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | h_some
-    · sorry
-    · sorry
+    · sorry  -- contradicts h_slot_c: the c-slot is active so stepRegWrite ≠ none
+    · convert h_some using 2; sorry  -- stepProducerRow = j for single-row ops
   have h_ptr_eq : Transpiler.wrap_to_regidx
       ((ZiskFv.AirsClean.Main.cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
-    sorry
+    simp only [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
+    rw [← h_row_eq]; exact h_ptr
   have h_regFile_succ := ziskRegFile_succ_of_writes ziskStep rowDecodes j r h_j_lt_n
     _ h_write h_ptr_eq
   have h_no_writes : ∀ m, j + 1 ≤ m → m < k → ¬ StepWritesReg ziskStep rowDecodes m r := by
@@ -202,8 +203,9 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     ((ZiskFv.AirsClean.Main.cMemMessage
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
     (by sorry) (by sorry)
-  rw [h_regFile_k, h_regFile_succ]
-  sorry
+  rw [h_regFile_k, h_regFile_succ, ← h_row_eq]
+  rw [← h_row_eq] at h_lane
+  simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_lane.symm
 
 /-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
 
