@@ -148,21 +148,17 @@ between any two consecutive chain elements, no write to that register
 occurred. This follows from the channel balance bijection. -/
 
 theorem ziskRegFile_eq_lane_lo_of_bootWalk_zero
-    {n : Nat} (trace : AcceptedZiskTrace n)
-    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
-    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
-    (k : ℕ) (hk : k < n)
-    (r : Fin 32) (hr : r ≠ 0) :
-    (eval (trace.mainTable.environment
-        (trace.mainTable.table.get ⟨k, trace.mainTable_index ⟨k, hk⟩⟩))
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        trace.programLength trace.program).rowInputVar).core.a_0 = 0
-    ∧ (eval (trace.mainTable.environment
-        (trace.mainTable.table.get ⟨k, trace.mainTable_index ⟨k, hk⟩⟩))
-      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-        trace.programLength trace.program).rowInputVar).core.a_1 = 0 →
+    {n : Nat} (_trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep _trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode _trace i (ziskStep i))
+    (k : ℕ) (_hk : k < n)
+    (r : Fin 32) (_hr : r ≠ 0)
+    (h_no_writes : ∀ m, m < k → ¬ StepWritesReg ziskStep rowDecodes m r) :
     (0 : FGL) = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
-  sorry
+  have h_eq := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r 0 k (Nat.zero_le k)
+    (fun m _ hm' => h_no_writes m hm')
+  rw [h_eq, ziskRegFile_zero]
+  simp [ZiskFv.Trusted.lane_lo]
 
 theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     {n : Nat} (trace : AcceptedZiskTrace n)
@@ -174,7 +170,9 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     (h_active : IsActiveWitnessMainRow trace q)
     (h_slot_c : q.2 = Instantiation.RegSlot.c)
     (h_ptr : Transpiler.wrap_to_regidx (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr = r)
-    (h_timestamp_lt : q.timestamp.val < (3 + 4 * k : ℕ)) :
+    (h_timestamp_lt : q.timestamp.val < (3 + 4 * k : ℕ))
+    (h_no_writes_above : ∀ m, q.timestamp.val < 3 + 4 * m → m < k →
+      ¬ StepWritesReg ziskStep rowDecodes m r) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
   obtain ⟨j, h_j_lt_table, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
@@ -203,8 +201,8 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     rw [← h_row_eq]; exact h_ptr
   have h_regFile_succ := ziskRegFile_succ_of_writes ziskStep rowDecodes j r h_j_lt_n
     _ h_write h_ptr_eq
-  have h_no_writes : ∀ m, j + 1 ≤ m → m < k → ¬ StepWritesReg ziskStep rowDecodes m r := by
-    sorry
+  have h_no_writes : ∀ m, j + 1 ≤ m → m < k → ¬ StepWritesReg ziskStep rowDecodes m r :=
+    fun m hm hm' => h_no_writes_above m (by omega) hm'
   have h_regFile_k := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r (j + 1) k
     (by omega) h_no_writes
   have h_lane := lane_lo_entryRegValue
@@ -214,6 +212,106 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
   rw [h_regFile_k, h_regFile_succ, ← h_row_eq]
   rw [← h_row_eq] at h_lane
   simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_lane.symm
+
+/-! ## Ptr propagation along `AnswersRegPre` chains
+
+The register address (ptr) is constant along a backward walk: every element reads
+the same register that the head targets. This follows from `AddressSpec` (the
+address-placement constraint) together with the fact that `mem_op = 3` on every
+non-head element forces the indirect flag to zero. -/
+
+private theorem fgl_zero_or_one_of_bool {x : FGL} (h : x * (1 - x) = 0) :
+    x = 0 ∨ x = 1 := by
+  rcases mul_eq_zero.mp h with h | h
+  · exact Or.inl h
+  · exact Or.inr (sub_eq_zero.mp h).symm
+
+set_option maxHeartbeats 400000 in
+/-- When an active witness row's read message has `mem_op = 3` (register read),
+    the read address and the register-pre address agree. For the a-slot this is
+    unconditional from `AddressSpec`; for b and c it follows because `mem_op = 3`
+    forces the indirect flag to zero. -/
+private theorem readMessage_ptr_eq_regPreMessage_ptr_of_memop3
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {p : RegWalkStep} (h_active : IsActiveWitnessMainRow trace p)
+    (h_memop : (p.2.readMessage p.1).mem_op = 3) :
+    (p.2.readMessage p.1).ptr = (p.2.regPreMessage p.1).ptr := by
+  obtain ⟨j, h_j_lt, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
+  have h_addr := RomDecodeBinding.mainAddressSpec_at trace ⟨j, h_j_lt⟩
+  obtain ⟨_, _, _, _, _, _, _, _, h_bsm, h_stm, h_sti, h_bsi, _, h_bsr, h_str⟩ :=
+    RomDecodeBinding.mainRow_flags_boolean trace ⟨j, h_j_lt⟩
+  obtain ⟨p_row, p_slot⟩ := p
+  rw [h_row_eq] at h_memop ⊢
+  cases p_slot with
+  | a =>
+    simp only [Instantiation.RegSlot.readMessage, Instantiation.RegSlot.regPreMessage,
+      ZiskFv.AirsClean.Main.aMemMessage, ZiskFv.AirsClean.Main.aRegPreMessage]
+    exact h_addr.1
+  | b =>
+    simp only [Instantiation.RegSlot.readMessage, Instantiation.RegSlot.regPreMessage,
+      ZiskFv.AirsClean.Main.bMemMessage, ZiskFv.AirsClean.Main.bRegPreMessage] at h_memop ⊢
+    rw [h_addr.2.1]
+    suffices h_bi : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.b_src_ind = 0 by
+      rw [h_bi, zero_mul, add_zero]
+    rcases fgl_zero_or_one_of_bool h_bsi with h | h
+    · exact h
+    · exfalso
+      rcases fgl_zero_or_one_of_bool h_bsm with hm | hm <;>
+        rcases fgl_zero_or_one_of_bool h_bsr with hr | hr <;>
+        (simp only [h, hm, hr] at h_memop; revert h_memop; decide)
+  | c =>
+    simp only [Instantiation.RegSlot.readMessage, Instantiation.RegSlot.regPreMessage,
+      ZiskFv.AirsClean.Main.cMemMessage, ZiskFv.AirsClean.Main.cRegPreMessage] at h_memop ⊢
+    rw [h_addr.2.2.1]
+    suffices h_si : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_ind = 0 by
+      rw [h_si, zero_mul, add_zero]
+    rcases fgl_zero_or_one_of_bool h_sti with h | h
+    · exact h
+    · exfalso
+      rcases fgl_zero_or_one_of_bool h_stm with hm | hm <;>
+        rcases fgl_zero_or_one_of_bool h_str with hr | hr <;>
+        (simp only [h, hm, hr] at h_memop; revert h_memop; decide)
+
+/-- Every element (except the head) of an `AnswersRegPre` chain of active witness
+    rows reads the same register that the head's register-pre message targets. -/
+theorem bootWalk_head_ptr {n : Nat} (trace : AcceptedZiskTrace n) :
+    ∀ (path : List RegWalkStep) (p : RegWalkStep),
+      path.head? = some p →
+      List.IsChain RegWalkStep.AnswersRegPre path →
+      (∀ q ∈ path, IsActiveWitnessMainRow trace q) →
+      ∀ q ∈ path, q ≠ p →
+        (q.2.readMessage q.1).ptr = (p.2.regPreMessage p.1).ptr := by
+  intro path
+  induction path with
+  | nil => intro _ h; simp at h
+  | cons a rest ih =>
+    intro p h_head h_chain h_sites q h_q h_neq
+    have h_p : a = p := by simpa using h_head
+    subst h_p
+    have h_rest : q ∈ rest := by
+      rcases List.mem_cons.mp h_q with rfl | h
+      · exact absurd rfl h_neq
+      · exact h
+    cases rest with
+    | nil => exact absurd h_rest List.not_mem_nil
+    | cons b rest' =>
+      obtain ⟨h_link, h_chain'⟩ := List.isChain_cons_cons.mp h_chain
+      have h_link_ptr : (b.2.readMessage b.1).ptr = (a.2.regPreMessage a.1).ptr :=
+        congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.ptr h_link
+      have h_b_memop : (b.2.readMessage b.1).mem_op = 3 := by
+        rw [congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.mem_op h_link]
+        cases a.2 <;> rfl
+      have h_b_inner := readMessage_ptr_eq_regPreMessage_ptr_of_memop3 trace
+        (h_sites b (List.mem_cons_of_mem _ List.mem_cons_self)) h_b_memop
+      have h_b_eq : (b.2.regPreMessage b.1).ptr = (a.2.regPreMessage a.1).ptr :=
+        h_b_inner ▸ h_link_ptr
+      rcases List.mem_cons.mp h_rest with rfl | h_deeper
+      · exact h_link_ptr
+      · by_cases h_eq_b : q = b
+        · exact h_eq_b ▸ h_link_ptr
+        · exact (ih b rfl h_chain'
+            (fun r hr => h_sites r (List.mem_cons_of_mem _ hr))
+            q (List.mem_cons_of_mem _ h_deeper) h_eq_b).trans h_b_eq
 
 /-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
 
@@ -272,8 +370,13 @@ theorem a_column_eq_lane_lo_sail_xreg
             trace.programLength trace.program).rowInputVar).core.a_0 := by
       simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
-    rw [h_a0_eq]; convert h0.symm ▸
-      (ziskRegFile_eq_lane_lo_of_bootWalk_zero trace ziskStep rowDecodes k hk r hr ⟨h0, h1⟩)
+    have h_no_writes : ∀ m, m < k → ¬ StepWritesReg ziskStep rowDecodes m r := by
+      sorry -- chain completeness: boot-anchored walk has no c-slot, so no writes to r
+    rw [h_a0_eq]
+    have h_zero := ziskRegFile_eq_lane_lo_of_bootWalk_zero trace ziskStep rowDecodes
+      k hk r hr h_no_writes
+    -- h0 : regPreMessage.value_0 = 0, which is definitionally core.a_0 = 0
+    convert h0.symm ▸ h_zero
   · -- Supplier q: head's a_0 = cMemMessage(q.1).value_0 via h_q0
     -- Goal: mainOfTable.a_0 k = lane_lo(ziskRegFile k r)
     -- Step 1: mainOfTable.a_0 k = aRegPreMessage(row_k).value_0 = head.regPreMessage.value_0
@@ -316,14 +419,46 @@ theorem a_column_eq_lane_lo_sail_xreg
       omega
     -- The supplier targets register r (from the chain's ptr propagation)
     have h_q_ptr : Transpiler.wrap_to_regidx (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr = r := by
-      sorry
+      have h_ne' : path ≠ [] := List.ne_nil_of_mem h_q
+      have h_head_some' := List.head?_eq_some_head h_ne'
+      rw [h_head] at h_head_some'
+      have h_head_id' := Option.some.inj h_head_some'.symm
+      have h_head_snd : (path.head h_ne').2 = RegSlot.a := congrArg Prod.snd h_head_id'
+      -- q ≠ head (since q.2 = .c and head.2 = .a)
+      have h_q_ne : q ≠ path.head h_ne' := by
+        intro h_eq
+        have : q.2 = (path.head h_ne').2 := congrArg Prod.snd h_eq
+        rw [h_qc, h_head_snd] at this
+        exact absurd this (by decide)
+      -- Chain propagation gives q.readMessage.ptr = head.regPreMessage.ptr
+      have h_chain_ptr := bootWalk_head_ptr trace path (path.head h_ne')
+        (List.head?_eq_some_head h_ne') h_chain h_sites q h_q h_q_ne
+      -- q.readMessage.ptr = cMemMessage.ptr (since q.2 = .c)
+      have h_rc : (q.2.readMessage q.1).ptr =
+          (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr := by rw [h_qc]; rfl
+      -- head.regPreMessage.ptr = a_offset_imm0
+      have h_head_ptr : ((path.head h_ne').2.regPreMessage (path.head h_ne').1).ptr =
+          (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_offset_imm0 := by
+        rw [h_head_snd]
+        -- Goal: (RegSlot.a.regPreMessage (path.head h_ne').1).ptr = ...
+        -- regPreMessage .a row = aRegPreMessage row, .ptr = row.rom.a_offset_imm0
+        simp only [Instantiation.RegSlot.regPreMessage, ZiskFv.AirsClean.Main.aRegPreMessage]
+        -- Goal: (path.head h_ne').1.rom.a_offset_imm0 = (mainTableRowAtOrZero k).rom.a_offset_imm0
+        congr 1; congr 1
+        rw [congrArg Prod.fst h_head_id']
+        -- Goal: eval (... table[↑⟨k, hk⟩] ...) ... = mainTableRowAtOrZero k
+        symm; exact mainTableRowAtOrZero_get trace.program trace.mainTable ⟨k, h_lt⟩
+      rw [← h_a_ptr, ← h_head_ptr, ← h_chain_ptr, h_rc]
     -- Use the helper theorem
     have h_a0_val : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
           trace.program trace.mainTable).a_0 k
         = (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 := by
       rw [h_a0_eq]; convert h_q0; rw [h_qc]; rfl
+    have h_no_writes_above : ∀ m, q.timestamp.val < 3 + 4 * m → m < k →
+        ¬ StepWritesReg ziskStep rowDecodes m r := by
+      sorry -- chain completeness: q is the first c-slot, so no writes after q
     rw [h_a0_val]
     exact cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
-      k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt
+      k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt h_no_writes_above
 
 end ZiskFv.Compliance
