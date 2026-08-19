@@ -415,18 +415,6 @@ def sdLdAddiA0Inputs :
     simp [sdLdAddiA0Input, sdLdSailTrace, sdLdAddiA0Index, sdLdState, sdLdRegs,
       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := rfl
-  h_a_lo_t := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
-      sdLdAddiA0Index.val).core.a_0 = _
-    rw [congrArg (fun row => row.core.a_0) (sdLdAcceptedMainRowAt sdLdAddiA0Index)]
-    simp only [sdLdAddiA0Claim]
-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-      (sdLdSailTrace sdLdAddiA0Index) (regidx_to_fin x0) (0#64)
-      (sdLdReadX0 sdLdAddiA0Index)]
-    norm_num [sdLdAddiA0Index, sdLdMainRows, sdLdAddiX1A0Row,
-      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf, lane_lo]
   h_a_hi_t := by
     rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
@@ -508,17 +496,6 @@ def sdLdSlliInputs :
     simp [sdLdSlliInput, sdLdSailTrace, sdLdSlliIndex, sdLdState, sdLdRegs,
       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := rfl
-  h_a_lo_t := by
-    apply sdLdLaneLo sdLdSlliIndex (160#64)
-      (by simpa [sdLdSlliIndex] using sdLdReadX1 sdLdSlliIndex)
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
-      sdLdSlliIndex.val).core.a_0 = _
-    rw [congrArg (fun row => row.core.a_0) (sdLdAcceptedMainRowAt sdLdSlliIndex)]
-    norm_num [sdLdSlliIndex, sdLdMainRows, sdLdSlliX1Row,
-      sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, mainRomRowOf, lane_lo]
-    decide
   h_a_hi_t := by
     apply sdLdLaneHi sdLdSlliIndex (160#64)
       (by simpa [sdLdSlliIndex] using sdLdReadX1 sdLdSlliIndex)
@@ -551,17 +528,6 @@ def sdLdAddiEightInputs :
     simp [sdLdAddiInput, sdLdSailTrace, sdLdAddiEightIndex, sdLdState, sdLdRegs,
       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := rfl
-  h_a_lo_t := by
-    apply sdLdLaneLo sdLdAddiEightIndex (2684354560#64)
-      (by simpa [sdLdAddiEightIndex] using sdLdReadX1 sdLdAddiEightIndex)
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
-      sdLdAddiEightIndex.val).core.a_0 = _
-    rw [congrArg (fun row => row.core.a_0) (sdLdAcceptedMainRowAt sdLdAddiEightIndex)]
-    norm_num [sdLdAddiEightIndex, sdLdMainRows, sdLdAddiX1EightRow,
-      sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate, mainRomRowOf, lane_lo]
-    decide
   h_a_hi_t := by
     apply sdLdLaneHi sdLdAddiEightIndex (2684354560#64)
       (by simpa [sdLdAddiEightIndex] using sdLdReadX1 sdLdAddiEightIndex)
@@ -583,18 +549,6 @@ def sdLdAddiX2Inputs :
     simp [sdLdAddiInput, sdLdSailTrace, sdLdAddiX2Index, sdLdState, sdLdRegs,
       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := rfl
-  h_a_lo_t := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
-      sdLdAddiX2Index.val).core.a_0 = _
-    rw [congrArg (fun row => row.core.a_0) (sdLdAcceptedMainRowAt sdLdAddiX2Index)]
-    simp only [sdLdAddiX2Claim]
-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
-      (sdLdSailTrace sdLdAddiX2Index) (regidx_to_fin x0) (0#64)
-      (sdLdReadX0 sdLdAddiX2Index)]
-    norm_num [sdLdAddiX2Index, sdLdMainRows, sdLdAddiX2Row,
-      sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, mainRomRowOf, lane_lo]
   h_a_hi_t := by
     rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
