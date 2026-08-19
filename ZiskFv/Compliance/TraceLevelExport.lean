@@ -14,6 +14,7 @@ import ZiskFv.Compliance.TraceLevelExport.SegmentPcSeed
 import ZiskFv.Compliance.TraceLevelExport.SailRetireChain
 import ZiskFv.Compliance.TraceLevelExport.RegisterWriteback
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
+import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
 
 /-!
 # TraceLevelExport.lean — P5 trace-level export (channel-balance form)
