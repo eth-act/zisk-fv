@@ -1355,9 +1355,6 @@ def Decode_slli_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_slli trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_b_lo_shamt :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo c.shamt)
     (bits : RomFlagBits)
     (h_bits_ieo : bits.is_external_op = true)
     (h_bits_m32 : bits.m32 = false)
@@ -1414,9 +1411,6 @@ def Decode_srli_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_srli trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_b_lo_shamt :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo c.shamt)
     (bits : RomFlagBits)
     (h_bits_ieo : bits.is_external_op = true)
     (h_bits_m32 : bits.m32 = false)
@@ -1473,9 +1467,6 @@ def Decode_srai_of_program
     (i : Fin trace.numInstructions)
     (c : Claim_srai trace i)
     (h_idx : i.val + 1 < trace.mainTable.table.length)
-    (h_b_lo_shamt :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo c.shamt)
     (bits : RomFlagBits)
     (h_bits_ieo : bits.is_external_op = true)
     (h_bits_m32 : bits.m32 = false)
