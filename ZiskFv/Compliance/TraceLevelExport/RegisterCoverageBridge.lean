@@ -281,8 +281,23 @@ theorem a_column_eq_lane_lo_sail_xreg
             trace.programLength trace.program).rowInputVar).core.a_0 := by
       simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
-    -- Step 1: mainOfTable.a_0 k = cMemMessage(q.1).value_0 (from h_q0)
-    -- Step 2: cMemMessage(q.1).value_0 = lane_lo(ziskRegFile k r) (register file chain)
-    sorry
+    -- The supplier's timestamp < head's timestamp (from chain membership)
+    have h_q_ts_lt : q.timestamp.val < (3 + 4 * k : ℕ) := by
+      have h_bound := timestamp_val_le_head_of_mem_chain trace
+        (by rcases path with _ | ⟨_, _⟩ <;> simp_all)
+        h_sites h_chain h_q
+      simp only [List.head_cons] at h_bound ⊢
+      sorry
+    -- The supplier targets register r (from the chain's ptr propagation)
+    have h_q_ptr : Transpiler.wrap_to_regidx (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr = r := by
+      sorry
+    -- Use the helper theorem
+    have h_a0_val : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+          trace.program trace.mainTable).a_0 k
+        = (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 := by
+      sorry
+    rw [h_a0_val]
+    exact cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
+      k hk r hr q (h_sites q h_q) h_qc h_q_ptr h_q_ts_lt
 
 end ZiskFv.Compliance
