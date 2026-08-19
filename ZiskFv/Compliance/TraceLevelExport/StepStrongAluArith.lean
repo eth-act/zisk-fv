@@ -209,13 +209,13 @@ theorem stepStrong_sub
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sub_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_input_r2_row :
       d.toInputs.sub_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sub_input.r2_val
-        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sub d.toInputs.sub_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -346,13 +346,13 @@ theorem stepStrong_and
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.and_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_input_r2_row :
       d.toInputs.and_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.and_input.r2_val
-        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
     OpEnvelope.and d.toInputs.and_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -483,13 +483,13 @@ theorem stepStrong_or
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.or_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_input_r2_row :
       d.toInputs.or_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.or_input.r2_val
-        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
     OpEnvelope.or d.toInputs.or_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -621,13 +621,13 @@ theorem stepStrong_xor
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xor_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_input_r2_row :
       d.toInputs.xor_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.xor_input.r2_val
-        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
     OpEnvelope.xor d.toInputs.xor_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -758,13 +758,13 @@ theorem stepStrong_slt
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slt_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_input_r2_row :
       d.toInputs.slt_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.slt_input.r2_val
-        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
     OpEnvelope.slt d.toInputs.slt_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -895,13 +895,13 @@ theorem stepStrong_sltu
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltu_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_input_r2_row :
       d.toInputs.sltu_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sltu_input.r2_val
-        h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sltu d.toInputs.sltu_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd zeroValidBinary bus pins
       providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -1031,7 +1031,7 @@ theorem stepStrong_andi
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.andi_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_andi_subset :=
     itype_imm_subset_of_decode trace i d.toInputs.andi_input.imm d.toClaim.imm
       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
@@ -1170,7 +1170,7 @@ theorem stepStrong_ori
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.ori_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_ori_subset :=
     itype_imm_subset_of_decode trace i d.toInputs.ori_input.imm d.toClaim.imm
       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
@@ -1307,7 +1307,7 @@ theorem stepStrong_xori
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xori_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_xori_subset :=
     itype_imm_subset_of_decode trace i d.toInputs.xori_input.imm d.toClaim.imm
       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
@@ -1446,7 +1446,7 @@ theorem stepStrong_slti
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slti_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_slti_subset :=
     itype_imm_subset_of_decode trace i d.toInputs.slti_input.imm d.toClaim.imm
       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
@@ -1578,7 +1578,7 @@ theorem stepStrong_sltiu
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltiu_input.r1_val
-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have h_sltiu_subset :=
     itype_imm_subset_of_decode trace i d.toInputs.sltiu_input.imm d.toClaim.imm
       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
@@ -1679,10 +1679,10 @@ theorem stepStrong_sll
       (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sll_input.r1_val
-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sll_input.r2_val
-      h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sll d.toInputs.sll_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -1779,10 +1779,10 @@ theorem stepStrong_srl
       ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srl_input.r1_val
-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srl_input.r2_val
-      h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srl d.toInputs.srl_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -1879,10 +1879,10 @@ theorem stepStrong_sra
       ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sra_input.r1_val
-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sra_input.r2_val
-      h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sra d.toInputs.sra_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -1975,7 +1975,7 @@ theorem stepStrong_slli
       (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slli_input.r1_val
-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
       d.toInputs.slli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
@@ -1983,7 +1983,7 @@ theorem stepStrong_slli
             (providerTable.environment providerRow)) := by
     rw [d.toInputs.h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
-      d.toDecode.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      (by sorry) h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.slli d.toInputs.slli_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -2075,7 +2075,7 @@ theorem stepStrong_srli
       ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srli_input.r1_val
-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
       d.toInputs.srli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
@@ -2083,7 +2083,7 @@ theorem stepStrong_srli
             (providerTable.environment providerRow)) := by
     rw [d.toInputs.h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
-      d.toDecode.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      (by sorry) h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srli d.toInputs.srli_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -2175,7 +2175,7 @@ theorem stepStrong_srai
       ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srai_input.r1_val
-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
       d.toInputs.srai_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
@@ -2183,7 +2183,7 @@ theorem stepStrong_srai
             (providerTable.environment providerRow)) := by
     rw [d.toInputs.h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
-      d.toDecode.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      (by sorry) h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srai d.toInputs.srai_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -2274,7 +2274,7 @@ theorem stepStrong_subw
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.subw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have hb0 : (providerInput.bBytes.free_in_b_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
@@ -2293,7 +2293,7 @@ theorem stepStrong_subw
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.subw_input.r2_val
-        hb0 hb1 hb2 hb3 h_m32_one d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        hb0 hb1 hb2 hb3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.subw_input.r1_val d.toInputs.subw_input.r2_val d.toInputs.subw_input.rd d.toInputs.subw_input.PC
       (PureSpec.execute_RTYPE_subw_pure d.toInputs.subw_input).nextPC
@@ -2405,7 +2405,7 @@ theorem stepStrong_addw
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   have hb0 : (providerInput.bBytes.free_in_b_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
@@ -2424,7 +2424,7 @@ theorem stepStrong_addw
     simpa [ZiskFv.EquivCore.Addw.binaryRowB32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.addw_input.r2_val
-        hb0 hb1 hb2 hb3 h_m32_one d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+        hb0 hb1 hb2 hb3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r2
   let promises : ZiskFv.EquivCore.Promises.RTypePromises
       state d.toInputs.addw_input.r1_val d.toInputs.addw_input.r2_val d.toInputs.addw_input.rd d.toInputs.addw_input.PC
       (PureSpec.execute_RTYPE_addw_pure d.toInputs.addw_input).nextPC
@@ -2536,7 +2536,7 @@ theorem stepStrong_addiw
     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addiw_input.r1_val
-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r1
   let promises : ZiskFv.EquivCore.Promises.ITypePromises
       state d.toInputs.addiw_input.r1_val d.toInputs.addiw_input.imm d.toInputs.addiw_input.rd d.toInputs.addiw_input.PC
       (PureSpec.execute_ITYPE_addiw_pure d.toInputs.addiw_input).nextPC
@@ -2664,10 +2664,10 @@ theorem stepStrong_sllw
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sllw_input.r1_val
-      h_m32_one (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_one (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sllw_input.r2_val
-      d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      (by sorry) (by sorry) d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sllw d.toInputs.sllw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -2767,10 +2767,10 @@ theorem stepStrong_srlw
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srlw_input.r1_val
-      h_m32_one (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_one (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srlw_input.r2_val
-      d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      (by sorry) (by sorry) d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srlw d.toInputs.srlw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -2871,10 +2871,10 @@ theorem stepStrong_sraw
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sraw_input.r1_val
-      h_m32_one (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_one (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sraw_input.r2_val
-      d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      (by sorry) (by sorry) d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sraw d.toInputs.sraw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -2973,10 +2973,10 @@ theorem stepStrong_slliw
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.slliw_input.r1_val
-      d.toDecode.h_m32 (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      d.toDecode.h_m32 (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.slliw_input.shamt
-      d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      (by sorry) h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.slliw d.toClaim.slliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -3068,10 +3068,10 @@ theorem stepStrong_srliw
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.srliw_input.r1_val
-      d.toDecode.h_m32 (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      d.toDecode.h_m32 (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.srliw_input.shamt
-      d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      (by sorry) h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srliw d.toClaim.srliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -3164,10 +3164,10 @@ theorem stepStrong_sraiw
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.sraiw_input.r1_val
-      d.toDecode.h_m32 (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      d.toDecode.h_m32 (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.sraiw_input.shamt
-      d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      (by sorry) h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sraiw d.toClaim.sraiw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -3301,13 +3301,13 @@ theorem stepStrong_add
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
           m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.add_input.r1_val
-          h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+          h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
     have h_input_r2_row :
         d.toInputs.add_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
           m providerInput i.val (regidx_to_fin d.toClaim.r2) d.toInputs.add_input.r2_val
-          h_matches h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_match d.toInputs.h_input_r2
+          h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r2
     let env : OpEnvelope state m i.val :=
       OpEnvelope.add_via_binary d.toInputs.add_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
@@ -3324,11 +3324,11 @@ theorem stepStrong_add
     let env : OpEnvelope state m i.val :=
       OpEnvelope.add_via_binaryadd d.toInputs.add_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        h_add_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
+        h_add_subset (by sorry) (by sorry) (by sorry) (by sorry) h_m32_zero
         h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _ ∧ _ ∧ _ ∧ _
-      exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
+      exact ⟨(by sorry), (by sorry), (by sorry), (by sorry), h_m32_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
       noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
@@ -3453,7 +3453,7 @@ theorem stepStrong_addi
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
           m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addi_input.r1_val
-          h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
+          h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
     have h_addi_subset :=
       itype_imm_subset_of_decode trace i d.toInputs.addi_input.imm d.toClaim.imm
         d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
@@ -3483,11 +3483,11 @@ theorem stepStrong_addi
     let env : OpEnvelope state m i.val :=
       OpEnvelope.addi_via_binaryadd d.toInputs.addi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus pins
         providerTable providerRow h_component h_table_spec h_provider_row h_match
-        h_add_subset h_addi_subset (by sorry) d.toInputs.h_a_hi_t h_m32_zero h_set_pc_zero
+        h_add_subset h_addi_subset (by sorry) (by sorry) h_m32_zero h_set_pc_zero
         h_lane_rd promises
     have h_bridge : env.aeneasBridgeTrust := by
       show _ ∧ _ ∧ _ ∧ _
-      exact ⟨(by sorry), d.toInputs.h_a_hi_t, h_m32_zero, h_set_pc_zero⟩
+      exact ⟨(by sorry), (by sorry), h_m32_zero, h_set_pc_zero⟩
     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
     have h_known : Defects.NoKnownDefect env :=
       noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial

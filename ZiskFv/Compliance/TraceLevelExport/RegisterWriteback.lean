@@ -3,7 +3,7 @@ import ZiskFv.Compliance.TraceLevelExport.SailRetireChain
 /-!
 # The Sail-side register writeback — #330 Phase 4 groundwork
 
-`h_a_lo_t` / `h_a_hi_t` / `h_b_lo_t` / `h_b_hi_t` are 116 assumed field occurrences across the 63
+`(by sorry)` / `(by sorry)` / `(by sorry)` / `(by sorry)` are 116 assumed field occurrences across the 63
 `Inputs_<op>` structures, each asserting that a ZisK operand column equals a Sail register value.
 Phase 4 aims to derive them instead of assuming them.
 
@@ -16,7 +16,7 @@ with `multiplicity = -1` and `as = 1`, exactly
 read_xreg (wrap_to_regidx entry.ptr) state = .ok (U64.toBV #v[byteAt entry 0, …]) state
 ```
 
-— which is `h_a_lo_t` / `h_a_hi_t` in the byte-lane representation. But
+— which is `(by sorry)` / `(by sorry)` in the byte-lane representation. But
 `state_effect_via_channels` is `(bus_effect …).2`, so `StepSound` compares only the post-state and
 **discards `.1` entirely**. That is the structural reason the register fields are assumed rather
 than checked: nothing in the export ever looks at the read conditions.

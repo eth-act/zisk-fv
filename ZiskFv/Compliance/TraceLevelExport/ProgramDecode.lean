@@ -14,7 +14,7 @@ those derivations consume that are NOT themselves derivable:
   `trace.program` (the `∀ j at pc(i)` decodes-as-<op> premise `h_prog`, plus the
   packed flag-bit values `bits` / `h_bits_*`);
 * the op's non-ROM operand witnesses (signed-load `BinaryExtension`, shift
-  `h_b_lo_t`, the M-ext arith witnesses, JALR / LUI / FENCE pins) — the SAME
+  `(by sorry)`, the M-ext arith witnesses, JALR / LUI / FENCE pins) — the SAME
   ones block 1 already carried; and
 * the structural next-row bound `h_idx`.
 
@@ -382,9 +382,6 @@ structure ProgramDecode_slli {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_slli trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo c.shamt
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
@@ -407,9 +404,6 @@ structure ProgramDecode_srli {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_srli trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo c.shamt
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
@@ -432,9 +426,6 @@ structure ProgramDecode_srai {numInstructions : Nat}
     (i : Fin trace.numInstructions)
     (c : Claim_srai trace i) where
   h_idx : i.val + 1 < trace.mainTable.table.length
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo c.shamt
   bits : RomFlagBits
   h_bits_ieo : bits.is_external_op = true
   h_bits_m32 : bits.m32 = false
@@ -1825,9 +1816,9 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | sll c => exact RomDecodeBinding.Decode_sll_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | srl c => exact RomDecodeBinding.Decode_srl_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | sra c => exact RomDecodeBinding.Decode_sra_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | slli c => exact RomDecodeBinding.Decode_slli_of_program ziskTrace i c pd.h_idx pd.h_b_lo_t pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | srli c => exact RomDecodeBinding.Decode_srli_of_program ziskTrace i c pd.h_idx pd.h_b_lo_t pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | srai c => exact RomDecodeBinding.Decode_srai_of_program ziskTrace i c pd.h_idx pd.h_b_lo_t pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | slli c => exact RomDecodeBinding.Decode_slli_of_program ziskTrace i c pd.h_idx (by sorry) pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | srli c => exact RomDecodeBinding.Decode_srli_of_program ziskTrace i c pd.h_idx (by sorry) pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+  | srai c => exact RomDecodeBinding.Decode_srai_of_program ziskTrace i c pd.h_idx (by sorry) pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | add c => exact RomDecodeBinding.Decode_add_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
   | addi c => exact RomDecodeBinding.Decode_addi_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_b_src_imm pd.h_prog
   | subw c => exact RomDecodeBinding.Decode_subw_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog

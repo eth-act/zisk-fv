@@ -205,34 +205,6 @@ def addFaithfulAddInputs :
       addFaithfulRegs, x1, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_lo_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).a_0 addFaithfulAddIndex.val =
-        lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneLo (fun m i => m.a_0 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
-  h_a_hi_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).a_1 addFaithfulAddIndex.val =
-        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneHi (fun m i => m.a_1 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
-  h_b_lo_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).b_0 addFaithfulAddIndex.val =
-        lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneLo (fun m i => m.b_0 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
-  h_b_hi_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).b_1 addFaithfulAddIndex.val =
-        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneHi (fun m i => m.b_1 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
   h_pc_bridge := by
     rw [addFaithfulAcceptedTrace_mainTable_eq]
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulProgram

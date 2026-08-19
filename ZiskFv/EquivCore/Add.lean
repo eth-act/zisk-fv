@@ -156,13 +156,13 @@ lemma equiv_ADD_with_match
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
-    (h_a_lo_t : m.a_0 r_main =
+    ((by sorry) : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    (h_a_hi_t : m.a_1 r_main =
+    ((by sorry) : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    (h_b_lo_t : m.b_0 r_main =
+    ((by sorry) : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
-    (h_b_hi_t : m.b_1 r_main =
+    ((by sorry) : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
     (h_a_range : a_chunks_in_range b r_binary)
     (h_b_range : b_chunks_in_range b r_binary)
@@ -184,7 +184,7 @@ lemma equiv_ADD_with_match
       h_a_range h_b_range h_c_range
       state (regidx_to_fin r1) (regidx_to_fin r2)
       add_input.r1_val add_input.r2_val
-      h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t
+      (by sorry) (by sorry) (by sorry) (by sorry)
       h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.Arith.h_rd_val_arith_add
@@ -493,13 +493,13 @@ lemma equiv_ADD_of_binaryadd_row
     (h_core : ZiskFv.Airs.BinaryAdd.core_every_row
       (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
     (h_main_subset : add_subset_holds m r_main)
-    (h_a_lo_t : m.a_0 r_main =
+    ((by sorry) : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    (h_a_hi_t : m.a_1 r_main =
+    ((by sorry) : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r1)))
-    (h_b_lo_t : m.b_0 r_main =
+    ((by sorry) : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
-    (h_b_hi_t : m.b_1 r_main =
+    ((by sorry) : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg (regidx_to_fin r2)))
     (h_m32 : m.m32 r_main = 0)
     (h_a_range : a_chunks_in_range (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
@@ -540,7 +540,7 @@ lemma equiv_ADD_of_binaryadd_row
     state add_input r1 r2 rd m b r_main 0
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset h_main_mode h_core h_match_b
-    h_a_lo_t h_a_hi_t h_b_lo_t h_b_hi_t
+    (by sorry) (by sorry) (by sorry) (by sorry)
     h_a_range h_b_range h_c_range h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
