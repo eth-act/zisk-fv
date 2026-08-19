@@ -2047,7 +2047,7 @@ theorem stepStrong_slli
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
     (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo d.toInputs.slli_input.shamt) :
+      shamt_b_lo d.toClaim.shamt) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SLLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
@@ -2155,7 +2155,7 @@ theorem stepStrong_srli
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
     (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo d.toInputs.srli_input.shamt) :
+      shamt_b_lo d.toClaim.shamt) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRLI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
@@ -2263,7 +2263,7 @@ theorem stepStrong_srai
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
     (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo d.toInputs.srai_input.shamt) :
+      shamt_b_lo d.toClaim.shamt) :
     execute_instruction (instruction.SHIFTIOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sop.SRAI)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
