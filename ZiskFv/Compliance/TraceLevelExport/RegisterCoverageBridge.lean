@@ -542,14 +542,12 @@ private theorem regPreMessage_ptr_const_along_chain {n : Nat} (trace : AcceptedZ
           (fun r hr => h_sites r (List.mem_cons_of_mem _ hr)) q h_rest
         exact h_ih.trans h_b_eq
 
-/-- When `store_reg = 1` at a step, `store_ind = 0`. Every register-writing
-    decode structure carries `h_store_ind`; the non-register-writing arms have
-    `store_reg ≠ 1` (derivable from the ROM opcode), contradicting `h_sr`.
-    The match on `(ziskStep, rowDecodes)` is needed because pairwise exclusivity
-    of `store_ind` and `store_reg` is a per-instruction fact, not a ROM-level one.
-    Unlike the earlier version, this proof never mentions `stepChannelOutput` or
-    `stepRegWrite`, avoiding the >10 min elaboration bottleneck those cause. -/
-theorem store_ind_eq_zero_of_store_reg
+set_option maxHeartbeats 800000 in
+/-- When `stepRegWrite ≠ none` at step `i`, the Main row's `store_ind = 0`.
+    Proved by case-splitting on `ZiskStep`: non-register-writing variants give
+    `stepRegWrite = none` (contradiction), and all register-writing decode
+    structures carry `h_store_ind`. -/
+theorem store_ind_eq_zero_of_stepRegWrite_ne_none
     {n : Nat} (trace : AcceptedZiskTrace n)
     (ziskStep : ∀ i : Fin n, ZiskStep trace i)
     (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
@@ -558,11 +556,13 @@ theorem store_ind_eq_zero_of_store_reg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (i : Fin n)
+    (h_ne : stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none)
     (h_sr : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1) :
     (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind = 0 := by
   have h_pr := (h_stepRegWrite_consistent i h_sr).2
-  revert h_pr
+  revert h_ne h_pr
   match ziskStep i, rowDecodes i with
+  -- Register-writing ALU/shift/immediate opcodes: rd.h_store_ind directly
   | .sub _, rd => intros; exact rd.h_store_ind
   | .and _, rd => intros; exact rd.h_store_ind
   | .or _, rd => intros; exact rd.h_store_ind
@@ -591,6 +591,7 @@ theorem store_ind_eq_zero_of_store_reg
   | .slliw _, rd => intros; exact rd.h_store_ind
   | .srliw _, rd => intros; exact rd.h_store_ind
   | .sraiw _, rd => intros; exact rd.h_store_ind
+  -- Arith opcodes
   | .mul _, rd => intros; exact rd.h_store_ind
   | .mulh _, rd => intros; exact rd.h_store_ind
   | .mulhsu _, rd => intros; exact rd.h_store_ind
@@ -604,13 +605,21 @@ theorem store_ind_eq_zero_of_store_reg
   | .divuw _, rd => intros; exact rd.h_store_ind
   | .remu _, rd => intros; exact rd.h_store_ind
   | .remuw _, rd => intros; exact rd.h_store_ind
+  -- Control flow: LUI, AUIPC
   | .lui _, rd => intros; exact rd.h_store_ind
   | .auipc _, rd => intros; exact rd.h_store_ind
+  -- JAL: store_ind for the step row (stepProducerRow = i.val)
   | .jal _, rd => intros; exact rd.h_store_ind
+  -- JALR: rd.h_store_ind is for rows.finish; bridge via stepProducerRow = i.val
   | .jalr _, rd =>
-      intro h_pr
+      intro _ h_pr
+      have h_finish : rd.rows.finish.val = i.val := h_pr
+      have h_si := rd.h_store_ind
+      -- h_si : (mainRowWithRomAt trace rd.rows.finish).rom.store_ind = 0
+      -- mainRowWithRomAt trace j = mainTableRowAtOrZero trace.program trace.mainTable j.val
       show (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind = 0
-      rw [← h_pr]; exact rd.h_store_ind
+      rw [← h_finish]; exact h_si
+  -- Load opcodes
   | .ld _, rd => intros; exact rd.h_store_ind
   | .lbu _, rd => intros; exact rd.h_store_ind
   | .lhu _, rd => intros; exact rd.h_store_ind
@@ -618,17 +627,18 @@ theorem store_ind_eq_zero_of_store_reg
   | .lb _, rd => intros; exact rd.h_store_ind
   | .lh _, rd => intros; exact rd.h_store_ind
   | .lw _, rd => intros; exact rd.h_store_ind
-  | .beq _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .bne _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .blt _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .bge _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .bltu _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .bgeu _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .sb _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .sh _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .sw _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .sd _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
-  | .fence _, _ => intros; exact absurd rfl (h_stepRegWrite_consistent i h_sr).1
+  -- Non-register-writing: stepRegWrite = none, contradiction
+  | .beq _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bne _, _ => intro h_ne; exact absurd rfl h_ne
+  | .blt _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bge _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bltu _, _ => intro h_ne; exact absurd rfl h_ne
+  | .bgeu _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sb _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sh _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sw _, _ => intro h_ne; exact absurd rfl h_ne
+  | .sd _, _ => intro h_ne; exact absurd rfl h_ne
+  | .fence _, _ => intro h_ne; exact absurd rfl h_ne
 
 /-! ## Chain completeness — a write to register r appears on the boot walk
 
@@ -731,8 +741,8 @@ theorem stepWritesReg_cslot_on_bootWalk
     -- Step A: derive wrap_to_regidx(store_offset(row_m)) = r
     --   via addr2 = store_offset (AddressSpec + store_ind = 0) + heq
     have h_store_ind : (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_ind = 0 :=
-      store_ind_eq_zero_of_store_reg trace ziskStep rowDecodes h_stepRegWrite_consistent
-        ⟨m, h_m_lt⟩ h_sr
+      store_ind_eq_zero_of_stepRegWrite_ne_none trace ziskStep rowDecodes h_stepRegWrite_consistent
+        ⟨m, h_m_lt⟩ (he ▸ Option.some_ne_none _) h_sr
     have h_addr_spec := RomDecodeBinding.mainAddressSpec_at trace ⟨m, h_m_lt_table⟩
     have h_e_eq : e = (ZiskFv.AirsClean.Main.cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable m)).toEntry 1 1 := by
