@@ -178,8 +178,16 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
   obtain ⟨j, h_j_lt_table, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
-  have h_j_lt_n : j < n := by sorry
-  have h_j_lt_k : j < k := by sorry
+  have h_q_ts_val : q.timestamp.val = 3 + 4 * j := by
+    have h_ms := mainRowAt_main_step trace.mainTable_component h_j_lt_table
+    have h_cap := main_index_lt_mainFixedCapacity trace.mainTable_component h_j_lt_table
+    have : q.timestamp = (3 : FGL) + (↑j : FGL) * 4 := by
+      simp only [Instantiation.RegWalkStep.timestamp, h_slot_c,
+        Instantiation.RegSlot.readTimestamp, h_row_eq, h_ms]
+    rw [this]
+    exact slot_timestamp_val (by norm_num : (3 : ℕ) ≤ 3) h_cap
+  have h_j_lt_n : j < n := by omega
+  have h_j_lt_k : j < k := by omega
   have h_write : stepRegWrite (stepChannelOutput ⟨j, h_j_lt_n⟩ (ziskStep ⟨j, h_j_lt_n⟩)
       (rowDecodes ⟨j, h_j_lt_n⟩))
     = some ((ZiskFv.AirsClean.Main.cMemMessage
@@ -286,8 +294,26 @@ theorem a_column_eq_lane_lo_sail_xreg
       have h_bound := timestamp_val_le_head_of_mem_chain trace
         (by rcases path with _ | ⟨_, _⟩ <;> simp_all)
         h_sites h_chain h_q
-      simp only [List.head_cons] at h_bound ⊢
-      sorry
+      have h_ne : path ≠ [] := List.ne_nil_of_mem h_q
+      have h_head_some := List.head?_eq_some_head h_ne
+      rw [h_head] at h_head_some
+      have h_head_id := Option.some.inj h_head_some.symm
+      have h_head_ts : (path.head h_ne).timestamp =
+          RegSlot.a.readTimestamp
+            (mainTableRowAtOrZero trace.program trace.mainTable k) := by
+        simp only [Instantiation.RegWalkStep.timestamp]
+        congr 1
+        · exact congrArg Prod.snd h_head_id
+        · simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
+          exact congrArg Prod.fst h_head_id
+      have h_ms := mainRowAt_main_step trace.mainTable_component h_lt
+      have h_cap := main_index_lt_mainFixedCapacity trace.mainTable_component h_lt
+      have h_head_ts_val : (path.head h_ne).timestamp.val = 1 + 4 * k := by
+        have : (path.head h_ne).timestamp = (1 : FGL) + (↑k : FGL) * 4 := by
+          rw [h_head_ts]; simp [Instantiation.RegSlot.readTimestamp, h_ms]
+        rw [this]
+        exact slot_timestamp_val (by norm_num : (1 : ℕ) ≤ 3) h_cap
+      omega
     -- The supplier targets register r (from the chain's ptr propagation)
     have h_q_ptr : Transpiler.wrap_to_regidx (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr = r := by
       sorry
