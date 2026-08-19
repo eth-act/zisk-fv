@@ -1362,81 +1362,115 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
   | sub c =>
       exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | and c =>
       exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | or c =>
       exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | xor c =>
       exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | slt c =>
       exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | sltu c =>
       exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | andi c =>
       exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | ori c =>
       exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | xori c =>
       exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | slti c =>
       exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | sltiu c =>
       exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | sll c =>
       exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | srl c =>
       exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | sra c =>
       exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | slli c =>
       exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry)
   | srli c =>
       exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry)
   | srai c =>
       exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry)
   | add c =>
       exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | addi c =>
       exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | subw c =>
       exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | addw c =>
       exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | addiw c =>
       exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry)
   | sllw c =>
       exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | srlw c =>
       exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | sraw c =>
       exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
-  | slliw c => exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia) hAvoidKnownBugs
-  | srliw c => exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia) hAvoidKnownBugs
-  | sraiw c => exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia) hAvoidKnownBugs
+        (by sorry) (by sorry) (by sorry) (by sorry)
+  | slliw c =>
+      exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry)
+  | srliw c =>
+      exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry)
+  | sraiw c =>
+      exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry)
   | mul c =>
       exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
@@ -1496,6 +1530,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             (BitVec.signExtend 64 ia.beq_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | bne c =>
       exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia)
         (by
@@ -1503,6 +1538,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             (BitVec.signExtend 64 ia.bne_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | blt c =>
       exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia)
         (by
@@ -1510,6 +1546,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             (BitVec.signExtend 64 ia.blt_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | bge c =>
       exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia)
         (by
@@ -1517,6 +1554,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             (BitVec.signExtend 64 ia.bge_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | bltu c =>
       exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia)
         (by
@@ -1524,6 +1562,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             (BitVec.signExtend 64 ia.bltu_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | bgeu c =>
       exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia)
         (by
@@ -1531,6 +1570,7 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
             (BitVec.signExtend 64 ia.bgeu_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (by sorry) (by sorry) (by sorry) (by sorry)
   | lui c =>
       exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)

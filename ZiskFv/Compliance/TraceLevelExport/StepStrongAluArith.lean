@@ -2127,7 +2127,7 @@ theorem stepStrong_slli
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow)) := by
-    rw [d.toInputs.h_input_shamt]
+    simp only [d.toInputs.h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
       h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
@@ -2235,7 +2235,7 @@ theorem stepStrong_srli
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow)) := by
-    rw [d.toInputs.h_input_shamt]
+    simp only [d.toInputs.h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
       h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
@@ -2343,7 +2343,7 @@ theorem stepStrong_srai
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
           (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow)) := by
-    rw [d.toInputs.h_input_shamt]
+    simp only [d.toInputs.h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
       h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
