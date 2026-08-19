@@ -105,6 +105,27 @@ theorem not_mem_chain_of_timestamp_ge (trace : AcceptedZiskTrace n)
               omega
   exact h_ne_head h_eq
 
+/-! ## stepRegWrite classification
+
+Every arm's register write is either `none` (branches, FENCE, stores) or
+`some (toEntry(cMemMessage(mainTableRowAtOrZero j), 1, 1))` where `j` is
+the step's producer row. -/
+
+theorem stepRegWrite_eq_none_or_cMemMessage
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
+    (rd : RowDecode ziskTrace i zs) :
+    stepRegWrite (stepChannelOutput i zs rd) = none
+    ∨ stepRegWrite (stepChannelOutput i zs rd) =
+        some (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (cMemMessage (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable
+            (stepProducerRow i zs rd)))
+          1 1) := by
+  cases zs <;>
+    first
+      | exact Or.inl rfl
+      | exact Or.inr rfl
+
 /-! ## Step-index bridge
 
 `IsActiveWitnessMainRow trace q` gives a row in SOME Main table. By `main_table_unique`,
@@ -171,9 +192,11 @@ theorem a_column_eq_lane_lo_sail_xreg
     simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
       ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
   rcases h_boot_walk with ⟨h0, _⟩ | ⟨q, h_active, h_slot_c, h_val0, _⟩
-  · rw [h_a0_eq]; convert h0.symm ▸ (by sorry :
-      (0 : FGL) = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
-  · rw [h_a0_eq]; convert h_val0.symm ▸ (by sorry :
+  · -- Boot-anchored: a_0 = 0, need ziskRegFile k r = 0
+    rw [h_a0_eq]; convert h0.symm ▸ (by sorry :
+        (0 : FGL) = ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
+  · -- Supplier: a_0 = cMemMessage(q).value_0, need it = lane_lo(ziskRegFile k r)
+    rw [h_a0_eq]; convert h_val0.symm ▸ (by sorry :
       (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
         ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r))
 
