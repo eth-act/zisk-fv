@@ -177,6 +177,32 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     (h_timestamp_lt : q.timestamp.val < (3 + 4 * k : ℕ)) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
+  obtain ⟨j, h_j_lt_table, h_row_eq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace h_active
+  have h_j_lt_n : j < n := by sorry
+  have h_j_lt_k : j < k := by sorry
+  have h_write : stepRegWrite (stepChannelOutput ⟨j, h_j_lt_n⟩ (ziskStep ⟨j, h_j_lt_n⟩)
+      (rowDecodes ⟨j, h_j_lt_n⟩))
+    = some ((ZiskFv.AirsClean.Main.cMemMessage
+      (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
+    rcases stepRegWrite_eq_none_or_cMemMessage ⟨j, h_j_lt_n⟩
+      (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | h_some
+    · sorry
+    · sorry
+  have h_ptr_eq : Transpiler.wrap_to_regidx
+      ((ZiskFv.AirsClean.Main.cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
+    sorry
+  have h_regFile_succ := ziskRegFile_succ_of_writes ziskStep rowDecodes j r h_j_lt_n
+    _ h_write h_ptr_eq
+  have h_no_writes : ∀ m, j + 1 ≤ m → m < k → ¬ StepWritesReg ziskStep rowDecodes m r := by
+    sorry
+  have h_regFile_k := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r (j + 1) k
+    (by omega) h_no_writes
+  have h_lane := lane_lo_entryRegValue
+    ((ZiskFv.AirsClean.Main.cMemMessage
+      (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
+    (by sorry) (by sorry)
+  rw [h_regFile_k, h_regFile_succ]
   sorry
 
 /-! ## The main derivation theorem: a-column = lane_lo(ziskRegFile)
