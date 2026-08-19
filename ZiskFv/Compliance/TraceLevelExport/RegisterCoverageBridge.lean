@@ -238,9 +238,23 @@ theorem a_column_eq_lane_lo_sail_xreg
         ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
     rw [h_a0_eq]; convert h0.symm ▸
       (ziskRegFile_eq_lane_lo_of_bootWalk_zero trace ziskStep rowDecodes k hk r hr ⟨h0, h1⟩)
-  · -- Supplier q: a_0 = cMemMessage(q.1).value_0
-    -- h_q0 : (head.regPreMessage).value_0 = (q.readMessage).value_0
-    -- readMessage .c = cMemMessage, regPreMessage .a (row) .value_0 = row.core.a_0
+  · -- Supplier q: head's a_0 = cMemMessage(q.1).value_0 via h_q0
+    -- Goal: mainOfTable.a_0 k = lane_lo(ziskRegFile k r)
+    -- Step 1: mainOfTable.a_0 k = aRegPreMessage(row_k).value_0 = head.regPreMessage.value_0
+    -- Step 2: head.regPreMessage.value_0 = q.readMessage.value_0 (h_q0)
+    -- Step 3: q.readMessage = cMemMessage q.1 (since q.2 = .c)
+    -- So mainOfTable.a_0 k = cMemMessage(q.1).value_0
+    -- Step 4: cMemMessage(q.1).value_0 = lane_lo(ziskRegFile k r) (the register file chain)
+    have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+          trace.program trace.mainTable).a_0 k
+        = (eval (trace.mainTable.environment
+            (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            trace.programLength trace.program).rowInputVar).core.a_0 := by
+      simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
+    -- Step 1: mainOfTable.a_0 k = cMemMessage(q.1).value_0 (from h_q0)
+    -- Step 2: cMemMessage(q.1).value_0 = lane_lo(ziskRegFile k r) (register file chain)
     sorry
 
 end ZiskFv.Compliance
