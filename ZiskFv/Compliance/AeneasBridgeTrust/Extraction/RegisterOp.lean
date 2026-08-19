@@ -66,6 +66,50 @@ theorem create_register_op_typed_pins
   · rw [bd_m, j_m, s_m]; exact o_m32
   · rw [bd_ext, j_ext, s_ext]; exact o_ext
 
+/- Source-field pins for `create_register_op_typed`: when both `rs1` and `rs2`
+are in the main register range, the extracted instruction has
+`a_src = SRC_REG`, `a_offset_imm0 = cast(rs1)`, and similarly for b. -/
+set_option maxHeartbeats 1000000 in
+theorem create_register_op_typed_src_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (h_rs1_ne : UScalar.cast .U64 i.rs1 ≠ 0#u64)
+    (h_rs1_ge : ¬(UScalar.cast .U64 i.rs1 < UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_FROM))
+    (h_rs1_le : ¬(UScalar.cast .U64 i.rs1 > UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_TO))
+    (h_rs2_ne : UScalar.cast .U64 i.rs2 ≠ 0#u64)
+    (h_rs2_ge : ¬(UScalar.cast .U64 i.rs2 < UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_FROM))
+    (h_rs2_le : ¬(UScalar.cast .U64 i.rs2 > UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_TO))
+    (h : riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed self i op inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.a_src = zisk_inst.SRC_REG ∧
+      zib.i.a_offset_imm0 = UScalar.cast .U64 i.rs1 ∧
+      zib.i.b_src = zisk_inst.SRC_REG ∧
+      zib.i.b_offset_imm0 = UScalar.cast .U64 i.rs2 := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨zib0, hzib0, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zib1, hzib1, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zib2, hzib2, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zib3, hzib3, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zib4, hzib4, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zib5, hzib5, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zib6, hzib6, h⟩ := bind_eq_ok_imp h
+  obtain ⟨self1, hself1, h⟩ := bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h
+  obtain ⟨a_src, a_off⟩ := src_a_reg_src_eq _ _ _ _ h_rs1_ne hzib1 h_rs1_ge h_rs1_le
+  obtain ⟨b_src, b_off, ba_src, ba_off⟩ :=
+    src_b_reg_src_eq _ _ _ _ h_rs2_ne hzib2 h_rs2_ge h_rs2_le
+  obtain ⟨o_a, o_ao, o_b, o_bo⟩ := op_zisk_src_pres _ _ _ hzib3
+  obtain ⟨s_a, s_ao, s_b, s_bo⟩ := store_reg_src_pres _ _ _ _ _ hzib4
+  obtain ⟨j_a, j_ao, j_b, j_bo⟩ := j_src_pres _ _ _ _ hzib5
+  obtain ⟨bd_a, bd_ao, bd_b, bd_bo⟩ := build_src_pres _ _ hzib6
+  refine ⟨zib6, insert_inst_extract _ _ _ _ hself1, ?_, ?_, ?_, ?_⟩
+  · rw [bd_a, j_a, s_a, o_a, ba_src]; exact a_src
+  · rw [bd_ao, j_ao, s_ao, o_ao, ba_off]; exact a_off
+  · rw [bd_b, j_b, s_b, o_b]; exact b_src
+  · rw [bd_bo, j_bo, s_bo, o_bo]; exact b_off
+
 /-- Headline `is_external_op = true` specialization (op_type ∉ {Internal, Fcall}). -/
 theorem create_register_op_typed_register_pins
     (self : riscv2zisk_context.Riscv2ZiskContext)
