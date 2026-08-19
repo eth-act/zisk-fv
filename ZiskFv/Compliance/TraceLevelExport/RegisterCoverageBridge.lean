@@ -155,6 +155,57 @@ theorem isActiveWitnessMainRow_eq_mainTableRow {n : Nat} (trace : AcceptedZiskTr
   subst h_same
   exact ⟨index, h_index, h_eq⟩
 
+/-! ## Range constraints on cMemMessage entries
+
+The memory-bus entry `(cMemMessage row).toEntry 1 1` carries the register write
+value.  For `lane_lo_entryRegValue` to bridge from the entry to the register
+file, the entry must satisfy `memory_entry_chunks_in_range` (each 32-bit chunk
+has `.val < 2^32`) and `memory_entry_packed_no_wrap` (the packed sum is below
+`GL_prime`).
+
+Derivation path (not yet reduced to kernel terms):
+* `store_pc = 0` → `value_0 = c_0`, `value_1 = c_1`.  The op-bus balance
+  (`trace.channels_balanced` on the OpBusChannel) matches the Main row to a
+  provider circuit row whose `c_lo` / `c_hi` are range-checked to 32 bits via
+  `ComponentSpecFacts` (e.g. `c_chunks_in_range_of_component_spec_facts`).
+* `store_pc = 1` → `value_0 = pc + jmp_offset2`, `value_1 = 0`.  `0` is
+  trivially < 2^32.  `(pc + jmp_offset2).val < 2^32` follows from the PC being
+  a 32-bit address (the `MainSequentialPcDomain` / `h_pc_offset_lt_2_32`
+  domain bounds).
+* `packed_no_wrap` follows from `chunks_in_range` since
+  `a + b * 2^32 < 2^32 + (2^32 - 1) * 2^32 = 2^64 - 2^32 < GL_prime`. -/
+
+open ZiskFv.Airs.MemoryBus in
+/-- The register-write entry at a step that performs a write satisfies the
+    chunk-range and no-wrap constraints required by `lane_lo_entryRegValue`.
+
+    Derivation path (per-case, not yet kernel-reduced):
+    * **`store_pc = 0`** (ALU/shift/M-ext/loads): `value_0 = c_0`, `value_1 = c_1`.
+      The op-bus balance (`trace.channels_balanced`) matches the Main row to a
+      provider row whose `c_lo`/`c_hi` are range-checked to < 2^32 via
+      `ComponentSpecFacts`.  The packed sum is
+      `c_0.val + c_1.val * 2^32 < 2^32 + (2^32-1)*2^32 = 2^64 - 2^32 < GL_prime`
+      when `c_1.val < 2^32 - 1`, or provable per-opcode when the result is in
+      the "high-register" range.
+    * **`store_pc = 1`** (JAL/JALR/AUIPC): `value_0 = pc + jmp_offset2`,
+      `value_1 = 0`.  `0 < 2^32` is trivial; the PC + offset bound follows
+      from `MainSequentialPcDomain` / `h_pc_offset_lt_2_32` domain bounds.
+      Packed no-wrap is immediate since `value_1 = 0`. -/
+private theorem cMemMessage_toEntry_range_of_stepRegWrite
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (ziskStep : ∀ i : Fin n, ZiskStep trace i)
+    (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
+    (j : ℕ) (h_j_lt_n : j < n) (_h_j_lt_table : j < trace.mainTable.table.length)
+    (h_write : stepRegWrite (stepChannelOutput ⟨j, h_j_lt_n⟩
+        (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩))
+      = some ((cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)) :
+    memory_entry_chunks_in_range
+      ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
+    ∧ memory_entry_packed_no_wrap
+      ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
+  sorry -- #330-S3: op-bus balance → provider range constraints per case above
+
 /-! ## No-writes lemma from boot walk
 
 The boot walk's chain gives the register's complete write history:
@@ -213,7 +264,6 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
   have h_ptr_eq : Transpiler.wrap_to_regidx
       ((ZiskFv.AirsClean.Main.cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1).ptr = r := by
-    simp only [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry]
     rw [← h_row_eq]; exact h_ptr
   have h_regFile_succ := ziskRegFile_succ_of_writes ziskStep rowDecodes j r h_j_lt_n
     _ h_write h_ptr_eq
@@ -221,10 +271,12 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     fun m hm hm' => h_no_writes_above m (by omega) hm'
   have h_regFile_k := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r (j + 1) k
     (by omega) h_no_writes
+  have ⟨h_chunks, h_no_wrap⟩ := cMemMessage_toEntry_range_of_stepRegWrite trace ziskStep
+    rowDecodes j h_j_lt_n h_j_lt_table h_write
   have h_lane := lane_lo_entryRegValue
     ((ZiskFv.AirsClean.Main.cMemMessage
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
-    (by sorry) (by sorry)
+    h_chunks h_no_wrap
   rw [h_regFile_k, h_regFile_succ, ← h_row_eq]
   rw [← h_row_eq] at h_lane
   simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_lane.symm
