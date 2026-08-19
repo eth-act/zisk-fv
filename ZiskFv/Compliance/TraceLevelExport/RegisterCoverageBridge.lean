@@ -172,7 +172,9 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     (r : Fin 32) (hr : r ≠ 0)
     (q : RegWalkStep)
     (h_active : IsActiveWitnessMainRow trace q)
-    (h_slot_c : q.2 = Instantiation.RegSlot.c) :
+    (h_slot_c : q.2 = Instantiation.RegSlot.c)
+    (h_ptr : Transpiler.wrap_to_regidx (ZiskFv.AirsClean.Main.cMemMessage q.1).ptr = r)
+    (h_timestamp_lt : q.timestamp.val < (3 + 4 * k : ℕ)) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
   sorry
@@ -211,29 +213,34 @@ theorem a_column_eq_lane_lo_sail_xreg
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
           (chainedSailStates ziskStep init k)).xreg r) := by
   rw [ZiskFv.Compliance.sail_xreg_eq_ziskRegFile ziskStep rowDecodes init k r hr h_regAgree]
+  -- Goal: mainOfTable.a_0 k = lane_lo (ziskRegFile k r)
+  -- Use exists_bootWalk for the full chain, then compose with register file.
   have h_lt := trace.mainTable_index ⟨k, hk⟩
-  have h_boot_walk := a_columns_of_bootWalk trace
-    trace.mainTable_mem trace.mainTable_component
-    (List.getElem_mem h_lt)
-    (by unfold ZiskFv.Compliance.Instantiation.RegSlot.selector
-        simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero,
-          dif_pos h_lt] at h_a_src_reg ⊢
-        exact h_a_src_reg)
-  have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
-        trace.program trace.mainTable).a_0 k
-      = (eval (trace.mainTable.environment
-          (trace.mainTable.table.get ⟨k, h_lt⟩))
-        (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
-          trace.programLength trace.program).rowInputVar).core.a_0 := by
-    simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
-      ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
-  rcases h_boot_walk with ⟨h0, h1⟩ | ⟨q, h_active, h_slot_c, h_val0, _⟩
-  · -- Boot-anchored: a_0 = 0, need ziskRegFile k r = 0
+  obtain ⟨path, last, h_head, h_last, h_sites, h_chain, h_boot⟩ :=
+    exists_bootWalk trace trace.mainTable_mem trace.mainTable_component
+      (List.getElem_mem h_lt) Instantiation.RegSlot.a
+      (by unfold ZiskFv.Compliance.Instantiation.RegSlot.selector
+          simp only [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero,
+            dif_pos h_lt] at h_a_src_reg ⊢
+          exact h_a_src_reg)
+  -- The chain gives both the value and the ordering.
+  -- bootWalk_head_value extracts the value from the chain.
+  rcases bootWalk_head_value trace path _ last h_head h_last h_chain h_boot with
+    ⟨h0, h1⟩ | ⟨q, h_q, h_qc, h_q0, h_q1⟩
+  · -- Boot-anchored: a_0 = 0
+    have h_a0_eq : (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+          trace.program trace.mainTable).a_0 k
+        = (eval (trace.mainTable.environment
+            (trace.mainTable.table.get ⟨k, h_lt⟩))
+          (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+            trace.programLength trace.program).rowInputVar).core.a_0 := by
+      simp only [ZiskFv.AirsClean.FullEnsemble.mainOfTable,
+        ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero, dif_pos h_lt]
     rw [h_a0_eq]; convert h0.symm ▸
       (ziskRegFile_eq_lane_lo_of_bootWalk_zero trace ziskStep rowDecodes k hk r hr ⟨h0, h1⟩)
-  · -- Supplier: a_0 = cMemMessage(q).value_0, need it = lane_lo(ziskRegFile k r)
-    rw [h_a0_eq]; convert h_val0.symm ▸
-      (cMemMessage_value_eq_lane_lo_of_bootWalk_supplier trace ziskStep rowDecodes
-        k hk r hr q h_active h_slot_c)
+  · -- Supplier q: a_0 = cMemMessage(q.1).value_0
+    -- h_q0 : (head.regPreMessage).value_0 = (q.readMessage).value_0
+    -- readMessage .c = cMemMessage, regPreMessage .a (row) .value_0 = row.core.a_0
+    sorry
 
 end ZiskFv.Compliance
