@@ -1536,4 +1536,47 @@ theorem nb_eq_msb32_of_neg_indexed
 
 end Div
 
+theorem sext_zero_of_m32_zero
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row)
+    (h_m32 : row.flags.m32 = 0) :
+    row.flags.sext = 0 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_m32 ⊢
+  all_goals
+    rcases hrow with ⟨_hop, hm32, _hdiv, _hna, _hnb, _hnp, _hnr, hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    first
+    | exact hsext
+    | rw [h_m32] at hm32
+      have hval := congrArg Fin.val hm32
+      norm_num at hval
+
+theorem m32_boolean
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row) :
+    row.flags.m32 = 0 ∨ row.flags.m32 = 1 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow ⊢
+  all_goals
+    rcases hrow with ⟨_hop, hm32, _⟩
+    first | left; exact hm32 | right; exact hm32
+
+theorem sext_boolean
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec row) :
+    row.flags.sext = 0 ∨ row.flags.sext = 1 := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow ⊢
+  all_goals
+    rcases hrow with ⟨_, _, _, _, _, _, _, hsext, _⟩
+    first | left; exact hsext | right; exact hsext
+
 end ZiskFv.AirsClean.ArithTableProjections

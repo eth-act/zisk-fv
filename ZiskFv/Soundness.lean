@@ -4,6 +4,7 @@ import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
+import ZiskFv.AirsClean.ArithTableProjections
 
 /-!
 # Root soundness
@@ -330,6 +331,11 @@ private lemma fgl_two_chunks_val_lt (a b : FGL)
   simp only [Fin.val_add, Fin.val_mul, h1, h2]
   omega
 
+private lemma fgl_two_chunks_val_lt_comm (a b : FGL)
+    (ha : a.val < 65536) (hb : b.val < 65536) :
+    (b + a * 65536 : FGL).val < 4294967296 := by
+  rw [add_comm]; exact fgl_two_chunks_val_lt a b ha hb
+
 private lemma fgl_two_bytes_val_lt (a b : FGL)
     (ha : a.val < 256) (hb : b.val < 256) :
     (a + 256 * b : FGL).val < 65536 := by
@@ -520,25 +526,29 @@ private lemma binary_static_w_mode_carry_7_zero
   have h_mode_one : row.mode.mode32 = 1 := by
     rcases mul_eq_zero.mp h_mode_bool with h | h
     · exfalso
-      have hv := congrArg Fin.val h_emit
-      simp only [Fin.val_add, Fin.val_mul, h, Fin.val_zero, Nat.mul_zero,
-        Nat.mod_eq_of_lt (by omega : 0 < GL_prime), Nat.add_zero] at hv
-      have hsmall : row.chain.b_op.val < GL_prime := row.chain.b_op.isLt
-      rw [Nat.mod_eq_of_lt hsmall] at hv
-      have h26v : (26 : FGL).val = 26 := by native_decide
-      have h27v : (27 : FGL).val = 27 := by native_decide
-      rcases h_op_w with rfl | rfl <;> simp only [h26v, h27v] at hv <;> omega
+      have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_W_add_sub h_spec_facts.1
+      simp only [ZiskFv.AirsClean.Binary.lookupMessage0Row] at h_ne
+      have h_bop : row.chain.b_op = (op_val : FGL) := by
+        have := h_emit; rw [h, mul_zero, add_zero] at this; exact this
+      have h_bop_v := congrArg Fin.val h_bop
+      simp only [Fin.val_natCast] at h_bop_v
+      rcases h_op_w with rfl | rfl
+      · exact h_ne.1 (by rw [show 26 % GL_prime = 26 from by omega] at h_bop_v; exact h_bop_v)
+      · exact h_ne.2 (by rw [show 27 % GL_prime = 27 from by omega] at h_bop_v; exact h_bop_v)
     · exact (sub_eq_zero.mp h).symm
   have h_bop_val : row.chain.b_op.val = op_val - 16 := by
     have hv := congrArg Fin.val h_emit
-    simp only [Fin.val_add, Fin.val_mul, h_mode_one, Fin.val_one, Nat.mul_one] at hv
+    simp only [Fin.val_add, Fin.val_mul] at hv
+    rw [h_mode_one] at hv
     have h16v : (16 : FGL).val = 16 := by native_decide
-    rw [h16v] at hv
-    have hsmall : row.chain.b_op.val + 16 < GL_prime := by omega
-    rw [Nat.mod_eq_of_lt hsmall] at hv
-    have h26v : (26 : FGL).val = 26 := by native_decide
-    have h27v : (27 : FGL).val = 27 := by native_decide
-    rcases h_op_w with rfl | rfl <;> simp only [h26v, h27v] at hv <;> omega
+    simp only [Fin.val_one, Nat.mul_one, h16v,
+      Nat.mod_eq_of_lt (by omega : 16 < GL_prime)] at hv
+    have h_lt : row.chain.b_op.val < GL_prime := row.chain.b_op.isLt
+    rcases h_op_w with rfl | rfl
+    · simp only [Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : 26 < GL_prime)] at hv; omega
+    · simp only [Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : 27 < GL_prime)] at hv; omega
   have h_bop_add_or_sub :
       row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD ∨
       row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
@@ -652,6 +662,111 @@ private lemma binaryAdd_entry_range
   exact entry_range_of_provider_match i h_sp h_match
     (binaryAdd_opBus_c_lo_lt _ h_facts)
     (binaryAdd_opBus_c_hi_lt _ h_facts)
+
+private lemma arithMul_opBus_c_lo_lt
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_full : ZiskFv.AirsClean.ArithMul.FullSpec row)
+    (h_div_block : ZiskFv.AirsClean.ArithMul.SharedDivBlockSpec row) :
+    (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage row).c_lo.val < 4294967296 := by
+  have h_chunks := h_full.2.2.2.1
+  have h_div_mode := h_div_block.1
+  have h_mm_bool := h_div_mode.2.1
+  have h_md_bool := h_div_mode.1
+  have h_mm_md := h_div_mode.2.2.1
+  show ((1 - row.flags.main_mul - row.flags.main_div) * (row.chunks.d_0 + row.chunks.d_1 * 65536)
+    + row.flags.main_mul * (row.chunks.c_0 + row.chunks.c_1 * 65536)
+    + row.flags.main_div * (row.chunks.a_0 + row.chunks.a_1 * 65536)).val < _
+  rcases mul_eq_zero.mp h_mm_bool with hmm | hmm
+  · rcases mul_eq_zero.mp h_md_bool with hmd | hmd
+    · have h1 : (1 : FGL) - 0 - 0 = 1 := by ring
+      simp only [hmm, hmd, zero_mul, add_zero, h1, one_mul]
+      exact fgl_two_chunks_val_lt_comm row.chunks.d_1 row.chunks.d_0
+        h_chunks.2.2.2.2.2.2.2.2.2.2.2.2.2.1 h_chunks.2.2.2.2.2.2.2.2.2.2.2.2.1
+    · have hmd1 := sub_eq_zero.mp hmd
+      have h1 : (1 : FGL) - 0 - 1 = 0 := by ring
+      simp only [hmm, hmd1, zero_mul, add_zero, zero_add, h1, one_mul]
+      exact fgl_two_chunks_val_lt_comm row.chunks.a_1 row.chunks.a_0
+        h_chunks.2.1 h_chunks.1
+  · have hmm1 := sub_eq_zero.mp hmm
+    have hmd0 : row.flags.main_div = 0 := by
+      have h := hmm1 ▸ h_mm_md; rwa [one_mul] at h
+    have h1 : (1 : FGL) - 1 - 0 = 0 := by ring
+    simp only [hmm1, hmd0, h1, zero_mul, zero_add, one_mul, mul_zero, add_zero]
+    exact fgl_two_chunks_val_lt_comm row.chunks.c_1 row.chunks.c_0
+      h_chunks.2.2.2.2.2.2.2.2.2.1 h_chunks.2.2.2.2.2.2.2.2.1
+
+private lemma arithMul_opBus_c_hi_lt
+    (row : ZiskFv.AirsClean.ArithMul.ArithMulRow FGL)
+    (h_full : ZiskFv.AirsClean.ArithMul.FullSpec row)
+    (h_div_block : ZiskFv.AirsClean.ArithMul.SharedDivBlockSpec row) :
+    (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage row).c_hi.val < 4294967296 := by
+  have h_chunks := h_full.2.2.2.1
+  have h_table := h_full.2.1
+  have h_c46 := h_full.2.2.1
+  have h_div_mode := h_div_block.1
+  have h_mm_bool := h_div_mode.2.1
+  have h_md_bool := h_div_mode.1
+  have h_mm_md := h_div_mode.2.2.1
+  show row.flags.bus_res1.val < _
+  have hbus : row.flags.bus_res1 = row.flags.sext * 4294967295
+      + (1 - row.flags.m32) * (
+          (1 - row.flags.main_mul - row.flags.main_div) * (row.chunks.d_2 + row.chunks.d_3 * 65536)
+          + row.flags.main_mul * (row.chunks.c_2 + row.chunks.c_3 * 65536)
+          + row.flags.main_div * (row.chunks.a_2 + row.chunks.a_3 * 65536)) :=
+    sub_eq_zero.mp h_c46
+  rw [hbus]
+  rcases ZiskFv.AirsClean.ArithTableProjections.m32_boolean row h_table with hm32 | hm32
+  · have hsext := ZiskFv.AirsClean.ArithTableProjections.sext_zero_of_m32_zero row h_table hm32
+    simp only [hm32, hsext, zero_mul, zero_add, sub_zero, one_mul]
+    rcases mul_eq_zero.mp h_mm_bool with hmm | hmm
+    · rcases mul_eq_zero.mp h_md_bool with hmd | hmd
+      · have h1 : (1 : FGL) - 0 - 0 = 1 := by ring
+        simp only [hmm, hmd, h1, one_mul, zero_mul, add_zero]
+        exact fgl_two_chunks_val_lt_comm row.chunks.d_3 row.chunks.d_2
+          h_chunks.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 h_chunks.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+      · have hmd1 := sub_eq_zero.mp hmd
+        have h1 : (1 : FGL) - 0 - 1 = 0 := by ring
+        simp only [hmm, hmd1, zero_mul, add_zero, zero_add, h1, one_mul]
+        exact fgl_two_chunks_val_lt_comm row.chunks.a_3 row.chunks.a_2
+          h_chunks.2.2.2.1 h_chunks.2.2.1
+    · have hmm1 := sub_eq_zero.mp hmm
+      have hmd0 : row.flags.main_div = 0 := by
+        have h := hmm1 ▸ h_mm_md; rwa [one_mul] at h
+      have h1 : (1 : FGL) - 1 - 0 = 0 := by ring
+      simp only [hmm1, hmd0, h1, zero_mul, zero_add, one_mul, mul_zero, add_zero]
+      exact fgl_two_chunks_val_lt_comm row.chunks.c_3 row.chunks.c_2
+        h_chunks.2.2.2.2.2.2.2.2.2.2.2.1 h_chunks.2.2.2.2.2.2.2.2.2.2.1
+  · simp only [hm32, sub_self, zero_mul, add_zero]
+    rcases ZiskFv.AirsClean.ArithTableProjections.sext_boolean row h_table with hs | hs
+    · simp only [hs, zero_mul]; decide
+    · simp only [hs, one_mul]
+      show (4294967295 : FGL).val < 4294967296
+      native_decide
+
+private lemma arithMul_entry_range
+    {n : ℕ} {trace : AcceptedZiskTrace n}
+    (i : Fin n)
+    (h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0)
+    {providerTable providerRow}
+    (_ : providerTable ∈ trace.witness.allTables)
+    (hpr : providerRow ∈ providerTable.table)
+    (hcomp : providerTable.component =
+      ZiskFv.AirsClean.FullEnsemble.arithMulProviderComponent)
+    (hspec : providerTable.Spec)
+    (hmatch : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program trace.mainTable) i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.ArithMul.primaryOpBusMessage
+          (ZiskFv.AirsClean.ArithMul.componentComplete.rowInput
+            (providerTable.environment providerRow))) 1)) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
+  have h_row := (hspec providerRow hpr)
+  rw [hcomp, ZiskFv.AirsClean.ArithMul.componentComplete_spec] at h_row
+  exact entry_range_of_provider_match i h_sp hmatch
+    (arithMul_opBus_c_lo_lt _ h_row.1 h_row.2)
+    (arithMul_opBus_c_hi_lt _ h_row.1 h_row.2)
 
 private theorem stepRegWrite_entry_range_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
@@ -1236,6 +1351,96 @@ private theorem stepRegWrite_entry_range_aux
     have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
       26 h_op_eq.symm (Or.inl rfl)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
+  | mulw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_mulw_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | mulhu c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULUH := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_mulhu_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | mulh c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULH := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_mulh_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | mulhsu c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MULSUH := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_mulhsu_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | div c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_div_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | divu c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_divu_provided trace i h_ieo (Or.inl h_op)
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | divuw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIVU_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_divuw_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | remu c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_remu_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | remuw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REMU_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_remuw_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
   | _ =>
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
