@@ -17,6 +17,9 @@ calls, kept as a separate declaration because the six concrete trace
 instantiations target it directly.
 -/
 
+open ZiskFv.AirsClean.FullEnsemble (mainTableRowAtOrZero)
+open ZiskFv.AirsClean.Main (cMemMessage)
+
 namespace ZiskFv.Compliance
 
 /-- Soundness for every executed step, indexed by the COMMITTED-program decode
@@ -241,8 +244,25 @@ theorem root_soundness
   let rowDecodes := fun i => rowDecode_of_programDecode ziskTrace i
     (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
       start addr rawProgram programBinding (rawProgramDecodes i))
-  -- Combined induction proving RegAgree and PC bridge together, breaking the
-  -- circularity between RegAgree and stepSound_of_evidence's LaneBridge input.
+  have h_stepRegWrite_consistent : ∀ (i : Fin numInstructions),
+      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 →
+      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+      ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val := sorry
+  have h_stepRegWrite_converse : ∀ (i : Fin numInstructions)
+      (e : Interaction.MemoryBusEntry FGL),
+      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
+      Transpiler.wrap_to_regidx e.ptr ≠ 0 →
+      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 := sorry
+  have h_entry_range : ∀ (i : Fin numInstructions),
+      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
+        = some ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
+      ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+        ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1)
+      ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
+        ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) := sorry
   have combined : ∀ (k : ℕ) (hk : k < numInstructions),
       RegAgree ziskStep rowDecodes init k
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
@@ -265,7 +285,7 @@ theorem root_soundness
             (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩))
             (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
             (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init j hj
-              h_reg_j sorry sorry sorry)
+              h_reg_j h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
         exact ⟨
           regAgree_succ ziskStep rowDecodes init j hj ss_j h_reg_j,
           pcBridge_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init)
@@ -277,6 +297,6 @@ theorem root_soundness
     (inputsAgree_of_pcBridge i h_pc_i (ziskStep i) (inputsAgree i))
     (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
     (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
-      h_reg_i sorry sorry sorry)
+      h_reg_i h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
 
 end ZiskFv.Compliance
