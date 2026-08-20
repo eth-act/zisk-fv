@@ -344,6 +344,26 @@ theorem storeRegColumn_of_programFlags
   have hstore := (mainSelectorColumns_of_packFlags trace i h_lt bits hrom).2.2
   rw [hstore, h_bits]
 
+theorem storeRegColumn_of_programBit
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits) (value : Bool) (h_bits : bits.store_reg = value)
+    (h_program : ∀ j : Fin trace.programLength,
+      (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
+        (trace.program j).flags = packFlags bits) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg =
+      ZiskFv.AirsClean.boolF value := by
+  obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
+  have hline : (trace.program j).line =
+      (mainOfTable trace.program trace.mainTable).pc i.val := by
+    simp only [← hj, romMessage, mainOfTable_pc]
+  have hpflags := h_program j hline
+  have hflags : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val) =
+      (trace.program j).flags := by simp only [← hj, romMessage]
+  have hstore := (mainSelectorColumns_of_packFlags trace i h_lt bits
+    (hflags.trans hpflags)).2.2
+  rw [hstore, h_bits]
+
 theorem fin_ne_zero_iff_val_ne_zero (r : Fin 32) : r ≠ 0 ↔ r.val ≠ 0 := by
   constructor
   · intro h hval
@@ -4242,6 +4262,7 @@ def Decode_sb_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
+    (h_bits_store_reg : bits.store_reg = false)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -4291,7 +4312,10 @@ def Decode_sb_of_program
       h_main_ind_width := key.2.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa [mainRowWithRomSt, ZiskFv.AirsClean.boolF_false] using
+          (storeRegColumn_of_programBit trace i h_lt bits false h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2.2))
       h_idx := h_idx }
 
 /-- `Decode_sh` rebuilt from the committed program via the ROM lookup
@@ -4308,6 +4332,7 @@ def Decode_sh_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
+    (h_bits_store_reg : bits.store_reg = false)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -4357,7 +4382,10 @@ def Decode_sh_of_program
       h_main_ind_width := key.2.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa [mainRowWithRomSt, ZiskFv.AirsClean.boolF_false] using
+          (storeRegColumn_of_programBit trace i h_lt bits false h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2.2))
       h_idx := h_idx }
 
 /-- `Decode_sw` rebuilt from the committed program via the ROM lookup
@@ -4374,6 +4402,7 @@ def Decode_sw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
+    (h_bits_store_reg : bits.store_reg = false)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -4423,7 +4452,10 @@ def Decode_sw_of_program
       h_main_ind_width := key.2.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa [mainRowWithRomSt, ZiskFv.AirsClean.boolF_false] using
+          (storeRegColumn_of_programBit trace i h_lt bits false h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2.2))
       h_idx := h_idx }
 
 /-- `Decode_sd` rebuilt from the committed program via the ROM lookup
@@ -4440,6 +4472,7 @@ def Decode_sd_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = true)
+    (h_bits_store_reg : bits.store_reg = false)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -4486,7 +4519,10 @@ def Decode_sd_of_program
       h_jmp2 := key.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa [mainRowWithRomSt, ZiskFv.AirsClean.boolF_false] using
+          (storeRegColumn_of_programBit trace i h_lt bits false h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2))
       h_idx := h_idx }
 
 
@@ -4513,6 +4549,7 @@ def Decode_lui_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -4551,7 +4588,11 @@ def Decode_lui_of_program
       h_store_offset := h_dest.2
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using
+          (storeRegColumn_of_programBit trace i h_lt bits
+            (decide ((regidx_to_fin c.rd).val ≠ 0)) h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2))
       h_idx := h_idx
       h_imm_lo_nat := h_imm_lo_nat
       h_imm_hi_nat := h_imm_hi_nat }
@@ -4571,6 +4612,7 @@ def Decode_auipc_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = true)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -4616,7 +4658,11 @@ def Decode_auipc_of_program
       h_store_offset := h_dest.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
       h_jmp1 := key.2.2.2.2.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using
+          (storeRegColumn_of_programBit trace i h_lt bits
+            (decide ((regidx_to_fin c.rd).val ≠ 0)) h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2))
       h_idx := h_idx }
 
 
@@ -5012,6 +5058,7 @@ def Decode_jal_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = true)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -5056,7 +5103,11 @@ def Decode_jal_of_program
       h_store_offset := h_dest.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
       h_jmp2 := key.2.2.2.2.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using
+          (storeRegColumn_of_programBit trace i h_lt bits
+            (decide ((regidx_to_fin c.rd).val ≠ 0)) h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2.2))
       h_idx := h_idx }
 
 /-- `Decode_jalr` rebuilt from the committed program via the ROM lookup
@@ -5438,6 +5489,7 @@ def Decode_fence_of_program
     (bits : RomFlagBits)
     (h_bits_ieo : bits.is_external_op = false)
     (h_bits_set_pc : bits.set_pc = false)
+    (h_bits_store_reg : bits.store_reg = false)
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -5465,7 +5517,11 @@ def Decode_fence_of_program
       h_set_pc := key.2.2.1
       h_jmp1 := key.2.2.2.1
       h_jmp2 := key.2.2.2.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt,
+          ZiskFv.AirsClean.boolF_false] using
+          (storeRegColumn_of_programBit trace i h_lt bits false h_bits_store_reg
+            (fun j h => (h_prog j h).2.2.2))
       h_idx := h_idx
       h_fm_zero := h_fm_zero
       h_rs_x0 := h_rs_x0
