@@ -2324,6 +2324,12 @@ structure ExtractedRangeFacts
   addr :
     ∀ idx : Fin table.table.length,
       ((MemOfProverData witness table).addr idx.val).val < 2 ^ 29
+  value_0 :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).value_0 idx.val).val < 2 ^ 32
+  value_1 :
+    ∀ idx : Fin table.table.length,
+      ((MemOfProverData witness table).value_1 idx.val).val < 2 ^ 32
   step :
     ∀ idx : Fin table.table.length,
       ((MemOfProverData witness table).step idx.val).val < 2 ^ 40
@@ -2355,6 +2361,9 @@ def rawRowRangeFacts_of_extractedRangeFacts
     intro idx
     exact ⟨h.increment_0 idx, h.increment_1 idx⟩
   addrColumns := h.addr
+  valueColumns := by
+    intro idx
+    exact ⟨h.value_0 idx, h.value_1 idx⟩
   stepColumns := by
     intro idx
     exact ⟨h.step idx, h.step_dual idx, h.previous_step idx⟩
@@ -2384,6 +2393,12 @@ def extractedRangeFacts_of_rawRangeFacts
     intro idx
     exact (rowRanges.incrementChunks idx).2
   addr := rowRanges.addrColumns
+  value_0 := by
+    intro idx
+    exact (rowRanges.valueColumns idx).1
+  value_1 := by
+    intro idx
+    exact (rowRanges.valueColumns idx).2
   step := by
     intro idx
     exact (rowRanges.stepColumns idx).1
