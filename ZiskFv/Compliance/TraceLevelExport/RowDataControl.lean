@@ -102,6 +102,8 @@ structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
       i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: taken on flag=1 (`r1 == r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_a_src_reg :
     (mainRowWithRomSub trace i).rom.a_src_reg =
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
@@ -201,6 +203,8 @@ structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
   -- #100: `neg` polarity (taken on flag=0, `r1 ≠ r2`); the taken offset rides on
   -- `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_a_src_reg :
     (mainRowWithRomSub trace i).rom.a_src_reg =
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
@@ -299,6 +303,8 @@ structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
       i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: taken on flag=1 (signed `r1 <s r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_a_src_reg :
     (mainRowWithRomSub trace i).rom.a_src_reg =
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
@@ -398,6 +404,8 @@ structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
   -- #100: `neg` polarity (taken on flag=0, signed `r1 ≥s r2`); the taken offset
   -- rides on `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_a_src_reg :
     (mainRowWithRomSub trace i).rom.a_src_reg =
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
@@ -499,6 +507,8 @@ structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
   -- the committed program; `flag = comparison` is DERIVED in `stepStrong_bltu`
   -- from the LTU Binary provider.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_a_src_reg :
     (mainRowWithRomSub trace i).rom.a_src_reg =
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
@@ -601,6 +611,8 @@ structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
   -- the taken offset rides on `jmp_offset2`; `jmp_offset1 = 4` is the fall-through
   -- side. `flag = comparison` is DERIVED in `stepStrong_bgeu`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_a_src_reg :
     (mainRowWithRomSub trace i).rom.a_src_reg =
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
@@ -692,6 +704,9 @@ structure Decode_jal (trace : AcceptedZiskTrace numInstructions)
       i.val = 1
   h_store_ind :
     (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomLui trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomLui trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -811,6 +826,9 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
         ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_ind :
     (mainRowWithRomAt trace rows.finish).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomAt trace rows.finish).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomAt trace rows.finish).rom.store_offset =
       if (regidx_to_fin c.rd).val = 0 then 0 else Transpiler.ind (regidx_to_fin c.rd)
@@ -923,6 +941,8 @@ structure Decode_fence (trace : AcceptedZiskTrace numInstructions)
   -- FENCE is op = OP_FLAG (flag = 1), but with jmp1 = jmp2 = 4 the handshake's
   -- `flag * (jmp1 - jmp2)` term vanishes, so the mux still collapses to pc + 4.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg = 0
   h_set_pc :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).set_pc
       i.val = 0
