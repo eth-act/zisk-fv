@@ -1713,6 +1713,10 @@ private theorem stepRegWrite_entry_range_aux
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_remw_provided trace i h_ieo h_op
     exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  -- 7 load ops (lb, lh, lw, ld, lbu, lhu, lwu): is_external_op = 0, so no
+  -- op-bus provider exists. c_0/c_1 = b_0/b_1 via COPYB (main.pil:281-282),
+  -- and the b values are the loaded memory data whose range bound requires
+  -- memory bus composition (#76).
   | _ =>
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
