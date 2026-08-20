@@ -209,6 +209,59 @@ theorem stepSound_of_programDecodes
     `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `rowsAligned`,
     `bootSeed`, `hAvoidKnownBugs` — but satisfy `ProgramDecode` directly, so they
     provide no evidence for `programBinding` / `rawProgramDecodes`. -/
+private theorem stepRegWrite_converse_aux
+    {n : ℕ} {trace : AcceptedZiskTrace n}
+    (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
+    (h_addr : ZiskFv.AirsClean.Main.AddressSpec
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val))
+    (h_aligned : stepProducerRow i zs rd = i.val)
+    (e : Interaction.MemoryBusEntry FGL)
+    (he : stepRegWrite (stepChannelOutput i zs rd) = some e)
+    (h_r_ne : Transpiler.wrap_to_regidx e.ptr ≠ 0) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 := by
+  cases zs with
+  | beq c => exact nomatch he
+  | bne c => exact nomatch he
+  | blt c => exact nomatch he
+  | bge c => exact nomatch he
+  | bltu c => exact nomatch he
+  | bgeu c => exact nomatch he
+  | sb c => exact nomatch he
+  | sh c => exact nomatch he
+  | sw c => exact nomatch he
+  | sd c => exact nomatch he
+  | fence c => exact nomatch he
+  | jalr c =>
+    have h_eq : rd.rows.start = rd.rows.finish := by
+      by_contra h_ne_rows
+      have := rd.h_start_store_reg_zero h_ne_rows
+      have h_prod : rd.rows.finish.val = i.val := h_aligned
+      have h_arch := rd.rows.architectural_start
+      omega
+    have h_fi : i.val = rd.rows.finish.val :=
+      ((congrArg Fin.val h_eq.symm).trans rd.rows.architectural_start).symm
+    rw [h_fi, rd.h_store_reg]
+    suffices h : (regidx_to_fin c.rd : Fin 32) ≠ 0 by simp [h]
+    intro h_zero
+    apply h_r_ne
+    have he' := Option.some.inj he
+    rw [show e.ptr = (eRdAt trace rd.rows.finish).ptr from congrArg (·.ptr) he'.symm]
+    have h_off : (mainRowWithRomAt trace rd.rows.finish).rom.store_offset =
+        Transpiler.ind (regidx_to_fin c.rd) := by
+      rw [rd.h_store_offset, h_zero]; simp [Transpiler.ind]
+    have h_idx := eRdAt_rd_idx_of_decode rd.h_store_ind h_off
+    rw [← h_idx, h_zero]
+  | _ =>
+    rw [rd.h_store_reg]
+    have h_addr2 := h_addr.2.2.1
+    rw [rd.h_store_ind, rd.h_store_offset] at h_addr2; simp at h_addr2
+    have he' := Option.some.inj he
+    rw [show e.ptr = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.addr2
+      from by exact congrArg (·.ptr) he'.symm] at h_r_ne
+    rw [h_addr2, Transpiler.wrap_to_regidx_ind] at h_r_ne
+    try simp only [Transpiler.regidxOfBitVec5, ne_eq, Fin.ext_iff, Fin.val_zero] at h_r_ne
+    simp [h_r_ne]
+
 private theorem stepRegWrite_consistent_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
@@ -286,7 +339,11 @@ theorem root_soundness
       i.val + 1 < numInstructions →
       stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
       Transpiler.wrap_to_regidx e.ptr ≠ 0 →
-      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 := sorry
+      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 :=
+    fun i e h_succ he h_ne =>
+    stepRegWrite_converse_aux i (ziskStep i) (rowDecodes i)
+      (RomDecodeBinding.mainAddressSpec_at ziskTrace ⟨i.val, ziskTrace.mainTable_index i⟩)
+      (rowsAligned i.val h_succ) e he h_ne
   have h_entry_range : ∀ (i : Fin numInstructions),
       stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
         = some ((cMemMessage
