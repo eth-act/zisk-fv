@@ -504,6 +504,50 @@ private lemma binary_static_compare_c_lo_lt
   · rw [h]; norm_num
   · have h1 := (sub_eq_zero.mp h).symm; rw [h1]; norm_num
 
+private lemma binary_static_w_mode_carry_7_zero
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_spec_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_wf : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (op_val : ℕ)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL))
+    (h_op_w : op_val = 26 ∨ op_val = 27) :
+    row.chain.carry_7 = 0 := by
+  have h_mode_bool : row.mode.mode32 * (1 - row.mode.mode32) = 0 := by
+    simpa [ZiskFv.Airs.Binary.boolean_mode32,
+      ZiskFv.AirsClean.Binary.validOfRow] using h_core.1
+  have h_mode_one : row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode_bool with h | h
+    · exfalso
+      have hv := congrArg Fin.val h_emit
+      simp only [Fin.val_add, Fin.val_mul, h, Fin.val_zero, Nat.mul_zero,
+        Nat.mod_eq_of_lt (by omega : 0 < GL_prime), Nat.add_zero] at hv
+      have hsmall : row.chain.b_op.val < GL_prime := row.chain.b_op.isLt
+      rw [Nat.mod_eq_of_lt hsmall] at hv
+      have h26v : (26 : FGL).val = 26 := by native_decide
+      have h27v : (27 : FGL).val = 27 := by native_decide
+      rcases h_op_w with rfl | rfl <;> simp only [h26v, h27v] at hv <;> omega
+    · exact (sub_eq_zero.mp h).symm
+  have h_bop_val : row.chain.b_op.val = op_val - 16 := by
+    have hv := congrArg Fin.val h_emit
+    simp only [Fin.val_add, Fin.val_mul, h_mode_one, Fin.val_one, Nat.mul_one] at hv
+    have h16v : (16 : FGL).val = 16 := by native_decide
+    rw [h16v] at hv
+    have hsmall : row.chain.b_op.val + 16 < GL_prime := by omega
+    rw [Nat.mod_eq_of_lt hsmall] at hv
+    have h26v : (26 : FGL).val = 26 := by native_decide
+    have h27v : (27 : FGL).val = 27 := by native_decide
+    rcases h_op_w with rfl | rfl <;> simp only [h26v, h27v] at hv <;> omega
+  have h_bop_add_or_sub :
+      row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD ∨
+      row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
+    rcases h_op_w with rfl | rfl
+    · left; rw [h_bop_val]; rfl
+    · right; rw [h_bop_val]; rfl
+  exact (ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+    row h_spec_facts h_wf h_core h_mode_one h_bop_add_or_sub).2
+
 private lemma cMemMessage_chunks_of_store_pc_zero
     (m : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
     (h_sp : m.core.store_pc = 0)
@@ -1126,6 +1170,72 @@ private theorem stepRegWrite_entry_range_aux
       (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
         (fun h => ZiskFv.EquivCore.Bridge.Binary.c_byte_zero_of_chain_wf_LTU h))
       (binary_static_opBus_c_hi_lt _ h_spec_facts)
+  | addw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_ADD_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_w_provided trace i h_ieo (Or.inl h_op)
+    have h_row := (hspec pr hpr)
+    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
+    have h_spec_facts := h_row.2
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_op_eq := hmatch.2.1
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    rw [h_op] at h_op_eq
+    have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
+      26 h_op_eq.symm (Or.inl rfl)
+    exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
+  | subw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SUB_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_w_provided trace i h_ieo (Or.inr h_op)
+    have h_row := (hspec pr hpr)
+    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
+    have h_spec_facts := h_row.2
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_op_eq := hmatch.2.1
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    rw [h_op] at h_op_eq
+    have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
+      27 h_op_eq.symm (Or.inr rfl)
+    exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
+  | addiw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_ADD_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_w_provided trace i h_ieo (Or.inl h_op)
+    have h_row := (hspec pr hpr)
+    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
+    have h_spec_facts := h_row.2
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_op_eq := hmatch.2.1
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    rw [h_op] at h_op_eq
+    have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
+      26 h_op_eq.symm (Or.inl rfl)
+    exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | _ =>
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
