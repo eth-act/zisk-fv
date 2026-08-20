@@ -596,48 +596,39 @@ from byte projections of a `MemoryBusEntry`. These two lemmas say that splitting
 it into lanes recovers the entry's chunk fields, so the register-file invariant
 can replace the per-row assumptions. -/
 
+private lemma entryRegValue_toNat (e : Interaction.MemoryBusEntry FGL)
+    (h_v0 : e.value_0.val < 4294967296) (h_v1 : e.value_1.val < 4294967296) :
+    (entryRegValue e).toNat = e.value_0.val + e.value_1.val * 4294967296 := by
+  show (U64.toBV #v[(ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 0 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 1 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 2 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 3 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 0 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 1 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 2 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 3 : BitVec 8)]).toNat = _
+  exact ZiskFv.Channels.MemoryBusBytes.u64_toBV_chunks_toNat
+    e.value_0 e.value_1 h_v0 h_v1
+
 open ZiskFv.Airs.MemoryBus in
 lemma lane_lo_entryRegValue (e : Interaction.MemoryBusEntry FGL)
-    (h_range : memory_entry_chunks_in_range e)
-    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    (h_range : memory_entry_chunks_in_range e) :
     ZiskFv.Trusted.lane_lo (entryRegValue e) = e.value_0 := by
-  have h_bridge := memory_entry_toField_eq_toBV_toNat e h_range h_no_wrap
-  unfold entryRegValue
-  rw [h_bridge]
   obtain ⟨h_v0, h_v1⟩ := h_range
-  simp only [memory_entry_packed_no_wrap] at h_no_wrap
-  have h_lit : ((4294967296 : FGL) : Fin GL_prime).val = 4294967296 :=
-    Nat.mod_eq_of_lt (by decide)
-  have h_val : (memory_entry_toField e).val = e.value_0.val + e.value_1.val * 4294967296 := by
-    simp only [memory_entry_toField, Fin.val_add, Fin.val_mul, h_lit,
-      Nat.mod_eq_of_lt (show e.value_1.val * 4294967296 < GL_prime by omega),
-      Nat.mod_eq_of_lt h_no_wrap]
-  have h_lt64 : e.value_0.val + e.value_1.val * 4294967296 < 2 ^ 64 := by omega
-  simp only [ZiskFv.Trusted.lane_lo, BitVec.toNat_ofNat, h_val]
+  have h_toNat := entryRegValue_toNat e h_v0 h_v1
+  simp only [ZiskFv.Trusted.lane_lo]
   refine Fin.ext ?_
-  simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_mod_self_right,
-    Nat.mod_eq_of_lt h_v0]
+  simp only [Fin.val_mk, h_toNat, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt h_v0]
 
 open ZiskFv.Airs.MemoryBus in
 lemma lane_hi_entryRegValue (e : Interaction.MemoryBusEntry FGL)
-    (h_range : memory_entry_chunks_in_range e)
-    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    (h_range : memory_entry_chunks_in_range e) :
     ZiskFv.Trusted.lane_hi (entryRegValue e) = e.value_1 := by
-  have h_bridge := memory_entry_toField_eq_toBV_toNat e h_range h_no_wrap
-  unfold entryRegValue
-  rw [h_bridge]
   obtain ⟨h_v0, h_v1⟩ := h_range
-  simp only [memory_entry_packed_no_wrap] at h_no_wrap
-  have h_lit : ((4294967296 : FGL) : Fin GL_prime).val = 4294967296 :=
-    Nat.mod_eq_of_lt (by decide)
-  have h_val : (memory_entry_toField e).val = e.value_0.val + e.value_1.val * 4294967296 := by
-    simp only [memory_entry_toField, Fin.val_add, Fin.val_mul, h_lit,
-      Nat.mod_eq_of_lt (show e.value_1.val * 4294967296 < GL_prime by omega),
-      Nat.mod_eq_of_lt h_no_wrap]
-  have h_lt64 : e.value_0.val + e.value_1.val * 4294967296 < 2 ^ 64 := by omega
-  simp only [ZiskFv.Trusted.lane_hi, BitVec.toNat_ofNat, h_val]
+  have h_toNat := entryRegValue_toNat e h_v0 h_v1
+  simp only [ZiskFv.Trusted.lane_hi]
   refine Fin.ext ?_
-  simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_div_right _ _ (by omega : 0 < 4294967296),
+  simp only [h_toNat, Nat.add_mul_div_right _ _ (by omega : 0 < 4294967296),
     Nat.div_eq_of_lt h_v0, Nat.zero_add, Nat.mod_eq_of_lt h_v1]
 
 /-! ## Sail-side bridge: `RegAgree → sail_to_rv64.xreg = ziskRegFile`

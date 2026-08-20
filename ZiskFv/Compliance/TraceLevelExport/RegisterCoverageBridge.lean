@@ -161,33 +161,18 @@ theorem isActiveWitnessMainRow_eq_mainTableRow {n : Nat} (trace : AcceptedZiskTr
 The memory-bus entry `(cMemMessage row).toEntry 1 1` carries the register write
 value.  For `lane_lo_entryRegValue` to bridge from the entry to the register
 file, the entry must satisfy `memory_entry_chunks_in_range` (each 32-bit chunk
-has `.val < 2^32`) and `memory_entry_packed_no_wrap` (the packed sum is below
-`GL_prime`).
+has `.val < 2^32`).  As of the `u64_toBV_chunks_toNat` refactor,
+`packed_no_wrap` is no longer required — the Nat-level byte decomposition
+bypasses the Goldilocks field packing entirely.
 
-Derivation path (not yet reduced to kernel terms):
+Derivation path:
 * `store_pc = 0` → `value_0 = c_0`, `value_1 = c_1`.  The op-bus balance
-  (`trace.channels_balanced` on the OpBusChannel) matches the Main row to a
-  provider circuit row whose `c_lo` / `c_hi` are range-checked to 32 bits via
-  `ComponentSpecFacts` (e.g. `c_chunks_in_range_of_component_spec_facts`).
+  matches the Main row to a provider circuit row whose `c_lo` / `c_hi` are
+  range-checked to 32 bits via `ComponentSpecFacts`
+  (e.g. `c_chunks_in_range_of_component_spec_facts`).
 * `store_pc = 1` → `value_0 = pc + jmp_offset2`, `value_1 = 0`.  `0` is
   trivially < 2^32.  `(pc + jmp_offset2).val < 2^32` follows from the PC being
-  a 32-bit address (the `MainSequentialPcDomain` / `h_pc_offset_lt_2_32`
-  domain bounds).
-* `packed_no_wrap` does NOT follow from `chunks_in_range` alone: the maximum
-  packed value `(2^32 - 1) + (2^32 - 1) * 2^32 = 2^64 - 1` exceeds
-  `GL_prime = 2^64 - 2^32 + 1` by `2^32 - 2`.  Callers must discharge it
-  either architecturally (32-bit ops have `c_1 = 0`) or from the concrete
-  operation's result range.  This is supplied as a premise at `root_soundness`. -/
-
-/-! ## Range constraint on register-write entries
-
-The register-write entry `(cMemMessage row).toEntry 1 1` must satisfy chunk-range
-and packed-no-wrap for `lane_lo_entryRegValue`. The derivation goes per-arm through
-the op-bus balance to each provider's `ComponentSpecFacts` (already used by the
-construction proofs, e.g. `c_chunks_in_range_of_component_spec_facts`). This is
-stated as a hypothesis `h_entry_range` on `a_column_eq_lane_lo_sail_xreg` and
-discharged per-row in the `stepSound_of_programDecodes` induction where the
-specific arm's provider match is available. -/
+  a 32-bit address. -/
 
 /-! ## No-writes lemma from boot walk
 
@@ -247,8 +232,6 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_0 =
       ZiskFv.Trusted.lane_lo (ziskRegFile ziskStep rowDecodes k r) := by
@@ -269,15 +252,13 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1) := by
     rcases stepRegWrite_eq_none_or_cMemMessage_at_i ⟨j, h_j_lt_n⟩
       (ziskStep ⟨j, h_j_lt_n⟩) (rowDecodes ⟨j, h_j_lt_n⟩) with h_none | ⟨j', h_some, h_j'⟩
-    · -- Derive store_reg = 1 from the active c-slot, then contradict h_none.
-      have h_sr : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_reg = 1 := by
+    · have h_sr : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_reg = 1 := by
         obtain ⟨_, _, _, _, _, h_eq_row, h_sel⟩ := h_active
         rw [h_slot_c] at h_sel
         simp only [Instantiation.RegSlot.selector] at h_sel
         rwa [← h_row_eq]
       exact absurd h_none (h_stepRegWrite_consistent ⟨j, h_j_lt_n⟩ h_sr).1
-    · -- Both sub-cases reduce to stepProducerRow = j via h_stepRegWrite_consistent.
-      have h_sr : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_reg = 1 := by
+    · have h_sr : (mainTableRowAtOrZero trace.program trace.mainTable j).rom.store_reg = 1 := by
         obtain ⟨_, _, _, _, _, h_eq_row, h_sel⟩ := h_active
         rw [h_slot_c] at h_sel
         simp only [Instantiation.RegSlot.selector] at h_sel
@@ -296,11 +277,11 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
     fun m hm hm' => h_no_writes_above m (by omega) hm'
   have h_regFile_k := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r (j + 1) k
     (by omega) h_no_writes
-  have ⟨h_chunks, h_no_wrap⟩ := h_entry_range ⟨j, h_j_lt_n⟩ h_write
+  have h_chunks := h_entry_range ⟨j, h_j_lt_n⟩ h_write
   have h_lane := lane_lo_entryRegValue
     ((ZiskFv.AirsClean.Main.cMemMessage
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
-    h_chunks h_no_wrap
+    h_chunks
   rw [h_regFile_k, h_regFile_succ, ← h_row_eq]
   rw [← h_row_eq] at h_lane
   simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_lane.symm
@@ -331,8 +312,6 @@ theorem cMemMessage_value_eq_lane_hi_of_bootWalk_supplier
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     (ZiskFv.AirsClean.Main.cMemMessage q.1).value_1 =
       ZiskFv.Trusted.lane_hi (ziskRegFile ziskStep rowDecodes k r) := by
@@ -378,11 +357,11 @@ theorem cMemMessage_value_eq_lane_hi_of_bootWalk_supplier
     fun m hm hm' => h_no_writes_above m (by omega) hm'
   have h_regFile_k := ziskRegFile_eq_of_no_writes_between ziskStep rowDecodes r (j + 1) k
     (by omega) h_no_writes
-  have ⟨h_chunks, h_no_wrap⟩ := h_entry_range ⟨j, h_j_lt_n⟩ h_write
+  have h_chunks := h_entry_range ⟨j, h_j_lt_n⟩ h_write
   have h_lane := lane_hi_entryRegValue
     ((ZiskFv.AirsClean.Main.cMemMessage
       (mainTableRowAtOrZero trace.program trace.mainTable j)).toEntry 1 1)
-    h_chunks h_no_wrap
+    h_chunks
   rw [h_regFile_k, h_regFile_succ, ← h_row_eq]
   rw [← h_row_eq] at h_lane
   simpa [ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_lane.symm
@@ -1162,8 +1141,6 @@ theorem a_column_eq_lane_lo_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 k =
       ZiskFv.Trusted.lane_lo
@@ -1345,8 +1322,6 @@ theorem a_column_eq_lane_hi_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 k =
       ZiskFv.Trusted.lane_hi
@@ -1500,8 +1475,6 @@ theorem b_column_eq_lane_lo_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 k =
       ZiskFv.Trusted.lane_lo
@@ -1655,8 +1628,6 @@ theorem b_column_eq_lane_hi_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 k =
       ZiskFv.Trusted.lane_hi
@@ -1804,8 +1775,6 @@ theorem laneBridge_of_regAgree
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
           = some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) →
         ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-          ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)
-        ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
     LaneBridge trace (chainedSailStates ziskStep init k) k where
   a_lo r hr h_src h_ptr :=

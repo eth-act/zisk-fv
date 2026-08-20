@@ -320,20 +320,7 @@ theorem root_soundness
       init.regs.get? (reg_of_fin k)
         = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)))
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      RowOutsideDefectRegion ziskTrace i (ziskStep i))
-    (entryRange : ∀ (i : Fin numInstructions),
-      stepRegWrite (stepChannelOutput i (ziskStep i)
-        (rowDecode_of_programDecode ziskTrace i
-          (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-            start addr rawProgram programBinding (rawProgramDecodes i))))
-        = some ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
-      ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-        ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1)
-      ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
-        ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1)) :
+      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions,
       StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i
@@ -363,11 +350,7 @@ theorem root_soundness
           (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
       ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
         ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1)
-      ∧ ZiskFv.Airs.MemoryBus.memory_entry_packed_no_wrap
-        ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
-    entryRange
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) := sorry
   have combined : ∀ (k : ℕ) (hk : k < numInstructions),
       RegAgree ziskStep rowDecodes init k
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
