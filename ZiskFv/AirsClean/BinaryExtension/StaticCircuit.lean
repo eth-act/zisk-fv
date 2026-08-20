@@ -941,6 +941,66 @@ theorem shiftStaticLookupComponent_op_val_ne_arith_remuw_of_spec
   exact static_table_op_val_ne_arith_remuw_of_spec_facts
     (shiftStaticLookupComponent.rowInput env) h_spec.2.1
 
+theorem static_table_op_val_ne_arith_mul_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 180 ∧ row.flags.op.val ≠ 164 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_mul h_specs.1
+
+theorem static_table_op_val_ne_arith_rem_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 187 ∧ row.flags.op.val ≠ 171 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_rem h_specs.1
+
+theorem static_table_op_val_ne_arith_divw_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 190 ∧ row.flags.op.val ≠ 174 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_divw h_specs.1
+
+theorem static_table_op_val_ne_arith_remw_of_spec_facts
+    (row : BinaryExtensionRow FGL)
+    (h_specs : StaticBinaryExtensionTableSpecFacts row) :
+    row.flags.op.val ≠ 191 ∧ row.flags.op.val ≠ 175 := by
+  exact ZiskFv.AirsClean.BinaryExtensionTable.spec_op_val_ne_arith_remw h_specs.1
+
+theorem shiftStaticLookupComponent_op_val_ne_arith_mul_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 180
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 164 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_mul_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+theorem shiftStaticLookupComponent_op_val_ne_arith_rem_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 187
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 171 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_rem_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+theorem shiftStaticLookupComponent_op_val_ne_arith_divw_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 190
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 174 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_divw_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
+theorem shiftStaticLookupComponent_op_val_ne_arith_remw_of_spec
+    (env : Environment FGL)
+    (h_spec : shiftStaticLookupComponent.Spec env) :
+    (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 191
+      ∧ (shiftStaticLookupComponent.rowInput env).flags.op.val ≠ 175 := by
+  rw [shiftStaticLookupComponent_spec] at h_spec
+  exact static_table_op_val_ne_arith_remw_of_spec_facts
+    (shiftStaticLookupComponent.rowInput env) h_spec.2.1
+
 theorem aCols_eval_eq
     (env : Environment FGL) (cols : BinaryExtensionACols (Expression FGL)) :
     eval env cols =

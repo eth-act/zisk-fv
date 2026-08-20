@@ -616,6 +616,98 @@ theorem spec_op_val_ne_arith_remuw {t : BinaryExtensionTableMessage FGL}
         OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_op_val_ne_arith_mul {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 180 ∧ t.op.val ≠ 164 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 180
+    ∧ (opOfIndex i.val : FGL).val ≠ 164
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    constructor
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_op_val_ne_arith_rem {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 187 ∧ t.op.val ≠ 171 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 187
+    ∧ (opOfIndex i.val : FGL).val ≠ 171
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    constructor
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_op_val_ne_arith_divw {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 190 ∧ t.op.val ≠ 174 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 190
+    ∧ (opOfIndex i.val : FGL).val ≠ 174
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    constructor
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_op_val_ne_arith_remw {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    t.op.val ≠ 191 ∧ t.op.val ≠ 175 := by
+  rcases h with ⟨i, rfl⟩
+  change (opOfIndex i.val : FGL).val ≠ 191
+    ∧ (opOfIndex i.val : FGL).val ≠ 175
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  unfold opOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  all_goals
+    constructor
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+    · unfold opOfBlock
+      norm_num [OP_SLL, OP_SRL, OP_SRA, OP_SLL_W, OP_SRL_W, OP_SRA_W,
+        OP_SEXT_B, OP_SEXT_H, OP_SEXT_W]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- The static decoder always produces the byte/range side of the legacy
     BinaryExtensionTable semantic predicate. This is the first reusable
     membership-to-semantics projection; the per-op output equations are

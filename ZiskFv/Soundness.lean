@@ -1673,6 +1673,46 @@ private theorem stepRegWrite_entry_range_aux
         (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
     exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
+  | mul c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_MUL := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_mul_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | rem c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REM := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_rem_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | divw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_DIV_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_divw_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | remw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_REM_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_remw_provided trace i h_ieo h_op
+    exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
   | _ =>
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
