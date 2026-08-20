@@ -768,6 +768,108 @@ private lemma arithMul_entry_range
     (arithMul_opBus_c_lo_lt _ h_row.1 h_row.2)
     (arithMul_opBus_c_hi_lt _ h_row.1 h_row.2)
 
+private lemma fgl_sum8_val_lt (a b c d e f g h : FGL)
+    (hlt : a.val + b.val + c.val + d.val + e.val + f.val + g.val + h.val < 4294967296) :
+    (a + b + c + d + e + f + g + h : FGL).val < 4294967296 := by
+  have h1 : (a + b).val = a.val + b.val := by
+    rw [Fin.val_add]; exact Nat.mod_eq_of_lt (by omega)
+  have h2 : (a + b + c).val = a.val + b.val + c.val := by
+    rw [Fin.val_add, h1]; exact Nat.mod_eq_of_lt (by omega)
+  have h3 : (a + b + c + d).val = a.val + b.val + c.val + d.val := by
+    rw [Fin.val_add, h2]; exact Nat.mod_eq_of_lt (by omega)
+  have h4 : (a + b + c + d + e).val = a.val + b.val + c.val + d.val + e.val := by
+    rw [Fin.val_add, h3]; exact Nat.mod_eq_of_lt (by omega)
+  have h5 : (a + b + c + d + e + f).val = a.val + b.val + c.val + d.val + e.val + f.val := by
+    rw [Fin.val_add, h4]; exact Nat.mod_eq_of_lt (by omega)
+  have h6 : (a + b + c + d + e + f + g).val =
+      a.val + b.val + c.val + d.val + e.val + f.val + g.val := by
+    rw [Fin.val_add, h5]; exact Nat.mod_eq_of_lt (by omega)
+  rw [Fin.val_add, h6]; rw [Nat.mod_eq_of_lt (by omega)]; omega
+
+open ZiskFv.AirsClean.BinaryExtension
+  (opBusMessage validOfRow StaticBinaryExtensionTableSpecFacts ShiftB0RangeSpecFact) in
+open ZiskFv.Airs.BinaryExtension
+  (binary_extension_row_byte_lookups ByteLookupWfHypotheses a_bytes_in_range) in
+open ZiskFv.AirsClean.BinaryExtensionTable (spec_wf_properties) in
+private lemma binExt_shift_opBus_c_lt
+    (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
+    (h_spec_facts : StaticBinaryExtensionTableSpecFacts row)
+    (h_op : row.flags.op = ZiskFv.Trusted.OP_SLL
+          ∨ row.flags.op = ZiskFv.Trusted.OP_SRL
+          ∨ row.flags.op = ZiskFv.Trusted.OP_SRA
+          ∨ row.flags.op = ZiskFv.Trusted.OP_SLL_W
+          ∨ row.flags.op = ZiskFv.Trusted.OP_SRL_W
+          ∨ row.flags.op = ZiskFv.Trusted.OP_SRA_W) :
+    (opBusMessage row).c_lo.val < 4294967296
+    ∧ (opBusMessage row).c_hi.val < 4294967296 := by
+  let v := validOfRow row
+  let h_bytes := binary_extension_row_byte_lookups v 0
+  have h_wfs : ByteLookupWfHypotheses h_bytes := by
+    rcases h_spec_facts with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+    exact ⟨spec_wf_properties h0, spec_wf_properties h1, spec_wf_properties h2,
+      spec_wf_properties h3, spec_wf_properties h4, spec_wf_properties h5,
+      spec_wf_properties h6, spec_wf_properties h7⟩
+  have h_a_range : a_bytes_in_range v 0 := by
+    exact ⟨h_wfs.1.1.1, h_wfs.2.1.1.1, h_wfs.2.2.1.1.1, h_wfs.2.2.2.1.1.1,
+      h_wfs.2.2.2.2.1.1.1, h_wfs.2.2.2.2.2.1.1.1, h_wfs.2.2.2.2.2.2.1.1.1,
+      h_wfs.2.2.2.2.2.2.2.1.1⟩
+  have h_v_op : (v.op 0) = row.flags.op := rfl
+  have mk_lt (h_sums : _ ∧ _) : (opBusMessage row).c_lo.val < 4294967296
+      ∧ (opBusMessage row).c_hi.val < 4294967296 :=
+    ⟨fgl_sum8_val_lt _ _ _ _ _ _ _ _ h_sums.1,
+     fgl_sum8_val_lt _ _ _ _ _ _ _ _ h_sums.2⟩
+  rcases h_op with h | h | h | h | h | h
+  · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sll_c_sums_lt_of_wf
+        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+  · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_srl_c_sums_lt_of_wf
+        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+  · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sra_c_sums_lt_of_wf
+        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+  · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sllw_c_sums_lt_of_wf
+        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+  · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_srlw_c_sums_lt_of_wf
+        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+  · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sraw_c_sums_lt_of_wf
+        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+
+open ZiskFv.AirsClean.BinaryExtension
+  (opBusMessage shiftStaticLookupComponent shiftStaticLookupComponent_spec
+   StaticBinaryExtensionTableSpecFacts ShiftB0RangeSpecFact) in
+private lemma binExt_shift_entry_range
+    {n : ℕ} {trace : AcceptedZiskTrace n}
+    (i : Fin n)
+    (h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0)
+    {providerTable providerRow}
+    (_ : providerTable ∈ trace.witness.allTables)
+    (hpr : providerRow ∈ providerTable.table)
+    (hcomp : providerTable.component = shiftStaticLookupComponent)
+    (hspec : providerTable.Spec)
+    (hmatch : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program trace.mainTable) i.val)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (opBusMessage
+          (shiftStaticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL_W
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL_W
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA_W) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
+  set theRow := shiftStaticLookupComponent.rowInput (providerTable.environment providerRow)
+  have h_row_spec := hspec providerRow hpr
+  rw [hcomp, shiftStaticLookupComponent_spec] at h_row_spec
+  have h_op_eq := hmatch.2.1
+  simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
+    ZiskFv.Channels.OperationBus.OpBusMessage.toEntry, opBusMessage] at h_op_eq
+  rw [h_op_eq] at h_main_op
+  have h_c_lt := binExt_shift_opBus_c_lt theRow h_row_spec.2.1 h_main_op
+  exact entry_range_of_provider_match i h_sp hmatch h_c_lt.1 h_c_lt.2
+
 private theorem stepRegWrite_entry_range_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
@@ -1441,6 +1543,136 @@ private theorem stepRegWrite_entry_range_aux
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_remuw_provided trace i h_ieo h_op
     exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
+  | sll c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inl h_op)
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch (Or.inl h_op)
+  | srl c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inl h_op))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch (Or.inr (Or.inl h_op))
+  | sra c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inr (Or.inl h_op)))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inl h_op)))
+  | slli c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inl h_op)
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch (Or.inl h_op)
+  | srli c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inl h_op))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch (Or.inr (Or.inl h_op))
+  | srai c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inr (Or.inl h_op)))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inl h_op)))
+  | sllw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inr (Or.inr (Or.inl h_op))))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inr (Or.inl h_op))))
+  | srlw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_op)))))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_op)))))
+  | sraw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo
+        (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
+  | slliw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inr (Or.inr (Or.inl h_op))))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inr (Or.inl h_op))))
+  | srliw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRL_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_op)))))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_op)))))
+  | sraiw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 := by
+      have := rd.h_main_active; exact this
+    have h_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA_W := by
+      have := rd.h_main_op; exact this
+    obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
+      main_request_shift_provided trace i h_ieo
+        (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
+    exact binExt_shift_entry_range i h_sp hpt hpr hcomp hspec hmatch
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
   | _ =>
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
