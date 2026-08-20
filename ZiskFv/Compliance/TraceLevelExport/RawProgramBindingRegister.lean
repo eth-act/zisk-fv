@@ -261,7 +261,7 @@ theorem src_a_reg_zero_pins (self z : zisk_inst_builder.ZiskInstBuilder)
   subst h
   exact ⟨rfl, rfl, rfl⟩
 
-private theorem src_b_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_b_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)
     (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z) :
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
@@ -320,7 +320,7 @@ theorem src_a_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; rfl)
 
-private theorem src_b_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_b_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64)
     (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg false = ok z) :
     z.i.b_use_sp_imm1 = 0#u64 := by
@@ -343,7 +343,7 @@ private theorem src_b_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInst
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; rfl)
 
-private theorem src_b_reg_a_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_b_reg_a_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)
     (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z) :
     z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 := by
