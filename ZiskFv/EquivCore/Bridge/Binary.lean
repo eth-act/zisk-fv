@@ -2551,7 +2551,7 @@ lemma carry_7_zero_ADD_of_static_chain
   rw [hmod] at h_cout_zero
   exact boolean_carry_implies_eq_zero h_carry_7_bool h_cout_zero
 
-private lemma c_byte_zero_of_chain_wf_LTU
+lemma c_byte_zero_of_chain_wf_LTU
     {a b c cin flags pos : FGL}
     (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_LTU a b c cin flags pos) :
@@ -2563,7 +2563,7 @@ private lemma c_byte_zero_of_chain_wf_LTU
   apply Fin.ext
   exact h_zero
 
-private lemma c_byte_zero_of_chain_wf_LT
+lemma c_byte_zero_of_chain_wf_LT
     {a b c cin flags pos : FGL}
     (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
       ZiskFv.Airs.Tables.BinaryTable.OP_LT a b c cin flags pos) :
@@ -2571,6 +2571,18 @@ private lemma c_byte_zero_of_chain_wf_LT
   obtain ⟨e, h_wf, h_op, _, _, h_c, _, _, _⟩ := h
   obtain ⟨_, _, _, _, _, h_lt, _⟩ := h_wf
   have h_zero : e.c_byte.val = 0 := (h_lt h_op).1
+  rw [h_c] at h_zero
+  apply Fin.ext
+  exact h_zero
+
+lemma c_byte_zero_of_chain_wf_EQ
+    {a b c cin flags pos : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+      ZiskFv.Airs.Tables.BinaryTable.OP_EQ a b c cin flags pos) :
+    c = 0 := by
+  obtain ⟨e, h_wf, h_op, _, _, h_c, _, _, _⟩ := h
+  obtain ⟨_, _, _, _, _, _, h_eq, _⟩ := h_wf
+  have h_zero : e.c_byte.val = 0 := (h_eq h_op).1
   rw [h_c] at h_zero
   apply Fin.ext
   exact h_zero
