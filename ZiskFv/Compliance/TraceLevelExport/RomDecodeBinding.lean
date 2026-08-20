@@ -926,6 +926,28 @@ theorem romASourceImmColumn_of_romFlags_eq_packFlags
   subst hbits
   exact e_a_src_imm
 
+structure ARegisterProgramFacts
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (bits : RomFlagBits) (r : Fin 32) : Prop where
+  h_src_reg : bits.a_src_reg = decide (r ≠ 0)
+  h_src_imm : bits.a_src_imm = decide (r = 0)
+  h_program : ∀ j : Fin trace.programLength,
+    (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
+      (trace.program j).a_offset_imm0 = Transpiler.ind r ∧
+      (trace.program j).a_imm1 = 0 ∧
+      (trace.program j).flags = packFlags bits
+
+structure BRegisterProgramFacts
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (bits : RomFlagBits) (r : Fin 32) : Prop where
+  h_src_reg : bits.b_src_reg = decide (r ≠ 0)
+  h_src_imm : bits.b_src_imm = decide (r = 0)
+  h_program : ∀ j : Fin trace.programLength,
+    (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
+      (trace.program j).b_offset_imm0 = Transpiler.ind r ∧
+      (trace.program j).b_imm1 = 0 ∧
+      (trace.program j).flags = packFlags bits
+
 /-! ## ADD pilot: reconstruct `Decode_add` from the committed program
 
 `Decode_add_of_program` rebuilds the `Decode_add` decode pins from
@@ -967,6 +989,9 @@ def Decode_add_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1039,6 +1064,51 @@ def Decode_add_of_program
       rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false]
     · rw [p_store_ind, h_bits_store_ind, ZiskFv.AirsClean.boolF_false]
     · exact hstore.symm.trans hp_store_offset
+  have sourceKey :
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg =
+        ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0)) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_reg =
+        ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0)) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_offset_imm0 =
+        Transpiler.ind (regidx_to_fin c.r1) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_imm =
+        ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0)) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_imm1 = 0 ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_src_reg =
+        ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0)) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_offset_imm0 =
+        Transpiler.ind (regidx_to_fin c.r2) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_src_imm =
+        ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0)) ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_imm1 = 0 := by
+    obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
+    have hline : (trace.program j).line =
+        (mainOfTable trace.program trace.mainTable).pc i.val := by
+      simp only [← hj, romMessage, ZiskFv.AirsClean.FullEnsemble.mainOfTable_pc]
+    obtain ⟨haoff, haimm, haflags⟩ := aFacts.h_program j hline
+    obtain ⟨hboff, hbimm, _⟩ := bFacts.h_program j hline
+    have hflags : romFlags
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val) =
+          (trace.program j).flags := by
+      simp only [← hj, romMessage]
+    have hrom := hflags.trans haflags
+    obtain ⟨paReg, paImm, pbReg, pbImm⟩ :=
+      romAllSourceSelectorColumns_of_romFlags_eq_packFlags
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
+        (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) hrom
+    obtain ⟨_, _, pStoreReg⟩ :=
+      romSelectorColumns_of_romFlags_eq_packFlags
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
+        (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) hrom
+    refine ⟨by rw [pStoreReg, h_bits_store_reg],
+      by rw [paReg, aFacts.h_src_reg], ?_,
+      by rw [paImm, aFacts.h_src_imm], ?_,
+      by rw [pbReg, bFacts.h_src_reg], ?_,
+      by rw [pbImm, bFacts.h_src_imm], ?_⟩
+    · exact (congrArg (fun msg => msg.a_offset_imm0) hj).trans haoff
+    · exact (congrArg (fun msg => msg.a_imm1) hj).trans haimm
+    · exact (congrArg (fun msg => msg.b_offset_imm0) hj).trans hboff
+    · exact (congrArg (fun msg => msg.b_imm1) hj).trans hbimm
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1050,14 +1120,14 @@ def Decode_add_of_program
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
       h_store_offset := key.2.2.2.2.2.2.2.2
-      h_store_reg := sorry
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_store_reg := sourceKey.1
+      h_a_src_reg := sourceKey.2.1
+      h_a_offset_imm0 := sourceKey.2.2.1
+      h_a_src_imm := sourceKey.2.2.2.1
+      h_a_imm1 := sourceKey.2.2.2.2.1
+      h_b_src_reg := sourceKey.2.2.2.2.2.1
+      h_b_offset_imm0 := sourceKey.2.2.2.2.2.2.1
+      h_b_src_imm := sourceKey.2.2.2.2.2.2.2.1
+      h_b_imm1 := sourceKey.2.2.2.2.2.2.2.2 }
 
 end ZiskFv.Compliance.RomDecodeBinding

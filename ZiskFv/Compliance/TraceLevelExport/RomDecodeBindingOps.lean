@@ -226,32 +226,6 @@ theorem mainRegSourceColumns_of_packFlags
     (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
     (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
 
-/-- Source-level facts that make one committed `a` operand a register read.
-The zero-register case uses the transpiler's immediate-zero encoding. -/
-structure ARegisterProgramFacts
-    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin trace.numInstructions) (bits : RomFlagBits) (r : Fin 32) : Prop where
-  h_src_reg : bits.a_src_reg = decide (r ≠ 0)
-  h_src_imm : bits.a_src_imm = decide (r = 0)
-  h_program : ∀ j : Fin trace.programLength,
-    (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
-      (trace.program j).a_offset_imm0 = Transpiler.ind r ∧
-      (trace.program j).a_imm1 = 0 ∧
-      (trace.program j).flags = packFlags bits
-
-/-- Source-level facts that make one committed `b` operand a register read.
-The zero-register case uses the transpiler's immediate-zero encoding. -/
-structure BRegisterProgramFacts
-    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin trace.numInstructions) (bits : RomFlagBits) (r : Fin 32) : Prop where
-  h_src_reg : bits.b_src_reg = decide (r ≠ 0)
-  h_src_imm : bits.b_src_imm = decide (r = 0)
-  h_program : ∀ j : Fin trace.programLength,
-    (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
-      (trace.program j).b_offset_imm0 = Transpiler.ind r ∧
-      (trace.program j).b_imm1 = 0 ∧
-      (trace.program j).flags = packFlags bits
-
 /-- Source-level facts for one shift immediate in the committed program. -/
 structure BShiftProgramFacts
     {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)

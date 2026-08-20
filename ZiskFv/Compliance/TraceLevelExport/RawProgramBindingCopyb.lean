@@ -1000,10 +1000,16 @@ noncomputable def ProgramDecode_add_from_rawProgram {n rawLength : Nat}
     (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrd0
     rawDecode.hrs10 rawDecode.hrs20).choose
   obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd, hstoreReg,
-      _, _, _, _, _, _⟩ :=
+      haSrc, haOff, haUse, hbSrc, hbOff, hbUse⟩ :=
     (transpile_add rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrd0
       rawDecode.hrs10 rawDecode.hrs20).choose_spec
+  have hserialized := serialized_of_raw_program_binding trace i start addr rawProgram
+    (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 0
+      (regidx_to_fin c.rd).val 0x33) ext hbind rawDecode.hLine
+    (by simpa only [rd, rs1, rs2, ext] using hok)
+    (by rw [ZiskFv.Compliance.Decode.toU32_and127,
+        ZiskFv.Compliance.Decode.rawRType_opcode]; all_goals decide)
   refine
     { h_idx := rawDecode.h_idx
       bits := romFlagBitsOfExtract ext.row
@@ -1017,6 +1023,10 @@ noncomputable def ProgramDecode_add_from_rawProgram {n rawLength : Nat}
       h_bits_store_reg := by
         exact storeBit_of_store_iff_val ext.row (regidx_to_fin c.rd)
           (by simpa only [ext, rd] using hstoreReg)
+      aFacts := aRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r1) ext.row
+        (by simpa only [rs1] using haSrc) (by simpa only [rs1] using haOff) haUse hserialized
+      bFacts := bRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r2) ext.row
+        (by simpa only [rs2] using hbSrc) (by simpa only [rs2] using hbOff) hbUse hserialized
       h_prog := ?_ }
   intro j hline
   obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
