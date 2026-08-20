@@ -323,7 +323,7 @@ private lemma matches_entry_c_eq
 private lemma fgl_two_chunks_val_lt (a b : FGL)
     (ha : a.val < 65536) (hb : b.val < 65536) :
     (a * 65536 + b : FGL).val < 4294967296 := by
-  have hav : (65536 : FGL).val = 65536 := by native_decide
+  have hav : (65536 : FGL).val = 65536 := by decide
   have h1 : a.val * (65536 : FGL).val % GL_prime = a.val * 65536 :=
     Nat.mod_eq_of_lt (by rw [hav]; omega)
   have h2 : (a.val * 65536 + b.val) % GL_prime = a.val * 65536 + b.val :=
@@ -339,7 +339,7 @@ private lemma fgl_two_chunks_val_lt_comm (a b : FGL)
 private lemma fgl_two_bytes_val_lt (a b : FGL)
     (ha : a.val < 256) (hb : b.val < 256) :
     (a + 256 * b : FGL).val < 65536 := by
-  have h256v : (256 : FGL).val = 256 := by native_decide
+  have h256v : (256 : FGL).val = 256 := by decide
   have h1 : (256 : FGL).val * b.val % GL_prime = 256 * b.val :=
     Nat.mod_eq_of_lt (by rw [h256v]; omega)
   have h2 : (a.val + 256 * b.val) % GL_prime = a.val + 256 * b.val :=
@@ -415,7 +415,7 @@ private lemma mode_pins_of_emit_op_eq_16_of_static_spec
   have h_mode_bool : row.mode.mode32 * (1 - row.mode.mode32) = 0 := by
     simpa [ZiskFv.Airs.Binary.boolean_mode32,
       ZiskFv.AirsClean.Binary.validOfRow] using h_core.1
-  have h16v : (16 : FGL).val = 16 := by native_decide
+  have h16v : (16 : FGL).val = 16 := by decide
   rcases (mul_eq_zero.mp h_mode_bool) with h_mode_zero | h_mode_sub
   · have h_bop_val : row.chain.b_op.val = 16 := by
       have hv := congrArg Fin.val h_emit
@@ -540,7 +540,7 @@ private lemma binary_static_w_mode_carry_7_zero
     have hv := congrArg Fin.val h_emit
     simp only [Fin.val_add, Fin.val_mul] at hv
     rw [h_mode_one] at hv
-    have h16v : (16 : FGL).val = 16 := by native_decide
+    have h16v : (16 : FGL).val = 16 := by decide
     simp only [Fin.val_one, Nat.mul_one, h16v,
       Nat.mod_eq_of_lt (by omega : 16 < GL_prime)] at hv
     have h_lt : row.chain.b_op.val < GL_prime := row.chain.b_op.isLt
@@ -741,7 +741,7 @@ private lemma arithMul_opBus_c_hi_lt
     · simp only [hs, zero_mul]; decide
     · simp only [hs, one_mul]
       show (4294967295 : FGL).val < 4294967296
-      native_decide
+      decide
 
 private lemma arithMul_entry_range
     {n : ℕ} {trace : AcceptedZiskTrace n}
@@ -820,17 +820,17 @@ private lemma binExt_shift_opBus_c_lt
      fgl_sum8_val_lt _ _ _ _ _ _ _ _ h_sums.2⟩
   rcases h_op with h | h | h | h | h | h
   · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sll_c_sums_lt_of_wf
-        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+        v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
   · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_srl_c_sums_lt_of_wf
-        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+        v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
   · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sra_c_sums_lt_of_wf
-        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+        v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
   · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sllw_c_sums_lt_of_wf
-        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+        v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
   · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_srlw_c_sums_lt_of_wf
-        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+        v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
   · exact mk_lt (ZiskFv.Airs.BinaryExtension.binary_extension_sraw_c_sums_lt_of_wf
-        v 0 (by rw [h_v_op, h]; native_decide) h_bytes h_wfs h_a_range)
+        v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
 
 open ZiskFv.AirsClean.BinaryExtension
   (opBusMessage shiftStaticLookupComponent shiftStaticLookupComponent_spec
@@ -921,13 +921,13 @@ private lemma binExt_sext_entry_range
   rcases h_main_op with h_b | h_h | h_w
   · exact mk_range
       (ZiskFv.Airs.BinaryExtension.binary_extension_sext_b_c_sums_lt_of_wf
-        v r_binary (by rw [← h_op, h_b]; native_decide) h_bytes h_wfs)
+        v r_binary (by rw [← h_op, h_b]; decide) h_bytes h_wfs)
   · exact mk_range
       (ZiskFv.Airs.BinaryExtension.binary_extension_sext_h_c_sums_lt_of_wf
-        v r_binary (by rw [← h_op, h_h]; native_decide) h_bytes h_wfs)
+        v r_binary (by rw [← h_op, h_h]; decide) h_bytes h_wfs)
   · exact mk_range
       (ZiskFv.Airs.BinaryExtension.binary_extension_sext_w_c_sums_lt_of_wf
-        v r_binary (by rw [← h_op, h_w]; native_decide) h_bytes h_wfs)
+        v r_binary (by rw [← h_op, h_w]; decide) h_bytes h_wfs)
 
 private lemma load_b_active_of_mem_message
     {n : ℕ} {trace : AcceptedZiskTrace n} (i : Fin n)
@@ -1082,10 +1082,10 @@ private lemma copyb_narrow_entry_range
     rcases h_width_one_or_two with h_width | h_width
     · rw [show row.core.b_1 = e1.value_1 from h_emit.2.1,
         (h_zero.1 (h_main_width.trans h_width)).1]
-      native_decide
+      decide
     · rw [show row.core.b_1 = e1.value_1 from h_emit.2.1,
         (h_zero.2.1 (h_main_width.trans h_width)).1]
-      native_decide
+      decide
 
 private theorem stepRegWrite_entry_range_aux
     {n : ℕ} {trace : AcceptedZiskTrace n} {sailTrace : SailTrace n}
