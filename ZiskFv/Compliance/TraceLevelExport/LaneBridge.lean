@@ -50,7 +50,7 @@ structure LaneBridge {n : Nat} (trace : AcceptedZiskTrace n)
 
 /-! ## Unconditional lane equalities from LaneBridge + SourceSpec + Decode fields -/
 
-private theorem fgl_eq_of_mul_sub_zero (a b : FGL) (h : (1 : FGL) * (a + -1 * b) = 0) :
+theorem fgl_eq_of_mul_sub_zero (a b : FGL) (h : (1 : FGL) * (a + -1 * b) = 0) :
     a = b := by
   simp only [one_mul] at h
   have : a = -(-1 * b) + 0 := by rw [← h]; ring

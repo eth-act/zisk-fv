@@ -1517,7 +1517,10 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
         (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
-        (by sorry)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | srli c =>
       have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia)
@@ -1526,7 +1529,10 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
         (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
-        (by sorry)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | srai c =>
       have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia)
@@ -1535,7 +1541,10 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
         (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
-        (by sorry)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | add c =>
       have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia)
@@ -1633,7 +1642,10 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
         (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
-        (by sorry)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | srliw c =>
       have h_domain : SequentialPcDomain c.srliw_input.PC := hAvoidKnownBugs
       have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
@@ -1643,7 +1655,10 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
         (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
-        (by sorry)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | sraiw c =>
       have h_domain : SequentialPcDomain c.sraiw_input.PC := hAvoidKnownBugs
       have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
@@ -1653,7 +1668,10 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
         (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
           rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
-        (by sorry)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | mul c =>
       exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)

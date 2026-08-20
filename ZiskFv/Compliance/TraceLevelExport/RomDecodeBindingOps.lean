@@ -1515,7 +1515,9 @@ def Decode_slli_of_program
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
-      h_a_imm1 := sorry }
+      h_a_imm1 := sorry
+      h_b_src_imm := sorry
+      h_b_offset_imm0 := sorry }
 
 /-- `Decode_srli` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1575,7 +1577,9 @@ def Decode_srli_of_program
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
-      h_a_imm1 := sorry }
+      h_a_imm1 := sorry
+      h_b_src_imm := sorry
+      h_b_offset_imm0 := sorry }
 
 /-- `Decode_srai` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1635,7 +1639,9 @@ def Decode_srai_of_program
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
-      h_a_imm1 := sorry }
+      h_a_imm1 := sorry
+      h_b_src_imm := sorry
+      h_b_offset_imm0 := sorry }
 
 
 /-! ## Family: W-ALU and W-shifts -/
@@ -2090,7 +2096,9 @@ def Decode_slliw_of_program
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
-      h_a_imm1 := sorry }
+      h_a_imm1 := sorry
+      h_b_src_imm := sorry
+      h_b_offset_imm0 := sorry }
 
 /-- `Decode_srliw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2150,7 +2158,9 @@ def Decode_srliw_of_program
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
-      h_a_imm1 := sorry }
+      h_a_imm1 := sorry
+      h_b_src_imm := sorry
+      h_b_offset_imm0 := sorry }
 
 /-- `Decode_sraiw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2210,7 +2220,9 @@ def Decode_sraiw_of_program
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
-      h_a_imm1 := sorry }
+      h_a_imm1 := sorry
+      h_b_src_imm := sorry
+      h_b_offset_imm0 := sorry }
 
 
 /-! ## Family: M-ext -/

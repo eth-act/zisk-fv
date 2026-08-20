@@ -1440,6 +1440,11 @@ structure Decode_slli (trace : AcceptedZiskTrace numInstructions)
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
   h_a_imm1 :
     (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      shamt_b_lo c.shamt
 
 structure InputsCore_slli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slli trace i) : Type where
@@ -1524,6 +1529,11 @@ structure Decode_srli (trace : AcceptedZiskTrace numInstructions)
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
   h_a_imm1 :
     (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      shamt_b_lo c.shamt
 
 structure InputsCore_srli (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srli trace i) : Type where
@@ -1608,6 +1618,11 @@ structure Decode_srai (trace : AcceptedZiskTrace numInstructions)
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
   h_a_imm1 :
     (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      shamt_b_lo c.shamt
 
 structure InputsCore_srai (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srai trace i) : Type where
@@ -1983,6 +1998,11 @@ structure Decode_slliw (trace : AcceptedZiskTrace numInstructions)
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
   h_a_imm1 :
     (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      shamt_b_lo (BitVec.setWidth 6 c.slliw_input.shamt)
 
 structure InputsCore_slliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slliw trace i) : Type where
@@ -2065,6 +2085,11 @@ structure Decode_srliw (trace : AcceptedZiskTrace numInstructions)
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
   h_a_imm1 :
     (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      shamt_b_lo (BitVec.setWidth 6 c.srliw_input.shamt)
 
 structure InputsCore_srliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srliw trace i) : Type where
@@ -2147,6 +2172,11 @@ structure Decode_sraiw (trace : AcceptedZiskTrace numInstructions)
       ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
   h_a_imm1 :
     (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm = 1
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      shamt_b_lo (BitVec.setWidth 6 c.sraiw_input.shamt)
 
 structure InputsCore_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sraiw trace i) : Type where
