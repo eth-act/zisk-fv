@@ -491,6 +491,7 @@ def Decode_sub_of_program
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
       h_store_offset := key.2.2.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -555,6 +556,7 @@ def Decode_and_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -619,6 +621,7 @@ def Decode_or_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -683,6 +686,7 @@ def Decode_xor_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -747,6 +751,7 @@ def Decode_slt_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -811,6 +816,7 @@ def Decode_sltu_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -887,6 +893,7 @@ def Decode_andi_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -959,6 +966,7 @@ def Decode_ori_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1031,6 +1039,7 @@ def Decode_xori_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1103,6 +1112,7 @@ def Decode_slti_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1175,6 +1185,7 @@ def Decode_sltiu_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1260,6 +1271,7 @@ def Decode_addi_of_program
       h_a_imm1 := sorry
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx }
 
 
@@ -1319,6 +1331,7 @@ def Decode_sll_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1383,6 +1396,7 @@ def Decode_srl_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1447,6 +1461,7 @@ def Decode_sra_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1511,6 +1526,7 @@ def Decode_slli_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1573,6 +1589,7 @@ def Decode_srli_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1635,6 +1652,7 @@ def Decode_srai_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1700,6 +1718,7 @@ def Decode_subw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1764,6 +1783,7 @@ def Decode_addw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1844,6 +1864,7 @@ def Decode_addiw_of_program
       h_a_imm1 := sorry
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
+      h_store_reg := sorry
       h_idx := h_idx }
 
 /-- `Decode_sllw` rebuilt from the committed program via the ROM lookup
@@ -1900,6 +1921,7 @@ def Decode_sllw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -1964,6 +1986,7 @@ def Decode_srlw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -2028,6 +2051,7 @@ def Decode_sraw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -2092,6 +2116,7 @@ def Decode_slliw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -2154,6 +2179,7 @@ def Decode_srliw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -2216,6 +2242,7 @@ def Decode_sraiw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -2281,6 +2308,7 @@ def Decode_mulw_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx }
 
 /-- `Decode_mul` rebuilt from the committed program via the ROM lookup
@@ -2343,6 +2371,7 @@ def Decode_mul_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       arith_mem := arith_mem
       bounds := bounds }
@@ -2407,6 +2436,7 @@ def Decode_mulh_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       arith_mem := arith_mem
       bounds := bounds }
@@ -2471,6 +2501,7 @@ def Decode_mulhsu_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       arith_mem := arith_mem
       bounds := bounds }
@@ -2535,6 +2566,7 @@ def Decode_div_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
@@ -2600,6 +2632,7 @@ def Decode_rem_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
@@ -2665,6 +2698,7 @@ def Decode_divw_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
@@ -2730,6 +2764,7 @@ def Decode_remw_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       pins := { main_active := key.2.1, main_op := key.1 }
       arith_mem := arith_mem
@@ -2789,6 +2824,7 @@ def Decode_mulhu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
@@ -2848,6 +2884,7 @@ def Decode_divu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
@@ -2907,6 +2944,7 @@ def Decode_divuw_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
@@ -2966,6 +3004,7 @@ def Decode_remu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
@@ -3025,6 +3064,7 @@ def Decode_remuw_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
@@ -3766,6 +3806,7 @@ def Decode_sb_of_program
       h_main_ind_width := key.2.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
+      h_store_reg := sorry
       h_idx := h_idx }
 
 /-- `Decode_sh` rebuilt from the committed program via the ROM lookup
@@ -3831,6 +3872,7 @@ def Decode_sh_of_program
       h_main_ind_width := key.2.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
+      h_store_reg := sorry
       h_idx := h_idx }
 
 /-- `Decode_sw` rebuilt from the committed program via the ROM lookup
@@ -3896,6 +3938,7 @@ def Decode_sw_of_program
       h_main_ind_width := key.2.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
+      h_store_reg := sorry
       h_idx := h_idx }
 
 /-- `Decode_sd` rebuilt from the committed program via the ROM lookup
@@ -3958,6 +4001,7 @@ def Decode_sd_of_program
       h_jmp2 := key.2.2.2.2.2
       h_store_ind := h_store_ind
       h_store_offset_imm := h_store_offset_imm
+      h_store_reg := sorry
       h_idx := h_idx }
 
 
@@ -4022,6 +4066,7 @@ def Decode_lui_of_program
       h_store_offset := h_dest.2
       h_jmp1 := key.2.2.2.2.2.1
       h_jmp2 := key.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_imm_lo_nat := h_imm_lo_nat
       h_imm_hi_nat := h_imm_hi_nat }
@@ -4086,6 +4131,7 @@ def Decode_auipc_of_program
       h_store_offset := h_dest.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
       h_jmp1 := key.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx }
 
 
@@ -4142,6 +4188,7 @@ def Decode_beq_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -4203,6 +4250,7 @@ def Decode_bne_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -4264,6 +4312,7 @@ def Decode_blt_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -4325,6 +4374,7 @@ def Decode_bge_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -4386,6 +4436,7 @@ def Decode_bltu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
@@ -4447,6 +4498,7 @@ def Decode_bgeu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
+      h_store_reg := sorry
       h_idx := h_idx
       h_a_src_reg := by sorry
       h_a_offset_imm0 := by sorry
@@ -4519,6 +4571,7 @@ def Decode_jal_of_program
       h_store_offset := h_dest.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
       h_jmp2 := key.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx }
 
 /-- `Decode_jalr` rebuilt from the committed program via the ROM lookup
@@ -4621,6 +4674,7 @@ def Decode_jalr_of_program
       h_store_pc := key.2.2.2.2.1
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_flag := h_flag
       h_a_mask_lo := h_a_mask_lo
@@ -4863,6 +4917,7 @@ def Decode_jalr_unaligned_of_program
       h_store_pc := keyAnd.2.2.2.2.1
       h_store_ind := keyAnd.2.2.2.2.2.2.2.2.2.2.2.1
       h_store_offset := keyAnd.2.2.2.2.2.2.2.2.2.2.2.2
+      h_store_reg := sorry
       h_idx := by simpa using h_idx2
       h_a_mask_lo := h_a_mask_lo
       h_a_mask_hi := h_a_mask_hi
@@ -4923,6 +4978,7 @@ def Decode_fence_of_program
       h_set_pc := key.2.2.1
       h_jmp1 := key.2.2.2.1
       h_jmp2 := key.2.2.2.2
+      h_store_reg := sorry
       h_idx := h_idx
       h_fm_zero := h_fm_zero
       h_rs_x0 := h_rs_x0

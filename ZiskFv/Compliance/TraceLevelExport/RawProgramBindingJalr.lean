@@ -509,6 +509,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
             h_bits_set_pc := ?_
             h_bits_store_pc := ?_
             h_bits_store_ind := ?_
+            h_bits_store_reg := sorry
             h_prog := ?_ }
       · exact hieo
       · exact hm32
@@ -751,6 +752,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
               exact decide_eq_false (by
                 rw [hn.2.1]
                 simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
+          h_and_store_reg := sorry
           h_and_b_src_imm := by
             simp [andBits, romFlagBitsOfExtract, handBSrc, zisk_inst.SRC_C,
               zisk_inst.SRC_IMM]

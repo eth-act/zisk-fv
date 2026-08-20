@@ -1243,6 +1243,7 @@ noncomputable def ProgramDecode_lui_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hsi
+      h_bits_store_reg := sorry
       h_prog := by
         intro j hline
         obtain ⟨k, hstart, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -1601,6 +1602,7 @@ local macro "branch_program_decode" nm:ident "," f3:term "," rop:term ","
         h_bits_m32 := by simpa only [ext, romFlagBitsOfExtract] using hm32
         h_bits_set_pc := by simpa only [ext, romFlagBitsOfExtract] using hsetpc
         h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
+        h_bits_store_reg := sorry
         h_prog := by
           intro j hline
           obtain ⟨k, hstart, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -1689,6 +1691,7 @@ noncomputable def ProgramDecode_auipc_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := sorry
       h_prog := by
         intro j hline
         obtain ⟨k, hstart, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -1775,6 +1778,7 @@ noncomputable def ProgramDecode_jal_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := sorry
       h_prog := by
         intro j hline
         obtain ⟨k, hstart, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -1857,6 +1861,7 @@ noncomputable def ProgramDecode_fence_from_rawProgram {n rawLength : Nat}
       bits := romFlagBitsOfExtract ext.row
       h_bits_ieo := ?_
       h_bits_set_pc := ?_
+      h_bits_store_reg := sorry
       h_prog := ?_ }
   · simpa only [ext, romFlagBitsOfExtract] using hieo
   · simpa only [ext, romFlagBitsOfExtract] using hsetpc

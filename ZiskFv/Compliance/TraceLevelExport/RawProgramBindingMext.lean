@@ -260,6 +260,7 @@ local macro "mext_program_decode_ab" nm:ident "," f3:term "," opw:term : command
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_false hstoreInd
+        h_bits_store_reg := sorry
         h_prog := ?_ }
     intro j hline
     obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -352,6 +353,7 @@ local macro "mext_program_decode_c" nm:ident "," f3:term "," opw:term : command 
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_false hstoreInd
+        h_bits_store_reg := sorry
         h_prog := ?_ }
     intro j hline
     obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline

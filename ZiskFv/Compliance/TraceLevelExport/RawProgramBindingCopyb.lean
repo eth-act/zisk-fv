@@ -464,7 +464,7 @@ theorem transpile_register_cond_of
     rw [hrStore]
     apply hsr
     rw [hinput]
-    exact_mod_cast (fun heq => hne (by rw [hrdv decoded hdecoded]; exact heq))
+    exact_mod_cast (fun heq => hne ((hrdv decoded hdecoded).symm.trans heq))
 
 /-- Conditional immediate-op transpile through the `immediate_op_or_x0_copyb_typed`
     builder. -/
@@ -854,6 +854,7 @@ noncomputable def ProgramDecode_add_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := sorry
       h_prog := ?_ }
   intro j hline
   obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -930,6 +931,7 @@ noncomputable def ProgramDecode_or_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := sorry
       h_prog := ?_ }
   intro j hline
   obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -1221,6 +1223,7 @@ local macro "copyb_imm_program_decode" nm:ident "," f3:term : command => do
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_false hstoreInd
+        h_bits_store_reg := sorry
         h_bits_b_src_imm := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_true hsrc
@@ -1345,6 +1348,7 @@ noncomputable def ProgramDecode_addi_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := sorry
       h_bits_b_src_imm := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_true hsrc

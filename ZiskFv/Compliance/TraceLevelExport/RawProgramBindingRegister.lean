@@ -328,7 +328,7 @@ theorem transpile_register_of
     rw [hinput]
     show decoded.rd.val ≠ 0
     intro heq
-    exact hne (by rw [hrdv decoded hdecoded]; exact heq)
+    exact hne ((hrdv decoded hdecoded).symm.trans heq)
 
 /-! ## Generic decode-field bridge for register ops. -/
 
@@ -516,6 +516,7 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
       h_bits_set_pc := ?_
       h_bits_store_pc := ?_
       h_bits_store_ind := ?_
+      h_bits_store_reg := sorry
       h_prog := ?_ }
   · simpa only [ext, romFlagBitsOfExtract] using hieo
   · simpa only [ext, romFlagBitsOfExtract] using hm32
@@ -611,6 +612,7 @@ local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term :
         h_bits_set_pc := ?_
         h_bits_store_pc := ?_
         h_bits_store_ind := ?_
+        h_bits_store_reg := sorry
         h_prog := ?_ }
     · simpa only [ext, romFlagBitsOfExtract] using hieo
     · simpa only [ext, romFlagBitsOfExtract] using hm32

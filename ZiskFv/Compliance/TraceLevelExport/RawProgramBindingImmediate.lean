@@ -713,6 +713,7 @@ local macro "shift_program_decode" nm:ident "," upper:term "," f3:term "," opw:t
         h_bits_set_pc := ?_
         h_bits_store_pc := ?_
         h_bits_store_ind := ?_
+        h_bits_store_reg := sorry
         h_prog := ?_ }
     · simpa only [ext, romFlagBitsOfExtract] using hieo
     · simpa only [ext, romFlagBitsOfExtract] using hm32
@@ -814,6 +815,7 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
         h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]; exact decide_eq_false hstoreInd
+        h_bits_store_reg := sorry
         h_prog := by
           intro j hline
           obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -981,6 +983,7 @@ local macro "imm_program_decode" nm:ident "," f3:term "," opw:term ","
         h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]; exact decide_eq_false hstoreInd
+        h_bits_store_reg := sorry
         h_bits_b_src_imm := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_true hsrc
@@ -1078,6 +1081,7 @@ noncomputable def ProgramDecode_addiw_from_rawProgram {n rawLength : Nat}
       h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]; exact decide_eq_false hstoreInd
+      h_bits_store_reg := sorry
       h_bits_b_src_imm := by
         simp only [romFlagBitsOfExtract]; exact decide_eq_true hsrc
       h_prog := by

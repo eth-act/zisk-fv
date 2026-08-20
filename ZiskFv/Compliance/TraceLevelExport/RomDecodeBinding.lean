@@ -1050,6 +1050,7 @@ def Decode_add_of_program
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
       h_store_offset := key.2.2.2.2.2.2.2.2
+      h_store_reg := sorry
       h_a_src_reg := sorry
       h_a_offset_imm0 := sorry
       h_a_src_imm := sorry
