@@ -5255,6 +5255,7 @@ def Decode_jalr_of_program
     (h_bits_store_pc :
       bits.store_pc = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -5309,6 +5310,10 @@ def Decode_jalr_of_program
       by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false],
       by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_true],
       by rw [p_store_pc, h_bits_store_pc], hj1.symm.trans hpj1, hjmp2.symm.trans hpj2⟩
+  have h_store_reg := storeRegColumn_of_programBit trace i h_lt bits
+    (decide ((regidx_to_fin c.rd).val ≠ 0)) h_bits_store_reg (by
+      intro j hline
+      exact (h_prog j hline).2.2.2.2)
   exact
     { rows := rows
       h_main_op := key.1
@@ -5318,7 +5323,8 @@ def Decode_jalr_of_program
       h_store_pc := key.2.2.2.2.1
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa [rows, physical, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
       h_flag := h_flag
       h_a_mask_lo := h_a_mask_lo
@@ -5381,6 +5387,7 @@ def Decode_jalr_unaligned_of_program
     (h_add_ieo : addBits.is_external_op = true)
     (h_add_m32 : addBits.m32 = false)
     (h_add_set_pc : addBits.set_pc = false)
+    (h_add_store_reg : addBits.store_reg = false)
     (h_add_a_src_imm : addBits.a_src_imm = true)
     (h_add_b_src_imm :
       addBits.b_src_imm = decide ((regidx_to_fin c.rs1).val = 0))
@@ -5393,6 +5400,7 @@ def Decode_jalr_unaligned_of_program
     (h_and_store_pc :
       andBits.store_pc = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_and_store_ind : andBits.store_ind = false)
+    (h_and_store_reg : andBits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0))
     (h_and_b_src_imm : andBits.b_src_imm = false)
     (h_and_b_src_mem : andBits.b_src_mem = false)
     (h_and_b_src_ind : andBits.b_src_ind = false)
@@ -5433,14 +5441,15 @@ def Decode_jalr_unaligned_of_program
       (mainRowWithRomAt trace ⟨i.val, h_lt_start⟩).rom.b_src_imm =
         ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rs1).val = 0)) ∧
       (mainRowWithRomAt trace ⟨i.val, h_lt_start⟩).rom.b_src_reg =
-        ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rs1).val ≠ 0)) := by
+        ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rs1).val ≠ 0)) ∧
+      (mainRowWithRomAt trace ⟨i.val, h_lt_start⟩).rom.store_reg = 0 := by
     obtain ⟨ja, hlinea, hopa, _, _, hjmp2a, hflagsa⟩ :=
       mainRomColumns_at_eq_program trace ⟨i.val, h_lt_start⟩
     obtain ⟨hpoa, hpj2a, _, hpfa⟩ := h_prog_add ja hlinea
     have hroma := hflagsa.symm.trans hpfa
     obtain ⟨pa_ieo, pa_m32, pa_set_pc, _⟩ :=
       mainFlagColumns_of_packFlags_at trace ⟨i.val, h_lt_start⟩ addBits hroma
-    obtain ⟨_, _, _, _, pa_b_src_reg, _⟩ :=
+    obtain ⟨_, _, _, _, pa_b_src_reg, pa_store_reg⟩ :=
       mainMemorySelectorColumns_of_packFlags_at trace ⟨i.val, h_lt_start⟩ addBits hroma
     have pa_b_src_imm :=
       mainBSourceImmColumn_of_packFlags_at trace ⟨i.val, h_lt_start⟩ addBits hroma
@@ -5450,7 +5459,8 @@ def Decode_jalr_unaligned_of_program
       by rw [pa_set_pc, h_add_set_pc, ZiskFv.AirsClean.boolF_false],
       hjmp2a.symm.trans hpj2a,
       by rw [pa_b_src_imm, h_add_b_src_imm],
-      by rw [pa_b_src_reg, h_add_b_src_reg]⟩
+      by rw [pa_b_src_reg, h_add_b_src_reg],
+      by rw [pa_store_reg, h_add_store_reg, ZiskFv.AirsClean.boolF_false]⟩
   -- The ADD row's `a` lane carries the committed immediate: `a_src_imm = 1`
   -- turns `SourceSpec` into `a_0 = a_offset_imm0`, `a_1 = a_imm1`, and the ROM
   -- message ties both limbs to the committed program entry.
@@ -5543,6 +5553,24 @@ def Decode_jalr_unaligned_of_program
       by rw [pb_b_ind, h_and_b_src_ind, ZiskFv.AirsClean.boolF_false],
       by rw [pb_b_reg, h_and_b_src_reg, ZiskFv.AirsClean.boolF_false],
       h_dest.1, h_dest.2⟩
+  have h_finish_store_reg :
+      (mainRowWithRomAt trace ⟨i.val + 1, h_lt_finish⟩).rom.store_reg =
+        ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0)) := by
+    obtain ⟨j, hj⟩ :=
+      mainRomMessage_at_eq_program trace ⟨i.val + 1, h_lt_finish⟩
+    have hline : (trace.program j).line =
+        (mainOfTable trace.program trace.mainTable).pc (i.val + 1) := by
+      simp only [← hj, romMessage, mainOfTable_pc]
+    have hpf := (h_prog_and j hline).2.2.2.2
+    have hflags : romFlags
+        (mainTableRowAtOrZero trace.program trace.mainTable (i.val + 1)) =
+          (trace.program j).flags := by
+      simp only [← hj, romMessage]
+    have hrom := hflags.trans hpf
+    have hp :=
+      (mainMemorySelectorColumns_of_packFlags_at trace
+        ⟨i.val + 1, h_lt_finish⟩ andBits hrom).2.2.2.2.2
+    rw [hp, h_and_store_reg]
   exact
     { rows :=
         { start := ⟨i.val, h_lt_start⟩
@@ -5551,7 +5579,7 @@ def Decode_jalr_unaligned_of_program
           finish_has_successor := by simpa using h_idx2
           lowering := Or.inr ⟨rfl, h_offset_zero, keyAdd.1, keyAdd.2.1, keyAdd.2.2.1,
             h_flag_add, keyAdd.2.2.2.1, keyAdd.2.2.2.2.1, h_a_lane,
-            keyAdd.2.2.2.2.2.1, keyAdd.2.2.2.2.2.2,
+            keyAdd.2.2.2.2.2.1, keyAdd.2.2.2.2.2.2.1,
             keyAnd.2.2.2.2.2.2.2.1, keyAnd.2.2.2.2.2.2.2.2.1,
             keyAnd.2.2.2.2.2.2.2.2.2.1, keyAnd.2.2.2.2.2.2.2.2.2.2.1⟩ }
       h_main_op := keyAnd.1
@@ -5562,7 +5590,7 @@ def Decode_jalr_unaligned_of_program
       h_store_pc := keyAnd.2.2.2.2.1
       h_store_ind := keyAnd.2.2.2.2.2.2.2.2.2.2.2.1
       h_store_offset := keyAnd.2.2.2.2.2.2.2.2.2.2.2.2
-      h_store_reg := sorry
+      h_store_reg := h_finish_store_reg
       h_idx := by simpa using h_idx2
       h_a_mask_lo := h_a_mask_lo
       h_a_mask_hi := h_a_mask_hi
@@ -5574,7 +5602,9 @@ def Decode_jalr_unaligned_of_program
       h_offset_even := h_offset_even
       h_target_nonneg := h_target_nonneg
       h_target_lt := h_target_lt
-      h_start_store_reg_zero := sorry }
+      h_start_store_reg_zero := by
+        intro _
+        exact keyAdd.2.2.2.2.2.2.2 }
 
 
 /-! ## Family: FENCE -/

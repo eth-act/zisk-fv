@@ -1426,6 +1426,7 @@ structure ProgramDecode_jalr_unaligned {numInstructions : Nat}
   h_add_ieo : addBits.is_external_op = true
   h_add_m32 : addBits.m32 = false
   h_add_set_pc : addBits.set_pc = false
+  h_add_store_reg : addBits.store_reg = false
   h_add_a_src_imm : addBits.a_src_imm = true
   h_add_b_src_imm :
     addBits.b_src_imm = decide ((regidx_to_fin c.rs1).val = 0)
@@ -2032,14 +2033,15 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
           exact RomDecodeBinding.Decode_jalr_of_program ziskTrace i c p.h_offset_aligned
             p.h_idx p.h_flag p.h_a_mask_lo p.h_a_mask_hi p.h_c1_zero
             p.h_offset_even p.h_target_nonneg p.h_target_lt p.bits p.h_bits_ieo p.h_bits_m32
-            p.h_bits_set_pc p.h_bits_store_pc p.h_bits_store_ind p.h_prog
+            p.h_bits_set_pc p.h_bits_store_pc p.h_bits_store_ind p.h_bits_store_reg p.h_prog
       | .unaligned p =>
           exact RomDecodeBinding.Decode_jalr_unaligned_of_program ziskTrace i c
             p.h_idx2 p.h_offset_zero p.h_flag_add p.h_flag p.h_a_mask_lo p.h_a_mask_hi
             p.h_c1_zero p.h_offset_even p.h_target_nonneg p.h_target_lt
-            p.addBits p.h_add_ieo p.h_add_m32 p.h_add_set_pc p.h_add_a_src_imm
+            p.addBits p.h_add_ieo p.h_add_m32 p.h_add_set_pc p.h_add_store_reg p.h_add_a_src_imm
             p.h_add_b_src_imm p.h_add_b_src_reg p.andBits p.h_and_ieo p.h_and_m32 p.h_and_set_pc
-            p.h_and_store_pc p.h_and_store_ind p.h_and_b_src_imm p.h_and_b_src_mem
+            p.h_and_store_pc p.h_and_store_ind p.h_and_store_reg
+            p.h_and_b_src_imm p.h_and_b_src_mem
             p.h_and_b_src_ind p.h_and_b_src_reg p.h_prog_add p.h_prog_and
   | sb c => exact RomDecodeBinding.Decode_sb_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.h_prog
   | sh c => exact RomDecodeBinding.Decode_sh_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.h_prog
