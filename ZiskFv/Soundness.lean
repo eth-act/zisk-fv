@@ -533,7 +533,12 @@ private theorem stepRegWrite_entry_range_aux
         have : (1 : FGL) = 0 := by
           have := sub_eq_zero.mpr h_cancel; ring_nf at this; exact this
         exact one_ne_zero this
-  | _ => sorry
+  | _ =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    apply cMemMessage_chunks_of_store_pc_zero _ h_sp
+    · sorry
+    · sorry
 
 private theorem stepRegWrite_consistent_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
