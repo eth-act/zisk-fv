@@ -102,7 +102,7 @@ private theorem and32505856_shr20 (x : BitVec 32) :
   have h := and_shr_reorder x 20 (by norm_num)
   simpa using h
 
-private theorem rawRType_rs1 (funct7 rs2 rs1 funct3 rd opcode : Nat)
+theorem rawRType_rs1 (funct7 rs2 rs1 funct3 rd opcode : Nat)
     (hrs1 : rs1 < 32) (hf3 : funct3 < 8) (hrd : rd < 32) (hop : opcode < 128) :
     ((ZiskFv.Completeness.Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode)
         &&& 1015808#32) >>> 15 = BitVec.ofNat 32 rs1 := by
@@ -125,7 +125,7 @@ private theorem rawRType_rs1 (funct7 rs2 rs1 funct3 rd opcode : Nat)
     ZiskFv.Compliance.Decode.tbf (show opcode < 2 ^ 7 by omega) (by omega)
   simp [e25, e20, e15, e12, e7, hf3', hrd', hop', show 15 + i - 15 = i from by omega]
 
-private theorem rawRType_rs2 (funct7 rs2 rs1 funct3 rd opcode : Nat)
+theorem rawRType_rs2 (funct7 rs2 rs1 funct3 rd opcode : Nat)
     (hrs2 : rs2 < 32) (hrs1 : rs1 < 32) (hf3 : funct3 < 8)
     (hrd : rd < 32) (hop : opcode < 128) :
     ((ZiskFv.Completeness.Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode)
@@ -152,7 +152,7 @@ private theorem rawRType_rs2 (funct7 rs2 rs1 funct3 rd opcode : Nat)
   simp [e25, e20, e15, e12, e7, hrs1', hf3', hrd', hop',
     show 20 + i - 20 = i from by omega]
 
-private theorem decode_r_fields (raw : Std.U32) (rop : RiscvOpcode) :
+theorem decode_r_fields (raw : Std.U32) (rop : RiscvOpcode) :
     ∃ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d
       ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7
       ∧ d.rs1.bv = (raw &&& 1015808#u32).bv >>> 15
@@ -297,7 +297,7 @@ theorem src_b_reg_zero_pins (self z : zisk_inst_builder.ZiskInstBuilder)
   subst h
   exact ⟨rfl, rfl, rfl⟩
 
-private theorem src_a_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_a_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64)
     (h : zisk_inst_builder.ZiskInstBuilder.src_a_reg self reg false = ok z) :
     z.i.a_use_sp_imm1 = 0#u64 := by
@@ -361,7 +361,7 @@ private theorem src_b_reg_a_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuil
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; rfl)
 
-private theorem op_zisk_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem op_zisk_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (op : zisk_ops.ZiskOp)
     (h : zisk_inst_builder.ZiskInstBuilder.op_zisk self op = ok z) :
     z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
@@ -383,7 +383,7 @@ private theorem op_zisk_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
   subst h4
   exact ⟨rfl, rfl⟩
 
-private theorem store_reg_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem store_reg_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (off : Std.I64) (usp spc : Bool)
     (h : zisk_inst_builder.ZiskInstBuilder.store_reg self off usp spc = ok z) :
     z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
@@ -399,7 +399,7 @@ private theorem store_reg_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilde
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
 
-private theorem j_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem j_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (j1 j2 : Std.I64)
     (h : zisk_inst_builder.ZiskInstBuilder.j self j1 j2 = ok z) :
     z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
@@ -409,7 +409,7 @@ private theorem j_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
   subst h
   exact ⟨rfl, rfl⟩
 
-private theorem build_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem build_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (h : zisk_inst_builder.ZiskInstBuilder.build self = ok z) :
     z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
       z.i.b_use_sp_imm1 = self.i.b_use_sp_imm1 := by
@@ -720,7 +720,7 @@ private theorem signedOffset_eq_registerIndex (x : Std.U64) (r : Fin 32)
   simp only [Transpiler.ind]
   exact Nat.mod_eq_of_lt (lt_trans r.isLt (by norm_num))
 
-private theorem storeBit_of_store_iff (row : zisk_core.aeneas_extract.ZiskInstExtract)
+theorem storeBit_of_store_iff (row : zisk_core.aeneas_extract.ZiskInstExtract)
     (rd : Fin 32) (hstore : row.store = zisk_inst.STORE_REG ↔ rd.val ≠ 0) :
     (romFlagBitsOfExtract row).store_reg = decide (rd ≠ 0) := by
   by_cases hrd : rd = 0
@@ -737,7 +737,7 @@ private theorem storeBit_of_store_iff (row : zisk_core.aeneas_extract.ZiskInstEx
     have hs : row.store = zisk_inst.STORE_REG := hstore.mpr hrdv
     simp [romFlagBitsOfExtract, hs, hrd]
 
-private theorem storeBit_of_store_iff_val
+theorem storeBit_of_store_iff_val
     (row : zisk_core.aeneas_extract.ZiskInstExtract) (rd : Fin 32)
     (hstore : row.store = zisk_inst.STORE_REG ↔ rd.val ≠ 0) :
     (romFlagBitsOfExtract row).store_reg = decide (rd.val ≠ 0) := by
@@ -754,7 +754,7 @@ private theorem storeBit_of_store_iff_val
       exact decide_eq_true hs]
     exact (decide_eq_true hrd).symm
 
-private theorem aRegisterProgramFacts_of_serialized
+theorem aRegisterProgramFacts_of_serialized
     {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (r : Fin 32)
     (row : zisk_core.aeneas_extract.ZiskInstExtract)

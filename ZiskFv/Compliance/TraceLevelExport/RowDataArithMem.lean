@@ -931,7 +931,7 @@ structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1032,7 +1032,7 @@ structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1128,7 +1128,7 @@ structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1224,7 +1224,7 @@ structure Decode_div (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1328,7 +1328,7 @@ structure Decode_rem (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1457,7 +1457,7 @@ structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1616,7 +1616,7 @@ structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1773,7 +1773,7 @@ structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1863,7 +1863,7 @@ structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1958,7 +1958,7 @@ structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -2074,7 +2074,7 @@ structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -2169,7 +2169,7 @@ structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomSub trace i).rom.store_reg =
-      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)

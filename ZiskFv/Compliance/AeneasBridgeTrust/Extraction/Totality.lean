@@ -234,9 +234,12 @@ attribute [local step] ZiskFv.Compliance.Decode.signext_spec
 set_option maxHeartbeats 1000000 in
 theorem decode_i_bounds (raw : Std.U32) (op : RiscvOpcode) (sh : Bool) :
     ∃ d, decode_i raw op sh = ok d ∧ d.opcode = op ∧ d.rd.val < 32 ∧ d.rs1.val < 32
-      ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 := by
+      ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7
+      ∧ d.rs1.bv = (raw &&& 1015808#u32).bv >>> 15 := by
   have spec : decode_i raw op sh
-      ⦃ d => d.opcode = op ∧ d.rd.val < 32 ∧ d.rs1.val < 32 ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7 ⦄ := by
+      ⦃ d => d.opcode = op ∧ d.rd.val < 32 ∧ d.rs1.val < 32 ∧
+        d.rd.bv = (raw &&& 3968#u32).bv >>> 7 ∧
+        d.rs1.bv = (raw &&& 1015808#u32).bv >>> 15 ⦄ := by
     rcases sh with _ | _
     · rw [decode_i]
       simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok,
@@ -247,7 +250,7 @@ theorem decode_i_bounds (raw : Std.U32) (op : RiscvOpcode) (sh : Bool) :
         have h : (↑(raw &&& 4293918720#u32) : Nat) < 2 ^ 32 := by
           have := (raw &&& 4293918720#u32).bv.isLt; simpa only [UScalar.val] using this
         omega
-      · refine ⟨?_, ?_, i3_post2⟩
+      · refine ⟨?_, ?_, i3_post2, i5_post2⟩
         · rw [i3_post1, Nat.shiftRight_eq_div_pow]
           have h : (↑(raw &&& 3968#u32) : Nat) ≤ 3968 := by
             simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
@@ -264,7 +267,7 @@ theorem decode_i_bounds (raw : Std.U32) (op : RiscvOpcode) (sh : Bool) :
         have h : (↑(raw &&& 4293918720#u32) : Nat) < 2 ^ 32 := by
           have := (raw &&& 4293918720#u32).bv.isLt; simpa only [UScalar.val] using this
         omega
-      · refine ⟨?_, ?_, i3_post2⟩
+      · refine ⟨?_, ?_, i3_post2, i5_post2⟩
         · rw [i3_post1, Nat.shiftRight_eq_div_pow]
           have h : (↑(raw &&& 3968#u32) : Nat) ≤ 3968 := by
             simp only [UScalar.val, BitVec.toNat_and]; exact le_trans Nat.and_le_right (by decide)
