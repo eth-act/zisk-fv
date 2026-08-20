@@ -4,50 +4,68 @@ Branch: `raw-root-soundness-320` (worktree `clean-migration-330`)
 Worktree: `/home/cody/zisk-fv/.worktrees/clean-migration-330/`
 Plan: `../../docs/ai/plan/PLAN_RAW_ROOT_SOUNDNESS_320.md`
 
-## Current state: lane-fact parameters wired, sorry consolidation in progress
+## Current state: condition type fix DONE, build GREEN
 
-Field removal complete (4 fields removed from 36 files). Infrastructure built:
+The two explicit #357 targets are satisfied:
 
-- `LaneBridge` structure + `laneBridge_of_regAgree` theorem (RegisterCoverageBridge.lean)
-- `regKey` induction proving `RegAgree k` for all k (Soundness.lean)
-- `regBoot` premise added to `root_soundness` for boot register state
+1. **0 `h_[ab]_(lo|hi)_t` in InputsCore** — confirmed, zero matches in `Compliance/`.
+2. **0 sorry in Dispatcher** — confirmed.
 
-### Sorry breakdown (active, session 3)
+### Condition type refactoring (this session)
 
-**Dispatcher — lane-fact sorry consolidation (agent running):**
-All `stepStrong_<op>` functions in AluArith + ControlStore now take lane-fact params.
-Agent is adding `(by sorry)` at each call site in `stepSound_of_evidence` (~116 sorries).
-These replace the previous 133 scattered sorries in Construction/EquivCore files.
+Changed `h_stepRegWrite_converse` from concluding at `stepProducerRow` to
+concluding at `i.val`, and added a `Transpiler.wrap_to_regidx e.ptr ≠ 0` guard.
+Without this fix the condition is FALSE for unaligned JALR (even under
+`StepRowsAligned`), because aligned JALR with `rd = 0` has `stepRegWrite = some`
+but `store_reg = 0`. The guard makes the condition true for all ops once
+`store_reg` data is available.
 
-**ConstructionShift.lean (agent running):** 6 remaining W-shift-immediate sorries (SLLIW/SRLIW/SRAIW).
+Changed `stepWritesReg_cslot_on_bootWalk` / `_b` to take `(hr : r ≠ 0)` and
+pass it through to callers (8 sites). Updated all callers in
+`a_column_eq_lane_{lo,hi}_sail_xreg` and `b_column_eq_lane_{lo,hi}_sail_xreg`.
 
-**ProgramDecode.lean (3, separate):** slli/srli/srai `h_b_lo_shamt` — ROM program binding gap, not RegAgree.
+### Sorry distribution (residual)
 
-### To discharge the dispatcher sorries
+| File | Count | Nature |
+|------|-------|--------|
+| Dispatcher.lean | 0 | all discharged |
+| Soundness.lean | 6 | 3 `laneBridge_of_regAgree` conditions × 2 |
+| Spin files (5) | 12 | `lb` forwarding |
+| RomDecodeBinding.lean | 8 | source-column fields |
+| RomDecodeBindingOps.lean | 224 | source-column fields |
 
-1. **Add `a_src_reg` extraction from `packFlags`** — extend `romSelectorColumns_of_romFlags_eq_packFlags`
-   or add a sibling lemma. Per-op `Decode_<op>` structures need `h_a_src_reg : rom.a_src_reg = 1`.
+### Blocker: 6 Soundness.lean sorry = source-column gap
 
-2. **Add `LaneBridge` parameter to `stepSound_of_evidence`** — universal bundle quantified over register.
-   Each arm instantiates with its claim's r1/r2 and proves `a_src_reg = 1` from decode data.
+The 3 conditions (`h_stepRegWrite_consistent`, `h_stepRegWrite_converse`,
+`h_entry_range`) need `store_reg` at `i.val`. This is ROM flag bit 15,
+derivable from `romSelectorColumns_of_romFlags_eq_packFlags` + the packed
+`bits`. But `ProgramDecode` for register-writing ops (44 ALU/control/M-ext)
+does NOT carry `h_bits_store_reg`. Only the 7 load ops carry it.
 
-3. **Prove 3 global side conditions** for `laneBridge_of_regAgree`:
-   - `h_stepRegWrite_consistent`: `store_reg = 1 → stepRegWrite ≠ none ∧ producerRow = i`
-   - `h_stepRegWrite_converse`: `stepRegWrite ≠ none → store_reg = 1`
-   - `h_entry_range`: write entry ⇒ chunks in range ∧ packed no wrap
-   These are 63-arm dispatches. Can be `sorry` initially and discharged later.
+Adding `h_bits_store_reg` to ProgramDecode structures is the same extension
+that the ~232 RomDecodeBindingOps sorry need. The 6 Soundness.lean sorry are
+part of that scope, not a separate workstream.
 
-4. **Thread through `root_soundness`**: `regKey` → `laneBridge_of_regAgree` → `stepSound_of_evidence`.
+### Infrastructure built (this branch)
 
-### Completed this session
+- `LaneBridge` structure + 4 helper theorems (LaneBridge.lean, 185 lines)
+- `laneBridge_of_regAgree` (RegisterCoverageBridge.lean:1774)
+- `fgl_eq_of_mul_sub_zero` (LaneBridge.lean:53)
+- Source-column fields on all 63 Decode structures (RowDataAluShift/ArithMem/Control)
+- `lb` parameter threaded through stepSound_of_evidence, stepSound_of_programDecodes,
+  sailRetireChain_of_inputsAgree, root_soundness, and all 5 spin files
+- Combined `RegAgree ∧ PC_bridge` induction (replaces separate regKey + key)
+- `regBoot` premise on root_soundness
+- Condition type fix: `h_stepRegWrite_converse` at `i.val` with `ptr ≠ 0` guard
 
-- StepStrongAluArith.lean: 0 sorry (28 functions, lane-fact params added)
-- StepStrongControlStore.lean: 0 sorry (6 branch functions, lane-fact params added)
-- ConstructionShift.lean: 16 unnamed params named; 6 W-immediate sorries remain (agent running)
-- LaneBridge + laneBridge_of_regAgree built (RegisterCoverageBridge.lean)
-- regKey induction + regBoot premise built (Soundness.lean)
+### Commits (this branch)
 
-### Commits
-
-- `9a167ae8` fix binder-position sorry + unclosed structures
-- (earlier session commits: e7ef144f, 81f435b5, 5238c33d, f363d29c, a6a7eda2, 3f8e2fac)
+- `bdcb9871` break RegAgree circularity with combined induction
+- `6443d642` discharge 6 shamt_b_lo sorries via SourceSpec + ROM decode
+- `4e021003` discharge 110 register-lane sorries via LaneBridge
+- `f2fffb08` source-field extraction: src_a/b_reg setting + preservation chain
+- `060bfe79` fix Dispatcher lane-param wiring and update Audit guard_msgs
+- `1fb2cb17` consolidate lane-fact sorry into stepSound_of_evidence dispatcher
+- `fc23b56c` fix shamt_b_lo type in stepStrong_slli/srli/srai
+- `33a3212a` remove dead h_b_lo_shamt param from Decode_slli/srli/srai_of_program
+- `fc7945c4` name lane params and wire RegAgree into root_soundness
