@@ -408,6 +408,45 @@ private theorem stepRegWrite_entry_range_aux
           = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.b_1.val from
         congr_arg Fin.val h_b1_eq_c1.symm, h_b1_val]
       exact Nat.div_lt_of_lt_mul (by have := (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).isLt; omega)
+  | jalr c =>
+    -- stepRegWrite [eRdAt rd.rows.finish] = some (eRdAt rd.rows.finish)
+    have h_inj : (cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable
+        rd.rows.finish.val)).toEntry 1 1
+      = (cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1 := by
+      have : stepRegWrite (stepChannelOutput i (.jalr c) rd) =
+        some ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable
+          rd.rows.finish.val)).toEntry 1 1) := by
+        show stepRegWrite ⟨_, [eRdAt trace rd.rows.finish]⟩ = _
+        simp [stepRegWrite, eRdAt, mainRowWithRomAt, MemBusMessage.toEntry]
+      rw [this] at he; exact Option.some.inj he
+    rw [← h_inj]
+    -- Case split on store_pc (= boolF (rd ≠ 0))
+    have h_sp := rd.h_store_pc
+    simp only [mainOfTable_store_pc] at h_sp
+    by_cases h_rd : (regidx_to_fin c.rd).val ≠ 0
+    · -- rd ≠ 0: store_pc = 1
+      have h_sp_rw : (mainTableRowAtOrZero trace.program trace.mainTable
+          rd.rows.finish.val).core.store_pc = 1 := by
+        rw [h_sp]; simp [ZiskFv.AirsClean.boolF, h_rd]
+      rcases rd.h_jmp2 with ⟨h_align, h_j2⟩ | ⟨h_2row, h_j2⟩
+      · -- aligned (1-row): rows.finish.val = i.val
+        have h_fi_eq : rd.rows.finish.val = i.val :=
+          (congr_arg Fin.val h_align).symm.trans rd.rows.architectural_start
+        simp only [h_fi_eq] at h_sp_rw h_j2 ⊢
+        apply cMemMessage_chunks_of_store_pc_one _ h_sp_rw
+        simp only [mainOfTable_jmp_offset2] at h_j2; rw [h_j2]
+        have h_pcv := hAvoid.h_pc_bound
+        unfold MainSequentialPcDomain mainPcVal at h_pcv
+        simp only [mainOfTable_pc] at h_pcv
+        have h_bound := hAvoid.h_pc_offset_lt_2_32
+          (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
+          (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
+        exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
+      · -- unaligned (2-row): rows.finish ≠ i, pc at finish unknown
+        sorry
+    · -- rd = 0: store_pc = 0, c_0 bound unknown
+      sorry
   | _ => sorry
 
 private theorem stepRegWrite_consistent_aux
