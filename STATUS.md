@@ -1,10 +1,10 @@
 # Status — #357 register derivation
 
-Branch: `raw-root-soundness-320` (worktree `clean-migration-330`)
+Branch: `357-register-derivation` (worktree `clean-migration-330`)
 Worktree: `/home/cody/zisk-fv/.worktrees/clean-migration-330/`
 Plan: `../../docs/ai/plan/PLAN_RAW_ROOT_SOUNDNESS_320.md`
 
-## Current state: h_entry_range — 1 sorry (catch-all)
+## Current state: BLOCKED — 2 sorry in h_entry_range (op-bus composition)
 
 The two explicit #357 targets are satisfied:
 
@@ -17,40 +17,42 @@ The two explicit #357 targets are satisfied:
 |-----------|--------|
 | h_stepRegWrite_consistent | PROVED |
 | h_stepRegWrite_converse | PROVED |
-| h_entry_range | 1 sorry — catch-all for 48 external ops |
+| h_entry_range | 2 sorry — c_0.val < 2^32 and c_1.val < 2^32 for 48 external ops |
 
 ### stepRegWrite_entry_range_aux dispatch
 
 | Category | Count | Status |
 |----------|-------|--------|
 | Vacuous (stepRegWrite = none) | 11 | DONE |
-| JAL | 1 | DONE — store_pc=1, jmp_offset2=4 |
-| AUIPC | 1 | DONE — store_pc=1, signed-offset bridge |
-| LUI | 1 | DONE — store_pc=0, b=c from Main.Spec |
-| JALR aligned rd≠0 | 1 | DONE — store_pc=1, jmp_offset2=4 |
-| JALR unaligned rd≠0 | 1 | DONE — store_pc=1, pc transition chain |
-| JALR aligned rd=0 | 1 | DONE — vacuous: addr2=0 via AddressSpec, contradicts h_ptr |
-| JALR unaligned rd=0 | 1 | DONE — vacuous: timestamps differ (main_step = index) |
-| External ALU/shift (28) + M-ext (8) + loads (7) + remaining (5) | 48 | BLOCKED — all have is_external_op=1; c_0/c_1 range needs op-bus composition |
+| JAL | 1 | DONE |
+| AUIPC | 1 | DONE |
+| LUI | 1 | DONE |
+| JALR aligned rd≠0 | 1 | DONE |
+| JALR unaligned rd≠0 | 1 | DONE |
+| JALR aligned rd=0 | 1 | DONE — vacuous via h_ptr guard |
+| JALR unaligned rd=0 | 1 | DONE — vacuous via timestamp mismatch |
+| 48 external ops (ALU/shift/M-ext/loads) | 48 | BLOCKED |
 
-### Architecture change: h_ptr guard
+### Blocker: op-bus composition
 
-Added `wrap_to_regidx ptr ≠ 0` guard to `h_entry_range` in RegisterCoverageBridge.lean.
-The bridge only queries nonzero registers, so the guard is free at call sites.
-This makes register-x0 writes vacuous and is architecturally correct.
+All 48 ops have `is_external_op = 1` and `store_pc = 0`. The register-write
+entry's `value_0 = c_0` and `value_1 = c_1`. These values originate from the
+provider AIR (BinaryAdd, Arith, etc.), which validates `c_chunks_in_range`
+(proved in `c_chunks_in_range_of_component_spec_facts`).
 
-### Blocker
+Main's constraints do NOT bound c_0/c_1 directly. Deriving the bound at the
+Main level requires op-bus composition: connecting Main's emission through
+balanced interactions to the provider's reception and extracting the provider's
+range validation. This infrastructure does not exist.
 
-All 48 remaining ops have `is_external_op = 1` and `store_pc = 0`. The register-write
-entry's `value_0 = c_0` and `value_1 = c_1` come from the provider AIR (Binary, Arith, etc.).
-Bounding `c_0.val < 2^32` and `c_1.val < 2^32` requires op-bus composition: linking
-Main's emission to the provider's reception and extracting the provider's range validation
-(e.g. `c_chunks_in_range_of_component_spec_facts` in BinaryAdd/Bridge.lean).
-
-This infrastructure does not exist yet.
+The provider-side proof is already used in the dispatch layer (Dispatch/ADD_RTYPEW.lean,
+Dispatch/Misc.lean), but it flows into the equivalence proof, not back to the
+Main-table level where h_entry_range operates.
 
 ### Commits (this branch)
 
+- `c4bdb9a5` refine catch-all: split sorry into c_0/c_1 range goals
+- `dbc40405` update STATUS.md
 - `f2154360` weaken h_entry_range with ptr≠0 guard; prove JALR rd=0 case
 - `29ea8beb` prove unaligned JALR rd≠0 case
 - `834b285f` prove aligned JALR case
