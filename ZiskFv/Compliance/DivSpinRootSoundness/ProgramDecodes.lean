@@ -25,6 +25,7 @@ def divSpinAddiX1ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := sorry
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline
@@ -51,6 +52,7 @@ def divSpinAddiX2ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := sorry
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline
@@ -104,6 +106,7 @@ def divSpinDivProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := sorry
   h_prog := by
     intro j hline
     have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq
@@ -128,6 +131,7 @@ def divSpinJalProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := sorry
   h_prog := by
     intro j hline
     have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq

@@ -220,7 +220,8 @@ that are not ROM-message slots (`flag`, the `a`-lane mask, `c_1`, the
 def jalrProgramDecode :
     ProgramDecode_jalr jalrAcceptedTrace jalrIndex jalrClaim :=
   .unaligned
-    { h_offset_zero := rfl
+    { h_and_store_reg := sorry
+      h_offset_zero := rfl
       h_idx2 := by
         simp [jalrIndex, jalrAcceptedTrace_mainTable_eq, jalrMainTable,
           ZiskFv.Compliance.AddSpinWitness.mainRowsTable, jalrMainRows]
@@ -345,6 +346,7 @@ def setupProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
+  h_bits_store_reg := sorry
   h_bits_b_src_imm := rfl
   h_prog := by
     intro j hline
