@@ -4684,7 +4684,8 @@ def Decode_jalr_of_program
       h_offset_bridge := by rw [key.2.2.2.2.2.1, h_offset_aligned]
       h_offset_even := h_offset_even
       h_target_nonneg := h_target_nonneg
-      h_target_lt := h_target_lt }
+      h_target_lt := h_target_lt
+      h_start_store_reg_zero := fun h => absurd rfl h }
 
 /-- `Decode_jalr` for the UNALIGNED lowering, rebuilt from the committed program
     via the ROM lookup at BOTH physical rows the lowering occupies.
@@ -4928,7 +4929,8 @@ def Decode_jalr_unaligned_of_program
         norm_num
       h_offset_even := h_offset_even
       h_target_nonneg := h_target_nonneg
-      h_target_lt := h_target_lt }
+      h_target_lt := h_target_lt
+      h_start_store_reg_zero := sorry }
 
 
 /-! ## Family: FENCE -/

@@ -236,6 +236,7 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -319,6 +320,7 @@ theorem cMemMessage_value_eq_lane_hi_of_bootWalk_supplier
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -682,6 +684,7 @@ theorem stepWritesReg_cslot_on_bootWalk
     (ziskStep : ∀ i : Fin n, ZiskStep trace i)
     (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -710,7 +713,8 @@ theorem stepWritesReg_cslot_on_bootWalk
   -- Step 1: store_reg = 1 from StepWritesReg
   obtain ⟨h_m_lt, e, he, heq⟩ := h_wr
   have h_r_ne : Transpiler.wrap_to_regidx e.ptr ≠ 0 := by rw [heq]; exact hr
-  have h_sr := h_stepRegWrite_converse ⟨m, h_m_lt⟩ e he h_r_ne
+  have h_sr := h_stepRegWrite_converse ⟨m, h_m_lt⟩ e
+    (Nat.lt_of_le_of_lt (Nat.succ_le_of_lt hm) hk) he h_r_ne
   -- Step 2: table length bound
   have h_m_lt_table : m < trace.mainTable.table.length :=
     trace.mainTable_index ⟨m, h_m_lt⟩
@@ -921,6 +925,7 @@ theorem stepWritesReg_cslot_on_bootWalk_b
     (ziskStep : ∀ i : Fin n, ZiskStep trace i)
     (rowDecodes : ∀ i : Fin n, RowDecode trace i (ziskStep i))
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -948,7 +953,8 @@ theorem stepWritesReg_cslot_on_bootWalk_b
       ∧ w.1 = mainTableRowAtOrZero trace.program trace.mainTable m := by
   obtain ⟨h_m_lt, e, he, heq⟩ := h_wr
   have h_r_ne : Transpiler.wrap_to_regidx e.ptr ≠ 0 := by rw [heq]; exact hr
-  have h_sr := h_stepRegWrite_converse ⟨m, h_m_lt⟩ e he h_r_ne
+  have h_sr := h_stepRegWrite_converse ⟨m, h_m_lt⟩ e
+    (Nat.lt_of_le_of_lt (Nat.succ_le_of_lt hm) hk) he h_r_ne
   have h_m_lt_table : m < trace.mainTable.table.length :=
     trace.mainTable_index ⟨m, h_m_lt⟩
   have h_sel_c : Instantiation.RegSlot.c.selector
@@ -1145,6 +1151,7 @@ theorem a_column_eq_lane_lo_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -1327,6 +1334,7 @@ theorem a_column_eq_lane_hi_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -1481,6 +1489,7 @@ theorem b_column_eq_lane_lo_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -1635,6 +1644,7 @@ theorem b_column_eq_lane_hi_sail_xreg
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)
@@ -1783,6 +1793,7 @@ theorem laneBridge_of_regAgree
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
     (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+        i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1)

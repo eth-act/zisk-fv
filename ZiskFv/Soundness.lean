@@ -209,6 +209,38 @@ theorem stepSound_of_programDecodes
     `stepSound_of_programDecodes` — `ziskTrace`, `ziskStep`, `inputsAgree`, `rowsAligned`,
     `bootSeed`, `hAvoidKnownBugs` — but satisfy `ProgramDecode` directly, so they
     provide no evidence for `programBinding` / `rawProgramDecodes`. -/
+private theorem stepRegWrite_consistent_aux
+    {n : ℕ} {trace : AcceptedZiskTrace n}
+    (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
+    (h_sr : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1) :
+    stepRegWrite (stepChannelOutput i zs rd) ≠ none
+    ∧ stepProducerRow i zs rd = i.val := by
+  cases zs with
+  | beq c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | bne c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | blt c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | bge c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | bltu c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | bgeu c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | sb c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | sh c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | sw c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | sd c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | fence c => exact absurd (rd.h_store_reg.symm.trans h_sr) (by decide)
+  | jalr c =>
+    constructor
+    · exact fun h => nomatch h
+    · show rd.rows.finish.val = i.val
+      have h_eq : rd.rows.start = rd.rows.finish := by
+        by_contra h_ne
+        have h_zero := rd.h_start_store_reg_zero h_ne
+        have : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 0 := by
+          rw [show i.val = rd.rows.start.val from rd.rows.architectural_start.symm]
+          exact h_zero
+        exact absurd (this.symm.trans h_sr) (by decide)
+      exact (congrArg Fin.val h_eq.symm).trans rd.rows.architectural_start
+  | _ => exact ⟨(fun h => nomatch h), rfl⟩
+
 theorem root_soundness
     (numInstructions rawLength : Nat)
     (ziskTrace : AcceptedZiskTrace numInstructions)
@@ -247,9 +279,11 @@ theorem root_soundness
   have h_stepRegWrite_consistent : ∀ (i : Fin numInstructions),
       (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 →
       stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
-      ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val := sorry
+      ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val := fun i h_sr =>
+    stepRegWrite_consistent_aux i (ziskStep i) (rowDecodes i) h_sr
   have h_stepRegWrite_converse : ∀ (i : Fin numInstructions)
       (e : Interaction.MemoryBusEntry FGL),
+      i.val + 1 < numInstructions →
       stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
       Transpiler.wrap_to_regidx e.ptr ≠ 0 →
       (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 := sorry

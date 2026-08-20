@@ -872,6 +872,9 @@ structure Decode_jalr (trace : AcceptedZiskTrace numInstructions)
   h_target_lt :
     (((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).c_0
       rows.finish.val).val : Int) + c.offset_bv.toInt < GL_prime
+  h_start_store_reg_zero :
+    rows.start ≠ rows.finish →
+      (mainRowWithRomAt trace rows.start).rom.store_reg = 0
 
 structure InputsCore_jalr (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_jalr trace i) : Type where
