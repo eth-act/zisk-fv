@@ -509,7 +509,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
             h_bits_set_pc := ?_
             h_bits_store_pc := ?_
             h_bits_store_ind := ?_
-            h_bits_store_reg := sorry
+            h_bits_store_reg := ?_
             h_prog := ?_ }
       · exact hieo
       · exact hm32
@@ -546,6 +546,23 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
           exact decide_eq_false (by
             rw [hnonzero.2.1]
             simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
+      · rcases hdest with hzero | hnonzero
+        · change input.rd = 0#u32 ∧ rows.last_row.store = 0#u64 ∧
+              rows.last_row.store_offset = 0#i64 ∧ rows.last_row.store_use_sp = false ∧
+              rows.last_row.store_pc = false at hzero
+          have hrdZero : (regidx_to_fin c.rd).val = 0 := by
+            rw [← show input.rd.val = (regidx_to_fin c.rd).val by simpa [rd] using hrd]
+            exact congrArg UScalar.val hzero.1
+          simp [bits, romFlagBitsOfExtract, hzero.2.1, hrdZero, zisk_inst.STORE_REG]
+        · change input.rd ≠ 0#u32 ∧ rows.last_row.store = zisk_inst.STORE_REG ∧
+              rows.last_row.store_offset = UScalar.hcast IScalarTy.I64 input.rd ∧
+              rows.last_row.store_use_sp = false ∧ rows.last_row.store_pc = true at hnonzero
+          have hrdNonzero : (regidx_to_fin c.rd).val ≠ 0 := by
+            intro hz
+            apply hnonzero.1
+            apply UScalar.eq_of_val_eq
+            simpa [rd, hz] using hrd.symm
+          simp [bits, romFlagBitsOfExtract, hnonzero.2.1, hrdNonzero]
       · intro j hline
         obtain ⟨k, hk, haddr, hraw⟩ := hLine j hline
         have hprimary := primary_row_of_programRowsBinding hbind
