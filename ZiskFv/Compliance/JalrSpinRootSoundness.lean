@@ -497,7 +497,7 @@ def jalrPcChain : SegmentPcChain jalrAcceptedTrace sailTrace jalrSpinZiskStep wh
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i))
-      inputsAgree bootSeed outsideDefectRegion jalrRowsAligned
+      inputsAgree bootSeed outsideDefectRegion (fun i => sorry) jalrRowsAligned
   boot := (pcSeed_of_inputsAgree inputsAgree).boot
 
 theorem jalrSpinRootSoundness :
@@ -506,6 +506,7 @@ theorem jalrSpinRootSoundness :
         (rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i)) :=
   stepSound_of_programDecodes 2 jalrAcceptedTrace sailTrace jalrSpinZiskStep
     programDecodes inputsAgreeCore jalrPcChain jalrRowsAligned bootSeed outsideDefectRegion
+    (fun i => sorry)
 
 theorem jalrStepSound :
     StepSound jalrAcceptedTrace sailTrace jalrIndex

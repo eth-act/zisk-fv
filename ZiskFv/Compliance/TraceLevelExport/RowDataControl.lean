@@ -102,6 +102,28 @@ structure Decode_beq (trace : AcceptedZiskTrace numInstructions)
       i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: taken on flag=1 (`r1 == r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_beq (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_beq trace i) : Type where
@@ -179,6 +201,28 @@ structure Decode_bne (trace : AcceptedZiskTrace numInstructions)
   -- #100: `neg` polarity (taken on flag=0, `r1 ≠ r2`); the taken offset rides on
   -- `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_bne (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bne trace i) : Type where
@@ -255,6 +299,28 @@ structure Decode_blt (trace : AcceptedZiskTrace numInstructions)
       i.val = ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100: taken on flag=1 (signed `r1 <s r2`); `jmp_offset2 = 4` fall-through.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_blt (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_blt trace i) : Type where
@@ -332,6 +398,28 @@ structure Decode_bge (trace : AcceptedZiskTrace numInstructions)
   -- #100: `neg` polarity (taken on flag=0, signed `r1 ≥s r2`); the taken offset
   -- rides on `jmp_offset2`, `jmp_offset1 = 4` is the fall-through side.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_bge (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bge trace i) : Type where
@@ -411,6 +499,28 @@ structure Decode_bltu (trace : AcceptedZiskTrace numInstructions)
   -- the committed program; `flag = comparison` is DERIVED in `stepStrong_bltu`
   -- from the LTU Binary provider.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_bltu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bltu trace i) : Type where
@@ -491,6 +601,28 @@ structure Decode_bgeu (trace : AcceptedZiskTrace numInstructions)
   -- the taken offset rides on `jmp_offset2`; `jmp_offset1 = 4` is the fall-through
   -- side. `flag = comparison` is DERIVED in `stepStrong_bgeu`.
   h_idx : i.val + 1 < trace.mainTable.table.length
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_bgeu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_bgeu trace i) : Type where

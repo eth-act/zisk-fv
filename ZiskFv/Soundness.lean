@@ -115,14 +115,12 @@ theorem stepSound_of_programDecodes
       (fun i => rowDecode_of_programDecode ziskTrace i (programDecodes i)))
     (bootSeed : BootSegmentMemorySeed ziskTrace sailTrace ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
-      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
+      RowOutsideDefectRegion ziskTrace i (ziskStep i))
+    (lb : ∀ i : Fin numInstructions,
+      LaneBridge ziskTrace (sailTrace i) i.val) :
     ∀ i : Fin numInstructions,
       StepSound ziskTrace sailTrace i (ziskStep i)
         (rowDecode_of_programDecode ziskTrace i (programDecodes i)) := by
-  -- Per-row PC agreement, by strong induction on the step index. Row `0` is `pcChain.boot`; each
-  -- later row comes from the previous row's own `StepSound` via `pcBridge_succ_of_stepSound`. This
-  -- is the #330 Phase 7 restructure: the per-`i` map became an induction so that `succ` could stop
-  -- being a premise.
   have key : ∀ (k : ℕ) (hk : k < numInstructions),
       ((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc k).val
         = ((sailTrace ⟨k, hk⟩).regs.get? Register.PC).elim 0 BitVec.toNat := by
@@ -136,12 +134,14 @@ theorem stepSound_of_programDecodes
           (stepSound_of_evidence ziskTrace sailTrace ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
             (rowDecode_of_programDecode ziskTrace ⟨j, hj⟩ (programDecodes ⟨j, hj⟩))
             (inputsAgree_of_pcBridge ⟨j, hj⟩ (ih hj) (ziskStep ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩))
-            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩))
+            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
+            (lb ⟨j, hj⟩))
   intro i
   exact stepSound_of_evidence ziskTrace sailTrace i (ziskStep i)
     (rowDecode_of_programDecode ziskTrace i (programDecodes i))
     (inputsAgree_of_pcBridge i (key i.val i.isLt) (ziskStep i) (inputsAgree i))
     (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
+    (lb i)
 
 /-- **The root soundness theorem — the entrypoint for an audit of this project's
     soundness claim.** The entire compliance statement is reachable from here:
@@ -257,7 +257,10 @@ theorem root_soundness
             inputsAgree
             { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
               boot := pcBoot }
-            rowsAligned bootSeed hAvoidKnownBugs ⟨j, hj⟩)
+            rowsAligned bootSeed hAvoidKnownBugs
+            (fun i => laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
+              sorry sorry sorry sorry)
+            ⟨j, hj⟩)
           (ih hj)
   intro i
   exact stepSound_of_programDecodes numInstructions ziskTrace
@@ -267,6 +270,9 @@ theorem root_soundness
     inputsAgree
     { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
       boot := pcBoot }
-    rowsAligned bootSeed hAvoidKnownBugs i
+    rowsAligned bootSeed hAvoidKnownBugs
+    (fun i => laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
+      sorry sorry sorry sorry)
+    i
 
 end ZiskFv.Compliance

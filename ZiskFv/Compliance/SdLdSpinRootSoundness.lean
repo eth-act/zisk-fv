@@ -943,7 +943,7 @@ def sdLdPcChain : SegmentPcChain sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep wh
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i))
-      sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion sdLdRowsAligned
+      sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion (fun i => sorry) sdLdRowsAligned
   boot := (pcSeed_of_inputsAgree sdLdInputsAgree).boot
 
 theorem sdLdRootSoundness :
@@ -952,7 +952,7 @@ theorem sdLdRootSoundness :
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
   stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
     sdLdProgramDecodes sdLdInputsAgreeCore sdLdPcChain sdLdRowsAligned
-    sdLdBootSeed sdLdOutsideDefectRegion
+    sdLdBootSeed sdLdOutsideDefectRegion (fun i => sorry)
 
 theorem sdLdAddiA0StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index

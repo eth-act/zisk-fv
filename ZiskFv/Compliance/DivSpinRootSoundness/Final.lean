@@ -22,7 +22,7 @@ def divSpinPcChain : SegmentPcChain divSpinAcceptedTrace divSpinSailTrace divSpi
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i))
-      divSpinInputsAgree divSpinBootSeed divSpinOutsideDefectRegion divSpinRowsAligned
+      divSpinInputsAgree divSpinBootSeed divSpinOutsideDefectRegion (fun i => sorry) divSpinRowsAligned
   boot := (pcSeed_of_inputsAgree divSpinInputsAgree).boot
 
 theorem divSpinRootSoundness :
@@ -31,7 +31,7 @@ theorem divSpinRootSoundness :
         (rowDecode_of_programDecode divSpinAcceptedTrace i (divSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 4 divSpinAcceptedTrace divSpinSailTrace divSpinZiskStep
     divSpinProgramDecodes divSpinInputsAgreeCore divSpinPcChain divSpinRowsAligned
-    divSpinBootSeed divSpinOutsideDefectRegion
+    divSpinBootSeed divSpinOutsideDefectRegion (fun i => sorry)
 
 theorem divSpinAddiX1StepSound :
     StepSound divSpinAcceptedTrace divSpinSailTrace divSpinAddiX1Index

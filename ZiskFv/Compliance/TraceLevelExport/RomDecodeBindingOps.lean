@@ -211,6 +211,21 @@ theorem mainSelectorColumns_of_packFlags
     (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
     (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
 
+theorem mainRegSourceColumns_of_packFlags
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions)
+    (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits)
+    (h : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val)
+        = packFlags bits) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_reg
+        = ZiskFv.AirsClean.boolF bits.a_src_reg
+  ∧ (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_src_reg
+        = ZiskFv.AirsClean.boolF bits.b_src_reg :=
+  romRegSourceColumns_of_romFlags_eq_packFlags
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
+    (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
+
 /-- **Immediate-source selector unpacking at a row.** Given the row's packed
     `romFlags` equals `packFlags bits`, the `b_src_imm` column equals `boolF` of
     the committed-program bit. -/
@@ -476,7 +491,15 @@ def Decode_sub_of_program
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
       h_store_offset := key.2.2.2.2.2.2.2.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_and` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -532,7 +555,15 @@ def Decode_and_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_or` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -588,7 +619,15 @@ def Decode_or_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_xor` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -644,7 +683,15 @@ def Decode_xor_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_slt` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -700,7 +747,15 @@ def Decode_slt_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_sltu` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -756,7 +811,15 @@ def Decode_sltu_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_andi` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -824,7 +887,11 @@ def Decode_andi_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_ori` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -892,7 +959,11 @@ def Decode_ori_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_xori` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -960,7 +1031,11 @@ def Decode_xori_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_slti` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1028,7 +1103,11 @@ def Decode_slti_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_sltiu` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1096,7 +1175,11 @@ def Decode_sltiu_of_program
       h_store_offset := h_dest.2
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_addi` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1171,6 +1254,10 @@ def Decode_addi_of_program
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
       h_store_offset := key.2.2.2.2.2.2.2.2
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
       h_idx := h_idx }
@@ -1232,7 +1319,15 @@ def Decode_sll_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_srl` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1288,7 +1383,15 @@ def Decode_srl_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_sra` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1344,7 +1447,15 @@ def Decode_sra_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_slli` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1400,7 +1511,11 @@ def Decode_slli_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_srli` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1456,7 +1571,11 @@ def Decode_srli_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_srai` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1512,7 +1631,11 @@ def Decode_srai_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 
 /-! ## Family: W-ALU and W-shifts -/
@@ -1571,7 +1694,15 @@ def Decode_subw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_addw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1627,7 +1758,15 @@ def Decode_addw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_addiw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1693,6 +1832,10 @@ def Decode_addiw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
       h_b_src_imm := h_src.1
       h_b_imm := h_src.2
       h_idx := h_idx }
@@ -1751,7 +1894,15 @@ def Decode_sllw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_srlw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1807,7 +1958,15 @@ def Decode_srlw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_sraw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1863,7 +2022,15 @@ def Decode_sraw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_slliw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1919,7 +2086,11 @@ def Decode_slliw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_srliw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1975,7 +2146,11 @@ def Decode_srliw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 /-- `Decode_sraiw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2031,7 +2206,11 @@ def Decode_sraiw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry }
 
 
 /-! ## Family: M-ext -/
@@ -3951,7 +4130,15 @@ def Decode_beq_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_bne` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -4004,7 +4191,15 @@ def Decode_bne_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_blt` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -4057,7 +4252,15 @@ def Decode_blt_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_bge` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -4110,7 +4313,15 @@ def Decode_bge_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_bltu` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -4163,7 +4374,15 @@ def Decode_bltu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset2 := key.2.2.2.2.2
       h_jmp_offset1_imm := h_jmp_offset1_imm
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := sorry
+      h_a_offset_imm0 := sorry
+      h_a_src_imm := sorry
+      h_a_imm1 := sorry
+      h_b_src_reg := sorry
+      h_b_offset_imm0 := sorry
+      h_b_src_imm := sorry
+      h_b_imm1 := sorry }
 
 /-- `Decode_bgeu` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -4216,7 +4435,15 @@ def Decode_bgeu_of_program
       h_store_pc := key.2.2.2.2.1
       h_jmp_offset1 := key.2.2.2.2.2
       h_jmp_offset2_imm := h_jmp_offset2_imm
-      h_idx := h_idx }
+      h_idx := h_idx
+      h_a_src_reg := by sorry
+      h_a_offset_imm0 := by sorry
+      h_a_src_imm := by sorry
+      h_a_imm1 := by sorry
+      h_b_src_reg := by sorry
+      h_b_offset_imm0 := by sorry
+      h_b_src_imm := by sorry
+      h_b_imm1 := by sorry }
 
 
 /-! ## Family: JAL/JALR -/

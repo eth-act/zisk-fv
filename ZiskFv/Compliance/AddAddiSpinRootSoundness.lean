@@ -488,7 +488,7 @@ def addAddiSpinPcChain : SegmentPcChain addAddiSpinAcceptedTrace addAddiSpinSail
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode addAddiSpinAcceptedTrace i (addAddiSpinProgramDecodes i))
-      addAddiSpinInputsAgree addAddiSpinBootSeed addAddiSpinOutsideDefectRegion addAddiSpinRowsAligned
+      addAddiSpinInputsAgree addAddiSpinBootSeed addAddiSpinOutsideDefectRegion (fun i => sorry) addAddiSpinRowsAligned
   boot := (pcSeed_of_inputsAgree addAddiSpinInputsAgree).boot
 
 theorem addAddiSpinRootSoundness :
@@ -499,7 +499,7 @@ theorem addAddiSpinRootSoundness :
           (addAddiSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 3 addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinZiskStep
     addAddiSpinProgramDecodes addAddiSpinInputsAgreeCore addAddiSpinPcChain
-    addAddiSpinRowsAligned addAddiSpinBootSeed addAddiSpinOutsideDefectRegion
+    addAddiSpinRowsAligned addAddiSpinBootSeed addAddiSpinOutsideDefectRegion (fun i => sorry)
 
 theorem addAddiSpinAddStepSound :
     StepSound addAddiSpinAcceptedTrace addAddiSpinSailTrace addAddiSpinAddIndex

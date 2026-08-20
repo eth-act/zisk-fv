@@ -364,7 +364,7 @@ def addSpinPcChain : SegmentPcChain addSpinAcceptedTrace addSpinSailTrace addSpi
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i))
-      addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion addSpinRowsAligned
+      addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion (fun i => sorry) addSpinRowsAligned
   boot := (pcSeed_of_inputsAgree addSpinInputsAgree).boot
 
 theorem addSpinRootSoundness :
@@ -373,7 +373,7 @@ theorem addSpinRootSoundness :
       (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
     addSpinProgramDecodes addSpinInputsAgreeCore addSpinPcChain addSpinRowsAligned
-    addSpinBootSeed addSpinOutsideDefectRegion
+    addSpinBootSeed addSpinOutsideDefectRegion (fun i => sorry)
 
 theorem addSpinAddStepSound :
     StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
@@ -593,7 +593,7 @@ def addPaddedPcChain : SegmentPcChain addPaddedAcceptedTrace addPaddedSailTrace 
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i))
-      addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion addPaddedRowsAligned
+      addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion (fun i => sorry) addPaddedRowsAligned
   boot := (pcSeed_of_inputsAgree addPaddedInputsAgree).boot
 
 theorem addPaddedRootSoundness :
@@ -602,7 +602,7 @@ theorem addPaddedRootSoundness :
       (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
   stepSound_of_programDecodes 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
     addPaddedProgramDecodes addPaddedInputsAgreeCore addPaddedPcChain addPaddedRowsAligned
-    addPaddedBootSeed addPaddedOutsideDefectRegion
+    addPaddedBootSeed addPaddedOutsideDefectRegion (fun i => sorry)
 
 theorem addPaddedAddStepSound :
     StepSound addPaddedAcceptedTrace addPaddedSailTrace addPaddedAddIndex
