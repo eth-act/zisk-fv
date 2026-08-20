@@ -18,8 +18,9 @@ instantiations target it directly.
 -/
 
 open ZiskFv.AirsClean.FullEnsemble (mainTableRowAtOrZero mainOfTable mainOfTable_pc
-  mainOfTable_store_pc mainOfTable_jmp_offset2 mainOfTable_is_external_op mainOfTable_op
-  mainOfTable_b_0 mainOfTable_b_1 mainOfTable_c_0 mainOfTable_c_1)
+  mainOfTable_store_pc mainOfTable_jmp_offset2 mainOfTable_jmp_offset1 mainOfTable_is_external_op
+  mainOfTable_op mainOfTable_b_0 mainOfTable_b_1 mainOfTable_c_0 mainOfTable_c_1
+  mainOfTable_set_pc mainOfTable_flag mainOfTable_segment_l1)
 open ZiskFv.AirsClean.Main (cMemMessage rowAt)
 open ZiskFv.Channels.MemoryBus (MemBusMessage.toEntry)
 
@@ -443,8 +444,46 @@ private theorem stepRegWrite_entry_range_aux
           (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
         simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
         exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
-      · -- unaligned (2-row): rows.finish ≠ i, pc at finish unknown
-        sorry
+      · -- unaligned (2-row): rows.finish = i+1, jmp2 = 3
+        apply cMemMessage_chunks_of_store_pc_one _ h_sp_rw
+        simp only [mainOfTable_jmp_offset2] at h_j2; rw [h_j2]
+        -- Derive pc(finish) = pc(i) + 1 from Main transition
+        have h_as : rd.rows.start.val = i.val := rd.rows.architectural_start
+        have h_fi_eq : rd.rows.finish.val = i.val + 1 := by omega
+        -- Get lowering properties for the start row
+        rcases rd.rows.lowering with ⟨h_eq, _⟩ | ⟨_, _, _, _, _, h_flag, h_setpc, h_j2s, _⟩
+        · exact absurd (congr_arg Fin.val h_eq) (by omega)
+        · -- Main transition: pc(i+1) = nextPcMux(i)
+          have h_idx_succ : i.val + 1 < trace.mainTable.table.length :=
+            by have := rd.rows.finish_has_successor; omega
+          have h_seg := trace.mainTable_fixed.segment_l1_succ i.val h_idx_succ
+          have h_trans := trace.mainTransition_to_next_pc i.val h_idx_succ h_seg
+          -- Specialize: set_pc=0, flag=0, jmp2=1 at start (= i)
+          simp only [ZiskFv.Airs.Main.pc_handshake_with_next_pc, mainOfTable_pc,
+            mainOfTable_set_pc, mainOfTable_c_0, mainOfTable_jmp_offset1,
+            mainOfTable_jmp_offset2, mainOfTable_flag] at h_trans
+          rw [h_as] at h_setpc h_flag h_j2s
+          simp only [mainOfTable_set_pc, mainOfTable_flag, mainOfTable_jmp_offset2] at h_setpc h_flag h_j2s
+          rw [h_setpc, h_flag, h_j2s] at h_trans
+          simp at h_trans
+          have h_pc_finish : (mainTableRowAtOrZero trace.program trace.mainTable
+              rd.rows.finish.val).core.pc
+            = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc + 1 := by
+            rw [h_fi_eq]; exact h_trans
+          rw [h_pc_finish]
+          -- pc(i) + 1 + 3 = pc(i) + 4
+          have h_pcv := hAvoid.h_pc_bound
+          unfold MainSequentialPcDomain mainPcVal at h_pcv
+          simp only [mainOfTable_pc] at h_pcv
+          have h_bound := hAvoid.h_pc_offset_lt_2_32
+            (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
+            (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
+          simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
+          have h_sum : ((mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc
+              + 1 + 3 : FGL) = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc
+              + 4 := by ring
+          rw [h_sum]
+          exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
     · -- rd = 0: store_pc = 0, c_0 bound unknown
       sorry
   | _ => sorry
