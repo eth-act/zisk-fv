@@ -236,6 +236,7 @@ structure ProgramDecode_ori {numInstructions : Nat}
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0)
   h_bits_b_src_imm : bits.b_src_imm = true
+  aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1)
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -264,6 +265,7 @@ structure ProgramDecode_xori {numInstructions : Nat}
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0)
   h_bits_b_src_imm : bits.b_src_imm = true
+  aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1)
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -523,6 +525,7 @@ structure ProgramDecode_addi {numInstructions : Nat}
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = decide ((regidx_to_fin c.rd).val ≠ 0)
   h_bits_b_src_imm : bits.b_src_imm = true
+  aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1)
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1932,8 +1935,8 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
           pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc
           pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.bFacts pd.h_prog
   | andi c => exact RomDecodeBinding.Decode_andi_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.h_bits_b_src_imm pd.h_prog
-  | ori c => exact RomDecodeBinding.Decode_ori_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_b_src_imm pd.h_prog
-  | xori c => exact RomDecodeBinding.Decode_xori_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_b_src_imm pd.h_prog
+  | ori c => exact RomDecodeBinding.Decode_ori_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.h_bits_b_src_imm pd.h_prog
+  | xori c => exact RomDecodeBinding.Decode_xori_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.h_bits_b_src_imm pd.h_prog
   | slti c => exact RomDecodeBinding.Decode_slti_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.h_bits_b_src_imm pd.h_prog
   | sltiu c => exact RomDecodeBinding.Decode_sltiu_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.h_bits_b_src_imm pd.h_prog
   | sll c =>
@@ -1955,7 +1958,7 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
   | srli c => exact RomDecodeBinding.Decode_srli_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.bShiftFacts pd.h_prog
   | srai c => exact RomDecodeBinding.Decode_srai_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.bShiftFacts pd.h_prog
   | add c => exact RomDecodeBinding.Decode_add_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
-  | addi c => exact RomDecodeBinding.Decode_addi_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_b_src_imm pd.h_prog
+  | addi c => exact RomDecodeBinding.Decode_addi_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_store_reg pd.aFacts pd.h_bits_b_src_imm pd.h_prog
   | subw c =>
       exact
         RomDecodeBinding.Decode_subw_of_program ziskTrace i c pd.h_idx pd.bits

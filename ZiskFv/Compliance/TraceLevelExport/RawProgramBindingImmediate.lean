@@ -44,7 +44,7 @@ open aeneas_extract (extract_transpile_rv64im_raw)
 
 set_option maxHeartbeats 4000000
 
-private theorem serialized_of_raw_program_binding
+theorem serialized_of_raw_program_binding
     {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions)
@@ -283,7 +283,7 @@ private theorem src_b_imm_pres_store (self z : zisk_inst_builder.ZiskInstBuilder
   | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
      rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
 
-private theorem src_b_imm_a_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_b_imm_a_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (v : Std.U64)
     (h : zisk_inst_builder.ZiskInstBuilder.src_b_imm self v = ok z) :
     z.i.a_src = self.i.a_src ∧ z.i.a_offset_imm0 = self.i.a_offset_imm0 ∧
