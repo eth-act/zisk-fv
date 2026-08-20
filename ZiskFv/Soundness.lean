@@ -241,38 +241,42 @@ theorem root_soundness
   let rowDecodes := fun i => rowDecode_of_programDecode ziskTrace i
     (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
       start addr rawProgram programBinding (rawProgramDecodes i))
-  have regKey : ∀ (k : ℕ) (hk : k < numInstructions),
-      RegAgree ziskStep rowDecodes init k := by
+  -- Combined induction proving RegAgree and PC bridge together, breaking the
+  -- circularity between RegAgree and stepSound_of_evidence's LaneBridge input.
+  have combined : ∀ (k : ℕ) (hk : k < numInstructions),
+      RegAgree ziskStep rowDecodes init k
+      ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
+            ziskTrace.program ziskTrace.mainTable).pc k).val
+        = ((chainedSailTrace ziskStep init ⟨k, hk⟩).regs.get? Register.PC).elim 0
+            BitVec.toNat := by
     intro k
     induction k with
-    | zero => intro _; exact regAgree_zero ziskStep rowDecodes init regBoot
+    | zero =>
+        intro hk
+        exact ⟨regAgree_zero ziskStep rowDecodes init regBoot, pcBoot hk⟩
     | succ j ih =>
         intro hk
         have hj : j < numInstructions := Nat.lt_of_succ_lt hk
-        exact regAgree_succ ziskStep rowDecodes init j hj
-          (stepSound_of_programDecodes numInstructions ziskTrace
-            (chainedSailTrace ziskStep init) ziskStep
-            (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-              start addr rawProgram programBinding (rawProgramDecodes i))
-            inputsAgree
-            { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
-              boot := pcBoot }
-            rowsAligned bootSeed hAvoidKnownBugs
-            (fun i => laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
-              sorry sorry sorry sorry)
-            ⟨j, hj⟩)
-          (ih hj)
+        obtain ⟨h_reg_j, h_pc_j⟩ := ih hj
+        have ss_j : StepSound ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
+            (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩) :=
+          stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
+            (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)
+            (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩))
+            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
+            (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init j hj
+              h_reg_j sorry sorry sorry)
+        exact ⟨
+          regAgree_succ ziskStep rowDecodes init j hj ss_j h_reg_j,
+          pcBridge_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init)
+            rowsAligned j hk ss_j⟩
   intro i
-  exact stepSound_of_programDecodes numInstructions ziskTrace
-    (chainedSailTrace ziskStep init) ziskStep
-    (fun i => programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-      start addr rawProgram programBinding (rawProgramDecodes i))
-    inputsAgree
-    { toSailRetireChain := chainedSailTrace_retireChain ziskStep init
-      boot := pcBoot }
-    rowsAligned bootSeed hAvoidKnownBugs
-    (fun i => laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
-      sorry sorry sorry sorry)
-    i
+  obtain ⟨h_reg_i, h_pc_i⟩ := combined i.val i.isLt
+  exact stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
+    (rowDecodes i)
+    (inputsAgree_of_pcBridge i h_pc_i (ziskStep i) (inputsAgree i))
+    (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
+    (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
+      h_reg_i sorry sorry sorry)
 
 end ZiskFv.Compliance
