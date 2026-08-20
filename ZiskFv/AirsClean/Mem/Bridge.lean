@@ -288,11 +288,14 @@ theorem row_ranges_of_lookup_aware_const_soundness
     (w : RowRangeLookupWitness v r) :
     ZiskFv.Airs.Mem.increment_chunks_in_range v r
       ∧ ZiskFv.Airs.Mem.addr_columns_in_range v r
-      ∧ ZiskFv.Airs.Mem.step_columns_in_range v r := by
+      ∧ ZiskFv.Airs.Mem.step_columns_in_range v r
+      ∧ (v.value_0 r).val < 2 ^ 32
+      ∧ (v.value_1 r).val < 2 ^ 32 := by
   have h_holds := w.holds
   simp only [rowRangeLookups, circuit_norm] at h_holds
   rcases h_holds with
-    ⟨h_increment_0, h_increment_1, h_addr, h_step, h_step_dual, h_previous_step⟩
+    ⟨h_increment_0, h_increment_1, h_addr, h_step, h_step_dual, h_previous_step,
+      h_value_0, h_value_1⟩
   exact
     ⟨ ⟨ by simpa [ZiskFv.Airs.Mem.increment_chunks_in_range, rowAt, constVar]
             using h_increment_0,
@@ -303,7 +306,11 @@ theorem row_ranges_of_lookup_aware_const_soundness
         by simpa [ZiskFv.Airs.Mem.step_columns_in_range, rowAt, constVar]
             using h_step_dual,
         by simpa [ZiskFv.Airs.Mem.step_columns_in_range, rowAt, constVar]
-            using h_previous_step ⟩ ⟩
+            using h_previous_step ⟩,
+      by simpa [rowAt, constVar, ZiskFv.AirsClean.RangeTables.rangeTable32,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_value_0,
+      by simpa [rowAt, constVar, ZiskFv.AirsClean.RangeTables.rangeTable32,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_value_1 ⟩
 
 /-- Build the lookup-aware Mem row range witness from raw range facts.
 
@@ -314,7 +321,9 @@ def rowRangeLookupWitness_of_range_facts
     {v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL} {r : ℕ}
     (h_increment : ZiskFv.Airs.Mem.increment_chunks_in_range v r)
     (h_addr : ZiskFv.Airs.Mem.addr_columns_in_range v r)
-    (h_steps : ZiskFv.Airs.Mem.step_columns_in_range v r) :
+    (h_steps : ZiskFv.Airs.Mem.step_columns_in_range v r)
+    (h_value_0 : (v.value_0 r).val < 2 ^ 32)
+    (h_value_1 : (v.value_1 r).val < 2 ^ 32) :
     RowRangeLookupWitness v r := by
   refine ⟨0, ?_, ?_⟩
   · exact ⟨fun _ => 0, fun _ _ => #[]⟩
@@ -323,9 +332,11 @@ def rowRangeLookupWitness_of_range_facts
       rowAt, constVar, ZiskFv.AirsClean.RangeTables.rangeTable22,
       ZiskFv.AirsClean.RangeTables.rangeTable16,
       ZiskFv.AirsClean.RangeTables.rangeTable29,
+      ZiskFv.AirsClean.RangeTables.rangeTable32,
       ZiskFv.AirsClean.RangeTables.rangeTable40,
       ZiskFv.AirsClean.RangeTables.rangeStaticTable, circuit_norm] using
-      ⟨h_increment.1, h_increment.2, h_addr, h_steps.1, h_steps.2.1, h_steps.2.2⟩
+      ⟨h_increment.1, h_increment.2, h_addr, h_steps.1, h_steps.2.1, h_steps.2.2,
+        h_value_0, h_value_1⟩
 
 /-- Lookup-aware Clean witness for the selector-gated dual-step delta range
     check. It should only be requested for rows with `sel_dual = 1`. -/

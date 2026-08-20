@@ -226,7 +226,7 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit where
       refine ⟨?_, ?_⟩
       · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8,
           _h_increment_0, _h_increment_1, _h_addr, _h_step, _h_step_dual,
-          _h_previous_step, _h_delta⟩ := h_holds
+          _h_previous_step, _h_value_0, _h_value_1, _h_delta⟩ := h_holds
         exact ⟨ by simpa only [sub_eq_add_neg] using h0
               , by simpa only [sub_eq_add_neg] using h1
               , by simpa only [sub_eq_add_neg] using h2
@@ -247,12 +247,13 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit where
         h_read_same_addr
       subst_vars
       rcases h_ranges with
-        ⟨h_increment_0, h_increment_1, h_addr, h_step, h_step_dual, h_previous_step, h_delta⟩
+        ⟨h_increment_0, h_increment_1, h_addr, h_step, h_step_dual, h_previous_step,
+          h_value_0, h_value_1, h_delta⟩
       have h_main := memRowOf_constraintsHold sel selDual wr addrChanges
         addr step stepDual previousStep increment_0 increment_1 value_0 value_1 h_selDual h_wr
       simp only [memRowOf, memReadSameAddrOf, memValueOf] at *
       rcases h_main with ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · simp
       · simpa [sub_eq_add_neg] using h1
       · simp
@@ -274,6 +275,10 @@ def circuitWithDualMemBus : GeneralFormalCircuit FGL MemRow unit where
           ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_step_dual
       · simpa [ZiskFv.AirsClean.RangeTables.rangeTable40,
           ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_previous_step
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable32,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_value_0
+      · simpa [ZiskFv.AirsClean.RangeTables.rangeTable32,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_value_1
       · cases selDual with
         | false => simp [boolF, ZiskFv.AirsClean.RangeTables.rangeTable24,
             ZiskFv.AirsClean.RangeTables.rangeStaticTable]

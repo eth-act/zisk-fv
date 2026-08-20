@@ -97,6 +97,24 @@ theorem acceptedMemReplayRows_exists_active_rowAt
   exists_activeMemReplayEntry_rowAt_of_fullWitnessMemReplayBridge
     (ziskTrace.memReplayBridge h_present) h_entry
 
+/-- Every accepted mutable-Mem replay entry carries the source-declared
+32-bit bounds for both value columns. -/
+theorem AcceptedZiskTrace.memory_entry_chunks_in_range_of_memReplayRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_present : MutableMemPresent ziskTrace.witness}
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ziskTrace.memReplayRows h_present) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range entry := by
+  obtain ⟨idx, h_active⟩ :=
+    acceptedMemReplayRows_exists_active_rowAt (ziskTrace := ziskTrace) h_entry
+  have h_values := (ziskTrace.memReplayBridge h_present).rowRanges.valueColumns idx
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_active with
+    h_primary | h_dual
+  · subst entry
+    simpa [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range] using h_values
+  · subst entry
+    simpa [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range] using h_values
+
 /-- Accepted-trace wrapper for Mem-source chronology within one byte pointer:
 accepted active replay rows are ordered by nondecreasing timestamps whenever
 their byte pointers agree. -/
