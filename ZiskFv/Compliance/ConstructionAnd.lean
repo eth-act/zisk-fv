@@ -49,7 +49,7 @@ An AND envelope's content splits into the same three buckets as SUB:
     `h_store_pc`
   - Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
     `h_input_rd`, `h_rd_idx`
-  - lane bridges (4): `(by sorry)`, `(by sorry)`, `(by sorry)`, `(by sorry)`
+  - lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
   - control-flow next-PC (1): `h_nextPC_matches`
     (blocked by the cross-row Clean-model ceiling — filed prerequisite #100).
 
@@ -95,7 +95,7 @@ set_option maxHeartbeats 2000000
       `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `(by sorry)`, `(by sorry)`, `(by sorry)`, `(by sorry)`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder (NOT construction-chosen, so the hypotheses are

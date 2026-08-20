@@ -46,7 +46,7 @@ The shifts are a **separate template instantiation**, not the
 
 3. **m32 = 0 lane route via `one_sub_zero_mul`.** The lane→Sail binding
    `h_input_r1_row : r1_val = rowA64 row` is derived from the named lane bridges
-   (`(by sorry)`/`(by sorry)`) + the Sail read via
+   (`h_a_lo`/`h_a_hi`) + the Sail read via
    `packed_a_eq_of_shift_match_m32_0_of_a_range`
    (`EquivCore/Bridge/BinaryExtension.lean:240`), which is the
    `simp only [one_sub_zero_mul]` route (line 269) — correct for the m32 = 0
@@ -302,7 +302,7 @@ theorem shift_imm_shift_pin_row_of_facts
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `(by sorry)`, `(by sorry)`, `(by sorry)`, `(by sorry)`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder.
@@ -469,7 +469,7 @@ theorem construction_sll_sound_claimed_dead
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `(by sorry)`, `(by sorry)`, `(by sorry)`, `(by sorry)`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder.
@@ -636,7 +636,7 @@ theorem construction_srl_sound_claimed_dead
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `(by sorry)`, `(by sorry)`, `(by sorry)`, `(by sorry)`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder.
@@ -806,8 +806,8 @@ theorem construction_sra_sound_claimed_dead
     `execute_instruction (SHIFTIOP SLLI) = (bus_effect …).2`.
 
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
-    variant's 17 + execRow): drop `h_input_r2`/`(by sorry)`, add `shamt` +
-    `h_input_shamt`; the `b_0` decode pin replaces the register `(by sorry)`. -/
+    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi`, add `shamt` +
+    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo`. -/
 theorem construction_slli_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -953,8 +953,8 @@ theorem construction_slli_sound_claimed_dead
     `execute_instruction (SHIFTIOP SLLI) = (bus_effect …).2`.
 
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
-    variant's 17 + execRow): drop `h_input_r2`/`(by sorry)`, add `shamt` +
-    `h_input_shamt`; the `b_0` decode pin replaces the register `(by sorry)`. -/
+    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi`, add `shamt` +
+    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo`. -/
 theorem construction_srli_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -1100,8 +1100,8 @@ theorem construction_srli_sound_claimed_dead
     `execute_instruction (SHIFTIOP SLLI) = (bus_effect …).2`.
 
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
-    variant's 17 + execRow): drop `h_input_r2`/`(by sorry)`, add `shamt` +
-    `h_input_shamt`; the `b_0` decode pin replaces the register `(by sorry)`. -/
+    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi`, add `shamt` +
+    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo`. -/
 theorem construction_srai_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -1862,8 +1862,8 @@ theorem construction_sraw_sound_claimed_dead
     `execute_instruction (SHIFTIWOP SLLIW) = (bus_effect …).2`.
 
     Residual budget: 15 hyp binders + `execRow` (vs the W-register variant's
-    17 + execRow): drop `h_input_r2`/`(by sorry)`; the `b_0` decode pin against
-    `slliw_input.shamt` replaces the register `(by sorry)`. The 5-bit immediate
+    17 + execRow): drop `h_input_r2`/`h_b_hi`; the `b_0` decode pin against
+    `slliw_input.shamt` replaces the register `h_b_lo`. The 5-bit immediate
     rides inside `slliw_input`, so it is NOT a separate top-level binder. -/
 theorem construction_slliw_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)

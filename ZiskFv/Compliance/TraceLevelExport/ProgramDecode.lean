@@ -14,7 +14,7 @@ those derivations consume that are NOT themselves derivable:
   `trace.program` (the `∀ j at pc(i)` decodes-as-<op> premise `h_prog`, plus the
   packed flag-bit values `bits` / `h_bits_*`);
 * the op's non-ROM operand witnesses (signed-load `BinaryExtension`, shift
-  `(by sorry)`, the M-ext arith witnesses, JALR / LUI / FENCE pins) — the SAME
+  immediate-shift pins, the M-ext arith witnesses, JALR / LUI / FENCE pins) — the SAME
   ones block 1 already carried; and
 * the structural next-row bound `h_idx`.
 

@@ -590,7 +590,7 @@ theorem ziskRegFile_eq_of_no_writes_between
 
 /-! ## Lane decomposition of `entryRegValue`
 
-The register fields (`(by sorry)`, `(by sorry)`, …) equate a Main-table column to
+The register fields (`h_a_lo`, `h_a_hi`, …) equate a Main-table column to
 `lane_lo`/`lane_hi` of a Sail register. `entryRegValue` is a `BitVec 64` built
 from byte projections of a `MemoryBusEntry`. These two lemmas say that splitting
 it into lanes recovers the entry's chunk fields, so the register-file invariant
