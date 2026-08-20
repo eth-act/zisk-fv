@@ -328,7 +328,9 @@ private theorem stepRegWrite_entry_range_aux
     (hAvoid : RowOutsideDefectRegion trace i zs)
     (he : stepRegWrite (stepChannelOutput i zs rd)
       = some ((cMemMessage
-        (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1))
+    (h_ptr : Transpiler.wrap_to_regidx ((cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1).ptr ≠ 0) :
     ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
       ((cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
@@ -484,8 +486,53 @@ private theorem stepRegWrite_entry_range_aux
               + 4 := by ring
           rw [h_sum]
           exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
-    · -- rd = 0: store_pc = 0, c_0 bound unknown
-      sorry
+    · -- rd = 0: addr2 = 0 via AddressSpec, contradicting h_ptr
+      push_neg at h_rd
+      rcases rd.h_jmp2 with ⟨h_align, _⟩ | ⟨h_2row, _⟩
+      · -- aligned: rows.finish = i, derive addr2 = 0 at row i
+        have h_fi_eq : rd.rows.finish.val = i.val :=
+          (congr_arg Fin.val h_align).symm.trans rd.rows.architectural_start
+        have h_addr_spec := RomDecodeBinding.mainAddressSpec_at trace
+          ⟨i.val, trace.mainTable_index i⟩
+        have h_addr2 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.addr2
+            = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_offset
+            + (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind
+              * (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.a_0 :=
+          h_addr_spec.2.2.1
+        have h_si : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind
+            = 0 := by
+          have := rd.h_store_ind; rw [mainRowWithRomAt, h_fi_eq] at this; exact this
+        have h_so : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_offset
+            = 0 := by
+          have := rd.h_store_offset
+          rw [mainRowWithRomAt, h_fi_eq, if_pos h_rd] at this; exact this
+        exfalso; apply h_ptr
+        show Transpiler.wrap_to_regidx
+          (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.addr2 = 0
+        rw [h_addr2, h_si, h_so]
+        simp [Transpiler.wrap_to_regidx]
+      · -- unaligned: timestamps at i and i+1 differ, so h_inj is False
+        exfalso
+        have h_as := rd.rows.architectural_start
+        have h_fi_eq : rd.rows.finish.val = i.val + 1 := by omega
+        have h_ms_i := mainRowAt_main_step trace.mainTable_component (trace.mainTable_index i)
+        have h_ms_f : (mainTableRowAtOrZero trace.program trace.mainTable
+              rd.rows.finish.val).rom.main_step
+            = (rd.rows.finish.val : FGL) :=
+          mainRowAt_main_step trace.mainTable_component
+            (by have := rd.rows.finish_has_successor; omega)
+        have h_ts : (3 : FGL) + (rd.rows.finish.val : FGL) * 4
+            = 3 + (i.val : FGL) * 4 := by
+          have := congrArg Interaction.MemoryBusEntry.timestamp h_inj
+          simp only [MemBusMessage.toEntry, cMemMessage, h_ms_f, h_ms_i] at this
+          exact this
+        rw [h_fi_eq] at h_ts
+        have h_cancel : (↑(i.val + 1) : FGL) = (↑i.val : FGL) :=
+          mul_right_cancel₀ (show (4 : FGL) ≠ 0 from by decide) (add_left_cancel h_ts)
+        rw [Nat.cast_succ] at h_cancel
+        have : (1 : FGL) = 0 := by
+          have := sub_eq_zero.mpr h_cancel; ring_nf at this; exact this
+        exact one_ne_zero this
   | _ => sorry
 
 private theorem stepRegWrite_consistent_aux
@@ -574,11 +621,13 @@ theorem root_soundness
       stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
         = some ((cMemMessage
           (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
+      Transpiler.wrap_to_regidx ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1).ptr ≠ 0 →
       ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
         ((cMemMessage
           (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
-    fun i he =>
-    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (hAvoidKnownBugs i) he
+    fun i he h_ptr =>
+    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (hAvoidKnownBugs i) he h_ptr
   have combined : ∀ (k : ℕ) (hk : k < numInstructions),
       RegAgree ziskStep rowDecodes init k
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
