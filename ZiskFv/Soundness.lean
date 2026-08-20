@@ -17,8 +17,11 @@ calls, kept as a separate declaration because the six concrete trace
 instantiations target it directly.
 -/
 
-open ZiskFv.AirsClean.FullEnsemble (mainTableRowAtOrZero)
-open ZiskFv.AirsClean.Main (cMemMessage)
+open ZiskFv.AirsClean.FullEnsemble (mainTableRowAtOrZero mainOfTable mainOfTable_pc
+  mainOfTable_store_pc mainOfTable_jmp_offset2 mainOfTable_is_external_op mainOfTable_op
+  mainOfTable_b_0 mainOfTable_b_1 mainOfTable_c_0 mainOfTable_c_1)
+open ZiskFv.AirsClean.Main (cMemMessage rowAt)
+open ZiskFv.Channels.MemoryBus (MemBusMessage.toEntry)
 
 namespace ZiskFv.Compliance
 
@@ -262,6 +265,151 @@ private theorem stepRegWrite_converse_aux
     try simp only [Transpiler.regidxOfBitVec5, ne_eq, Fin.ext_iff, Fin.val_zero] at h_r_ne
     simp [h_r_ne]
 
+private lemma fgl_add_val_lt_of_sum_lt {a b : FGL} {bound : ℕ}
+    (h_sum_lt : a.val + b.val < GL_prime)
+    (h_bound : a.val + b.val < bound) :
+    (a + b).val < bound := by
+  change (a.val + b.val) % GL_prime < bound
+  omega
+
+private lemma fgl_val_add_intCast_of_nonneg_lt {a : FGL} {z : ℤ}
+    (h_nonneg : 0 ≤ (a.val : ℤ) + z) (h_lt : (a.val : ℤ) + z < GL_prime) :
+    (a + (z : FGL)).val = ((a.val : ℤ) + z).toNat := by
+  have h_a := a.isLt
+  change (a.val + (z : FGL).val) % GL_prime = _
+  have h_zv : (z : FGL).val = (z % (GL_prime : ℤ)).toNat := by
+    simp only [Fin.val_intCast]; norm_cast
+  rw [h_zv]; omega
+
+private lemma fgl_add_intCast_lt_of_bitvec_lt {pc : FGL} {offset : BitVec 64} {bound : ℕ}
+    (h_nonneg : 0 ≤ (pc.val : ℤ) + offset.toInt)
+    (h_lt : (pc.val : ℤ) + offset.toInt < GL_prime)
+    (h_bound : (BitVec.ofNat 64 pc.val + offset).toNat < bound) :
+    (pc + (offset.toInt : FGL)).val < bound := by
+  rw [fgl_val_add_intCast_of_nonneg_lt h_nonneg h_lt]
+  have h_pc_lt := pc.isLt
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : pc.val < 2 ^ 64)]
+      at h_bound
+  rw [BitVec.toInt_eq_toNat_bmod] at h_nonneg h_lt ⊢
+  have h_off_lt : offset.toNat < 2 ^ 64 := offset.isLt
+  simp only [Int.bmod] at h_nonneg h_lt ⊢
+  split at h_nonneg <;> split at h_lt <;> split <;> omega
+
+private lemma cMemMessage_chunks_of_store_pc_one
+    (m : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_sp : m.core.store_pc = 1)
+    (h_val : (m.core.pc + m.core.jmp_offset2).val < 4294967296) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage m).toEntry 1 1) := by
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range, cMemMessage, MemBusMessage.toEntry,
+    h_sp]
+  constructor
+  · rw [one_mul, sub_add_cancel]; exact h_val
+  · show ((1 : FGL) - 1).val * _ % _ < _; simp
+
+private lemma cMemMessage_chunks_of_store_pc_zero
+    (m : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (h_sp : m.core.store_pc = 0)
+    (h_c0 : m.core.c_0.val < 4294967296)
+    (h_c1 : m.core.c_1.val < 4294967296) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage m).toEntry 1 1) := by
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range, cMemMessage, MemBusMessage.toEntry,
+    h_sp]
+  constructor
+  · show (0 * _ + m.core.c_0).val < _; simp [h_c0]
+  · have : ((1 : FGL) - 0) * m.core.c_1 = m.core.c_1 := by ring
+    rw [this]; exact h_c1
+
+private theorem stepRegWrite_entry_range_aux
+    {n : ℕ} {trace : AcceptedZiskTrace n}
+    (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
+    (hAvoid : RowOutsideDefectRegion trace i zs)
+    (he : stepRegWrite (stepChannelOutput i zs rd)
+      = some ((cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1)) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
+  cases zs with
+  | beq c => exact nomatch he
+  | bne c => exact nomatch he
+  | blt c => exact nomatch he
+  | bge c => exact nomatch he
+  | bltu c => exact nomatch he
+  | bgeu c => exact nomatch he
+  | sb c => exact nomatch he
+  | sh c => exact nomatch he
+  | sw c => exact nomatch he
+  | sd c => exact nomatch he
+  | fence c => exact nomatch he
+  | jal c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 1 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_j2 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.jmp_offset2 = 4 := by
+      have := rd.h_jmp2; simp only [mainOfTable_jmp_offset2] at this; exact this
+    apply cMemMessage_chunks_of_store_pc_one _ h_sp
+    rw [h_j2]
+    have h_pcv : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val
+        < GL_prime - 4 := by
+      have := hAvoid.h_pc_bound; unfold MainSequentialPcDomain mainPcVal at this
+      simp only [mainOfTable_pc] at this; exact this
+    have h_bound := hAvoid.h_pc_offset_lt_2_32
+      (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
+      (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
+    exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
+  | auipc c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 1 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_j2 := rd.h_jmp_offset2_imm; simp only [mainOfTable_jmp_offset2] at h_j2
+    apply cMemMessage_chunks_of_store_pc_one _ h_sp
+    rw [h_j2]
+    have h_nonneg := hAvoid.h_target_nonneg
+    have h_lt_prime := hAvoid.h_target_lt
+    unfold mainPcVal at h_nonneg h_lt_prime
+    simp only [mainOfTable_pc] at h_nonneg h_lt_prime
+    exact fgl_add_intCast_lt_of_bitvec_lt h_nonneg h_lt_prime
+      (hAvoid.h_pc_offset_lt_2_32
+        (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
+        (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat]; omega))
+  | lui c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    have h_ieo : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.is_external_op
+        = 0 := by
+      have := rd.h_main_active; simp only [mainOfTable_is_external_op] at this; exact this
+    have h_op : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.op
+        = (1 : FGL) := by
+      have := rd.h_main_op; simp only [mainOfTable_op] at this
+      rw [this]; rfl
+    have h_spec := mainSpec_at_physical trace ⟨i.val, trace.mainTable_index i⟩
+    have h5 := h_spec.2.2.2.2.1
+    simp only [mainOfTable_is_external_op, mainOfTable_op, mainOfTable_b_0, mainOfTable_c_0] at h5
+    rw [h_ieo, h_op] at h5
+    have h6 := h_spec.2.2.2.2.2.1
+    simp only [mainOfTable_is_external_op, mainOfTable_op, mainOfTable_b_1, mainOfTable_c_1] at h6
+    rw [h_ieo, h_op] at h6
+    simp only [sub_zero, one_mul] at h5 h6
+    have h_b0_eq_c0 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.b_0
+        = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_0 :=
+      sub_eq_zero.mp h5
+    have h_b1_eq_c1 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.b_1
+        = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_1 :=
+      sub_eq_zero.mp h6
+    apply cMemMessage_chunks_of_store_pc_zero _ h_sp
+    · have h_b0_val := rd.h_imm_lo_nat; simp only [mainOfTable_b_0] at h_b0_val
+      rw [show (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_0.val
+          = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.b_0.val from
+        congr_arg Fin.val h_b0_eq_c0.symm, h_b0_val]
+      exact (c.imm ++ (0 : BitVec 12)).isLt
+    · have h_b1_val := rd.h_imm_hi_nat; simp only [mainOfTable_b_1] at h_b1_val
+      rw [show (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_1.val
+          = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.b_1.val from
+        congr_arg Fin.val h_b1_eq_c1.symm, h_b1_val]
+      exact Nat.div_lt_of_lt_mul (by have := (BitVec.signExtend 64 (c.imm ++ (0 : BitVec 12))).isLt; omega)
+  | _ => sorry
+
 private theorem stepRegWrite_consistent_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
@@ -350,7 +498,9 @@ theorem root_soundness
           (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
       ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
         ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) := sorry
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
+    fun i he =>
+    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (hAvoidKnownBugs i) he
   have combined : ∀ (k : ℕ) (hk : k < numInstructions),
       RegAgree ziskStep rowDecodes init k
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
