@@ -226,6 +226,114 @@ theorem mainRegSourceColumns_of_packFlags
     (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
     (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) h
 
+/-- Source-level facts that make one committed `a` operand a register read.
+The zero-register case uses the transpiler's immediate-zero encoding. -/
+structure ARegisterProgramFacts
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (bits : RomFlagBits) (r : Fin 32) : Prop where
+  h_src_reg : bits.a_src_reg = decide (r ≠ 0)
+  h_src_imm : bits.a_src_imm = decide (r = 0)
+  h_program : ∀ j : Fin trace.programLength,
+    (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
+      (trace.program j).a_offset_imm0 = Transpiler.ind r ∧
+      (trace.program j).a_imm1 = 0 ∧
+      (trace.program j).flags = packFlags bits
+
+/-- Source-level facts that make one committed `b` operand a register read.
+The zero-register case uses the transpiler's immediate-zero encoding. -/
+structure BRegisterProgramFacts
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (bits : RomFlagBits) (r : Fin 32) : Prop where
+  h_src_reg : bits.b_src_reg = decide (r ≠ 0)
+  h_src_imm : bits.b_src_imm = decide (r = 0)
+  h_program : ∀ j : Fin trace.programLength,
+    (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
+      (trace.program j).b_offset_imm0 = Transpiler.ind r ∧
+      (trace.program j).b_imm1 = 0 ∧
+      (trace.program j).flags = packFlags bits
+
+/-- Project the four `a` register-source columns from committed program facts. -/
+theorem aRegisterColumns_of_programFacts
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits) (r : Fin 32)
+    (facts : ARegisterProgramFacts trace i bits r) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_reg =
+        ZiskFv.AirsClean.boolF (decide (r ≠ 0)) ∧
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_offset_imm0 =
+        Transpiler.ind r ∧
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_src_imm =
+        ZiskFv.AirsClean.boolF (decide (r = 0)) ∧
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_imm1 = 0 := by
+  obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
+  have hline : (trace.program j).line =
+      (mainOfTable trace.program trace.mainTable).pc i.val := by
+    simp only [← hj, romMessage, mainOfTable_pc]
+  obtain ⟨hoff, himm1, hpflags⟩ := facts.h_program j hline
+  have hflags : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val) =
+      (trace.program j).flags := by simp only [← hj, romMessage]
+  have hrom := hflags.trans hpflags
+  have hreg := (mainRegSourceColumns_of_packFlags trace i h_lt bits hrom).1
+  have himm := mainASourceImmColumn_of_packFlags_at trace ⟨i.val, h_lt⟩ bits hrom
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [hreg, facts.h_src_reg]
+  · exact (congrArg (fun msg => msg.a_offset_imm0) hj).trans hoff
+  · rw [himm, facts.h_src_imm]
+  · exact (congrArg (fun msg => msg.a_imm1) hj).trans himm1
+
+/-- Project the four `b` register-source columns from committed program facts. -/
+theorem bRegisterColumns_of_programFacts
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits) (r : Fin 32)
+    (facts : BRegisterProgramFacts trace i bits r) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_src_reg =
+        ZiskFv.AirsClean.boolF (decide (r ≠ 0)) ∧
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_offset_imm0 =
+        Transpiler.ind r ∧
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_src_imm =
+        ZiskFv.AirsClean.boolF (decide (r = 0)) ∧
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_imm1 = 0 := by
+  obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
+  have hline : (trace.program j).line =
+      (mainOfTable trace.program trace.mainTable).pc i.val := by
+    simp only [← hj, romMessage, mainOfTable_pc]
+  obtain ⟨hoff, himm1, hpflags⟩ := facts.h_program j hline
+  have hflags : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val) =
+      (trace.program j).flags := by simp only [← hj, romMessage]
+  have hrom := hflags.trans hpflags
+  have hreg := (mainRegSourceColumns_of_packFlags trace i h_lt bits hrom).2
+  have himm := romBSourceImmColumn_of_romFlags_eq_packFlags
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val) bits
+    (mainRow_flags_boolean trace ⟨i.val, h_lt⟩) hrom
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [hreg, facts.h_src_reg]
+  · exact (congrArg (fun msg => msg.b_offset_imm0) hj).trans hoff
+  · rw [himm, facts.h_src_imm]
+  · exact (congrArg (fun msg => msg.b_imm1) hj).trans himm1
+
+/-- Project the destination register selector from committed program flags. -/
+theorem storeRegColumn_of_programFlags
+    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
+    (i : Fin trace.numInstructions) (h_lt : i.val < trace.mainTable.table.length)
+    (bits : RomFlagBits) (rd : Fin 32)
+    (h_bits : bits.store_reg = decide (rd ≠ 0))
+    (h_program : ∀ j : Fin trace.programLength,
+      (trace.program j).line = (mainOfTable trace.program trace.mainTable).pc i.val →
+        (trace.program j).flags = packFlags bits) :
+    (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (rd ≠ 0)) := by
+  obtain ⟨j, hj⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
+  have hline : (trace.program j).line =
+      (mainOfTable trace.program trace.mainTable).pc i.val := by
+    simp only [← hj, romMessage, mainOfTable_pc]
+  have hpflags := h_program j hline
+  have hflags : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val) =
+      (trace.program j).flags := by simp only [← hj, romMessage]
+  have hrom := hflags.trans hpflags
+  have hstore := (mainSelectorColumns_of_packFlags trace i h_lt bits hrom).2.2
+  rw [hstore, h_bits]
+
 /-- **Immediate-source selector unpacking at a row.** Given the row's packed
     `romFlags` equals `packFlags bits`, the `b_src_imm` column equals `boolF` of
     the committed-program bit. -/
@@ -443,6 +551,9 @@ def Decode_sub_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -481,6 +592,12 @@ def Decode_sub_of_program
     · rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false]
     · rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false]
     · rw [p_store_ind, h_bits_store_ind, ZiskFv.AirsClean.boolF_false]
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -491,16 +608,17 @@ def Decode_sub_of_program
       h_jmp2 := key.2.2.2.2.2.2.1
       h_store_ind := key.2.2.2.2.2.2.2.1
       h_store_offset := key.2.2.2.2.2.2.2.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_and` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -517,6 +635,9 @@ def Decode_and_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -546,6 +667,13 @@ def Decode_and_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -556,16 +684,17 @@ def Decode_and_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_or` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -647,6 +776,9 @@ def Decode_xor_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -676,6 +808,13 @@ def Decode_xor_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -686,16 +825,17 @@ def Decode_xor_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_slt` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -712,6 +852,9 @@ def Decode_slt_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -741,6 +884,13 @@ def Decode_slt_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -751,16 +901,17 @@ def Decode_slt_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_sltu` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -777,6 +928,9 @@ def Decode_sltu_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -806,6 +960,13 @@ def Decode_sltu_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -816,16 +977,17 @@ def Decode_sltu_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_andi` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1292,6 +1454,9 @@ def Decode_sll_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1321,6 +1486,13 @@ def Decode_sll_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1331,16 +1503,17 @@ def Decode_sll_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_srl` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1357,6 +1530,9 @@ def Decode_srl_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1386,6 +1562,13 @@ def Decode_srl_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1396,16 +1579,17 @@ def Decode_srl_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_sra` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1422,6 +1606,9 @@ def Decode_sra_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1451,6 +1638,13 @@ def Decode_sra_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1461,16 +1655,17 @@ def Decode_sra_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_slli` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1679,6 +1874,9 @@ def Decode_subw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1708,6 +1906,13 @@ def Decode_subw_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1718,16 +1923,17 @@ def Decode_subw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_addw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1744,6 +1950,9 @@ def Decode_addw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1773,6 +1982,13 @@ def Decode_addw_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1783,16 +1999,17 @@ def Decode_addw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_addiw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1882,6 +2099,9 @@ def Decode_sllw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1911,6 +2131,13 @@ def Decode_sllw_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1921,16 +2148,17 @@ def Decode_sllw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_srlw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -1947,6 +2175,9 @@ def Decode_srlw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -1976,6 +2207,13 @@ def Decode_srlw_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -1986,16 +2224,17 @@ def Decode_srlw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_sraw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2012,6 +2251,9 @@ def Decode_sraw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2041,6 +2283,13 @@ def Decode_sraw_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2051,16 +2300,17 @@ def Decode_sraw_of_program
       h_jmp2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx
-      h_a_src_reg := sorry
-      h_a_offset_imm0 := sorry
-      h_a_src_imm := sorry
-      h_a_imm1 := sorry
-      h_b_src_reg := sorry
-      h_b_offset_imm0 := sorry
-      h_b_src_imm := sorry
-      h_b_imm1 := sorry }
+      h_a_src_reg := h_a.1
+      h_a_offset_imm0 := h_a.2.1
+      h_a_src_imm := h_a.2.2.1
+      h_a_imm1 := h_a.2.2.2
+      h_b_src_reg := h_b.1
+      h_b_offset_imm0 := h_b.2.1
+      h_b_src_imm := h_b.2.2.1
+      h_b_imm1 := h_b.2.2.2 }
 
 /-- `Decode_slliw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2269,6 +2519,9 @@ def Decode_mulw_of_program
     (h_bits_set_pc : bits.set_pc = false)
     (h_bits_store_pc : bits.store_pc = false)
     (h_bits_store_ind : bits.store_ind = false)
+    (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
+    (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
+    (bFacts : BRegisterProgramFacts trace i bits (regidx_to_fin c.r2))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2298,6 +2551,13 @@ def Decode_mulw_of_program
       (fun j hline => by
         obtain ⟨_, _, _, hp_store_offset, hpf⟩ := h_prog j hline
         exact ⟨hp_store_offset, hpf⟩)
+  have h_a := aRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r1) aFacts
+  have h_b := bRegisterColumns_of_programFacts trace i h_lt bits
+    (regidx_to_fin c.r2) bFacts
+  have h_store_reg := storeRegColumn_of_programFlags trace i h_lt bits
+    (regidx_to_fin c.rd) h_bits_store_reg
+    (fun j hline => (aFacts.h_program j hline).2.2)
   exact
     { h_main_op := key.1
       h_main_active := key.2.1
@@ -2308,7 +2568,8 @@ def Decode_mulw_of_program
       h_jmp_offset2 := key.2.2.2.2.2.2
       h_store_ind := h_dest.1
       h_store_offset := h_dest.2
-      h_store_reg := sorry
+      h_store_reg := by
+        simpa only [mainRowWithRomSub, mainRowWithRomAt] using h_store_reg
       h_idx := h_idx }
 
 /-- `Decode_mul` rebuilt from the committed program via the ROM lookup
