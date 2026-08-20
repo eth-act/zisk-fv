@@ -173,8 +173,11 @@ Derivation path (not yet reduced to kernel terms):
   trivially < 2^32.  `(pc + jmp_offset2).val < 2^32` follows from the PC being
   a 32-bit address (the `MainSequentialPcDomain` / `h_pc_offset_lt_2_32`
   domain bounds).
-* `packed_no_wrap` follows from `chunks_in_range` since
-  `a + b * 2^32 < 2^32 + (2^32 - 1) * 2^32 = 2^64 - 2^32 < GL_prime`. -/
+* `packed_no_wrap` does NOT follow from `chunks_in_range` alone: the maximum
+  packed value `(2^32 - 1) + (2^32 - 1) * 2^32 = 2^64 - 1` exceeds
+  `GL_prime = 2^64 - 2^32 + 1` by `2^32 - 2`.  Callers must discharge it
+  either architecturally (32-bit ops have `c_1 = 0`) or from the concrete
+  operation's result range.  This is supplied as a premise at `root_soundness`. -/
 
 /-! ## Range constraint on register-write entries
 
