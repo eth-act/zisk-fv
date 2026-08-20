@@ -929,9 +929,76 @@ private lemma binExt_sext_entry_range
       (ZiskFv.Airs.BinaryExtension.binary_extension_sext_w_c_sums_lt_of_wf
         v r_binary (by rw [← h_op, h_w]; native_decide) h_bytes h_wfs)
 
+private lemma copyb_narrow_entry_range
+    {n : ℕ} {trace : AcceptedZiskTrace n} {sailTrace : SailTrace n}
+    (i : Fin n)
+    (width : FGL)
+    (h_width_one_or_two : width = 1 ∨ width = 2)
+    (h_main_width : (mainOfTable trace.program trace.mainTable).ind_width i.val = width)
+    (h_main_active : (mainOfTable trace.program trace.mainTable).is_external_op i.val = 0)
+    (h_main_op : (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_COPYB)
+    (h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0)
+    (align : ZiskFv.Compliance.MemAlignWitness
+      (mainOfTable trace.program trace.mainTable) i.val
+      (busLd trace i (Pilot.execRowOf trace i)).e1) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
+  let row := mainTableRowAtOrZero trace.program trace.mainTable i.val
+  let e1 := (busLd trace i (Pilot.execRowOf trace i)).e1
+  have h_core := mainRowWithRomLd_core trace sailTrace i
+  have h_spec : ZiskFv.AirsClean.Main.Spec row.core := by
+    rw [h_core]
+    exact mainSpec_at trace sailTrace i
+  obtain ⟨_, _, _, _, _, _, h_copy0, h_copy1⟩ :=
+    ZiskFv.AirsClean.Main.load_emission_lane_copy_bundle_of_messages row h_spec h_sp
+  have h_active_row : row.core.is_external_op = 0 := by
+    simpa [row, mainOfTable_is_external_op] using h_main_active
+  have h_op_row : row.core.op = ZiskFv.Trusted.OP_COPYB := by
+    simpa [row, mainOfTable_op] using h_main_op
+  have h_bc0 : row.core.b_0 = row.core.c_0 := by
+    simp only [ZiskFv.Airs.Main.internal_op1_copies_b0,
+      ZiskFv.AirsClean.Main.validOfRow] at h_copy0
+    rw [h_active_row, h_op_row] at h_copy0
+    norm_num [ZiskFv.Trusted.OP_COPYB] at h_copy0 ⊢
+    linear_combination h_copy0
+  have h_bc1 : row.core.b_1 = row.core.c_1 := by
+    simp only [ZiskFv.Airs.Main.internal_op1_copies_b1,
+      ZiskFv.AirsClean.Main.validOfRow] at h_copy1
+    rw [h_active_row, h_op_row] at h_copy1
+    norm_num [ZiskFv.Trusted.OP_COPYB] at h_copy1 ⊢
+    linear_combination h_copy1
+  have h_emit :
+      (mainOfTable trace.program trace.mainTable).b_0 i.val =
+          ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ (mainOfTable trace.program trace.mainTable).b_1 i.val =
+          ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2 ∧ e1.multiplicity = -1 := by
+    simp [e1, busLd, mainRowWithRomLd, mainOfTable_b_0, mainOfTable_b_1]
+  have h_zero :=
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
+      (mainOfTable trace.program trace.mainTable) align.mab align.marb align.ma i.val e1
+      h_emit
+      (h_width_one_or_two.elim (fun h => Or.inl (h_main_width.trans h))
+        (fun h => Or.inr (Or.inl (h_main_width.trans h))))
+      align.provider
+  apply cMemMessage_chunks_of_store_pc_zero row h_sp
+  · rw [← h_bc0]
+    rcases h_width_one_or_two with h_width | h_width
+    · exact Nat.lt_trans ((h_zero.1 (h_main_width.trans h_width)).2) (by norm_num)
+    · exact Nat.lt_trans ((h_zero.2.1 (h_main_width.trans h_width)).2) (by norm_num)
+  · rw [← h_bc1]
+    rcases h_width_one_or_two with h_width | h_width
+    · rw [show row.core.b_1 = e1.value_1 from h_emit.2.1,
+        (h_zero.1 (h_main_width.trans h_width)).1]
+      native_decide
+    · rw [show row.core.b_1 = e1.value_1 from h_emit.2.1,
+        (h_zero.2.1 (h_main_width.trans h_width)).1]
+      native_decide
+
 private theorem stepRegWrite_entry_range_aux
-    {n : ℕ} {trace : AcceptedZiskTrace n}
+    {n : ℕ} {trace : AcceptedZiskTrace n} {sailTrace : SailTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
+    (ia : InputsAgreeCore trace sailTrace i zs)
     (hAvoid : RowOutsideDefectRegion trace i zs)
     (he : stepRegWrite (stepChannelOutput i zs rd)
       = some ((cMemMessage
@@ -1787,7 +1854,18 @@ private theorem stepRegWrite_entry_range_aux
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
     exact binExt_sext_entry_range i h_sp rd.v rd.r_binary rd.offset rd.env rd.h_static rd.h_match
       (Or.inr (Or.inr rd.h_main_op))
-  -- 4 unsigned load ops (ld, lbu, lhu, lwu): is_external_op = 0, so no
+  | lbu c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    exact copyb_narrow_entry_range (sailTrace := sailTrace) i 1 (Or.inl rfl) rd.h_width
+      rd.h_main_active rd.h_main_op h_sp ia.align
+  | lhu c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    exact copyb_narrow_entry_range (sailTrace := sailTrace) i 2 (Or.inr rfl) rd.h_width
+      rd.h_main_active rd.h_main_op h_sp ia.align
+  -- LD and LWU still require full 32-bit range facts from the mutable-memory value columns.
+  -- Both operations have `is_external_op = 0`, so no operation-bus provider exists.
   -- op-bus provider exists. c_0/c_1 = b_0/b_1 via COPYB (main.pil:281-282),
   -- and the b values are the loaded memory data whose range bound requires
   -- memory bus composition (#76).
@@ -1890,7 +1968,8 @@ theorem root_soundness
         ((cMemMessage
           (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
     fun i he h_ptr =>
-    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (hAvoidKnownBugs i) he h_ptr
+    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (inputsAgree i)
+      (hAvoidKnownBugs i) he h_ptr
   have combined : ∀ (k : ℕ) (hk : k < numInstructions),
       RegAgree ziskStep rowDecodes init k
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
