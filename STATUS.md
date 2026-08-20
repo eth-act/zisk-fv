@@ -4,56 +4,57 @@ Branch: `raw-root-soundness-320` (worktree `clean-migration-330`)
 Worktree: `/home/cody/zisk-fv/.worktrees/clean-migration-330/`
 Plan: `../../docs/ai/plan/PLAN_RAW_ROOT_SOUNDNESS_320.md`
 
-## Current state: entry_range partially discharged
+## Current state: h_entry_range — 1 sorry (catch-all)
 
 The two explicit #357 targets are satisfied:
 
-1. **0 `h_[ab]_(lo|hi)_t` in InputsCore** — confirmed, zero matches in `Compliance/`.
+1. **0 `h_[ab]_(lo|hi)_t` in InputsCore** — confirmed.
 2. **0 sorry in Dispatcher** — confirmed.
 
-### stepRegWrite_entry_range_aux progress (this session)
+### laneBridge_of_regAgree conditions
 
-The `stepRegWrite_entry_range_aux` dispatch in Soundness.lean proves
-`memory_entry_chunks_in_range` for each opcode's register-write entry.
+| Condition | Status |
+|-----------|--------|
+| h_stepRegWrite_consistent | PROVED |
+| h_stepRegWrite_converse | PROVED |
+| h_entry_range | 1 sorry — catch-all for 48 external ops |
+
+### stepRegWrite_entry_range_aux dispatch
 
 | Category | Count | Status |
 |----------|-------|--------|
-| Vacuous (stepRegWrite = none) | 11 | DONE (beq/bne/blt/bge/bltu/bgeu/sb/sh/sw/sd/fence) |
-| JAL | 1 | DONE — store_pc=1, jmp_offset2=4, MainJalRangeDomain |
-| AUIPC | 1 | DONE — store_pc=1, signed-offset bridge via fgl_add_intCast_lt_of_bitvec_lt |
-| LUI | 1 | DONE — store_pc=0, b=c from Main.Spec constraints 5&6, BitVec bounds |
-| JALR aligned rd≠0 | 1 | DONE — store_pc=1, jmp_offset2=4, same as JAL |
-| JALR unaligned rd≠0 | 1 | DONE — store_pc=1, jmp2=3, pc(finish)=pc(i)+1 via Main transition |
-| JALR rd=0 | 1 | BLOCKED — store_pc=0, is_external_op=1; needs AND circuit range (op-bus composition) |
-| External ALU/shift | 28 | BLOCKED — needs op-bus composition (c_0/c_1 from provider, not Main.Spec) |
-| M-ext | 8 | BLOCKED — needs provider match lemmas |
-| Loads | 7 | BLOCKED — b from memory bus, no range constraint (SpecifiedRanges) |
+| Vacuous (stepRegWrite = none) | 11 | DONE |
+| JAL | 1 | DONE — store_pc=1, jmp_offset2=4 |
+| AUIPC | 1 | DONE — store_pc=1, signed-offset bridge |
+| LUI | 1 | DONE — store_pc=0, b=c from Main.Spec |
+| JALR aligned rd≠0 | 1 | DONE — store_pc=1, jmp_offset2=4 |
+| JALR unaligned rd≠0 | 1 | DONE — store_pc=1, pc transition chain |
+| JALR aligned rd=0 | 1 | DONE — vacuous: addr2=0 via AddressSpec, contradicts h_ptr |
+| JALR unaligned rd=0 | 1 | DONE — vacuous: timestamps differ (main_step = index) |
+| External ALU/shift (28) + M-ext (8) + loads (7) + remaining (5) | 48 | BLOCKED — all have is_external_op=1; c_0/c_1 range needs op-bus composition |
 
-**2 sorry in Soundness.lean** (JALR rd=0 + catch-all `| _ => sorry` for 47 remaining ops).
+### Architecture change: h_ptr guard
 
-### Helpers added (Soundness.lean)
+Added `wrap_to_regidx ptr ≠ 0` guard to `h_entry_range` in RegisterCoverageBridge.lean.
+The bridge only queries nonzero registers, so the guard is free at call sites.
+This makes register-x0 writes vacuous and is architecturally correct.
 
-- `fgl_add_val_lt_of_sum_lt` — FGL add-then-bound when sum < GL_prime
-- `fgl_val_add_intCast_of_nonneg_lt` — value of FGL + Int.cast
-- `fgl_add_intCast_lt_of_bitvec_lt` — bridge BitVec.toNat bound to FGL bound
-- `cMemMessage_chunks_of_store_pc_one` — entry range when store_pc = 1
-- `cMemMessage_chunks_of_store_pc_zero` — entry range when store_pc = 0
+### Blocker
 
-### Sorry distribution (residual)
+All 48 remaining ops have `is_external_op = 1` and `store_pc = 0`. The register-write
+entry's `value_0 = c_0` and `value_1 = c_1` come from the provider AIR (Binary, Arith, etc.).
+Bounding `c_0.val < 2^32` and `c_1.val < 2^32` requires op-bus composition: linking
+Main's emission to the provider's reception and extracting the provider's range validation
+(e.g. `c_chunks_in_range_of_component_spec_facts` in BinaryAdd/Bridge.lean).
 
-| File | Count | Nature |
-|------|-------|--------|
-| Dispatcher.lean | 0 | all discharged |
-| Soundness.lean | 8 | 3×2 `laneBridge_of_regAgree` conditions (6) + entry_range (2) |
-| Spin files (5) | 12 | `lb` forwarding |
-| RomDecodeBinding.lean | 8 | source-column fields |
-| RomDecodeBindingOps.lean | 224 | source-column fields |
+This infrastructure does not exist yet.
 
 ### Commits (this branch)
 
-- `(pending)` prove unaligned JALR rd≠0 case of stepRegWrite_entry_range_aux
-- `834b285f` prove aligned JALR case of stepRegWrite_entry_range_aux
-- `5302ad08` prove JAL, AUIPC, LUI cases of stepRegWrite_entry_range_aux
+- `f2154360` weaken h_entry_range with ptr≠0 guard; prove JALR rd=0 case
+- `29ea8beb` prove unaligned JALR rd≠0 case
+- `834b285f` prove aligned JALR case
+- `5302ad08` prove JAL, AUIPC, LUI cases
 - `bdcb9871` break RegAgree circularity with combined induction
 - `6443d642` discharge 6 shamt_b_lo sorries via SourceSpec + ROM decode
 - `4e021003` discharge 110 register-lane sorries via LaneBridge
