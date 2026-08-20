@@ -815,7 +815,7 @@ theorem aRegisterProgramFacts_of_serialized
         split <;> norm_num)
     · exact hf
 
-private theorem bRegisterProgramFacts_of_serialized
+theorem bRegisterProgramFacts_of_serialized
     {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (r : Fin 32)
     (row : zisk_core.aeneas_extract.ZiskInstExtract)

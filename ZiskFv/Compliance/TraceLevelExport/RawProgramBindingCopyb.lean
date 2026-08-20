@@ -389,8 +389,10 @@ private theorem hcast4 : (UScalar.hcast IScalarTy.I64 4#u64 : Std.I64).val = (4 
 theorem transpile_register_cond_of
     (raw : Std.U32) (rop : RiscvOpcode) (srop : riscv2zisk_single_row.Rv64imSingleRowOpcode)
     (zop : zisk_ops.ZiskOp) (opc : Std.U8) (m32v : Bool) (otv : zisk_ops.OpType)
-    (rdv : Nat)
+    (rdv rs1v rs2v : Nat)
     (hrdv : ∀ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d → d.rd.val = rdv)
+    (hrs1v : ∀ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d → d.rs1.val = rs1v)
+    (hrs2v : ∀ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d → d.rs2.val = rs2v)
     (S : riscv2zisk_context.Riscv2ZiskContext)
     (P : riscv2zisk_single_row.Rv64imLoweringInput → Prop)
     (hdec : aeneas_extract.rv64im_decode.decode_32_core raw = aeneas_extract.rv64im_decode.decode_r raw rop)
@@ -411,7 +413,11 @@ theorem transpile_register_cond_of
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rdv
       ∧ ext.row.store ≠ zisk_inst.STORE_IND
-      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rdv ≠ 0) := by
+      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rdv ≠ 0)
+      ∧ ext.row.a_src = (if rs1v = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.a_offset_imm0.val = rs1v ∧ ext.row.a_use_sp_imm1 = 0#u64
+      ∧ ext.row.b_src = (if rs2v = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.b_offset_imm0.val = rs2v ∧ ext.row.b_use_sp_imm1 = 0#u64 := by
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, hrs2b⟩ := decode_r_bounds raw rop
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core raw = ok decoded := hdec.trans hdecoded
   set input : riscv2zisk_single_row.Rv64imLoweringInput :=
@@ -431,6 +437,11 @@ theorem transpile_register_cond_of
       (by rw [hinput]; exact hrdb) hctx0
   have hzz' : zib'' = zib := Option.some.inj (hzib''.symm.trans hzib)
   rw [hzz'] at hso hsi hsr
+  obtain ⟨zibSrc, hzibSrc, haSrc, haOff, haUse, hbSrc, hbOff, hbUse⟩ :=
+    create_register_op_typed_source_pins S input zop 4#u64 ctx0
+      (by rw [hinput]; exact hrs1b) (by rw [hinput]; exact hrs2b) hctx0
+  have hzzSrc : zibSrc = zib := Option.some.inj (hzibSrc.symm.trans hzib)
+  rw [hzzSrc] at haSrc haOff haUse hbSrc hbOff hbUse
   obtain ⟨dext, hdext⟩ := decode_extract_ok decoded
   obtain ⟨row, hrow, hrop, hrext, hrm32, hrsp, hrstp, hrj1, hrj2, _⟩ := from_inst_ok zib.i
   have hrStoreOffset : row.store_offset = zib.i.store_offset := by
@@ -445,10 +456,14 @@ theorem transpile_register_cond_of
     rw [Result.ok.injEq] at hrow
     subst row
     rfl
+  obtain ⟨row', hrow', hraSrc, hraUse, hraOff, hrbSrc, hrbUse, hrbOff,
+      _, _, _, _, _, _, _, _, _⟩ := ZiskFv.Compliance.Extraction.from_inst_full_fields zib.i
+  have hrowEq : row' = row := Result.ok.inj (hrow'.symm.trans hrow)
+  subst row'
   have hlower : riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input defCtx input srop false
       = ok { ctx0 with extract_marker := () } := by rw [harm input hPin, hctx0]; rfl
   refine ⟨{ accepted := true, decode := dext, row := row },
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
     simp only [bind_ok, Bind.bind, hdext, hopd, hlowop]
     simp only [defCtx] at hlower
@@ -468,6 +483,12 @@ theorem transpile_register_cond_of
     rw [hrStore]
     exact hsi
   · rw [hrStore, hsr, hinput, hrdv decoded hdecoded]
+  · rw [hraSrc, haSrc, hinput, hrs1v decoded hdecoded]
+  · rw [hraOff, haOff, hinput, hrs1v decoded hdecoded]
+  · rw [hraUse, haUse]
+  · rw [hrbSrc, hbSrc, hinput, hrs2v decoded hdecoded]
+  · rw [hrbOff, hbOff, hinput, hrs2v decoded hdecoded]
+  · rw [hrbUse, hbUse]
 
 /-- Conditional immediate-op transpile through the `immediate_op_or_x0_copyb_typed`
     builder. -/
@@ -687,10 +708,14 @@ theorem transpile_add (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd
       ∧ ext.row.store ≠ zisk_inst.STORE_IND
-      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rd ≠ 0) := by
+      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rd ≠ 0)
+      ∧ ext.row.a_src = (if rs1 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.a_offset_imm0.val = rs1 ∧ ext.row.a_use_sp_imm1 = 0#u64
+      ∧ ext.row.b_src = (if rs2 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.b_offset_imm0.val = rs2 ∧ ext.row.b_use_sp_imm1 = 0#u64 := by
   refine transpile_register_cond_of _ RiscvOpcode.Add
     riscv2zisk_single_row.Rv64imSingleRowOpcode.Add zisk_ops.ZiskOp.Add 10#u8 false zisk_ops.OpType.Binary
-    rd ?_
+    rd rs1 rs2 ?_ ?_ ?_
     { defCtx with extract_marker := (), input_precompile := none }
     (fun input => input.rd ≠ 0#u32 ∧ input.rs1 ≠ 0#u32 ∧ input.rs2 ≠ 0#u32)
     ?_ rfl ?_ ?_ rfl rfl rfl (by intro h; cases h) (by intro h; cases h)
@@ -703,6 +728,24 @@ theorem transpile_add (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2
     rw [hrdbv]
     change (((rawRType 0 rs2 rs1 0 rd 0x33) &&& 3968#32) >>> 7).toNat = rd
     rw [rawRType_rd 0 rs2 rs1 0 rd 0x33 hrd (by norm_num) (by norm_num)]
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+  · intro d hd
+    obtain ⟨d', hd', _, hrs1bv, _⟩ :=
+      copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 0 rd 0x33)) RiscvOpcode.Add
+    have hdd : d = d' := Result.ok.inj (hd.symm.trans hd'); subst hdd
+    change d.rs1.bv.toNat = rs1
+    rw [hrs1bv]
+    change (((rawRType 0 rs2 rs1 0 rd 0x33) &&& 1015808#32) >>> 15).toNat = rs1
+    rw [copyb_rawRType_rs1 0 rs2 rs1 0 rd 0x33 hrs1 (by norm_num) hrd (by norm_num)]
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+  · intro d hd
+    obtain ⟨d', hd', _, _, hrs2bv⟩ :=
+      copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 0 rd 0x33)) RiscvOpcode.Add
+    have hdd : d = d' := Result.ok.inj (hd.symm.trans hd'); subst hdd
+    change d.rs2.bv.toNat = rs2
+    rw [hrs2bv]
+    change (((rawRType 0 rs2 rs1 0 rd 0x33) &&& 32505856#32) >>> 20).toNat = rs2
+    rw [copyb_rawRType_rs2 0 rs2 rs1 0 rd 0x33 hrs2 hrs1 (by norm_num) hrd (by norm_num)]
     simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
   · simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,
@@ -759,10 +802,14 @@ theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd
       ∧ ext.row.store ≠ zisk_inst.STORE_IND
-      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rd ≠ 0) := by
+      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rd ≠ 0)
+      ∧ ext.row.a_src = (if rs1 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.a_offset_imm0.val = rs1 ∧ ext.row.a_use_sp_imm1 = 0#u64
+      ∧ ext.row.b_src = (if rs2 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.b_offset_imm0.val = rs2 ∧ ext.row.b_use_sp_imm1 = 0#u64 := by
   refine transpile_register_cond_of _ RiscvOpcode.Or
     riscv2zisk_single_row.Rv64imSingleRowOpcode.Or zisk_ops.ZiskOp.Or 15#u8 false zisk_ops.OpType.Binary
-    rd ?_
+    rd rs1 rs2 ?_ ?_ ?_
     { defCtx with extract_marker := () }
     (fun input => input.rs1 ≠ 0#u32 ∧ input.rs2 ≠ 0#u32)
     ?_ rfl ?_ ?_ rfl rfl rfl (by intro h; cases h) (by intro h; cases h)
@@ -775,6 +822,24 @@ theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 
     rw [hrdbv]
     change (((rawRType 0 rs2 rs1 6 rd 0x33) &&& 3968#32) >>> 7).toNat = rd
     rw [rawRType_rd 0 rs2 rs1 6 rd 0x33 hrd (by norm_num) (by norm_num)]
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+  · intro d hd
+    obtain ⟨d', hd', _, hrs1bv, _⟩ :=
+      copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 6 rd 0x33)) RiscvOpcode.Or
+    have hdd : d = d' := Result.ok.inj (hd.symm.trans hd'); subst hdd
+    change d.rs1.bv.toNat = rs1
+    rw [hrs1bv]
+    change (((rawRType 0 rs2 rs1 6 rd 0x33) &&& 1015808#32) >>> 15).toNat = rs1
+    rw [copyb_rawRType_rs1 0 rs2 rs1 6 rd 0x33 hrs1 (by norm_num) hrd (by norm_num)]
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+  · intro d hd
+    obtain ⟨d', hd', _, _, hrs2bv⟩ :=
+      copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 6 rd 0x33)) RiscvOpcode.Or
+    have hdd : d = d' := Result.ok.inj (hd.symm.trans hd'); subst hdd
+    change d.rs2.bv.toNat = rs2
+    rw [hrs2bv]
+    change (((rawRType 0 rs2 rs1 6 rd 0x33) &&& 32505856#32) >>> 20).toNat = rs2
+    rw [copyb_rawRType_rs2 0 rs2 rs1 6 rd 0x33 hrs2 hrs1 (by norm_num) hrd (by norm_num)]
     simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
   · simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,
@@ -846,7 +911,8 @@ noncomputable def ProgramDecode_add_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_add rd rs1 rs2 (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrd0
     rawDecode.hrs10 rawDecode.hrs20).choose
-  obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd, hstoreReg⟩ :=
+  obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd, hstoreReg,
+      _, _, _, _, _, _⟩ :=
     (transpile_add rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrd0
       rawDecode.hrs10 rawDecode.hrs20).choose_spec
@@ -925,10 +991,37 @@ noncomputable def ProgramDecode_or_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_or rd rs1 rs2 (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrs10
     rawDecode.hrs20).choose
-  obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd, hstoreReg⟩ :=
+  obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd, hstoreReg,
+      haSrc, haOff, haUse, hbSrc, hbOff, hbUse⟩ :=
     (transpile_or rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrs10
       rawDecode.hrs20).choose_spec
+  have hserialized : ∀ j : Fin trace.programLength,
+      (trace.program j).line =
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+        trace.program j = serializeExtract (trace.program j).line ext.row := by
+    intro j hline
+    obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+    have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
+    have hok' : extract_transpile_rv64im_raw
+        (toU32 (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 6
+          (regidx_to_fin c.rd).val 0x33)) = .ok ext := by
+      simpa only [rd, rs1, rs2, ext] using hok
+    have hnon :
+        (toU32 (rawRType 0 (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 6
+          (regidx_to_fin c.rd).val 0x33) &&& 127#u32) ≠ 103#u32 := by
+      rw [ZiskFv.Compliance.Decode.toU32_and127,
+        ZiskFv.Compliance.Decode.rawRType_opcode]
+      all_goals decide
+    have hp := hprimary.2
+    rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+    have hbk : trace.program j =
+        romMessageOfRaw (addr k) (rawRType 0 rs2 rs1 6 rd 0x33) := by
+      simpa only [rd, rs1, rs2] using hp
+    have hser : trace.program j = serializeExtract (addr k) ext.row := by
+      rw [hbk, romMessageOfRaw, hok]
+      exact romRowOf_eq_serializeExtract (addr k) ext.row
+    exact hser.trans (by rw [haddr])
   refine
     { h_idx := rawDecode.h_idx
       bits := romFlagBitsOfExtract ext.row
@@ -940,8 +1033,12 @@ noncomputable def ProgramDecode_or_from_rawProgram {n rawLength : Nat}
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
       h_bits_store_reg := by
-        exact storeBit_of_store_iff_val ext.row (regidx_to_fin c.rd)
+        exact storeBit_of_store_iff ext.row (regidx_to_fin c.rd)
           (by simpa only [ext, rd] using hstoreReg)
+      aFacts := aRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r1) ext.row
+        (by simpa only [rs1] using haSrc) (by simpa only [rs1] using haOff) haUse hserialized
+      bFacts := bRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r2) ext.row
+        (by simpa only [rs2] using hbSrc) (by simpa only [rs2] using hbOff) hbUse hserialized
       h_prog := ?_ }
   intro j hline
   obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
