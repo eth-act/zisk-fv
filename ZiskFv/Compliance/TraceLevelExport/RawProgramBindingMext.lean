@@ -103,7 +103,8 @@ local macro "mext_lemmas" nm:ident "," f7:term "," f3:term "," opw:term "," rop:
             ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
             ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
             ∧ ext.row.store_offset.val = rd
-            ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
+            ∧ ext.row.store ≠ zisk_inst.STORE_IND
+            ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG) := by
         refine transpile_register_of _ $rop $srop $zop $opU8 $m32 $ot rd ?_ ?_ rfl
           (by intro self input; rfl)
           rfl rfl rfl (by intro h; cases h) (by intro h; cases h)
@@ -160,7 +161,7 @@ local macro "mext_lemmas" nm:ident "," f7:term "," f3:term "," opw:term "," rop:
                 ∧ (romFlagBitsOfExtract ext.row).store_ind = false
                 ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
         obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-            hstoreOffset, hstoreInd⟩ := $tName rd rs1 rs2 hrd hrs1 hrs2
+            hstoreOffset, hstoreInd, _⟩ := $tName rd rs1 rs2 hrd hrs1 hrs2
         obtain ⟨ho, hjo1, hjo2, hso, hsi, hf⟩ :=
           register_decode_fields_of_binding line msg _ $opU8 $opc rd ext
             (by simp [romOpcode, $opc:term]) hok hop hj1 hj2 hstoreOffset hstoreInd hbind
@@ -244,7 +245,7 @@ local macro "mext_program_decode_ab" nm:ident "," f3:term "," opw:term : command
     let ext := ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd⟩ :=
+        hstoreOffset, hstoreInd, _⟩ :=
       ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
     refine
@@ -337,7 +338,7 @@ local macro "mext_program_decode_c" nm:ident "," f3:term "," opw:term : command 
     let ext := ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd⟩ :=
+        hstoreOffset, hstoreInd, _⟩ :=
       ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
     refine
