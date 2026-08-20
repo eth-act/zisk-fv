@@ -271,8 +271,8 @@ symbols, and the `std_alpha`/`std_gamma` challenges. The report lists
 extractor-facing source for `MemTableGeneratedRangeFacts` and
 `MemSegmentGeneratedRangeFacts`. It also emits a Lean range-fact coverage table:
 range-check hints cover `incrementChunks`, `dualStepDelta`, and
-`distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
-`mem.pil` bit-width lines supplied through `--pil-source`. The generated
+`distanceBaseChunks`. The `addrColumns`, `valueColumns`, and `stepColumns`
+facts require the `mem.pil` bit-width lines supplied through `--pil-source`. The generated
 artifact contract section names the remaining callback exactly: a generated
 Lean module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for
 the named `witness.data` sidecar keys and pass it to

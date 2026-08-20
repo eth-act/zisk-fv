@@ -3247,6 +3247,7 @@ fn write_mem_air_range_fact_coverage(
         source_has("range_check(expression: l_increment")
           && source_has("range_check(expression: h_increment");
     let addr_source = source_has("col witness bits(29) addr");
+    let value_source = source_has("col witness bits(32) air.value[RC]");
     let step_source =
         source_has("col witness bits(MEM_STEP_BITS) step")
           && source_has("col witness bits(MEM_STEP_BITS) air.step_dual")
@@ -3273,6 +3274,13 @@ fn write_mem_air_range_fact_coverage(
         "| `MemTableGeneratedRangeFacts.addrColumns` | \
          `col witness bits(29) addr` (`mem.pil:109`) | `{}` |",
         status(true, addr_source, true)
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemTableGeneratedRangeFacts.valueColumns` | \
+         `col witness bits(32) air.value[RC]` (`mem.pil:156`) | `{}` |",
+        status(true, value_source, true)
     )
     .unwrap();
     writeln!(
