@@ -331,6 +331,8 @@ theorem addFaithfulPaddedRawRootSoundness :
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
     addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcBoot
     addFaithfulRowsAligned addFaithfulBootSeed addFaithfulRegBoot
+    (fun i => by fin_cases i; simp [mainTableRowAtOrZero,
+      addFaithfulAcceptedTrace_mainTable_eq, addFaithfulMainTable]; decide)
     addFaithfulOutsideDefectRegion
 
 #print axioms addFaithfulPaddedRawRootSoundness

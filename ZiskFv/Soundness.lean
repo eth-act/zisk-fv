@@ -874,6 +874,8 @@ private theorem stepRegWrite_entry_range_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
     (hAvoid : RowOutsideDefectRegion trace i zs)
+    (loadValueRange : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_0.val < 4294967296
+      ∧ (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_1.val < 4294967296)
     (he : stepRegWrite (stepChannelOutput i zs rd)
       = some ((cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1))
@@ -1720,9 +1722,7 @@ private theorem stepRegWrite_entry_range_aux
   | _ =>
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
       have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
-    apply cMemMessage_chunks_of_store_pc_zero _ h_sp
-    · sorry
-    · sorry
+    exact cMemMessage_chunks_of_store_pc_zero _ h_sp loadValueRange.1 loadValueRange.2
 
 private theorem stepRegWrite_consistent_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
@@ -1781,6 +1781,11 @@ theorem root_soundness
     (regBoot : ∀ k : Fin 32, k ≠ 0 →
       init.regs.get? (reg_of_fin k)
         = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)))
+    (loadValueRange : ∀ i : Fin numInstructions,
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+        ziskTrace.program ziskTrace.mainTable i.val).core.c_0.val < 4294967296
+      ∧ (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+        ziskTrace.program ziskTrace.mainTable i.val).core.c_1.val < 4294967296)
     (hAvoidKnownBugs : ∀ i : Fin numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
     ∀ i : Fin numInstructions,
@@ -1816,7 +1821,8 @@ theorem root_soundness
         ((cMemMessage
           (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
     fun i he h_ptr =>
-    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (hAvoidKnownBugs i) he h_ptr
+    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (hAvoidKnownBugs i)
+      (loadValueRange i) he h_ptr
   have combined : ∀ (k : ℕ) (hk : k < numInstructions),
       RegAgree ziskStep rowDecodes init k
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable

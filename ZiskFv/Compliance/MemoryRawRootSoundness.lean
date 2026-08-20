@@ -179,7 +179,7 @@ theorem memoryRawRootSoundness :
   root_soundness 0 3 memoryAcceptedTrace memoryInit memoryZiskStep
     memoryStart memoryAddr memoryRawProgram memoryProgramRowsBinding
     (fun i => i.elim0) (fun i => i.elim0) memoryPcBoot memoryRowsAligned memoryBootSeed
-    memoryRegBoot (fun i => i.elim0)
+    memoryRegBoot (fun i => i.elim0) (fun i => i.elim0)
 
 #print axioms memoryRawRootSoundness
 
