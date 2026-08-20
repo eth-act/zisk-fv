@@ -870,6 +870,65 @@ private lemma binExt_shift_entry_range
   have h_c_lt := binExt_shift_opBus_c_lt theRow h_row_spec.2.1 h_main_op
   exact entry_range_of_provider_match i h_sp hmatch h_c_lt.1 h_c_lt.2
 
+private lemma binExt_sext_entry_range
+    {n : ℕ} {trace : AcceptedZiskTrace n}
+    (i : Fin n)
+    (h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main
+        (mainOfTable trace.program trace.mainTable) i.val)
+      (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
+    (h_main_op :
+      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SIGNEXTEND_B
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SIGNEXTEND_H
+      ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SIGNEXTEND_W) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
+  obtain ⟨h_op, h_clo, h_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      (mainOfTable trace.program trace.mainTable) v i.val r_binary h_match
+  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes] using
+      ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
+        v r_binary offset env h_static
+  have mk_range
+      (h_sums :
+        ((v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+          + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+          + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+          + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val
+          < 4294967296)
+        ∧ ((v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+          + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+          + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+          + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val
+          < 4294967296)) :
+      ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+        ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
+    apply cMemMessage_chunks_of_store_pc_zero _ h_sp
+    · rw [show (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_0 =
+          (mainOfTable trace.program trace.mainTable).c_0 i.val from by
+          simp only [mainOfTable_c_0], h_clo]
+      exact fgl_sum8_val_lt _ _ _ _ _ _ _ _ h_sums.1
+    · rw [show (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.c_1 =
+          (mainOfTable trace.program trace.mainTable).c_1 i.val from by
+          simp only [mainOfTable_c_1], h_chi]
+      exact fgl_sum8_val_lt _ _ _ _ _ _ _ _ h_sums.2
+  rcases h_main_op with h_b | h_h | h_w
+  · exact mk_range
+      (ZiskFv.Airs.BinaryExtension.binary_extension_sext_b_c_sums_lt_of_wf
+        v r_binary (by rw [← h_op, h_b]; native_decide) h_bytes h_wfs)
+  · exact mk_range
+      (ZiskFv.Airs.BinaryExtension.binary_extension_sext_h_c_sums_lt_of_wf
+        v r_binary (by rw [← h_op, h_h]; native_decide) h_bytes h_wfs)
+  · exact mk_range
+      (ZiskFv.Airs.BinaryExtension.binary_extension_sext_w_c_sums_lt_of_wf
+        v r_binary (by rw [← h_op, h_w]; native_decide) h_bytes h_wfs)
+
 private theorem stepRegWrite_entry_range_aux
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
@@ -1713,7 +1772,22 @@ private theorem stepRegWrite_entry_range_aux
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_remw_provided trace i h_ieo h_op
     exact arithMul_entry_range i h_sp hpt hpr hcomp hspec hmatch
-  -- 7 load ops (lb, lh, lw, ld, lbu, lhu, lwu): is_external_op = 0, so no
+  | lb c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    exact binExt_sext_entry_range i h_sp rd.v rd.r_binary rd.offset rd.env rd.h_static rd.h_match
+      (Or.inl rd.h_main_op)
+  | lh c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    exact binExt_sext_entry_range i h_sp rd.v rd.r_binary rd.offset rd.env rd.h_static rd.h_match
+      (Or.inr (Or.inl rd.h_main_op))
+  | lw c =>
+    have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
+      have := rd.h_store_pc; simp only [mainOfTable_store_pc] at this; exact this
+    exact binExt_sext_entry_range i h_sp rd.v rd.r_binary rd.offset rd.env rd.h_static rd.h_match
+      (Or.inr (Or.inr rd.h_main_op))
+  -- 4 unsigned load ops (ld, lbu, lhu, lwu): is_external_op = 0, so no
   -- op-bus provider exists. c_0/c_1 = b_0/b_1 via COPYB (main.pil:281-282),
   -- and the b values are the loaded memory data whose range bound requires
   -- memory bus composition (#76).
