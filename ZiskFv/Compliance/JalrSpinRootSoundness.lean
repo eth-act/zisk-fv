@@ -520,6 +520,61 @@ def jalrRowsAligned :
   have hj : j < 2 - 1 := by omega
   interval_cases j <;> rfl
 
+def jalrLaneBridge : ∀ i : Fin 2,
+    LaneBridge jalrAcceptedTrace (sailTrace i) i.val := by
+  intro i
+  fin_cases i
+  · constructor <;> intro _ _ hsrc _ <;> exfalso
+    all_goals
+      simp only [mainRawAt_setup] at hsrc
+      simpa [jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
+        jalrSetupProgramRow, jalrSetupBits, ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+  · constructor
+    · intro _ _ hsrc _
+      simp only [mainRawAt_start] at hsrc
+      simpa [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+    · intro _ _ hsrc _
+      simp only [mainRawAt_start] at hsrc
+      simpa [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+    · intro r _ _ hoff
+      have hre : r = regidx_to_fin x1 := by
+        simp only [mainRawAt_start] at hoff
+        fin_cases r <;> simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+          jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf,
+          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+      rw [hre, ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
+      change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+        jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 1).core.b_0 = _
+      rw [mainRawAt_start]
+      change jalrAddRow.core.b_0 = lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (sailTrace jalrIndex)).xreg (regidx_to_fin x1))
+      rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+        (sailTrace jalrIndex) (regidx_to_fin x1) (2#64) readX1_jalr]
+      norm_num [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf, lane_lo]
+      apply Fin.ext
+      norm_num
+    · intro r _ _ hoff
+      have hre : r = regidx_to_fin x1 := by
+        simp only [mainRawAt_start] at hoff
+        fin_cases r <;> simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+          jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf,
+          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+      rw [hre, ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_1]
+      change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+        jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 1).core.b_1 = _
+      rw [mainRawAt_start]
+      change jalrAddRow.core.b_1 = lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (sailTrace jalrIndex)).xreg (regidx_to_fin x1))
+      rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+        (sailTrace jalrIndex) (regidx_to_fin x1) (2#64) readX1_jalr]
+      norm_num [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf, lane_hi]
+
 /-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
     `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
     witness already proves — no new content, and no hand-evaluated Sail execution. -/
@@ -527,7 +582,7 @@ def jalrPcChain : SegmentPcChain jalrAcceptedTrace sailTrace jalrSpinZiskStep wh
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i))
-      inputsAgree bootSeed outsideDefectRegion (fun i => sorry) jalrRowsAligned
+      inputsAgree bootSeed outsideDefectRegion jalrLaneBridge jalrRowsAligned
   boot := (pcSeed_of_inputsAgree inputsAgree).boot
 
 theorem jalrSpinRootSoundness :
@@ -536,7 +591,7 @@ theorem jalrSpinRootSoundness :
         (rowDecode_of_programDecode jalrAcceptedTrace i (programDecodes i)) :=
   stepSound_of_programDecodes 2 jalrAcceptedTrace sailTrace jalrSpinZiskStep
     programDecodes inputsAgreeCore jalrPcChain jalrRowsAligned bootSeed outsideDefectRegion
-    (fun i => sorry)
+    jalrLaneBridge
 
 theorem jalrStepSound :
     StepSound jalrAcceptedTrace sailTrace jalrIndex

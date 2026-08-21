@@ -986,6 +986,260 @@ def sdLdRowsAligned :
   have hj : j < 7 - 1 := by omega
   interval_cases j <;> rfl
 
+private theorem sdLdAcceptedMainRowAt_zero :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 0 = sdLdAddiX1A0Row := by
+  simpa [sdLdAddiA0Index, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdAddiA0Index
+
+private theorem sdLdAcceptedMainRowAt_one :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 1 = sdLdSlliX1Row := by
+  simpa [sdLdSlliIndex, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdSlliIndex
+
+private theorem sdLdAcceptedMainRowAt_two :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 2 = sdLdAddiX1EightRow := by
+  simpa [sdLdAddiEightIndex, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdAddiEightIndex
+
+private theorem sdLdAcceptedMainRowAt_three :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 3 = sdLdAddiX2Row := by
+  simpa [sdLdAddiX2Index, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdAddiX2Index
+
+private theorem sdLdAcceptedMainRowAt_four :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 4 = sdLdSdRow := by
+  simpa [sdLdSdIndex, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdSdIndex
+
+private theorem sdLdAcceptedMainRowAt_five :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 5 = sdLdLdRow := by
+  simpa [sdLdLdIndex, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdLdIndex
+
+private theorem sdLdAcceptedMainRowAt_six :
+    ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable 6 = sdLdJalRow 6 := by
+  simpa [sdLdJalIndex, sdLdMainRows] using sdLdAcceptedMainRowAt sdLdJalIndex
+
+private def laneBridgeNoSources (i : Fin 7)
+    (ha : (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable i.val).rom.a_src_reg ≠ 1)
+    (hb : (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable i.val).rom.b_src_reg ≠ 1) :
+    LaneBridge sdLdAcceptedTrace (sdLdSailTrace i) i.val where
+  a_lo := by intro _ _ hsrc _; exact (ha hsrc).elim
+  a_hi := by intro _ _ hsrc _; exact (ha hsrc).elim
+  b_lo := by intro _ _ hsrc _; exact (hb hsrc).elim
+  b_hi := by intro _ _ hsrc _; exact (hb hsrc).elim
+
+private def laneBridgeASource (i : Fin 7) (ra : Fin 32)
+    (hoffset : Transpiler.wrap_to_regidx
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+        sdLdAcceptedTrace.mainTable i.val).rom.a_offset_imm0 = ra)
+    (ha0 : (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable).a_0 i.val = lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (sdLdSailTrace i)).xreg ra))
+    (ha1 : (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable).a_1 i.val = lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+          (sdLdSailTrace i)).xreg ra))
+    (hb : (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable i.val).rom.b_src_reg ≠ 1) :
+    LaneBridge sdLdAcceptedTrace (sdLdSailTrace i) i.val where
+  a_lo := by
+    intro r _ _ hoff
+    have hre : ra = r := hoffset.symm.trans hoff
+    simpa [hre] using ha0
+  a_hi := by
+    intro r _ _ hoff
+    have hre : ra = r := hoffset.symm.trans hoff
+    simpa [hre] using ha1
+  b_lo := by intro _ _ hsrc _; exact (hb hsrc).elim
+  b_hi := by intro _ _ hsrc _; exact (hb hsrc).elim
+
+private def laneBridgeABSources (i : Fin 7) (ra rb : Fin 32)
+    (haoffset : Transpiler.wrap_to_regidx
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+        sdLdAcceptedTrace.mainTable i.val).rom.a_offset_imm0 = ra)
+    (hboffset : Transpiler.wrap_to_regidx
+      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
+        sdLdAcceptedTrace.mainTable i.val).rom.b_offset_imm0 = rb)
+    (ha0 : (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable).a_0 i.val = lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sdLdSailTrace i)).xreg ra))
+    (ha1 : (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable).a_1 i.val = lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sdLdSailTrace i)).xreg ra))
+    (hb0 : (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable).b_0 i.val = lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sdLdSailTrace i)).xreg rb))
+    (hb1 : (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
+      sdLdAcceptedTrace.mainTable).b_1 i.val = lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (sdLdSailTrace i)).xreg rb)) :
+    LaneBridge sdLdAcceptedTrace (sdLdSailTrace i) i.val where
+  a_lo := by intro r _ _ h; simpa [haoffset.symm.trans h] using ha0
+  a_hi := by intro r _ _ h; simpa [haoffset.symm.trans h] using ha1
+  b_lo := by intro r _ _ h; simpa [hboffset.symm.trans h] using hb0
+  b_hi := by intro r _ _ h; simpa [hboffset.symm.trans h] using hb1
+
+set_option maxHeartbeats 4000000 in
+def sdLdLaneBridge : ∀ i : Fin 7,
+    LaneBridge sdLdAcceptedTrace (sdLdSailTrace i) i.val
+  | ⟨0, _⟩ => laneBridgeNoSources sdLdAddiA0Index
+      (by simp [sdLdAddiA0Index, sdLdAcceptedMainRowAt_zero, sdLdAddiX1A0Row,
+        sdLdAddiX1A0RowTemplate,
+        addiX0Bits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+      (by simp [sdLdAddiA0Index, sdLdAcceptedMainRowAt_zero, sdLdAddiX1A0Row,
+        sdLdAddiX1A0RowTemplate,
+        addiX0Bits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+  | ⟨1, _⟩ => laneBridgeASource sdLdSlliIndex (regidx_to_fin x1)
+      (by
+        simp only [sdLdSlliIndex]
+        rw [sdLdAcceptedMainRowAt_one]
+        change Transpiler.wrap_to_regidx (1 : FGL) = regidx_to_fin x1
+        norm_num [Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1,
+          regidx_to_fin]
+        apply Fin.ext
+        norm_num)
+      (sdLdLaneLo sdLdSlliIndex (160#64)
+        (by simpa [sdLdSlliIndex] using sdLdReadX1 sdLdSlliIndex)
+        (fun m i => m.a_0 i) (by
+          dsimp only
+          rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
+          change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+            sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 1).core.a_0 = _
+          rw [sdLdAcceptedMainRowAt_one]
+          norm_num [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+            mainRomRowOf, lane_lo]
+          decide))
+      (sdLdLaneHi sdLdSlliIndex (160#64)
+        (by simpa [sdLdSlliIndex] using sdLdReadX1 sdLdSlliIndex)
+        (fun m i => m.a_1 i) (by
+          dsimp only
+          rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+          change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+            sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 1).core.a_1 = _
+          rw [sdLdAcceptedMainRowAt_one]
+          norm_num [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
+            mainRomRowOf, lane_hi]))
+      (by simp [sdLdSlliIndex, sdLdAcceptedMainRowAt_one, sdLdSlliX1Row,
+        sdLdSlliX1RowTemplate,
+        addiX1Bits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+  | ⟨2, _⟩ => laneBridgeASource sdLdAddiEightIndex (regidx_to_fin x1)
+      (by
+        simp only [sdLdAddiEightIndex]
+        rw [sdLdAcceptedMainRowAt_two]
+        change Transpiler.wrap_to_regidx (1 : FGL) = regidx_to_fin x1
+        norm_num [Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1,
+          regidx_to_fin]
+        apply Fin.ext
+        norm_num)
+      (sdLdLaneLo sdLdAddiEightIndex (2684354560#64)
+        (by simpa [sdLdAddiEightIndex] using sdLdReadX1 sdLdAddiEightIndex)
+        (fun m i => m.a_0 i) (by
+          dsimp only
+          rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
+          change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+            sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 2).core.a_0 = _
+          rw [sdLdAcceptedMainRowAt_two]
+          norm_num [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+            sdLdAddiX1EightRowTemplate, mainRomRowOf, lane_lo]
+          decide))
+      (sdLdLaneHi sdLdAddiEightIndex (2684354560#64)
+        (by simpa [sdLdAddiEightIndex] using sdLdReadX1 sdLdAddiEightIndex)
+        (fun m i => m.a_1 i) (by
+          dsimp only
+          rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+          change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+            sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 2).core.a_1 = _
+          rw [sdLdAcceptedMainRowAt_two]
+          norm_num [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+            sdLdAddiX1EightRowTemplate, mainRomRowOf, lane_hi]))
+      (by simp [sdLdAddiEightIndex, sdLdAcceptedMainRowAt_two, sdLdAddiX1EightRow,
+        sdLdAddiX1EightRowTemplate, addiX1Bits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+  | ⟨3, _⟩ => laneBridgeNoSources sdLdAddiX2Index
+      (by simp [sdLdAddiX2Index, sdLdAcceptedMainRowAt_three, sdLdAddiX2Row,
+        sdLdAddiX2RowTemplate,
+        addiX0Bits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+      (by simp [sdLdAddiX2Index, sdLdAcceptedMainRowAt_three, sdLdAddiX2Row,
+        sdLdAddiX2RowTemplate,
+        addiX0Bits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+  | ⟨4, _⟩ => laneBridgeABSources sdLdSdIndex (regidx_to_fin x1) (regidx_to_fin x2)
+      (by
+        simp only [sdLdSdIndex]
+        rw [sdLdAcceptedMainRowAt_four]
+        change Transpiler.wrap_to_regidx (1 : FGL) = regidx_to_fin x1
+        norm_num [Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1,
+          regidx_to_fin]
+        apply Fin.ext
+        norm_num)
+      (by
+        simp only [sdLdSdIndex]
+        rw [sdLdAcceptedMainRowAt_four]
+        change Transpiler.wrap_to_regidx (2 : FGL) = regidx_to_fin x2
+        norm_num [Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x2,
+          regidx_to_fin]
+        apply Fin.ext
+        norm_num)
+      (sdLdLaneLo sdLdSdIndex (2684354568#64)
+        (by simpa [sdLdSdIndex] using sdLdReadX1 sdLdSdIndex)
+        (fun m i => m.a_0 i) (by simpa [sdLdSdClaim, sdLdSdInput] using
+          sdLdSdInputs.h_a0_value))
+      (sdLdLaneHi sdLdSdIndex (2684354568#64)
+        (by simpa [sdLdSdIndex] using sdLdReadX1 sdLdSdIndex)
+        (fun m i => m.a_1 i) (by simpa [sdLdSdClaim, sdLdSdInput] using
+          sdLdSdInputs.h_a1_value))
+      (by
+        rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 4).core.b_0 = _
+        rw [sdLdAcceptedMainRowAt_four]
+        rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+          (sdLdSailTrace sdLdSdIndex) (regidx_to_fin x2) (42#64) sdLdReadX2Sd]
+        norm_num [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, lane_lo]
+        decide)
+      (by
+        rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_1]
+        change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+          sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 4).core.b_1 = _
+        rw [sdLdAcceptedMainRowAt_four]
+        rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+          (sdLdSailTrace sdLdSdIndex) (regidx_to_fin x2) (42#64) sdLdReadX2Sd]
+        norm_num [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, lane_hi])
+  | ⟨5, _⟩ => laneBridgeASource sdLdLdIndex (regidx_to_fin x1)
+      (by
+        simp only [sdLdLdIndex]
+        rw [sdLdAcceptedMainRowAt_five]
+        change Transpiler.wrap_to_regidx (1 : FGL) = regidx_to_fin x1
+        norm_num [Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1,
+          regidx_to_fin]
+        apply Fin.ext
+        norm_num)
+      (sdLdLaneLo sdLdLdIndex (2684354568#64)
+        (by simpa [sdLdLdIndex] using sdLdReadX1 sdLdLdIndex)
+        (fun m i => m.a_0 i) (by simpa [sdLdLdClaim, sdLdLdInput] using
+          sdLdLdInputs.h_a0_value))
+      (sdLdLaneHi sdLdLdIndex (2684354568#64)
+        (by simpa [sdLdLdIndex] using sdLdReadX1 sdLdLdIndex)
+        (fun m i => m.a_1 i) (by
+          dsimp only
+          rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+          change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+            sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable 5).core.a_1 = _
+          rw [sdLdAcceptedMainRowAt_five]
+          norm_num [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, lane_hi]))
+      (by simp [sdLdLdIndex, sdLdAcceptedMainRowAt_five, sdLdLdRow,
+        sdLdLdRowTemplate,
+        sdLdLdBits, mainRomRowOf, ZiskFv.AirsClean.boolF])
+  | ⟨6, _⟩ => laneBridgeNoSources sdLdJalIndex
+      (by simp [sdLdJalIndex, sdLdAcceptedMainRowAt_six, sdLdJalRow,
+        AddSpinWitness.addSpinJalBits,
+        mainRomRowOf, ZiskFv.AirsClean.boolF])
+      (by simp [sdLdJalIndex, sdLdAcceptedMainRowAt_six, sdLdJalRow,
+        AddSpinWitness.addSpinJalBits,
+        mainRomRowOf, ZiskFv.AirsClean.boolF])
+
 /-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
     `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
     witness already proves — no new content, and no hand-evaluated Sail execution. -/
@@ -993,7 +1247,7 @@ def sdLdPcChain : SegmentPcChain sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep wh
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i))
-      sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion (fun i => sorry) sdLdRowsAligned
+      sdLdInputsAgree sdLdBootSeed sdLdOutsideDefectRegion sdLdLaneBridge sdLdRowsAligned
   boot := (pcSeed_of_inputsAgree sdLdInputsAgree).boot
 
 theorem sdLdRootSoundness :
@@ -1002,7 +1256,7 @@ theorem sdLdRootSoundness :
       (rowDecode_of_programDecode sdLdAcceptedTrace i (sdLdProgramDecodes i)) :=
   stepSound_of_programDecodes 7 sdLdAcceptedTrace sdLdSailTrace sdLdZiskStep
     sdLdProgramDecodes sdLdInputsAgreeCore sdLdPcChain sdLdRowsAligned
-    sdLdBootSeed sdLdOutsideDefectRegion (fun i => sorry)
+    sdLdBootSeed sdLdOutsideDefectRegion sdLdLaneBridge
 
 theorem sdLdAddiA0StepSound :
     StepSound sdLdAcceptedTrace sdLdSailTrace sdLdAddiA0Index
