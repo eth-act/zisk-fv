@@ -671,9 +671,18 @@ past result is invalidated: the old behaviour over-flagged, never under-flagged.
 `trust/forbidden-types.txt` is untouched, and check 2 still passes on all 63
 canonical `equiv_<OP>` theorems.
 
-**Scope.** The PC arm only. The register fields (`h_a_*_t` / `h_b_*_t`, 116
-occurrences) stay assumed; they go through the MemBus and are the separate
-register-partition axis (`main.pil:277-279`, #169/#19).
+### Register-value derivation — #357
+
+`root_soundness` no longer receives the 116 `h_a_*_t` and `h_b_*_t` lane facts
+through the per-opcode `InputsCore` structures. It derives `RegAgree` by induction
+from register-bus write consistency, entry ranges, and the preceding step theorem.
+
+The new `regBoot` premise states that each nonzero general register in `init` is
+zero. This value matches the literal zero in `RegisterBoundary.bootMessage`.
+Register `x0` needs no premise because its architectural value is always zero.
+Thus, one initial-state premise replaces 116 caller-supplied per-row facts. The
+strong-export binder baseline records this public premise. The axiom closure of
+`root_soundness` contains neither project axioms nor `sorryAx`.
 
 ### Register MemBus balance (`MEMORY_REG_OP`) — #225
 
