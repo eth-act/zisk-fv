@@ -85,7 +85,7 @@ def rowRangeLookups (row : Var MemRow FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable40) row.step_dual
   -- `previous_step : bits(40)`, `mem.pil:365`.
   lookup (Table.fromStatic rangeTable40) row.previous_step
-  -- Mutable `value[RC] : bits(32)`, `mem.pil:156`.
+  -- Mutable, non-free `Mem` instance `value[RC] : bits(32)`, `mem.pil:156`.
   lookup (Table.fromStatic rangeTable32) row.value_0
   lookup (Table.fromStatic rangeTable32) row.value_1
 

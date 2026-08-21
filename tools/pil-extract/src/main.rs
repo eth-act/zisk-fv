@@ -217,6 +217,12 @@ struct MemAirFactsCmd {
     #[arg(long)]
     pil_source: Option<PathBuf>,
 
+    /// Optional path to `state-machines/mem/pil/mem_align.pil`. The report
+    /// checks the `value[RC] : bits(32)` source declaration used by Lean's
+    /// MemAlign value-range lookups.
+    #[arg(long)]
+    mem_align_pil_source: Option<PathBuf>,
+
     /// Output path for the Markdown report. If omitted, prints to stdout.
     #[arg(long)]
     output: Option<PathBuf>,
@@ -299,7 +305,12 @@ fn run_mem_air_facts(args: MemAirFactsCmd) -> Result<()> {
         .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
     let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
     let hit = find_air(&pilout, &args.air)?;
-    let rendered = render_mem_air_facts_report(&pilout, &hit, args.pil_source.as_deref())?;
+    let rendered = render_mem_air_facts_report(
+        &pilout,
+        &hit,
+        args.pil_source.as_deref(),
+        args.mem_align_pil_source.as_deref(),
+    )?;
     write_output(args.output.as_deref(), &rendered)
 }
 
@@ -2630,6 +2641,7 @@ fn render_mem_air_facts_report(
     pilout: &PilOut,
     hit: &AirHit<'_>,
     pil_source: Option<&std::path::Path>,
+    mem_align_pil_source: Option<&std::path::Path>,
 ) -> Result<String> {
     let air_name = hit
         .air
@@ -2646,6 +2658,9 @@ fn render_mem_air_facts_report(
         .filter(|(_, em)| em.name_piop != "Range Check")
         .collect::<Vec<_>>();
     let source_lines = pil_source
+        .map(mem_pil_source_lines)
+        .transpose()?;
+    let mem_align_source_lines = mem_align_pil_source
         .map(mem_pil_source_lines)
         .transpose()?;
 
@@ -2858,7 +2873,12 @@ fn render_mem_air_facts_report(
     writeln!(out).unwrap();
 
     writeln!(out, "## Lean Range-Fact Coverage\n").unwrap();
-    write_mem_air_range_fact_coverage(&mut out, &range_hints, source_lines.as_deref());
+    write_mem_air_range_fact_coverage(
+        &mut out,
+        &range_hints,
+        source_lines.as_deref(),
+        mem_align_source_lines.as_deref(),
+    );
     writeln!(out).unwrap();
 
     writeln!(out, "## Other `gsum_debug_data` Hints\n").unwrap();
@@ -2873,6 +2893,20 @@ fn render_mem_air_facts_report(
                 "_No relevant `bits`, `SEGMENT_L1`, or `range_check` lines found._"
             )
             .unwrap();
+        } else {
+            writeln!(out, "| Line | Source |").unwrap();
+            writeln!(out, "|---:|---|").unwrap();
+            for (line, text) in source_lines {
+                writeln!(out, "| {} | `{}` |", line, md_escape(&text)).unwrap();
+            }
+        }
+        writeln!(out).unwrap();
+    }
+
+    if let Some(source_lines) = mem_align_source_lines {
+        writeln!(out, "## `mem_align.pil` Source Lines\n").unwrap();
+        if source_lines.is_empty() {
+            writeln!(out, "_No relevant `bits` or `range_check` lines found._").unwrap();
         } else {
             writeln!(out, "| Line | Source |").unwrap();
             writeln!(out, "|---:|---|").unwrap();
@@ -3229,8 +3263,10 @@ fn write_mem_air_range_fact_coverage(
     out: &mut String,
     range_hints: &[(usize, BusEmission)],
     source_lines: Option<&[(usize, String)]>,
+    mem_align_source_lines: Option<&[(usize, String)]>,
 ) {
     let source_supplied = source_lines.is_some();
+    let mem_align_source_supplied = mem_align_source_lines.is_some();
     let hint_has = |needle: &str| {
         range_hints.iter().any(|(_, em)| {
             em.slots
@@ -3243,6 +3279,11 @@ fn write_mem_air_range_fact_coverage(
             lines
                 .iter()
                 .any(|(_, text)| text.contains(needle))
+        })
+    };
+    let mem_align_source_has = |needle: &str| {
+        mem_align_source_lines.is_some_and(|lines| {
+            lines.iter().any(|(_, text)| text.contains(needle))
         })
     };
     let status = |hints_ok: bool, source_ok: bool, source_required: bool| {
@@ -3263,6 +3304,7 @@ fn write_mem_air_range_fact_coverage(
           && source_has("range_check(expression: h_increment");
     let addr_source = source_has("col witness bits(29) addr");
     let value_source = source_has("col witness bits(32) air.value[RC]");
+    let mem_align_value_source = mem_align_source_has("col witness bits(32) value[RC]");
     let step_source =
         source_has("col witness bits(MEM_STEP_BITS) step")
           && source_has("col witness bits(MEM_STEP_BITS) air.step_dual")
@@ -3294,8 +3336,22 @@ fn write_mem_air_range_fact_coverage(
     writeln!(
         out,
         "| `MemTableGeneratedRangeFacts.valueColumns` | \
-         `col witness bits(32) air.value[RC]` (`mem.pil:156`) | `{}` |",
+         `col witness bits(32) air.value[RC]` (`mem.pil:156`) for the selected \
+         non-free `Mem` instance | `{}` |",
         status(true, value_source, true)
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "| `MemAlign.valueRangeLookups` | \
+         `col witness bits(32) value[RC]` (`mem_align.pil:185`) | `{}` |",
+        if !mem_align_source_supplied {
+            "rerun with `--mem-align-pil-source` for bit-width provenance"
+        } else if mem_align_value_source {
+            "present"
+        } else {
+            "missing `mem_align.pil` source line"
+        }
     )
     .unwrap();
     writeln!(
@@ -4213,7 +4269,7 @@ mod tests {
             ..Default::default()
         };
         let hit = find_air(&pilout, "Mem").unwrap();
-        let out = render_mem_air_facts_report(&pilout, &hit, None).unwrap();
+        let out = render_mem_air_facts_report(&pilout, &hit, None, None).unwrap();
         assert!(
             out.contains(
                 "Lean stores that sidecar callback on `FullWitnessMemoryTimelineEvidence`"
@@ -4248,7 +4304,7 @@ mod tests {
             ..Default::default()
         };
         let hit = find_air(&pilout, "Mem").unwrap();
-        let out = render_mem_air_facts_report(&pilout, &hit, None).unwrap();
+        let out = render_mem_air_facts_report(&pilout, &hit, None, None).unwrap();
         assert!(
             out.contains("| Lean sidecar field | ProverData key | Pilout source | Role |"),
             "report should include the ProverData key column:\n{}",
@@ -4312,7 +4368,7 @@ mod tests {
             ..Default::default()
         };
         let hit = find_air(&pilout, "Mem").unwrap();
-        let out = render_mem_air_facts_report(&pilout, &hit, None).unwrap();
+        let out = render_mem_air_facts_report(&pilout, &hit, None, None).unwrap();
         assert!(
             out.contains("## Generated Lean Artifact Contract"),
             "report should include a generated artifact contract section:\n{}",
@@ -4332,6 +4388,40 @@ mod tests {
                     "`segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data)`"
                 ),
             "report should identify the exact generated constraint/range sources:\n{}",
+            out
+        );
+    }
+
+    #[test]
+    fn mem_air_range_coverage_checks_mem_align_value_width() {
+        let mem_source = vec![(156, "col witness bits(32) air.value[RC];".to_string())];
+        let mem_align_source = vec![(185, "col witness bits(32) value[RC];".to_string())];
+        let mut out = String::new();
+        write_mem_air_range_fact_coverage(
+            &mut out,
+            &[],
+            Some(&mem_source),
+            Some(&mem_align_source),
+        );
+        assert!(
+            out.contains(
+                "| `MemAlign.valueRangeLookups` | `col witness bits(32) value[RC]` \
+                 (`mem_align.pil:185`) | `present` |"
+            ),
+            "report should confirm the MemAlign source declaration:\n{}",
+            out
+        );
+    }
+
+    #[test]
+    fn mem_air_range_coverage_rejects_missing_mem_align_value_width() {
+        let mut out = String::new();
+        let unrelated_source = vec![(185, "col witness bits(16) value[RC];".to_string())];
+        write_mem_air_range_fact_coverage(&mut out, &[], None, Some(&unrelated_source));
+        assert!(
+            out.contains("| `MemAlign.valueRangeLookups` |")
+                && out.contains("`missing `mem_align.pil` source line`"),
+            "report should reject a missing MemAlign 32-bit declaration:\n{}",
             out
         );
     }

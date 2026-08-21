@@ -89,6 +89,7 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --air Mem \
       --pil-source ${zisk-src}/state-machines/mem/pil/mem.pil \
+      --mem-align-pil-source ${zisk-src}/state-machines/mem/pil/mem_align.pil \
       --output $out/MemAirFacts.md
 
     # Typed Lean wrapper for the generated Mem artifact. The wrapper is not

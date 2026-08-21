@@ -684,6 +684,10 @@ Thus, one initial-state premise replaces 116 caller-supplied per-row facts. The
 strong-export binder baseline records this public premise. The axiom closure of
 `root_soundness` contains neither project axioms nor `sorryAx`.
 
+**Removability: removable.** A future theorem can derive `regBoot` from a stronger
+boot-segment contract that connects `BootSegmentMemorySeed` to the initial Sail
+register file. The current boot-segment contract does not expose that connection.
+
 ### Register MemBus balance (`MEMORY_REG_OP`) — #225
 
 The full RV64IM Clean ensemble now **emits** the complete register-consistency
