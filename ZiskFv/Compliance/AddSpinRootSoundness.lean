@@ -154,7 +154,38 @@ def addSpinAddProgramDecode :
   h_bits_set_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by
+    simp [addSpinAddBits, addX1RomFlagBits, addSpinAddClaim, x1, regidx_to_fin]
+  aFacts := by
+    refine { h_src_reg := ?_, h_src_imm := ?_, h_program := ?_ }
+    · simp [addSpinAddBits, addX1RomFlagBits, addSpinAddClaim, x1, regidx_to_fin]
+    · simp [addSpinAddBits, addX1RomFlagBits, addSpinAddClaim, x1, regidx_to_fin]
+    · intro j hline
+      fin_cases j
+      · simp only [addSpinAcceptedTrace, addSpinProgram]
+        norm_num [addSpinAddProgramRow, addX1ProgramRow,
+          addSpinAddBits, addX1RomFlagBits,
+          addSpinAddClaim, x1, regidx_to_fin, Transpiler.ind, ZiskFv.AirsClean.Main.packFlags,
+          ZiskFv.AirsClean.boolF]
+      · rw [addSpinMainPc_add, addSpinAcceptedTrace_program] at hline
+        exfalso
+        have hval := congrArg (fun x : FGL => x.val) hline
+        norm_num [addSpinAcceptedTrace, addSpinProgram, addSpinJalProgramRow] at hval
+  bFacts := by
+    refine { h_src_reg := ?_, h_src_imm := ?_, h_program := ?_ }
+    · simp [addSpinAddBits, addX1RomFlagBits, addSpinAddClaim, x1, regidx_to_fin]
+    · simp [addSpinAddBits, addX1RomFlagBits, addSpinAddClaim, x1, regidx_to_fin]
+    · intro j hline
+      fin_cases j
+      · simp only [addSpinAcceptedTrace, addSpinProgram]
+        norm_num [addSpinAddProgramRow, addX1ProgramRow,
+          addSpinAddBits, addX1RomFlagBits,
+          addSpinAddClaim, x1, regidx_to_fin, Transpiler.ind, ZiskFv.AirsClean.Main.packFlags,
+          ZiskFv.AirsClean.boolF]
+      · rw [addSpinMainPc_add, addSpinAcceptedTrace_program] at hline
+        exfalso
+        have hval := congrArg (fun x : FGL => x.val) hline
+        norm_num [addSpinAcceptedTrace, addSpinProgram, addSpinJalProgramRow] at hval
   h_prog := by
     intro j hline
     change Fin 2 at j
@@ -190,7 +221,8 @@ def addSpinJalProgramDecode :
   h_bits_set_pc := by rfl
   h_bits_store_pc := by rfl
   h_bits_store_ind := by rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by
+    simp [addSpinJalBits, addSpinJalClaim, x0, regidx_to_fin]
   h_prog := by
     intro j hline
     change Fin 2 at j
@@ -359,6 +391,55 @@ def addSpinRowsAligned :
   have hj : j < 2 - 1 := by omega
   interval_cases j <;> rfl
 
+set_option maxHeartbeats 4000000 in
+def addSpinLaneBridge : ∀ i : Fin 2,
+    LaneBridge addSpinAcceptedTrace (addSpinSailTrace i) i.val := by
+  intro i
+  fin_cases i
+  · constructor
+    · intro r _ _ hoff
+      have hre : r = regidx_to_fin x1 := by
+        rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
+        rw [addSpinMainRowAt_zero] at hoff
+        fin_cases r <;> simp [addSpinAddRow, addX1Row,
+          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+      rw [hre]
+      simpa [addSpinAddIndex] using addSpinAddLaneLo (fun m i => m.a_0 i)
+        (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+    · intro r _ _ hoff
+      have hre : r = regidx_to_fin x1 := by
+        rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
+        rw [addSpinMainRowAt_zero] at hoff
+        fin_cases r <;> simp [addSpinAddRow, addX1Row,
+          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+      rw [hre]
+      simpa [addSpinAddIndex] using addSpinAddLaneHi (fun m i => m.a_1 i)
+        (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+    · intro r _ _ hoff
+      have hre : r = regidx_to_fin x1 := by
+        rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
+        rw [addSpinMainRowAt_zero] at hoff
+        fin_cases r <;> simp [addSpinAddRow, addX1Row,
+          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+      rw [hre]
+      simpa [addSpinAddIndex] using addSpinAddLaneLo (fun m i => m.b_0 i)
+        (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+    · intro r _ _ hoff
+      have hre : r = regidx_to_fin x1 := by
+        rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
+        rw [addSpinMainRowAt_zero] at hoff
+        fin_cases r <;> simp [addSpinAddRow, addX1Row,
+          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+      rw [hre]
+      simpa [addSpinAddIndex] using addSpinAddLaneHi (fun m i => m.b_1 i)
+        (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  · constructor <;> intro r hr hsrc hoff <;> exfalso
+    all_goals
+      rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hsrc
+      rw [addSpinMainRowAt_one] at hsrc
+      simpa [addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
+        ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+
 /-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
     `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
     witness already proves — no new content, and no hand-evaluated Sail execution. -/
@@ -366,7 +447,7 @@ def addSpinPcChain : SegmentPcChain addSpinAcceptedTrace addSpinSailTrace addSpi
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i))
-      addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion (fun i => sorry) addSpinRowsAligned
+      addSpinInputsAgree addSpinBootSeed addSpinOutsideDefectRegion addSpinLaneBridge addSpinRowsAligned
   boot := (pcSeed_of_inputsAgree addSpinInputsAgree).boot
 
 theorem addSpinRootSoundness :
@@ -375,7 +456,7 @@ theorem addSpinRootSoundness :
       (rowDecode_of_programDecode addSpinAcceptedTrace i (addSpinProgramDecodes i)) :=
   stepSound_of_programDecodes 2 addSpinAcceptedTrace addSpinSailTrace addSpinZiskStep
     addSpinProgramDecodes addSpinInputsAgreeCore addSpinPcChain addSpinRowsAligned
-    addSpinBootSeed addSpinOutsideDefectRegion (fun i => sorry)
+    addSpinBootSeed addSpinOutsideDefectRegion addSpinLaneBridge
 
 theorem addSpinAddStepSound :
     StepSound addSpinAcceptedTrace addSpinSailTrace addSpinAddIndex
@@ -454,7 +535,38 @@ def addPaddedAddProgramDecode :
   h_bits_set_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_pc := by simp [addSpinAddBits, addX1RomFlagBits]
   h_bits_store_ind := by simp [addSpinAddBits, addX1RomFlagBits]
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by
+    simp [addSpinAddBits, addX1RomFlagBits, addPaddedAddClaim, x1, regidx_to_fin]
+  aFacts := by
+    refine { h_src_reg := ?_, h_src_imm := ?_, h_program := ?_ }
+    · simp [addSpinAddBits, addX1RomFlagBits, addPaddedAddClaim, x1, regidx_to_fin]
+    · simp [addSpinAddBits, addX1RomFlagBits, addPaddedAddClaim, x1, regidx_to_fin]
+    · intro j hline
+      fin_cases j
+      · simp only [addPaddedAcceptedTrace, addSpinProgram]
+        norm_num [addSpinAddProgramRow, addX1ProgramRow,
+          addSpinAddBits, addX1RomFlagBits,
+          addPaddedAddClaim, x1, regidx_to_fin, Transpiler.ind, ZiskFv.AirsClean.Main.packFlags,
+          ZiskFv.AirsClean.boolF]
+      · rw [addPaddedMainPc_add, addPaddedAcceptedTrace_program] at hline
+        exfalso
+        have hval := congrArg (fun x : FGL => x.val) hline
+        norm_num [addPaddedAcceptedTrace, addSpinProgram, addSpinJalProgramRow] at hval
+  bFacts := by
+    refine { h_src_reg := ?_, h_src_imm := ?_, h_program := ?_ }
+    · simp [addSpinAddBits, addX1RomFlagBits, addPaddedAddClaim, x1, regidx_to_fin]
+    · simp [addSpinAddBits, addX1RomFlagBits, addPaddedAddClaim, x1, regidx_to_fin]
+    · intro j hline
+      fin_cases j
+      · simp only [addPaddedAcceptedTrace, addSpinProgram]
+        norm_num [addSpinAddProgramRow, addX1ProgramRow,
+          addSpinAddBits, addX1RomFlagBits,
+          addPaddedAddClaim, x1, regidx_to_fin, Transpiler.ind, ZiskFv.AirsClean.Main.packFlags,
+          ZiskFv.AirsClean.boolF]
+      · rw [addPaddedMainPc_add, addPaddedAcceptedTrace_program] at hline
+        exfalso
+        have hval := congrArg (fun x : FGL => x.val) hline
+        norm_num [addPaddedAcceptedTrace, addSpinProgram, addSpinJalProgramRow] at hval
   h_prog := by
     intro j hline
     change Fin 2 at j
@@ -589,6 +701,49 @@ def addPaddedRowsAligned :
   have hj : j < 1 - 1 := by omega
   interval_cases j <;> rfl
 
+set_option maxHeartbeats 4000000 in
+def addPaddedLaneBridge : ∀ i : Fin 1,
+    LaneBridge addPaddedAcceptedTrace (addPaddedSailTrace i) i.val := by
+  intro i
+  fin_cases i
+  constructor
+  · intro r _ _ hoff
+    have hre : r = regidx_to_fin x1 := by
+      rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
+      rw [addSpinMainRowAt_zero] at hoff
+      fin_cases r <;> simp [addSpinAddRow, addX1Row,
+        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+    rw [hre]
+    simpa [addPaddedAddIndex] using addPaddedAddLaneLo (fun m i => m.a_0 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  · intro r _ _ hoff
+    have hre : r = regidx_to_fin x1 := by
+      rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
+      rw [addSpinMainRowAt_zero] at hoff
+      fin_cases r <;> simp [addSpinAddRow, addX1Row,
+        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+    rw [hre]
+    simpa [addPaddedAddIndex] using addPaddedAddLaneHi (fun m i => m.a_1 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  · intro r _ _ hoff
+    have hre : r = regidx_to_fin x1 := by
+      rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
+      rw [addSpinMainRowAt_zero] at hoff
+      fin_cases r <;> simp [addSpinAddRow, addX1Row,
+        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+    rw [hre]
+    simpa [addPaddedAddIndex] using addPaddedAddLaneLo (fun m i => m.b_0 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+  · intro r _ _ hoff
+    have hre : r = regidx_to_fin x1 := by
+      rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
+      rw [addSpinMainRowAt_zero] at hoff
+      fin_cases r <;> simp [addSpinAddRow, addX1Row,
+        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+    rw [hre]
+    simpa [addPaddedAddIndex] using addPaddedAddLaneHi (fun m i => m.b_1 i)
+      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
+
 /-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
     `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
     witness already proves — no new content, and no hand-evaluated Sail execution. -/
@@ -596,7 +751,7 @@ def addPaddedPcChain : SegmentPcChain addPaddedAcceptedTrace addPaddedSailTrace 
   toSailRetireChain :=
     sailRetireChain_of_inputsAgree
       (fun i => rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i))
-      addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion (fun i => sorry) addPaddedRowsAligned
+      addPaddedInputsAgree addPaddedBootSeed addPaddedOutsideDefectRegion addPaddedLaneBridge addPaddedRowsAligned
   boot := (pcSeed_of_inputsAgree addPaddedInputsAgree).boot
 
 theorem addPaddedRootSoundness :
@@ -605,7 +760,7 @@ theorem addPaddedRootSoundness :
       (rowDecode_of_programDecode addPaddedAcceptedTrace i (addPaddedProgramDecodes i)) :=
   stepSound_of_programDecodes 1 addPaddedAcceptedTrace addPaddedSailTrace addPaddedZiskStep
     addPaddedProgramDecodes addPaddedInputsAgreeCore addPaddedPcChain addPaddedRowsAligned
-    addPaddedBootSeed addPaddedOutsideDefectRegion (fun i => sorry)
+    addPaddedBootSeed addPaddedOutsideDefectRegion addPaddedLaneBridge
 
 theorem addPaddedAddStepSound :
     StepSound addPaddedAcceptedTrace addPaddedSailTrace addPaddedAddIndex

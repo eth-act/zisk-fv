@@ -27,6 +27,11 @@ open ZiskFv.Channels.MemoryBus (MemBusMessage.toEntry)
 
 namespace ZiskFv.Compliance
 
+private lemma fin32_ne_zero_of_val_ne_zero (r : Fin 32) (h : r.val ≠ 0) :
+    r ≠ 0 := by
+  intro hr
+  exact h (congrArg Fin.val hr)
+
 /-- Soundness for every executed step, indexed by the COMMITTED-program decode
     family: given a satisfying assignment of circuits that does not involve any
     explicitly enumerated bugs, the zisk machine state transition agrees with the
@@ -259,13 +264,14 @@ private theorem stepRegWrite_converse_aux
   | _ =>
     rw [rd.h_store_reg]
     have h_addr2 := h_addr.2.2.1
-    rw [rd.h_store_ind, rd.h_store_offset] at h_addr2; simp at h_addr2
+    rw [rd.h_store_ind, rd.h_store_offset] at h_addr2
+    simp at h_addr2
     have he' := Option.some.inj he
     rw [show e.ptr = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.addr2
       from by exact congrArg (·.ptr) he'.symm] at h_r_ne
     rw [h_addr2, Transpiler.wrap_to_regidx_ind] at h_r_ne
     try simp only [Transpiler.regidxOfBitVec5, ne_eq, Fin.ext_iff, Fin.val_zero] at h_r_ne
-    simp [h_r_ne]
+    simp [h_r_ne, fin32_ne_zero_of_val_ne_zero]
 
 private lemma fgl_add_val_lt_of_sum_lt {a b : FGL} {bound : ℕ}
     (h_sum_lt : a.val + b.val < GL_prime)
