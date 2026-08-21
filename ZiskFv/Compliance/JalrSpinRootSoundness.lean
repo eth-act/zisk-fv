@@ -220,7 +220,7 @@ that are not ROM-message slots (`flag`, the `a`-lane mask, `c_1`, the
 def jalrProgramDecode :
     ProgramDecode_jalr jalrAcceptedTrace jalrIndex jalrClaim :=
   .unaligned
-    { h_and_store_reg := sorry
+    { h_and_store_reg := by rfl
       h_offset_zero := rfl
       h_idx2 := by
         simp [jalrIndex, jalrAcceptedTrace_mainTable_eq, jalrMainTable,
@@ -267,6 +267,7 @@ def jalrProgramDecode :
       h_add_ieo := rfl
       h_add_m32 := rfl
       h_add_set_pc := rfl
+      h_add_store_reg := rfl
       h_add_a_src_imm := rfl
       h_add_b_src_imm := rfl
       h_add_b_src_reg := rfl
@@ -346,8 +347,35 @@ def setupProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_bits_b_src_imm := rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    fin_cases j
+    · simp [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow, setupClaim,
+        x0, x1, Transpiler.ind, regidx_to_fin,
+        ZiskFv.AirsClean.Main.packFlags, jalrSetupBits, ZiskFv.AirsClean.boolF]
+    · change (jalrAcceptedTrace.program
+          (⟨1, by norm_num [jalrAcceptedTrace]⟩ :
+            Fin jalrAcceptedTrace.programLength)).line =
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable jalrAcceptedTrace.program
+          jalrAcceptedTrace.mainTable).pc 0 at hline
+      rw [setupMainPc] at hline
+      exfalso
+      have hfalse : (4 : FGL) = 0 := by
+        simpa [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] using hline
+      exact absurd (congrArg Fin.val hfalse) (by norm_num)
+    · change (jalrAcceptedTrace.program
+          (⟨2, by norm_num [jalrAcceptedTrace]⟩ :
+            Fin jalrAcceptedTrace.programLength)).line =
+        (ZiskFv.AirsClean.FullEnsemble.mainOfTable jalrAcceptedTrace.program
+          jalrAcceptedTrace.mainTable).pc 0 at hline
+      rw [setupMainPc] at hline
+      exfalso
+      have hfalse : (5 : FGL) = 0 := by
+        simpa [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] using hline
+      exact absurd (congrArg Fin.val hfalse) (by norm_num)
   h_prog := by
     intro j hline
     fin_cases j

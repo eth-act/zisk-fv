@@ -25,8 +25,19 @@ def divSpinAddiX1ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_bits_b_src_imm := rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq
+      divSpinAddiX1Index j hline
+    subst j
+    simp [divSpinAcceptedTrace, divSpinProgram, divSpinAddiX1Index,
+      divSpinAddiX1ProgramRow,
+      divSpinAddiX1Claim, x0, Transpiler.ind, regidx_to_fin, packFlags,
+      divSpinAddiBits, ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
+      ZiskFv.AirsClean.boolF]
   h_prog := by
     intro j hline
     have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq
@@ -52,8 +63,19 @@ def divSpinAddiX2ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_bits_b_src_imm := rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq
+      divSpinAddiX2Index j hline
+    subst j
+    simp [divSpinAcceptedTrace, divSpinProgram, divSpinAddiX2Index,
+      divSpinAddiX2ProgramRow,
+      divSpinAddiX2Claim, x0, Transpiler.ind, regidx_to_fin, packFlags,
+      divSpinAddiBits, ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
+      ZiskFv.AirsClean.boolF]
   h_prog := by
     intro j hline
     have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq
@@ -106,7 +128,7 @@ def divSpinDivProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_prog := by
     intro j hline
     have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq
@@ -131,7 +153,7 @@ def divSpinJalProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_prog := by
     intro j hline
     have hj := ZiskFv.Compliance.DivSpinRootSoundness.divSpinProgramIndex_eq

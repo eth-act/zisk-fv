@@ -232,8 +232,17 @@ def sdLdAddiA0ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_bits_b_src_imm := rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := sdLdProgramIndex_eq sdLdAddiA0Index j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    simp [sdLdProgram, sdLdAddiA0Index, sdLdAddiX1A0ProgramRow,
+      sdLdAddiA0Claim, x0, Transpiler.ind, regidx_to_fin, packFlags, addiX0Bits,
+      ZiskFv.AirsClean.boolF]
   h_prog := by
     intro j hline
     have hj : j = ⟨0, by decide⟩ := sdLdProgramIndex_eq sdLdAddiA0Index j hline
@@ -257,7 +266,24 @@ def sdLdSlliProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := sdLdProgramIndex_eq sdLdSlliIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    simp [sdLdProgram, sdLdSlliIndex, sdLdSlliX1ProgramRow,
+      sdLdSlliClaim, x1, Transpiler.ind, regidx_to_fin, packFlags, addiX1Bits,
+      ZiskFv.AirsClean.boolF]
+  bShiftFacts := by
+    refine { h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := sdLdProgramIndex_eq sdLdSlliIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    simp [sdLdProgram, sdLdSlliIndex, sdLdSlliX1ProgramRow,
+      sdLdSlliClaim, shamt_b_lo, packFlags, addiX1Bits, ZiskFv.AirsClean.boolF]
   h_prog := by
     intro j hline
     have hj : j = ⟨1, by decide⟩ := sdLdProgramIndex_eq sdLdSlliIndex j hline
@@ -279,8 +305,17 @@ def sdLdAddiEightProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_bits_b_src_imm := rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := sdLdProgramIndex_eq sdLdAddiEightIndex j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    simp [sdLdProgram, sdLdAddiEightIndex, sdLdAddiX1EightProgramRow,
+      sdLdAddiEightClaim, x1, Transpiler.ind, regidx_to_fin, packFlags, addiX1Bits,
+      ZiskFv.AirsClean.boolF]
   h_prog := by
     intro j hline
     have hj : j = ⟨2, by decide⟩ := sdLdProgramIndex_eq sdLdAddiEightIndex j hline
@@ -302,8 +337,17 @@ def sdLdAddiX2ProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_bits_b_src_imm := rfl
+  aFacts := by
+    refine { h_src_reg := by rfl, h_src_imm := by rfl, h_program := ?_ }
+    intro j hline
+    have hj := sdLdProgramIndex_eq sdLdAddiX2Index j hline
+    subst j
+    rw [sdLdAcceptedTrace_program]
+    simp [sdLdProgram, sdLdAddiX2Index, sdLdAddiX2ProgramRow,
+      sdLdAddiX2Claim, x0, Transpiler.ind, regidx_to_fin, packFlags, addiX0Bits,
+      ZiskFv.AirsClean.boolF]
   h_prog := by
     intro j hline
     have hj : j = ⟨3, by decide⟩ := sdLdProgramIndex_eq sdLdAddiX2Index j hline
@@ -324,7 +368,7 @@ def sdLdSdProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_prog := by
     intro j hline
     have hj : j = ⟨4, by decide⟩ := sdLdProgramIndex_eq sdLdSdIndex j hline
@@ -367,7 +411,7 @@ def sdLdJalProgramDecode :
   h_bits_set_pc := rfl
   h_bits_store_pc := rfl
   h_bits_store_ind := rfl
-  h_bits_store_reg := sorry
+  h_bits_store_reg := by rfl
   h_prog := by
     intro j hline
     have hj : j = ⟨6, by decide⟩ := sdLdProgramIndex_eq sdLdJalIndex j hline
