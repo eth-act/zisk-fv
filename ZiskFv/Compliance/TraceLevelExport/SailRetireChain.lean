@@ -808,6 +808,8 @@ theorem sailRetireChain_of_inputsAgree
     (bootSeed : BootSegmentMemorySeed ziskTrace binding ziskStep)
     (hAvoidKnownBugs : ∀ i : Fin ziskTrace.numInstructions,
       RowOutsideDefectRegion ziskTrace i (ziskStep i))
+    (lb : ∀ i : Fin ziskTrace.numInstructions,
+      LaneBridge ziskTrace (binding i) i.val)
     (aligned : StepRowsAligned ziskTrace ziskStep rowDecodes) :
     SailRetireChain ziskTrace binding ziskStep where
   retire := by
@@ -816,6 +818,7 @@ theorem sailRetireChain_of_inputsAgree
     have h_step := stepSound_of_evidence ziskTrace binding ⟨j, hj⟩ (ziskStep ⟨j, hj⟩)
       (rowDecodes ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩)
       (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
+      (lb ⟨j, hj⟩)
     have h_iff :=
       (stepSound_iff (binding := binding) ⟨j, hj⟩ (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)).mp h_step
     have h_ok :

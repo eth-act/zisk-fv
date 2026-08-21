@@ -64,6 +64,8 @@ pil-extract mem-air-facts --pilout <path> [--air Mem]
   `mem-air-facts`. Pilout symbols do not encode original `bits(N)`
   declarations, so the report attaches source lines from this file when
   supplied.
+- `--mem-align-pil-source <path>`: optional `mem_align.pil` source path for
+  the machine-checked MemAlign value-width coverage row.
 
 Output shape mirrors `openvm-fv/OpenvmFv/Extraction/*.lean`: one `constraint_N`
 definition per pilout constraint, typed over `Circuit F ExtF C` (from
@@ -253,11 +255,12 @@ surface behind the Lean `MemTableGeneratedAirFacts` package. It is not a Lean
 proof generator. Its purpose is to make the remaining Mem-table proof inputs
 concrete: which pilout constraints supply `generated_every_row`, which hints
 source range-check obligations, which witness/fixed columns are named, and
-which `mem.pil` lines provide bit-width provenance that pilout does not carry.
+which `mem.pil` and `mem_align.pil` lines provide bit-width provenance.
 
 ```
 pil-extract mem-air-facts --pilout build/zisk.pilout --air Mem \
     --pil-source zisk/state-machines/mem/pil/mem.pil \
+    --mem-align-pil-source zisk/state-machines/mem/pil/mem_align.pil \
     --output /tmp/mem-air-facts-report.md
 ```
 
@@ -271,8 +274,8 @@ symbols, and the `std_alpha`/`std_gamma` challenges. The report lists
 extractor-facing source for `MemTableGeneratedRangeFacts` and
 `MemSegmentGeneratedRangeFacts`. It also emits a Lean range-fact coverage table:
 range-check hints cover `incrementChunks`, `dualStepDelta`, and
-`distanceBaseChunks`, while `addrColumns` and `stepColumns` require the
-`mem.pil` bit-width lines supplied through `--pil-source`. The generated
+`distanceBaseChunks`. The `addrColumns`, `valueColumns`, and `stepColumns`
+facts require the `mem.pil` bit-width lines supplied through `--pil-source`. The generated
 artifact contract section names the remaining callback exactly: a generated
 Lean module should supply `FullWitnessMemAirSourceProverDataWitnessFacts` for
 the named `witness.data` sidecar keys and pass it to

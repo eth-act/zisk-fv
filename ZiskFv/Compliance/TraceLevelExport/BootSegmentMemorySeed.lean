@@ -97,6 +97,104 @@ theorem acceptedMemReplayRows_exists_active_rowAt
   exists_activeMemReplayEntry_rowAt_of_fullWitnessMemReplayBridge
     (ziskTrace.memReplayBridge h_present) h_entry
 
+/-- Every accepted mutable-Mem replay entry carries the source-declared
+32-bit bounds for both value columns. -/
+theorem AcceptedZiskTrace.memory_entry_chunks_in_range_of_memReplayRows
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {h_present : MutableMemPresent ziskTrace.witness}
+    {entry : MemoryBusEntry FGL}
+    (h_entry : entry ∈ ziskTrace.memReplayRows h_present) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range entry := by
+  obtain ⟨idx, h_active⟩ :=
+    acceptedMemReplayRows_exists_active_rowAt (ziskTrace := ziskTrace) h_entry
+  have h_values := (ziskTrace.memReplayBridge h_present).rowRanges.valueColumns idx
+  rcases activeMemReplayEntriesOfRow_mem_eq_primary_or_dual h_active with
+    h_primary | h_dual
+  · subst entry
+    simpa [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range] using h_values
+  · subst entry
+    simpa [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range] using h_values
+
+/-- A selected general MemAlign provider row carries the source-declared
+32-bit bounds for both memory-entry chunks. -/
+theorem AcceptedZiskTrace.memory_entry_chunks_in_range_of_memAlignLoadProviderRowMatchSpec
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {entry : MemoryBusEntry FGL}
+    (h_provider : MemAlignLoadProviderRowMatchSpec
+      ziskTrace.program ziskTrace.witness entry) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range entry := by
+  rcases h_provider with
+    ⟨providerTable, h_providerTable, providerRow, h_providerRow,
+      _h_spec, h_component, h_match⟩
+  have h_constraints :=
+    ziskTrace.constraints_hold providerTable h_providerTable providerRow h_providerRow
+  rw [h_component] at h_constraints
+  have h_ranges :=
+    ZiskFv.AirsClean.MemAlign.value_ranges_of_component_constraints
+      (providerTable.environment providerRow) h_constraints
+  obtain ⟨_, _, _, _, _, _, h_value_0, h_value_1, _⟩ := h_match
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_lo,
+    ZiskFv.Airs.MemoryBus.memory_entry_hi] at h_value_0 h_value_1
+  constructor
+  · rw [← h_value_0]
+    exact h_ranges.1
+  · rw [← h_value_1]
+    exact h_ranges.2
+
+/-- A selected MemAlignReadByte provider row has one byte in its low chunk
+and zero in its high chunk. -/
+theorem memory_entry_chunks_in_range_of_memAlignReadByteLoadProviderRowMatchSpec
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    {entry : MemoryBusEntry FGL}
+    (h_provider : MemAlignReadByteLoadProviderRowMatchSpec program witness entry) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range entry := by
+  rcases h_provider with
+    ⟨providerTable, _, providerRow, _, h_spec, h_component, h_match⟩
+  rw [h_component] at h_spec
+  rw [ZiskFv.AirsClean.MemAlignReadByte.component_spec] at h_spec
+  have h_row_spec : ZiskFv.AirsClean.MemAlignReadByte.Spec
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar) := by
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+      eval_varFromOffset_valueFromOffset] using h_spec
+  obtain ⟨_, _, h_value_0, h_value_1, _⟩ := h_match
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_lo,
+    ZiskFv.Airs.MemoryBus.memory_entry_hi] at h_value_0 h_value_1
+  constructor
+  · rw [← h_value_0]
+    exact lt_trans h_row_spec.2 (by norm_num)
+  · rw [h_value_1]
+    norm_num
+
+/-- A selected MemAlignByte provider row has one byte in its low chunk and
+zero in its high chunk. -/
+theorem memory_entry_chunks_in_range_of_memAlignByteLoadProviderRowMatchSpec
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    {entry : MemoryBusEntry FGL}
+    (h_provider : MemAlignByteLoadProviderRowMatchSpec program witness entry) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range entry := by
+  rcases h_provider with
+    ⟨providerTable, _, providerRow, _, h_spec, h_component, h_match⟩
+  rw [h_component] at h_spec
+  rw [ZiskFv.AirsClean.MemAlignByte.component_spec] at h_spec
+  have h_row_spec : ZiskFv.AirsClean.MemAlignByte.Spec
+      (eval (providerTable.environment providerRow)
+        ZiskFv.AirsClean.MemAlignByte.component.rowInputVar) := by
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+      eval_varFromOffset_valueFromOffset] using h_spec
+  obtain ⟨_, _, _, h_value_0, h_value_1, _⟩ := h_match
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_lo,
+    ZiskFv.Airs.MemoryBus.memory_entry_hi] at h_value_0 h_value_1
+  constructor
+  · rw [← h_value_0]
+    exact lt_trans h_row_spec.2.2.2.2.2.1 (by norm_num)
+  · rw [h_value_1]
+    norm_num
+
 /-- Accepted-trace wrapper for Mem-source chronology within one byte pointer:
 accepted active replay rows are ordered by nondecreasing timestamps whenever
 their byte pointers agree. -/
@@ -1135,6 +1233,60 @@ theorem AcceptedZiskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderE
     · exact False.elim
         (not_activeMainRegisterBoundaryProviderRowMatchSpec_of_main_mem_op_one
           h_mainEval h_main_mem_op h_regBoundary)
+
+/-- The accepted provider coverage gives both source-declared 32-bit bounds
+for the concrete Main load entry. This result does not require the MemAlign
+prove-selector defect exclusion because either selector case carries the same
+value-column bounds. -/
+theorem AcceptedZiskTrace.loadBMem_entry_chunks_in_range
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (h_present : MutableMemPresent ziskTrace.witness)
+    (i : Fin ziskTrace.numInstructions)
+    (h_b_src_ind : (mainRowWithRomLd ziskTrace i).rom.b_src_ind = 1)
+    (h_active :
+      -((mainRowWithRomLd ziskTrace i).rom.b_src_mem
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_ind
+        + (mainRowWithRomLd ziskTrace i).rom.b_src_reg) = (-1 : FGL)) :
+    ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+      (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 := by
+  let selected := (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
+  by_cases h_no_forge :
+      ¬ Defects.MemAlignSkippableProveForge
+        ziskTrace.program ziskTrace.witness selected
+  · have h_no_selected : LoadBNoMemAlignSkippableProveForge ziskTrace i :=
+      loadBNoMemAlignSkippableProveForge_of_selected h_no_forge
+    obtain ⟨entry, h_match, h_provider⟩ :=
+      ziskTrace.memReplayRows_or_memAlignProvider_of_loadBMemProviderEntry
+        h_present i h_b_src_ind h_active h_no_selected
+    have h_range : ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range entry := by
+      rcases h_provider with h_mem | h_marb | h_mab | h_memAlign
+      · exact ziskTrace.memory_entry_chunks_in_range_of_memReplayRows h_mem
+      · exact memory_entry_chunks_in_range_of_memAlignReadByteLoadProviderRowMatchSpec h_marb
+      · exact memory_entry_chunks_in_range_of_memAlignByteLoadProviderRowMatchSpec h_mab
+      · exact ziskTrace.memory_entry_chunks_in_range_of_memAlignLoadProviderRowMatchSpec h_memAlign
+    have h_eq : selected = entry :=
+      ZiskFv.ZiskCircuit.MemTimeline.eq_of_matches_memory_entry h_match
+    change ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range selected
+    rw [h_eq]
+    exact h_range
+  · have h_forge : Defects.MemAlignSkippableProveForge
+        ziskTrace.program ziskTrace.witness selected := not_not.mp h_no_forge
+    rcases h_forge with
+      ⟨_, _, _, _, providerTable, h_providerTable, _, providerRow,
+        h_providerRow, _, h_component, _, multiplicity, h_match, _⟩
+    have h_constraints :=
+      ziskTrace.constraints_hold providerTable h_providerTable providerRow h_providerRow
+    rw [h_component] at h_constraints
+    have h_ranges :=
+      ZiskFv.AirsClean.MemAlign.value_ranges_of_component_constraints
+        (providerTable.environment providerRow) h_constraints
+    have h_eq := ZiskFv.ZiskCircuit.MemTimeline.eq_of_matches_memory_entry h_match
+    change ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range selected
+    rw [h_eq]
+    simpa [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range,
+      ZiskFv.AirsClean.MemAlign.eval_memBusMessageExpr,
+      ZiskFv.AirsClean.MemAlign.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ranges
 
 /-- Coverage version of the load `b` provider split.
 
@@ -2401,6 +2553,32 @@ theorem rowsOf_eq_memoryRowsOfStep_of_placement
     first
     | exact h_placement
     | exact h_placement.1
+
+/-- Any structural load row makes the seed's execution-row list nonempty and
+therefore exposes the accepted mutable-Mem replay bridge. -/
+theorem BootSegmentMemorySeed.memPresent_of_load
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    {binding : SailTrace ziskTrace.numInstructions}
+    {ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i}
+    (seed : BootSegmentMemorySeed ziskTrace binding ziskStep)
+    (i : Fin ziskTrace.numInstructions)
+    (h_load : ZiskStepLoadMemoryRows ziskTrace i (ziskStep i)) :
+    MutableMemPresent ziskTrace.witness := by
+  apply seed.memPresent_of_executionRows_nonempty
+  intro h_empty
+  have h_rows := rowsOf_eq_memoryRowsOfStep_of_placement
+    i (ziskStep i) (seed.placement i)
+  have h_member :
+      (memoryRowsOfStep ziskTrace i (ziskStep i)).head! ∈
+        (List.range ziskTrace.numInstructions).flatMap seed.rowsOf := by
+    apply List.mem_flatMap.mpr
+    refine ⟨i.val, List.mem_range.mpr i.isLt, ?_⟩
+    rw [h_rows]
+    generalize h_step : ziskStep i = step at h_load ⊢
+    cases step <;>
+      simp [ZiskStepLoadMemoryRows, memoryRowsOfStep] at h_load ⊢
+  rw [h_empty] at h_member
+  simp at h_member
 
 /-- Placement identifies the whole execution-order `rowsOf` list with the
 structural per-step decoder row list, not merely row membership. This is the

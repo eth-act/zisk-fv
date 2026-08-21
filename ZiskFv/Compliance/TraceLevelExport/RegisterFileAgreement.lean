@@ -438,6 +438,18 @@ trace to be *chained*. On a bare `Fin n → SequentialState` there is no equatio
 `j + 1` to step `j`'s post-state, so `RegAgree j → RegAgree (j + 1)` could not even be stated
 without assuming one, which is the swap the anti-laundering rule forbids. -/
 
+theorem regAgree_zero
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_boot : ∀ k : Fin 32, k ≠ 0 →
+      init.regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64))) :
+    RegAgree ziskStep rowDecode init 0 := by
+  intro k hk
+  rw [chainedSailStates, h_boot k hk, ziskRegFile_zero]
+
 /-- **Writeback preservation.** If the register files agree before a step, they agree after it.
 
     Sail's side: the post-state's registers are the pre-state's with the write entry applied
@@ -578,54 +590,79 @@ theorem ziskRegFile_eq_of_no_writes_between
 
 /-! ## Lane decomposition of `entryRegValue`
 
-The register fields (`h_a_lo_t`, `h_a_hi_t`, …) equate a Main-table column to
+The register fields (`h_a_lo`, `h_a_hi`, …) equate a Main-table column to
 `lane_lo`/`lane_hi` of a Sail register. `entryRegValue` is a `BitVec 64` built
 from byte projections of a `MemoryBusEntry`. These two lemmas say that splitting
 it into lanes recovers the entry's chunk fields, so the register-file invariant
 can replace the per-row assumptions. -/
 
+private lemma entryRegValue_toNat (e : Interaction.MemoryBusEntry FGL)
+    (h_v0 : e.value_0.val < 4294967296) (h_v1 : e.value_1.val < 4294967296) :
+    (entryRegValue e).toNat = e.value_0.val + e.value_1.val * 4294967296 := by
+  show (U64.toBV #v[(ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 0 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 1 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 2 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_0 3 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 0 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 1 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 2 : BitVec 8),
+    (ZiskFv.Channels.MemoryBusBytes.byteOf e.value_1 3 : BitVec 8)]).toNat = _
+  exact ZiskFv.Channels.MemoryBusBytes.u64_toBV_chunks_toNat
+    e.value_0 e.value_1 h_v0 h_v1
+
 open ZiskFv.Airs.MemoryBus in
 lemma lane_lo_entryRegValue (e : Interaction.MemoryBusEntry FGL)
-    (h_range : memory_entry_chunks_in_range e)
-    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    (h_range : memory_entry_chunks_in_range e) :
     ZiskFv.Trusted.lane_lo (entryRegValue e) = e.value_0 := by
-  have h_bridge := memory_entry_toField_eq_toBV_toNat e h_range h_no_wrap
-  unfold entryRegValue
-  rw [h_bridge]
   obtain ⟨h_v0, h_v1⟩ := h_range
-  simp only [memory_entry_packed_no_wrap] at h_no_wrap
-  have h_lit : ((4294967296 : FGL) : Fin GL_prime).val = 4294967296 :=
-    Nat.mod_eq_of_lt (by decide)
-  have h_val : (memory_entry_toField e).val = e.value_0.val + e.value_1.val * 4294967296 := by
-    simp only [memory_entry_toField, Fin.val_add, Fin.val_mul, h_lit,
-      Nat.mod_eq_of_lt (show e.value_1.val * 4294967296 < GL_prime by omega),
-      Nat.mod_eq_of_lt h_no_wrap]
-  have h_lt64 : e.value_0.val + e.value_1.val * 4294967296 < 2 ^ 64 := by omega
-  simp only [ZiskFv.Trusted.lane_lo, BitVec.toNat_ofNat, h_val]
+  have h_toNat := entryRegValue_toNat e h_v0 h_v1
+  simp only [ZiskFv.Trusted.lane_lo]
   refine Fin.ext ?_
-  simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_mod_self_right,
-    Nat.mod_eq_of_lt h_v0]
+  simp only [Fin.val_mk, h_toNat, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt h_v0]
 
 open ZiskFv.Airs.MemoryBus in
 lemma lane_hi_entryRegValue (e : Interaction.MemoryBusEntry FGL)
-    (h_range : memory_entry_chunks_in_range e)
-    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    (h_range : memory_entry_chunks_in_range e) :
     ZiskFv.Trusted.lane_hi (entryRegValue e) = e.value_1 := by
-  have h_bridge := memory_entry_toField_eq_toBV_toNat e h_range h_no_wrap
-  unfold entryRegValue
-  rw [h_bridge]
   obtain ⟨h_v0, h_v1⟩ := h_range
-  simp only [memory_entry_packed_no_wrap] at h_no_wrap
-  have h_lit : ((4294967296 : FGL) : Fin GL_prime).val = 4294967296 :=
-    Nat.mod_eq_of_lt (by decide)
-  have h_val : (memory_entry_toField e).val = e.value_0.val + e.value_1.val * 4294967296 := by
-    simp only [memory_entry_toField, Fin.val_add, Fin.val_mul, h_lit,
-      Nat.mod_eq_of_lt (show e.value_1.val * 4294967296 < GL_prime by omega),
-      Nat.mod_eq_of_lt h_no_wrap]
-  have h_lt64 : e.value_0.val + e.value_1.val * 4294967296 < 2 ^ 64 := by omega
-  simp only [ZiskFv.Trusted.lane_hi, BitVec.toNat_ofNat, h_val]
+  have h_toNat := entryRegValue_toNat e h_v0 h_v1
+  simp only [ZiskFv.Trusted.lane_hi]
   refine Fin.ext ?_
-  simp only [Fin.val_mk, Nat.mod_eq_of_lt h_lt64, Nat.add_mul_div_right _ _ (by omega : 0 < 4294967296),
+  simp only [h_toNat, Nat.add_mul_div_right _ _ (by omega : 0 < 4294967296),
     Nat.div_eq_of_lt h_v0, Nat.zero_add, Nat.mod_eq_of_lt h_v1]
+
+/-! ## Sail-side bridge: `RegAgree → sail_to_rv64.xreg = ziskRegFile`
+
+Given `RegAgree j`, the Sail state's register value (via `read_xreg` and `sail_to_rv64`)
+equals the ZisK register file. The cast between `RegisterType (reg_of_fin k)` and
+`BitVec 64` cancels by `register_type_reg_of_fin_equiv`. -/
+
+theorem read_xreg_of_regAgree
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (k : Fin 32) (h_k : k ≠ 0)
+    (h_ra : RegAgree ziskStep rowDecode init j) :
+    read_xreg k (chainedSailStates ziskStep init j) =
+      EStateM.Result.ok (ziskRegFile ziskStep rowDecode j k)
+        (chainedSailStates ziskStep init j) := by
+  have h_get := h_ra k h_k
+  set state := chainedSailStates ziskStep init j with hstate
+  set v := ziskRegFile ziskStep rowDecode j k with hv
+  fin_cases k <;> simp_all [read_xreg, Sail.readReg, PreSail.readReg, reg_of_fin]
+
+theorem sail_xreg_eq_ziskRegFile
+    {ziskTrace : AcceptedZiskTrace numInstructions}
+    (ziskStep : ∀ i : Fin ziskTrace.numInstructions, ZiskStep ziskTrace i)
+    (rowDecode : ∀ i : Fin ziskTrace.numInstructions, RowDecode ziskTrace i (ziskStep i))
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (j : ℕ) (k : Fin 32) (h_k : k ≠ 0)
+    (h_ra : RegAgree ziskStep rowDecode init j) :
+    (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
+      (chainedSailStates ziskStep init j)).xreg k =
+      ziskRegFile ziskStep rowDecode j k :=
+  ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg _ k _
+    (read_xreg_of_regAgree ziskStep rowDecode init j k h_k h_ra)
 
 end ZiskFv.Compliance

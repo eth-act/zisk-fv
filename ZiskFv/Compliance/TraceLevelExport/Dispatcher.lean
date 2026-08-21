@@ -30,6 +30,7 @@ import ZiskFv.Compliance.TraceLevelExport.StepStrongControlStore
 import ZiskFv.Compliance.TraceLevelExport.StepStrongLoadMext
 import ZiskFv.Compliance.TraceLevelExport.StepStrongSignedM
 import ZiskFv.Compliance.TraceLevelExport.RowDataSplit
+import ZiskFv.Compliance.TraceLevelExport.LaneBridge
 
 namespace ZiskFv.Compliance
 
@@ -1356,87 +1357,321 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
     (i : Fin ziskTrace.numInstructions) (zs : ZiskStep ziskTrace i)
     (rd : RowDecode ziskTrace i zs) (ia : InputsAgree ziskTrace sailTrace i zs)
     (memEv : MemoryOpEvidenceFor ziskTrace sailTrace i zs)
-    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs) :
+    (hAvoidKnownBugs : RowOutsideDefectRegion ziskTrace i zs)
+    (lb : LaneBridge ziskTrace (sailTrace i) i.val) :
     StepSound ziskTrace sailTrace i zs rd := by
   cases zs with
   | sub c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sub ziskTrace sailTrace i (toRowData_sub c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | and c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_and ziskTrace sailTrace i (toRowData_and c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | or c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_or ziskTrace sailTrace i (toRowData_or c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | xor c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_xor ziskTrace sailTrace i (toRowData_xor c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | slt c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_slt ziskTrace sailTrace i (toRowData_slt c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | sltu c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sltu ziskTrace sailTrace i (toRowData_sltu c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | andi c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_andi ziskTrace sailTrace i (toRowData_andi c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | ori c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_ori ziskTrace sailTrace i (toRowData_ori c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | xori c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_xori ziskTrace sailTrace i (toRowData_xori c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | slti c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_slti ziskTrace sailTrace i (toRowData_slti c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | sltiu c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sltiu ziskTrace sailTrace i (toRowData_sltiu c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | sll c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sll ziskTrace sailTrace i (toRowData_sll c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | srl c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_srl ziskTrace sailTrace i (toRowData_srl c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | sra c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sra ziskTrace sailTrace i (toRowData_sra c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | slli c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_slli ziskTrace sailTrace i (toRowData_slli c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | srli c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_srli ziskTrace sailTrace i (toRowData_srli c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | srai c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_srai ziskTrace sailTrace i (toRowData_srai c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | add c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_add ziskTrace sailTrace i (toRowData_add c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | addi c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_addi ziskTrace sailTrace i (toRowData_addi c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | subw c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_subw ziskTrace sailTrace i (toRowData_subw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | addw c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_addw ziskTrace sailTrace i (toRowData_addw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | addiw c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_addiw ziskTrace sailTrace i (toRowData_addiw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
   | sllw c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sllw ziskTrace sailTrace i (toRowData_sllw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | srlw c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_srlw ziskTrace sailTrace i (toRowData_srlw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | sraw c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_sraw ziskTrace sailTrace i (toRowData_sraw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
-  | slliw c => exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia) hAvoidKnownBugs
-  | srliw c => exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia) hAvoidKnownBugs
-  | sraiw c => exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia) hAvoidKnownBugs
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+  | slliw c =>
+      have h_domain : SequentialPcDomain c.slliw_input.PC := hAvoidKnownBugs
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
+      exact stepStrong_slliw ziskTrace sailTrace i (toRowData_slliw c rd ia)
+        h_domain
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
+  | srliw c =>
+      have h_domain : SequentialPcDomain c.srliw_input.PC := hAvoidKnownBugs
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
+      exact stepStrong_srliw ziskTrace sailTrace i (toRowData_srliw c rd ia)
+        h_domain
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
+  | sraiw c =>
+      have h_domain : SequentialPcDomain c.sraiw_input.PC := hAvoidKnownBugs
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
+      exact stepStrong_sraiw ziskTrace sailTrace i (toRowData_sraiw c rd ia)
+        h_domain
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (by
+          have ⟨_, _, hb, _⟩ := hSS
+          rw [rd.h_b_src_imm] at hb
+          exact (fgl_eq_of_mul_sub_zero _ _ hb).trans rd.h_b_offset_imm0)
   | mul c =>
       exact stepStrong_mul ziskTrace sailTrace i (toRowData_mul c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs.1)
@@ -1490,47 +1725,101 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
       exact stepStrong_remuw ziskTrace sailTrace i (toRowData_remuw c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | beq c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_beq ziskTrace sailTrace i (toRowData_beq c rd ia)
         (by
           change BranchRangeDomain ziskTrace i ia.beq_input.PC
             (BitVec.signExtend 64 ia.beq_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | bne c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_bne ziskTrace sailTrace i (toRowData_bne c rd ia)
         (by
           change BranchRangeDomain ziskTrace i ia.bne_input.PC
             (BitVec.signExtend 64 ia.bne_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | blt c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_blt ziskTrace sailTrace i (toRowData_blt c rd ia)
         (by
           change BranchRangeDomain ziskTrace i ia.blt_input.PC
             (BitVec.signExtend 64 ia.blt_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | bge c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_bge ziskTrace sailTrace i (toRowData_bge c rd ia)
         (by
           change BranchRangeDomain ziskTrace i ia.bge_input.PC
             (BitVec.signExtend 64 ia.bge_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | bltu c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_bltu ziskTrace sailTrace i (toRowData_bltu c rd ia)
         (by
           change BranchRangeDomain ziskTrace i ia.bltu_input.PC
             (BitVec.signExtend 64 ia.bltu_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | bgeu c =>
+      have hSS := RomDecodeBinding.mainRowWithRomSub_sourceSpec ziskTrace i
       exact stepStrong_bgeu ziskTrace sailTrace i (toRowData_bgeu c rd ia)
         (by
           change BranchRangeDomain ziskTrace i ia.bgeu_input.PC
             (BitVec.signExtend 64 ia.bgeu_input.imm)
           simpa [ia.h_input_imm] using
             branchRangeDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+        (a_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (a_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r1) lb hSS
+          rd.h_a_src_reg rd.h_a_offset_imm0 rd.h_a_src_imm rd.h_a_imm1)
+        (b_lo_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
+        (b_hi_of_laneBridge ziskTrace _ i.val (regidx_to_fin c.r2) lb hSS
+          rd.h_b_src_reg rd.h_b_offset_imm0 rd.h_b_src_imm rd.h_b_imm1)
   | lui c =>
       exact stepStrong_lui ziskTrace sailTrace i (toRowData_lui c rd ia)
         (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)

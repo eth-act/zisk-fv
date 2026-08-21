@@ -1343,6 +1343,11 @@ local macro "store_program_decode" nm:ident "," inp:term "," f3:term ","
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_true hstore
+        h_bits_store_reg := by
+          simp only [romFlagBitsOfExtract]
+          exact decide_eq_false (by
+            rw [hstore]
+            simp [zisk_inst.STORE_IND, zisk_inst.STORE_REG])
         h_prog := by
           intro j hline
           obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -1422,6 +1427,11 @@ noncomputable def ProgramDecode_sd_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_true hstore
+      h_bits_store_reg := by
+        simp only [romFlagBitsOfExtract]
+        exact decide_eq_false (by
+          rw [hstore]
+          simp [zisk_inst.STORE_IND, zisk_inst.STORE_REG])
       h_prog := by
         intro j hline
         obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline

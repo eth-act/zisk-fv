@@ -46,7 +46,7 @@ The shifts are a **separate template instantiation**, not the
 
 3. **m32 = 0 lane route via `one_sub_zero_mul`.** The lane→Sail binding
    `h_input_r1_row : r1_val = rowA64 row` is derived from the named lane bridges
-   (`h_a_lo_t`/`h_a_hi_t`) + the Sail read via
+   (`h_a_lo`/`h_a_hi`) + the Sail read via
    `packed_a_eq_of_shift_match_m32_0_of_a_range`
    (`EquivCore/Bridge/BinaryExtension.lean:240`), which is the
    `simp only [one_sub_zero_mul]` route (line 269) — correct for the m32 = 0
@@ -110,9 +110,9 @@ theorem shift_m32_0_input_r1_row_of_facts
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
     (r_main : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
-    (h_a_lo_t : m.a_0 r_main =
+    (h_a_lo : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
-    (h_a_hi_t : m.a_1 r_main =
+    (h_a_hi : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -150,7 +150,7 @@ theorem shift_m32_0_input_r1_row_of_facts
   have h :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0_of_a_range
       m v r_main 0 rs1 r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_read_r1 h_op_is_shift h_match_v h_a_range
+      h_m32 h_a_lo h_a_hi h_read_r1 h_op_is_shift h_match_v h_a_range
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowA64] using h
 
@@ -163,9 +163,9 @@ theorem shift_m32_0_shift_pin_row_of_facts
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
     (r_main : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
-    (h_b_lo_t : m.b_0 r_main =
+    (h_b_lo : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
-    (h_b_hi_t : m.b_1 r_main =
+    (h_b_hi : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -195,7 +195,7 @@ theorem shift_m32_0_shift_pin_row_of_facts
   have h :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0_of_b0_range
       m v r_main 0 rs2 r2_val
-      h_m32 h_b_lo_t h_b_hi_t h_read_r2 h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
+      h_m32 h_b_lo h_b_hi h_read_r2 h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowShiftAmount] using h
 
@@ -264,7 +264,7 @@ theorem shift_imm_shift_pin_row_of_facts
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
     (r_main : ℕ) (shamt : BitVec 6)
-    (h_b_lo_t : m.b_0 r_main = shamt_b_lo shamt)
+    (h_b_lo : m.b_0 r_main = shamt_b_lo shamt)
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage row) 1))
@@ -291,7 +291,7 @@ theorem shift_imm_shift_pin_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range
   have h :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_immediate_eq_of_shift_match_of_b0_range
-      m v r_main 0 shamt h_b_lo_t h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
+      m v r_main 0 shamt h_b_lo h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowShiftAmount] using h
 
@@ -302,7 +302,7 @@ theorem shift_imm_shift_pin_row_of_facts
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder.
@@ -340,22 +340,22 @@ theorem construction_sll_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sll_input.PC)
     (h_input_rd : sll_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -451,10 +451,10 @@ theorem construction_sll_sound_claimed_dead
       (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sll_input.r1_val
-      h_m32_zero h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sll_input.r2_val
-      h_m32_zero h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLL
     state sll_input r1 r2 rd m
@@ -469,7 +469,7 @@ theorem construction_sll_sound_claimed_dead
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder.
@@ -507,22 +507,22 @@ theorem construction_srl_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some srl_input.PC)
     (h_input_rd : srl_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -618,10 +618,10 @@ theorem construction_srl_sound_claimed_dead
       (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srl_input.r1_val
-      h_m32_zero h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) srl_input.r2_val
-      h_m32_zero h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRL
     state srl_input r1 r2 rd m
@@ -636,7 +636,7 @@ theorem construction_srl_sound_claimed_dead
     * (b) decode pins (4): `h_main_op`, `h_main_active`, `h_m32`, `h_store_pc`
     * (b) Sail reads + operands (5): `h_input_r1`, `h_input_r2`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) lane bridges (4): `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
+    * (b) lane bridges (4): `h_a_lo`, `h_a_hi`, `h_b_lo`, `h_b_hi`
     * (b)-pending-infra (1): `h_nextPC_matches`
     * (c) exec artifacts (3): `h_exec_len`, `h_e0_mult`, `h_e1_mult`, PLUS the
       genuine `execRow` ∀-binder.
@@ -674,22 +674,22 @@ theorem construction_sra_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sra_input.PC)
     (h_input_rd : sra_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -785,10 +785,10 @@ theorem construction_sra_sound_claimed_dead
       (Or.inr (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sra_input.r1_val
-      h_m32_zero h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sra_input.r2_val
-      h_m32_zero h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRA
     state sra_input r1 r2 rd m
@@ -806,8 +806,8 @@ theorem construction_sra_sound_claimed_dead
     `execute_instruction (SHIFTIOP SLLI) = (bus_effect …).2`.
 
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
-    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi_t`, add `shamt` +
-    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
+    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi`, add `shamt` +
+    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo`. -/
 theorem construction_slli_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -835,17 +835,17 @@ theorem construction_slli_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some slli_input.PC)
     (h_input_rd : slli_input.rd = regidx_to_fin rd)
     -- (b) lane bridges (a-lanes for r1; the b_0 lane is a decode pin on shamt)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_shamt :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_b_lo shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
@@ -928,7 +928,7 @@ theorem construction_slli_sound_claimed_dead
       (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) slli_input.r1_val
-      h_m32_zero h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
       slli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
@@ -936,7 +936,7 @@ theorem construction_slli_sound_claimed_dead
             (providerTable.environment providerRow)) := by
     rw [h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
-      h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLI
     state slli_input r1 rd shamt m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -953,8 +953,8 @@ theorem construction_slli_sound_claimed_dead
     `execute_instruction (SHIFTIOP SLLI) = (bus_effect …).2`.
 
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
-    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi_t`, add `shamt` +
-    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
+    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi`, add `shamt` +
+    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo`. -/
 theorem construction_srli_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -982,17 +982,17 @@ theorem construction_srli_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some srli_input.PC)
     (h_input_rd : srli_input.rd = regidx_to_fin rd)
     -- (b) lane bridges (a-lanes for r1; the b_0 lane is a decode pin on shamt)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_shamt :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_b_lo shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
@@ -1075,7 +1075,7 @@ theorem construction_srli_sound_claimed_dead
       (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srli_input.r1_val
-      h_m32_zero h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
       srli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
@@ -1083,7 +1083,7 @@ theorem construction_srli_sound_claimed_dead
             (providerTable.environment providerRow)) := by
     rw [h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
-      h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLI
     state srli_input r1 rd shamt m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -1100,8 +1100,8 @@ theorem construction_srli_sound_claimed_dead
     `execute_instruction (SHIFTIOP SLLI) = (bus_effect …).2`.
 
     Residual budget: 16 hyp binders + `shamt` + `execRow` (vs the register
-    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi_t`, add `shamt` +
-    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo_t`. -/
+    variant's 17 + execRow): drop `h_input_r2`/`h_b_hi`, add `shamt` +
+    `h_input_shamt`; the `b_0` decode pin replaces the register `h_b_lo`. -/
 theorem construction_srai_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
     (binding : SailTrace trace.numInstructions)
@@ -1129,17 +1129,17 @@ theorem construction_srai_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some srai_input.PC)
     (h_input_rd : srai_input.rd = regidx_to_fin rd)
     -- (b) lane bridges (a-lanes for r1; the b_0 lane is a decode pin on shamt)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_shamt :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_b_lo shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
@@ -1222,7 +1222,7 @@ theorem construction_srai_sound_claimed_dead
       (Or.inr (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))
   have h_input_r1_row :=
     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srai_input.r1_val
-      h_m32_zero h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :
       srai_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
@@ -1230,7 +1230,7 @@ theorem construction_srai_sound_claimed_dead
             (providerTable.environment providerRow)) := by
     rw [h_input_shamt]
     exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
-      h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAI
     state srai_input r1 rd shamt m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -1261,9 +1261,9 @@ theorem shift_m32_1_input_r1_row_of_facts
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
     (r_main : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 1)
-    (h_a_lo_t : m.a_0 r_main =
+    (h_a_lo : m.a_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
-    (h_a_hi_t : m.a_1 r_main =
+    (h_a_hi : m.a_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs1))
     (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -1302,7 +1302,7 @@ theorem shift_m32_1_input_r1_row_of_facts
   have h :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
       m v r_main 0 rs1 r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_read_r1 h_op_is_shift h_match_v h_a_range
+      h_m32 h_a_lo h_a_hi h_read_r1 h_op_is_shift h_match_v h_a_range
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowA32] using h
 
@@ -1318,9 +1318,9 @@ theorem shift_m32_1_shift_pin_row_of_facts
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
     (r_main : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
-    (h_b_lo_t : m.b_0 r_main =
+    (h_b_lo : m.b_0 r_main =
       ZiskFv.Trusted.lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
-    (h_b_hi_t : m.b_1 r_main =
+    (h_b_hi : m.b_1 r_main =
       ZiskFv.Trusted.lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -1350,7 +1350,7 @@ theorem shift_m32_1_shift_pin_row_of_facts
   have h :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_w_eq_of_shift_match_of_b0_range
       m v r_main 0 rs2 r2_val
-      h_b_lo_t h_b_hi_t h_read_r2 h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
+      h_b_lo h_b_hi h_read_r2 h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   -- bridge LHS is `(extractLsb r2_val 31 0).toNat % 32`; the low 5 bits are
   -- preserved by the low-32 extract, so it equals `r2_val.toNat % 32`.
   have h_extract :
@@ -1372,7 +1372,7 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
     (r_main : ℕ) (shamt : BitVec 5)
-    (h_b_lo_t : m.b_0 r_main = shamt_w_b_lo shamt)
+    (h_b_lo_shamt : m.b_0 r_main = shamt_w_b_lo shamt)
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage row) 1))
@@ -1399,7 +1399,7 @@ theorem shift_m32_1_imm_shift_pin_row_of_facts
       ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range
   have h :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_w_immediate_eq_of_shift_match_of_b0_range
-      m v r_main 0 shamt h_b_lo_t h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
+      m v r_main 0 shamt h_b_lo_shamt h_op_is_shift h_match_v h_bytes h_wfs h_b0_lt
   simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
     ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32] using h
 
@@ -1446,22 +1446,22 @@ theorem construction_sllw_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sllw_input.PC)
     (h_input_rd : sllw_input.rd = regidx_to_fin rd)
     -- (b) lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -1557,10 +1557,10 @@ theorem construction_sllw_sound_claimed_dead
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sllw_input.r1_val
-      h_m32_one h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sllw_input.r2_val
-      h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLW
     state sllw_input r1 r2 rd m
@@ -1598,22 +1598,22 @@ theorem construction_srlw_sound_claimed_dead
         = EStateM.Result.ok srlw_input.r2_val (binding i))
     (h_input_pc : (binding i).regs.get? Register.PC = .some srlw_input.PC)
     (h_input_rd : srlw_input.rd = regidx_to_fin rd)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -1698,10 +1698,10 @@ theorem construction_srlw_sound_claimed_dead
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srlw_input.r1_val
-      h_m32_one h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) srlw_input.r2_val
-      h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLW
     state srlw_input r1 r2 rd m
@@ -1739,22 +1739,22 @@ theorem construction_sraw_sound_claimed_dead
         = EStateM.Result.ok sraw_input.r2_val (binding i))
     (h_input_pc : (binding i).regs.get? Register.PC = .some sraw_input.PC)
     (h_input_rd : sraw_input.rd = regidx_to_fin rd)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -1840,10 +1840,10 @@ theorem construction_sraw_sound_claimed_dead
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sraw_input.r1_val
-      h_m32_one h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sraw_input.r2_val
-      h_b_lo_t h_b_hi_t h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+      h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAW
     state sraw_input r1 r2 rd m
@@ -1862,8 +1862,8 @@ theorem construction_sraw_sound_claimed_dead
     `execute_instruction (SHIFTIWOP SLLIW) = (bus_effect …).2`.
 
     Residual budget: 15 hyp binders + `execRow` (vs the W-register variant's
-    17 + execRow): drop `h_input_r2`/`h_b_hi_t`; the `b_0` decode pin against
-    `slliw_input.shamt` replaces the register `h_b_lo_t`. The 5-bit immediate
+    17 + execRow): drop `h_input_r2`/`h_b_hi`; the `b_0` decode pin against
+    `slliw_input.shamt` replaces the register `h_b_lo`. The 5-bit immediate
     rides inside `slliw_input`, so it is NOT a separate top-level binder. -/
 theorem construction_slliw_sound_claimed_dead
     (trace : AcceptedZiskTrace numInstructions)
@@ -1891,17 +1891,17 @@ theorem construction_slliw_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some slliw_input.PC)
     (h_input_rd : slliw_input.rd = regidx_to_fin rd)
     -- (b) lane bridges (a-lanes for r1; the b_0 lane is a decode pin on shamt)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_shamt :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_w_b_lo slliw_input.shamt)
     -- (c) exec artifacts: the exec row is a genuine top-level binder.
@@ -1984,10 +1984,10 @@ theorem construction_slliw_sound_claimed_dead
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) slliw_input.r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val slliw_input.shamt
-      h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLIW
     state slliw_input r1 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -2020,17 +2020,17 @@ theorem construction_srliw_sound_claimed_dead
         = EStateM.Result.ok srliw_input.r1_val (binding i))
     (h_input_pc : (binding i).regs.get? Register.PC = .some srliw_input.PC)
     (h_input_rd : srliw_input.rd = regidx_to_fin rd)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_shamt :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_w_b_lo srliw_input.shamt)
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -2112,10 +2112,10 @@ theorem construction_srliw_sound_claimed_dead
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srliw_input.r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val srliw_input.shamt
-      h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLIW
     state srliw_input r1 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -2148,17 +2148,17 @@ theorem construction_sraiw_sound_claimed_dead
         = EStateM.Result.ok sraiw_input.r1_val (binding i))
     (h_input_pc : (binding i).regs.get? Register.PC = .some sraiw_input.PC)
     (h_input_rd : sraiw_input.rd = regidx_to_fin rd)
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo_shamt :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
         shamt_w_b_lo sraiw_input.shamt)
     (execRow : List (Interaction.ExecutionBusEntry FGL))
@@ -2241,10 +2241,10 @@ theorem construction_sraiw_sound_claimed_dead
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sraiw_input.r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val sraiw_input.shamt
-      h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAIW
     state sraiw_input r1 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩

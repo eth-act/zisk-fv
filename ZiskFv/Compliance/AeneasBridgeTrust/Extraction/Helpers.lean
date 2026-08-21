@@ -255,6 +255,70 @@ theorem src_a_reg_pres (self z : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U
        obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, rfl⟩)
 
+/- When the register is in the main range (`REGS_IN_MAIN_FROM ≤ reg ≤ REGS_IN_MAIN_TO`),
+`src_a_reg` sets `a_src = SRC_REG` and `a_offset_imm0 = reg`. -/
+set_option maxHeartbeats 1000000 in
+theorem src_a_reg_src_eq (self z : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64) (usp : Bool)
+    (h_ne : reg ≠ 0#u64)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_a_reg self reg usp = ok z)
+    (h_ge : ¬(reg < UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_FROM))
+    (h_le : ¬(reg > UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_TO)) :
+    z.i.a_src = zisk_inst.SRC_REG ∧ z.i.a_offset_imm0 = reg := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok, if_neg h_ne] at h
+  simp only [zisk_registers.REGS_IN_MAIN_FROM] at h_ge
+  simp only [if_neg h_ge] at h
+  simp only [zisk_registers.REGS_IN_MAIN_TO] at h_le
+  simp only [if_neg h_le] at h
+  split_ifs at h with husp
+  · rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩
+  · rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩
+
+/- `src_b_reg` preserves `a_src` and `a_offset_imm0` across all branches. -/
+set_option maxHeartbeats 1000000 in
+theorem src_b_reg_a_pres (self z : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64) (usp : Bool)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z) :
+    z.i.a_src = self.i.a_src ∧ z.i.a_offset_imm0 = self.i.a_offset_imm0 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok] at h
+  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+    | (obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+    | (obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+       obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+
+/- When the register is in the main range, `src_b_reg` sets `b_src = SRC_REG`
+and `b_offset_imm0 = reg`, while preserving the a-source fields. -/
+set_option maxHeartbeats 1000000 in
+theorem src_b_reg_src_eq (self z : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64) (usp : Bool)
+    (h_ne : reg ≠ 0#u64)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z)
+    (h_ge : ¬(reg < UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_FROM))
+    (h_le : ¬(reg > UScalar.cast .U64 zisk_registers.REGS_IN_MAIN_TO)) :
+    z.i.b_src = zisk_inst.SRC_REG ∧ z.i.b_offset_imm0 = reg ∧
+    z.i.a_src = self.i.a_src ∧ z.i.a_offset_imm0 = self.i.a_offset_imm0 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok, if_neg h_ne] at h
+  simp only [zisk_registers.REGS_IN_MAIN_FROM] at h_ge
+  simp only [if_neg h_ge] at h
+  simp only [zisk_registers.REGS_IN_MAIN_TO] at h_le
+  simp only [if_neg h_le] at h
+  split_ifs at h with husp
+  · rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl⟩
+  · rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl⟩
+
 /- `src_b_reg` writes only the b-source fields in EVERY register-class branch:
 all five pins preserved. -/
 set_option maxHeartbeats 1000000 in
@@ -458,5 +522,68 @@ theorem store_ind_pres (self : zisk_inst_builder.ZiskInstBuilder) (off : Std.I64
     z.i.m32 = self.i.m32 ∧ z.i.set_pc = self.i.set_pc ∧ z.i.store_pc = false := by
   simp only [zisk_inst_builder.ZiskInstBuilder.store_ind, zisk_inst.STORE_IND] at h
   rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, rfl⟩
+
+/-! ## 6. Source-field (a/b_src, a/b_offset_imm0) preservation through the builder chain.
+
+Each builder after `src_a_reg`/`src_b_reg` writes only op-classification, jump, or
+store fields.  The four source fields are never touched, so they chain through to the
+final `zib`. -/
+
+/- `op_zisk` preserves all four source fields. -/
+set_option maxHeartbeats 1000000 in
+theorem op_zisk_src_pres (self z : zisk_inst_builder.ZiskInstBuilder) (op : zisk_ops.ZiskOp)
+    (h : zisk_inst_builder.ZiskInstBuilder.op_zisk self op = ok z) :
+    z.i.a_src = self.i.a_src ∧ z.i.a_offset_imm0 = self.i.a_offset_imm0 ∧
+    z.i.b_src = self.i.b_src ∧ z.i.b_offset_imm0 = self.i.b_offset_imm0 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    core.convert.IntoFrom.into,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    Bind.bind] at h
+  obtain ⟨ot, hot, h⟩ := bind_eq_ok_imp h
+  obtain ⟨b, hb, h⟩ := bind_eq_ok_imp h
+  obtain ⟨cval, hc, h⟩ := bind_eq_ok_imp h
+  obtain ⟨self1, hself1, h⟩ := bind_eq_ok_imp h
+  obtain ⟨zot, hzot, h⟩ := bind_eq_ok_imp h
+  obtain ⟨i1, hi1, h⟩ := bind_eq_ok_imp h
+  obtain ⟨mval, hm, h4⟩ := bind_eq_ok_imp hself1
+  rw [Result.ok.injEq] at h h4
+  subst h; subst h4
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+/- `store_reg` preserves all four source fields (any `store_pc` flag). -/
+set_option maxHeartbeats 1000000 in
+theorem store_reg_src_pres (zib : zisk_inst_builder.ZiskInstBuilder) (off : Std.I64)
+    (usp spc : Bool) (z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.store_reg zib off usp spc = ok z) :
+    z.i.a_src = zib.i.a_src ∧ z.i.a_offset_imm0 = zib.i.a_offset_imm0 ∧
+    z.i.b_src = zib.i.b_src ∧ z.i.b_offset_imm0 = zib.i.b_offset_imm0 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    UScalar.hcast, lift, bind_ok, Bind.bind] at h
+  split_ifs at h <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl⟩)
+    | (obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+       obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl⟩)
+
+/-- `j` preserves all four source fields. -/
+theorem j_src_pres (self : zisk_inst_builder.ZiskInstBuilder) (j1 j2 : Std.I64)
+    (z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.j self j1 j2 = ok z) :
+    z.i.a_src = self.i.a_src ∧ z.i.a_offset_imm0 = self.i.a_offset_imm0 ∧
+    z.i.b_src = self.i.b_src ∧ z.i.b_offset_imm0 = self.i.b_offset_imm0 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.j] at h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl⟩
+
+/-- `build` preserves all four source fields. -/
+theorem build_src_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.build self = ok z) :
+    z.i.a_src = self.i.a_src ∧ z.i.a_offset_imm0 = self.i.a_offset_imm0 ∧
+    z.i.b_src = self.i.b_src ∧ z.i.b_offset_imm0 = self.i.b_offset_imm0 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.build] at h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl⟩
 
 end ZiskFv.Compliance.Extraction

@@ -205,34 +205,6 @@ def addFaithfulAddInputs :
       addFaithfulRegs, x1, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
   h_input_rd := by
     rfl
-  h_a_lo_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).a_0 addFaithfulAddIndex.val =
-        lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneLo (fun m i => m.a_0 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
-  h_a_hi_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).a_1 addFaithfulAddIndex.val =
-        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneHi (fun m i => m.a_1 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
-  h_b_lo_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).b_0 addFaithfulAddIndex.val =
-        lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneLo (fun m i => m.b_0 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
-  h_b_hi_t := by
-    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
-          addFaithfulAcceptedTrace.mainTable).b_1 addFaithfulAddIndex.val =
-        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
-          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
-    exact addFaithfulAddLaneHi (fun m i => m.b_1 i)
-      (by simp [addFaithfulMainRowAt_zero, addX1Row])
   h_pc_bridge := by
     rw [addFaithfulAcceptedTrace_mainTable_eq]
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulProgram
@@ -338,6 +310,15 @@ theorem addFaithfulRegAgreeBoot :
   fin_cases k <;>
     simp_all [reg_of_fin, regidx_to_fin, x1, Std.ExtDHashMap.get?_insert]
 
+theorem addFaithfulRegBoot :
+    ∀ k : Fin 32, k ≠ 0 →
+      (addFaithfulState (0#64)).regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)) := by
+  intro k hk
+  fin_cases k <;>
+    simp_all [addFaithfulState, addFaithfulRegs, addFaithfulZeroRegs, reg_of_fin,
+      regidx_to_fin, x1, Std.ExtDHashMap.get?_insert]
+
 open ZiskFv.Compliance.RawProgramBinding in
 theorem addFaithfulPaddedRawRootSoundness :
     ∀ i : Fin 1,
@@ -349,7 +330,8 @@ theorem addFaithfulPaddedRawRootSoundness :
   root_soundness 1 2 addFaithfulAcceptedTrace (addFaithfulState (0#64)) addFaithfulZiskStep
     addFaithfulStart addFaithfulAddr addFaithfulRawProgram addFaithfulProgramRowsBinding
     addFaithfulRawProgramDecodes addFaithfulInputsAgreeCore addFaithfulPcBoot
-    addFaithfulRowsAligned addFaithfulBootSeed addFaithfulOutsideDefectRegion
+    addFaithfulRowsAligned addFaithfulBootSeed addFaithfulRegBoot
+    addFaithfulOutsideDefectRegion
 
 #print axioms addFaithfulPaddedRawRootSoundness
 

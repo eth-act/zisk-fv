@@ -79,12 +79,13 @@ info: root_soundness : ∀ (numInstructions rawLength : ℕ) (ziskTrace : Accept
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
             (rawProgramDecodes i))) →
       ∀ (bootSeed : BootSegmentMemorySeed ziskTrace (chainedSailTrace ziskStep init) ziskStep),
-        (∀ (i : Fin numInstructions), RowOutsideDefectRegion ziskTrace i (ziskStep i)) →
-          ∀ (i : Fin numInstructions),
-            StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
-              (rowDecode_of_programDecode ziskTrace i
-                (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
-                  (rawProgramDecodes i)))
+        (∀ (k : Fin 32), k ≠ 0 → init.regs.get? (reg_of_fin k) = some (cast ⋯ 0)) →
+          (∀ (i : Fin numInstructions), RowOutsideDefectRegion ziskTrace i (ziskStep i)) →
+            ∀ (i : Fin numInstructions),
+              StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
+                (rowDecode_of_programDecode ziskTrace i
+                  (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding
+                    (rawProgramDecodes i)))
 -/
 #guard_msgs (whitespace := lax) in
 #check @root_soundness

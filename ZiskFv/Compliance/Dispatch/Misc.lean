@@ -168,7 +168,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       h_input_r1_row h_input_imm_row h_lane_rd promises
   | addi_via_binaryadd addi_input r1 rd imm bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_binaryadd h_main_subset
-      h_addi_subset h_a_lo_t h_a_hi_t h_m32 h_set_pc h_lane_rd promises =>
+      h_addi_subset h_a_lo h_a_hi h_m32 h_set_pc h_lane_rd promises =>
     change
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -188,7 +188,7 @@ theorem zisk_riscv_compliant_program_bus_misc
       state addi_input r1 rd imm m row r_main bus promises pins
       h_match_binaryadd
       (ZiskFv.AirsClean.BinaryAdd.core_every_row_of_component_spec_facts row h_facts)
-      h_main_subset h_a_lo_t h_a_hi_t
+      h_main_subset h_a_lo h_a_hi
       (ZiskFv.AirsClean.BinaryAdd.a_chunks_in_range_of_component_spec_facts row h_facts)
       (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
       (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)

@@ -192,7 +192,7 @@ theorem root_soundness_instantiation_degenerate :
     ∀ i : Fin 0,
       StepSound trace sail i (step i)
         (rowDecode_of_programDecode trace i (decode i)) :=
-  stepSound_of_programDecodes 0 trace sail step decode nofun pcChain rowsAligned seed nofun
+  stepSound_of_programDecodes 0 trace sail step decode nofun pcChain rowsAligned seed nofun nofun
 
 #print axioms root_soundness_instantiation_degenerate
 

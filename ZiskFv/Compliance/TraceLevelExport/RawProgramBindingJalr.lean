@@ -509,6 +509,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
             h_bits_set_pc := ?_
             h_bits_store_pc := ?_
             h_bits_store_ind := ?_
+            h_bits_store_reg := ?_
             h_prog := ?_ }
       · exact hieo
       · exact hm32
@@ -545,6 +546,23 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
           exact decide_eq_false (by
             rw [hnonzero.2.1]
             simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
+      · rcases hdest with hzero | hnonzero
+        · change input.rd = 0#u32 ∧ rows.last_row.store = 0#u64 ∧
+              rows.last_row.store_offset = 0#i64 ∧ rows.last_row.store_use_sp = false ∧
+              rows.last_row.store_pc = false at hzero
+          have hrdZero : (regidx_to_fin c.rd).val = 0 := by
+            rw [← show input.rd.val = (regidx_to_fin c.rd).val by simpa [rd] using hrd]
+            exact congrArg UScalar.val hzero.1
+          simp [bits, romFlagBitsOfExtract, hzero.2.1, hrdZero, zisk_inst.STORE_REG]
+        · change input.rd ≠ 0#u32 ∧ rows.last_row.store = zisk_inst.STORE_REG ∧
+              rows.last_row.store_offset = UScalar.hcast IScalarTy.I64 input.rd ∧
+              rows.last_row.store_use_sp = false ∧ rows.last_row.store_pc = true at hnonzero
+          have hrdNonzero : (regidx_to_fin c.rd).val ≠ 0 := by
+            intro hz
+            apply hnonzero.1
+            apply UScalar.eq_of_val_eq
+            simpa [rd, hz] using hrd.symm
+          simp [bits, romFlagBitsOfExtract, hnonzero.2.1, hrdNonzero]
       · intro j hline
         obtain ⟨k, hk, haddr, hraw⟩ := hLine j hline
         have hprimary := primary_row_of_programRowsBinding hbind
@@ -617,7 +635,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
       unfold JalrUnalignedFirstRowPins JalrUnalignedSuccessorRowPins at hpins
       rcases hpins with
         ⟨⟨haddOp, haddJ1, haddJ2, haddASrc, haddHi, haddLo, haddSrc, haddIeo,
-            haddM32, haddSetPc, haddStorePc⟩,
+            haddM32, haddSetPc, haddStorePc, haddStore⟩,
           ⟨handOp, handJ1, handJ2, handDest, handBSrc, handBUse, handBOffset,
             handIeo, handM32, handSetPc⟩⟩
       change rows.first_row.op = 10#u8 at haddOp
@@ -650,6 +668,11 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
             exact haddM32
           h_add_set_pc := by
             exact haddSetPc
+          h_add_store_reg := by
+            change decide (rows.first_row.store = zisk_inst.STORE_REG) = false
+            exact decide_eq_false (by
+              rw [haddStore]
+              simp [zisk_inst.STORE_REG])
           h_add_a_src_imm := by
             exact decide_eq_true haddASrc
           h_add_b_src_imm := by
@@ -751,6 +774,31 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
               exact decide_eq_false (by
                 rw [hn.2.1]
                 simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
+          h_and_store_reg := by
+            change decide (rows.last_row.store = zisk_inst.STORE_REG) =
+              decide ((regidx_to_fin c.rd).val ≠ 0)
+            unfold JalrDestinationPins at handDest
+            rcases handDest with hz | hn
+            · change input.rd = 0#u32 ∧ rows.last_row.store = 0#u64 ∧
+                  rows.last_row.store_offset = 0#i64 ∧
+                  rows.last_row.store_use_sp = false ∧ rows.last_row.store_pc = false at hz
+              have hrdZero : (regidx_to_fin c.rd).val = 0 := by
+                rw [← hrd]
+                exact congrArg UScalar.val hz.1
+              rw [decide_eq_false (by omega : ¬(regidx_to_fin c.rd).val ≠ 0)]
+              exact decide_eq_false (by
+                rw [hz.2.1]
+                simp [zisk_inst.STORE_REG])
+            · change input.rd ≠ 0#u32 ∧ rows.last_row.store = zisk_inst.STORE_REG ∧
+                  rows.last_row.store_offset = UScalar.hcast IScalarTy.I64 input.rd ∧
+                  rows.last_row.store_use_sp = false ∧ rows.last_row.store_pc = true at hn
+              have hrdNonzero : (regidx_to_fin c.rd).val ≠ 0 := by
+                intro hzero
+                apply hn.1
+                apply UScalar.eq_of_val_eq
+                simpa [hzero] using hrd.symm
+              rw [decide_eq_true hrdNonzero]
+              exact decide_eq_true hn.2.1
           h_and_b_src_imm := by
             simp [andBits, romFlagBitsOfExtract, handBSrc, zisk_inst.SRC_C,
               zisk_inst.SRC_IMM]

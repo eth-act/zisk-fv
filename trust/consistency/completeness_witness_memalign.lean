@@ -14,10 +14,16 @@ private def memAlignWitnessRow : MemAlignRow FGL :=
 private theorem memAlignWitnessProverAssumptions
     (data : ProverData FGL) (hint : ProverHint FGL) :
     circuit.ProverAssumptions memAlignWitnessRow data hint := by
-  refine ⟨.prove, false, false, false,
+  refine ⟨⟨?_, ?_⟩, .prove, false, false, false,
     true, false, false, false, false, false, false, false,
     1, 2, 3, 4, 5, 6, 7, 8,
     16, 0, 4, 9, 0, 123, 0, ?_⟩
+  · norm_num [memAlignWitnessRow, memAlignRowOf, memAlignValue0Of, memAlignLane,
+      ZiskFv.AirsClean.RangeTables.rangeTable32,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable]
+  · norm_num [memAlignWitnessRow, memAlignRowOf, memAlignValue1Of, memAlignLane,
+      ZiskFv.AirsClean.RangeTables.rangeTable32,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable]
   rfl
 
 theorem completeness_witness_memalign :

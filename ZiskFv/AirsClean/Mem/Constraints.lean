@@ -65,6 +65,8 @@ def dualMemRowRangeFacts (row : MemRow FGL) : Prop :=
     ∧ row.step.val < 2 ^ 40
     ∧ row.step_dual.val < 2 ^ 40
     ∧ row.previous_step.val < 2 ^ 40
+    ∧ row.value_0.val < 2 ^ 32
+    ∧ row.value_1.val < 2 ^ 32
     ∧ (row.sel_dual = 1 → (row.step_dual - row.step - row.wr).val < 2 ^ 24)
 
 /-- Lookup-aware source for the ungated mutable-Mem row range facts: increment
@@ -83,6 +85,9 @@ def rowRangeLookups (row : Var MemRow FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable40) row.step_dual
   -- `previous_step : bits(40)`, `mem.pil:365`.
   lookup (Table.fromStatic rangeTable40) row.previous_step
+  -- Mutable, non-free `Mem` instance `value[RC] : bits(32)`, `mem.pil:156`.
+  lookup (Table.fromStatic rangeTable32) row.value_0
+  lookup (Table.fromStatic rangeTable32) row.value_1
 
 /-- Lookup-aware source for the selector-gated dual-step delta range check.
     Callers should require this witness only on rows where `sel_dual = 1`,
@@ -293,6 +298,10 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
   let previousStepTable := Table.fromStatic rangeTable40
   let previousStepLookup : Lookup FGL :=
     { table := previousStepTable.toRaw, entry := #v[row.previous_step] }
+  let value0Table := Table.fromStatic rangeTable32
+  let value0Lookup : Lookup FGL := { table := value0Table.toRaw, entry := #v[row.value_0] }
+  let value1Table := Table.fromStatic rangeTable32
+  let value1Lookup : Lookup FGL := { table := value1Table.toRaw, entry := #v[row.value_1] }
   let deltaTable := Table.fromStatic rangeTable24
   let deltaLookup : Lookup FGL :=
     { table := deltaTable.toRaw,
@@ -330,7 +339,17 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
   have h_delta_contains : deltaLookup.Contains env := by
     apply h_holds.2 deltaLookup
     dsimp [deltaLookup, deltaTable, Table.fromStatic, StaticTable.toTable]
-    right; right; right; right; right; right
+    right; right; right; right; right; right; right; right
+    rfl
+  have h_value_0_contains : value0Lookup.Contains env := by
+    apply h_holds.2 value0Lookup
+    dsimp [value0Lookup, value0Table, Table.fromStatic, StaticTable.toTable]
+    right; right; right; right; right; right; left
+    rfl
+  have h_value_1_contains : value1Lookup.Contains env := by
+    apply h_holds.2 value1Lookup
+    dsimp [value1Lookup, value1Table, Table.fromStatic, StaticTable.toTable]
+    right; right; right; right; right; right; right; left
     rfl
   have h_increment_0 := staticRange increment0Table row.increment_0
     (increment0Lookup.table.imply_soundness _ _ h_increment_0_contains)
@@ -344,6 +363,10 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
     (stepDualLookup.table.imply_soundness _ _ h_step_dual_contains)
   have h_previous_step := staticRange previousStepTable row.previous_step
     (previousStepLookup.table.imply_soundness _ _ h_previous_step_contains)
+  have h_value_0 := staticRange value0Table row.value_0
+    (value0Lookup.table.imply_soundness _ _ h_value_0_contains)
+  have h_value_1 := staticRange value1Table row.value_1
+    (value1Lookup.table.imply_soundness _ _ h_value_1_contains)
   have h_delta := staticRange deltaTable
     (row.sel_dual * (row.step_dual - row.step - row.wr))
     (deltaLookup.table.imply_soundness _ _ h_delta_contains)
@@ -364,7 +387,11 @@ theorem dualMemRowRangeFacts_of_memWithDualMemBus_constraints
       by simpa [CircuitType.eval_expr, stepDualTable, Table.fromStatic,
         StaticTable.toTable, rangeTable40, rangeStaticTable] using h_step_dual,
       by simpa [CircuitType.eval_expr, previousStepTable, Table.fromStatic,
-        StaticTable.toTable, rangeTable40, rangeStaticTable] using h_previous_step, ?_⟩
+        StaticTable.toTable, rangeTable40, rangeStaticTable] using h_previous_step,
+      by simpa [CircuitType.eval_expr, value0Table, Table.fromStatic,
+        StaticTable.toTable, rangeTable32, rangeStaticTable] using h_value_0,
+      by simpa [CircuitType.eval_expr, value1Table, Table.fromStatic,
+        StaticTable.toTable, rangeTable32, rangeStaticTable] using h_value_1, ?_⟩
     have h_delta_range :
         rangeTable24.Spec
           (Expression.eval env sel_dual *

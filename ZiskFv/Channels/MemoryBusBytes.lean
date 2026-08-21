@@ -293,4 +293,36 @@ lemma u64_toBV_chunks_eq_ofNat_fgl_val
     linear_combination hpack0 + 4294967296 * hpack1
   rw [h_fgl_eq]
 
+/-- **Nat-level chunk bridge.** Under `chunks_in_range`, the `U64.toBV`
+    of the entry's byte projections has `.toNat = v0.val + v1.val * 2^32`.
+    Unlike `u64_toBV_chunks_eq_ofNat_fgl_val`, this does NOT require
+    `packed_no_wrap` — the result is a pure Nat identity, independent of
+    the Goldilocks modular reduction. -/
+lemma u64_toBV_chunks_toNat
+    (v0 v1 : FGL)
+    (h_v0 : v0.val < 4294967296) (h_v1 : v1.val < 4294967296) :
+    (U64.toBV #v[(byteOf v0 0 : BitVec 8), (byteOf v0 1 : BitVec 8),
+                (byteOf v0 2 : BitVec 8), (byteOf v0 3 : BitVec 8),
+                (byteOf v1 0 : BitVec 8), (byteOf v1 1 : BitVec 8),
+                (byteOf v1 2 : BitVec 8), (byteOf v1 3 : BitVec 8)]).toNat
+    = v0.val + v1.val * 4294967296 := by
+  rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat
+        (byteOf v0 0) (byteOf v0 1) (byteOf v0 2) (byteOf v0 3)
+        (byteOf v1 0) (byteOf v1 1) (byteOf v1 2) (byteOf v1 3)
+        (byteOf_val_lt_256 v0 0) (byteOf_val_lt_256 v0 1)
+        (byteOf_val_lt_256 v0 2) (byteOf_val_lt_256 v0 3)
+        (byteOf_val_lt_256 v1 0) (byteOf_val_lt_256 v1 1)
+        (byteOf_val_lt_256 v1 2) (byteOf_val_lt_256 v1 3)]
+  have h_sum_v0 := byteOf_val_sum_eq v0 h_v0
+  have h_sum_v1 := byteOf_val_sum_eq v1 h_v1
+  have h_rearrange :
+      (byteOf v1 0).val * 4294967296
+      + (byteOf v1 1).val * 1099511627776
+      + (byteOf v1 2).val * 281474976710656
+      + (byteOf v1 3).val * 72057594037927936
+      = ((byteOf v1 0).val + (byteOf v1 1).val * 256
+          + (byteOf v1 2).val * 65536
+          + (byteOf v1 3).val * 16777216) * 4294967296 := by ring
+  omega
+
 end ZiskFv.Channels.MemoryBusBytes

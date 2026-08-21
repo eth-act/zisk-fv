@@ -4,6 +4,7 @@ import Clean.Circuit.Formal
 import ZiskFv.Channels.MemoryBus
 import ZiskFv.Channels.MemAlignRom
 import ZiskFv.Channels.MemAlignRanges
+import ZiskFv.AirsClean.RangeTables
 
 /-!
 # MemAlign circuit operations
@@ -128,6 +129,13 @@ def memAlignRomMessageExpr (row : Var MemAlignRow FGL) :
 def memAlignRangeMessageExpr (value : Expression FGL) : MemAlignRangeMessage (Expression FGL) :=
   { value }
 
+/-- The source-declared `value[RC] : bits(32)` constraints at
+`mem_align.pil:185`. PILOUT does not retain these column declarations. -/
+@[circuit_norm]
+def valueRangeLookups (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
+  lookup (Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable32) row.value_0
+  lookup (Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable32) row.value_1
+
 @[circuit_norm]
 def mainWithMemBus (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
   main row
@@ -136,6 +144,7 @@ def mainWithMemBus (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
 @[circuit_norm]
 def mainWithMemBusAndMemAlignRomAndRanges (row : Var MemAlignRow FGL) : Circuit FGL Unit := do
   mainWithMemBus row
+  valueRangeLookups row
   MemAlignRomChannel.emit (-1) (memAlignRomMessageExpr row)
   MemAlignRangeChannel.emit (-1) (memAlignRangeMessageExpr row.reg_0)
   MemAlignRangeChannel.emit (-1) (memAlignRangeMessageExpr row.reg_1)
@@ -145,6 +154,58 @@ def mainWithMemBusAndMemAlignRomAndRanges (row : Var MemAlignRow FGL) : Circuit 
   MemAlignRangeChannel.emit (-1) (memAlignRangeMessageExpr row.reg_5)
   MemAlignRangeChannel.emit (-1) (memAlignRangeMessageExpr row.reg_6)
   MemAlignRangeChannel.emit (-1) (memAlignRangeMessageExpr row.reg_7)
+
+/-- Project the source-declared value-column bounds from the live local
+MemAlign operations. -/
+theorem value_ranges_of_mainWithMemBusAndMemAlignRomAndRanges_constraints
+    (row : Var MemAlignRow FGL) (offset : ℕ) (env : Environment FGL)
+    (h_constraints : Operations.ConstraintsHold env
+      ((mainWithMemBusAndMemAlignRomAndRanges row).operations offset)) :
+    (eval env row).value_0.val < 2 ^ 32 ∧ (eval env row).value_1.val < 2 ^ 32 := by
+  simp only [mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main,
+    valueRangeLookups, memBusMessageExpr, selAssumeExpr, memAlignRomMessageExpr,
+    memAlignRomFlagsExpr, memAlignRangeMessageExpr, MemBusChannel,
+    MemAlignRomChannel, MemAlignRangeChannel, circuit_norm] at h_constraints
+  let valueTable := Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable32
+  let value0Lookup : Lookup FGL := { table := valueTable.toRaw, entry := #v[row.value_0] }
+  let value1Lookup : Lookup FGL := { table := valueTable.toRaw, entry := #v[row.value_1] }
+  have h_value_0_contains : value0Lookup.Contains env := by
+    apply h_constraints.2 value0Lookup
+    dsimp [value0Lookup, valueTable, Table.fromStatic, StaticTable.toTable]
+    left
+    rfl
+  have h_value_1_contains : value1Lookup.Contains env := by
+    apply h_constraints.2 value1Lookup
+    dsimp [value1Lookup, valueTable, Table.fromStatic, StaticTable.toTable]
+    exact Or.inr rfl
+  have staticRange := fun (table : Table FGL field) (entry : Expression FGL)
+      (h_sound :
+        let lookup : Lookup FGL := { table := table.toRaw, entry := #v[entry] }
+        lookup.Soundness env) =>
+    (Lookup.soundess_def_field table env entry).mp h_sound
+  have h_value_0 := staticRange valueTable row.value_0
+    (value0Lookup.table.imply_soundness _ _ h_value_0_contains)
+  have h_value_1 := staticRange valueTable row.value_1
+    (value1Lookup.table.imply_soundness _ _ h_value_1_contains)
+  have h_eval_value_0 :
+      (eval env row).value_0 = Expression.eval env row.value_0 := by
+    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+      ProvableStruct.fromComponents, ProvableStruct.components,
+      ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field]
+  have h_eval_value_1 :
+      (eval env row).value_1 = Expression.eval env row.value_1 := by
+    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+      ProvableStruct.fromComponents, ProvableStruct.components,
+      ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field]
+  constructor
+  · rw [h_eval_value_0]
+    simpa [value0Lookup, valueTable, Table.fromStatic, StaticTable.toTable,
+      ZiskFv.AirsClean.RangeTables.rangeTable32,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_value_0
+  · rw [h_eval_value_1]
+    simpa [value1Lookup, valueTable, Table.fromStatic, StaticTable.toTable,
+      ZiskFv.AirsClean.RangeTables.rangeTable32,
+      ZiskFv.AirsClean.RangeTables.rangeStaticTable] using h_value_1
 
 @[reducible] def memAlignWithMemBusElaborated :
     FormalCircuitBase FGL MemAlignRow unit where

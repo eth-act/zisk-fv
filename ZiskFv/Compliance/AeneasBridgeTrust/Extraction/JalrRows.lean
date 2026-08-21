@@ -57,6 +57,7 @@ def JalrUnalignedFirstRowPins (i : riscv2zisk_single_row.Rv64imLoweringInput)
     op_type := zisk_inst.ZiskOperationType.None, m32 := row.m32,
     input_size := row.input_size, sorted_pc_list_index := row.sorted_pc_list_index } ∧
   row.is_external_op = true ∧ row.m32 = false ∧ row.set_pc = false ∧ row.store_pc = false
+  ∧ row.store = 0#u64
 
 def JalrUnalignedSuccessorRowPins (i : riscv2zisk_single_row.Rv64imLoweringInput)
     (row : zisk_inst.ZiskInst) : Prop :=

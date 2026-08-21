@@ -12,5 +12,6 @@
 11 :: pcBoot :: instLTNat.lt 0 numInstructions → Eq ((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc 0).val ((init.regs.get? Register.PC).elim 0 BitVec.toNat)
 12 :: rowsAligned :: ZiskFv.Compliance.StepRowsAligned ziskTrace ziskStep fun i => ZiskFv.Compliance.rowDecode_of_programDecode ziskTrace i (ZiskFv.Compliance.programDecode_of_rawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram programBinding (rawProgramDecodes i))
 13 :: bootSeed :: ZiskFv.Compliance.BootSegmentMemorySeed ziskTrace (ZiskFv.Compliance.chainedSailTrace ziskStep init) ziskStep
-14 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
-15 :: i :: Fin numInstructions
+14 :: regBoot :: ∀ (k : Fin 32), Ne k 0 → Eq (init.regs.get? (reg_of_fin k)) (Option.some (cast ⋯ 0))
+15 :: hAvoidKnownBugs :: ∀ (i : Fin numInstructions), ZiskFv.Compliance.RowOutsideDefectRegion ziskTrace i (ziskStep i)
+16 :: i :: Fin numInstructions

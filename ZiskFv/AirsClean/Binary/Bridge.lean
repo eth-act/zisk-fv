@@ -1026,6 +1026,138 @@ theorem static_table_op_val_ne_arith_remuw_of_emit
       omega
     exact h_ne.2 hoffset
 
+theorem static_table_op_val_ne_arith_mul_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = ((180 : ℕ) : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_ne_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_arith_mul h0
+  have h_ne :
+      row.chain.b_op.val ≠ 180 ∧ row.chain.b_op.val ≠ 164 := by
+    simpa [lookupMessage0Row] using h_ne_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = ((180 : ℕ) : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_val := congrArg Fin.val h_bop
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : (180 : ℕ) < GL_prime)] at h_val
+    exact h_ne.1 h_val
+  · have hoffset : row.chain.b_op.val = 164 := by
+      have h_bop_lt : row.chain.b_op.val < 514 := by
+        have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+        simpa [lookupMessage0Row] using h
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : (180 : ℕ) < GL_prime)] at hv
+      omega
+    exact h_ne.2 hoffset
+
+theorem static_table_op_val_ne_arith_rem_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = ((187 : ℕ) : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_ne_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_arith_rem h0
+  have h_ne :
+      row.chain.b_op.val ≠ 187 ∧ row.chain.b_op.val ≠ 171 := by
+    simpa [lookupMessage0Row] using h_ne_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = ((187 : ℕ) : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_val := congrArg Fin.val h_bop
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : (187 : ℕ) < GL_prime)] at h_val
+    exact h_ne.1 h_val
+  · have hoffset : row.chain.b_op.val = 171 := by
+      have h_bop_lt : row.chain.b_op.val < 514 := by
+        have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+        simpa [lookupMessage0Row] using h
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : (187 : ℕ) < GL_prime)] at hv
+      omega
+    exact h_ne.2 hoffset
+
+theorem static_table_op_val_ne_arith_divw_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = ((190 : ℕ) : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_ne_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_arith_divw h0
+  have h_ne :
+      row.chain.b_op.val ≠ 190 ∧ row.chain.b_op.val ≠ 174 := by
+    simpa [lookupMessage0Row] using h_ne_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = ((190 : ℕ) : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_val := congrArg Fin.val h_bop
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : (190 : ℕ) < GL_prime)] at h_val
+    exact h_ne.1 h_val
+  · have hoffset : row.chain.b_op.val = 174 := by
+      have h_bop_lt : row.chain.b_op.val < 514 := by
+        have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+        simpa [lookupMessage0Row] using h
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : (190 : ℕ) < GL_prime)] at hv
+      omega
+    exact h_ne.2 hoffset
+
+theorem static_table_op_val_ne_arith_remw_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = ((191 : ℕ) : FGL)) :
+    False := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, _, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_ne_raw :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_arith_remw h0
+  have h_ne :
+      row.chain.b_op.val ≠ 191 ∧ row.chain.b_op.val ≠ 175 := by
+    simpa [lookupMessage0Row] using h_ne_raw
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = ((191 : ℕ) : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_val := congrArg Fin.val h_bop
+    rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : (191 : ℕ) < GL_prime)] at h_val
+    exact h_ne.1 h_val
+  · have hoffset : row.chain.b_op.val = 175 := by
+      have h_bop_lt : row.chain.b_op.val < 514 := by
+        have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+        simpa [lookupMessage0Row] using h
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast,
+        Nat.mod_eq_of_lt (by omega : (191 : ℕ) < GL_prime)] at hv
+      omega
+    exact h_ne.2 hoffset
+
 /-- Shared C7 witness surface for Binary's static-table lookup path.
     This is intentionally family-level and row-indexed; it is the shape a
     terminal Binary-family ensemble can provide once the static provider is

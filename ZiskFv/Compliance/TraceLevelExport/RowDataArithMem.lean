@@ -164,9 +164,34 @@ structure Decode_add (trace : AcceptedZiskTrace numInstructions)
       i.val = 4
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_add trace i) : Type where
@@ -179,26 +204,6 @@ structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding : 
       = EStateM.Result.ok add_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some add_input.PC
   h_input_rd : add_input.rd = regidx_to_fin c.rd
-  h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_add` carries on top of `InputsCore_add`.
 
@@ -259,9 +264,23 @@ structure Decode_addi (trace : AcceptedZiskTrace numInstructions)
       i.val = 4
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
   h_b_src_imm :
     (mainRowWithRomSub trace i).rom.b_src_imm = 1
   h_b_imm :
@@ -279,16 +298,6 @@ structure InputsCore_addi (trace : AcceptedZiskTrace numInstructions) (binding :
   h_input_imm : addi_input.imm = c.imm
   h_input_pc : (binding i).regs.get? Register.PC = .some addi_input.PC
   h_input_rd : addi_input.rd = regidx_to_fin c.rd
-  h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
 
 /-- The PC agreement `Inputs_addi` carries on top of `InputsCore_addi`.
 
@@ -349,9 +358,34 @@ structure Decode_subw (trace : AcceptedZiskTrace numInstructions)
       i.val = 4
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_subw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_subw trace i) : Type where
@@ -364,26 +398,6 @@ structure InputsCore_subw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok subw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some subw_input.PC
   h_input_rd : subw_input.rd = regidx_to_fin c.rd
-  h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_subw` carries on top of `InputsCore_subw`.
 
@@ -444,9 +458,34 @@ structure Decode_addw (trace : AcceptedZiskTrace numInstructions)
       i.val = 4
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
+  h_b_src_reg :
+    (mainRowWithRomSub trace i).rom.b_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 ≠ 0))
+  h_b_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.b_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r2)
+  h_b_src_imm :
+    (mainRowWithRomSub trace i).rom.b_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r2 = 0))
+  h_b_imm1 :
+    (mainRowWithRomSub trace i).rom.b_imm1 = 0
 
 structure InputsCore_addw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_addw trace i) : Type where
@@ -459,26 +498,6 @@ structure InputsCore_addw (trace : AcceptedZiskTrace numInstructions) (binding :
       = EStateM.Result.ok addw_input.r2_val (binding i)
   h_input_pc : (binding i).regs.get? Register.PC = .some addw_input.PC
   h_input_rd : addw_input.rd = regidx_to_fin c.rd
-  h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_b_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
-  h_b_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r2))
 
 /-- The PC agreement `Inputs_addw` carries on top of `InputsCore_addw`.
 
@@ -539,9 +558,23 @@ structure Decode_addiw (trace : AcceptedZiskTrace numInstructions)
       i.val = 4
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
+  h_a_src_reg :
+    (mainRowWithRomSub trace i).rom.a_src_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 ≠ 0))
+  h_a_offset_imm0 :
+    (mainRowWithRomSub trace i).rom.a_offset_imm0 =
+      Transpiler.ind (regidx_to_fin c.r1)
+  h_a_src_imm :
+    (mainRowWithRomSub trace i).rom.a_src_imm =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.r1 = 0))
+  h_a_imm1 :
+    (mainRowWithRomSub trace i).rom.a_imm1 = 0
   h_b_src_imm :
     (mainRowWithRomSub trace i).rom.b_src_imm = 1
   h_b_imm :
@@ -559,16 +592,6 @@ structure InputsCore_addiw (trace : AcceptedZiskTrace numInstructions) (binding 
   h_input_imm : addiw_input.imm = c.imm
   h_input_pc : (binding i).regs.get? Register.PC = .some addiw_input.PC
   h_input_rd : addiw_input.rd = regidx_to_fin c.rd
-  h_a_lo_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
-  h_a_hi_t :
-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi
-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
-          (regidx_to_fin c.r1))
 
 /-- The PC agreement `Inputs_addiw` carries on top of `InputsCore_addiw`.
 
@@ -621,6 +644,9 @@ structure Decode_lui (trace : AcceptedZiskTrace numInstructions)
       i.val = 0
   h_store_ind :
     (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomLui trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomLui trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -701,6 +727,9 @@ structure Decode_auipc (trace : AcceptedZiskTrace numInstructions)
       i.val = 1
   h_store_ind :
     (mainRowWithRomLui trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomLui trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide ((regidx_to_fin c.rd).val ≠ 0))
   h_store_offset :
     (mainRowWithRomLui trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -781,6 +810,9 @@ structure Decode_mulw (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -897,6 +929,9 @@ structure Decode_mul (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -995,6 +1030,9 @@ structure Decode_mulh (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1088,6 +1126,9 @@ structure Decode_mulhsu (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1181,6 +1222,9 @@ structure Decode_div (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1282,6 +1326,9 @@ structure Decode_rem (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1408,6 +1455,9 @@ structure Decode_divw (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1564,6 +1614,9 @@ structure Decode_remw (trace : AcceptedZiskTrace numInstructions)
   h_idx : i.val + 1 < trace.mainTable.table.length
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1718,6 +1771,9 @@ structure Decode_mulhu (trace : AcceptedZiskTrace numInstructions)
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1805,6 +1861,9 @@ structure Decode_divu (trace : AcceptedZiskTrace numInstructions)
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -1897,6 +1956,9 @@ structure Decode_divuw (trace : AcceptedZiskTrace numInstructions)
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -2010,6 +2072,9 @@ structure Decode_remu (trace : AcceptedZiskTrace numInstructions)
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -2102,6 +2167,9 @@ structure Decode_remuw (trace : AcceptedZiskTrace numInstructions)
   bounds : ZiskFv.Compliance.ByteBounds (busSub trace i (Pilot.execRowOf trace i)).e2
   h_store_ind :
     (mainRowWithRomSub trace i).rom.store_ind = 0
+  h_store_reg :
+    (mainRowWithRomSub trace i).rom.store_reg =
+      ZiskFv.AirsClean.boolF (decide (regidx_to_fin c.rd ≠ 0))
   h_store_offset :
     (mainRowWithRomSub trace i).rom.store_offset =
       Transpiler.ind (regidx_to_fin c.rd)
@@ -2209,6 +2277,8 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
       i.val = 1
   h_store_ind :
     (mainRowWithRomSt trace i).rom.store_ind = 1
+  h_store_reg :
+    (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
       ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL)
@@ -2293,6 +2363,8 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
       i.val = 2
   h_store_ind :
     (mainRowWithRomSt trace i).rom.store_ind = 1
+  h_store_reg :
+    (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
       ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL)
@@ -2377,6 +2449,8 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
       i.val = 4
   h_store_ind :
     (mainRowWithRomSt trace i).rom.store_ind = 1
+  h_store_reg :
+    (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
       ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL)
@@ -2458,6 +2532,8 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
       i.val = 0
   h_store_ind :
     (mainRowWithRomSt trace i).rom.store_ind = 1
+  h_store_reg :
+    (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
       ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)

@@ -76,6 +76,89 @@ private theorem and3968_ushift7 (x : BitVec 32) :
     simp [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_and,
       BitVec.getLsbD_ofNat, hi, hi7]
 
+private theorem and_shr_reorder (x : BitVec 32) (k : Nat) (hk : k + 5 ≤ 32) :
+    (x &&& BitVec.ofNat 32 (31 <<< k)) >>> k = (x >>> k) &&& 31#32 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_and, BitVec.getLsbD_ofNat,
+    Nat.testBit_shiftLeft]
+  rcases Nat.lt_or_ge (i : Nat) 5 with h5 | h5
+  · rw [decide_eq_true (show k + (i : Nat) < 32 by omega),
+      decide_eq_true (show (i : Nat) < 32 by omega)]
+    simp [show k ≤ k + (i : Nat) by omega, show k + (i : Nat) - k = (i : Nat) by omega]
+  · rw [ZiskFv.Compliance.Decode.tbf (show (31 : Nat) < 2 ^ 5 by norm_num)
+        (show 5 ≤ k + (i : Nat) - k by omega),
+      ZiskFv.Compliance.Decode.tbf (show (31 : Nat) < 2 ^ 5 by norm_num)
+        (show 5 ≤ (i : Nat) by omega)]
+    simp
+
+private theorem and1015808_shr15 (x : BitVec 32) :
+    (x &&& 1015808#32) >>> 15 = (x >>> 15) &&& 31#32 := by
+  have h := and_shr_reorder x 15 (by norm_num)
+  simpa using h
+
+private theorem and32505856_shr20 (x : BitVec 32) :
+    (x &&& 32505856#32) >>> 20 = (x >>> 20) &&& 31#32 := by
+  have h := and_shr_reorder x 20 (by norm_num)
+  simpa using h
+
+theorem rawRType_rs1 (funct7 rs2 rs1 funct3 rd opcode : Nat)
+    (hrs1 : rs1 < 32) (hf3 : funct3 < 8) (hrd : rd < 32) (hop : opcode < 128) :
+    ((ZiskFv.Completeness.Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode)
+        &&& 1015808#32) >>> 15 = BitVec.ofNat 32 rs1 := by
+  rw [and1015808_shr15]
+  simp only [ZiskFv.Completeness.Rv64imShapes.rawRType,
+    ZiskFv.Completeness.Rv64imShapes.rawOfNat32]
+  refine ZiskFv.Compliance.Decode.ofNat32_shift_mask_eq _ 15 5 rs1 hrs1 (by norm_num) ?_
+  intro i hi
+  simp only [Nat.testBit_or, Nat.testBit_shiftLeft]
+  have e25 : ¬ (25 ≤ 15 + i) := by omega
+  have e20 : ¬ (20 ≤ 15 + i) := by omega
+  have e15 : 15 ≤ 15 + i := by omega
+  have e12 : 12 ≤ 15 + i := by omega
+  have e7 : 7 ≤ 15 + i := by omega
+  have hf3' : funct3.testBit (15 + i - 12) = false :=
+    ZiskFv.Compliance.Decode.tbf (show funct3 < 2 ^ 3 by omega) (by omega)
+  have hrd' : rd.testBit (15 + i - 7) = false :=
+    ZiskFv.Compliance.Decode.tbf (show rd < 2 ^ 5 by omega) (by omega)
+  have hop' : opcode.testBit (15 + i) = false :=
+    ZiskFv.Compliance.Decode.tbf (show opcode < 2 ^ 7 by omega) (by omega)
+  simp [e25, e20, e15, e12, e7, hf3', hrd', hop', show 15 + i - 15 = i from by omega]
+
+theorem rawRType_rs2 (funct7 rs2 rs1 funct3 rd opcode : Nat)
+    (hrs2 : rs2 < 32) (hrs1 : rs1 < 32) (hf3 : funct3 < 8)
+    (hrd : rd < 32) (hop : opcode < 128) :
+    ((ZiskFv.Completeness.Rv64imShapes.rawRType funct7 rs2 rs1 funct3 rd opcode)
+        &&& 32505856#32) >>> 20 = BitVec.ofNat 32 rs2 := by
+  rw [and32505856_shr20]
+  simp only [ZiskFv.Completeness.Rv64imShapes.rawRType,
+    ZiskFv.Completeness.Rv64imShapes.rawOfNat32]
+  refine ZiskFv.Compliance.Decode.ofNat32_shift_mask_eq _ 20 5 rs2 hrs2 (by norm_num) ?_
+  intro i hi
+  simp only [Nat.testBit_or, Nat.testBit_shiftLeft]
+  have e25 : ¬ (25 ≤ 20 + i) := by omega
+  have e20 : 20 ≤ 20 + i := by omega
+  have e15 : 15 ≤ 20 + i := by omega
+  have e12 : 12 ≤ 20 + i := by omega
+  have e7 : 7 ≤ 20 + i := by omega
+  have hrs1' : rs1.testBit (20 + i - 15) = false :=
+    ZiskFv.Compliance.Decode.tbf (show rs1 < 2 ^ 5 by omega) (by omega)
+  have hf3' : funct3.testBit (20 + i - 12) = false :=
+    ZiskFv.Compliance.Decode.tbf (show funct3 < 2 ^ 3 by omega) (by omega)
+  have hrd' : rd.testBit (20 + i - 7) = false :=
+    ZiskFv.Compliance.Decode.tbf (show rd < 2 ^ 5 by omega) (by omega)
+  have hop' : opcode.testBit (20 + i) = false :=
+    ZiskFv.Compliance.Decode.tbf (show opcode < 2 ^ 7 by omega) (by omega)
+  simp [e25, e20, e15, e12, e7, hrs1', hf3', hrd', hop',
+    show 20 + i - 20 = i from by omega]
+
+theorem decode_r_fields (raw : Std.U32) (rop : RiscvOpcode) :
+    ∃ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d
+      ∧ d.rd.bv = (raw &&& 3968#u32).bv >>> 7
+      ∧ d.rs1.bv = (raw &&& 1015808#u32).bv >>> 15
+      ∧ d.rs2.bv = (raw &&& 32505856#u32).bv >>> 20 := by
+  refine ⟨_, rfl, ?_, ?_, ?_⟩ <;> rfl
+
 theorem store_reg_raw_index_pins
     (self z : zisk_inst_builder.ZiskInstBuilder) (rd : Std.U32)
     (hrd : rd.val < 32)
@@ -102,11 +185,51 @@ theorem store_reg_raw_index_pins
        · simp [zisk_inst.STORE_REG, zisk_inst.STORE_IND])
     | (exfalso; scalar_tac)
 
+theorem store_reg_u32_is_reg
+    (self z : zisk_inst_builder.ZiskInstBuilder) (rd : Std.U32)
+    (hrd : rd.val < 32) (hrdne : rd.val ≠ 0)
+    (h : zisk_inst_builder.ZiskInstBuilder.store_reg self
+      (UScalar.hcast IScalarTy.I64 rd) false false = ok z) :
+    z.i.store = zisk_inst.STORE_REG := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  have e1 := ZiskFv.Compliance.Extraction.cast_one_i64
+  have e31 := ZiskFv.Compliance.Extraction.cast_31_i64
+  have erd := ZiskFv.Compliance.Extraction.hcast_u32_i64_val rd
+  split_ifs at h <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; simp [zisk_inst.STORE_REG])
+    | (exfalso; scalar_tac)
+  all_goals exfalso; scalar_tac
+
+theorem store_reg_u32_zero_not_reg
+    (self z : zisk_inst_builder.ZiskInstBuilder) (rd : Std.U32)
+    (hrd : rd.val = 0) (hself : self.i.store = 0#u64)
+    (h : zisk_inst_builder.ZiskInstBuilder.store_reg self
+      (UScalar.hcast IScalarTy.I64 rd) false false = ok z) :
+    z.i.store ≠ zisk_inst.STORE_REG := by
+  have hrd0 : rd = 0#u32 := UScalar.eq_of_val_eq hrd
+  subst rd
+  simp only [zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
+  have e0 : UScalar.hcast IScalarTy.I64 0#u32 = 0#i64 := by rfl
+  have e1 := ZiskFv.Compliance.Extraction.cast_one_i64
+  have e31 := ZiskFv.Compliance.Extraction.cast_31_i64
+  split_ifs at h <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst z
+       simpa [hself, zisk_inst.STORE_REG])
+    | (exfalso; scalar_tac)
+
 theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)
     (h : zisk_inst_builder.ZiskInstBuilder.src_a_reg self reg usp = ok z) :
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
-  simp only [zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+  simp [zisk_inst_builder.ZiskInstBuilder.src_a_reg,
     zisk_inst_builder.ZiskInstBuilder.src_a_imm,
     zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
     zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
@@ -120,7 +243,25 @@ theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
 
-private theorem src_b_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
+theorem src_a_reg_zero_pins (self z : zisk_inst_builder.ZiskInstBuilder)
+    (usp : Bool)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_a_reg self 0#u64 usp = ok z) :
+    z.i.a_src = zisk_inst.SRC_IMM ∧ z.i.a_offset_imm0 = 0#u64 ∧
+      z.i.a_use_sp_imm1 = 0#u64 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok] at h
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    lift, Bind.bind, bind_ok] at h
+  simp only [if_true] at h
+  have hz : (0#u64 >>> 32#i32) = ok 0#u64 := by rfl
+  rw [hz] at h
+  simp only [bind_ok, Result.ok.injEq] at h
+  subst h
+  exact ⟨rfl, rfl, rfl⟩
+
+theorem src_b_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)
     (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z) :
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
@@ -137,6 +278,145 @@ private theorem src_b_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder
     | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+
+theorem src_b_reg_zero_pins (self z : zisk_inst_builder.ZiskInstBuilder)
+    (usp : Bool)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self 0#u64 usp = ok z) :
+    z.i.b_src = zisk_inst.SRC_IMM ∧ z.i.b_offset_imm0 = 0#u64 ∧
+      z.i.b_use_sp_imm1 = 0#u64 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok] at h
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    lift, Bind.bind, bind_ok] at h
+  simp only [if_true] at h
+  have hz : (0#u64 >>> 32#i32) = ok 0#u64 := by rfl
+  rw [hz] at h
+  simp only [bind_ok, Result.ok.injEq] at h
+  subst h
+  exact ⟨rfl, rfl, rfl⟩
+
+theorem src_a_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
+    (reg : Std.U64)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_a_reg self reg false = ok z) :
+    z.i.a_use_sp_imm1 = 0#u64 := by
+  by_cases hz : reg = 0#u64
+  · subst reg
+    exact (src_a_reg_zero_pins self z false h).2.2
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_a_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok, if_neg hz] at h
+  simp only [Bool.false_eq_true, if_false, bind_ok] at h
+  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; rfl)
+    | (subst z; rfl)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; rfl)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; rfl)
+
+theorem src_b_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
+    (reg : Std.U64)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg false = ok z) :
+    z.i.b_use_sp_imm1 = 0#u64 := by
+  by_cases hz : reg = 0#u64
+  · subst reg
+    exact (src_b_reg_zero_pins self z false h).2.2
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok, if_neg hz] at h
+  simp only [Bool.false_eq_true, if_false, bind_ok] at h
+  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; rfl)
+    | (subst z; rfl)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; rfl)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; rfl)
+
+theorem src_b_reg_a_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+    (reg : Std.U64) (usp : Bool)
+    (h : zisk_inst_builder.ZiskInstBuilder.src_b_reg self reg usp = ok z) :
+    z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, Bind.bind, bind_ok] at h
+  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; rfl)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; rfl)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; rfl)
+
+theorem op_zisk_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+    (op : zisk_ops.ZiskOp)
+    (h : zisk_inst_builder.ZiskInstBuilder.op_zisk self op = ok z) :
+    z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
+      z.i.b_use_sp_imm1 = self.i.b_use_sp_imm1 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    core.convert.IntoFrom.into,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    Bind.bind] at h
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨self1, hself1, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨_, _, h4⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hself1
+  rw [Result.ok.injEq] at h h4
+  subst h
+  subst h4
+  exact ⟨rfl, rfl⟩
+
+theorem store_reg_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+    (off : Std.I64) (usp spc : Bool)
+    (h : zisk_inst_builder.ZiskInstBuilder.store_reg self off usp spc = ok z) :
+    z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
+      z.i.b_use_sp_imm1 = self.i.b_use_sp_imm1 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
+    zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
+    lift, bind_ok, Bind.bind] at h
+  split_ifs at h <;>
+    first
+    | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+       rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+
+theorem j_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+    (j1 j2 : Std.I64)
+    (h : zisk_inst_builder.ZiskInstBuilder.j self j1 j2 = ok z) :
+    z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
+      z.i.b_use_sp_imm1 = self.i.b_use_sp_imm1 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.j] at h
+  rw [Result.ok.injEq] at h
+  subst h
+  exact ⟨rfl, rfl⟩
+
+theorem build_use_sp_pres (self z : zisk_inst_builder.ZiskInstBuilder)
+    (h : zisk_inst_builder.ZiskInstBuilder.build self = ok z) :
+    z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 ∧
+      z.i.b_use_sp_imm1 = self.i.b_use_sp_imm1 := by
+  simp only [zisk_inst_builder.ZiskInstBuilder.build] at h
+  rw [Result.ok.injEq] at h
+  subst h
+  exact ⟨rfl, rfl⟩
 
 theorem op_zisk_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (op : zisk_ops.ZiskOp)
@@ -176,7 +456,8 @@ theorem create_register_op_typed_store_pins
     (h : riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed
       self i op inst_size = ok ctx) :
     ∃ zib, ctx.extract_inst = some zib ∧
-      zib.i.store_offset.val = i.rd.val ∧ zib.i.store ≠ zisk_inst.STORE_IND := by
+      zib.i.store_offset.val = i.rd.val ∧ zib.i.store ≠ zisk_inst.STORE_IND
+      ∧ (zib.i.store = zisk_inst.STORE_REG ↔ i.rd.val ≠ 0) := by
   simp only [riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed,
     lift, Bind.bind, bind_ok] at h
   obtain ⟨z0, h0, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
@@ -204,12 +485,106 @@ theorem create_register_op_typed_store_pins
   obtain ⟨hso, hst⟩ := store_reg_raw_index_pins z3 z4 i.rd hrd h30.1 h30.2 h4
   obtain ⟨hjso, hjst⟩ := j_pres_store _ _ _ _ h5
   have hz65 := ZiskFv.Compliance.Extraction.build_eq _ _ h6
-  refine ⟨z6, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
+  refine ⟨z6, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h7, ?_, ?_, ?_⟩
   · rw [hz65]
     rw [hjso]
     exact hso
   · rw [hz65]
     exact fun hh => hst (hjst.symm.trans hh)
+  · have hjst' := j_pres_store _ _ _ _ h5
+    constructor
+    · intro hreg hzero
+      rw [hz65, hjst'.2] at hreg
+      exact store_reg_u32_zero_not_reg z3 z4 i.rd hzero h30.2 h4 hreg
+    · intro hne
+      rw [hz65, hjst'.2]
+      exact store_reg_u32_is_reg z3 z4 i.rd hrd hne h4
+
+theorem create_register_op_typed_source_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (hrs1 : i.rs1.val < 32) (hrs2 : i.rs2.val < 32)
+    (h : riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed
+      self i op inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.a_src = (if i.rs1.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+      zib.i.a_offset_imm0.val = i.rs1.val ∧ zib.i.a_use_sp_imm1 = 0#u64 ∧
+      zib.i.b_src = (if i.rs2.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+      zib.i.b_offset_imm0.val = i.rs2.val ∧ zib.i.b_use_sp_imm1 = 0#u64 := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.create_register_op_typed,
+    lift, Bind.bind, bind_ok] at h
+  obtain ⟨z0, h0, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨z1, h1, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨z2, h2, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨z3, h3, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨z4, h4, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨z5, h5, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨z6, h6, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  obtain ⟨_, h7, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h
+  subst h
+  have hcast1 := ZiskFv.Compliance.Extraction.cast_u32_u64_val i.rs1
+  have hcast2 := ZiskFv.Compliance.Extraction.cast_u32_u64_val i.rs2
+  have e1 := ZiskFv.Compliance.Extraction.cast_one_u64
+  have e31 := ZiskFv.Compliance.Extraction.cast_31_u64
+  have ha : z1.i.a_src = (if i.rs1.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+      z1.i.a_offset_imm0.val = i.rs1.val ∧ z1.i.a_use_sp_imm1 = 0#u64 := by
+    by_cases hz : i.rs1.val = 0
+    · have hc : UScalar.cast UScalarTy.U64 i.rs1 = 0#u64 :=
+        UScalar.eq_of_val_eq (hcast1.trans hz)
+      obtain ⟨hs, ho, hu⟩ := src_a_reg_zero_pins z0 z1 false (by simpa [hc] using h1)
+      simp only [if_pos hz]
+      exact ⟨hs, by rw [ho]; norm_num; exact hz.symm, hu⟩
+    · have hcne : UScalar.cast UScalarTy.U64 i.rs1 ≠ 0#u64 := by
+        intro heq
+        apply hz
+        have := congrArg UScalar.val heq
+        simpa [hcast1] using this
+      obtain ⟨hs, ho⟩ := ZiskFv.Compliance.Extraction.src_a_reg_src_eq z0 z1 _ false
+        hcne h1
+          (by simp only [zisk_registers.REGS_IN_MAIN_FROM]; scalar_tac)
+          (by simp only [zisk_registers.REGS_IN_MAIN_TO]; scalar_tac)
+      simp only [if_neg hz]
+      exact ⟨hs, by rw [ho, hcast1], src_a_reg_false_use_sp_zero z0 z1 _ h1⟩
+  have hb : z2.i.b_src = (if i.rs2.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+      z2.i.b_offset_imm0.val = i.rs2.val ∧ z2.i.b_use_sp_imm1 = 0#u64 := by
+    by_cases hz : i.rs2.val = 0
+    · have hc : UScalar.cast UScalarTy.U64 i.rs2 = 0#u64 :=
+        UScalar.eq_of_val_eq (hcast2.trans hz)
+      obtain ⟨hs, ho, hu⟩ := src_b_reg_zero_pins z1 z2 false (by simpa [hc] using h2)
+      simp only [if_pos hz]
+      exact ⟨hs, by rw [ho]; norm_num; exact hz.symm, hu⟩
+    · have hcne : UScalar.cast UScalarTy.U64 i.rs2 ≠ 0#u64 := by
+        intro heq
+        apply hz
+        have := congrArg UScalar.val heq
+        simpa [hcast2] using this
+      obtain ⟨hs, ho, _, _⟩ := ZiskFv.Compliance.Extraction.src_b_reg_src_eq z1 z2 _ false
+        hcne h2
+          (by simp only [zisk_registers.REGS_IN_MAIN_FROM]; scalar_tac)
+          (by simp only [zisk_registers.REGS_IN_MAIN_TO]; scalar_tac)
+      simp only [if_neg hz]
+      exact ⟨hs, by rw [ho, hcast2], src_b_reg_false_use_sp_zero z1 z2 _ h2⟩
+  obtain ⟨hba, hbao⟩ := ZiskFv.Compliance.Extraction.src_b_reg_a_pres z1 z2 _ false h2
+  have hbau := src_b_reg_a_use_sp_pres z1 z2 _ false h2
+  obtain ⟨hoa, hoao, hob, hobo⟩ := ZiskFv.Compliance.Extraction.op_zisk_src_pres z2 z3 op h3
+  obtain ⟨houa, houb⟩ := op_zisk_use_sp_pres z2 z3 op h3
+  obtain ⟨hsa, hsao, hsb, hsbo⟩ :=
+    ZiskFv.Compliance.Extraction.store_reg_src_pres z3 _ _ _ z4 h4
+  obtain ⟨hsua, hsub⟩ := store_reg_use_sp_pres z3 z4 _ _ _ h4
+  obtain ⟨hja, hjao, hjb, hjbo⟩ := ZiskFv.Compliance.Extraction.j_src_pres z4 _ _ z5 h5
+  obtain ⟨hjua, hjub⟩ := j_use_sp_pres z4 z5 _ _ h5
+  obtain ⟨hda, hdao, hdb, hdbo⟩ := ZiskFv.Compliance.Extraction.build_src_pres z5 z6 h6
+  obtain ⟨hdua, hdub⟩ := build_use_sp_pres z5 z6 h6
+  refine ⟨z6, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h7,
+    ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hda, hja, hsa, hoa, hba]; exact ha.1
+  · rw [hdao, hjao, hsao, hoao, hbao]; exact ha.2.1
+  · rw [hdua, hjua, hsua, houa, hbau]; exact ha.2.2
+  · rw [hdb, hjb, hsb, hob]; exact hb.1
+  · rw [hdbo, hjbo, hsbo, hobo]; exact hb.2.1
+  · rw [hdub, hjub, hsub, houb]; exact hb.2.2
 
 /-- The REAL transpile pipeline on a register-op raw word `raw` reduces to the
     op's decode-field pins, given: the decode classifies to `decode_r raw rop`;
@@ -219,8 +594,10 @@ theorem create_register_op_typed_store_pins
 theorem transpile_register_of
     (raw : Std.U32) (rop : RiscvOpcode) (srop : riscv2zisk_single_row.Rv64imSingleRowOpcode)
     (zop : zisk_ops.ZiskOp) (opc : Std.U8) (m32v : Bool) (otv : zisk_ops.OpType)
-    (rdv : Nat)
+    (rdv rs1v rs2v : Nat)
     (hrdv : ∀ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d → d.rd.val = rdv)
+    (hrs1v : ∀ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d → d.rs1.val = rs1v)
+    (hrs2v : ∀ d, aeneas_extract.rv64im_decode.decode_r raw rop = ok d → d.rs2.val = rs2v)
     (hdec : aeneas_extract.rv64im_decode.decode_32_core raw = aeneas_extract.rv64im_decode.decode_r raw rop)
     (hlowop : aeneas_extract.lowering_opcode rop = ok (some srop))
     (harm : ∀ (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -238,7 +615,12 @@ theorem transpile_register_of
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rdv
-      ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
+      ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rdv ≠ 0)
+      ∧ ext.row.a_src = (if rs1v = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.a_offset_imm0.val = rs1v ∧ ext.row.a_use_sp_imm1 = 0#u64
+      ∧ ext.row.b_src = (if rs2v = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+      ∧ ext.row.b_offset_imm0.val = rs2v ∧ ext.row.b_use_sp_imm1 = 0#u64 := by
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, hrs2b⟩ := decode_r_bounds raw rop
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core raw = ok decoded := hdec.trans hdecoded
   set input : riscv2zisk_single_row.Rv64imLoweringInput :=
@@ -254,13 +636,24 @@ theorem transpile_register_of
       { defCtx with extract_marker := () } input zop 4#u64 ctx0 hctx0
   have hzz : zib' = zib := Option.some.inj (hzib'.symm.trans hzib)
   rw [hzz] at hj1 hj2
-  obtain ⟨zibS, hzibS, hstoreOffset, hstoreInd⟩ :=
+  obtain ⟨zibS, hzibS, hstoreOffset, hstoreInd, hstoreReg⟩ :=
     create_register_op_typed_store_pins
       { defCtx with extract_marker := () } input zop 4#u64 ctx0 (by rw [hinput]; exact hrdb) hctx0
   have hzzS : zibS = zib := Option.some.inj (hzibS.symm.trans hzib)
-  rw [hzzS] at hstoreOffset hstoreInd
+  rw [hzzS] at hstoreOffset hstoreInd hstoreReg
+  obtain ⟨zibSrc, hzibSrc, haSrc, haOff, haUse, hbSrc, hbOff, hbUse⟩ :=
+    create_register_op_typed_source_pins
+      { defCtx with extract_marker := () } input zop 4#u64 ctx0
+      (by rw [hinput]; exact hrs1b) (by rw [hinput]; exact hrs2b) hctx0
+  have hzzSrc : zibSrc = zib := Option.some.inj (hzibSrc.symm.trans hzib)
+  rw [hzzSrc] at haSrc haOff haUse hbSrc hbOff hbUse
   obtain ⟨dext, hdext⟩ := decode_extract_ok decoded
   obtain ⟨row, hrow, hrop, hrext, hrm32, hrsp, hrstp, hrj1, hrj2, _⟩ := from_inst_ok zib.i
+  obtain ⟨row', hrow', hraSrc, hraUse, hraOff, hrbSrc, hrbUse, hrbOff,
+      _, _, hrStore', _, _, _, _, _, _⟩ :=
+    ZiskFv.Compliance.Extraction.from_inst_full_fields zib.i
+  have hrowEq : row' = row := Result.ok.inj (hrow'.symm.trans hrow)
+  subst row'
   have hlower : riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input defCtx input srop false
       = ok { ctx0 with extract_marker := () } := by rw [harm, hctx0]; rfl
   have hrStoreOffset : row.store_offset = zib.i.store_offset := by
@@ -275,7 +668,8 @@ theorem transpile_register_of
     rw [Result.ok.injEq] at hrow
     subst row
     rfl
-  refine ⟨{ accepted := true, decode := dext, row := row }, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨{ accepted := true, decode := dext, row := row }, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
     simp only [bind_ok, Bind.bind, hdext, hopd, hlowop]
     simp only [defCtx] at hlower
@@ -295,10 +689,192 @@ theorem transpile_register_of
   · show row.store ≠ zisk_inst.STORE_IND
     rw [hrStore]
     exact hstoreInd
+  · rw [hrStore, hstoreReg]
+    rw [hinput]
+    rw [hrdv decoded hdecoded]
+  · rw [hraSrc, haSrc, hinput, hrs1v decoded hdecoded]
+  · rw [hraOff, haOff, hinput, hrs1v decoded hdecoded]
+  · rw [hraUse, haUse]
+  · rw [hrbSrc, hbSrc, hinput, hrs2v decoded hdecoded]
+  · rw [hrbOff, hbOff, hinput, hrs2v decoded hdecoded]
+  · rw [hrbUse, hbUse]
 
 /-! ## Generic decode-field bridge for register ops. -/
 
 private theorem hcast4 : (UScalar.hcast IScalarTy.I64 4#u64 : Std.I64).val = (4 : Int) := by decide
+
+private theorem signedOffset_eq_registerIndex (x : Std.U64) (r : Fin 32)
+    (h : x.val = r.val) : signedOffset x = Transpiler.ind r := by
+  have hx : x.bv.toNat < 32 := by
+    change x.bv.toNat < 32
+    rw [show x.bv.toNat = r.val by simpa only [UScalar.val] using h]
+    exact r.isLt
+  have hnonneg : 2 * x.val < 18446744073709551616 := by
+    change 2 * x.bv.toNat < 18446744073709551616
+    omega
+  have hsigned : signedOffset x = (x.bv.toNat : FGL) := by
+    simp [signedOffset, BitVec.toInt, if_pos hnonneg]
+  rw [hsigned]
+  rw [show x.bv.toNat = r.val by simpa only [UScalar.val] using h]
+  apply Fin.ext
+  simp only [Transpiler.ind]
+  exact Nat.mod_eq_of_lt (lt_trans r.isLt (by norm_num))
+
+theorem storeBit_of_store_iff (row : zisk_core.aeneas_extract.ZiskInstExtract)
+    (rd : Fin 32) (hstore : row.store = zisk_inst.STORE_REG ↔ rd.val ≠ 0) :
+    (romFlagBitsOfExtract row).store_reg = decide (rd ≠ 0) := by
+  by_cases hrd : rd = 0
+  · have hrdv : rd.val = 0 := by simp [hrd]
+    have hnstore : row.store ≠ zisk_inst.STORE_REG := by
+      intro hs
+      exact (hstore.mp hs) hrdv
+    simp [romFlagBitsOfExtract, hnstore, hrd]
+  · have hrdv : rd.val ≠ 0 := by
+      intro hz
+      apply hrd
+      apply Fin.ext
+      exact hz
+    have hs : row.store = zisk_inst.STORE_REG := hstore.mpr hrdv
+    simp [romFlagBitsOfExtract, hs, hrd]
+
+theorem storeBit_of_store_iff_val
+    (row : zisk_core.aeneas_extract.ZiskInstExtract) (rd : Fin 32)
+    (hstore : row.store = zisk_inst.STORE_REG ↔ rd.val ≠ 0) :
+    (romFlagBitsOfExtract row).store_reg = decide (rd.val ≠ 0) := by
+  by_cases hrd : rd.val = 0
+  · have hnstore : row.store ≠ zisk_inst.STORE_REG := by
+      intro hs
+      exact (hstore.mp hs) hrd
+    rw [show (romFlagBitsOfExtract row).store_reg = false by
+      exact decide_eq_false hnstore]
+    have hn : ¬ rd.val ≠ 0 := by omega
+    exact (decide_eq_false hn).symm
+  · have hs : row.store = zisk_inst.STORE_REG := hstore.mpr hrd
+    rw [show (romFlagBitsOfExtract row).store_reg = true by
+      exact decide_eq_true hs]
+    exact (decide_eq_true hrd).symm
+
+theorem aRegisterProgramFacts_of_serialized
+    {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (r : Fin 32)
+    (row : zisk_core.aeneas_extract.ZiskInstExtract)
+    (hsrc : row.a_src = if r.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+    (hoff : row.a_offset_imm0.val = r.val) (huse : row.a_use_sp_imm1 = 0#u64)
+    (hserialized : ∀ j : Fin trace.programLength,
+      (trace.program j).line =
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+        trace.program j = serializeExtract (trace.program j).line row) :
+    ZiskFv.Compliance.RomDecodeBinding.ARegisterProgramFacts trace i
+      (romFlagBitsOfExtract row) r := by
+  refine { h_src_reg := ?_, h_src_imm := ?_, h_program := ?_ }
+  · by_cases hr : r = 0
+    · have hs : row.a_src = zisk_inst.SRC_IMM := by simpa [hr] using hsrc
+      have hn : row.a_src ≠ zisk_inst.SRC_REG := by
+        rw [hs]
+        intro heq
+        have hv := congrArg UScalar.val heq
+        norm_num [zisk_inst.SRC_IMM, zisk_inst.SRC_REG] at hv
+      change decide (row.a_src = zisk_inst.SRC_REG) = decide (r ≠ 0)
+      have hrn : ¬ r ≠ 0 := by exact fun hne => hne hr
+      rw [decide_eq_false hn, decide_eq_false hrn]
+    · have hrv : r.val ≠ 0 := by
+        intro hz
+        apply hr
+        apply Fin.ext
+        exact hz
+      have hs : row.a_src = zisk_inst.SRC_REG := by simpa [hrv] using hsrc
+      change decide (row.a_src = zisk_inst.SRC_REG) = decide (r ≠ 0)
+      rw [decide_eq_true hs, decide_eq_true hr]
+  · by_cases hr : r = 0
+    · have hs : row.a_src = zisk_inst.SRC_IMM := by simpa [hr] using hsrc
+      change decide (row.a_src = zisk_inst.SRC_IMM) = decide (r = 0)
+      rw [decide_eq_true hs, decide_eq_true hr]
+    · have hrv : r.val ≠ 0 := by
+        intro hz
+        apply hr
+        apply Fin.ext
+        exact hz
+      have hs : row.a_src = zisk_inst.SRC_REG := by simpa [hrv] using hsrc
+      have hn : row.a_src ≠ zisk_inst.SRC_IMM := by
+        rw [hs]
+        intro heq
+        have hv := congrArg UScalar.val heq
+        norm_num [zisk_inst.SRC_IMM, zisk_inst.SRC_REG] at hv
+      change decide (row.a_src = zisk_inst.SRC_IMM) = decide (r = 0)
+      rw [decide_eq_false hn, decide_eq_false hr]
+  · intro j hline
+    have hs := hserialized j hline
+    have ho := congrArg (fun msg => msg.a_offset_imm0) hs
+    have hi := congrArg (fun msg => msg.a_imm1) hs
+    have hf := congrArg (fun msg => msg.flags) hs
+    simp only [serializeExtract] at ho hi hf
+    refine ⟨ho.trans (signedOffset_eq_registerIndex row.a_offset_imm0 r hoff), ?_, ?_⟩
+    · exact hi.trans (by
+        rw [huse]
+        unfold sourceImmediate
+        split <;> norm_num)
+    · exact hf
+
+theorem bRegisterProgramFacts_of_serialized
+    {n : Nat} (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
+    (i : Fin trace.numInstructions) (r : Fin 32)
+    (row : zisk_core.aeneas_extract.ZiskInstExtract)
+    (hsrc : row.b_src = if r.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+    (hoff : row.b_offset_imm0.val = r.val) (huse : row.b_use_sp_imm1 = 0#u64)
+    (hserialized : ∀ j : Fin trace.programLength,
+      (trace.program j).line =
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+        trace.program j = serializeExtract (trace.program j).line row) :
+    ZiskFv.Compliance.RomDecodeBinding.BRegisterProgramFacts trace i
+      (romFlagBitsOfExtract row) r := by
+  refine { h_src_reg := ?_, h_src_imm := ?_, h_program := ?_ }
+  · by_cases hr : r = 0
+    · have hs : row.b_src = zisk_inst.SRC_IMM := by simpa [hr] using hsrc
+      have hn : row.b_src ≠ zisk_inst.SRC_REG := by
+        rw [hs]
+        intro heq
+        have hv := congrArg UScalar.val heq
+        norm_num [zisk_inst.SRC_IMM, zisk_inst.SRC_REG] at hv
+      change decide (row.b_src = zisk_inst.SRC_REG) = decide (r ≠ 0)
+      have hrn : ¬ r ≠ 0 := by exact fun hne => hne hr
+      rw [decide_eq_false hn, decide_eq_false hrn]
+    · have hrv : r.val ≠ 0 := by
+        intro hz
+        apply hr
+        apply Fin.ext
+        exact hz
+      have hs : row.b_src = zisk_inst.SRC_REG := by simpa [hrv] using hsrc
+      change decide (row.b_src = zisk_inst.SRC_REG) = decide (r ≠ 0)
+      rw [decide_eq_true hs, decide_eq_true hr]
+  · by_cases hr : r = 0
+    · have hs : row.b_src = zisk_inst.SRC_IMM := by simpa [hr] using hsrc
+      change decide (row.b_src = zisk_inst.SRC_IMM) = decide (r = 0)
+      rw [decide_eq_true hs, decide_eq_true hr]
+    · have hrv : r.val ≠ 0 := by
+        intro hz
+        apply hr
+        apply Fin.ext
+        exact hz
+      have hs : row.b_src = zisk_inst.SRC_REG := by simpa [hrv] using hsrc
+      have hn : row.b_src ≠ zisk_inst.SRC_IMM := by
+        rw [hs]
+        intro heq
+        have hv := congrArg UScalar.val heq
+        norm_num [zisk_inst.SRC_IMM, zisk_inst.SRC_REG] at hv
+      change decide (row.b_src = zisk_inst.SRC_IMM) = decide (r = 0)
+      rw [decide_eq_false hn, decide_eq_false hr]
+  · intro j hline
+    have hs := hserialized j hline
+    have ho := congrArg (fun msg => msg.b_offset_imm0) hs
+    have hi := congrArg (fun msg => msg.b_imm1) hs
+    have hf := congrArg (fun msg => msg.flags) hs
+    simp only [serializeExtract] at ho hi hf
+    refine ⟨ho.trans (signedOffset_eq_registerIndex row.b_offset_imm0 r hoff), ?_, ?_⟩
+    · exact hi.trans (by
+        rw [huse]
+        unfold sourceImmediate
+        split <;> norm_num)
+    · exact hf
 
 /-- The committed message's register-op decode fields, from its raw word binding. -/
 theorem register_decode_fields_of_binding
@@ -349,44 +925,46 @@ local macro "reg_op" nm:ident "," f7:term "," f3:term "," opw:term ","
           ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
           ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
           ∧ ext.row.store_offset.val = rd
-          ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
-      refine transpile_register_of _ $rop $srop $zop $opU8 $m32 $ot rd ?_ ?_ rfl
+          ∧ ext.row.store ≠ zisk_inst.STORE_IND
+          ∧ (ext.row.store = zisk_inst.STORE_REG ↔ rd ≠ 0)
+          ∧ ext.row.a_src = (if rs1 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+          ∧ ext.row.a_offset_imm0.val = rs1 ∧ ext.row.a_use_sp_imm1 = 0#u64
+          ∧ ext.row.b_src = (if rs2 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG)
+          ∧ ext.row.b_offset_imm0.val = rs2 ∧ ext.row.b_use_sp_imm1 = 0#u64 := by
+      refine transpile_register_of _ $rop $srop $zop $opU8 $m32 $ot rd rs1 rs2 ?_ ?_ ?_ ?_ rfl
         (by intro self input; rfl)
         rfl rfl rfl (by intro h; cases h) (by intro h; cases h)
       · intro d hd
-        rw [aeneas_extract.rv64im_decode.decode_r] at hd
-        simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new, lift, bind_ok,
-          Bind.bind] at hd
-        obtain ⟨i1, hi1, hd⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hd
-        obtain ⟨i3, hi3, hd⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hd
-        obtain ⟨i5, hi5, hd⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hd
-        obtain ⟨i7, hi7, hd⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hd
-        obtain ⟨i9, hi9, hd⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hd
-        rw [Result.ok.injEq] at hd
-        subst d
-        have hi3' :
-            i3 = toU32 (BitVec.ofNat 32 rd) := by
-          have hcalc :
-              (toU32 (ZiskFv.Completeness.Rv64imShapes.rawRType
-                    $f7 rs2 rs1 $f3 rd $opw) &&& 3968#u32) >>> 7#i32 =
-                ok (toU32 (BitVec.ofNat 32 rd)) := by
-            change (toU32
-                (ZiskFv.Completeness.Rv64imShapes.rawRType
-                  $f7 rs2 rs1 $f3 rd $opw &&& 3968#32)) >>> 7#i32 =
-              ok (toU32 (BitVec.ofNat 32 rd))
-            rw [show (toU32
-                  (ZiskFv.Completeness.Rv64imShapes.rawRType
-                    $f7 rs2 rs1 $f3 rd $opw &&& 3968#32)) >>> 7#i32 =
-                ok (toU32
-                  ((ZiskFv.Completeness.Rv64imShapes.rawRType
-                    $f7 rs2 rs1 $f3 rd $opw &&& 3968#32) >>> 7)) by rfl]
-            rw [and3968_ushift7,
-              rawRType_rd $f7 rs2 rs1 $f3 rd $opw hrd (by norm_num)]
-          rw [hcalc] at hi3
-          exact (Result.ok.inj hi3).symm
-        rw [hi3']
-        simp only [UScalar.val, BitVec.toNat_ofNat]
-        exact Nat.mod_eq_of_lt (lt_trans hrd (by norm_num))
+        obtain ⟨d', hd', hrdbv, _, _⟩ := decode_r_fields _ $rop
+        have hdd : d = d' := Result.ok.inj (hd.symm.trans hd')
+        rw [hdd]
+        change d'.rd.bv.toNat = rd
+        rw [hrdbv]
+        change (((ZiskFv.Completeness.Rv64imShapes.rawRType
+          $f7 rs2 rs1 $f3 rd $opw) &&& 3968#32) >>> 7).toNat = rd
+        rw [and3968_ushift7,
+          rawRType_rd $f7 rs2 rs1 $f3 rd $opw hrd (by norm_num)]
+        simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+      · intro d hd
+        obtain ⟨d', hd', _, hrs1bv, _⟩ := decode_r_fields _ $rop
+        have hdd : d = d' := Result.ok.inj (hd.symm.trans hd')
+        rw [hdd]
+        change d'.rs1.bv.toNat = rs1
+        rw [hrs1bv]
+        change (((ZiskFv.Completeness.Rv64imShapes.rawRType
+          $f7 rs2 rs1 $f3 rd $opw) &&& 1015808#32) >>> 15).toNat = rs1
+        rw [rawRType_rs1 $f7 rs2 rs1 $f3 rd $opw hrs1 (by norm_num) hrd (by norm_num)]
+        simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+      · intro d hd
+        obtain ⟨d', hd', _, _, hrs2bv⟩ := decode_r_fields _ $rop
+        have hdd : d = d' := Result.ok.inj (hd.symm.trans hd')
+        rw [hdd]
+        change d'.rs2.bv.toNat = rs2
+        rw [hrs2bv]
+        change (((ZiskFv.Completeness.Rv64imShapes.rawRType
+          $f7 rs2 rs1 $f3 rd $opw) &&& 32505856#32) >>> 20).toNat = rs2
+        rw [rawRType_rs2 $f7 rs2 rs1 $f3 rd $opw hrs2 hrs1 (by norm_num) hrd (by norm_num)]
+        simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
       simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
         ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,
         ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_shr25,
@@ -406,7 +984,7 @@ local macro "reg_op" nm:ident "," f7:term "," f3:term "," opw:term ","
               ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
               ∧ (romFlagBitsOfExtract ext.row).store_ind = false
               ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hstoreOffset, hstoreInd⟩ :=
+      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hstoreOffset, hstoreInd, _⟩ :=
         $tName rd rs1 rs2 hrd hrs1 hrs2
       obtain ⟨ho, hjo1, hjo2, hso, hsi, hf⟩ :=
         register_decode_fields_of_binding line msg _ $opU8 $opc rd ext
@@ -470,9 +1048,40 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_sub rd rs1 rs2 (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
   obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-      hstoreOffset, hstoreInd⟩ :=
+      hstoreOffset, hstoreInd, hstoreReg, haSrc, haOff, haUse,
+      hbSrc, hbOff, hbUse⟩ :=
     (transpile_sub rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
+  have hserialized : ∀ j : Fin trace.programLength,
+      (trace.program j).line =
+          (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+        trace.program j = serializeExtract (trace.program j).line ext.row := by
+    intro j hline
+    obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+    have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
+    have hok' : aeneas_extract.extract_transpile_rv64im_raw
+        (ZiskFv.Compliance.Decode.toU32
+          (ZiskFv.Completeness.Rv64imShapes.rawRType 32
+            (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 0
+            (regidx_to_fin c.rd).val 0x33)) = .ok ext := by
+      simpa only [rd, rs1, rs2, ext] using hok
+    have hnon :
+        (ZiskFv.Compliance.Decode.toU32
+            (ZiskFv.Completeness.Rv64imShapes.rawRType 32
+              (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val 0
+              (regidx_to_fin c.rd).val 0x33) &&& 127#u32) ≠ 103#u32 := by
+      rw [ZiskFv.Compliance.Decode.toU32_and127,
+        ZiskFv.Compliance.Decode.rawRType_opcode]
+      all_goals decide
+    have hp := hprimary.2
+    rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+    have hbk : trace.program j = romMessageOfRaw (addr k)
+        (ZiskFv.Completeness.Rv64imShapes.rawRType 32 rs2 rs1 0 rd 0x33) := by
+      simpa only [rd, rs1, rs2] using hp
+    have hser : trace.program j = serializeExtract (addr k) ext.row := by
+      rw [hbk, romMessageOfRaw, hok]
+      exact romRowOf_eq_serializeExtract (addr k) ext.row
+    exact hser.trans (by rw [haddr])
   refine
     { h_idx := rawDecode.h_idx
       bits := romFlagBitsOfExtract ext.row
@@ -481,6 +1090,9 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
       h_bits_set_pc := ?_
       h_bits_store_pc := ?_
       h_bits_store_ind := ?_
+      h_bits_store_reg := ?_
+      aFacts := ?_
+      bFacts := ?_
       h_prog := ?_ }
   · simpa only [ext, romFlagBitsOfExtract] using hieo
   · simpa only [ext, romFlagBitsOfExtract] using hm32
@@ -488,6 +1100,14 @@ noncomputable def ProgramDecode_sub_from_rawProgram {n rawLength : Nat}
   · simpa only [ext, romFlagBitsOfExtract] using hstorepc
   · simp only [romFlagBitsOfExtract]
     exact decide_eq_false hstoreInd
+  · exact storeBit_of_store_iff ext.row (regidx_to_fin c.rd)
+      (by simpa only [rd] using hstoreReg)
+  · exact aRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r1) ext.row
+      (by simpa only [ext, rs1] using haSrc)
+      (by simpa only [ext, rs1] using haOff) (by simpa only [ext] using haUse) hserialized
+  · exact bRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r2) ext.row
+      (by simpa only [ext, rs2] using hbSrc)
+      (by simpa only [ext, rs2] using hbOff) (by simpa only [ext] using hbUse) hserialized
   · intro j hline
     obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
     have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
@@ -565,9 +1185,40 @@ local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term :
     let ext := ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd⟩ :=
+        hstoreOffset, hstoreInd, hstoreReg, haSrc, haOff, haUse,
+        hbSrc, hbOff, hbUse⟩ :=
       ($transpileName rd rs1 rs2 (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt).choose_spec
+    have hserialized : ∀ j : Fin trace.programLength,
+        (trace.program j).line =
+            (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val →
+          trace.program j = serializeExtract (trace.program j).line ext.row := by
+      intro j hline
+      obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
+      have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
+      have hok' : aeneas_extract.extract_transpile_rv64im_raw
+          (ZiskFv.Compliance.Decode.toU32
+            (ZiskFv.Completeness.Rv64imShapes.rawRType $f7
+              (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val $f3
+              (regidx_to_fin c.rd).val $opw)) = .ok ext := by
+        simpa only [rd, rs1, rs2, ext] using hok
+      have hnon :
+          (ZiskFv.Compliance.Decode.toU32
+              (ZiskFv.Completeness.Rv64imShapes.rawRType $f7
+                (regidx_to_fin c.r2).val (regidx_to_fin c.r1).val $f3
+                (regidx_to_fin c.rd).val $opw) &&& 127#u32) ≠ 103#u32 := by
+        rw [ZiskFv.Compliance.Decode.toU32_and127,
+          ZiskFv.Compliance.Decode.rawRType_opcode]
+        all_goals decide
+      have hp := hprimary.2
+      rw [hraw, romMessagesOfRaw_fst_of_non_jalr _ _ ext hok' hnon] at hp
+      have hbk : trace.program j = romMessageOfRaw (addr k)
+          (ZiskFv.Completeness.Rv64imShapes.rawRType $f7 rs2 rs1 $f3 rd $opw) := by
+        simpa only [rd, rs1, rs2] using hp
+      have hser : trace.program j = serializeExtract (addr k) ext.row := by
+        rw [hbk, romMessageOfRaw, hok]
+        exact romRowOf_eq_serializeExtract (addr k) ext.row
+      exact hser.trans (by rw [haddr])
     refine
       { h_idx := rawDecode.h_idx
         bits := romFlagBitsOfExtract ext.row
@@ -576,6 +1227,14 @@ local macro "reg_program_decode" nm:ident "," f7:term "," f3:term "," opw:term :
         h_bits_set_pc := ?_
         h_bits_store_pc := ?_
         h_bits_store_ind := ?_
+        h_bits_store_reg := storeBit_of_store_iff ext.row (regidx_to_fin c.rd)
+          (by simpa only [rd] using hstoreReg)
+        aFacts := aRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r1) ext.row
+          (by simpa only [rs1] using haSrc) (by simpa only [rs1] using haOff) haUse
+          hserialized
+        bFacts := bRegisterProgramFacts_of_serialized trace i (regidx_to_fin c.r2) ext.row
+          (by simpa only [rs2] using hbSrc) (by simpa only [rs2] using hbOff) hbUse
+          hserialized
         h_prog := ?_ }
     · simpa only [ext, romFlagBitsOfExtract] using hieo
     · simpa only [ext, romFlagBitsOfExtract] using hm32

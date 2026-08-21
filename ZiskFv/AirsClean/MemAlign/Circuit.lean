@@ -184,13 +184,16 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit where
         List.not_mem_nil, or_false] at h_mem
       rcases h_mem with rfl | rfl | rfl <;>
         simp [circuit_norm, mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main,
-          selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
+          selAssumeExpr, memBusMessageExpr, valueRangeLookups,
+          memAlignRomMessageExpr, memAlignRomFlagsExpr,
           memAlignRangeMessageExpr, MemBusChannel, MemAlignRomChannel, MemAlignRangeChannel]
     Assumptions := fun _ _ => True
     Spec := fun row _ _ => Spec row
     -- Completeness covers rows built by `memAlignRowOf`: phase and Boolean
     -- columns are honest, while unconstrained address/register data remains free.
     ProverAssumptions := fun row _ _ =>
+      (ZiskFv.AirsClean.RangeTables.rangeTable32.Spec row.value_0 ∧
+        ZiskFv.AirsClean.RangeTables.rangeTable32.Spec row.value_1) ∧
       ∃ phase isBoot wr reset sel_0 sel_1 sel_2 sel_3 sel_4 sel_5 sel_6 sel_7
         reg_0 reg_1 reg_2 reg_3 reg_4 reg_5 reg_6 reg_7
         addr offset width step delta_addr delta_pc pcVal,
@@ -203,7 +206,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit where
       circuit_proof_start
       refine ⟨?_, ?_⟩
       · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
-          h12, h13, h14, h15⟩ := h_holds
+          h12, h13, h14, h15, _, _⟩ := h_holds
         exact ⟨ by simpa only [sub_eq_add_neg] using h0
               , by simpa only [sub_eq_add_neg] using h1
               , by simpa only [sub_eq_add_neg] using h2
@@ -225,15 +228,18 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit where
     completeness := by
       circuit_proof_start_core
       simp only [mainWithMemBusAndMemAlignRomAndRanges, mainWithMemBus, main, circuit_norm,
-        selAssumeExpr, memBusMessageExpr, memAlignRomMessageExpr, memAlignRomFlagsExpr,
+        selAssumeExpr, memBusMessageExpr, valueRangeLookups,
+        memAlignRomMessageExpr, memAlignRomFlagsExpr,
         memAlignRangeMessageExpr, MemBusChannel,
         ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
         ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel]
-      obtain ⟨phase, isBoot, wr, reset, sel_0, sel_1, sel_2, sel_3,
+      obtain ⟨⟨h_value_0_range, h_value_1_range⟩,
+        phase, isBoot, wr, reset, sel_0, sel_1, sel_2, sel_3,
         sel_4, sel_5, sel_6, sel_7, reg_0, reg_1, reg_2, reg_3,
         reg_4, reg_5, reg_6, reg_7, addr, offset, width, step,
         delta_addr, delta_pc, pcVal, hrow⟩ := h_assumptions
       rw [hrow] at h_input
+      rw [hrow] at h_value_0_range h_value_1_range
       simp only [circuit_norm] at h_input
       injection h_input with h_addr h_offset h_width h_wr h_pc h_reset h_sel_up_to_down
         h_sel_down_to_up h_reg_0 h_reg_1 h_reg_2 h_reg_3 h_reg_4 h_reg_5
@@ -245,9 +251,12 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit where
           h_reg_1, h_reg_2, h_reg_3, h_reg_4, h_reg_5, h_reg_6, h_reg_7, h_sel_0,
           h_sel_1, h_sel_2, h_sel_3, h_sel_4, h_sel_5, h_sel_6, h_sel_7,
           h_sel_prove, h_preL1, h_value_0, h_value_1, memAlignValue0Of,
-          memAlignValue1Of, memAlignLane] <;>
-        ring_nf <;>
-        simp
+          memAlignValue1Of, memAlignLane, memAlignRowOf,
+          ZiskFv.AirsClean.RangeTables.rangeTable32,
+          ZiskFv.AirsClean.RangeTables.rangeStaticTable]
+          at h_value_0_range h_value_1_range ⊢ <;>
+        try ring_nf at h_value_0_range h_value_1_range ⊢ <;>
+        simp_all
 
 /-- The source's predecessor/current MemAlign constraints: c29's gated
     `delta_addr` relation and c1/c3/.../c15's register continuity.
@@ -422,6 +431,21 @@ def component : Air.Flat.Component FGL :=
     fixedColumns := some memAlignFixedColumns
     transition := transition
     cyclicSuccessorTransition := cyclicSuccessorTransition }
+
+/- The live component constraints expose the two source-declared 32-bit
+MemAlign value-column bounds. -/
+theorem value_ranges_of_component_constraints
+    (env : Environment FGL)
+    (h_constraints : component.operations.ConstraintsHold env) :
+    (eval env component.rowInputVar).value_0.val < 2 ^ 32 ∧
+      (eval env component.rowInputVar).value_1.val < 2 ^ 32 := by
+  have h_row : component.rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff (component := component) env).mp h_constraints
+  change Operations.ConstraintsHold env
+    ((mainWithMemBusAndMemAlignRomAndRanges component.rowInputVar).operations
+      component.rowOffset) at h_row
+  exact value_ranges_of_mainWithMemBusAndMemAlignRomAndRanges_constraints
+    component.rowInputVar component.rowOffset env h_row
 
 /-- Project the generic Clean component `Spec` to the concrete MemAlign row
     `Spec`. -/

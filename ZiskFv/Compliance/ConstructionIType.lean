@@ -24,7 +24,7 @@ The second operand is NOT a register read; it is an immediate sourced from the
 program binding. So relative to the R-type sibling each construction:
 
 * **drops** the second-register Sail read `h_input_r2` and the two `b`-lane
-  bridges `h_b_lo_t` / `h_b_hi_t` (no `xreg(rs2)` lane pin),
+  bridges `h_b_lo` / `h_b_hi` (no `xreg(rs2)` lane pin),
 * **adds** the immediate binder `imm : BitVec 12` and the immediate-routing
   *constructibility-bundle* pin `itype_imm_subset_holds_main m i.val imm` as a
   NAMED top-level binder (`h_<op>_subset`) — a bucket-(b) program/decode residual
@@ -54,7 +54,7 @@ The 8-byte Binary-row immediate form `h_input_imm_row`
 
 ## Residual budget (per family): 16 + `imm` + `execRow`
 
-R-type sibling 17 binders, minus `h_input_r2` (−1), minus `h_b_lo_t`/`h_b_hi_t`
+R-type sibling 17 binders, minus `h_input_r2` (−1), minus `h_b_lo`/`h_b_hi`
 (−2), plus `h_<op>_subset` (+1) and the immediate-decode equality
 `h_input_imm : input.imm = imm` (+1) = 16 hypothesis binders, plus the immediate
 value binder `imm : BitVec 12`, plus the genuine `execRow` ∀-binder.
@@ -111,7 +111,7 @@ set_option maxHeartbeats 2000000
       `h_store_pc`
     * (b) Sail read + operands (5): `h_input_r1`, `h_input_imm`, `h_input_pc`,
       `h_input_rd`, `h_rd_idx`
-    * (b) r1 lane bridges (2): `h_a_lo_t`, `h_a_hi_t`
+    * (b) r1 lane bridges (2): `h_a_lo`, `h_a_hi`
     * (b) immediate-routing pin (1): `h_andi_subset`
       (`itype_imm_subset_holds_main`)
     * (b)-pending-infra (1): `h_nextPC_matches`
@@ -151,12 +151,12 @@ theorem construction_andi_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some andi_input.PC)
     (h_input_rd : andi_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -290,7 +290,7 @@ theorem construction_andi_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) andi_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   -- Immediate routing: DERIVE the 8-byte Binary-row form from the named Main-form
   -- pin + the in-body byte-match fact + `m32 = 0` + the provider match.
   have h_input_imm_row :
@@ -342,12 +342,12 @@ theorem construction_ori_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some ori_input.PC)
     (h_input_rd : ori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -472,7 +472,7 @@ theorem construction_ori_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) ori_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_imm_row :
       BitVec.signExtend 64 ori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
@@ -524,12 +524,12 @@ theorem construction_xori_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some xori_input.PC)
     (h_input_rd : xori_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -654,7 +654,7 @@ theorem construction_xori_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) xori_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_imm_row :
       BitVec.signExtend 64 xori_input.imm
         = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
@@ -707,12 +707,12 @@ theorem construction_slti_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some slti_input.PC)
     (h_input_rd : slti_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -837,7 +837,7 @@ theorem construction_slti_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) slti_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTI
     state slti_input r1 rd imm m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -883,12 +883,12 @@ theorem construction_sltiu_sound_claimed_dead
     (h_input_pc : (binding i).regs.get? Register.PC = .some sltiu_input.PC)
     (h_input_rd : sltiu_input.rd = regidx_to_fin rd)
     -- (b) r1 lane bridges
-    (h_a_lo_t :
+    (h_a_lo :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -1013,7 +1013,7 @@ theorem construction_sltiu_sound_claimed_dead
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) sltiu_input.r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   exact ZiskFv.Compliance.equiv_SLTIU
     state sltiu_input r1 rd imm m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩

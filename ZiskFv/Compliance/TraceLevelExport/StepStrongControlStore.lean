@@ -506,22 +506,22 @@ theorem branch_flag_ltu_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_LTU)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    (h_a_lo_t :
+    (h_a_lo :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -578,13 +578,13 @@ theorem branch_flag_ltu_provided
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_row :
       r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_ltu_of_static_row
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row
@@ -604,22 +604,22 @@ theorem branch_flag_lt_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_LT)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    (h_a_lo_t :
+    (h_a_lo :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -676,13 +676,13 @@ theorem branch_flag_lt_provided
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_row :
       r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_lt_of_static_row
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row
@@ -702,22 +702,22 @@ theorem branch_flag_eq_provided
       (mainOfTable trace.program trace.mainTable).op i.val = OP_EQ)
     (h_m32 :
       (mainOfTable trace.program trace.mainTable).m32 i.val = 0)
-    (h_a_lo_t :
+    (h_a_lo :
       (mainOfTable trace.program trace.mainTable).a_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_a_hi_t :
+    (h_a_hi :
       (mainOfTable trace.program trace.mainTable).a_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r1)))
-    (h_b_lo_t :
+    (h_b_lo :
       (mainOfTable trace.program trace.mainTable).b_0 i.val =
         ZiskFv.Trusted.lane_lo
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
             (regidx_to_fin r2)))
-    (h_b_hi_t :
+    (h_b_hi :
       (mainOfTable trace.program trace.mainTable).b_1 i.val =
         ZiskFv.Trusted.lane_hi
           ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
@@ -774,13 +774,13 @@ theorem branch_flag_eq_provided
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) r1_val
-        h_matches h_m32_zero h_a_lo_t h_a_hi_t h_match h_input_r1
+        h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
   have h_input_r2_row :
       r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) r2_val
-        h_matches h_m32_zero h_b_lo_t h_b_hi_t h_match h_input_r2
+        h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
   exact ZiskFv.EquivCore.Bridge.Binary.branch_flag_eq_of_static_row
     m i.val providerInput r1_val r2_val h_match h_core h_facts h_row_m32 h_bop
     h_input_r1_row h_input_r2_row
@@ -796,7 +796,23 @@ theorem stepStrong_beq
     (d : RowData_beq trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.beq_input.PC
-        (BitVec.signExtend 64 d.toInputs.beq_input.imm)) :
+        (BitVec.signExtend 64 d.toInputs.beq_input.imm))
+    (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_a_hi : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2)))
+    (h_b_hi : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2))) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BEQ)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -828,7 +844,7 @@ theorem stepStrong_beq
           branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.beq_input.r1_val d.toInputs.beq_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            h_a_lo h_a_hi h_b_lo h_b_hi
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset1 i.val =
@@ -863,7 +879,23 @@ theorem stepStrong_bne
     (d : RowData_bne trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bne_input.PC
-        (BitVec.signExtend 64 d.toInputs.bne_input.imm)) :
+        (BitVec.signExtend 64 d.toInputs.bne_input.imm))
+    (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_a_hi : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2)))
+    (h_b_hi : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2))) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BNE)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -895,7 +927,7 @@ theorem stepStrong_bne
           branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bne_input.r1_val d.toInputs.bne_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            h_a_lo h_a_hi h_b_lo h_b_hi
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset2 i.val =
@@ -930,7 +962,23 @@ theorem stepStrong_blt
     (d : RowData_blt trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.blt_input.PC
-        (BitVec.signExtend 64 d.toInputs.blt_input.imm)) :
+        (BitVec.signExtend 64 d.toInputs.blt_input.imm))
+    (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_a_hi : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2)))
+    (h_b_hi : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2))) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BLT)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -962,7 +1010,7 @@ theorem stepStrong_blt
           branch_flag_lt_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.blt_input.r1_val d.toInputs.blt_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            h_a_lo h_a_hi h_b_lo h_b_hi
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset1 i.val =
@@ -997,7 +1045,23 @@ theorem stepStrong_bge
     (d : RowData_bge trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bge_input.PC
-        (BitVec.signExtend 64 d.toInputs.bge_input.imm)) :
+        (BitVec.signExtend 64 d.toInputs.bge_input.imm))
+    (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_a_hi : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2)))
+    (h_b_hi : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2))) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BGE)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -1029,7 +1093,7 @@ theorem stepStrong_bge
           branch_flag_lt_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bge_input.r1_val d.toInputs.bge_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            h_a_lo h_a_hi h_b_lo h_b_hi
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset2 i.val =
@@ -1064,7 +1128,23 @@ theorem stepStrong_bltu
     (d : RowData_bltu trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bltu_input.PC
-        (BitVec.signExtend 64 d.toInputs.bltu_input.imm)) :
+        (BitVec.signExtend 64 d.toInputs.bltu_input.imm))
+    (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_a_hi : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2)))
+    (h_b_hi : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2))) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BLTU)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -1099,7 +1179,7 @@ theorem stepStrong_bltu
           branch_flag_ltu_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bltu_input.r1_val d.toInputs.bltu_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            h_a_lo h_a_hi h_b_lo h_b_hi
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset1 i.val =
@@ -1134,7 +1214,23 @@ theorem stepStrong_bgeu
     (d : RowData_bgeu trace binding i)
     (h_domain :
       BranchRangeDomain trace i d.toInputs.bgeu_input.PC
-        (BitVec.signExtend 64 d.toInputs.bgeu_input.imm)) :
+        (BitVec.signExtend 64 d.toInputs.bgeu_input.imm))
+    (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_a_hi : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r1)))
+    (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2)))
+    (h_b_hi : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi
+        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+          (regidx_to_fin d.toClaim.r2))) :
     execute_instruction (instruction.BTYPE (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, bop.BGEU)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels ⟨Pilot.execRowOf trace i, []⟩ (binding i) := by
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
@@ -1169,7 +1265,7 @@ theorem stepStrong_bgeu
           branch_flag_ltu_provided trace binding i d.toClaim.r1 d.toClaim.r2
             d.toInputs.bgeu_input.r1_val d.toInputs.bgeu_input.r2_val
             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
-            d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+            h_a_lo h_a_hi h_b_lo h_b_hi
             d.toInputs.h_input_r1 d.toInputs.h_input_r2
         have h_off_bridge :
             m.jmp_offset2 i.val =

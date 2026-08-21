@@ -81,8 +81,43 @@ private theorem memoryAcceptedTrace_not_mutableMemPresent :
 def memoryZiskStep : ∀ i : Fin 0, ZiskStep memoryAcceptedTrace i := nofun
 
 /-- The initial Sail state this witness hands to `root_soundness` (#343). An empty execution never
-    reads it, but the theorem now takes a state rather than a trace, so it must be supplied. -/
-def memoryInit : PreSail.SequentialState RegisterType Sail.trivialChoiceSource := default
+    reads it, but the theorem now takes a state rather than a trace, so it must be supplied. The
+    general registers are zero-initialized to satisfy `regBoot`. -/
+def memoryInit : PreSail.SequentialState RegisterType Sail.trivialChoiceSource :=
+  { (default : PreSail.SequentialState RegisterType Sail.trivialChoiceSource) with
+    regs :=
+      (default : PreSail.SequentialState RegisterType Sail.trivialChoiceSource).regs
+        |>.insert Register.x1 (0#64)
+        |>.insert Register.x2 (0#64)
+        |>.insert Register.x3 (0#64)
+        |>.insert Register.x4 (0#64)
+        |>.insert Register.x5 (0#64)
+        |>.insert Register.x6 (0#64)
+        |>.insert Register.x7 (0#64)
+        |>.insert Register.x8 (0#64)
+        |>.insert Register.x9 (0#64)
+        |>.insert Register.x10 (0#64)
+        |>.insert Register.x11 (0#64)
+        |>.insert Register.x12 (0#64)
+        |>.insert Register.x13 (0#64)
+        |>.insert Register.x14 (0#64)
+        |>.insert Register.x15 (0#64)
+        |>.insert Register.x16 (0#64)
+        |>.insert Register.x17 (0#64)
+        |>.insert Register.x18 (0#64)
+        |>.insert Register.x19 (0#64)
+        |>.insert Register.x20 (0#64)
+        |>.insert Register.x21 (0#64)
+        |>.insert Register.x22 (0#64)
+        |>.insert Register.x23 (0#64)
+        |>.insert Register.x24 (0#64)
+        |>.insert Register.x25 (0#64)
+        |>.insert Register.x26 (0#64)
+        |>.insert Register.x27 (0#64)
+        |>.insert Register.x28 (0#64)
+        |>.insert Register.x29 (0#64)
+        |>.insert Register.x30 (0#64)
+        |>.insert Register.x31 (0#64) }
 
 /-- The Sail trace over the empty execution — generated from `memoryInit`, not hand-written. Over
     `Fin 0` it has no inhabited index, as before. -/
@@ -122,6 +157,14 @@ def memoryRowsAligned :
           memoryStart memoryAddr memoryRawProgram memoryProgramRowsBinding i.elim0)) :=
   fun _ h => absurd h (Nat.not_lt_zero _)
 
+theorem memoryRegBoot :
+    ∀ k : Fin 32, k ≠ 0 →
+      memoryInit.regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)) := by
+  intro k hk
+  fin_cases k <;>
+    simp_all [memoryInit, reg_of_fin, Std.ExtDHashMap.get?_insert]
+
 /-- `root_soundness` instantiated on the memory witness with the real, already-proven
     `memoryProgramRowsBinding` as `programBinding` — strengthening
     `root_soundness_instantiation_degenerate`, which uses the same empty-execution shape
@@ -136,7 +179,7 @@ theorem memoryRawRootSoundness :
   root_soundness 0 3 memoryAcceptedTrace memoryInit memoryZiskStep
     memoryStart memoryAddr memoryRawProgram memoryProgramRowsBinding
     (fun i => i.elim0) (fun i => i.elim0) memoryPcBoot memoryRowsAligned memoryBootSeed
-    (fun i => i.elim0)
+    memoryRegBoot (fun i => i.elim0)
 
 #print axioms memoryRawRootSoundness
 

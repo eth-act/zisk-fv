@@ -81,7 +81,7 @@ private theorem signExtend12_of_not_sign (v : BitVec 32)
         BitVec.getElem_setWidth, BitVec.msb_setWidth] at h ⊢ <;> assumption
   · simp [BitVec.getLsbD_signExtend, hi]
 
-private theorem signext_mask12 (v : BitVec 32) :
+theorem signext_mask12 (v : BitVec 32) :
     signext ⟨v &&& 4095#32⟩ 12#u32
       ⦃ r => r.bv = BitVec.signExtend 32 (v.truncate 12) ⦄ := by
   rw [signext]
@@ -302,7 +302,7 @@ private theorem signext_mask21 (v : BitVec 32) :
 
 #print axioms signext_mask21
 
-private theorem rawIType_imm_bits
+theorem rawIType_imm_bits
     (imm rs1 funct3 rd opcode : Nat)
     (hrs1 : rs1 < 32) (hfunct3 : funct3 < 8)
     (hrd : rd < 32) (hopcode : opcode < 128) :
@@ -350,7 +350,7 @@ private theorem rawIType_imm_bits
       show 20 + i - 20 = i by omega]
   · simp [BitVec.getLsbD, hi]
 
-private theorem upper12_shift_mask (v : BitVec 32) :
+theorem upper12_shift_mask (v : BitVec 32) :
     ((v &&& 4293918720#32) >>> 20) &&& 4095#32 =
       (v &&& 4293918720#32) >>> 20 := by
   apply BitVec.eq_of_getLsbD_eq

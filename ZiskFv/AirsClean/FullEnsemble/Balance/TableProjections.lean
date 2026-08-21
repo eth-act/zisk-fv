@@ -1071,6 +1071,9 @@ structure MemTableGeneratedRangeFacts
   stepColumns :
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.step_columns_in_range mem idx.val
+  valueColumns :
+    ∀ idx : Fin table.table.length,
+      (mem.value_0 idx.val).val < 2 ^ 32 ∧ (mem.value_1 idx.val).val < 2 ^ 32
   dualStepDelta :
     ∀ idx : Fin table.table.length,
       mem.sel_dual idx.val = 1 →
@@ -1100,7 +1103,7 @@ theorem memTableGeneratedRangeFacts_of_component_constraints
     rw [h_component] at h_holds
     exact ZiskFv.AirsClean.Mem.dualMemRowRangeFacts_of_componentWithDualMemBus_constraints
       _ h_holds
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · intro idx
     have h := rangeAt idx
     rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
@@ -1113,10 +1116,14 @@ theorem memTableGeneratedRangeFacts_of_component_constraints
     have h := rangeAt idx
     rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
     exact ⟨h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1⟩
+  · intro idx
+    have h := rangeAt idx
+    rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
+    exact ⟨h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1⟩
   · intro idx h_sel_dual
     have h := rangeAt idx
     rw [← rowAt_memOfTable table gsum im0 im1 idx] at h
-    exact h.2.2.2.2.2.2 h_sel_dual
+    exact h.2.2.2.2.2.2.2.2 h_sel_dual
 
 /-- Derive the concrete Mem row-range facts from the canonical live-table
     projection. The selected `ProverData` columns and materialized witness rows
@@ -1188,7 +1195,14 @@ def memTableGeneratedRangeFacts_of_lookupFacts
   stepColumns := by
     intro idx
     exact (ZiskFv.AirsClean.Mem.row_ranges_of_lookup_aware_const_soundness
-      (h_lookup.rowRanges idx)).2.2
+      (h_lookup.rowRanges idx)).2.2.1
+  valueColumns := by
+    intro idx
+    exact ⟨
+      (ZiskFv.AirsClean.Mem.row_ranges_of_lookup_aware_const_soundness
+        (h_lookup.rowRanges idx)).2.2.2.1,
+      (ZiskFv.AirsClean.Mem.row_ranges_of_lookup_aware_const_soundness
+        (h_lookup.rowRanges idx)).2.2.2.2⟩
   dualStepDelta := by
     intro idx h_sel_dual
     exact ZiskFv.AirsClean.Mem.dual_step_delta_in_range_of_lookup_aware_const_soundness
@@ -1208,6 +1222,8 @@ def memTableGeneratedRangeLookupFacts_of_rangeFacts
       (h_ranges.incrementChunks idx)
       (h_ranges.addrColumns idx)
       (h_ranges.stepColumns idx)
+      (h_ranges.valueColumns idx).1
+      (h_ranges.valueColumns idx).2
   dualStepDelta := by
     intro idx h_sel_dual
     exact ZiskFv.AirsClean.Mem.dualStepDeltaRangeLookupWitness_of_range_fact
