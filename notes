@@ -1,0 +1,531 @@
+● Your instinct is pointing at something real, and I want to separate it into the two questions tangled together: was OpEnvelope the right abstraction to build with (I'd say yes), and is it the right abstraction to state the final result with (I'd say no — and the fix is a layer on top, not a rewrite).
+
+  What OpEnvelope actually is, stated plainly. It's a sum type whose constructors bundle data (rows, bus entries) together with evidence (validator instances, row facts, route facts, promise bundles). So ∀ env : OpEnvelope, … → env.exec_eq is literally "for every package of data-plus-proofs, compliance holds." That shape has two structural
+  consequences you've been living with for months. First, every constructor field is a potential hiding place for an assumption — which is why you needed the entire anti-laundering apparatus, the caller-burden ledger's 1,087 lines, the hypothesis-count gate, the constructibility witnesses. Those aren't incidental bureaucracy; they're the
+  carrying cost of an abstraction that makes trust ambient and diffuse rather than concentrated in one visible place. Second, the statement isn't self-interpreting: nobody can read the global theorem and know what's assumed without reading 63 constructors plus a ledger. That's the sharpness deficit you're feeling.
+
+  Why it was still the right scaffolding. The honest counterfactual isn't "the same result, stated better." The textbook-sharp alternative — quantify over the raw committed trace, assume only ConstraintsHold ∧ ChannelsBalanced ∧ BootOK, conclude a step-simulation against Sail — is a monolithic statement. You can't land it opcode by opcode,
+  you can't carry an undischarged promise visibly while you work on the next family, and you can't measure progress with a ledger, because there's one giant simulation invariant instead of 63 inspectable burdens. The envelope is what let this project move incrementally and let the gates mechanically freeze the trust surface at every step.
+  The OUTPUT-EQ retirement, the promise-discharge campaign, the load closures — all of that worked because the obligations were reified as fields you could see, count, and remove one at a time.
+
+  Why it's the wrong final interface — and the cheap path to the right one. The sharp statement you want is reachable as a composition, and it's exactly what #61 already asks for:
+
+  theorem zisk_riscv_compliant_trace
+      (trace : CommittedTrace) (program : Program n)
+      (h_constraints : ConstraintsHold trace)      -- from extraction, the thing the proof system enforces
+      (h_balance : ChannelsBalanced trace)
+      (h_boot : InitialStateOK trace program)       -- the genuine public-input premises
+      : StepwiseSailCorrespondence trace program
+
+  with AcceptedTrace → OpEnvelope (the #61 construction theorem) as the internal bridge and the current global theorem consumed inside. At that point OpEnvelope vanishes from the public signature, the 1,087 binder lines collapse into one constraint-satisfaction predicate that is derived rather than assumed per-opcode, and the
+  constructibility worry inverts from "can envelopes be built?" into a theorem that builds them. You get the sharper statement without abandoning anything — the per-opcode canonical theorems remain exactly the lemmas any architecture would have needed.
+
+  The diagnostic that answers "too broad?" definitively. Classify every envelope field into three buckets: (a) derivable from constraint satisfaction plus channel balance — these get discharged by the construction theorem; (b) genuine top-level premises — boot state, program binding, the Rust-bridge and (until #76) memory-timeline facts —
+  these belong explicitly in the final trace-level signature; (c) neither — not derivable from what the proof system enforces, and not a defensible public premise. Bucket (c) is the test: if it's empty, OpEnvelope was a fine waypoint and only the export layer is missing. If things land in (c), those specific fields are where the
+  abstraction genuinely baked in assumptions a different design would have surfaced earlier — and they get targeted fixes, not a rewrite. The caller-burden ledger's category labels (validator | row | bridge | bus_shape | byte_chain | …) already do half of this classification for you, and #74's Phase 0 — enumerating everything the
+  constructors demand for one opcode — is the other half done concretely. The memory timeline is the instructive precedent: it sat in bucket (c) disguised as a constructor-carried promise until #63/#65 forced it into bucket (b) as a named top-level hypothesis, and #76 is the plan to move it to (a). The architecture question is whether
+  anything else like it is still hiding.
+
+  So my recommendation, concretely: don't rearchitect, and don't treat the worry as resolved either. Run the bucket classification as the first deliverable of the #61 program (it falls out of #74's Phase 0 nearly for free), put the trace-level export theorem at the top of #61's success criteria as the public statement, and judge OpEnvelope
+  on the outcome — if bucket (c) is empty, it was scaffolding that did its job and the final result is exactly as sharp as the from-scratch design would have been; if not, you'll know precisely which fields to fix and the blast radius of each. Want me to fold this framing into the #61 refresh comment — recast its success criteria around
+  the trace-level export theorem and the three-bucket audit?
+
+  ---
+
+  ● Plan written: docs/ai/plan/PLAN_ENDGAME_AENEAS.md (6 PRs). But the honest framing has to come first, because "get rid of the Aeneas trust assumption" isn't literally achievable and I
+  won't let the plan pretend otherwise.
+
+  What you can't do: eliminate Rust↔Lean trust. aeneasBridgeTrust is already a Prop hypothesis, not an axiom (the project's axiom closure is 0). So this isn't axiom removal — it's
+  discharging a hypothesis, and the real question is where the trust goes.
+
+  What the plan does:
+  1. Discharge it — import the Aeneas-extracted model of ZisK's real transpiler (trust/aeneas/ProductionM2.lean, already on main via #93) into main Lake and prove the 63 per-arm row facts
+  from it. The good news from the survey: the discharge chain extractedRow → *OfExtractedShape → aeneasBridgeTrust is already fully built for all 63 arms, and ProductionM2's output maps
+  field-for-field onto MainExtractedRow. The only gap is producing a real MainRowProvenance from the extracted transpiler instead of assuming it. So most of the proof work already exists.
+  2. Reduce + name the residual — replace the 63 hand-asserted bridge hypotheses with one named premise: "the committed ROM equals the transpiler's lowering of the program." That's a real,
+  measurable caller-burden shrink, and it stays a premise (not an axiom), so 0 axioms is preserved.
+  3. Validate it — add a Rust-side differential test (real ZisK lowerer vs ProductionM2 on an RV64IM corpus) plus a fork-vs-upstream pin check, so the model is checked against real
+  behavior, not just trusted. This is the counterpart to #77's Sail-side test, which doesn't cover the Rust side.
+
+  The honest residual after all that: 63 opaque hand-asserted facts → one named ROM-population premise + Charon/Aeneas translation faithfulness + the submodule fork pin
+  (codygunton/zisk@4148c25, which — note — is not the same commit as flake.lock's upstream v0.17.0; nothing currently ties them together, which PR5 fixes). So auditability and
+  source-coupling improve a lot — the row facts become consequences of a validated model of the real Rust — but the irreducible Rust↔Lean trust is relocated and validated, not eliminated.
+  The plan states this verbatim and bans any "eliminates Aeneas trust" wording in PR bodies.
+
+  The gating risk is real and front-loaded: ProductionM2 is deliberately fenced out of main Lake by a Lean-toolchain mismatch (flake.nix:50). PR1 is a go/no-go spike — try a minimal
+  Aeneas.Std shim first (the generated file uses only a small surface), toolchain bump as last resort, and an export/validate-only fallback if import is infeasible. The other PRs (adapter +
+  per-op eval lemmas, the provenance producer, the discharge, the differential test, the honest ledger update) are mostly assembly once the import works.
+
+  Two dependencies worth flagging: the final discharge (PRs 3–4) composes with P4's Valid_Main/ProgramBinding spine (the ROM-population premise refines P4's decode premise), so it should
+  follow or run alongside P4 — but the infrastructure (PRs 1–2, 5) is independent and can start now. And it feeds P5 by shrinking the export theorem's premise list. Roadmap and STATUS
+  updated; I left your active P4 PR1/#94 tracking untouched.
+
+---
+
+The mental model to hold onto: there's really only one campaign (the endgame, #61), and everything we've been doing lives under P4. P4's "easy" 28 opcodes are merged; the rest is gated by one ceiling with two faces — #100 (cross-row) and #103 (cross-segment) — which XCAP resolves, plus the independent M-EXT and AENEAS residuals. The deep
+  nesting was really just: P4 → loads/stores need #76 → #76 needs #103 → #103 (with #100) is XCAP. That whole chain is now one picture in §0.
+
+---
+
+● The adversarial pass came back SOUND-AND-MINIMAL — ready to implement, having
+  independently re-derived the soundness against the real Clean source (no
+  double-count, no dropped interaction, no hidden sorry/axiom). As promised, here's
+  the design before I touch Clean.
+
+  The insight (why it's safe)
+
+  reqs_disjoint_finished is conservative, not load-bearing. It exists to discharge
+  an OrderedChannel obligation that has two sufficient disjuncts:
+  - "the VM tables add no requirements on this finished channel" (what addVm
+  currently demands — the lookup case), or
+  - "the VM tables add no guarantees on this finished channel" (the provider case).
+
+  A pure provider like our Mem rows — which only push MemBus, never pull it —
+  satisfies the second. The finished channel's balance is taken globally over all
+  tables, so the provider's push is counted exactly once either way; nothing is
+  dropped or double-counted. The only thing that changes is how we prove the VM
+  tables meet MemBus's guarantee obligation, and for a pure provider that's vacuous
+  (it guarantees nothing on MemBus).
+
+  The change (minimal, idiomatic, additive)
+
+  Replace the precondition with a disjunction, in a new sibling builder — leaving
+  the existing addVm and its only caller (FibonacciWithChannels) untouched:
+
+  -- for each finished channel: (no requirements) OR (no guarantees)
+  (∀ channel ∈ finished,
+    (channel ∉ vm.verifier.channelsWithRequirements ∧
+      ∀ t ∈ vm.tables, channel ∉ t.circuit.channelsWithRequirements) ∨
+    (channel ∉ vm.verifier.channelsWithGuarantees ∧
+      ∀ t ∈ vm.tables, channel ∉ t.circuit.channelsWithGuarantees))
+
+  Footprint — Clean/Air/Vm.lean only: +1 core theorem (the existing
+  addVm_soundVmChannel_of_soundChannels body verbatim except a 3-spot fork: the
+  precondition, the per-channel reshape, and the two consumer sites) + 1 builder
+  addVmProvidingFinished + 4 rfl projection lemmas. OrderedChannel.lean untouched;
+  existing addVm untouched. No sorry/axiom. ZisK then discharges MemBus's disjunct
+  via the provider branch (Or.inr — Mem's MemBus-guarantees list is empty), closable
+  by the simp [circuit_norm] default.
+
+  One honest caveat (the next wall, not a defect here)
+
+  This patch unblocks the table-assembly layer. It does not by itself finish the
+  migration: addVmProvidingFinished returns a SoundVmEnsemble, which forces
+  switching the ensemble's closure from SoundEnsemble.toFormal (Spec := True) to
+  SoundVmEnsemble.toFormal (Spec := ∃ data, VerifierSpec), surfacing the seam
+  verifier's VerifierSpec/verifier_requirements obligations. That's the migration's
+  known re-prove territory — expected, but real, and separate from this Clean
+  change.
+
+  Riskiest implementation step (so I tackle it first)
+
+  Getting the reqs_disjoint reshape under the fork right — scoping it per-channel so
+  the lookup branch still feeds guarantees_of_requirements_append the all-tables
+  form it expects. Everything else is the original proof body verbatim or the
+  vacuous provider branch.
+
+  ---
+  Dev loop: edit build/clean-lean/Clean/Air/Vm.lean directly + lake build (the
+  xcap-seam-tag worktree sees it via the symlink); once green and proven, port to
+  codygunton/clean, push, re-pin flake.lock (no upstream PR).
+
+  Shall I implement it? The design is verified sound and minimal, scoped to one
+  file. If you want to eyeball anything in the shape first — particularly the
+  disjunctive precondition — now's the moment; otherwise I'll build it.
+
+✻ Cogitated for 15m 0s
+
+
+
+---
+
+
+● Trail fully updated (STATUS, #103, the NOTE doc with a RESOLUTION banner, memory). Here's where we are.
+
+  Bottom line: the Clean fork is dodged — you called it
+
+  Your push to re-check "maybe what we want is supported" was exactly right. No Clean change, no addVm, Mem rows unmoved. The idiom is SoundEnsemble.addChannel: it puts
+  the continuation channel into ens.channels so its balance is an assumed conjunct of trace.balanced (same trust class), with no soundness obligation. It only looked
+  blocked because we emitted the seam with .pull; .emit (-1) (production's own MemBus-consumption idiom) is the fix. Confirmed non-vacuous end-to-end, adversarially, on
+  the real SeamContChannel/SeamMessage — green, kernel-only axioms, with a proven-satisfiable balance witness. Evidence on branch seam-path1-evidence.
+
+  On honesty: that's four overclaims this session (route de-risked / design SOUND-AND-MINIMAL / first probe PATH-CONFIRMED-but-vacuous), each caught one layer deeper.
+  What finally produced a trustworthy answer was your "is it already supported?" prompt + ending in a non-vacuous compile probe with an adversarial inhabitation proof.
+  I've recorded that lesson in the NOTE doc and memory.
+
+  Residual to actually land it (all generalization/substitution — no new soundness question)
+
+
+---
+
+● Here's the re-orientation — where the current deep-dive sits in the whole campaign, and what's actually banked vs. still ahead.
+
+  The map (4 nested levels)
+
+  L1 — Campaign (issue #61): make the global theorem zisk_riscv_compliant_program_bus trace-level (over raw committed traces), retiring the OpEnvelope scaffolding.
+  Phases P1→P6; we're in P4.
+
+  L2 — P4 (the construction theorem): derive each opcode's promise burden from trace.constraints + channel balance instead of assuming a proof-bearing envelope.
+  Headline: 28 of 63 opcodes sound and MERGED to main, 0 PROJECT axioms.
+
+  L3 — the remaining 35 opcodes (the frontiers):
+
+  ┌────────────────────────────┬───────┬───────────────────────────────────────────────────────┐
+  │          Frontier          │ Count │                         State                         │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ RV64I ALU + shifts + W-ALU │ 28    │ ✅ done, merged                                       │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ M-extension (mul/div/rem)  │ 13    │ buildable now (needs new Arith extractors), untouched │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ Loads/stores               │ 11    │ blocked on #103 (this session's work)                 │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ Branches                   │ 6     │ need #100 (cross-row PC) + #101                       │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ JAL/JALR                   │ 2     │ need #100                                             │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ LUI/AUIPC                  │ 2     │ buildable now (small), untouched                      │
+  ├────────────────────────────┼───────┼───────────────────────────────────────────────────────┤
+  │ FENCE                      │ 1     │ decode-gap defect                                     │
+  └────────────────────────────┴───────┴───────────────────────────────────────────────────────┘
+
+  L4 — the cross-X capability → #103 (where this whole session went): loads/stores and branches both hit the same ceiling — the live per-row/single-table Clean ensemble
+  can't express a cross-X global balance. #103 = the cross-segment half (memory continuity across execution segments); #100 = the cross-row half (PC handshake).
+
+  What this session actually accomplished
+
+  One thing, and it's a prerequisite, not shipped opcodes: we found and confirmed a sound, fork-free route to the cross-segment seam (#103).
+
+  - The journey was winding and honest-to-a-fault: structural exposure (PR #104) → make-or-break GO → tried addVm → hit a real Clean wall → almost forked Clean (you
+  stopped me) → breakthrough: Clean already supports it via addChannel, no fork, no addVm, no moving Mem rows → confirmed non-vacuous end-to-end, adversarially verified.
+  - Net conversion: "maybe we need a risky Clean fork / maybe a research wall" → "a known, minimal, idiomatic idiom that compiles." That's the single biggest uncertainty
+  in the load/store frontier, resolved.
+  - Cost: four overclaims along the way, each caught one layer down by the adversarial step. The discipline held, but it was expensive.
+
+  Be clear on what is NOT done: #103 is not landed. The seam isn't in main — it's a confirmed mechanism on branches (xcap-xseg, seam-path1-evidence). It contributes 0
+  new merged opcodes so far. Loads/stores (11) are still blocked until #103 actually lands.
+
+  What's next (and a likely bonus)
+
+  - Land #103 (the residual): general-N tag-chain induction → production componentWithSeamAndMemBus + addChannel wiring on the real ensemble → hook into the 11
+  loads/stores. All generalization/substitution — no new soundness question.
+  - Likely bonus: the cross-row PC handshake (#100) is the same both-push-and-pull chain shape, so the addChannel idiom very probably unblocks #100 too — which would
+  cover branches (6) + JAL/JALR (2). I haven't verified #100 specifically, so I'm flagging it as a strong hypothesis, not a claim. If it holds, this one idiom unblocks
+  ~19 of the 35 remaining opcodes.
+  - Independent, buildable now (no cross-X dependency): M-extension (13) and LUI/AUIPC (2) — untouched this session, available anytime.
+
+  Honest one-liner
+
+  P4 sits at 28/63 merged. This session didn't move that number — it de-risked the path to the next ~19 (loads/stores + branches/JAL) by proving the cross-X seam needs
+  no Clean fork. Valuable foundation; not yet shipped opcodes.
+
+  Where do you want to point next — land #103 (cash in the seam → loads/stores), verify the #100 bonus (does addChannel unblock branches too?), or bank some easy wins
+  (M-ext / LUI-AUIPC) while the seam work is fresh?
+
+✻ Cooked for 1m 5s
+
+
+  1. Range-check / table AIRs are not extracted at all. SpecifiedRanges (#19, the range-check lookup table), VirtualTable0 (#20), VirtualTable1 (#21) have zero presence in the Lean tree (grep-empty) — the extractor emits only 13 constraint files. Range semantics are hand-rebuilt as RangeTables.lean StaticTables, which are wired as
+  providers for BinaryAdd and Mem — but not for Arith.
+  2. Inter-AIR / Stage-2 lookups + permutation running-products are never emitted as constraints. They mix verifier-Challenge operands, which the extractor deliberately skips; they survive only as BusEmissionSpec hints in Buses.lean/MemoryBuses.lean, verified by a bus-matching layer rather than by balance. (This is the documented
+  ExtF-stubbing limitation.)
+  3. Unsupported operand kinds are stub-rendered (FixedCol, Challenge, AirValue, PeriodicCol) — e.g. Main's op-bus tuple stubs its AirValue slot 9 to literal 0.
+
+
+  ---
+
+
+Also worth flagging — the agent surfaced a genuinely valuable finding, consistent with my RANK 2b choice: equiv_MULHU's < 2¹⁷ carry bound is unsatisfiable for real MULHU carries (genuine 4×4 carries reach ~3·2¹⁶), so it correctly routed through the faithful < 983041 (signedCarryRangeTable) bound from balance instead of the too-tight hand-bound.
+
+---
+
+Got the exact signature — and it lets me give you a precise answer. Yes, there is a composite theorem, and it is proven. Here it is:
+
+theorem zisk_riscv_compliant_program_bus
+    (env : OpEnvelope state m r_main)                                  -- the per-op proof package
+    (h_bridge : env.aeneasBridgeTrust)                                 -- decode faithfulness
+    (h_memory_construction : env.memoryTimelineConstructionEvidence)   -- memory timeline
+    (h_known_bugs : Defects.NoKnownDefect env) :                       -- defect exclusion
+    env.exec_eq                                                        -- ← end-to-end compliance
+
+env.exec_eq is the composite statement: for the program execution, the circuit's decode-then-execute behavior matches the Sail spec, step by step. It chains the pieces — decode (h_bridge) + per-op execution (inside env) + memory (h_memory_construction) → compliance. So it's not three disconnected islands; the link exists and typechecks.
+
+But your underlying instinct is right about how it's linked — it's conditional on four supplied inputs, and two of them are exactly the "not-yet-composed-from-raw-data" parts:
+
+1. env : OpEnvelope is supplied, not derived. This is the proof-bearing package that carries the 63 per-op equivalences plus their construction facts (provider/row evidence, promises). The per-op equivalences themselves are proven in-build (the 63 equiv_<OP>), so this input is real proof, not a hole — but the theorem assumes the envelope exists; whether every accepted trace can produce one from raw trace data is #61, and that's exactly what the construction_<op>_sound sweep (47/63) is closing. So the per-op execution side is soundly linked, but the "from raw trace" composition is in progress.
+2. h_bridge : aeneasBridgeTrust is the loose link. This is where the decoder facts (Piece 1) plug in — but only as a hypothesis backed by the side workspace + manifest, not an in-build proof term (#111). So the decoder→composite link is the weak one.
+3. h_memory_construction = #76 (open). h_known_bugs = the documented defect exclusion.
+
+So the honest one-paragraph version: the composite is proven, but conditionally. The execution half is soundly in-build (the per-op proofs are real and the composite consumes them); the decode half is loosely coupled (the spot your instinct flagged); and the whole thing currently assumes the OpEnvelope rather than building it from raw trace data. The endgame discharges exactly these conditions: P4→P5 / #61 makes the OpEnvelope trace-derivable (so it's no longer a supplied input), #76 discharges the memory hypothesis, #111 would turn the loose decode link into a real proof term. After all three, the composite holds with its remaining trust being only the documented external pieces (the Sail spec itself, the Charon/Aeneas translation, and the recorded defects) — which is the irreducible floor.
+
+So: not "we haven't linked it" — we have, and it's proven. The accurate gap is that the composite is conditional, and the conditions (envelope-from-trace, sound decode link, memory timeline) are precisely the threads in flight.
+
+---
+
+Honest end-state of the project:
+- 55/63 RV64IM opcodes formally verified compliant with the Sail spec, now derivable from accepted-trace data (the env-free trace-level theorem).
+- 8 opcodes honestly excluded, not claimed: 7 signed-M (the circuit's signed mul/div is genuinely unsound — a malicious prover can forge; proven unconstructible) + FENCE (decode-incompleteness). Covered by the documented NoKnownDefect/decode-gap, never silently dropped (the ∀ i, RowConstructionData premise forces per-row coverage).
+- Remaining trust = the documented residuals, each with a thread:
+  - #76 (memory timeline) — loads/stores' residuals. PR-76.5 step D landed (cross-segment seam, GO); E/F/G + per-address remain.
+  - #100 (cross-row PC) — branches/JAL-JALR's h_nextPC_matches. Carried honestly; discharge is the cross-row work.
+  - #111 (decode bridge) — aeneasBridgeTrust. Sound in-build discharge is NO-GO; route decision pending.
+  - External: Sail spec, Charon/Aeneas, Lean kernel, native_decide (#75).
+
+---
+
+The conclusion (the strictly-stronger version we discussed — construct OpEnvelope, call the old theorem):
+∀ i : Fin trace.length, (envOf trace binding i).exec_eq
+i.e. the exact old state_effect_via_channels conclusion, per row, with the envelope constructed from the trace.
+
+Form A — right after P4 + P5 only (constructions + assembly; the residual threads NOT yet discharged). Everything balance-derivable is gone (the provider/table match comes from trace.balanced), but the framework residuals are still carried as hypotheses:
+theorem zisk_compliant_of_accepted_trace
+    (trace    : AcceptedTrace)                                   -- committed witness; .balanced = channel-balance trust
+    (binding  : ProgramBinding trace)
+    (h_decode : ∀ i, (envOf trace binding i).aeneasBridgeTrust)  -- #111  (SET ASIDE) — also carries the per-row coverage
+    (h_memory : ∀ i, (envOf trace binding i).memoryTimelineConstructionEvidence)  -- #76
+    (h_nextpc : ∀ i, NextPcMatches trace binding i)              -- #100
+    : ∀ i, (envOf trace binding i).exec_eq
+
+Form B — P4 + P5 and #76 + #100 also discharged, only aeneas left. Those two threads remove h_memory and h_nextpc (derived from the trace instead), leaving the clean minimal form:
+theorem zisk_compliant_of_accepted_trace
+    (trace    : AcceptedTrace)
+    (binding  : ProgramBinding trace)
+    (h_decode : ∀ i, (envOf trace binding i).aeneasBridgeTrust)  -- #111, the lone explicit residual
+    : ∀ i, (envOf trace binding i).exec_eq
+aeneasBridgeTrust does double duty here: it's the decode bridge and the per-row coverage (it's what says "row i is opcode X among the 55"). So setting aside aeneas, the theorem is essentially "committed trace + program binding + the decode bridge ⇒ full per-step compliance."
+
+The irreducible trust baked in (not hypotheses you can remove — present in both forms):
+- trace.balanced — the channel-balance / proof-system-soundness premise (the RHS trust; it's an assumed conjunct of AcceptedTrace, never discharged — that's by design).
+- The Sail spec (the LHS) and the Lean kernel; plus inherited native_decide in a few load/M-ext closures (#75).
+- The 55-op coverage limit: the 8 defect/gap ops (signed-M + FENCE) have no arm — out of scope, because the circuit can't support them.
+
+Honest caveats:
+1. This is the target, not the current c5e75899 — that one proves the weaker bus_effect-form and carries the residuals as the explicit RowConstructionData bundle. Reaching Form A needs the strictly-stronger refactor (construct OpEnvelope → call the old theorem); Form B additionally needs #76 and #100 landed.
+2. #76 and #100 are real, hard threads (cross-row Mem timeline; cross-row PC). "Done with P4 and P5" gets you Form A; Form B is the prettier signature but requires those two discharges too.
+3. So if you want the single cleanest statement of where this is headed: Form B — (trace) (binding) (decode-bridge) ⇒ ∀ step, compliance, over the 55 sound opcodes, with channel-balance + Sail + kernel as the documented external floor.
+
+---
+
+The actual definitions:
+
+structure AcceptedTrace where
+  length      : Nat
+  program     : Program length
+  witness     : EnsembleWitness (fullRv64imEnsemble length program).ensemble
+  constraints : witness.Constraints       -- the circuit's algebraic constraints hold
+  spec        : witness.Spec              -- per-AIR column validity
+  balanced    : witness.BalancedChannels  -- channel balance (the proof-system-soundness trust)
+
+structure ProgramBinding (trace : AcceptedTrace) where
+  stateAt   : Fin trace.length → SequentialState RegisterType …   -- a Sail/RISC-V state per step
+  mainTable : Air.Flat.Table FGL
+  mainTable_mem       : mainTable ∈ trace.witness.allTables
+  mainTable_component : mainTable.component = Main.componentWithRomMemAndOpBus length program
+  mainTable_index     : ∀ i, i.val < mainTable.table.length
+
+So AcceptedTrace is "a real, accepted ZisK proof" (a program + a filled-in witness + the three acceptance conditions, of which .balanced is the channel-balance trust). ProgramBinding is the bridge from that circuit trace to the Sail spec side, and it has two parts:
+
+1. mainTable (+ its 3 facts) — picks out which of the trace's tables is the Main AIR table and proves it's genuinely the Main component for this program. This part is sound/structural — it just selects the real table from the witness.
+2. stateAt : Fin length → SequentialState — a Sail architectural state for each step. This is the part to look at closely: in the structure it's a free function — ProgramBinding does not tie stateAt to the trace at all. There's no field saying "stateAt i is the actual state at row i" or "stateAt (i+1) is the result of executing step i."
+
+Where the tying actually lives: the connection between stateAt and the trace is supplied by the construction theorems' per-row residuals — the "Sail reads" like read_xreg r1 (binding.stateAt i) = <the trace row's operand value>. Those are exactly the aeneasBridgeTrust-class hypotheses. So the per-step theorem reads: "given stateAt i whose relevant registers/PC match the trace's row i (the residuals), the Sail execution on stateAt i equals the circuit's bus_effect."
+
+Two honest consequences:
+- It's a container, not a soundness hole. Because stateAt is free, the binding alone claims nothing; the residuals pin it. For a real trace, the actual execution states are a valid stateAt satisfying those residuals, so the theorem is non-vacuous and applies to the real execution.
+- What the binding does not give you (and this is the gap the remaining threads fill): it does not assert that the stateAt form a coherent chained execution — i.e. that stateAt (i+1) is the result of running step i (that's #100, the next-PC chaining) or that memory carries correctly between steps (that's #76). Nor does it pin stateAt 0 to a canonical boot state with the program loaded (the "initial state assumptions" #61 lists). The current theorem is per-step compliance against a bound state sequence; turning that into "the whole program executes correctly start-to-finish" is exactly the cross-step coherence work (#76/#100) on top.
+
+So in one line: binding = "this circuit table is the real Main table, and here is a per-step Sail-state sequence" — a setup bridge whose per-step tie to the trace is carried by the residuals, with cross-step chaining and the initial state deliberately left to #76/#100.
+
+
+---
+
+❯ I missed some a/b/c list you said is blocking, where is that?
+
+That's the #111 route decision — how to discharge aeneasBridgeTrust (the decode bridge), given the spike found the sound in-build discharge is a NO-GO (GATE 1: the numBits-opacity + @[irreducible] wall blocks plain decide/simp; GATE 2: the only route that works, native_decide, is gate-forbidden). The three options:
+
+- (a) Large sound effort — prove the decode pins via Aeneas progress/scalar_tac symbolic execution of the ~150-function transpile, per opcode, with a System.Platform.numBits 32/64 case split. Principled, 0 new trust axioms, but a genuine multi-week workstream (not the cheap per-opcode decide the import-GO had hoped for).
+- (b) native_decide trust-policy — extend the gate's axiom allowlist to permit ofReduceBool/trustCompiler for the aeneas path, then use the native_decide discharge (which does work). Cheap, but it moves native-compiler trust into the gated build — directly against the project's #75 effort to eliminate native_decide. I advised against.
+- (c) Keep the loose coupling — status quo (cross-workspace lean-check proofs + manifest gate + CI); the a2fcf1923d / Charon-0.1.184 downgrade recipe is banked in #111 for whenever (a) is done. I've been holding here.
+
+Where it's written down: issue #111 (the "Routes forward" section of my comment — https://github.com/eth-act/zisk-fv/issues/111), and the #111 line in STATUS.md / PLAN_ENDGAME.md.
+
+My recommendation: (c) now, (a) eventually, avoid (b). It only "blocks" in the sense that it was clause (2) of the /goal you just cleared — it's not blocking the #61/P5 work at all. So it's independent of the strictly-stronger-theorem question; you can decide it whenever, or leave it at (c).
+
+
+---
+
+Flag — a possible ZisK issue (outside our FV scope): the investigation noticed the fast emulator op_div_w (zisk/core/src/zisk_ops.rs:1063) returns 0x0000_0000_8000_0000 for DIVW overflow, while the ARITH state machine correctly returns the sign-extended 0xFFFF_FFFF_8000_0000. That's an emulator-vs-SM discrepancy inside ZisK (our FV compares SM-vs-Sail, so it doesn't affect our proofs — unless a downstream store-width sext reconciles it, which wasn't chased). It's your kind of find — might be worth a separate ZisK report. Want me to dig into whether it's real?
+
+
+---
+
+TLDR — each residual on the 63/63 theorem, ease, and where we are:
+
+Residual: div-by-zero / overflow (h_op2_ne/h_no_overflow, signed div/rem)
+What discharge needs: Extract arith.pil:54,64-95 (F-clean polynomial, the --only
+  curation just skipped them) → model + case-split
+Progress: Fully diagnosed, not started. Confirmed circuit-correct (all 15 cases
+  match Sail) → it's purely the extraction gap. Easiest. Tracked: #114 cat A
+────────────────────────────────────────
+Residual: na=MSB sign-range (signed mul/div)
+What discharge needs: Extract the indexed range lookup + compose ArithRangeTable
+  into balance
+Progress: Diagnosed, not started. Confirmed the circuit enforces it
+  (arith.pil:286/289/303); FV model collapsed it to FULL. Harder (lookup-class, not
+   just polynomial). Tracked: #114 cat D
+────────────────────────────────────────
+Residual: (d) memory reduction (loads' h_memory_timeline → RowTraceCoherence)
+What discharge needs: Weaken the old theorem's memory-evidence interface
+  (whole-state → memory-only), then wire in the Fold-B
+Progress: Machinery proven (Fold-B banked on PR #113), but wiring needs the
+  old-theorem change. The to direct-lift (rejected).
+  Awaiting your go-ahead on the interface change
+──────────────────────────
+Residual: aeneas decode (aeneasBridgeTrust)
+What discharge needs: In-bdecoder
+Progress: Investigated, blocked. Sound in-build discharge is NO-GO (numBits
+  opacity; native_decide gending. Tracked: #111
+────────────────────────────────────────
+Residual: h_known_bugs (MU
+What discharge needs: Not a discharge target — it's the intended exception     boundary
+Progress: The underlying circuit defects need upstream fixes (filed:             codygunton/zisk #5 DIV/Reness). Stays localized in
+  h_known_bugs                                                                 
+One-line summary: two are clean extraction work we haven't started (div0/overfl= easy, na=MSB = harder, bon isproven-but-needs-your-OK on an old-theorem change; aeneas is genuinely blocked (#111); and h_known_bugs it's where the two real,filed circuit bugs are honestly quarantined pending upstream fixes.
+
+Net: the 63/63 theorem stands today on h_known_bugs + those four residuals, all documented and (except aenng is hand-waved.
+
+
+---
+
+
+Threads pursued this session that are NOT in an open issue/PR (the gaps)
+
+1. Construction-layer deletion — the 78 are marked _claimed_dead in #112, but the actual deletion (post-merge) — plus the equiv_MULW_of_fullSpec straggler and retiring the construction-binder audit step — isn't tracked anywhere.
+2. find-unused tooling — the memoization patch is committed (bundled in 155c50ba in #112), but it's not its own PR/issue, and the private-blindness fix (the agent's recommended follow-up) is unfiled.
+3. The broader 4,727-const dead sweep — find-unused flags ~50% of consts unreachable; that signal lives only in this conversation. (Needs root-completeness verification first.)
+4. The stores memory reduction — #76 (d) for stores (h_m* RMW residual) is deferred (needs an OpEnvelope store-arm refactor); it's noted in the #76 closed comment + STATUS, but there's no open tracking issue.
+
+Also worth a glance (likely NOT this conversation)
+
+Several other worktrees have dirty files — ci-aeneas-diff-nasm (3), ci-track-aeneas-extraction (2), endgame-p4-pr1/2 (1–2), p4-pr2 (1). These look like pre-existing/stale WIP from prior sessions (this conversation only touched p4-loads-stores, which is clean), but you may want to sweep them.
+
+
+---
+
+The research is back, and it's an important answer. Bottom line: there is no silently untracked give-up — but the scale and framing of what's assumed is bigger than the "0-axiom" headline suggests, and that's the real story.
+
+The honest answer to "what did we give up on"
+
+Good news first: every execution-necessary constraint the FV drops maps to an existing issue (#114, #100, #76/#115, #61/#74) or a named residual hypothesis tracked by the caller-burden ledger. No hidden class-(C) hole. The two residuals you're already discharging (div0/overflow, na=MSB) are a small slice of a much larger, already-enumerated set.
+
+The real "give-up" is architectural — and under-emphasized: the gated theorem zisk_riscv_compliant_program_bus does not derive the cross-AIR relationships from a composed, globally-balanced ensemble. It assumes them per-arm — each opcode takes its provider table, a row, a matches_entry bus equality, and lane-matches as hypotheses. Crucially, ZisK's actual soundness mechanism — the global zero-sum gsum·global_den + global_num === 0 (std_sum.pil:745), the check that makes every bus/lookup/permutation argument mean anything — has no enforced FV analog. The FV's stand-in (witness.BalancedChannels) is itself a hypothesis, never derived from committed columns. --skip-unsupported's real effect isn't the four bailed operand kinds — it's that every lookup/permutation/range/global-sum compiles to stage-2 accumulator columns the extractor drops entirely, leaving each as a hint or nothing.
+
+So what we "gave up on" (deferred) is: deriving the bus/lookup/range/balance relationships from circuit data instead of assuming them. That's sound but per-arm-conditional and incomplete — and it's the precise scope of "the extracted circuit matches Sail."
+
+Why it's incompleteness, not unsoundness
+
+Dropping a constraint makes Valid_<AIR> weaker (admits more traces) → the theorem becomes a stronger claim → it surfaces as residual hypotheses, never vacuity. A trace ZisK rejects (unbalanced bus, forged provider row, non-increasing memory step) can satisfy the per-arm hypotheses — but the theorem doesn't falsely call it compliant; it just hasn't been shown those hypotheses are dischargeable from real circuit data.
+
+Three concrete things worth surfacing
+
+1. Whole range/table AIRs are absent from the FV — SpecifiedRanges (#19), VirtualTable0/1 (#20/21), ArithRangeTable: zero occurrences in ZiskFv/; range checks are hand-rebuilt as row-local StaticTables, not composed (#114 cat C).
+2. One specific drop most likely overlooked: Arith constraints 47, 48 (m32·bus_a1 === 0, m32·bus_b1 === 0, arith.pil:264-265) — the W-mode operand high-word zeroing that MULW/DIVW/REMW correctness rests on. It's --only-dropped with no stub, and it's neither the div block nor na=MSB — so it's exactly the thing that falls through when "#114 cat A" is mentally equated with "the div fix."
+3. The framing gap itself: nothing states, as a headline auditor-facing caveat, "the global balance check is assumed, not verified."
+
+Connection to this session's work
+
+The strong export I built (zisk_compliant_of_accepted_trace_strong) is actually a step against this — it derives the per-arm matches from trace.balanced (one trace-level balance assumption instead of 63 per-arm matches_entry ones). But trace.balanced is still an input, not derived from the committed columns + the gsum zero-sum. Closing that — deriving balance from the circuit's actual global-sum constraint — is the heart of #74.
+
+Suggested follow-ups (your call): (a) a finer-grained #114 sub-item for Arith 47/48 (W-mode operand zeroing), and (b) a dedicated issue stating the global-balance-assumed-not-derived scope plainly (the single most important thing for an auditor; currently implied across #61/#74/#100/#115 but never headlined). Want me to file those two?
+
+
+---
+
+
+All relationships are now live on GitHub (visible in the sub-issues panel on #61/#114/#115 and the "blocked by" section on #74/#115/#118):
+
+Sub-issue tree: #61 → {74, 100, 101, 111, 115}, #115 → 119, #114 → 108
+Dependencies: #74 blocked_by {100, 101, 111, 114, 115}, #115 blocked_by 100, #118 blocked_by 117
+
+The tree (size bar = relative work to close, 0–10)
+
+LEGEND  ██████████ = relative effort to close      ⟸ blocked by      ↳ sub-issue
+
+╔═ SOUNDNESS DERIVATION ── make the global theorem derivable from real circuit data ═╗
+
+ #61  OpEnvelope construction gap            ▕ UMBRELLA ▏  closes when its children do
+  ↳ #74  Instantiate end-to-end + derive      █████████░  9  XL   ◀ the capstone
+  │      the global balance ("the heart")     ⟸ 100,101,111,114,115
+  ↳ #100 Cross-row PC handshake (next-PC)      ██████░░░░  6  L
+  ↳ #101 Binary-EQ 8-byte aggregation lemma    ██░░░░░░░░  2  S
+  ↳ #111 Discharge aeneasBridgeTrust  ⚠BLOCKED ██████░░░░  6  L
+  ↳ #115 Eliminate RowTraceCoherence floor     ███████░░░  7  L+   ⟸ 100
+       ↳ #119 Reduce store RMW residual (h_m*) ███░░░░░░░  3  M
+
+╔═ EXTRACTION FIDELITY ── extract the constraints the real circuit actually enforces ═╗
+
+ #114 Extraction completeness                  ██████████ 10  XL   ◀ broadest single issue
+  │    (--only / --skip-unsupported / compose)  ═══ enables ⟹ #61's hypothesis discharge
+  ↳ #108 Aeneas-extract table data + witnesses ████░░░░░░  4  M+
+
+╔═ VERIFICATION HARDENING ── independent trust/validation ═╗
+
+ #75  Eliminate native_decide → pure-kernel    ███░░░░░░░  3  M
+ #77  Differential-test Sail-Lean vs emulator  ████░░░░░░  4  M+
+ #78  External kernel re-check (lean4lean)     ███░░░░░░░  3  M
+
+╔═ DEAD-CODE CLEANUP ── winding down ═╗
+
+ #116 Delete _claimed_dead layer    ✓ DONE → PR #120
+ #117 find-unused private fix       ✓ DONE → PR #120   ═══ unblocks ⟹ #118
+ #118 Project-wide dead sweep       ████░░░░░░  4  M+   ⟸ 117
+
+Reading the sizes
+
+- The two giants are #114 and #74 — and they're the same mega-goal from two sides: #114 extracts the bus/lookup/range/global-zero-sum constraints the real circuit enforces (broadest — spans every AIR), and #74 composes them into an end-to-end derivation (deepest — the global-balance/gsum derivation the research flagged as the dominant assumption). Close both and the "0-axiom" claim stops being per-arm-conditional.
+- The deep residuals (#100, #111, #115) are L-sized — each is a genuine mechanism (cross-row execution bus, Aeneas-on-4.28, whole-trace memory induction). #111 is gated by a toolchain blocker, so its effort is high even though its scope is narrow.
+- The bounded ones (#101, #119) are S–M — a specific lemma and an OpEnvelope refactor; finishable in one focused sitting each.
+- Hardening (#75/#77/#78) is M and independent — doesn't block the soundness story; quality/auditability wins.
+- Cleanup is essentially done — #116/#117 close on #120; only #118 (the broader sweep, M+) remains, and it's gated on #117's tool fix + a better safety net.
+
+Net shape: it's two big trunks (derive #61 ⟸ extract #114) joined at the root by the cross-link, a handful of deep-but-narrow residuals hanging off #61, and three small independent hardening tracks. The realistic "critical path to a non-conditional global theorem" runs #114 → #74, with #100/#111/#115 feeding #74 in parallel.
+
+
+
+---
+
+
+● Grounded answer — and it sharpens the picture usefully. The key realization: there's one "decode-binding" axis here, and #159 closed the ZisK half of it. Almost
+  everything else in root_soundness is a different axis that #111 never touched.
+
+  Unblocked now (by the #159 stack)
+
+  The op-identity decode columns are now derived from the committed raw program, not assumed:
+  op, is_external_op, m32, set_pc, store_pc, jmp_offset1/2, ind_width, flags — i.e. #111's pins are load-bearing. The rowDecodes premise is no longer a caller
+  assumption.
+  - #74 (instantiate root_soundness on a real trace) — its decode-driven rowData was blocked on #61/#159; the decode witness is now constructible. (Still needs the other
+  premises built, but the decode blocker is lifted.)
+  - Advances #61 (the umbrella rowData gap) on its decode child.
+
+  Still blocked by #172
+
+  The Sail-instruction + operand decoding grounded in the raw word — i.e. the full "root_soundness is about the circuit executing the committed program." Right now
+  operandsGrounded = false: the Sail conclusion instruction.RTYPE (c.r2, c.r1, c.rd, …) takes its operands from the caller's ziskStep, not from rawProgram. #172 would
+  close that, and it's blocked by the fundamental noncomputable Sail decoder — plus it needs #174 (de-native_decide the Sail encode bridge) for kernel-soundness.
+  - Important: #172 is not blocked by #111. It's a different decoder (the Sail spec's encdec_backwards), so #159 doesn't help it — which is exactly why it's a separate,
+  hard issue rather than a punt of #170's work.
+
+  Never about #111 — independent axes (neither unblocked by #159 nor blocked by #172)
+
+  This is the bulk of the remaining trust, and it's the honest counterweight to "is #172 the last thing":
+  - Operand values (inputsAgree) — the cross-world register/PC/memory value bridge. The fundamental assumption; orthogonal to decoding.
+  - Effect placement (#141) — dest-reg / store-address (next-PC was #100). A sibling "derive from Main AIR" axis #159 didn't touch.
+  - Memory timeline (#76) — loads/stores.
+  - Signed-M defects — the real codygunton/zisk#5 bug, defect-gated (#151 → #169).
+  - Boot/profile, aeneasBridgeTrust, channel-balance, completeness (#154).
+  - The non-ROM operand witnesses still carried in RawRowDecode (shift amounts, signed-load BinaryExtension, M-ext bits) — operand-side, not the op-decode #159 grounded.
+
+  Punchline: #159 fully closed one axis (which opcode + flags, grounded in the committed binary). #172 is the matching Sail-side twin of that axis — real remaining work,
+  genuinely blocked at a tooling wall, and complementary to the half that's now done. It is not the only thing left, and not the critical-path blocker: the heavier
+  remaining trust (operand values, placement, memory, the signed-M bug) is independent of both #111 and #172. So #172 is honestly-carved, not a hole dug under #170.
+
+✻ Cooked for 6m 54s

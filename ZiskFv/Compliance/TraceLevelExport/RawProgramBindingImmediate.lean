@@ -417,7 +417,7 @@ local macro "imm_op" nm:ident "," f3:term "," opw:term ","
               ∧ ext.row.is_external_op = true ∧ ext.row.m32 = $m32
               ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
               ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, hb⟩ :=
+      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, _, hb⟩ :=
         $tName rd rs1 imm hrd hrs1
       obtain ⟨ho, hjo1, hjo2, hmso, _, hf⟩ :=
         register_decode_fields_of_binding line msg _ $opU8 $opc rd ext
@@ -447,6 +447,7 @@ local macro "shift_op" nm:ident "," upper:term "," f3:term "," opw:term ","
           ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
           ∧ ext.row.store_offset.val = rd
           ∧ ext.row.store ≠ zisk_inst.STORE_IND
+          ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
           ∧ ∃ d, aeneas_extract.rv64im_decode.decode_i
               (toU32 (ZiskFv.Completeness.Rv64imShapes.rawIType ($upper ||| shamt) rs1 $f3 rd $opw)) $rop true = ok d
             ∧ ext.row.b_src = zisk_inst.SRC_IMM
@@ -482,7 +483,7 @@ local macro "shift_op" nm:ident "," upper:term "," f3:term "," opw:term ","
               ∧ ext.row.is_external_op = true ∧ ext.row.m32 = $m32
               ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
               ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, hb⟩ :=
+      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, _, hb⟩ :=
         $tName rd rs1 shamt hrd hrs1 hsh
       obtain ⟨ho, hjo1, hjo2, hmso, _, hf⟩ :=
         register_decode_fields_of_binding line msg _ $opU8 $opc rd ext
@@ -512,6 +513,7 @@ local macro "shift64_op" nm:ident "," upper:term "," f3:term "," opw:term ","
           ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
           ∧ ext.row.store_offset.val = rd
           ∧ ext.row.store ≠ zisk_inst.STORE_IND
+          ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
           ∧ ∃ d, aeneas_extract.rv64im_decode.decode_i
               (toU32 (ZiskFv.Completeness.Rv64imShapes.rawIType ($upper ||| shamt) rs1 $f3 rd $opw)) $rop true = ok d
             ∧ ext.row.b_src = zisk_inst.SRC_IMM
@@ -547,7 +549,7 @@ local macro "shift64_op" nm:ident "," upper:term "," f3:term "," opw:term ","
               ∧ ext.row.is_external_op = true ∧ ext.row.m32 = $m32
               ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
               ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, hb⟩ :=
+      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, _, hb⟩ :=
         $tName rd rs1 shamt hrd hrs1 hsh
       obtain ⟨ho, hjo1, hjo2, hmso, _, hf⟩ :=
         register_decode_fields_of_binding line msg _ $opU8 $opc rd ext
@@ -578,6 +580,7 @@ theorem transpile_addiw (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hr
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd
       ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
       ∧ ∃ d, aeneas_extract.rv64im_decode.decode_i
           (toU32 (ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 0 rd 0x1b))
             RiscvOpcode.Addiw false = ok d
@@ -633,7 +636,7 @@ theorem addiw_decode_fields_of_binding (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 
           ∧ ext.row.is_external_op = true ∧ ext.row.m32 = true
           ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
           ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-  obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, hb⟩ :=
+  obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, _, hb⟩ :=
     transpile_addiw rd rs1 imm hrd hrs1 hrd0
   obtain ⟨ho, hjo1, hjo2, hmso, _, hf⟩ :=
     register_decode_fields_of_binding line msg _ 26#u8 OP_ADD_W rd ext
@@ -705,7 +708,7 @@ local macro "shift_program_decode" nm:ident "," upper:term "," f3:term "," opw:t
     let ext := ($transpileName rd rs1 shamt (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt hsh).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd, hb⟩ :=
+        hstoreOffset, hstoreInd, hstoreReg, hb⟩ :=
       ($transpileName rd rs1 shamt (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt hsh).choose_spec
     refine
@@ -718,6 +721,7 @@ local macro "shift_program_decode" nm:ident "," upper:term "," f3:term "," opw:t
         h_bits_set_pc := ?_
         h_bits_store_pc := ?_
         h_bits_store_ind := ?_
+        h_bits_store_reg := ?_
         h_prog := ?_ }
     · simpa only [ext, romFlagBitsOfExtract] using hieo
     · simpa only [ext, romFlagBitsOfExtract] using hm32
@@ -725,6 +729,9 @@ local macro "shift_program_decode" nm:ident "," upper:term "," f3:term "," opw:t
     · simpa only [ext, romFlagBitsOfExtract] using hstorepc
     · simp only [romFlagBitsOfExtract]
       exact decide_eq_false hstoreInd
+    · intro hrd0
+      simp only [romFlagBitsOfExtract]
+      exact decide_eq_true (hstoreReg hrd0)
     · intro j hline
       obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
       have hprimary := primary_row_at_architectural_line hbind j k haddr.symm
@@ -807,7 +814,7 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
     let ext := ($transpileName rd rs1 shamt (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt hsh).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd, hb⟩ :=
+        hstoreOffset, hstoreInd, hstoreReg, hb⟩ :=
       ($transpileName rd rs1 shamt (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt hsh).choose_spec
     refine
@@ -819,6 +826,8 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
         h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]; exact decide_eq_false hstoreInd
+        h_bits_store_reg := by
+          intro hrd0; simp only [romFlagBitsOfExtract]; exact decide_eq_true (hstoreReg hrd0)
         h_prog := by
           intro j hline
           obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -967,7 +976,7 @@ local macro "imm_program_decode" nm:ident "," f3:term "," opw:term ","
     let ext := ($transpileName rd rs1 imm (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-        hstoreOffset, hstoreInd, hrowImm⟩ :=
+        hstoreOffset, hstoreInd, hstoreReg, hrowImm⟩ :=
       ($transpileName rd rs1 imm (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt).choose_spec
     let hd := hrowImm.choose
@@ -986,6 +995,8 @@ local macro "imm_program_decode" nm:ident "," f3:term "," opw:term ","
         h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]; exact decide_eq_false hstoreInd
+        h_bits_store_reg := by
+          intro hrd0; simp only [romFlagBitsOfExtract]; exact decide_eq_true (hstoreReg hrd0)
         h_bits_b_src_imm := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_true hsrc
@@ -1064,7 +1075,7 @@ noncomputable def ProgramDecode_addiw_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_addiw rd rs1 imm (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt rawDecode.h_rd_ne_zero).choose
   obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-      hstoreOffset, hstoreInd, hrowImm⟩ :=
+      hstoreOffset, hstoreInd, hstoreReg, hrowImm⟩ :=
     (transpile_addiw rd rs1 imm (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt rawDecode.h_rd_ne_zero).choose_spec
   let hd := hrowImm.choose
@@ -1083,6 +1094,8 @@ noncomputable def ProgramDecode_addiw_from_rawProgram {n rawLength : Nat}
       h_bits_store_pc := by simpa only [ext, romFlagBitsOfExtract] using hstorepc
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]; exact decide_eq_false hstoreInd
+      h_bits_store_reg := by
+        intro hrd0; simp only [romFlagBitsOfExtract]; exact decide_eq_true (hstoreReg hrd0)
       h_bits_b_src_imm := by
         simp only [romFlagBitsOfExtract]; exact decide_eq_true hsrc
       h_prog := by

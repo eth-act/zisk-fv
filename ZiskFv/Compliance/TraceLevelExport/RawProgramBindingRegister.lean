@@ -238,7 +238,8 @@ theorem transpile_register_of
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rdv
-      ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
+      ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rdv ≠ 0 → ext.row.store = zisk_inst.STORE_REG) := by
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, hrs2b⟩ := decode_r_bounds raw rop
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core raw = ok decoded := hdec.trans hdecoded
   set input : riscv2zisk_single_row.Rv64imLoweringInput :=
@@ -275,7 +276,7 @@ theorem transpile_register_of
     rw [Result.ok.injEq] at hrow
     subst row
     rfl
-  refine ⟨{ accepted := true, decode := dext, row := row }, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨{ accepted := true, decode := dext, row := row }, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
     simp only [bind_ok, Bind.bind, hdext, hopd, hlowop]
     simp only [defCtx] at hlower
@@ -295,6 +296,11 @@ theorem transpile_register_of
   · show row.store ≠ zisk_inst.STORE_IND
     rw [hrStore]
     exact hstoreInd
+  · intro hrd0
+    show row.store = zisk_inst.STORE_REG
+    rw [hrStore]
+    exact hstoreReg (by rw [hinput]; exact_mod_cast (by
+      intro he; exact hrd0 (by rw [← hrdv decoded hdecoded, ← he])))
 
 /-! ## Generic decode-field bridge for register ops. -/
 
@@ -349,7 +355,8 @@ local macro "reg_op" nm:ident "," f7:term "," f3:term "," opw:term ","
           ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
           ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
           ∧ ext.row.store_offset.val = rd
-          ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
+          ∧ ext.row.store ≠ zisk_inst.STORE_IND
+          ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG) := by
       refine transpile_register_of _ $rop $srop $zop $opU8 $m32 $ot rd ?_ ?_ rfl
         (by intro self input; rfl)
         rfl rfl rfl (by intro h; cases h) (by intro h; cases h)
@@ -406,7 +413,7 @@ local macro "reg_op" nm:ident "," f7:term "," f3:term "," opw:term ","
               ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
               ∧ (romFlagBitsOfExtract ext.row).store_ind = false
               ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hstoreOffset, hstoreInd⟩ :=
+      obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hstoreOffset, hstoreInd, _⟩ :=
         $tName rd rs1 rs2 hrd hrs1 hrs2
       obtain ⟨ho, hjo1, hjo2, hso, hsi, hf⟩ :=
         register_decode_fields_of_binding line msg _ $opU8 $opc rd ext

@@ -293,7 +293,8 @@ theorem immediate_op_or_x0_copyb_typed_store_pins
     (h : riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed
       self i op inst_size = ok ctx) :
     ∃ zib, ctx.extract_inst = some zib ∧
-      zib.i.store_offset.val = i.rd.val ∧ zib.i.store ≠ zisk_inst.STORE_IND := by
+      zib.i.store_offset.val = i.rd.val ∧ zib.i.store ≠ zisk_inst.STORE_IND
+      ∧ (i.rd.val ≠ 0 → zib.i.store = zisk_inst.STORE_REG) := by
   simp only [riscv2zisk_context.Riscv2ZiskContext.immediate_op_or_x0_copyb_typed,
     lift, Bind.bind, bind_ok] at h
   obtain ⟨z0, h0, h⟩ := bind_eq_ok_imp h
@@ -322,14 +323,17 @@ theorem immediate_op_or_x0_copyb_typed_store_pins
       · exact op_zisk_pres_store _ _ _ h3
     obtain ⟨ho0, ho1⟩ := hopStore
     exact ⟨ho0.trans (hb0.trans ha0), ho1.trans (hb1.trans ha1)⟩
-  obtain ⟨hso, hst⟩ := store_reg_raw_index_pins z3 z4 i.rd hrd h30.1 h30.2 h4
+  obtain ⟨hso, hst, hstoreReg⟩ := store_reg_raw_index_pins z3 z4 i.rd hrd h30.1 h30.2 h4
   obtain ⟨hjso, hjst⟩ := j_pres_store _ _ _ _ h5
   have hz65 := ZiskFv.Compliance.Extraction.build_eq _ _ h6
-  refine ⟨z6, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h7, ?_, ?_⟩
+  refine ⟨z6, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h7, ?_, ?_, ?_⟩
   · rw [hz65, hjso]
     exact hso
   · rw [hz65]
     exact fun hh => hst (hjst.symm.trans hh)
+  · intro hrd0
+    rw [hz65]
+    exact (hjst ▸ hstoreReg hrd0)
 
 /-- The conditional immediate builder preserves the exact 64-bit immediate
     split written by `src_b_imm` through either operation arm. -/
@@ -402,7 +406,8 @@ theorem transpile_register_cond_of
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rdv
-      ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
+      ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rdv ≠ 0 → ext.row.store = zisk_inst.STORE_REG) := by
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, hrs2b⟩ := decode_r_bounds raw rop
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core raw = ok decoded := hdec.trans hdecoded
   set input : riscv2zisk_single_row.Rv64imLoweringInput :=
@@ -417,11 +422,11 @@ theorem transpile_register_cond_of
     create_register_op_typed_dynamic_pins S input zop 4#u64 ctx0 hctx0
   have hzz : zib' = zib := Option.some.inj (hzib'.symm.trans hzib)
   rw [hzz] at hj1 hj2
-  obtain ⟨zib'', hzib'', hso, hsi⟩ :=
+  obtain ⟨zib'', hzib'', hso, hsi, hstoreReg⟩ :=
     create_register_op_typed_store_pins S input zop 4#u64 ctx0
       (by rw [hinput]; exact hrdb) hctx0
   have hzz' : zib'' = zib := Option.some.inj (hzib''.symm.trans hzib)
-  rw [hzz'] at hso hsi
+  rw [hzz'] at hso hsi hstoreReg
   obtain ⟨dext, hdext⟩ := decode_extract_ok decoded
   obtain ⟨row, hrow, hrop, hrext, hrm32, hrsp, hrstp, hrj1, hrj2, _⟩ := from_inst_ok zib.i
   have hrStoreOffset : row.store_offset = zib.i.store_offset := by
@@ -439,7 +444,7 @@ theorem transpile_register_cond_of
   have hlower : riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input defCtx input srop false
       = ok { ctx0 with extract_marker := () } := by rw [harm input hPin, hctx0]; rfl
   refine ⟨{ accepted := true, decode := dext, row := row },
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
     simp only [bind_ok, Bind.bind, hdext, hopd, hlowop]
     simp only [defCtx] at hlower
@@ -458,6 +463,11 @@ theorem transpile_register_cond_of
   · show row.store ≠ zisk_inst.STORE_IND
     rw [hrStore]
     exact hsi
+  · intro hrd0
+    show row.store = zisk_inst.STORE_REG
+    rw [hrStore]
+    exact hstoreReg (by rw [hinput]; exact_mod_cast (by
+      intro he; exact hrd0 (by rw [← hrdv decoded hdecoded, ← he])))
 
 /-- Conditional immediate-op transpile through the `immediate_op_or_x0_copyb_typed`
     builder. -/
@@ -491,6 +501,7 @@ theorem transpile_immediate_copyb_of
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rdv
       ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rdv ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
       ∧ ext.row.b_src = zisk_inst.SRC_IMM
       ∧ ext.row.b_use_sp_imm1.val = imm64 / 4294967296
       ∧ ext.row.b_offset_imm0.val = imm64 % 4294967296 := by
@@ -509,11 +520,11 @@ theorem transpile_immediate_copyb_of
     immediate_op_or_x0_copyb_typed_dynamic_pins S input zop 4#u64 ctx0 hctx0
   have hzz : zib' = zib := Option.some.inj (hzib'.symm.trans hzib)
   rw [hzz] at hj1 hj2
-  obtain ⟨zib'', hzib'', hso, hsi⟩ :=
+  obtain ⟨zib'', hzib'', hso, hsi, hstoreReg⟩ :=
     immediate_op_or_x0_copyb_typed_store_pins S input zop 4#u64 ctx0
       (by rw [hinput]; exact hrdb) hctx0
   have hzz' : zib'' = zib := Option.some.inj (hzib''.symm.trans hzib)
-  rw [hzz'] at hso hsi
+  rw [hzz'] at hso hsi hstoreReg
   obtain ⟨zib''', hzib''', hbsrc, hbhi, hblo⟩ :=
     immediate_op_or_x0_copyb_typed_immediate_pins S input zop 4#u64 ctx0 hctx0
   have hzz'' : zib''' = zib := Option.some.inj (hzib'''.symm.trans hzib)
@@ -531,7 +542,7 @@ theorem transpile_immediate_copyb_of
   have hlower : riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input defCtx input srop false
       = ok { ctx0 with extract_marker := () } := by rw [harm input hPin, hctx0]; rfl
   refine ⟨{ accepted := true, decode := dext, row := row },
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
     simp only [bind_ok, Bind.bind, hdext, hopd, hlowop]
     simp only [defCtx] at hlower
@@ -550,6 +561,11 @@ theorem transpile_immediate_copyb_of
   · show row.store ≠ zisk_inst.STORE_IND
     rw [hrFields.2.1]
     exact hsi
+  · intro hrd0
+    show row.store = zisk_inst.STORE_REG
+    rw [hrFields.2.1]
+    exact hstoreReg (by rw [hinput]; exact_mod_cast (by
+      intro he; exact hrd0 (by rw [← hrdv decoded hdecoded, ← he])))
   · show row.b_src = zisk_inst.SRC_IMM
     rw [hrFields.2.2.1]
     exact hbsrc
@@ -744,7 +760,8 @@ theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd
-      ∧ ext.row.store ≠ zisk_inst.STORE_IND := by
+      ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG) := by
   refine transpile_register_cond_of _ RiscvOpcode.Or
     riscv2zisk_single_row.Rv64imSingleRowOpcode.Or zisk_ops.ZiskOp.Or 15#u8 false zisk_ops.OpType.Binary
     rd ?_
@@ -792,7 +809,7 @@ theorem or_decode_fields_of_binding (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : r
           ∧ ext.row.set_pc = false ∧ ext.row.store_pc = false
           ∧ (romFlagBitsOfExtract ext.row).store_ind = false
           ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
-  obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi⟩ :=
+  obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2, hso, hsi, _⟩ :=
     transpile_or rd rs1 rs2 hrd hrs1 hrs2 hrs10 hrs20
   obtain ⟨ho, hjo1, hjo2, hmso, hstoreInd, hf⟩ :=
     register_decode_fields_of_binding line msg _ 15#u8 OP_OR rd ext
@@ -907,7 +924,7 @@ noncomputable def ProgramDecode_or_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_or rd rs1 rs2 (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrs10
     rawDecode.hrs20).choose
-  obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd⟩ :=
+  obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd, hstoreReg⟩ :=
     (transpile_or rd rs1 rs2 (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt (regidx_to_fin c.r2).isLt rawDecode.hrs10
       rawDecode.hrs20).choose_spec
@@ -921,6 +938,8 @@ noncomputable def ProgramDecode_or_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := by
+        intro hrd0; simp only [romFlagBitsOfExtract]; exact decide_eq_true (hstoreReg hrd0)
       h_prog := ?_ }
   intro j hline
   obtain ⟨k, haddr, hraw⟩ := rawDecode.hLine j hline
@@ -965,6 +984,7 @@ theorem transpile_addi (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32)
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
       ∧ ext.row.b_src = zisk_inst.SRC_IMM
       ∧ ext.row.b_use_sp_imm1.val =
         (BitVec.signExtend 64 (BitVec.ofNat 12 imm)).toNat / 4294967296
@@ -1023,7 +1043,7 @@ theorem addi_decode_fields_of_binding (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 :
               BitVec.ofNat 64 (msg.b_offset_imm0.val + msg.b_imm1.val * 4294967296)
           ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
   obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-      hso, hsi, hsrc, hhi, hlo⟩ :=
+      hso, hsi, _, hsrc, hhi, hlo⟩ :=
     transpile_addi rd rs1 imm hrd hrs1 hrd0 hrs10 himm
   obtain ⟨ho, hjo1, hjo2, hmso, hstoreInd, hbsrc, himmv, hf⟩ :=
     copyb_immediate_decode_fields_of_binding line msg _ 10#u8 OP_ADD rd
@@ -1041,6 +1061,7 @@ theorem transpile_xori (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
       ∧ ext.row.b_src = zisk_inst.SRC_IMM
       ∧ ext.row.b_use_sp_imm1.val =
         (BitVec.signExtend 64 (BitVec.ofNat 12 imm)).toNat / 4294967296
@@ -1089,7 +1110,7 @@ theorem xori_decode_fields_of_binding (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 :
               BitVec.ofNat 64 (msg.b_offset_imm0.val + msg.b_imm1.val * 4294967296)
           ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
   obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-      hso, hsi, hsrc, hhi, hlo⟩ :=
+      hso, hsi, _, hsrc, hhi, hlo⟩ :=
     transpile_xori rd rs1 imm hrd hrs1 hrs10
   obtain ⟨ho, hjo1, hjo2, hmso, hstoreInd, hbsrc, himmv, hf⟩ :=
     copyb_immediate_decode_fields_of_binding line msg _ 16#u8 OP_XOR rd
@@ -1105,6 +1126,7 @@ theorem transpile_ori (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs1
       ∧ ext.row.jmp_offset1 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.jmp_offset2 = UScalar.hcast IScalarTy.I64 4#u64
       ∧ ext.row.store_offset.val = rd ∧ ext.row.store ≠ zisk_inst.STORE_IND
+      ∧ (rd ≠ 0 → ext.row.store = zisk_inst.STORE_REG)
       ∧ ext.row.b_src = zisk_inst.SRC_IMM
       ∧ ext.row.b_use_sp_imm1.val =
         (BitVec.signExtend 64 (BitVec.ofNat 12 imm)).toNat / 4294967296
@@ -1153,7 +1175,7 @@ theorem ori_decode_fields_of_binding (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : 
               BitVec.ofNat 64 (msg.b_offset_imm0.val + msg.b_imm1.val * 4294967296)
           ∧ msg.flags = packFlags (romFlagBitsOfExtract ext.row) := by
   obtain ⟨ext, hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
-      hso, hsi, hsrc, hhi, hlo⟩ :=
+      hso, hsi, _, hsrc, hhi, hlo⟩ :=
     transpile_ori rd rs1 imm hrd hrs1 hrs10
   obtain ⟨ho, hjo1, hjo2, hmso, hstoreInd, hbsrc, himmv, hf⟩ :=
     copyb_immediate_decode_fields_of_binding line msg _ 15#u8 OP_OR rd
@@ -1199,7 +1221,7 @@ local macro "copyb_imm_program_decode" nm:ident "," f3:term : command => do
     let ext := ($transpileName rd rs1 imm (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt rawDecode.hrs10).choose
     obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd,
-        hsrc, _, _⟩ :=
+        hstoreReg, hsrc, _, _⟩ :=
       ($transpileName rd rs1 imm (regidx_to_fin c.rd).isLt
         (regidx_to_fin c.r1).isLt rawDecode.hrs10).choose_spec
     refine
@@ -1212,6 +1234,8 @@ local macro "copyb_imm_program_decode" nm:ident "," f3:term : command => do
         h_bits_store_ind := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_false hstoreInd
+        h_bits_store_reg := by
+          intro hrd0; simp only [romFlagBitsOfExtract]; exact decide_eq_true (hstoreReg hrd0)
         h_bits_b_src_imm := by
           simp only [romFlagBitsOfExtract]
           exact decide_eq_true hsrc
@@ -1323,7 +1347,7 @@ noncomputable def ProgramDecode_addi_from_rawProgram {n rawLength : Nat}
   let ext := (transpile_addi rd rs1 imm (regidx_to_fin c.rd).isLt
     (regidx_to_fin c.r1).isLt rawDecode.hrd0 rawDecode.hrs10 himm).choose
   obtain ⟨hok, _, hieo, hm32, hsetpc, hstorepc, _, _, _, hstoreInd,
-      hsrc, _, _⟩ :=
+      hstoreReg, hsrc, _, _⟩ :=
     (transpile_addi rd rs1 imm (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt rawDecode.hrd0 rawDecode.hrs10 himm).choose_spec
   refine
@@ -1336,6 +1360,8 @@ noncomputable def ProgramDecode_addi_from_rawProgram {n rawLength : Nat}
       h_bits_store_ind := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_false hstoreInd
+      h_bits_store_reg := by
+        intro hrd0; simp only [romFlagBitsOfExtract]; exact decide_eq_true (hstoreReg hrd0)
       h_bits_b_src_imm := by
         simp only [romFlagBitsOfExtract]
         exact decide_eq_true hsrc
