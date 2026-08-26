@@ -633,8 +633,8 @@ def addAddiSpinLaneBridge : ∀ i : Fin 3,
     all_goals
       rw [addAddiSpinAcceptedTrace_mainTable_eq, addAddiSpinAcceptedTrace_program,
         addAddiSpinMainRowAt_two] at hsrc
-      simp [addAddiSpinJalIndex, addAddiSpinJalRow, addSpinJalRow,
-        addSpinJalFreeCols, addAddiSpinJalProgramRow, addSpinJalBits,
+      simp [addAddiSpinJalRow, addSpinJalRow,
+        addSpinJalBits,
         ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
 
 /-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.

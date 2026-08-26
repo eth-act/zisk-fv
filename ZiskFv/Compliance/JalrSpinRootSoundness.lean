@@ -527,16 +527,16 @@ def jalrLaneBridge : ∀ i : Fin 2,
   · constructor <;> intro _ _ hsrc _ <;> exfalso
     all_goals
       simp only [mainRawAt_setup] at hsrc
-      simp [jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
+      simp [jalrSetupRow, jalrSetupRowTemplate,
         jalrSetupProgramRow, jalrSetupBits, ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
   · constructor
     · intro _ _ hsrc _
       simp only [mainRawAt_start] at hsrc
-      simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+      simp [jalrAddRow, jalrAddRowTemplate,
         jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
     · intro _ _ hsrc _
       simp only [mainRawAt_start] at hsrc
-      simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+      simp [jalrAddRow, jalrAddRowTemplate,
         jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
     · intro r _ _ hoff
       have hre : r = regidx_to_fin x1 := by

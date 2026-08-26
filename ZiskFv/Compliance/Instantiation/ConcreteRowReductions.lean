@@ -222,7 +222,7 @@ def mainSingleRowTable
     intro arr h_arr
     simp [mainRowArray] at h_arr
     subst arr
-    simp [mainRowArray, componentWithRomMemAndOpBus]
+    simp [componentWithRomMemAndOpBus]
   fixed_domain := by
     intro columns h_columns
     have h_columns' : columns = mainFixedColumns := by
@@ -1202,7 +1202,7 @@ def binarySingleRowTable (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Table F
     simp [binaryRowArray] at h_arr
     subst arr
     rw [binaryStaticLookup_component_rawWidth]
-    simp [binaryRowArray]
+    simp
   fixed_domain := by
     intro columns h_columns
     simp [ZiskFv.AirsClean.Binary.staticLookupComponent] at h_columns
@@ -1354,7 +1354,7 @@ def memSingleRowTable (row : ZiskFv.AirsClean.Mem.MemRow FGL) : Table FGL where
     intro arr h_arr
     simp [memRowArray] at h_arr
     subst arr
-    simp [memRowArray, ZiskFv.AirsClean.Mem.componentWithDualMemBus]
+    simp [ZiskFv.AirsClean.Mem.componentWithDualMemBus]
   fixed_domain := by
     intro columns h_columns
     have h_columns' : columns = ZiskFv.AirsClean.Mem.memFixedColumns := by
