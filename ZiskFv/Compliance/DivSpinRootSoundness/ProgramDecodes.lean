@@ -109,12 +109,8 @@ def divSpinDivProgramDecode :
         (divSpinAcceptedMainRowAt divSpinDivIndex)).symm
     · simp [divSpinAcceptedMainRowAt, divSpinDivIndex, divSpinMainRows,
         divSpinDivRow, divSpinDivRowTemplate, mainRomRowOf,
-        withMainRegisterPrevious, busSub, Pilot.execRowOf,
-        ZiskFv.Airs.MemoryBus.matches_memory_entry,
-        ZiskFv.AirsClean.Main.cMemMessage,
-        ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
-        AbstractInteraction.eval, ChannelInteraction.toRaw, Channel.emitted,
-        Expression.eval]
+        withMainRegisterPrevious,
+        ZiskFv.Airs.MemoryBus.matches_memory_entry]
   bounds := by
     constructor <;>
       norm_num [busSub, Pilot.execRowOf, divSpinAcceptedTrace_mainTable_eq,

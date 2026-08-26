@@ -77,7 +77,7 @@ theorem main_rom_eval
     simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
       ProvableStruct.fromComponents, ProvableStruct.components,
       ProvableStruct.toComponents, ProvableStruct.eval.go,
-      ProvableType.eval_field, Expression.eval]
+      ProvableType.eval_field]
 
 /-! ## Main's three current accesses, at `mem_op = 4`
 

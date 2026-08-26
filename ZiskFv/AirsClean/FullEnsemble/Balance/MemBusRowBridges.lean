@@ -3469,7 +3469,7 @@ private lemma main_rowInput_a_src_reg_eval
   simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go,
-    ProvableType.eval_field, Expression.eval]
+    ProvableType.eval_field]
 
 private lemma main_rowInput_b_src_reg_eval
     (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
@@ -3477,7 +3477,7 @@ private lemma main_rowInput_b_src_reg_eval
   simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go,
-    ProvableType.eval_field, Expression.eval]
+    ProvableType.eval_field]
 
 private lemma main_rowInput_store_reg_eval
     (env : Environment FGL) (row : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL) :
@@ -3485,7 +3485,7 @@ private lemma main_rowInput_store_reg_eval
   simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
     ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go,
-    ProvableType.eval_field, Expression.eval]
+    ProvableType.eval_field]
 
 /-- A boolean column is `0` or `1`. -/
 private lemma zero_or_one_of_booleanity {col : FGL} (h : col * (1 - col) = 0) :

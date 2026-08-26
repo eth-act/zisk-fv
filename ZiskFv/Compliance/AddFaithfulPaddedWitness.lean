@@ -107,7 +107,7 @@ theorem addFaithfulBinaryAddTable_constraints : addFaithfulBinaryAddTable.Constr
   apply binaryAddRowsTable_constraints_of_proverAssumptions
   intro row h_row
   simp [addFaithfulBinaryAddRows] at h_row
-  rcases h_row with rfl | rfl <;> exact ⟨0, 0, by decide, by decide, rfl⟩
+  rcases h_row with rfl | rfl ; exact ⟨0, 0, by decide, by decide, rfl⟩
 
 /-- Row 1 is the last real access to x1: the boundary reload comes from row 1's final message. -/
 def addFaithfulBoundaryRowX1 : ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=

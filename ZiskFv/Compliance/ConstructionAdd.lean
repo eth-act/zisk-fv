@@ -205,9 +205,7 @@ theorem main_add_packed_result_of_static_provider
       (ZiskFv.AirsClean.Binary.validOfRow row) 0 out h_core h_carry_bool
   have hflag : m.flag i = 0 := by
     have hm := h_match
-    simp only [matches_entry, opBus_row_Main,
-      ZiskFv.AirsClean.Binary.opBusMessage,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry] at hm
+    simp only [matches_entry, opBus_row_Main] at hm
     exact hm.2.2.2.2.2.2.2.2.1.trans hcarry
   obtain ⟨hc0, hc1⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.main_c_lanes_carryfree_of_match
@@ -263,9 +261,7 @@ theorem main_add_packed_result_of_binaryadd_provider
       (ZiskFv.AirsClean.BinaryAdd.b_chunks_in_range_of_component_spec_facts row h_facts)
       (ZiskFv.AirsClean.BinaryAdd.c_chunks_in_range_of_component_spec_facts row h_facts)
   have hm := h_match
-  simp only [matches_entry, opBus_row_Main,
-    ZiskFv.AirsClean.BinaryAdd.opBusMessage,
-    ZiskFv.Channels.OperationBus.OpBusMessage.toEntry] at hm
+  simp only [matches_entry, opBus_row_Main] at hm
   obtain ⟨_, _, ha0, ha1, hb0, hb1, hc0, hc1, _, _, _, _⟩ := hm
   obtain ⟨_, _, _, _, hc0_lt, hc1_lt, hc2_lt, hc3_lt⟩ := h_facts.2.2
   have hc_lo_lt :

@@ -207,7 +207,7 @@ private theorem operandFields_store_ind (self z : zisk_inst_builder.ZiskInstBuil
 
 private theorem operandFields_j (self z : zisk_inst_builder.ZiskInstBuilder)
     (j1 j2 : Std.I64) (h : self.j j1 j2 = ok z) : operandFields self z := by
-  simp only [zisk_inst_builder.ZiskInstBuilder.j, bind_ok, Bind.bind] at h
+  simp only [zisk_inst_builder.ZiskInstBuilder.j] at h
   rw [Result.ok.injEq] at h
   subst z
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
@@ -224,7 +224,7 @@ private theorem op_zisk_copyb_precompiled (self z : zisk_inst_builder.ZiskInstBu
     zisk_ops.ZiskOp.op_type, zisk_ops.ZiskOp.code, zisk_ops.ZiskOp.is_m32,
     zisk_ops.ZiskOp.input_size, core.convert.IntoFrom.into,
     zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from, Bind.bind] at h
-  simp only [bind_ok, Bind.bind] at h
+  simp only [bind_ok] at h
   rw [Result.ok.injEq] at h
   subst z
   norm_num [memoryLdZeroRow, romMessageOfRaw]
@@ -249,7 +249,7 @@ private theorem precompiled_pres_store_ind (self z : zisk_inst_builder.ZiskInstB
 private theorem precompiled_pres_j (self z : zisk_inst_builder.ZiskInstBuilder)
     (j1 j2 : Std.I64) (h : self.j j1 j2 = ok z) :
     z.i.is_precompiled = self.i.is_precompiled := by
-  simp only [zisk_inst_builder.ZiskInstBuilder.j, Bind.bind] at h
+  simp only [zisk_inst_builder.ZiskInstBuilder.j] at h
   rw [Result.ok.injEq] at h
   subst z
   rfl
@@ -265,7 +265,7 @@ theorem memorySdRow_eq_romMessageOfRaw :
     rw [show aeneas_extract.rv64im_decode.decode_32_core raw =
         aeneas_extract.rv64im_decode.decode_s raw
           aeneas_extract.rv64im_decode.RiscvOpcode.Sd by
-      simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc,
+      simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift,
         Bind.bind, bind_ok, ZiskFv.Compliance.Decode.toU32_and127,
         ZiskFv.Compliance.Decode.toU32_and7, ZiskFv.Compliance.Decode.toU32_shr12,
         ZiskFv.Compliance.Decode.toU32_ofNat,
@@ -321,7 +321,7 @@ theorem memorySdRow_eq_romMessageOfRaw :
       zisk_ops.ZiskOp.CopyB 8#u64 4#u64 8#u64 ctx ind_width_set8 hctx
   have hctxFields := hctx
   simp only [riscv2zisk_context.Riscv2ZiskContext.store_op_typed,
-    Bind.bind, bind_ok] at hctxFields
+    Bind.bind] at hctxFields
   obtain ⟨ctxBase, hctxBase, hctxFields⟩ :=
     ZiskFv.Compliance.Extraction.bind_eq_ok_imp hctxFields
   rw [Result.ok.injEq] at hctxFields
@@ -370,7 +370,7 @@ theorem memorySdRow_eq_romMessageOfRaw :
     rw [(ZiskFv.Compliance.Extraction.build_eq z6 z7 hz7)]
     exact hpre6.trans (hpre5.trans hpre4)
   simp only [zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
-    zisk_inst_builder.ZiskInstBuilder.new, input, ← hdecoded, Result.ok.injEq] at hz0
+    zisk_inst_builder.ZiskInstBuilder.new, input] at hz0
   have hz1Saved := hz1
   norm_num [input, ← hdecoded, zisk_inst_builder.ZiskInstBuilder.src_a_reg,
     zisk_inst_builder.ZiskInstBuilder.src_a_imm, zisk_registers.REGS_IN_MAIN_FROM,
@@ -451,16 +451,7 @@ theorem memorySdRow_eq_romMessageOfRaw :
     hj2, hsetPc,
     hstorePc, hopVal, hm32Val, hotVal, hext, input, ← hdecoded, ext,
     hpre7,
-    haSrcFinal, haUseSpFinal, haOffsetFinal, hbSrcFinal, hbUseSpFinal, hbOffsetFinal,
-    hz1Saved,
-    zisk_inst_builder.ZiskInstBuilder.src_a_reg,
-    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
-    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
-    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
-    zisk_inst_builder.ZiskInstBuilder.op_zisk,
-    zisk_inst_builder.ZiskInstBuilder.ind_width,
-    zisk_inst_builder.ZiskInstBuilder.store_ind,
-    zisk_inst_builder.ZiskInstBuilder.j]
+    haSrcFinal, haUseSpFinal, haOffsetFinal, hbSrcFinal, hbUseSpFinal, hbOffsetFinal]
   norm_num [input, ← hdecoded, zisk_inst_builder.ZiskInstBuilder.src_a_reg,
     zisk_inst_builder.ZiskInstBuilder.src_a_imm,
     zisk_inst_builder.ZiskInstBuilder.src_b_reg,
@@ -488,7 +479,7 @@ theorem memoryLdZeroRow_eq_romMessageOfRaw :
     rw [show aeneas_extract.rv64im_decode.decode_32_core raw =
         aeneas_extract.rv64im_decode.decode_i raw
           aeneas_extract.rv64im_decode.RiscvOpcode.Ld false by
-      simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc,
+      simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift,
         Bind.bind, bind_ok, ZiskFv.Compliance.Decode.toU32_and127,
         ZiskFv.Compliance.Decode.toU32_and7, ZiskFv.Compliance.Decode.toU32_shr12,
         ZiskFv.Compliance.Decode.toU32_ofNat,
@@ -576,7 +567,7 @@ theorem memoryLdZeroRow_eq_romMessageOfRaw :
     romOpcode, romFlagBitsOfExtract, ZiskFv.AirsClean.Main.packFlags, hrowASrc, hrowASp,
     hrowAOff, hrowBSrc, hrowBSp, hrowBOff, hrowWidth, hrowOp, hrowStore, hrowStoreOff,
     hrowJ1, hrowJ2, hrowSetPc, hrowStorePc, hrowExt, hrowM32, haSrc, haOffEq, haSp,
-    hbSrc, hbOff, hstoreOffEq, hstoreReg hrdne, hiw, hj1, hj2, hpre, hrowPre, hop, hext,
+    hbSrc, hbOff, hstoreOffEq, hstoreReg hrdne, hj1, hj2, hpre, hrowPre, hop, hext,
     hm32, hsetPc, hstorePc, input, ext]
   norm_num [signedOffset, sourceImmediate, ZiskFv.AirsClean.boolF, zisk_inst.SRC_IMM,
     zisk_inst.SRC_MEM, zisk_inst.SRC_IND, zisk_inst.SRC_REG, zisk_inst.STORE_MEM,
@@ -596,7 +587,7 @@ theorem memoryLdNegativeRow_eq_romMessageOfRaw :
     rw [show aeneas_extract.rv64im_decode.decode_32_core raw =
         aeneas_extract.rv64im_decode.decode_i raw
           aeneas_extract.rv64im_decode.RiscvOpcode.Ld false by
-      simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc,
+      simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift,
         Bind.bind, bind_ok, ZiskFv.Compliance.Decode.toU32_and127,
         ZiskFv.Compliance.Decode.toU32_and7, ZiskFv.Compliance.Decode.toU32_shr12,
         ZiskFv.Compliance.Decode.toU32_ofNat,
@@ -678,7 +669,7 @@ theorem memoryLdNegativeRow_eq_romMessageOfRaw :
     romOpcode, romFlagBitsOfExtract, ZiskFv.AirsClean.Main.packFlags, hrowASrc, hrowASp,
     hrowAOff, hrowBSrc, hrowBSp, hrowBOff, hrowWidth, hrowOp, hrowStore, hrowStoreOff,
     hrowJ1, hrowJ2, hrowSetPc, hrowStorePc, hrowExt, hrowM32, haSrc, haOffEq, haSp,
-    hbSrc, hbOff, hstoreOffEq, hstoreReg hrdne, hiw, hj1, hj2, hpre, hrowPre, hop, hext,
+    hbSrc, hbOff, hstoreOffEq, hstoreReg hrdne, hj1, hj2, hpre, hrowPre, hop, hext,
     hm32, hsetPc, hstorePc, input, ext]
   norm_num [signedOffset, sourceImmediate, ZiskFv.AirsClean.boolF, zisk_inst.SRC_IMM,
     zisk_inst.SRC_MEM, zisk_inst.SRC_IND, zisk_inst.SRC_REG, zisk_inst.STORE_MEM,

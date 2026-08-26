@@ -151,8 +151,7 @@ private lemma post_eq_of_busEffect_ok_three_store
   have h_one_val : ((1 : FGL) : ℕ) = 1 := rfl
   unfold bus_effect at h_ok
   simp only [h_len, h_ex0, h_ex1, and_self, if_true, List.foldl_cons, List.foldl_nil,
-    h_m0, h_m1, h_m2, h_a0, h_a1, h_a2, h_one_ne, h_one_val, as_two_val, as_two_ne_one,
-    h_two_ne_neg_one, h_two_ne_one, if_false, if_true,
+    h_m0, h_m1, h_m2, h_a0, h_a1, h_a2, h_one_ne, h_one_val, as_two_val, if_false, if_true,
     write_xreg, Sail.writeReg, PreSail.writeReg, modify, modifyGet,
     MonadStateOf.modifyGet, EStateM.modifyGet, EStateM.Result.map] at h_ok
   cases h_ok
@@ -215,8 +214,7 @@ private lemma post_eq_of_busEffect_ok_three_load
   have h_one_val : ((1 : FGL) : ℕ) = 1 := rfl
   unfold bus_effect at h_ok
   simp only [h_len, h_ex0, h_ex1, and_self, if_true, List.foldl_cons, List.foldl_nil,
-    h_m0, h_m1, h_m2, h_a0, h_a1, h_a2, h_one_ne, h_one_val, as_two_val, as_two_ne_one,
-    h_two_ne_neg_one, if_false, if_true, dif_neg h_nz,
+    h_m0, h_m1, h_m2, h_a0, h_a1, h_a2, h_one_ne, h_one_val, as_two_val, if_false, if_true, dif_neg h_nz,
     write_xreg, Sail.writeReg, PreSail.writeReg, modify, modifyGet,
     MonadStateOf.modifyGet, EStateM.modifyGet, EStateM.Result.map] at h_ok
   cases h_ok
@@ -313,8 +311,7 @@ private lemma post_eq_of_busEffect_ok_three_x0
   unfold bus_effect at h_ok
   rcases h_a1 with h_a1 | h_a1 <;>
     · simp only [h_len, h_ex0, h_ex1, and_self, if_true, List.foldl_cons, List.foldl_nil,
-        h_m0, h_m1, h_m2, h_a0, h_a1, h_a2, h_one_ne, h_one_val, as_two_val, as_two_ne_one,
-        h_two_ne_neg_one, if_false, if_true, dif_pos h_z,
+        h_m0, h_m1, h_m2, h_a0, h_a1, h_a2, h_one_ne, h_one_val, as_two_val, if_false, if_true, dif_pos h_z,
         write_xreg, Sail.writeReg, PreSail.writeReg, modify, modifyGet,
         MonadStateOf.modifyGet, EStateM.modifyGet, EStateM.Result.map] at h_ok
       cases h_ok
@@ -486,7 +483,7 @@ theorem regAgree_succ
   rw [h_regs, h_post_regs, ziskRegFile, dif_pos h]
   have h_nextPC : reg_of_fin k ≠ Register.nextPC := reg_of_fin_neq_nextPC
   rw [Std.ExtDHashMap.get?_insert,
-    dif_neg (by simp only [beq_iff_eq, ne_eq]; exact Ne.symm h_nextPC)]
+    dif_neg (by simp only [beq_iff_eq]; exact Ne.symm h_nextPC)]
   cases h_w : stepRegWrite (stepChannelOutput (⟨j, h⟩ : Fin ziskTrace.numInstructions)
       (ziskStep ⟨j, h⟩) (rowDecode ⟨j, h⟩)) with
   | none => exact h_prev k h_k
@@ -506,7 +503,7 @@ theorem regAgree_succ
             h_eq (reg_of_fin_injective h_z h_k hc)
           dsimp only
           rw [if_neg h_z, if_neg h_eq, Std.ExtDHashMap.get?_insert,
-            dif_neg (by simp only [beq_iff_eq, ne_eq]; exact h_ne)]
+            dif_neg (by simp only [beq_iff_eq]; exact h_ne)]
           exact h_prev k h_k
 
 /-! ## The register file as "the last write"
@@ -618,7 +615,7 @@ lemma lane_lo_entryRegValue (e : Interaction.MemoryBusEntry FGL)
   have h_toNat := entryRegValue_toNat e h_v0 h_v1
   simp only [ZiskFv.Trusted.lane_lo]
   refine Fin.ext ?_
-  simp only [Fin.val_mk, h_toNat, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt h_v0]
+  simp only [h_toNat, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt h_v0]
 
 open ZiskFv.Airs.MemoryBus in
 lemma lane_hi_entryRegValue (e : Interaction.MemoryBusEntry FGL)

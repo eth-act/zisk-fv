@@ -412,9 +412,7 @@ theorem addSpinMainTable_constraints : addSpinMainTable.Constraints := by
         ⟨0, by simp⟩)
       (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
       addSpinAddRow := by
-  simpa [Table.environmentAt] using
-    addSpinMainTable_eval_rowInputVar_zero
-      (by simp)
+  simp [Table.environmentAt]
 
 @[simp] theorem addSpinMainTable_evalAt_one :
     Eval.eval
@@ -422,9 +420,7 @@ theorem addSpinMainTable_constraints : addSpinMainTable.Constraints := by
         ⟨1, by simp⟩)
       (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
       addSpinJalRow 1 := by
-  simpa [Table.environmentAt] using
-    addSpinMainTable_eval_rowInputVar_one
-      (by simp)
+  simp [Table.environmentAt]
 
 @[simp] theorem addSpinMainTable_evalAt_two :
     Eval.eval
@@ -432,9 +428,7 @@ theorem addSpinMainTable_constraints : addSpinMainTable.Constraints := by
         ⟨2, by simp⟩)
       (componentWithRomMemAndOpBus 2 addSpinProgram).rowInputVar =
       addSpinJalRow 2 := by
-  simpa [Table.environmentAt] using
-    addSpinMainTable_eval_rowInputVar_two
-      (by simp)
+  simp [Table.environmentAt]
 
 theorem addSpinMainTable_transitions : addSpinMainTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
@@ -1132,7 +1126,7 @@ theorem addSpinMainTable_interactionsWith_memBus :
         mainMemBusInteractionsAt_eq_valueLevel 2 addSpinProgram _ (addSpinJalRow 2)
           (eval_mainRawRow_materialize 2 emptyData (addSpinJalRow 2) (by rfl) (by rfl))
   rw [h_zero, h_one, h_two]
-  simpa only [List.append_assoc]
+  simp only [List.append_assoc]
 
 theorem addSpinAddMainMemBusInteractions_eq :
     mainValueMemBusInteractions addSpinAddRow =

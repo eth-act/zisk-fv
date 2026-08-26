@@ -91,7 +91,7 @@ theorem divSpinReadX0 (i : Fin 4) :
       EStateM.Result.ok (0#64) (divSpinSailTrace i) := by
   fin_cases i <;>
     simp [divSpinSailTrace, divSpinState, divSpinRegs, x0, x1, x2, x3,
-      regidx_to_fin, read_xreg, reg_of_fin, Std.ExtDHashMap.get?_insert]
+      regidx_to_fin, read_xreg, reg_of_fin]
 
 theorem divSpinReadX1Div :
     read_xreg (regidx_to_fin x1) (divSpinSailTrace divSpinDivIndex) =

@@ -259,7 +259,7 @@ theorem addFaithfulRawDecode :
       decide
     · rw [addFaithfulMainPc_add] at hline
       rw [addFaithfulAcceptedTrace_program] at hline
-      simp only [addFaithfulAcceptedTrace, addFaithfulProgram, addFaithfulRow1ProgramRow,
+      simp only [addFaithfulProgram, addFaithfulRow1ProgramRow,
         RegisterMemBusBalance.addX1ProgramRow] at hline
       exact absurd hline (by decide)
 

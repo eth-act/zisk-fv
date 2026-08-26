@@ -620,11 +620,7 @@ theorem singleAddWitness_rangeChannel_balanced :
     binaryAddRowsTable_interactionsWith_rangeChannel_nil,
     mainSingleRowTable_interactionsWith_rangeChannel_nil,
     emptyComponentTable_interactionsWith,
-    registerStepRangeRowsTable_interactionsWith_rangeChannel_nil,
-    registerStepRangeRowsTable_interactionsWith_memAlignRangeChannel_nil,
-    registerStepRangeRowsTable_interactionsWith_memBus_nil,
-    registerStepRangeRowsTable_interactionsWith_opBus_nil,
-    registerStepRangeRowsTable_interactionsWith_memAlignRomChannel_nil]
+    registerStepRangeRowsTable_interactionsWith_rangeChannel_nil]
   refine ⟨?_, ?_⟩
   · left
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
@@ -672,11 +668,7 @@ theorem singleAddWitness_memAlignRangeChannel_balanced :
     binaryAddRowsTable_interactionsWith_memAlignRangeChannel_nil,
     mainSingleRowTable_interactionsWith_memAlignRangeChannel_nil,
     emptyComponentTable_interactionsWith,
-    registerStepRangeRowsTable_interactionsWith_rangeChannel_nil,
-    registerStepRangeRowsTable_interactionsWith_memAlignRangeChannel_nil,
-    registerStepRangeRowsTable_interactionsWith_memBus_nil,
-    registerStepRangeRowsTable_interactionsWith_opBus_nil,
-    registerStepRangeRowsTable_interactionsWith_memAlignRomChannel_nil]
+    registerStepRangeRowsTable_interactionsWith_memAlignRangeChannel_nil]
   refine ⟨?_, ?_⟩
   · left
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
@@ -737,10 +729,6 @@ theorem singleAddWitness_memAlignRomChannel_balanced :
     binaryAddRowsTable_interactionsWith_memAlignRomChannel_nil,
     mainSingleRowTable_interactionsWith_memAlignRomChannel_nil,
     emptyComponentTable_interactionsWith,
-    registerStepRangeRowsTable_interactionsWith_rangeChannel_nil,
-    registerStepRangeRowsTable_interactionsWith_memAlignRangeChannel_nil,
-    registerStepRangeRowsTable_interactionsWith_memBus_nil,
-    registerStepRangeRowsTable_interactionsWith_opBus_nil,
     registerStepRangeRowsTable_interactionsWith_memAlignRomChannel_nil]
   refine ⟨?_, ?_⟩
   · left

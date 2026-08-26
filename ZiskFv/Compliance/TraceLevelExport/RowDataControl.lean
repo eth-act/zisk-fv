@@ -47,7 +47,7 @@ This is not a decoded placement fact: it is the explicit soundness-domain condit
 branch next-PC cast. Keeping it separate from `Inputs_<branch>` leaves those input records focused
 on Sail/ZisK state and value agreement. -/
 def BranchRangeDomain (trace : AcceptedZiskTrace numInstructions)
-    (i : Fin trace.numInstructions) (pc takenOffset : BitVec 64) : Prop :=
+    (_i : Fin trace.numInstructions) (pc takenOffset : BitVec 64) : Prop :=
   0 ≤ (pc.toNat : Int) + takenOffset.toInt
     ∧ (pc.toNat : Int) + takenOffset.toInt < GL_prime
     ∧ pc.toNat < GL_prime - 4

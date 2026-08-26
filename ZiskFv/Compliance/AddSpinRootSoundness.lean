@@ -124,7 +124,7 @@ private theorem addSpinMainPc_jal :
   change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
       addSpinMainTable).pc 1 = 4
   simp [addSpinMainRowAt_one, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-    addSpinJalFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf]
+    ZiskFv.AirsClean.Main.mainRomRowOf]
 
 private theorem addSpinReadX1_add :
     read_xreg (regidx_to_fin x1) (addSpinSailTrace addSpinAddIndex) =
@@ -307,7 +307,7 @@ def addSpinJalInputs :
     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinProgram
           addSpinMainTable).pc 1).val = _
     simp [addSpinMainRowAt_one, addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-      addSpinJalFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf, addSpinJalInput]
+      ZiskFv.AirsClean.Main.mainRomRowOf, addSpinJalInput]
   h_input_rd := by
     rfl
   h_input_pc := by
@@ -389,7 +389,7 @@ def addSpinRowsAligned :
   intro j h
   have h' : j + 1 < 2 := h
   have hj : j < 2 - 1 := by omega
-  interval_cases j <;> rfl
+  interval_cases j ; rfl
 
 set_option maxHeartbeats 4000000 in
 def addSpinLaneBridge : ∀ i : Fin 2,
@@ -402,7 +402,7 @@ def addSpinLaneBridge : ∀ i : Fin 2,
         rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
         rw [addSpinMainRowAt_zero] at hoff
         fin_cases r <;> simp [addSpinAddRow, addX1Row,
-          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+          Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
       rw [hre]
       simpa [addSpinAddIndex] using addSpinAddLaneLo (fun m i => m.a_0 i)
         (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -411,7 +411,7 @@ def addSpinLaneBridge : ∀ i : Fin 2,
         rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
         rw [addSpinMainRowAt_zero] at hoff
         fin_cases r <;> simp [addSpinAddRow, addX1Row,
-          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+          Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
       rw [hre]
       simpa [addSpinAddIndex] using addSpinAddLaneHi (fun m i => m.a_1 i)
         (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -420,7 +420,7 @@ def addSpinLaneBridge : ∀ i : Fin 2,
         rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
         rw [addSpinMainRowAt_zero] at hoff
         fin_cases r <;> simp [addSpinAddRow, addX1Row,
-          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+          Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
       rw [hre]
       simpa [addSpinAddIndex] using addSpinAddLaneLo (fun m i => m.b_0 i)
         (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -429,7 +429,7 @@ def addSpinLaneBridge : ∀ i : Fin 2,
         rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hoff
         rw [addSpinMainRowAt_zero] at hoff
         fin_cases r <;> simp [addSpinAddRow, addX1Row,
-          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+          Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
       rw [hre]
       simpa [addSpinAddIndex] using addSpinAddLaneHi (fun m i => m.b_1 i)
         (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -437,8 +437,8 @@ def addSpinLaneBridge : ∀ i : Fin 2,
     all_goals
       rw [addSpinAcceptedTrace_mainTable_eq, addSpinAcceptedTrace_program] at hsrc
       rw [addSpinMainRowAt_one] at hsrc
-      simpa [addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
-        ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+      simp [addSpinJalRow, addSpinJalProgramRow, addSpinJalBits,
+        ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
 
 /-- The two root PC premises for this witness: boot agreement, and the Sail-internal retire law.
     `sailRetireChain_of_inputsAgree` builds the latter from the per-row `InputsAgree` family this
@@ -712,7 +712,7 @@ def addPaddedLaneBridge : ∀ i : Fin 1,
       rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
       rw [addSpinMainRowAt_zero] at hoff
       fin_cases r <;> simp [addSpinAddRow, addX1Row,
-        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+        Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
     rw [hre]
     simpa [addPaddedAddIndex] using addPaddedAddLaneLo (fun m i => m.a_0 i)
       (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -721,7 +721,7 @@ def addPaddedLaneBridge : ∀ i : Fin 1,
       rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
       rw [addSpinMainRowAt_zero] at hoff
       fin_cases r <;> simp [addSpinAddRow, addX1Row,
-        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+        Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
     rw [hre]
     simpa [addPaddedAddIndex] using addPaddedAddLaneHi (fun m i => m.a_1 i)
       (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -730,7 +730,7 @@ def addPaddedLaneBridge : ∀ i : Fin 1,
       rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
       rw [addSpinMainRowAt_zero] at hoff
       fin_cases r <;> simp [addSpinAddRow, addX1Row,
-        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+        Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
     rw [hre]
     simpa [addPaddedAddIndex] using addPaddedAddLaneLo (fun m i => m.b_0 i)
       (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
@@ -739,7 +739,7 @@ def addPaddedLaneBridge : ∀ i : Fin 1,
       rw [addPaddedAcceptedTrace_mainTable_eq, addPaddedAcceptedTrace_program] at hoff
       rw [addSpinMainRowAt_zero] at hoff
       fin_cases r <;> simp [addSpinAddRow, addX1Row,
-        Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+        Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
     rw [hre]
     simpa [addPaddedAddIndex] using addPaddedAddLaneHi (fun m i => m.b_1 i)
       (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])

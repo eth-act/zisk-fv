@@ -346,7 +346,7 @@ theorem fin_ne_zero_iff_val_ne_zero (r : Fin 32) : r ≠ 0 ↔ r.val ≠ 0 := by
     simpa using hval
   · intro h hr
     apply h
-    simpa [hr]
+    simp [hr]
 
 /-- **Immediate-source selector unpacking at a row.** Given the row's packed
     `romFlags` equals `packFlags bits`, the `b_src_imm` column equals `boolF` of

@@ -47,7 +47,7 @@ theorem sum_mult_eq_pushCount_sub_pullCount {l : List (Interaction FGL)}
         fun i hi => h i (List.mem_cons_of_mem _ hi)
       have h_a := h a List.mem_cons_self
       rcases h_a with h_a | h_a | h_a <;>
-        simp [List.countP_cons, h_a, h_zero_one, h_zero_neg, h_one_neg, h_neg_one, ih h_t] <;>
+        simp [h_a, h_zero_one, h_zero_neg, h_one_neg, h_neg_one, ih h_t] <;>
         ring
 
 /-! ## Two rows contribute two positions
@@ -105,14 +105,14 @@ private theorem two_le_countP_of_two_indices {β : Type _} (P : β → Bool) :
           have h_tail : 1 ≤ t.countP P :=
             List.countP_pos_iff.mpr ⟨t[k], List.getElem_mem h_k, by simpa using h_j⟩
           have h_head : P a = true := by simpa using h_i
-          simp only [h_head, cond_true, if_true]
+          simp only [h_head, if_true]
           omega
       | (k + 1), 0 =>
           have h_k : k < t.length := by simpa using hi
           have h_tail : 1 ≤ t.countP P :=
             List.countP_pos_iff.mpr ⟨t[k], List.getElem_mem h_k, by simpa using h_i⟩
           have h_head : P a = true := by simpa using h_j
-          simp only [h_head, cond_true, if_true]
+          simp only [h_head, if_true]
           omega
       | (k + 1), (m + 1) =>
           have := ih k m (by simpa using hi) (by simpa using hj) (by omega)
@@ -338,7 +338,7 @@ private theorem countP_le_one_of_unique_index {β : Type _} (P : β → Bool) :
             (by simpa using h_i) (by simpa using h_j)
           omega)
         simp only [Bool.not_eq_true] at h_a
-        simp [h_a] <;> omega
+        simp [h_a] ; omega
 
 /-- **One row pulls a given message at most once.** Of Main's six memory-bus emissions the three
     register-pre pushes ride at a boolean selector, so never at `-1`; the three current accesses
@@ -400,7 +400,7 @@ theorem row_memBus_pullCount_le_one {length : ℕ} {program : Program length} {t
   intro i j hi hj h_i h_j
   simp only [List.length_map, List.length_cons, List.length_nil] at hi hj
   interval_cases i <;> interval_cases j <;>
-    simp_all [Bool.and_eq_true, decide_eq_true_iff]
+    simp_all [Bool.and_eq_true]
 
 /-- **A pull in a Main row is one of the three current accesses.** The three register-pre pushes
     ride at a boolean selector, so a `-1` interaction can only be a current access. This is the
@@ -582,7 +582,7 @@ theorem registerBoundaryTable_pullCount_le_one
       RegisterBoundary.registerBoundaryFixedColumns,
       RegisterBoundary.registerBoundaryFixedValues,
       RegisterBoundary.registerBoundaryCapacity, Nat.mod_eq_of_lt h_i31,
-      Nat.mod_eq_of_lt h_j31, dif_pos] at h_ptr
+      Nat.mod_eq_of_lt h_j31] at h_ptr
     have h_prime : GL_prime = 18446744069414584321 := rfl
     have h_nat := nat_eq_of_cast_eq (a := i + 1) (b := j + 1) (by omega) (by omega) h_ptr
     omega
@@ -612,7 +612,7 @@ theorem exists_mainRead_of_table_pull {n : ℕ} (trace : AcceptedZiskTrace n)
     (List.countP_pos_iff.mpr ⟨x, h_xarr, h_px⟩)
 
 /-- A boundary table with a pull at a message has a row whose boot carries it. -/
-theorem exists_boot_of_table_pull {n : ℕ} (trace : AcceptedZiskTrace n)
+theorem exists_boot_of_table_pull {n : ℕ} (_trace : AcceptedZiskTrace n)
     {table : Table FGL} (h_component : table.component = RegisterBoundary.component)
     {msg : Array FGL}
     (h_pos : 0 < (table.interactionsWith ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw).countP

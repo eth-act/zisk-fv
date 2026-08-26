@@ -69,7 +69,7 @@ private theorem createRegisterAddX1FullPins
   have ei31 := Extraction.cast_31_i64
   split_ifs at h <;> (try scalar_tac)
   all_goals
-    simp only [bind_ok, Bind.bind] at h
+    simp only [bind_ok] at h
     rw [Result.ok.injEq] at h
     subst ctx
     refine ⟨_, rfl, ?_⟩
@@ -90,7 +90,7 @@ private theorem transpileAddX1FullPins
   have hdec : aeneas_extract.rv64im_decode.decode_32_core raw =
       aeneas_extract.rv64im_decode.decode_r raw
         aeneas_extract.rv64im_decode.RiscvOpcode.Add := by
-    simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc,
+    simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift,
       Bind.bind, bind_ok, ZiskFv.Compliance.Decode.toU32_and127,
       ZiskFv.Compliance.Decode.toU32_and7, ZiskFv.Compliance.Decode.toU32_shr12,
       ZiskFv.Compliance.Decode.toU32_shr25,
@@ -164,7 +164,7 @@ private theorem transpileAddX1FullPins
   have hext' : aeneas_extract.extract_transpile_rv64im_raw raw =
       ok { accepted := true, decode := dext, row := row } := by
     rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
-    simp only [bind_ok, Bind.bind, hdext, hopd, input,
+    simp only [bind_ok, Bind.bind, hdext, hopd,
       show aeneas_extract.lowering_opcode
         aeneas_extract.rv64im_decode.RiscvOpcode.Add =
           ok (some riscv2zisk_single_row.Rv64imSingleRowOpcode.Add) from rfl]
@@ -214,10 +214,9 @@ theorem singleAddProgramBinding :
     have haeq : ext.row.a_offset_imm0 = 1#u64 := UScalar.eq_of_val_eq hao
     have hbeq : ext.row.b_offset_imm0 = 1#u64 := UScalar.eq_of_val_eq hbo
     rw [romMessageOfRaw, hext]
-    congr 1 <;>
-      simp [RegisterMemBusBalance.addX1ProgramRow, romRowOf, signedOffset, sourceImmediate,
-        romOpcode, romFlagBitsOfExtract, ZiskFv.AirsClean.Main.packFlags,
-        ha, hau, hao, haeq, hb, hbu, hbo, hbeq, hiw, hs, hso, hip,
+    congr 1
+    simp [RegisterMemBusBalance.addX1ProgramRow, romRowOf, signedOffset, romFlagBitsOfExtract, ZiskFv.AirsClean.Main.packFlags,
+        ha, haeq, hb, hbeq, hiw, hs, hso, hip,
         hop, hie, hm32, hset, hstorepc, hj1, hj2, hcast4,
         zisk_inst.SRC_IMM, zisk_inst.SRC_MEM, zisk_inst.SRC_IND,
         zisk_inst.SRC_REG, zisk_inst.STORE_MEM, zisk_inst.STORE_IND,

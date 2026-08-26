@@ -223,7 +223,7 @@ theorem cMemMessage_value_eq_lane_lo_of_bootWalk_supplier
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
-    (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+    (_h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
         i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
@@ -304,7 +304,7 @@ theorem cMemMessage_value_eq_lane_hi_of_bootWalk_supplier
         (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_reg = 1 →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
         ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val)
-    (h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
+    (_h_stepRegWrite_converse : ∀ (i : Fin n) (e : Interaction.MemoryBusEntry FGL),
         i.val + 1 < n →
         stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
         Transpiler.wrap_to_regidx e.ptr ≠ 0 →
