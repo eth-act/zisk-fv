@@ -214,7 +214,6 @@ theorem singleAddProgramBinding :
     have haeq : ext.row.a_offset_imm0 = 1#u64 := UScalar.eq_of_val_eq hao
     have hbeq : ext.row.b_offset_imm0 = 1#u64 := UScalar.eq_of_val_eq hbo
     rw [romMessageOfRaw, hext]
-    congr 1
     simp [RegisterMemBusBalance.addX1ProgramRow, romRowOf, signedOffset, romFlagBitsOfExtract, ZiskFv.AirsClean.Main.packFlags,
         ha, haeq, hb, hbeq, hiw, hs, hso, hip,
         hop, hie, hm32, hset, hstorepc, hj1, hj2, hcast4,

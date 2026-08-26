@@ -111,8 +111,6 @@ private theorem store_reg_raw_index_iff_any
     first
     | (rw [Result.ok.injEq] at h; subst h
        simp [hstore, zisk_inst.STORE_REG] ; scalar_tac)
-    | (rw [Result.ok.injEq] at h; subst h
-       simp [zisk_inst.STORE_REG] <;> scalar_tac)
     | (exfalso; scalar_tac)
 
 private theorem src_a_imm_pres_store
@@ -122,7 +120,6 @@ private theorem src_a_imm_pres_store
   simp only [zisk_inst_builder.ZiskInstBuilder.src_a_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
   first
-  | (rw [Result.ok.injEq] at h; subst h; rfl)
   | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
      rw [Result.ok.injEq] at h; subst h; rfl)
 
@@ -133,11 +130,7 @@ private theorem src_b_imm_pres_store
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
   first
-  | (rw [Result.ok.injEq] at h; subst h; rfl)
   | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; rfl)
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
      rw [Result.ok.injEq] at h; subst h; rfl)
 
 private theorem nop_store_pin
@@ -921,7 +914,6 @@ theorem transpile_lui (rd imm : Nat) (hrd : rd < 32) :
     simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawUType_opcode imm rd 0x37 (by norm_num)]
-    all_goals rfl
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrdbv⟩ :=
     decode_u_bounds (toU32 (ZiskFv.Completeness.Rv64imShapes.rawUType imm rd 0x37)) RiscvOpcode.Lui
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core
@@ -1038,7 +1030,6 @@ theorem transpile_auipc (rd imm : Nat) (hrd : rd < 32) (hrd0 : rd ≠ 0) :
     simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawUType_opcode imm rd 0x17 (by norm_num)]
-    all_goals rfl
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrdbv⟩ :=
     decode_u_bounds (toU32 (ZiskFv.Completeness.Rv64imShapes.rawUType imm rd 0x17)) RiscvOpcode.Auipc
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core
@@ -1176,7 +1167,6 @@ theorem transpile_jal (rd imm : Nat) (hrd : rd < 32) (hrd0 : rd ≠ 0) :
     simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawJType_opcode imm rd]
-    all_goals rfl
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrdbv⟩ :=
     decode_j_bounds (toU32 (ZiskFv.Completeness.Rv64imShapes.rawJType imm rd)) RiscvOpcode.Jal
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core
@@ -1309,7 +1299,6 @@ theorem transpile_jalr (rd rs1 imm : Nat) (hrd : rd < 32) (_hrs1 : rs1 < 32) (hr
     simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 0 rd 0x67 (by norm_num)]
-    all_goals rfl
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, hrdbv⟩ :=
     decode_i_bounds (toU32 (ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 0 rd 0x67)) RiscvOpcode.Jalr false
   have hdec0 : aeneas_extract.rv64im_decode.decode_32_core

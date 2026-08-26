@@ -138,8 +138,7 @@ private theorem mainAt_setup :
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get]
   rw [setupMainGet]
   rw [jalrAcceptedTrace_mainTable_eq]
-  convert jalrMainTable_evalAt (⟨0, by decide⟩ : Fin jalrMainTable.length) using 1 <;>
-    simp [jalrMainRows]
+  convert jalrMainTable_evalAt (⟨0, by decide⟩ : Fin jalrMainTable.length) using 1
 
 private theorem mainAt_start :
     ZiskFv.Compliance.mainRowWithRomAt jalrAcceptedTrace startMainIndex =
@@ -148,8 +147,7 @@ private theorem mainAt_start :
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get]
   rw [startMainGet]
   rw [jalrAcceptedTrace_mainTable_eq]
-  convert jalrMainTable_evalAt (⟨1, by decide⟩ : Fin jalrMainTable.length) using 1 <;>
-    simp [jalrMainRows]
+  convert jalrMainTable_evalAt (⟨1, by decide⟩ : Fin jalrMainTable.length) using 1
 
 private theorem mainAt_finish :
     ZiskFv.Compliance.mainRowWithRomAt jalrAcceptedTrace finishMainIndex =
@@ -158,8 +156,7 @@ private theorem mainAt_finish :
   rw [ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get]
   rw [finishMainGet]
   rw [jalrAcceptedTrace_mainTable_eq]
-  convert jalrMainTable_evalAt (⟨2, by decide⟩ : Fin jalrMainTable.length) using 1 <;>
-    simp [jalrMainRows]
+  convert jalrMainTable_evalAt (⟨2, by decide⟩ : Fin jalrMainTable.length) using 1
 
 @[simp] private theorem mainRawAt_setup :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero

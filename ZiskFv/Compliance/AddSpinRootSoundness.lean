@@ -699,7 +699,7 @@ def addPaddedRowsAligned :
   intro j h
   have h' : j + 1 < 1 := h
   have hj : j < 1 - 1 := by omega
-  interval_cases j <;> rfl
+  interval_cases j
 
 set_option maxHeartbeats 4000000 in
 def addPaddedLaneBridge : ∀ i : Fin 1,

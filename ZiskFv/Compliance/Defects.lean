@@ -332,7 +332,6 @@ def MemAlignNarrowLoadLaneShape
 @[simp] theorem no_memAlignNarrowLoadLaneShape
     (env : OpEnvelope state m r_main) : ¬ MemAlignNarrowLoadLaneShape env := by
   cases env <;> simp [MemAlignNarrowLoadLaneShape]
-  all_goals rintro ⟨_, _, h_fits, h_not_fits⟩; exact h_not_fits h_fits
 
 /-- Anti-vacuity guard for the trace-local carve-out: any selected general
     provider row whose reconstructed value fits its selected narrow width lies
