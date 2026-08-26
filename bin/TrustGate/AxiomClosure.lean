@@ -51,4 +51,31 @@ def rawAxiomDepsForTheorem (env : Environment) (name : Name) : Array Name :=
   let st := ((Lean.CollectAxioms.collect name).run env).run {} |>.snd
   st.axioms.qsort (fun a b => a.toString < b.toString)
 
+/-- The RAW, UNFILTERED axiom closure of `roots` taken all at once.
+
+`Lean.CollectAxioms.State` carries the `visited` set, so threading one state
+through every root walks the shared constant graph a single time instead of
+once per root. That is what makes a union over thousands of project
+declarations affordable. -/
+def rawAxiomUnion (env : Environment) (roots : Array Name) : Array Name := Id.run do
+  let mut st : Lean.CollectAxioms.State := {}
+  for r in roots do
+    st := ((Lean.CollectAxioms.collect r).run env).run st |>.snd
+  return st.axioms.qsort (fun a b => a.toString < b.toString)
+
+/-- Lean's own postulates, plus the two the compiled-certificate tactics
+(`native_decide`, `bv_decide`) add. Trusted unconditionally, so they are
+reported apart from the axioms membership review actually controls. -/
+def kernelAxioms : Array Name :=
+  #[`propext, `Classical.choice, `Quot.sound, `Lean.ofReduceBool,
+    `Lean.trustCompiler, `sorryAx]
+
+/-- Which trust scope `n` belongs to: `project` (`ZiskFv.*`, the ledger in
+`trust/trusted-base.md`), `kernel` (see `kernelAxioms`), or `spec` (everything
+else, i.e. the LeanRV64D Sail-translation primitives and the Aeneas runtime). -/
+def scopeOf (n : Name) : String :=
+  if isProjectAxiom n then "project"
+  else if kernelAxioms.contains n then "kernel"
+  else "spec"
+
 end TrustGate.AxiomClosure
