@@ -570,7 +570,7 @@ theorem registerBoundaryTable_pullCount_le_one
     have h_eq := memBusMessage_eq_of_eval_emitted_provider_msg_eq (h_bi.trans h_bj.symm)
     rw [RegisterBoundary.eval_bootMessageExpr, RegisterBoundary.eval_bootMessageExpr] at h_eq
     have h_ptr := congrArg ZiskFv.Channels.MemoryBus.MemBusMessage.ptr h_eq
-    simp only [RegisterBoundary.bootMessage] at h_ptr
+    simp only [] at h_ptr
     rw [RegisterBoundary.reg_of_materialize, RegisterBoundary.reg_of_materialize] at h_ptr
     have h_cap : rawRows.length ≤ RegisterBoundary.registerBoundaryCapacity :=
       fixed_domain RegisterBoundary.registerBoundaryFixedColumns rfl
@@ -667,7 +667,7 @@ theorem mainRead_ne_boot {length : ℕ} {program : Program length} {table : Tabl
   rw [slot_timestamp_val (slotOffset_le_three s)
     (main_index_lt_mainFixedCapacity h_component h_index)] at h_val
   have h_pos : 1 ≤ slotOffset s := by cases s <;> decide
-  simp only [RegisterBoundary.bootMessage] at h_val
+  simp only [] at h_val
   omega
 
 /-- **As many pushes as pulls, at every memory-bus message whose interactions ride at `0`, `±1`.**

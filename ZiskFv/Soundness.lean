@@ -522,7 +522,6 @@ private lemma binary_static_w_mode_carry_7_zero
     rcases mul_eq_zero.mp h_mode_bool with h | h
     · exfalso
       have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_W_add_sub h_spec_facts.1
-      simp only [ZiskFv.AirsClean.Binary.lookupMessage0Row] at h_ne
       have h_bop : row.chain.b_op = (op_val : FGL) := by
         have := h_emit; rw [h, mul_zero, add_zero] at this; exact this
       have h_bop_v := congrArg Fin.val h_bop

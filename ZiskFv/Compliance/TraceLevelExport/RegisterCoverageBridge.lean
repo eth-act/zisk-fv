@@ -551,7 +551,6 @@ private theorem bootAnchoredStep_ptr_val_lt {n : Nat} (trace : AcceptedZiskTrace
     (p.2.regPreMessage p.1).ptr.val < 32 := by
   obtain ⟨btbl, h_btbl, h_bcomp, br, h_br, h_eq⟩ := h
   rw [h_eq]
-  simp only [ZiskFv.AirsClean.RegisterBoundary.bootMessage]
   -- Destructure btbl and subst the component (same pattern as pullCount proof)
   cases btbl with
   | mk component rawRows data raw_uniform_width fixed_domain =>
@@ -771,7 +770,7 @@ theorem stepWritesReg_cslot_on_bootWalk
           (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_offset := by
         rw [h_e_eq]
         show (ZiskFv.AirsClean.Main.cMemMessage _).ptr = _
-        simp only [ZiskFv.AirsClean.Main.cMemMessage]
+        simp only []
         rw [h_addr_spec.2.2.1, h_store_ind, zero_mul, add_zero]
       rw [← h_e_ptr]; exact heq
     -- Step B: Both sides are boot boundary reg values with .val < 32, both
@@ -995,7 +994,7 @@ theorem stepWritesReg_cslot_on_bootWalk_b
           (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_offset := by
         rw [h_e_eq]
         show (ZiskFv.AirsClean.Main.cMemMessage _).ptr = _
-        simp only [ZiskFv.AirsClean.Main.cMemMessage]
+        simp only []
         rw [h_addr_spec.2.2.1, h_store_ind, zero_mul, add_zero]
       rw [← h_e_ptr]; exact heq
     have h_val_lt_b : (last.2.regPreMessage last.1).ptr.val < 32 :=
