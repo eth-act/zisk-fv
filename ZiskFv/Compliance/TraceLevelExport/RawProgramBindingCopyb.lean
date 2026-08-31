@@ -275,13 +275,8 @@ private theorem copyb_src_b_imm_pres_store (self z : zisk_inst_builder.ZiskInstB
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
-  | (obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
-  | (obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
-     obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+  obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩
 
 /-- The conditional immediate builder preserves the honest destination-register
     store pins through either `CopyB` or the requested operation arm. -/
@@ -1219,7 +1214,6 @@ theorem transpile_addi (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32)
       ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 0 rd 0x13 (by norm_num),
       ZiskFv.Compliance.Decode.rawIType_funct3 imm rs1 0 rd 0x13 (by norm_num) hrd (by norm_num)]
-    all_goals rfl
   · intro input hP
     obtain ⟨hrd', himm', _⟩ := hP
     simp only [riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input, Bind.bind, bind_ok]
@@ -1306,7 +1300,6 @@ theorem transpile_xori (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs
       ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 4 rd 0x13 (by norm_num),
       ZiskFv.Compliance.Decode.rawIType_funct3 imm rs1 4 rd 0x13 (by norm_num) hrd (by norm_num)]
-    all_goals rfl
   · intro d hd
     obtain ⟨_, hrs1bv⟩ :=
       decode_i_rd_rs1_bv (toU32 (rawIType imm rs1 4 rd 0x13)) RiscvOpcode.Xori false d hd
@@ -1381,7 +1374,6 @@ theorem transpile_ori (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs1
       ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 6 rd 0x13 (by norm_num),
       ZiskFv.Compliance.Decode.rawIType_funct3 imm rs1 6 rd 0x13 (by norm_num) hrd (by norm_num)]
-    all_goals rfl
   · intro d hd
     obtain ⟨_, hrs1bv⟩ :=
       decode_i_rd_rs1_bv (toU32 (rawIType imm rs1 6 rd 0x13)) RiscvOpcode.Ori false d hd

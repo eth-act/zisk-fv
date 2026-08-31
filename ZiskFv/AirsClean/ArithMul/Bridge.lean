@@ -639,7 +639,7 @@ theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row
       ZiskFv.Airs.ArithMul.opBus_row_Arith v r := by
   simp only [OpBusMessage.toEntry, primaryOpBusMessage,
     ZiskFv.Airs.ArithMul.opBus_row_Arith, h_div, h_main_mul, h_main_div]
-  ring
+  ring_nf
 
 theorem secondaryOpBusMessage_toEntry_rowAt_eq_opBus_row
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
@@ -666,7 +666,7 @@ theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row_secondary
       ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r := by
   simp only [OpBusMessage.toEntry, primaryOpBusMessage,
     ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary, h_div, h_main_mul, h_main_div]
-  ring
+  ring_nf
 
 /-- The Clean Component `Spec` projected at a `Valid_ArithMul` row,
     derived **through the Clean Component**. From the AIR's MUL-mode

@@ -323,14 +323,14 @@ private theorem mainWithArithTableConstraints (offset : ℕ) :
       h_div0, h_overflow, h_mainDiv, h_mainMul, h_signed, h_rangeAB, h_rangeCD,
       h_op, h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6]
   next => exact hRom
-  next => norm_num; exact hIdxA1
-  next => norm_num; exact hIdxB1
-  next => norm_num; exact hIdxC1
-  next => norm_num; exact hIdxD1
+  next => exact hIdxA1
+  next => exact hIdxB1
+  next => exact hIdxC1
+  next => exact hIdxD1
   next => exact hIdxA3
-  next => norm_num; exact hIdxB3
+  next => exact hIdxB3
   next => exact hIdxC3
-  next => norm_num; exact hIdxD3
+  next => exact hIdxD3
   all_goals
     norm_num [ZiskFv.AirsClean.RangeTables.rangeTable16,
       ZiskFv.AirsClean.RangeTables.rangeStaticTable,

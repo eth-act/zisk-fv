@@ -278,10 +278,8 @@ private theorem src_b_imm_pres_store (self z : zisk_inst_builder.ZiskInstBuilder
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩
 
 theorem src_b_imm_a_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (v : Std.U64)
@@ -290,16 +288,8 @@ theorem src_b_imm_a_pres (self z : zisk_inst_builder.ZiskInstBuilder)
       z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩
 
 theorem src_b_imm_data_pins (self z : zisk_inst_builder.ZiskInstBuilder)
     (v : Std.U64)
@@ -324,7 +314,7 @@ theorem src_b_imm_data_pins (self z : zisk_inst_builder.ZiskInstBuilder)
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   · change (v.bv &&& (4294967295 : BitVec 64)).toNat = v.bv.toNat % 4294967296
     have hb := congrArg BitVec.toNat (BitVec.and_two_pow_sub_one_eq_mod v.bv 32)
-    convert hb using 1 <;> norm_num
+    convert hb using 1
 
 theorem op_zisk_pres_b (self z : zisk_inst_builder.ZiskInstBuilder)
     (op : zisk_ops.ZiskOp)
@@ -360,8 +350,6 @@ theorem store_reg_pres_b (self z : zisk_inst_builder.ZiskInstBuilder)
   split_ifs at h <;>
     first
     | (rw [Result.ok.injEq] at h; subst z; exact ⟨rfl, rfl, rfl⟩)
-    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-       rw [Result.ok.injEq] at h; subst z; exact ⟨rfl, rfl, rfl⟩)
     | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst z; exact ⟨rfl, rfl, rfl⟩)
@@ -976,7 +964,6 @@ theorem transpile_addiw (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hr
       ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 0 rd 0x1b (by norm_num),
       ZiskFv.Compliance.Decode.rawIType_funct3 imm rs1 0 rd 0x1b (by norm_num) hrd (by norm_num)]
-    all_goals rfl
   · intro self input hrdne
     simp only [riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input, Bind.bind, bind_ok]
     rw [if_neg hrdne]

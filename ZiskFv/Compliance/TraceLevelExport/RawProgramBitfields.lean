@@ -904,7 +904,7 @@ private theorem rawBType_imm_bits (imm rs2 rs1 funct3 : Nat)
         Nat.mod_eq_of_lt hp12, Nat.mod_eq_of_lt hp11,
         Nat.mod_eq_of_lt h12, Nat.mod_eq_of_lt h11, Nat.mod_eq_of_lt h10,
         Nat.mod_eq_of_lt h4] <;>
-      norm_num [Nat.testBit] at halign ⊢ <;> aesop
+      norm_num [Nat.testBit] at halign ⊢ <;> aesop (config := { warnOnNonterminal := false })
     simp [Nat.shiftRight_eq_div_pow] at *
   · simp [BitVec.getLsbD, hi]
 

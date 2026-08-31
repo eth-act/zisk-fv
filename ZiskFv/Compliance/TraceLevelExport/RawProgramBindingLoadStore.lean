@@ -130,7 +130,6 @@ theorem store_reg_i64_selector_pin (self z : zisk_inst_builder.ZiskInstBuilder)
       first
       | (rw [Result.ok.injEq] at h; subst z; exact hzero)
       | (exfalso; scalar_tac)
-    all_goals exfalso; scalar_tac
   · simp [hz]
     exact store_reg_i64_is_reg self z rd hrd0 hrd hz h
 
@@ -298,11 +297,8 @@ private theorem loadOperandPins_store_reg (self z : zisk_inst_builder.ZiskInstBu
     zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
     zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
-    first
+  split_ifs at h <;> first
     | (rw [Result.ok.injEq] at h; subst z; exact ⟨rfl, rfl, rfl⟩)
-    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-       rw [Result.ok.injEq] at h; subst z; exact ⟨rfl, rfl, rfl⟩)
     | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst z; exact ⟨rfl, rfl, rfl⟩)
@@ -314,11 +310,8 @@ private theorem precompiled_pres_store_reg (self z : zisk_inst_builder.ZiskInstB
     zisk_registers.REGS_IN_MAIN_FROM, zisk_registers.REGS_IN_MAIN_TO,
     zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
-    first
+  split_ifs at h <;> first
     | (rw [Result.ok.injEq] at h; subst z; rfl)
-    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-       rw [Result.ok.injEq] at h; subst z; rfl)
     | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst z; rfl)
@@ -354,7 +347,6 @@ private theorem src_a_reg_u32_nonzero_pins (self z : zisk_inst_builder.ZiskInstB
     | (rw [Result.ok.injEq] at h; subst z
        simp [zisk_inst.SRC_REG, hc])
     | (exfalso; scalar_tac)
-  all_goals exfalso; scalar_tac
 
 theorem load_op_typed_nonzero_rs1_full_pins
     (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -937,7 +929,6 @@ theorem transpile_sd (rs1 rs2 imm : Nat) (_hrs1 : rs1 < 32) (_hrs2 : rs2 < 32) :
     ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_ofNat,
     ZiskFv.Compliance.Decode.rawSType_opcode imm rs2 rs1 3,
     ZiskFv.Compliance.Decode.rawSType_funct3 imm rs2 rs1 3 (by norm_num)]
-  all_goals rfl
 
 theorem sd_decode_fields_of_binding (rs1 rs2 imm : Nat) (hrs1 : rs1 < 32) (hrs2 : rs2 < 32)
     (line : FGL) (msg : ZiskRomMessage FGL)

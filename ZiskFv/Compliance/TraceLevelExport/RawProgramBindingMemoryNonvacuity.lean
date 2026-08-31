@@ -271,7 +271,7 @@ theorem memorySdRow_eq_romMessageOfRaw :
         ZiskFv.Compliance.Decode.toU32_ofNat,
         ZiskFv.Compliance.Decode.rawSType_opcode 0 2 1 3,
         ZiskFv.Compliance.Decode.rawSType_funct3 0 2 1 3 (by norm_num)]
-      all_goals rfl]
+      ]
     exact hdecoded
   have hraw : raw = 2142243#u32 := by rfl
   rw [hraw] at hdecoded
@@ -486,7 +486,7 @@ theorem memoryLdZeroRow_eq_romMessageOfRaw :
         ZiskFv.Compliance.Decode.rawIType_opcode 0 1 3 3 0x03 (by norm_num),
         ZiskFv.Compliance.Decode.rawIType_funct3 0 1 3 3 0x03 (by norm_num) (by norm_num)
           (by norm_num)]
-      all_goals rfl]
+      ]
     exact hdecoded
   obtain ⟨hrd, hrs1, himm⟩ :=
     decode_i_rawIType_fields 0 1 3 3 0x03 (by norm_num) (by norm_num) (by norm_num)
@@ -594,7 +594,7 @@ theorem memoryLdNegativeRow_eq_romMessageOfRaw :
         ZiskFv.Compliance.Decode.rawIType_opcode 4088 1 3 4 0x03 (by norm_num),
         ZiskFv.Compliance.Decode.rawIType_funct3 4088 1 3 4 0x03 (by norm_num)
           (by norm_num) (by norm_num)]
-      all_goals rfl]
+      ]
     exact hdecoded
   obtain ⟨hrd, hrs1, himm⟩ :=
     decode_i_rawIType_fields 4088 1 3 4 0x03 (by norm_num) (by norm_num)

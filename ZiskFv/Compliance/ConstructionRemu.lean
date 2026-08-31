@@ -108,7 +108,7 @@ theorem primaryOpBusMessage_toEntry_eq_opBus_row_ArithDivSecondary
     ZiskFv.AirsClean.ArithMul.primaryOpBusMessage,
     ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary,
     h_div, h_main_div, h_main_mul]
-  ring
+  ring_nf
 
 /-- The REMU op-bus match transports along the ArithDiv secondary row-native
     view: a match against the FAITHFUL muxed primary message of a concrete row

@@ -153,7 +153,6 @@ private theorem jalr_raw_rows
       Bind.bind, bind_ok, ZiskFv.Compliance.Decode.toU32_and127,
       ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 0 rd 0x67 (by norm_num)]
-    all_goals rfl
   obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, _⟩ :=
     decode_i_bounds (ZiskFv.Compliance.Decode.toU32 raw)
       aeneas_extract.rv64im_decode.RiscvOpcode.Jalr false

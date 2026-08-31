@@ -290,7 +290,6 @@ def sdLdSlliProgramDecode :
     norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdSlliX1ProgramRow,
       sdLdSlliClaim, x1, Transpiler.ind, regidx_to_fin, packFlags, addiX1Bits,
       ZiskFv.AirsClean.boolF]
-    all_goals decide
 
 def sdLdAddiEightProgramDecode :
     ProgramDecode_addi sdLdAcceptedTrace sdLdAddiEightIndex sdLdAddiEightClaim where

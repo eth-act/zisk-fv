@@ -220,10 +220,8 @@ theorem store_reg_u32_zero_not_reg
   have e1 := ZiskFv.Compliance.Extraction.cast_one_i64
   have e31 := ZiskFv.Compliance.Extraction.cast_31_i64
   split_ifs at h <;>
-    first
-    | (rw [Result.ok.injEq] at h; subst z
-       simp [hself, zisk_inst.STORE_REG])
-    | (exfalso; scalar_tac)
+    (rw [Result.ok.injEq] at h; subst z
+     simp [hself, zisk_inst.STORE_REG])
 
 theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)
@@ -310,12 +308,8 @@ theorem src_a_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
     zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
     lift, Bind.bind, bind_ok, if_neg hz] at h
   simp only [Bool.false_eq_true, if_false, bind_ok] at h
-  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
-    first
+  split_ifs at h <;> first
     | (rw [Result.ok.injEq] at h; subst h; rfl)
-    | (subst z; rfl)
-    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-       rw [Result.ok.injEq] at h; subst h; rfl)
     | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; rfl)
@@ -333,12 +327,8 @@ theorem src_b_reg_false_use_sp_zero (self z : zisk_inst_builder.ZiskInstBuilder)
     zisk_registers.REG_FIRST, mem.SYS_ADDR, mem.RAM_ADDR,
     lift, Bind.bind, bind_ok, if_neg hz] at h
   simp only [Bool.false_eq_true, if_false, bind_ok] at h
-  split_ifs at h <;> (try simp only [bind_ok] at h) <;>
-    first
+  split_ifs at h <;> first
     | (rw [Result.ok.injEq] at h; subst h; rfl)
-    | (subst z; rfl)
-    | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-       rw [Result.ok.injEq] at h; subst h; rfl)
     | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
        rw [Result.ok.injEq] at h; subst h; rfl)
