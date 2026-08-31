@@ -572,7 +572,7 @@ private theorem rawSType_imm_bits (imm rs2 rs1 funct3 : Nat)
       simp [BitVec.getLsbD, Nat.testBit_shiftLeft, Nat.testBit_shiftRight,
         Nat.mod_eq_of_lt himmLt, Nat.mod_eq_of_lt hhiLt, Nat.mod_eq_of_lt hshiftLt,
         show (4096 : Nat) = 2 ^ 12 by norm_num] <;>
-      first | rfl | (norm_num [Nat.testBit] <;> aesop)
+      first | rfl | (norm_num [Nat.testBit] ; aesop)
   · simp [BitVec.getLsbD, hi]
 
 private theorem rawSType_assembled_mask (v : BitVec 32) :
@@ -900,14 +900,12 @@ private theorem rawBType_imm_bits (imm rs2 rs1 funct3 : Nat)
   · interval_cases i <;>
       simp only [BitVec.getLsbD] <;>
       simp [Nat.testBit_shiftLeft, Nat.testBit_shiftRight,
-        Nat.testBit_mod_two_pow, Nat.mod_eq_of_lt himmLt, Nat.mod_eq_of_lt hshr12,
-        Nat.mod_eq_of_lt hshr11, Nat.mod_eq_of_lt hshr5, Nat.mod_eq_of_lt hshr1,
-        Nat.mod_eq_of_lt hp12, Nat.mod_eq_of_lt hp11, Nat.mod_eq_of_lt ha10,
-        Nat.mod_eq_of_lt ha4,
+        Nat.mod_eq_of_lt himmLt, Nat.mod_eq_of_lt hshr5, Nat.mod_eq_of_lt hshr1,
+        Nat.mod_eq_of_lt hp12, Nat.mod_eq_of_lt hp11,
         Nat.mod_eq_of_lt h12, Nat.mod_eq_of_lt h11, Nat.mod_eq_of_lt h10,
-        Nat.mod_eq_of_lt h4, show (8192 : Nat) = 2 ^ 13 by norm_num] <;>
-      norm_num [Nat.testBit] at halign ⊢ <;> aesop <;>
-      simp [Nat.shiftRight_eq_div_pow] at *
+        Nat.mod_eq_of_lt h4] <;>
+      norm_num [Nat.testBit] at halign ⊢ <;> aesop
+    simp [Nat.shiftRight_eq_div_pow] at *
   · simp [BitVec.getLsbD, hi]
 
 private theorem rawBType_assembled_mask (v : BitVec 32) :
@@ -1038,8 +1036,7 @@ private theorem signExtend13_of_not_sign (v : BitVec 13) (h : v[12] = false) :
   intro i
   by_cases hi : i < 32
   · interval_cases i <;>
-      simp [BitVec.getElem_signExtend, BitVec.getElem_setWidth,
-        BitVec.msb_setWidth] at h ⊢ <;> assumption
+      simp [BitVec.getElem_signExtend, BitVec.getElem_setWidth] at h ⊢ <;> assumption
   · simp [BitVec.getLsbD_signExtend, hi]
 
 private theorem signext13 (v : BitVec 13) :

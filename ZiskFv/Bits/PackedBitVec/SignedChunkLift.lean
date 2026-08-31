@@ -2245,7 +2245,7 @@ lemma abs_euclidean_to_signed_euclidean_div_rem_zero_quotient_exception
     rcases h_nr_pin with hpin | hD
   all_goals try norm_num at hpin
   all_goals try subst D
-  all_goals norm_num at h_chain ⊢ <;> nlinarith
+  all_goals norm_num at h_chain ⊢ ; nlinarith
 
 /-! ## Part 9.W — Abs-Euclidean → signed-Euclidean linker (DIVW / REMW)
 

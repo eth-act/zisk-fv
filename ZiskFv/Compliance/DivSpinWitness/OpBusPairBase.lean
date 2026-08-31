@@ -18,7 +18,7 @@ theorem divSpinOpBusPair_balanced
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h_interaction
     rcases h_interaction with rfl | rfl
     · simp
-    · simpa [h_msg_eq]
+    · simp [h_msg_eq]
   · intro msg h_present
     simp only [List.mem_singleton] at h_present
     subst msg

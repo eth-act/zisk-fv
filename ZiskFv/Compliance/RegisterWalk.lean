@@ -231,7 +231,7 @@ open ZiskFv.Channels.MemoryBus (MemBusChannel)
     index, and this is the bridge. -/
 theorem exists_index_of_mem_mainTable
     {length : Nat} {program : Program length} {table : Table FGL}
-    (h_component :
+    (_h_component :
       table.component = ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
     {row : Array FGL} (h_row : row ∈ table.table) :
     ∃ index, ∃ _h : index < table.table.length,

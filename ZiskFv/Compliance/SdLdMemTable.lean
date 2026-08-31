@@ -106,7 +106,7 @@ theorem sdLdMemRows_proverAssumptions (index : Fin sdLdMemRows.length) :
     componentWithDualMemBus.circuit.ProverAssumptions (sdLdMemRows.get index)
       sdLdMemData (ProverHint.empty FGL) := by
   have h_index : index.val < 2 := by
-    simpa [sdLdMemRows] using index.isLt
+    simp [sdLdMemRows]
   interval_cases h : index.val
   · have h_eq : index = ⟨0, by simp [sdLdMemRows]⟩ := Fin.ext (by omega)
     subst index
@@ -415,7 +415,7 @@ theorem sdLdMemTable_transitions : sdLdMemTable.TransitionConstraints := by
         ZiskFv.Airs.Mem.direct_gsum_distance_end_0,
         ZiskFv.Airs.Mem.direct_gsum_distance_end_1,
         ZiskFv.Airs.Mem.gsum_accumulator_delta, sdMemRow, memRowOf,
-        memReadSameAddrOf, memValueOf] <;> decide
+        memReadSameAddrOf, memValueOf] ; decide
   · have h_eq : index = ⟨1, by simp⟩ := Fin.ext (by omega)
     subst index
     let previous := sdLdMemTable.previousEnvironment ⟨1, by simp⟩
@@ -449,7 +449,7 @@ theorem sdLdMemTable_transitions : sdLdMemTable.TransitionConstraints := by
         ZiskFv.Airs.Mem.direct_gsum_distance_end_0,
         ZiskFv.Airs.Mem.direct_gsum_distance_end_1,
         ZiskFv.Airs.Mem.gsum_accumulator_delta, sdMemRow, ldMemRow, memRowOf,
-        memReadSameAddrOf, memValueOf] <;> decide
+        memReadSameAddrOf, memValueOf] ; decide
 
 /-- The full `mem.pil` generated surface (segment 0--23 and permutation
 24--33) is available from this table's ordinary constraints and indexed

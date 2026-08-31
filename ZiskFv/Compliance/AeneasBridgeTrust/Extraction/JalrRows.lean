@@ -148,8 +148,8 @@ private theorem src_b_reg_false_main_pins
     (try subst z) <;>
     (try cases h) <;>
     simp_all [hregFrom, hregTo, hnotAbove, haboveFalse] <;>
-      (try have : False := (not_lt_of_ge hnotAbove) (by assumption); contradiction) <;>
-      try decide <;> try scalar_tac <;> try omega
+      (try have : False := (not_lt_of_ge hnotAbove) (by assumption); contradiction)
+  try decide <;> try scalar_tac <;> try omega
 
 set_option maxHeartbeats 8000000 in
 theorem jalr_production_expanded_row_pins

@@ -95,7 +95,7 @@ private theorem and3968_shr7 (x : BitVec 32) :
 /-- The decoder's `rd` field (`inst &&& 3968 >>> 7`, bits [7,11]) of an `rawIType`
     word recovers `rd` for `rd < 32`. -/
 private theorem rawIType_rd (imm rs1 funct3 rd opcode : Nat) (hrd : rd < 32)
-    (hf3 : funct3 < 8) (hop : opcode < 128) :
+    (_hf3 : funct3 < 8) (hop : opcode < 128) :
     ((ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 funct3 rd opcode) &&& 3968#32) >>> 7
       = BitVec.ofNat 32 rd := by
   rw [and3968_shr7]
@@ -959,7 +959,7 @@ theorem transpile_addiw (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hr
       change d'.rd.bv.toNat = rd
       rw [show d'.rd.bv = BitVec.ofNat 32 rd from by
         rw [hrdbv']; exact rawIType_rd imm rs1 0 rd 0x1b hrd (by norm_num) (by norm_num)]
-      simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega)
+      simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega)
     (by
       intro d hd
       obtain ⟨d', hd', _, _, _, _, hrs1bv'⟩ := decode_i_bounds _ RiscvOpcode.Addiw false
@@ -969,7 +969,7 @@ theorem transpile_addiw (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hr
       rw [show d'.rs1.bv = BitVec.ofNat 32 rs1 from by
         rw [hrs1bv']; exact rawIType_rs1 imm rs1 0 rd 0x1b hrs1
           (by norm_num) hrd (by norm_num)]
-      simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega)
+      simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega)
     (fun input => input.rd ≠ 0#u32) ?_ rfl ?_ ?_ rfl rfl rfl (by intro h; cases h) (by intro h; cases h)
   · simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,

@@ -76,7 +76,7 @@ theorem rawWidth_memAlignByte :
 
 theorem rawWidth_memAlign :
     (MemAlign.component : Component FGL).rawWidth = 30 := by
-  simp only [MemAlign.component, GeneralFormalCircuit.size_eq, circuit_norm, MemAlign.circuit]
+  simp only [MemAlign.component, circuit_norm, MemAlign.circuit]
 
 theorem rawWidth_memAlignRangeSlice :
     (MemAlignRangeSlice.component : Component FGL).rawWidth = 1 := by
@@ -141,7 +141,7 @@ theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
       = [0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] := by
   simp only [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
     Ensemble.allTables, SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables,
-    List.map_cons, List.map_nil, SoundEnsemble.empty, Ensemble.verifierTable,
+    List.map_cons, SoundEnsemble.empty, Ensemble.verifierTable,
     rawWidth_main, rawWidth_registerBoundary, rawWidth_memAlignReadByte, rawWidth_memAlignByte,
     rawWidth_memAlign, rawWidth_memAlignRangeSlice, rawWidth_memAlignRomSlice, rawWidth_mem,
     rawWidth_registerStepRangeSlice, rawWidth_specifiedRangesSlice, rawWidth_arithDiv,

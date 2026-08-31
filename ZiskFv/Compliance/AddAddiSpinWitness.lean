@@ -544,9 +544,7 @@ private theorem addAddiSpinMain_pcHandshake_jal_jal :
         ⟨0, by simp⟩)
       (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinAddRow := by
-  simpa [Table.environmentAt] using
-    addAddiSpinMainTable_eval_rowInputVar_zero
-      (by simp)
+  simp [Table.environmentAt]
 
 @[simp] theorem addAddiSpinMainTable_evalAt_one :
     Eval.eval
@@ -554,9 +552,7 @@ private theorem addAddiSpinMain_pcHandshake_jal_jal :
         ⟨1, by simp⟩)
       (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinAddiRow := by
-  simpa [Table.environmentAt] using
-    addAddiSpinMainTable_eval_rowInputVar_one
-      (by simp)
+  simp [Table.environmentAt]
 
 @[simp] theorem addAddiSpinMainTable_evalAt_two :
     Eval.eval
@@ -564,9 +560,7 @@ private theorem addAddiSpinMain_pcHandshake_jal_jal :
         ⟨2, by simp⟩)
       (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinJalRow 2 := by
-  simpa [Table.environmentAt] using
-    addAddiSpinMainTable_eval_rowInputVar_two
-      (by simp)
+  simp [Table.environmentAt]
 
 @[simp] theorem addAddiSpinMainTable_evalAt_three :
     Eval.eval
@@ -574,9 +568,7 @@ private theorem addAddiSpinMain_pcHandshake_jal_jal :
         ⟨3, by simp⟩)
       (componentWithRomMemAndOpBus 3 addAddiSpinProgram).rowInputVar =
       addAddiSpinJalRow 3 := by
-  simpa [Table.environmentAt] using
-    addAddiSpinMainTable_eval_rowInputVar_three
-      (by simp)
+  simp [Table.environmentAt]
 
 theorem addAddiSpinMainTable_transitions : addAddiSpinMainTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
@@ -1384,7 +1376,7 @@ theorem addAddiSpinMainTable_interactionsWith_memBus :
         addAddiSpinMainMemBusInteractionsAt_eq_valueLevel _ (addAddiSpinJalRow 3)
           (eval_mainRawRow_materialize 3 emptyData (addAddiSpinJalRow 3) (by rfl) (by rfl))
   rw [h_add, h_addi, h_jal_two, h_jal_three]
-  simpa only [List.append_assoc]
+  simp only [List.append_assoc]
 
 private theorem addAddiSpinJalMemBusInteractions_balanced (step : FGL) :
     BalancedInteractions (addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow step)) := by
@@ -1392,7 +1384,7 @@ private theorem addAddiSpinJalMemBusInteractions_balanced (step : FGL) :
   · intro interaction h_interaction
     simp [addAddiSpinMainValueMemBusInteractions, mainValueMemBusInteractions] at h_interaction
     rcases h_interaction with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp [addAddiSpinMainValueMemBusInteractions, mainValueMemBusInteractions,
+      simp [
         mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
         mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction, addAddiSpinJalRow,
         addSpinJalRow, addSpinJalProgramRow, addSpinJalBits, mainRomRowOf]

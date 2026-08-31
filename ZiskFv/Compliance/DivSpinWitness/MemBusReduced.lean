@@ -89,7 +89,7 @@ theorem divSpinMemBusNonzero_filter :
       (mainValueMemBusInteractions divSpinAddiX1Row).filter (·.mult ≠ 0) =
         [mainCRegPreInteraction divSpinAddiX1Row,
           mainCMemInteraction divSpinAddiX1Row] := by
-    simp [mainValueMemBusInteractions, divSpinAddiX1Row, divSpinAddiX1RowWithLast,
+    simp [mainValueMemBusInteractions, divSpinAddiX1Row,
       divSpinAddiX1RowTemplate, mainRomRowOf, divSpinAddiBits,
       ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
       mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
@@ -98,7 +98,7 @@ theorem divSpinMemBusNonzero_filter :
       (mainValueMemBusInteractions divSpinAddiX2Row).filter (·.mult ≠ 0) =
         [mainCRegPreInteraction divSpinAddiX2Row,
           mainCMemInteraction divSpinAddiX2Row] := by
-    simp [mainValueMemBusInteractions, divSpinAddiX2Row, divSpinAddiX2RowWithLast,
+    simp [mainValueMemBusInteractions, divSpinAddiX2Row,
       divSpinAddiX2RowTemplate, mainRomRowOf, divSpinAddiBits,
       ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
       mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,

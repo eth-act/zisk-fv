@@ -274,7 +274,7 @@ private theorem stepRegWrite_converse_aux
     simp [h_r_ne, fin32_ne_zero_of_val_ne_zero]
 
 private lemma fgl_add_val_lt_of_sum_lt {a b : FGL} {bound : ℕ}
-    (h_sum_lt : a.val + b.val < GL_prime)
+    (_h_sum_lt : a.val + b.val < GL_prime)
     (h_bound : a.val + b.val < bound) :
     (a + b).val < bound := by
   change (a.val + b.val) % GL_prime < bound
@@ -309,7 +309,7 @@ private lemma cMemMessage_chunks_of_store_pc_one
     (h_val : (m.core.pc + m.core.jmp_offset2).val < 4294967296) :
     ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
       ((cMemMessage m).toEntry 1 1) := by
-  simp only [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range, cMemMessage, MemBusMessage.toEntry,
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range,
     h_sp]
   constructor
   · rw [one_mul, sub_add_cancel]; exact h_val
@@ -322,8 +322,7 @@ private lemma matches_entry_c_eq
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry msg 1)) :
     m.c_0 i = msg.c_lo ∧ m.c_1 i = msg.c_hi := by
   simp only [ZiskFv.Airs.OperationBus.matches_entry,
-    ZiskFv.Airs.OperationBus.opBus_row_Main,
-    ZiskFv.Channels.OperationBus.OpBusMessage.toEntry] at h
+    ZiskFv.Airs.OperationBus.opBus_row_Main] at h
   exact ⟨h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1⟩
 
 private lemma fgl_two_chunks_val_lt (a b : FGL)
@@ -350,7 +349,7 @@ private lemma fgl_two_bytes_val_lt (a b : FGL)
     Nat.mod_eq_of_lt (by rw [h256v]; omega)
   have h2 : (a.val + 256 * b.val) % GL_prime = a.val + 256 * b.val :=
     Nat.mod_eq_of_lt (by omega)
-  simp only [Fin.val_add, Fin.val_mul, h256v, h1, h2]
+  simp only [Fin.val_add, Fin.val_mul, h256v]
   omega
 
 private lemma fgl_four_bytes_val_lt (a b c d : FGL)
@@ -379,12 +378,7 @@ private lemma binary_static_opBus_c_hi_lt
   have hr5 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions h_spec.2.2.2.2.2.1
   have hr6 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions h_spec.2.2.2.2.2.2.1
   have hr7 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions h_spec.2.2.2.2.2.2.2
-  simp only [ZiskFv.Airs.Tables.BinaryTable.range_conditions,
-    ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
-    ZiskFv.AirsClean.Binary.lookupMessage4Row,
-    ZiskFv.AirsClean.Binary.lookupMessage5Row,
-    ZiskFv.AirsClean.Binary.lookupMessage6Row,
-    ZiskFv.AirsClean.Binary.lookupMessage7Row] at hr4 hr5 hr6 hr7
+  simp only [ZiskFv.Airs.Tables.BinaryTable.range_conditions] at hr4 hr5 hr6 hr7
   exact fgl_four_bytes_val_lt _ _ _ _ hr4.2.2.1 hr5.2.2.1 hr6.2.2.1 hr7.2.2.1
 
 private lemma binary_static_opBus_c_lo_lt
@@ -398,12 +392,7 @@ private lemma binary_static_opBus_c_lo_lt
   have hr1 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions h_spec.2.1
   have hr2 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions h_spec.2.2.1
   have hr3 := ZiskFv.AirsClean.BinaryTable.spec_range_conditions h_spec.2.2.2.1
-  simp only [ZiskFv.Airs.Tables.BinaryTable.range_conditions,
-    ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
-    ZiskFv.AirsClean.Binary.lookupMessage0Row,
-    ZiskFv.AirsClean.Binary.lookupMessage1Row,
-    ZiskFv.AirsClean.Binary.lookupMessage2Row,
-    ZiskFv.AirsClean.Binary.lookupMessage3Row] at hr0 hr1 hr2 hr3
+  simp only [ZiskFv.Airs.Tables.BinaryTable.range_conditions] at hr0 hr1 hr2 hr3
   exact fgl_four_bytes_carry_val_lt _ _ _ _ _ hr0.2.2.1 hr1.2.2.1 hr2.2.2.1 hr3.2.2.1 h_carry
 
 private lemma mode_pins_of_emit_op_eq_16_of_static_spec
@@ -571,7 +560,7 @@ private lemma cMemMessage_chunks_of_store_pc_zero
     (h_c1 : m.core.c_1.val < 4294967296) :
     ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
       ((cMemMessage m).toEntry 1 1) := by
-  simp only [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range, cMemMessage, MemBusMessage.toEntry,
+  simp only [ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range,
     h_sp]
   constructor
   · show (0 * _ + m.core.c_0).val < _; simp [h_c0]
@@ -697,7 +686,7 @@ private lemma arithMul_opBus_c_lo_lt
     have hmd0 : row.flags.main_div = 0 := by
       have h := hmm1 ▸ h_mm_md; rwa [one_mul] at h
     have h1 : (1 : FGL) - 1 - 0 = 0 := by ring
-    simp only [hmm1, hmd0, h1, zero_mul, zero_add, one_mul, mul_zero, add_zero]
+    simp only [hmm1, hmd0, h1, zero_mul, zero_add, one_mul, add_zero]
     exact fgl_two_chunks_val_lt_comm row.chunks.c_1 row.chunks.c_0
       h_chunks.2.2.2.2.2.2.2.2.2.1 h_chunks.2.2.2.2.2.2.2.2.1
 
@@ -739,7 +728,7 @@ private lemma arithMul_opBus_c_hi_lt
       have hmd0 : row.flags.main_div = 0 := by
         have h := hmm1 ▸ h_mm_md; rwa [one_mul] at h
       have h1 : (1 : FGL) - 1 - 0 = 0 := by ring
-      simp only [hmm1, hmd0, h1, zero_mul, zero_add, one_mul, mul_zero, add_zero]
+      simp only [hmm1, hmd0, h1, zero_mul, zero_add, one_mul, add_zero]
       exact fgl_two_chunks_val_lt_comm row.chunks.c_3 row.chunks.c_2
         h_chunks.2.2.2.2.2.2.2.2.2.2.2.1 h_chunks.2.2.2.2.2.2.2.2.2.2.1
   · simp only [hm32, sub_self, zero_mul, add_zero]
@@ -870,8 +859,7 @@ private lemma binExt_shift_entry_range
   have h_row_spec := hspec providerRow hpr
   rw [hcomp, shiftStaticLookupComponent_spec] at h_row_spec
   have h_op_eq := hmatch.2.1
-  simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-    ZiskFv.Channels.OperationBus.OpBusMessage.toEntry, opBusMessage] at h_op_eq
+  simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
   rw [h_op_eq] at h_main_op
   have h_c_lt := binExt_shift_opBus_c_lt theRow h_row_spec.2.1 h_main_op
   exact entry_range_of_provider_match i h_sp hmatch h_c_lt.1 h_c_lt.2
@@ -1004,14 +992,12 @@ private lemma copyb_entry_range_of_e1_range
   have h_op_row : row.core.op = ZiskFv.Trusted.OP_COPYB := by
     simpa [row, mainOfTable_op] using h_main_op
   have h_bc0 : row.core.b_0 = row.core.c_0 := by
-    simp only [ZiskFv.Airs.Main.internal_op1_copies_b0,
-      ZiskFv.AirsClean.Main.validOfRow] at h_copy0
+    simp only [ZiskFv.Airs.Main.internal_op1_copies_b0] at h_copy0
     rw [h_active_row, h_op_row] at h_copy0
     norm_num [ZiskFv.Trusted.OP_COPYB] at h_copy0 ⊢
     linear_combination h_copy0
   have h_bc1 : row.core.b_1 = row.core.c_1 := by
-    simp only [ZiskFv.Airs.Main.internal_op1_copies_b1,
-      ZiskFv.AirsClean.Main.validOfRow] at h_copy1
+    simp only [ZiskFv.Airs.Main.internal_op1_copies_b1] at h_copy1
     rw [h_active_row, h_op_row] at h_copy1
     norm_num [ZiskFv.Trusted.OP_COPYB] at h_copy1 ⊢
     linear_combination h_copy1
@@ -1020,7 +1006,7 @@ private lemma copyb_entry_range_of_e1_range
           ZiskFv.Airs.MemoryBus.memory_entry_lo e1
       ∧ (mainOfTable trace.program trace.mainTable).b_1 i.val =
           ZiskFv.Airs.MemoryBus.memory_entry_hi e1 := by
-    simp [e1, busLd, mainRowWithRomLd, mainOfTable_b_0, mainOfTable_b_1]
+    simp [e1, mainRowWithRomLd, mainOfTable_b_0, mainOfTable_b_1]
   apply cMemMessage_chunks_of_store_pc_zero row h_sp
   · rw [← h_bc0, show row.core.b_0 = e1.value_0 from h_emit.1]
     exact h_e1_range.1
@@ -1054,14 +1040,12 @@ private lemma copyb_narrow_entry_range
   have h_op_row : row.core.op = ZiskFv.Trusted.OP_COPYB := by
     simpa [row, mainOfTable_op] using h_main_op
   have h_bc0 : row.core.b_0 = row.core.c_0 := by
-    simp only [ZiskFv.Airs.Main.internal_op1_copies_b0,
-      ZiskFv.AirsClean.Main.validOfRow] at h_copy0
+    simp only [ZiskFv.Airs.Main.internal_op1_copies_b0] at h_copy0
     rw [h_active_row, h_op_row] at h_copy0
     norm_num [ZiskFv.Trusted.OP_COPYB] at h_copy0 ⊢
     linear_combination h_copy0
   have h_bc1 : row.core.b_1 = row.core.c_1 := by
-    simp only [ZiskFv.Airs.Main.internal_op1_copies_b1,
-      ZiskFv.AirsClean.Main.validOfRow] at h_copy1
+    simp only [ZiskFv.Airs.Main.internal_op1_copies_b1] at h_copy1
     rw [h_active_row, h_op_row] at h_copy1
     norm_num [ZiskFv.Trusted.OP_COPYB] at h_copy1 ⊢
     linear_combination h_copy1
@@ -1071,7 +1055,7 @@ private lemma copyb_narrow_entry_range
       ∧ (mainOfTable trace.program trace.mainTable).b_1 i.val =
           ZiskFv.Airs.MemoryBus.memory_entry_hi e1
       ∧ e1.as = 2 ∧ e1.multiplicity = -1 := by
-    simp [e1, busLd, mainRowWithRomLd, mainOfTable_b_0, mainOfTable_b_1]
+    simp [e1, mainRowWithRomLd, mainOfTable_b_0, mainOfTable_b_1]
   have h_zero :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       (mainOfTable trace.program trace.mainTable) align.mab align.marb align.ma i.val e1
@@ -1133,7 +1117,7 @@ private theorem stepRegWrite_entry_range_aux
       simp only [mainOfTable_pc] at this; exact this
     have h_bound := hAvoid.h_pc_offset_lt_2_32
       (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
-      (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
+      (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat]; omega)
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
     exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
   | auipc c =>
@@ -1217,7 +1201,7 @@ private theorem stepRegWrite_entry_range_aux
         simp only [mainOfTable_pc] at h_pcv
         have h_bound := hAvoid.h_pc_offset_lt_2_32
           (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
-          (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
+          (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat]; omega)
         simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
         exact fgl_add_val_lt_of_sum_lt (by omega) (by omega)
       · -- unaligned (2-row): rows.finish = i+1, jmp2 = 3
@@ -1253,7 +1237,7 @@ private theorem stepRegWrite_entry_range_aux
           simp only [mainOfTable_pc] at h_pcv
           have h_bound := hAvoid.h_pc_offset_lt_2_32
             (BitVec.ofNat 64 (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc.val)
-            (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]; omega)
+            (by unfold mainPcVal; simp only [mainOfTable_pc, BitVec.toNat_ofNat]; omega)
           simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h_bound
           have h_sum : ((mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc
               + 1 + 3 : FGL) = (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.pc
@@ -1298,7 +1282,7 @@ private theorem stepRegWrite_entry_range_aux
         have h_ts : (3 : FGL) + (rd.rows.finish.val : FGL) * 4
             = 3 + (i.val : FGL) * 4 := by
           have := congrArg Interaction.MemoryBusEntry.timestamp h_inj
-          simp only [MemBusMessage.toEntry, cMemMessage, h_ms_f, h_ms_i] at this
+          simp only [h_ms_f, h_ms_i] at this
           exact this
         rw [h_fi_eq] at h_ts
         have h_cancel : (↑(i.val + 1) : FGL) = (↑i.val : FGL) :=
@@ -1322,9 +1306,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       _ h_spec_facts 14 (by norm_num) h_core h_op_eq.symm
@@ -1346,9 +1328,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       _ h_spec_facts 15 (by norm_num) h_core h_op_eq.symm
@@ -1370,9 +1350,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := mode_pins_of_emit_op_eq_16_of_static_spec
       _ h_spec_facts h_core h_op_eq.symm
@@ -1394,9 +1372,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       _ h_spec_facts 14 (by norm_num) h_core h_op_eq.symm
@@ -1418,9 +1394,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
       _ h_spec_facts 15 (by norm_num) h_core h_op_eq.symm
@@ -1442,9 +1416,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := mode_pins_of_emit_op_eq_16_of_static_spec
       _ h_spec_facts h_core h_op_eq.symm
@@ -1466,9 +1438,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_carry := binary_static_add_sub_entry_range _ h_spec_facts h_core h_wf
       11 (by norm_num) h_op_eq.symm (Or.inr rfl)
@@ -1489,9 +1459,7 @@ private theorem stepRegWrite_entry_range_aux
       have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
       have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
       have h_op_eq := hmatch.2.1
-      simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-        ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-        ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+      simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
       rw [h_op] at h_op_eq
       have h_carry := binary_static_add_sub_entry_range _ h_spec_facts h_core h_wf
         10 (by norm_num) h_op_eq.symm (Or.inl rfl)
@@ -1513,9 +1481,7 @@ private theorem stepRegWrite_entry_range_aux
       have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
       have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
       have h_op_eq := hmatch.2.1
-      simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-        ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-        ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+      simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
       rw [h_op] at h_op_eq
       have h_carry := binary_static_add_sub_entry_range _ h_spec_facts h_core h_wf
         10 (by norm_num) h_op_eq.symm (Or.inl rfl)
@@ -1536,9 +1502,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
       (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 7 (by norm_num) h_op_eq.symm
@@ -1559,9 +1523,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
       (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
@@ -1582,9 +1544,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
       (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 7 (by norm_num) h_op_eq.symm
@@ -1605,9 +1565,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
       (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
@@ -1628,9 +1586,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
       26 h_op_eq.symm (Or.inl rfl)
@@ -1650,9 +1606,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
       27 h_op_eq.symm (Or.inr rfl)
@@ -1672,9 +1626,7 @@ private theorem stepRegWrite_entry_range_aux
     have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
     have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
     have h_op_eq := hmatch.2.1
-    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main,
-      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.opBusMessage] at h_op_eq
+    simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
       26 h_op_eq.symm (Or.inl rfl)

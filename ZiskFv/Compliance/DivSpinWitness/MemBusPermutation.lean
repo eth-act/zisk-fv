@@ -52,7 +52,7 @@ private theorem chronological_perm_histories {α : Type}
   refine List.Perm.cons b3 <| List.Perm.cons r3 <|
     (move_front c3p idle [c3m]).trans (List.Perm.cons c3p ?_)
   refine (move_front c3m idle []).trans (List.Perm.cons c3m ?_)
-  simpa using List.Perm.refl idle
+  simp
 
 theorem divSpinMemBusNonzeroChronological_perm_core :
     List.Perm divSpinMemBusNonzeroChronological divSpinMemBusCore := by

@@ -127,7 +127,7 @@ theorem memBus_mult_eq_neg_three_of_msg_eq_bMem_mem_op_five
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     (h_constraints : witness.Constraints) (h_specs : witness.Spec)
-    {tblRef : Table FGL} (h_tblRef : tblRef ∈ witness.allTables)
+    {tblRef : Table FGL} (_h_tblRef : tblRef ∈ witness.allTables)
     (h_compRef : tblRef.component = componentWithRomMemAndOpBus length program)
     {rRef : Array FGL} (h_rRef : rRef ∈ tblRef.table)
     (h_ref_op : (eval (tblRef.environment rRef)
@@ -154,7 +154,7 @@ theorem memBus_mult_eq_neg_two_of_msg_eq_cMem_mem_op_five
     {length : ℕ} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
     (h_constraints : witness.Constraints) (h_specs : witness.Spec)
-    {tblRef : Table FGL} (h_tblRef : tblRef ∈ witness.allTables)
+    {tblRef : Table FGL} (_h_tblRef : tblRef ∈ witness.allTables)
     (h_compRef : tblRef.component = componentWithRomMemAndOpBus length program)
     {rRef : Array FGL} (h_rRef : rRef ∈ tblRef.table)
     (h_ref_op : (eval (tblRef.environment rRef)
@@ -537,7 +537,7 @@ set_option maxHeartbeats 1000000 in
 theorem exists_boundaryWalk_of_fuel
     {n : Nat} (trace : AcceptedZiskTrace n) :
     ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
-      ∀ (h_component : table.component =
+      ∀ (_h_component : table.component =
           componentWithRomMemAndOpBus trace.programLength trace.program),
         ∀ {row : Array FGL}, row ∈ table.table → ∀ (s : RegSlot),
           s.selector (eval (table.environment row)

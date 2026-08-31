@@ -186,7 +186,7 @@ private theorem setupMainPc :
     (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 0).core.pc = 0
   rw [mainRawAt_setup]
-  simp [jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
+  simp [jalrSetupRow, jalrSetupRowTemplate,
     jalrSetupProgramRow, jalrSetupBits, ZiskFv.AirsClean.Main.mainRomRowOf]
 
 private theorem jalrMainPc :
@@ -196,7 +196,7 @@ private theorem jalrMainPc :
     (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 1).core.pc = 4
   rw [mainRawAt_start]
-  simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+  simp [jalrAddRow, jalrAddRowTemplate,
     jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf]
 
 private theorem jalrAndMainPc :
@@ -290,13 +290,13 @@ def jalrProgramDecode :
         fin_cases j
         · exfalso
           have hfalse : (0 : FGL) = 4 := by
-            simpa [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow] using hline
+            simp [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow] at hline
           have := congrArg Fin.val hfalse
           norm_num at this
         · simp [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow, jalrClaim]
         · exfalso
           have hfalse : (5 : FGL) = 4 := by
-            simpa [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] using hline
+            simp [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] at hline
           have := congrArg Fin.val hfalse
           norm_num at this
       h_prog_and := by
@@ -308,12 +308,12 @@ def jalrProgramDecode :
         fin_cases j
         · exfalso
           have hfalse : (0 : FGL) = 5 := by
-            simpa [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow] using hline
+            simp [jalrAcceptedTrace, jalrProgram, jalrSetupProgramRow] at hline
           have := congrArg Fin.val hfalse
           norm_num at this
         · exfalso
           have hfalse : (4 : FGL) = 5 := by
-            simpa [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] using hline
+            simp [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] at hline
           have := congrArg Fin.val hfalse
           norm_num at this
         · simp [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow, jalrClaim,
@@ -364,7 +364,7 @@ def setupProgramDecode :
       rw [setupMainPc] at hline
       exfalso
       have hfalse : (4 : FGL) = 0 := by
-        simpa [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] using hline
+        simp [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] at hline
       exact absurd (congrArg Fin.val hfalse) (by norm_num)
     · change (jalrAcceptedTrace.program
           (⟨2, by norm_num [jalrAcceptedTrace]⟩ :
@@ -374,7 +374,7 @@ def setupProgramDecode :
       rw [setupMainPc] at hline
       exfalso
       have hfalse : (5 : FGL) = 0 := by
-        simpa [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] using hline
+        simp [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] at hline
       exact absurd (congrArg Fin.val hfalse) (by norm_num)
   h_prog := by
     intro j hline
@@ -391,7 +391,7 @@ def setupProgramDecode :
       rw [setupMainPc] at hline
       exfalso
       have hfalse : (4 : FGL) = 0 := by
-        simpa [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] using hline
+        simp [jalrAcceptedTrace, jalrProgram, jalrAddProgramRow] at hline
       have := congrArg Fin.val hfalse
       norm_num at this
     · change (jalrAcceptedTrace.program
@@ -402,7 +402,7 @@ def setupProgramDecode :
       rw [setupMainPc] at hline
       exfalso
       have hfalse : (5 : FGL) = 0 := by
-        simpa [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] using hline
+        simp [jalrAcceptedTrace, jalrProgram, jalrAndProgramRow] at hline
       have := congrArg Fin.val hfalse
       norm_num at this
 
@@ -518,7 +518,7 @@ def jalrRowsAligned :
   intro j h
   have h' : j + 1 < 2 := h
   have hj : j < 2 - 1 := by omega
-  interval_cases j <;> rfl
+  interval_cases j ; rfl
 
 def jalrLaneBridge : ∀ i : Fin 2,
     LaneBridge jalrAcceptedTrace (sailTrace i) i.val := by
@@ -527,23 +527,23 @@ def jalrLaneBridge : ∀ i : Fin 2,
   · constructor <;> intro _ _ hsrc _ <;> exfalso
     all_goals
       simp only [mainRawAt_setup] at hsrc
-      simpa [jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
-        jalrSetupProgramRow, jalrSetupBits, ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+      simp [jalrSetupRow, jalrSetupRowTemplate,
+        jalrSetupProgramRow, jalrSetupBits, ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
   · constructor
     · intro _ _ hsrc _
       simp only [mainRawAt_start] at hsrc
-      simpa [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
-        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+      simp [jalrAddRow, jalrAddRowTemplate,
+        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
     · intro _ _ hsrc _
       simp only [mainRawAt_start] at hsrc
-      simpa [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
-        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] using hsrc
+      simp [jalrAddRow, jalrAddRowTemplate,
+        jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf] at hsrc
     · intro r _ _ hoff
       have hre : r = regidx_to_fin x1 := by
         simp only [mainRawAt_start] at hoff
-        fin_cases r <;> simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+        fin_cases r <;> simp [jalrAddRow, jalrAddRowTemplate,
           jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf,
-          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+          Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
       rw [hre, ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
       change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
         jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 1).core.b_0 = _
@@ -560,9 +560,9 @@ def jalrLaneBridge : ∀ i : Fin 2,
     · intro r _ _ hoff
       have hre : r = regidx_to_fin x1 := by
         simp only [mainRawAt_start] at hoff
-        fin_cases r <;> simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+        fin_cases r <;> simp [jalrAddRow, jalrAddRowTemplate,
           jalrAddProgramRow, jalrAddBits, ZiskFv.AirsClean.Main.mainRomRowOf,
-          Transpiler.wrap_to_regidx, Transpiler.regidxOfBitVec5, x1, regidx_to_fin] at hoff ⊢
+          Transpiler.wrap_to_regidx, x1, regidx_to_fin] at hoff ⊢
       rw [hre, ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_1]
       change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
         jalrAcceptedTrace.program jalrAcceptedTrace.mainTable 1).core.b_1 = _

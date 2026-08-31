@@ -68,13 +68,13 @@ theorem a_lo_of_laneBridge
       Transpiler.ind r)
     (h_src_imm : (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_src_imm =
       ZiskFv.AirsClean.boolF (decide (r = 0)))
-    (h_imm1 : (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_imm1 = 0) :
+    (_h_imm1 : (mainTableRowAtOrZero trace.program trace.mainTable k).rom.a_imm1 = 0) :
     (mainOfTable trace.program trace.mainTable).a_0 k =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r) := by
   by_cases hr : (r : Fin 32) = 0
   · subst hr
-    simp only [ne_eq, not_true_eq_false, decide_false, decide_true,
+    simp only [decide_true,
       ZiskFv.AirsClean.boolF] at h_src_imm
     have ⟨hss1, _, _, _⟩ := hSS
     rw [h_src_imm] at hss1
@@ -106,7 +106,7 @@ theorem a_hi_of_laneBridge
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r) := by
   by_cases hr : (r : Fin 32) = 0
   · subst hr
-    simp only [ne_eq, not_true_eq_false, decide_false, decide_true,
+    simp only [decide_true,
       ZiskFv.AirsClean.boolF] at h_src_imm
     have ⟨_, hss2, _, _⟩ := hSS
     rw [h_src_imm, h_imm1] at hss2
@@ -131,13 +131,13 @@ theorem b_lo_of_laneBridge
       Transpiler.ind r)
     (h_src_imm : (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_src_imm =
       ZiskFv.AirsClean.boolF (decide (r = 0)))
-    (h_imm1 : (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_imm1 = 0) :
+    (_h_imm1 : (mainTableRowAtOrZero trace.program trace.mainTable k).rom.b_imm1 = 0) :
     (mainOfTable trace.program trace.mainTable).b_0 k =
       ZiskFv.Trusted.lane_lo
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r) := by
   by_cases hr : (r : Fin 32) = 0
   · subst hr
-    simp only [ne_eq, not_true_eq_false, decide_false, decide_true,
+    simp only [decide_true,
       ZiskFv.AirsClean.boolF] at h_src_imm
     have ⟨_, _, hss3, _⟩ := hSS
     rw [h_src_imm] at hss3
@@ -169,7 +169,7 @@ theorem b_hi_of_laneBridge
         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state).xreg r) := by
   by_cases hr : (r : Fin 32) = 0
   · subst hr
-    simp only [ne_eq, not_true_eq_false, decide_false, decide_true,
+    simp only [decide_true,
       ZiskFv.AirsClean.boolF] at h_src_imm
     have ⟨_, _, _, hss4⟩ := hSS
     rw [h_src_imm, h_imm1] at hss4

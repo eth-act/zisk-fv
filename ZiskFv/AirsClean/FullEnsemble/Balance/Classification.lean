@@ -770,10 +770,7 @@ theorem memAlignReadByte_table_interactionsWith_registerStepRange_nil
   have h_not :
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ ZiskFv.AirsClean.MemAlignReadByte.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component, ZiskFv.AirsClean.MemAlignReadByte.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel, OpBusChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -786,10 +783,7 @@ theorem memAlignByte_table_interactionsWith_registerStepRange_nil
   have h_not :
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ ZiskFv.AirsClean.MemAlignByte.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component, ZiskFv.AirsClean.MemAlignByte.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel, OpBusChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -830,10 +824,8 @@ theorem memAlignRangeSlice_table_interactionsWith_registerStepRange_nil
   have h_not :
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ ZiskFv.AirsClean.MemAlignRangeSlice.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.MemAlignRangeSlice.component, ZiskFv.AirsClean.MemAlignRangeSlice.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel, OpBusChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
+      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -846,10 +838,8 @@ theorem memAlignRomSlice_table_interactionsWith_registerStepRange_nil
   have h_not :
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ ZiskFv.AirsClean.MemAlignRomSlice.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.MemAlignRomSlice.component, ZiskFv.AirsClean.MemAlignRomSlice.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel, OpBusChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
+      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
@@ -862,9 +852,7 @@ theorem specifiedRangesSlice_table_interactionsWith_registerStepRange_nil
   have h_not :
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ ZiskFv.AirsClean.SpecifiedRangesSlice.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.SpecifiedRangesSlice.component, ZiskFv.AirsClean.SpecifiedRangesSlice.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel, OpBusChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
       ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
@@ -878,10 +866,7 @@ theorem arithDiv_table_interactionsWith_registerStepRange_nil
   have h_not :
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
     simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component, ZiskFv.AirsClean.ArithDiv.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel, OpBusChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel]
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel]
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not

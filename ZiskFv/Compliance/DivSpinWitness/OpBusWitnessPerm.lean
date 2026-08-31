@@ -40,7 +40,7 @@ theorem divSpinWitnessOpBus_perm :
   simp only [List.flatMap_append]
   rw [divSpinOpBusTables0_flatMap, divSpinOpBusTables1_flatMap,
     divSpinOpBusTables2_flatMap, divSpinOpBusTables3_flatMap]
-  simp only [List.nil_append, List.append_assoc]
+  simp only [List.nil_append]
   unfold divSpinReorderedOpBusInteractions
   exact divSpinTenPerm _ _ _ _ _ _ _ _ _ _
 

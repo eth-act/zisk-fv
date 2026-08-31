@@ -183,9 +183,7 @@ private theorem sdLdMainRowAt (i : Fin 7) :
       rw [sdLdMainTable_length]
       omega⟩)
       (componentWithRomMemAndOpBus 7 sdLdProgram).rowInputVar = _
-  simpa [sdLdMainRows] using sdLdMainTable_evalAt ⟨i.val, by
-    rw [sdLdMainTable_length]
-    omega⟩
+  simp [sdLdMainRows]
 
 private theorem sdLdMainPc (i : Fin 7) :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable sdLdAcceptedTrace.program
@@ -199,10 +197,10 @@ private theorem sdLdMainPc (i : Fin 7) :
   rw [congrArg (fun row => row.core.pc) (sdLdMainRowAt i)]
   fin_cases i <;>
     simp [sdLdMainRows, sdLdAddiX1A0Row,
-    sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, sdLdSlliX1Row,
-    sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, sdLdAddiX1EightRow,
-    sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate, sdLdAddiX2Row,
-    sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate,
+    sdLdAddiX1A0RowTemplate, sdLdSlliX1Row,
+    sdLdSlliX1RowTemplate, sdLdAddiX1EightRow,
+    sdLdAddiX1EightRowTemplate, sdLdAddiX2Row,
+    sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate,
     sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow, mainRomRowOf,
     sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
     sdLdAddiX2ProgramRow, sdLdSdProgramRow, sdLdLdProgramRow, sdLdJalProgramRow]
@@ -433,8 +431,7 @@ private theorem sdLdReadX0 (i : Fin 7) :
       EStateM.Result.ok (0#64) (sdLdSailTrace i) := by
   fin_cases i <;>
     simp [sdLdSailTrace, sdLdState, sdLdRegs, x0, x1, x2, x3,
-      regidx_to_fin, read_xreg, reg_of_fin, sdLdStoredMem,
-      Std.ExtDHashMap.get?_insert]
+      regidx_to_fin, read_xreg, reg_of_fin, sdLdStoredMem]
 
 private theorem sdLdAcceptedMainRowAt (i : Fin 7) :
     ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero sdLdAcceptedTrace.program
@@ -464,7 +461,7 @@ private theorem sdLdReadX1 (i : Fin 7) :
       EStateM.Result.ok
         ([0#64, 160#64, 2684354560#64, 2684354568#64,
           2684354568#64, 2684354568#64, 2684354568#64][i.val]'(by
-            simpa using i.isLt))
+            simp))
         (sdLdSailTrace i) := by
   fin_cases i <;>
     simp [sdLdSailTrace, sdLdState, sdLdRegs, x1, x2, x3, regidx_to_fin,
@@ -615,13 +612,12 @@ def sdLdLdInputs :
     unfold PureSpec.ld_state_assumptions
     simp [sdLdLdClaim, sdLdLdInput, sdLdSailTrace, sdLdLdIndex, sdLdState, sdLdRegs,
       sdLdStoredMem, sdLdInitialMem, sdLdAcceptedReplayRows, sdMemRow,
-      ZiskFv.AirsClean.Mem.memBusMessage, ZiskFv.AirsClean.Mem.memRowOf,
+      ZiskFv.AirsClean.Mem.memRowOf,
       ZiskFv.AirsClean.Mem.memValueOf,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
       ZiskFv.ZiskCircuit.MemTrace.writeMemoryOfEntry,
       ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfRows,
       ZiskFv.ZiskCircuit.MemTrace.zeroMemoryOfEntry,
-      ZiskFv.ZiskCircuit.MemTrace.zeroedMemoryEntryOfEntry,
       ZiskFv.Channels.MemoryBusBytes.byteAt,
       x1, x2, x3, regidx_to_fin, reg_of_fin,
       LeanRV64D.Functions.rX_bits, LeanRV64D.Functions.rX,

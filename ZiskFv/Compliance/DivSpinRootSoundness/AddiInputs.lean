@@ -17,10 +17,10 @@ private def divSpinAddiInput
     (h_imm : input.imm = claim.imm)
     (h_pc : (divSpinSailTrace index).regs.get? Register.PC = .some input.PC)
     (h_rd : input.rd = regidx_to_fin claim.rd)
-    (h_a0 :
+    (_h_a0 :
       (divSpinMainRows[index.val]'(by change index.val < 5; omega)).core.a_0 =
         lane_lo input.r1_val)
-    (h_a1 :
+    (_h_a1 :
       (divSpinMainRows[index.val]'(by change index.val < 5; omega)).core.a_1 =
         lane_hi input.r1_val)
     (h_pc_bridge : (((4 * index.val : Nat) : FGL).val) = input.PC.toNat) :

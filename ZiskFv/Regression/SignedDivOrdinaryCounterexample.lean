@@ -273,9 +273,8 @@ private theorem mainConstraints (offset : ℕ) :
     | apply constraintsHold_assertZero
       simp only [Expression.eval, h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3,
         h_c0, h_c1, h_c2, h_c3, h_d0, h_d1, h_d2, h_d3, h_na, h_nb, h_nr, h_np,
-        h_sext, h_m32, h_div, h_div0, h_overflow, h_mainDiv, h_mainMul, h_signed,
-        h_rangeAB, h_rangeCD, h_op, h_busRes, h_mult, h_cy0, h_cy1, h_cy2, h_cy3,
-        h_cy4, h_cy5, h_cy6, h_fab, h_nafb, h_nbfa, h_inv]
+        h_m32, h_div, h_cy0, h_cy1, h_cy2, h_cy3,
+        h_cy4, h_cy5, h_cy6, h_fab, h_nafb, h_nbfa]
       norm_num [arithRow]
     | apply constraintsHold_interaction <;> rfl
 
@@ -311,25 +310,18 @@ private theorem mainWithArithTableConstraints (offset : ℕ) :
   repeat' apply constraintsHold_bind
   next =>
     apply constraintsHold_assertZero
-    simp only [Expression.eval, h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3,
-      h_c0, h_c1, h_c2, h_c3, h_d0, h_d1, h_d2, h_d3, h_na, h_nb, h_nr, h_np,
-      h_sext, h_m32, h_div, h_div0, h_overflow, h_mainDiv, h_mainMul, h_signed,
-      h_rangeAB, h_rangeCD, h_op, h_busRes, h_mult, h_cy0, h_cy1, h_cy2, h_cy3,
-      h_cy4, h_cy5, h_cy6, h_fab, h_nafb, h_nbfa, h_inv]
+    simp only [Expression.eval, h_a2, h_a3, h_c2, h_c3, h_d2, h_d3,
+      h_sext, h_m32, h_mainDiv, h_mainMul, h_busRes]
     norm_num [arithRow]
   all_goals
     apply constraintsHold_staticLookup
-    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-      ProvableStruct.fromComponents, ProvableStruct.components,
-      ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field,
-      ProvableType.eval_fields, CircuitType.eval_expr, CircuitType.eval_var_field,
+    simp only [ProvableType.eval_field,
+      ProvableType.eval_fields,
       Vector.map_mk, List.map_toArray, List.map_cons, List.map_nil,
-      eval_add, expressionEvalConst,
       h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3, h_c0, h_c1, h_c2, h_c3,
       h_d0, h_d1, h_d2, h_d3, h_na, h_nb, h_nr, h_np, h_sext, h_m32, h_div,
       h_div0, h_overflow, h_mainDiv, h_mainMul, h_signed, h_rangeAB, h_rangeCD,
-      h_op, h_busRes, h_mult, h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
-      h_fab, h_nafb, h_nbfa, h_inv]
+      h_op, h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6]
   next => exact hRom
   next => norm_num; exact hIdxA1
   next => norm_num; exact hIdxB1
@@ -366,10 +358,9 @@ private theorem sharedMainConstraints (offset : ℕ) :
   all_goals first
     | apply constraintsHold_assertZero
       simp only [Expression.eval, h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3,
-        h_c0, h_c1, h_c2, h_c3, h_d0, h_d1, h_d2, h_d3, h_na, h_nb, h_nr, h_np,
+        h_c0, h_c1, h_c2, h_c3, h_d2, h_d3, h_na, h_nb, h_nr, h_np,
         h_sext, h_m32, h_div, h_div0, h_overflow, h_mainDiv, h_mainMul, h_signed,
-        h_rangeAB, h_rangeCD, h_op, h_busRes, h_mult, h_cy0, h_cy1, h_cy2, h_cy3,
-        h_cy4, h_cy5, h_cy6, h_fab, h_nafb, h_nbfa, h_inv]
+        h_busRes, h_inv]
       norm_num [arithRow]
   all_goals
     have hDenominator : (262140 : FGL) ≠ 0 := by decide

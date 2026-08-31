@@ -916,7 +916,7 @@ store_op sw, 2, RiscvOpcode.Sw, riscv2zisk_single_row.Rv64imSingleRowOpcode.Sw, 
     `ind_width` column (the SD width column is not a decode pin), so SD threads only
     op/jmp1/jmp2/flags via the register field bridge. -/
 
-theorem transpile_sd (rs1 rs2 imm : Nat) (hrs1 : rs1 < 32) (hrs2 : rs2 < 32) :
+theorem transpile_sd (rs1 rs2 imm : Nat) (_hrs1 : rs1 < 32) (_hrs2 : rs2 < 32) :
     ∃ ext, extract_transpile_rv64im_raw
         (toU32 (ZiskFv.Completeness.Rv64imShapes.rawSType imm rs2 rs1 3)) = ok ext
       ∧ ext.row.op = 1#u8 ∧ ext.row.is_external_op = false ∧ ext.row.m32 = false

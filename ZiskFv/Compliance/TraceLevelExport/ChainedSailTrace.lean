@@ -128,7 +128,7 @@ theorem chainedSailStates_retire
       = some (cast (by simp [RegisterType]) v) := by
   rw [chainedSailStates, dif_pos h, retirePC]
   rw [h_next]
-  simp [Std.ExtDHashMap.get?_insert]
+  simp
 
 
 /-! ## Why this unblocks `RegAgree`
@@ -194,7 +194,7 @@ theorem chainedSailTrace_retireChain
     = post.regs.get? Register.nextPC
   rw [chainedSailStates, dif_pos (Nat.lt_of_succ_lt h), h_post, retirePC]
   cases h_next : post.regs.get? Register.nextPC with
-  | none => simp [Std.ExtDHashMap.get?_erase, h_next]
-  | some v => simp [Std.ExtDHashMap.get?_insert]
+  | none => simp
+  | some v => simp
 
 end ZiskFv.Compliance

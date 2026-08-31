@@ -27,7 +27,7 @@ private theorem signExtend64_signExtend32 (v : BitVec 12) :
   intro k
   by_cases hk : k < 64
   · interval_cases k <;>
-      simp [BitVec.getLsbD_signExtend, BitVec.getElem_signExtend,
+      simp [BitVec.getElem_signExtend,
         BitVec.msb_signExtend]
   · simp [BitVec.getLsbD_signExtend, hk]
 
@@ -37,7 +37,7 @@ private theorem jalr_signExtend64_signExtend32 (v : BitVec 12) :
   intro k
   by_cases hk : k < 64
   · interval_cases k <;>
-      simp [BitVec.getLsbD_signExtend, BitVec.getElem_signExtend,
+      simp [BitVec.getElem_signExtend,
         BitVec.msb_signExtend]
   · simp [BitVec.getLsbD_signExtend, hk]
 
@@ -62,7 +62,7 @@ private theorem jalr_immediate_rom_value
     rw [hdimm, jalr_signExtend64_signExtend32]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat]
-  simp only [romRowOf, sourceImmediate, hsrc, if_pos, UScalar.val]
+  simp only [romRowOf, hsrc, if_pos, UScalar.val]
   have hloBound : row.a_offset_imm0.bv.toNat < 2 ^ 32 := by
     rw [show row.a_offset_imm0.bv.toNat =
       (IScalar.hcast UScalarTy.U64 d.imm).val % 4294967296 by
@@ -149,7 +149,7 @@ private theorem jalr_raw_rows
       aeneas_extract.rv64im_decode.decode_i
         (ZiskFv.Compliance.Decode.toU32 raw)
           aeneas_extract.rv64im_decode.RiscvOpcode.Jalr false := by
-    simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc,
+    simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift,
       Bind.bind, bind_ok, ZiskFv.Compliance.Decode.toU32_and127,
       ZiskFv.Compliance.Decode.toU32_ofNat,
       ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 0 rd 0x67 (by norm_num)]
@@ -229,7 +229,7 @@ private theorem jalr_raw_rows
         let row ← aeneas_extract.ZiskInstExtract.from_inst zib.i
         .ok ({ accepted := true, decode := dext, row := row } :
           aeneas_extract.Rv64imTranspileExtract)) = _
-      simp only [riscv2zisk_single_row.Rv64imLoweringInput.new, bind_ok]
+      simp only [riscv2zisk_single_row.Rv64imLoweringInput.new]
       change (do
         let ctx' ←
           riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
@@ -281,7 +281,7 @@ private theorem jalr_raw_rows
         let row ← aeneas_extract.ZiskInstExtract.from_inst zib.i
         .ok ({ accepted := true, decode := dext, row := row } :
           aeneas_extract.Rv64imTranspileExtract)) = _
-      simp only [riscv2zisk_single_row.Rv64imLoweringInput.new, bind_ok]
+      simp only [riscv2zisk_single_row.Rv64imLoweringInput.new]
       change (do
         let ctx' ←
           riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
@@ -321,7 +321,7 @@ private theorem jalr_raw_rows
       rw [if_pos (by decide)]
       simp only [defCtx] at hlower
       rw [hlower]
-      simp [Bind.bind, hfirst, rows]
+      simp [hfirst]
     · unfold JalrUnalignedSuccessorRowPins JalrDestinationPins at hlastPins ⊢
       simpa [rows, hbSrc, hbHi, hbLo, hop, hstore, hstoreOffset, hstoreUseSp,
         hj1, hj2, hsetpc, hstorepc, hieo, hm32] using hlastPins
@@ -582,7 +582,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
             rw [← hrd]
             exact congrArg UScalar.val hzero.1
           have hstoreZero := congrArg IScalar.val hzero.2.2.1
-          simp [hmsg, romRowOf, hop, hj1, hj2, hzero, bits, hrdZero,
+          simp [hmsg, romRowOf, hop, hj1, hj2, bits, hrdZero,
             himmInt, hstoreZero]
         · have hrdNonzero : (regidx_to_fin c.rd).val ≠ 0 := by
             intro hzero
@@ -597,8 +597,8 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
               lt_trans (regidx_to_fin c.rd).isLt (by norm_num)
             apply Fin.ext
             simp [hstoreVal, hcast_u32_i64_val, hrd, Transpiler.ind, hrdPrime]
-          simp [hmsg, romRowOf, hop, hj1, hj2, hnonzero, bits, hrdNonzero,
-            hrd, himmInt, hstoreOffset]
+          simp [hmsg, romRowOf, hop, hj1, hj2, bits, hrdNonzero,
+            himmInt, hstoreOffset]
   | unaligned evidence =>
       obtain ⟨raw, hrawEncoded, hcert, hOffset, hidx, hflagAdd, hflag, haLo, haHi,
         hc1, heven, hnonneg, hlt, hLineAdd, hLineAnd⟩ := evidence
@@ -720,7 +720,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
               exact decide_eq_false (by
                 intro heq
                 have hbad := hz.2.1.symm.trans heq
-                simpa [zisk_inst.SRC_IMM, zisk_inst.SRC_REG] using hbad)
+                simp [zisk_inst.SRC_IMM, zisk_inst.SRC_REG] at hbad)
             · change input.rs1 ≠ 0#u32 ∧ rows.first_row.b_src = zisk_inst.SRC_REG ∧
                   rows.first_row.b_use_sp_imm1 = 0#u64 ∧
                   rows.first_row.b_offset_imm0 = UScalar.cast UScalarTy.U64 input.rs1 at hn
@@ -828,8 +828,8 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
               rw [← haddr]
             have himmRow := jalr_immediate_rom_value c.imm input himmC
               rows.first_row haddASrc haddHi haddLo
-            simp [hmsg, romRowOf, haddOp, haddJ2, haddASrc, haddHi, haddLo,
-              addBits, himm, himmRow]
+            simp [hmsg, romRowOf, haddOp, haddJ2, haddASrc, haddHi,
+              addBits, himmRow]
           h_prog_and := by
             intro j hline
             obtain ⟨k, hj, haddr, hraw⟩ := hLineAnd j hline
@@ -859,7 +859,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
                 exact congrArg UScalar.val hz.1
               have hstoreZero := congrArg IScalar.val hz.2.2.1
               simp [hmsg, romRowOf, handOp, handJ1, handJ2,
-                hz, andBits, hrdZero, hstoreZero]
+                hz, andBits, hrdZero]
             · change input.rd ≠ 0#u32 ∧ rows.last_row.store = zisk_inst.STORE_REG ∧
                   rows.last_row.store_offset = UScalar.hcast IScalarTy.I64 input.rd ∧
                   rows.last_row.store_use_sp = false ∧ rows.last_row.store_pc = true at hn
@@ -877,7 +877,7 @@ noncomputable def ProgramDecode_jalr_from_rawProgram {n rawLength : Nat}
                 apply Fin.ext
                 simp [hstoreVal, hcast_u32_i64_val, hrd, Transpiler.ind, hrdPrime]
               simp [hmsg, romRowOf, handOp, handJ1, handJ2,
-                hn, andBits, hrdNonzero, hstoreOffset]
+                hn, andBits, hrdNonzero]
               simpa only [hstoreVal] using hstoreOffset }
 
 end ZiskFv.Compliance.RawProgramBinding

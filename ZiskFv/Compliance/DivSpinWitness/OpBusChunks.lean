@@ -39,7 +39,7 @@ theorem divSpinOpBusTables0_flatMap :
   simp only [divSpinOpBusTables0, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, divSpinBoundaryTable_opBusInteractions,
     divSpinMemAlignReadByte_opBus_nil, divSpinMemAlignByte_opBus_nil,
-    divSpinMemAlign_opBus_nil, List.nil_append]
+    divSpinMemAlign_opBus_nil]
 
 theorem divSpinOpBusTables1_flatMap :
     divSpinOpBusTables1.flatMap (·.interactionsWith OpBusChannel.toRaw) = [] := by
@@ -47,7 +47,7 @@ theorem divSpinOpBusTables1_flatMap :
     List.append_nil, divSpinMemAlignRangeSlice_opBus_nil,
     divSpinMemAlignRomSlice_opBus_nil, divSpinMem_opBus_nil,
     registerStepRangeRowsTable_interactionsWith_opBus_nil,
-    divSpinSpecifiedRangesSlice_opBus_nil, List.nil_append]
+    divSpinSpecifiedRangesSlice_opBus_nil]
 
 theorem divSpinOpBusTables2_flatMap :
     divSpinOpBusTables2.flatMap (·.interactionsWith OpBusChannel.toRaw) =

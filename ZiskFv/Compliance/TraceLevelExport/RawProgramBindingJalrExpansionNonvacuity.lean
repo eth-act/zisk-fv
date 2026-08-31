@@ -336,13 +336,13 @@ theorem jalrExpansionProgramRowsBinding :
       jalrExpansionRawProgram := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro k k' h
-    fin_cases k <;> fin_cases k' <;> revert h <;> decide
+    fin_cases k ; fin_cases k' ; revert h ; decide
   · intro k
-    fin_cases k <;> decide
+    fin_cases k ; decide
   · intro k
-    fin_cases k <;> decide
+    fin_cases k ; decide
   · intro k k' h
-    fin_cases k <;> fin_cases k' <;> exact absurd h (by decide)
+    fin_cases k ; fin_cases k' ; exact absurd h (by decide)
   · intro k
     fin_cases k
     simp only [jalrExpansionStart, jalrExpansionAddr, jalrExpansionRawProgram]

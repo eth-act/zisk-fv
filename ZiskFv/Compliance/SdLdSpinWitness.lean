@@ -225,66 +225,46 @@ def sdLdMainRows : List (MainRowWithRom FGL) :=
 theorem sdLdMain_pc_addi_slli :
     transitionBetween sdLdAddiX1A0Row sdLdSlliX1Row := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1A0Row,
-    sdLdAddiX1A0RowWithLast,
-    sdLdAddiX1A0RowTemplate, sdLdSlliX1Row, sdLdSlliX1RowWithLast,
+    sdLdAddiX1A0RowTemplate, sdLdSlliX1Row,
     sdLdSlliX1RowTemplate, sdLdAddiX1A0ProgramRow, sdLdSlliX1ProgramRow,
-    addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
-    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
-    materializeMainRegisterAccesses, withMainRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    addiX0Bits, addiX1Bits, mainRomRowOf, withMainRegisterPrevious]
 
 theorem sdLdMain_pc_slli_addi :
     transitionBetween sdLdSlliX1Row sdLdAddiX1EightRow := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSlliX1Row,
-    sdLdSlliX1RowWithLast,
-    sdLdSlliX1RowTemplate, sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
+    sdLdSlliX1RowTemplate, sdLdAddiX1EightRow,
     sdLdAddiX1EightRowTemplate, sdLdSlliX1ProgramRow, sdLdAddiX1EightProgramRow,
-    addiX1Bits, mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
-    materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    addiX1Bits, mainRomRowOf, withMainRegisterPrevious]
 
 theorem sdLdMain_pc_addi_addi :
     transitionBetween sdLdAddiX1EightRow sdLdAddiX2Row := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX1EightRow,
-    sdLdAddiX1EightRowWithLast,
-    sdLdAddiX1EightRowTemplate, sdLdAddiX2Row, sdLdAddiX2RowWithLast,
+    sdLdAddiX1EightRowTemplate, sdLdAddiX2Row,
     sdLdAddiX2RowTemplate, sdLdAddiX1EightProgramRow, sdLdAddiX2ProgramRow,
-    addiX0Bits, addiX1Bits, mainRomRowOf, sdLdFreeCols,
-    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
-    materializeMainRegisterAccesses, withMainRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    addiX0Bits, addiX1Bits, mainRomRowOf, withMainRegisterPrevious]
 
 theorem sdLdMain_pc_addi_sd :
     transitionBetween sdLdAddiX2Row sdLdSdRow := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdAddiX2Row,
-    sdLdAddiX2RowWithLast,
     sdLdAddiX2RowTemplate, sdLdSdRow, sdLdSdRowTemplate, sdLdAddiX2ProgramRow,
-    sdLdSdProgramRow, addiX0Bits, sdLdSdBits, mainRomRowOf, sdLdFreeCols,
-    mainRomFreeColsWithRegisterPrevious, materializeMainRegisterRow,
-    materializeMainRegisterAccesses, withMainRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    sdLdSdProgramRow, addiX0Bits, sdLdSdBits, mainRomRowOf, withMainRegisterPrevious]
 
 theorem sdLdMain_pc_sd_ld : transitionBetween sdLdSdRow sdLdLdRow := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdSdRow,
     sdLdSdRowTemplate, sdLdLdRow,
     sdLdLdRowTemplate, sdLdSdProgramRow, sdLdLdProgramRow, sdLdSdBits, sdLdLdBits,
-    mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
-    materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    mainRomRowOf, withMainRegisterPrevious]
 
 theorem sdLdMain_pc_ld_jal : transitionBetween sdLdLdRow (sdLdJalRow 6) := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdLdRow,
     sdLdLdRowTemplate, sdLdJalRow,
     sdLdLdProgramRow, sdLdJalProgramRow, sdLdLdBits, AddSpinWitness.addSpinJalBits,
-    mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
-    materializeMainRegisterRow, materializeMainRegisterAccesses, withMainRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    mainRomRowOf, withMainRegisterPrevious]
 
 theorem sdLdMain_pc_jal_jal : transitionBetween (sdLdJalRow 6) (sdLdJalRow 7) := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween, sdLdJalRow,
     sdLdJalProgramRow, AddSpinWitness.addSpinJalBits,
-    mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage, boundaryRowIdle]
+    mainRomRowOf]
   ring
 
 def sdLdProgram : Program 7
@@ -597,54 +577,44 @@ theorem sdLdMainTableWithData_constraints (data : ProverData FGL)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at h_arr
   rcases h_arr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact sdLdMain_constraintsHold_materialize data 0 sdLdAddiX1A0Row
-      (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+        mainRomRowOf])
+      (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+        mainRomRowOf])
       (h_assumptions sdLdAddiX1A0Row (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 1 sdLdSlliX1Row
-      (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+        mainRomRowOf])
+      (by simp [sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+        mainRomRowOf])
       (h_assumptions sdLdSlliX1Row (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 2 sdLdAddiX1EightRow
-      (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
-        sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
-        sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdAddiX1EightRow,
+        sdLdAddiX1EightRowTemplate, mainRomRowOf])
+      (by simp [sdLdAddiX1EightRow,
+        sdLdAddiX1EightRowTemplate, mainRomRowOf])
       (h_assumptions sdLdAddiX1EightRow (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 3 sdLdAddiX2Row
-      (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
-        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
-        mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdAddiX2Row, sdLdAddiX2RowTemplate,
+        mainRomRowOf])
+      (by simp [sdLdAddiX2Row, sdLdAddiX2RowTemplate,
+        mainRomRowOf])
       (h_assumptions sdLdAddiX2Row (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 4 sdLdSdRow
-      (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf])
+      (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf])
       (h_assumptions sdLdSdRow (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 5 sdLdLdRow
-      (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf])
+      (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf])
       (h_assumptions sdLdLdRow (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 6 (sdLdJalRow 6)
-      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdJalRow, mainRomRowOf])
+      (by simp [sdLdJalRow, mainRomRowOf])
       (h_assumptions (sdLdJalRow 6) (by simp [sdLdMainRows]))
   · exact sdLdMain_constraintsHold_materialize data 7 (sdLdJalRow 7)
-      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
-      (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-        mainRomFreeColsWithRegisterPrevious])
+      (by simp [sdLdJalRow, mainRomRowOf])
+      (by simp [sdLdJalRow, mainRomRowOf])
       (h_assumptions (sdLdJalRow 7) (by simp [sdLdMainRows]))
 
 theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
@@ -678,12 +648,12 @@ theorem sdLdMainTable_constraints : sdLdMainTable.Constraints := by
       (Environment.fromArray (mainFixedColumns.materialize _ (mainRawRow _)) sdLdMemData)
       (varFromOffset MainRowWithRom 0) = _ <;>
     apply eval_mainRawRow_materialize <;>
-    simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-      sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-      sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate,
-      sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
+    simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+      sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+      sdLdAddiX1EightRow, sdLdAddiX1EightRowTemplate,
+      sdLdAddiX2Row, sdLdAddiX2RowTemplate,
       sdLdSdRow, sdLdSdRowTemplate, sdLdLdRow, sdLdLdRowTemplate, sdLdJalRow,
-      mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious]
+      mainRomRowOf]
 
 theorem sdLdMainTable_transitions : sdLdMainTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
@@ -696,8 +666,7 @@ theorem sdLdMainTable_transitions : sdLdMainTable.TransitionConstraints := by
   fin_cases index
   · simp [Table.previousEnvironment, sdLdMainRows, transitionBetween, sourceCCopyBetween,
       pcHandshakeBetween, sdLdAddiX1A0Row,
-      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf,
-      sdLdFreeCols, mainRomFreeColsWithRegisterPrevious]
+      sdLdAddiX1A0RowTemplate, mainRomRowOf]
   · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_addi_slli
   · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_slli_addi
   · simpa [Table.previousEnvironment, sdLdMainRows] using sdLdMain_pc_addi_addi
@@ -947,7 +916,7 @@ def sdLdWitness : EnsembleWitness sdLdEnsemble where
       registerBoundaryRowsTableOf, emptyComponentTable,
       sdLdMemTable, memRowsTable, sdLdSpecifiedRangesTable, sdLdBinaryExtensionTable,
       binaryExtensionShiftStaticRowsTable, sdLdBinaryAddTable, binaryAddRowsTable,
-      sdLdMainTable, AddSpinWitness.mainRowsTable] at h_table
+      sdLdMainTable] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> rfl
 
@@ -1106,7 +1075,7 @@ private theorem sdLdEmptyTableWithData_transitions (component : Component FGL) :
   intro index
   have h_length :
       (sdLdTableWithData (emptyComponentTable component)).length = 0 := by
-    simp [sdLdTableWithData, emptyComponentTable, Table.length, Table.table]
+    simp [sdLdTableWithData, emptyComponentTable, Table.length]
   exact Fin.elim0 (Fin.cast h_length index)
 
 private theorem sdLdEmptyTableWithData_cyclicSuccessorTransitions (component : Component FGL) :
@@ -1116,7 +1085,7 @@ private theorem sdLdEmptyTableWithData_cyclicSuccessorTransitions (component : C
   intro index
   have h_length :
       (sdLdTableWithData (emptyComponentTable component)).length = 0 := by
-    simp [sdLdTableWithData, emptyComponentTable, Table.length, Table.table]
+    simp [sdLdTableWithData, emptyComponentTable, Table.length]
   exact Fin.elim0 (Fin.cast h_length index)
 
 theorem sdLdWitness_transitions : sdLdWitness.TransitionConstraints := by
@@ -1404,7 +1373,7 @@ private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
     simpa using h_rsr
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_memTable, h_rangeTable, h_extension, h_binaryAdd, h_main,
-    h_stepRange, emptyComponentTable_interactionsWith]
+    h_stepRange]
 
 private theorem sdLdBalancedInteractions_nil :
     BalancedInteractions ([] : List (Interaction FGL)) := by
@@ -1550,7 +1519,7 @@ private theorem sdLdBinaryAddTable_opBusInteractions :
     ZiskFv.AirsClean.BinaryAdd.component.operations.interactionValuesWith
       OpBusChannel.toRaw (Environment.fromArray arr sdLdMemData)) = _
   simp_rw [List.flatMap_map]
-  simp [binaryAddRowArray, Environment.fromInput, sdLdBinaryAddOpBus_row]
+  simp [binaryAddRowArray, sdLdBinaryAddOpBus_row]
 
 private theorem sdLdBinaryExtensionTable_opBusInteractions :
     (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith OpBusChannel.toRaw =
@@ -1637,54 +1606,44 @@ private theorem sdLdMainTable_opBusInteractions :
     List.mapIdx_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [sdLdMainOpBusInteractionsAt _ sdLdAddiX1A0Row
       (eval_mainRawRow_materialize 0 sdLdMemData sdLdAddiX1A0Row
-        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf])
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ sdLdSlliX1Row
       (eval_mainRawRow_materialize 1 sdLdMemData sdLdSlliX1Row
-        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+          mainRomRowOf])
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+          mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ sdLdAddiX1EightRow
       (eval_mainRawRow_materialize 2 sdLdMemData sdLdAddiX1EightRow
-        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
-          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
-          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdAddiX1EightRow,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf])
+        (by simp [sdLdAddiX1EightRow,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ sdLdAddiX2Row
       (eval_mainRawRow_materialize 3 sdLdMemData sdLdAddiX2Row
-        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowTemplate,
+          mainRomRowOf])
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowTemplate,
+          mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ sdLdSdRow
       (eval_mainRawRow_materialize 4 sdLdMemData sdLdSdRow
-        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf])
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ sdLdLdRow
       (eval_mainRawRow_materialize 5 sdLdMemData sdLdLdRow
-        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf])
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ (sdLdJalRow 6)
       (eval_mainRawRow_materialize 6 sdLdMemData (sdLdJalRow 6)
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdJalRow, mainRomRowOf])
+        (by simp [sdLdJalRow, mainRomRowOf])),
     sdLdMainOpBusInteractionsAt _ (sdLdJalRow 7)
       (eval_mainRawRow_materialize 7 sdLdMemData (sdLdJalRow 7)
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious]))]
+        (by simp [sdLdJalRow, mainRomRowOf])
+        (by simp [sdLdJalRow, mainRomRowOf]))]
   rfl
 
 theorem sdLdMainTable_registerStepRangeInteractions :
@@ -1703,54 +1662,44 @@ theorem sdLdMainTable_registerStepRangeInteractions :
     List.mapIdx_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdAddiX1A0Row
       (eval_mainRawRow_materialize 0 sdLdMemData sdLdAddiX1A0Row
-        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf])
+        (by simp [sdLdAddiX1A0Row, sdLdAddiX1A0RowTemplate,
+          mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdSlliX1Row
       (eval_mainRawRow_materialize 1 sdLdMemData sdLdSlliX1Row
-        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdSlliX1Row, sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+          mainRomRowOf])
+        (by simp [sdLdSlliX1Row, sdLdSlliX1RowTemplate,
+          mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdAddiX1EightRow
       (eval_mainRawRow_materialize 2 sdLdMemData sdLdAddiX1EightRow
-        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
-          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdAddiX1EightRow, sdLdAddiX1EightRowWithLast,
-          sdLdAddiX1EightRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdAddiX1EightRow,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf])
+        (by simp [sdLdAddiX1EightRow,
+          sdLdAddiX1EightRowTemplate, mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdAddiX2Row
       (eval_mainRawRow_materialize 3 sdLdMemData sdLdAddiX2Row
-        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdAddiX2Row, sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate,
-          mainRomRowOf, sdLdFreeCols, mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowTemplate,
+          mainRomRowOf])
+        (by simp [sdLdAddiX2Row, sdLdAddiX2RowTemplate,
+          mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdSdRow
       (eval_mainRawRow_materialize 4 sdLdMemData sdLdSdRow
-        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf])
+        (by simp [sdLdSdRow, sdLdSdRowTemplate, mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ sdLdLdRow
       (eval_mainRawRow_materialize 5 sdLdMemData sdLdLdRow
-        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf])
+        (by simp [sdLdLdRow, sdLdLdRowTemplate, mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ (sdLdJalRow 6)
       (eval_mainRawRow_materialize 6 sdLdMemData (sdLdJalRow 6)
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])),
+        (by simp [sdLdJalRow, mainRomRowOf])
+        (by simp [sdLdJalRow, mainRomRowOf])),
     mainRegisterStepInteractionsAt 7 sdLdProgram _ (sdLdJalRow 7)
       (eval_mainRawRow_materialize 7 sdLdMemData (sdLdJalRow 7)
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious])
-        (by simp [sdLdJalRow, mainRomRowOf, sdLdFreeCols,
-          mainRomFreeColsWithRegisterPrevious]))]
+        (by simp [sdLdJalRow, mainRomRowOf])
+        (by simp [sdLdJalRow, mainRomRowOf]))]
 
 
 private theorem sdLdWitness_opBusInteractions :
@@ -2212,8 +2161,7 @@ private theorem sdLdMemBusNonzero_filter :
         simp only [List.flatMap_cons, List.filter_append]
         rw [ih]
         simp [registerBoundaryMemBusInteractions, registerBoundaryBootInteraction,
-          registerBoundaryReloadInteraction, RegisterMemBusBalance.emittedPulledValue,
-          Channel.pushedValue]
+          registerBoundaryReloadInteraction]
   have h_boundary :
       (sdLdBoundaryRows.flatMap registerBoundaryMemBusInteractions).filter
           (fun interaction => !decide (interaction.mult = 0)) =
@@ -2247,7 +2195,7 @@ private theorem sdLdMemBusNonzero_filter :
         [mainCRegPreInteraction sdLdAddiX1A0Row,
           mainCMemInteraction sdLdAddiX1A0Row] := by
     simp [AddSpinWitness.mainValueMemBusInteractions, sdLdAddiX1A0Row,
-      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf,
+      sdLdAddiX1A0RowTemplate, mainRomRowOf,
       addiX0Bits, mainARegPreInteraction, mainAMemInteraction,
       mainBRegPreInteraction, mainBMemInteraction, mainCRegPreInteraction,
       mainCMemInteraction]
@@ -2259,7 +2207,7 @@ private theorem sdLdMemBusNonzero_filter :
         , mainCRegPreInteraction sdLdSlliX1Row
         , mainCMemInteraction sdLdSlliX1Row ] := by
     simp [AddSpinWitness.mainValueMemBusInteractions, sdLdSlliX1Row,
-      sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, mainRomRowOf, addiX1Bits,
+      sdLdSlliX1RowTemplate, mainRomRowOf, addiX1Bits,
       mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
       mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction]
   have h_addi_eight :
@@ -2270,7 +2218,7 @@ private theorem sdLdMemBusNonzero_filter :
         , mainCRegPreInteraction sdLdAddiX1EightRow
         , mainCMemInteraction sdLdAddiX1EightRow ] := by
     simp [AddSpinWitness.mainValueMemBusInteractions, sdLdAddiX1EightRow,
-      sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate, mainRomRowOf,
+      sdLdAddiX1EightRowTemplate, mainRomRowOf,
       addiX1Bits, mainARegPreInteraction, mainAMemInteraction,
       mainBRegPreInteraction, mainBMemInteraction, mainCRegPreInteraction,
       mainCMemInteraction]
@@ -2279,7 +2227,7 @@ private theorem sdLdMemBusNonzero_filter :
           (fun interaction => !decide (interaction.mult = 0)) =
         [mainCRegPreInteraction sdLdAddiX2Row, mainCMemInteraction sdLdAddiX2Row] := by
     simp [AddSpinWitness.mainValueMemBusInteractions, sdLdAddiX2Row,
-      sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, mainRomRowOf, addiX0Bits,
+      sdLdAddiX2RowTemplate, mainRomRowOf, addiX0Bits,
       mainARegPreInteraction, mainAMemInteraction, mainBRegPreInteraction,
       mainBMemInteraction, mainCRegPreInteraction, mainCMemInteraction]
   have h_sd :
@@ -2313,9 +2261,8 @@ private theorem sdLdMemBusNonzero_filter :
       AddSpinWitness.addSpinJalBits, mainARegPreInteraction, mainAMemInteraction,
       mainBRegPreInteraction, mainBMemInteraction, mainCRegPreInteraction,
       mainCMemInteraction]
-  simp only [sdLdMemBusInteractions, List.filter_append, h_boundary, h_mem,
-    sdLdMainRows, List.flatMap_cons, List.flatMap_nil, List.append_nil,
-    h_addi_a0, h_slli, h_addi_eight, h_addi_x2, h_sd, h_ld, h_jal]
+  simp only [sdLdMemBusInteractions, List.filter_append,
+    sdLdMainRows, List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rfl
 
 private theorem sdLdMemBusNonzeroChronological_perm_core :
@@ -2509,7 +2456,7 @@ theorem sdLdWitness_registerStepRange_interactions :
       [2, 1, 1, 1, 1, 14, 5, 2, 3, 22] sdLdMemData
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_mem, h_extension, h_add, h_ranges, h_provider,
-    emptyComponentTable_interactionsWith, sdLdMainTable_registerStepRangeInteractions]
+    sdLdMainTable_registerStepRangeInteractions]
 
 set_option maxRecDepth 20000 in
 /-- Bus-102 balance. Ten of the twenty-four pulls are active and the provider supplies exactly

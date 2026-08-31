@@ -223,7 +223,7 @@ theorem eval_rawRow_materialize_reg (index : Nat) (data : ProverData FGL)
   simp_all [registerBoundaryFixedColumns, IndexedFixedColumns.materialize,
     IndexedFixedColumns.fixedAt, registerBoundaryFixedLayout, registerBoundaryFixedValues,
     rawRow, Environment.fromArray, ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-    ProvableStruct.varFromOffset_eq_varFromOffset, ProvableType.eval_field,
+    ProvableStruct.varFromOffset_eq_varFromOffset,
     ProvableStruct.varFromOffset, ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go, Expression.eval,
     ProvableStruct.varFromOffset.go, explicit_provable_type, circuit_norm]
@@ -285,11 +285,11 @@ theorem reg_of_materialize (index : Nat) (raw : Array FGL) (data : ProverData FG
       (Environment.fromArray (registerBoundaryFixedColumns.materialize index raw) data)
       component.rowInputVar).reg
       = registerBoundaryFixedColumns.fixedAt 0 index := by
-  simp [Air.Flat.Component.rowInputVar, component,
+  simp [Air.Flat.Component.rowInputVar,
     registerBoundaryFixedColumns, IndexedFixedColumns.materialize,
     registerBoundaryFixedLayout, Environment.fromArray,
     ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-    ProvableStruct.varFromOffset_eq_varFromOffset, ProvableType.eval_field,
+    ProvableStruct.varFromOffset_eq_varFromOffset,
     ProvableStruct.varFromOffset, ProvableStruct.fromComponents, ProvableStruct.components,
     ProvableStruct.toComponents, ProvableStruct.eval.go, Expression.eval,
     ProvableStruct.varFromOffset.go, explicit_provable_type, circuit_norm]

@@ -30,25 +30,20 @@ theorem divSpinMain_pcHandshake_addi_x1_x2 :
     transitionBetween divSpinAddiX1Row divSpinAddiX2Row := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
     divSpinAddiX1Row, divSpinAddiX2Row,
-    divSpinAddiX1RowWithLast, divSpinAddiX2RowWithLast,
     divSpinAddiX1RowTemplate, divSpinAddiX2RowTemplate,
     divSpinAddiX1ProgramRow, divSpinAddiX2ProgramRow, divSpinAddiBits,
-    divSpinAddiFree, divSpinAddiBits, ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
+    divSpinAddiBits, ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits,
     mainRomRowOf,
-    ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterRow,
-    ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterAccesses,
     ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinMain_pcHandshake_addi_x2_div :
     transitionBetween divSpinAddiX2Row divSpinDivRow := by
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
-    divSpinAddiX2Row, divSpinAddiX2RowWithLast,
+    divSpinAddiX2Row,
     divSpinAddiX2RowTemplate, divSpinDivRow, divSpinDivRowTemplate,
     divSpinAddiX2ProgramRow, divSpinDivProgramRow, divSpinAddiBits,
-    divSpinDivBits, divSpinAddiFree, divSpinAddiBits,
+    divSpinDivBits, divSpinAddiBits,
     ZiskFv.Compliance.SdLdSpinWitness.addiX0Bits, mainRomRowOf,
-    ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterRow,
-    ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterAccesses,
     ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinMain_pcHandshake_div_jal :
@@ -56,7 +51,6 @@ theorem divSpinMain_pcHandshake_div_jal :
   simp [transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
     divSpinDivRow, divSpinJalRow,
     divSpinJalProgramRow, divSpinDivProgramRow, divSpinDivBits,
-    ZiskFv.Compliance.AddSpinWitness.addSpinJalRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalProgramRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalBits, mainRomRowOf]
 
@@ -66,7 +60,7 @@ theorem divSpinMain_pcHandshake_jal_jal :
     divSpinJalRow, divSpinJalProgramRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalProgramRow,
     ZiskFv.Compliance.AddSpinWitness.addSpinJalBits,
-    ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols, mainRomRowOf]
+    mainRomRowOf]
   ring
 
 theorem divSpinAddiX1Main_proverAssumptions :
@@ -80,11 +74,9 @@ theorem divSpinAddiX1Main_proverAssumptions :
   · simp [MainRomSourceGuard, divSpinProgram, divSpinAddiX1ProgramRow,
       divSpinAddiBits]
   · simp [MainRomAddressGuard, divSpinAddiBits]
-  · simp [divSpinAddiX1Row, divSpinAddiX1RowWithLast,
+  · simp [divSpinAddiX1Row,
       divSpinAddiX1RowTemplate, divSpinProgram, divSpinAddiX1ProgramRow,
-      divSpinAddiBits, mainRomRowOf, divSpinAddiFree, divSpinRegisterInitial,
-      ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterRow,
-      ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterAccesses,
+      divSpinAddiBits, mainRomRowOf,
       ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinAddiX2Main_proverAssumptions :
@@ -98,11 +90,9 @@ theorem divSpinAddiX2Main_proverAssumptions :
   · simp [MainRomSourceGuard, divSpinProgram, divSpinAddiX2ProgramRow,
       divSpinAddiBits]
   · simp [MainRomAddressGuard, divSpinAddiBits]
-  · simp [divSpinAddiX2Row, divSpinAddiX2RowWithLast,
+  · simp [divSpinAddiX2Row,
       divSpinAddiX2RowTemplate, divSpinProgram, divSpinAddiX2ProgramRow,
-      divSpinAddiBits, mainRomRowOf, divSpinAddiFree, divSpinRegisterInitial,
-      ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterRow,
-      ZiskFv.Compliance.RegisterMemBusBalance.materializeMainRegisterAccesses,
+      divSpinAddiBits, mainRomRowOf,
       ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinDivMain_proverAssumptions :
@@ -128,7 +118,7 @@ theorem divSpinDivMain_proverAssumptions :
       divSpinDivBits]
   · simp [MainRomAddressGuard, divSpinDivBits]
   · simp [divSpinDivRow, divSpinDivRowTemplate, divSpinProgram,
-      divSpinDivProgramRow, divSpinDivBits, mainRomRowOf, divSpinRegisterInitial,
+      divSpinDivProgramRow, divSpinDivBits, mainRomRowOf,
       ZiskFv.Compliance.RegisterMemBusBalance.withMainRegisterPrevious]
 
 theorem divSpinJalMain_proverAssumptions (step : FGL) :
@@ -149,7 +139,7 @@ theorem divSpinJalMain_proverAssumptions (step : FGL) :
   · simp [divSpinJalRow, divSpinProgram, divSpinJalProgramRow,
       ZiskFv.Compliance.AddSpinWitness.addSpinJalProgramRow,
       ZiskFv.Compliance.AddSpinWitness.addSpinJalBits,
-      ZiskFv.Compliance.AddSpinWitness.addSpinJalFreeCols, mainRomRowOf]
+      mainRomRowOf]
 
 private theorem divSpinMain_constraintsHold_materialize
     (index : Nat) (row : MainRowWithRom FGL)
@@ -185,16 +175,16 @@ theorem divSpinMainTable_constraints : divSpinMainTable.Constraints := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at h_arr
   rcases h_arr with rfl | rfl | rfl | rfl | rfl
   · exact divSpinMain_constraintsHold_materialize 0 divSpinAddiX1Row
-      (by simp [divSpinAddiX1Row, divSpinAddiX1RowWithLast,
-        divSpinAddiX1RowTemplate, mainRomRowOf, divSpinAddiFree])
-      (by simp [divSpinAddiX1Row, divSpinAddiX1RowWithLast,
-        divSpinAddiX1RowTemplate, mainRomRowOf, divSpinAddiFree])
+      (by simp [divSpinAddiX1Row,
+        divSpinAddiX1RowTemplate, mainRomRowOf])
+      (by simp [divSpinAddiX1Row,
+        divSpinAddiX1RowTemplate, mainRomRowOf])
       divSpinAddiX1Main_proverAssumptions
   · exact divSpinMain_constraintsHold_materialize 1 divSpinAddiX2Row
-      (by simp [divSpinAddiX2Row, divSpinAddiX2RowWithLast,
-        divSpinAddiX2RowTemplate, mainRomRowOf, divSpinAddiFree])
-      (by simp [divSpinAddiX2Row, divSpinAddiX2RowWithLast,
-        divSpinAddiX2RowTemplate, mainRomRowOf, divSpinAddiFree])
+      (by simp [divSpinAddiX2Row,
+        divSpinAddiX2RowTemplate, mainRomRowOf])
+      (by simp [divSpinAddiX2Row,
+        divSpinAddiX2RowTemplate, mainRomRowOf])
       divSpinAddiX2Main_proverAssumptions
   · exact divSpinMain_constraintsHold_materialize 2 divSpinDivRow
       (by simp [divSpinDivRow, divSpinDivRowTemplate, mainRomRowOf])
@@ -224,10 +214,8 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
           (mainFixedColumns.materialize 0 (mainRawRow divSpinAddiX1Row)) emptyData)
         (varFromOffset MainRowWithRom 0))
     rw [eval_mainRawRow_materialize 0 emptyData divSpinAddiX1Row
-      (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf,
-        divSpinAddiFree])
-      (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf,
-        divSpinAddiFree])]
+      (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf])
+      (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf])]
     simp [Table.previousEnvironment, divSpinMainTable, mainRowsTable,
       divSpinMainRows, transitionBetween, sourceCCopyBetween, pcHandshakeBetween,
       divSpinAddiX1Row, divSpinAddiX1RowWithLast, divSpinAddiX1RowTemplate,
@@ -243,15 +231,11 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
           (mainFixedColumns.materialize 1 (mainRawRow divSpinAddiX2Row)) emptyData)
         (varFromOffset MainRowWithRom 0))
     rw [eval_mainRawRow_materialize 0 emptyData divSpinAddiX1Row
-        (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf,
-          divSpinAddiFree])
-        (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf,
-          divSpinAddiFree]),
+        (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf])
+        (by simp [divSpinAddiX1Row, divSpinAddiX1RowTemplate, mainRomRowOf]),
       eval_mainRawRow_materialize 1 emptyData divSpinAddiX2Row
-        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf,
-          divSpinAddiFree])
-        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf,
-          divSpinAddiFree])]
+        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf])
+        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf])]
     exact divSpinMain_pcHandshake_addi_x1_x2
   · change transitionBetween
       (Eval.eval
@@ -263,10 +247,8 @@ theorem divSpinMainTable_transitions : divSpinMainTable.TransitionConstraints :=
           (mainFixedColumns.materialize 2 (mainRawRow divSpinDivRow)) emptyData)
         (varFromOffset MainRowWithRom 0))
     rw [eval_mainRawRow_materialize 1 emptyData divSpinAddiX2Row
-        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf,
-          divSpinAddiFree])
-        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf,
-          divSpinAddiFree]),
+        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf])
+        (by simp [divSpinAddiX2Row, divSpinAddiX2RowTemplate, mainRomRowOf]),
       eval_mainRawRow_materialize 2 emptyData divSpinDivRow
         (by simp [divSpinDivRow, divSpinDivRowTemplate, mainRomRowOf])
         (by simp [divSpinDivRow, divSpinDivRowTemplate, mainRomRowOf])]

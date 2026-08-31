@@ -170,12 +170,12 @@ theorem memBus_mem_op_three_counterpart
     · have h_op := h_op_of_pulled h_eval
       rw [memBusMessage_eval_mem_op] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.MemAlignReadByte.memReadMessageExpr, Expression.eval] using h_op
+        simp [Expression.eval] at h_op
       exact absurd h_lit (by decide)
     · have h_op := h_op_of_pushed h_eval
       rw [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.MemAlignReadByte.memBusMessage] using h_op
+        simp at h_op
       exact absurd h_lit (by decide)
   -- MemAlignByte carries `1` or `1 + is_write`.
   · exfalso
@@ -187,7 +187,7 @@ theorem memBus_mem_op_three_counterpart
     · have h_op := h_op_of_pulled h_eval
       rw [memBusMessage_eval_mem_op] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.MemAlignByte.memReadMessageExpr, Expression.eval] using h_op
+        simp [Expression.eval] at h_op
       exact absurd h_lit (by decide)
     · have h_spec := h_rowSpec r h_r
       rw [h_mab, ZiskFv.AirsClean.MemAlignByte.component_spec,
@@ -249,7 +249,7 @@ theorem memBus_mem_op_three_counterpart
     · have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.Mem.memBusDualMessage] using h_op
+        simp at h_op
       exact absurd h_lit (by decide)
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
@@ -385,12 +385,12 @@ theorem memBus_mem_op_three_table_component
     · have h_op := h_op_of_pulled h_eval
       rw [memBusMessage_eval_mem_op] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.MemAlignReadByte.memReadMessageExpr, Expression.eval] using h_op
+        simp [Expression.eval] at h_op
       exact absurd h_lit (by decide)
     · have h_op := h_op_of_pushed h_eval
       rw [ZiskFv.AirsClean.MemAlignReadByte.eval_memBusMessageExpr] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.MemAlignReadByte.memBusMessage] using h_op
+        simp at h_op
       exact absurd h_lit (by decide)
   -- MemAlignByte carries `1` or `1 + is_write`.
   · exfalso
@@ -402,7 +402,7 @@ theorem memBus_mem_op_three_table_component
     · have h_op := h_op_of_pulled h_eval
       rw [memBusMessage_eval_mem_op] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.MemAlignByte.memReadMessageExpr, Expression.eval] using h_op
+        simp [Expression.eval] at h_op
       exact absurd h_lit (by decide)
     · have h_spec := h_rowSpec r h_r
       rw [h_mab, ZiskFv.AirsClean.MemAlignByte.component_spec,
@@ -464,7 +464,7 @@ theorem memBus_mem_op_three_table_component
     · have h_op := h_op_of_emitted h_eval
       rw [ZiskFv.AirsClean.Mem.eval_memBusDualMessageExpr] at h_op
       have h_lit : (1 : FGL) = 3 := by
-        simpa [ZiskFv.AirsClean.Mem.memBusDualMessage] using h_op
+        simp at h_op
       exact absurd h_lit (by decide)
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
@@ -704,7 +704,7 @@ theorem backward_step_lt
       componentWithRomMemAndOpBus trace.programLength trace.program)
     {row : Array FGL} (h_row : row ∈ table.table) (s : RegSlot)
     (h_sel : s.selector (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1)
-    {tbl : Table FGL} (h_tbl : tbl ∈ trace.witness.allTables)
+    {tbl : Table FGL} (_h_tbl : tbl ∈ trace.witness.allTables)
     (h_comp : tbl.component = componentWithRomMemAndOpBus trace.programLength trace.program)
     {r : Array FGL} (h_r : r ∈ tbl.table) (t : RegSlot)
     (h_eq : t.readMessage (eval (tbl.environment r) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)
@@ -774,7 +774,7 @@ set_option maxHeartbeats 1000000 in
 theorem exists_bootAnchored_of_fuel
     {n : Nat} (trace : AcceptedZiskTrace n) :
     ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
-      ∀ (h_component : table.component =
+      ∀ (_h_component : table.component =
           componentWithRomMemAndOpBus trace.programLength trace.program),
         ∀ {row : Array FGL}, row ∈ table.table → ∀ (s : RegSlot),
           s.selector (eval (table.environment row) (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar) = 1 →
@@ -866,7 +866,7 @@ def RegWalkStep.AnswersRegPre (p q : RegWalkStep) : Prop :=
 theorem exists_bootWalk_of_fuel
     {n : Nat} (trace : AcceptedZiskTrace n) :
     ∀ (fuel : ℕ) {table : Table FGL}, table ∈ trace.witness.allTables →
-      ∀ (h_component : table.component =
+      ∀ (_h_component : table.component =
           componentWithRomMemAndOpBus trace.programLength trace.program),
         ∀ {row : Array FGL}, row ∈ table.table → ∀ (s : RegSlot),
           s.selector (eval (table.environment row)

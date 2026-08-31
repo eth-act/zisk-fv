@@ -206,35 +206,29 @@ private theorem jalrMainTable_effectiveRows :
 theorem jalrTransition_add_and :
     transitionBetween jalrAddRow jalrAndRow := by
   simp [transitionBetween, pcHandshakeBetween, sourceCCopyBetween,
-    jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
-    jalrAndRow, jalrAndRowWithLast, jalrAndRowTemplate,
+    jalrAddRow, jalrAddRowTemplate,
+    jalrAndRow, jalrAndRowTemplate,
     jalrAddProgramRow, jalrAndProgramRow, jalrAddBits, jalrAndBits,
-    jalrFreeCols, jalrRegisterInitial, mainRomRowOf,
-    materializeMainRegisterRow, materializeMainRegisterAccesses,
-    withMainRegisterPrevious, boundaryRowIdle,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage]
+    mainRomRowOf,
+    withMainRegisterPrevious]
 
 theorem jalrTransition_setup_add :
     transitionBetween jalrSetupRow jalrAddRow := by
   simp [transitionBetween, pcHandshakeBetween, sourceCCopyBetween,
-    jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
-    jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+    jalrSetupRow, jalrSetupRowTemplate,
+    jalrAddRow, jalrAddRowTemplate,
     jalrSetupProgramRow, jalrAddProgramRow, jalrSetupBits, jalrAddBits,
-    jalrFreeCols, jalrRegisterInitial, mainRomRowOf,
-    materializeMainRegisterRow, materializeMainRegisterAccesses,
-    withMainRegisterPrevious, boundaryRowIdle,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage]
+    mainRomRowOf,
+    withMainRegisterPrevious]
 
 theorem jalrTransition_and_successor :
     transitionBetween jalrAndRow jalrSuccessorRow := by
   simp [transitionBetween, pcHandshakeBetween, sourceCCopyBetween,
-    jalrAndRow, jalrAndRowWithLast, jalrAndRowTemplate,
-    jalrSuccessorRow, jalrSuccessorRowWithLast, jalrSuccessorRowTemplate,
+    jalrAndRow, jalrAndRowTemplate,
+    jalrSuccessorRow, jalrSuccessorRowTemplate,
     jalrAndProgramRow, jalrAddProgramRow, jalrAndBits, jalrAddBits,
-    jalrFreeCols, jalrRegisterInitial, mainRomRowOf,
-    materializeMainRegisterRow, materializeMainRegisterAccesses,
-    withMainRegisterPrevious, boundaryRowIdle,
-    ZiskFv.AirsClean.RegisterBoundary.bootMessage]
+    mainRomRowOf,
+    withMainRegisterPrevious]
 
 def jalrBoundaryRowX1 :
   ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
@@ -351,10 +345,8 @@ theorem jalrSetupMain_proverAssumptions :
   · simp [MainRomExecKind.Coherent, jalrSetupBits]
   · simp [MainRomSourceGuard, jalrProgram, jalrSetupProgramRow, jalrSetupBits]
   · simp [MainRomAddressGuard, jalrSetupBits]
-  · simp [jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
+  · simp [jalrSetupRow, jalrSetupRowTemplate,
       jalrProgram, jalrSetupProgramRow, jalrSetupBits, mainRomRowOf,
-      jalrFreeCols, jalrRegisterInitial,
-      materializeMainRegisterRow, materializeMainRegisterAccesses,
       withMainRegisterPrevious]
 
 theorem jalrAddMain_proverAssumptions :
@@ -367,10 +359,8 @@ theorem jalrAddMain_proverAssumptions :
   · simp [MainRomExecKind.Coherent, jalrAddBits]
   · simp [MainRomSourceGuard, jalrProgram, jalrAddProgramRow, jalrAddBits]
   · simp [MainRomAddressGuard, jalrAddBits]
-  · simp [jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
+  · simp [jalrAddRow, jalrAddRowTemplate,
       jalrProgram, jalrAddProgramRow, jalrAddBits, mainRomRowOf,
-      jalrFreeCols, jalrRegisterInitial,
-      materializeMainRegisterRow, materializeMainRegisterAccesses,
       withMainRegisterPrevious]
 
 theorem jalrAndMain_proverAssumptions :
@@ -383,10 +373,8 @@ theorem jalrAndMain_proverAssumptions :
   · simp [MainRomExecKind.Coherent, jalrAndBits]
   · simp [MainRomSourceGuard, jalrProgram, jalrAndProgramRow, jalrAndBits]
   · simp [MainRomAddressGuard, jalrAndBits]
-  · simp [jalrAndRow, jalrAndRowWithLast, jalrAndRowTemplate,
+  · simp [jalrAndRow, jalrAndRowTemplate,
       jalrProgram, jalrAndProgramRow, jalrAndBits, mainRomRowOf,
-      jalrFreeCols, jalrRegisterInitial,
-      materializeMainRegisterRow, materializeMainRegisterAccesses,
       withMainRegisterPrevious]
 
 theorem jalrSuccessorMain_proverAssumptions :
@@ -398,10 +386,8 @@ theorem jalrSuccessorMain_proverAssumptions :
   · simp [MainRomExecKind.Coherent, jalrAddBits]
   · simp [MainRomSourceGuard, jalrProgram, jalrAddProgramRow, jalrAddBits]
   · simp [MainRomAddressGuard, jalrAddBits]
-  · simp [jalrSuccessorRow, jalrSuccessorRowWithLast, jalrSuccessorRowTemplate,
+  · simp [jalrSuccessorRow, jalrSuccessorRowTemplate,
       jalrProgram, jalrAddProgramRow, jalrAddBits, mainRomRowOf,
-      jalrFreeCols, jalrRegisterInitial,
-      materializeMainRegisterRow, materializeMainRegisterAccesses,
       withMainRegisterPrevious]
 
 private theorem jalrMain_constraintsHold_materialize
@@ -502,11 +488,11 @@ theorem jalrBoundaryTable_constraints : jalrBoundaryTable.Constraints :=
       (Environment.fromArray (mainFixedColumns.materialize _ (mainRawRow _)) emptyData)
       (varFromOffset MainRowWithRom 0) = _ <;>
     apply eval_mainRawRow_materialize <;>
-    simp [jalrMainRows, jalrSetupRow, jalrSetupRowWithLast, jalrSetupRowTemplate,
-      jalrAddRow, jalrAddRowWithLast, jalrAddRowTemplate,
-      jalrAndRow, jalrAndRowWithLast, jalrAndRowTemplate, jalrSuccessorRow,
-      jalrSuccessorRowWithLast, jalrSuccessorRowTemplate,
-      mainRomRowOf, jalrFreeCols, jalrRegisterInitial] <;> rfl
+    simp [jalrSetupRow, jalrSetupRowTemplate,
+      jalrAddRow, jalrAddRowTemplate,
+      jalrAndRow, jalrAndRowTemplate, jalrSuccessorRow,
+      jalrSuccessorRowTemplate,
+      mainRomRowOf, jalrRegisterInitial] <;> rfl
 
 theorem jalrMainTable_transitions : jalrMainTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
@@ -519,8 +505,8 @@ theorem jalrMainTable_transitions : jalrMainTable.TransitionConstraints := by
   fin_cases index
   · simp [Table.previousEnvironment, jalrMainRows, transitionBetween,
       pcHandshakeBetween, sourceCCopyBetween, jalrSetupRow,
-      jalrSetupRowWithLast, jalrSetupRowTemplate, mainRomRowOf,
-      jalrFreeCols, jalrRegisterInitial]
+      jalrSetupRowTemplate, mainRomRowOf,
+      jalrRegisterInitial]
   · simpa [Table.previousEnvironment, jalrMainRows] using jalrTransition_setup_add
   · simpa [Table.previousEnvironment, jalrMainRows] using jalrTransition_add_and
   · simpa [Table.previousEnvironment, jalrMainRows] using

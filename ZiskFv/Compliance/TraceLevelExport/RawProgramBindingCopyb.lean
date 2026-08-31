@@ -121,7 +121,7 @@ private theorem and32505856_shr20 (x : BitVec 32) : (x &&& 32505856#32) >>> 20 =
   have := and_shr_reorder x 20 (by norm_num); simpa using this
 
 theorem rawRType_rd (funct7 rs2 rs1 funct3 rd opcode : Nat) (hrd : rd < 32)
-    (hf3 : funct3 < 8) (hop : opcode < 128) :
+    (_hf3 : funct3 < 8) (hop : opcode < 128) :
     ((rawRType funct7 rs2 rs1 funct3 rd opcode) &&& 3968#32) >>> 7 = BitVec.ofNat 32 rd := by
   rw [and3968_shr7]
   simp only [rawRType, rawOfNat32]
@@ -174,7 +174,7 @@ theorem copyb_rawRType_rs2 (funct7 rs2 rs1 funct3 rd opcode : Nat) (hrs2 : rs2 <
   simp [e25, e20, e15, e12, e7, hrs1', hf3', hrd', hop', show 20 + i - 20 = i from by omega]
 
 theorem rawIType_rd' (imm rs1 funct3 rd opcode : Nat) (hrd : rd < 32)
-    (hf3 : funct3 < 8) (hop : opcode < 128) :
+    (_hf3 : funct3 < 8) (hop : opcode < 128) :
     ((rawIType imm rs1 funct3 rd opcode) &&& 3968#32) >>> 7 = BitVec.ofNat 32 rd := by
   rw [and3968_shr7]
   simp only [rawIType, rawOfNat32]
@@ -816,7 +816,7 @@ theorem transpile_add (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2
     rw [hrdbv]
     change (((rawRType 0 rs2 rs1 0 rd 0x33) &&& 3968#32) >>> 7).toNat = rd
     rw [rawRType_rd 0 rs2 rs1 0 rd 0x33 hrd (by norm_num) (by norm_num)]
-    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega
   · intro d hd
     obtain ⟨d', hd', _, hrs1bv, _⟩ :=
       copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 0 rd 0x33)) RiscvOpcode.Add
@@ -825,7 +825,7 @@ theorem transpile_add (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2
     rw [hrs1bv]
     change (((rawRType 0 rs2 rs1 0 rd 0x33) &&& 1015808#32) >>> 15).toNat = rs1
     rw [copyb_rawRType_rs1 0 rs2 rs1 0 rd 0x33 hrs1 (by norm_num) hrd (by norm_num)]
-    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega
   · intro d hd
     obtain ⟨d', hd', _, _, hrs2bv⟩ :=
       copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 0 rd 0x33)) RiscvOpcode.Add
@@ -834,7 +834,7 @@ theorem transpile_add (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2
     rw [hrs2bv]
     change (((rawRType 0 rs2 rs1 0 rd 0x33) &&& 32505856#32) >>> 20).toNat = rs2
     rw [copyb_rawRType_rs2 0 rs2 rs1 0 rd 0x33 hrs2 hrs1 (by norm_num) hrd (by norm_num)]
-    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega
   · simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,
       ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_shr25,
@@ -910,7 +910,7 @@ theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 
     rw [hrdbv]
     change (((rawRType 0 rs2 rs1 6 rd 0x33) &&& 3968#32) >>> 7).toNat = rd
     rw [rawRType_rd 0 rs2 rs1 6 rd 0x33 hrd (by norm_num) (by norm_num)]
-    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega
   · intro d hd
     obtain ⟨d', hd', _, hrs1bv, _⟩ :=
       copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 6 rd 0x33)) RiscvOpcode.Or
@@ -919,7 +919,7 @@ theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 
     rw [hrs1bv]
     change (((rawRType 0 rs2 rs1 6 rd 0x33) &&& 1015808#32) >>> 15).toNat = rs1
     rw [copyb_rawRType_rs1 0 rs2 rs1 6 rd 0x33 hrs1 (by norm_num) hrd (by norm_num)]
-    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega
   · intro d hd
     obtain ⟨d', hd', _, _, hrs2bv⟩ :=
       copyb_decode_r_fields (toU32 (rawRType 0 rs2 rs1 6 rd 0x33)) RiscvOpcode.Or
@@ -928,7 +928,7 @@ theorem transpile_or (rd rs1 rs2 : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrs2 
     rw [hrs2bv]
     change (((rawRType 0 rs2 rs1 6 rd 0x33) &&& 32505856#32) >>> 20).toNat = rs2
     rw [copyb_rawRType_rs2 0 rs2 rs1 6 rd 0x33 hrs2 hrs1 (by norm_num) hrd (by norm_num)]
-    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] <;> omega
+    simp [UScalar.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt] ; omega
   · simp only [aeneas_extract.rv64im_decode.decode_32_core, lift, bind_assoc, Bind.bind, bind_ok,
       ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,
       ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_shr25,

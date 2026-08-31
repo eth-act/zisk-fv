@@ -222,7 +222,7 @@ theorem store_reg_u32_zero_not_reg
   split_ifs at h <;>
     first
     | (rw [Result.ok.injEq] at h; subst z
-       simpa [hself, zisk_inst.STORE_REG])
+       simp [hself, zisk_inst.STORE_REG])
     | (exfalso; scalar_tac)
 
 theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)

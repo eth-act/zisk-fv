@@ -110,7 +110,7 @@ private theorem store_reg_raw_index_iff_any
   split_ifs at h <;>
     first
     | (rw [Result.ok.injEq] at h; subst h
-       simp [hstore, zisk_inst.STORE_REG] <;> scalar_tac)
+       simp [hstore, zisk_inst.STORE_REG] ; scalar_tac)
     | (rw [Result.ok.injEq] at h; subst h
        simp [zisk_inst.STORE_REG] <;> scalar_tac)
     | (exfalso; scalar_tac)
@@ -415,7 +415,7 @@ private theorem rawJType_rd (imm rd : Nat) (hrd : rd < 32) :
     ZiskFv.Compliance.Decode.tbf (show 111 < 2 ^ 7 by norm_num) (by omega)
   simp [e7, h12, h20, h21, h31, h6f, show 7 + i - 7 = i from by omega]
 
-private theorem rawIType_rd (imm rs1 funct3 rd opcode : Nat) (hrd : rd < 32) (hf3 : funct3 < 8)
+private theorem rawIType_rd (imm rs1 funct3 rd opcode : Nat) (hrd : rd < 32) (_hf3 : funct3 < 8)
     (hop : opcode < 128) :
     ((ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 funct3 rd opcode) &&& 3968#32) >>> 7
       = BitVec.ofNat 32 rd := by
@@ -1297,7 +1297,7 @@ theorem jal_decode_fields_of_binding (rd imm : Nat) (hrd : rd < 32) (hrd0 : rd �
 `op` / `flags`, plus the genuine operand-side JALR witnesses (`flag` / a-mask /
 c-mask / offset bridge / even / no-wrap) as caller hypotheses. -/
 
-theorem transpile_jalr (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32) (hrd0 : rd ≠ 0) :
+theorem transpile_jalr (rd rs1 imm : Nat) (hrd : rd < 32) (_hrs1 : rs1 < 32) (hrd0 : rd ≠ 0) :
     ∃ ext, extract_transpile_rv64im_raw
         (toU32 (ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 0 rd 0x67)) = ok ext
       ∧ ext.row.op = 14#u8 ∧ ext.row.is_external_op = true ∧ ext.row.m32 = false
@@ -1830,7 +1830,7 @@ private theorem decode_j_rawJType_imm
 /-! ## Branch-family `ProgramDecode` bundles. -/
 
 local macro "branch_program_decode" nm:ident "," f3:term "," rop:term ","
-    neg:term : command => do
+    _neg:term : command => do
   let s := nm.getId.toString
   let rawName := Lean.mkIdent (Lean.Name.mkSimple ("RawProgramDecode_" ++ s))
   let ctorName := Lean.mkIdent (Lean.Name.mkSimple ("ProgramDecode_" ++ s ++ "_from_rawProgram"))

@@ -222,7 +222,7 @@ def mainSingleRowTable
     intro arr h_arr
     simp [mainRowArray] at h_arr
     subst arr
-    simpa [mainRowArray, componentWithRomMemAndOpBus] using mainRawRow_size row
+    simp [componentWithRomMemAndOpBus]
   fixed_domain := by
     intro columns h_columns
     have h_columns' : columns = mainFixedColumns := by
@@ -237,7 +237,7 @@ private theorem mainSingleRowTable_effectiveRows
   simp [mainSingleRowTable, Table.table, mainRowArray, componentWithRomMemAndOpBus]
 
 def mainSingleRowTableEnvironment
-    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL) : Environment FGL :=
+    (length : ℕ) (_program : Program length) (row : MainRowWithRom FGL) : Environment FGL :=
   Environment.fromArray (mainFixedColumns.materialize 0 (mainRawRow row)) emptyData
 
 theorem mainSingleRowTable_rowInput
@@ -1045,8 +1045,8 @@ theorem registerStepRangeComponentInteraction_eval
       registerStepRangeInteraction v := by
   simp [registerStepRangeInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw,
     ZiskFv.Channels.SpecifiedRanges.registerStepMessage, toElements_eval_toArray,
-    circuit_norm, Table.environment, registerStepRangeRowsTable, registerStepRangeRowArray,
-    Component.rowInputVar, Component.rowOffset,
+    circuit_norm, Table.environment, registerStepRangeRowArray,
+    Component.rowInputVar,
     ZiskFv.AirsClean.RegisterStepRangeSlice.component]
 
 /-- The bus-102 provider emits exactly one push per row, carrying that row's value. -/
@@ -1202,7 +1202,7 @@ def binarySingleRowTable (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Table F
     simp [binaryRowArray] at h_arr
     subst arr
     rw [binaryStaticLookup_component_rawWidth]
-    simp [binaryRowArray]
+    simp
   fixed_domain := by
     intro columns h_columns
     simp [ZiskFv.AirsClean.Binary.staticLookupComponent] at h_columns
@@ -1354,8 +1354,7 @@ def memSingleRowTable (row : ZiskFv.AirsClean.Mem.MemRow FGL) : Table FGL where
     intro arr h_arr
     simp [memRowArray] at h_arr
     subst arr
-    simpa [memRowArray, ZiskFv.AirsClean.Mem.componentWithDualMemBus] using
-      ZiskFv.AirsClean.Mem.memRawRow_size row
+    simp [ZiskFv.AirsClean.Mem.componentWithDualMemBus]
   fixed_domain := by
     intro columns h_columns
     have h_columns' : columns = ZiskFv.AirsClean.Mem.memFixedColumns := by
@@ -1429,7 +1428,7 @@ theorem memRowsTable_constraints_of_proverAssumptions
         (rows.map (ZiskFv.AirsClean.Mem.memRawRowWithProverData data))).get index =
         ZiskFv.AirsClean.Mem.memFixedColumns.materialize rowsIndex.val
           (ZiskFv.AirsClean.Mem.memRawRowWithProverData data (rows.get rowsIndex)) := by
-    simpa [List.mapIdx_eq_ofFn, rowsIndex]
+    simp [List.mapIdx_eq_ofFn, rowsIndex]
   rw [h_effective] at h_arr
   subst arr
   exact component_constraintsHold_of_proverAssumptions_at_data
