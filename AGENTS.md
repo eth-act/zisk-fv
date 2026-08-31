@@ -147,6 +147,22 @@ nix run .#test
 semantic trust gate does and should be run after `lake build`. Docs-only changes do not require a
 Lean build unless they affect executable examples, generated artifacts, or commands.
 
+The tree carries 138 `#print axioms` commands, so a plain `lake build` prints about 130
+near-identical closures, each dominated by the same Sail floating-point primitives. Silence them
+and read the union once instead:
+
+```bash
+lake build --log-level=warning
+lake exe trust-gate print-axiom-union
+```
+
+The union groups every axiom the `ZiskFv.*` declarations reach into `sorry` (`sorryAx`, an
+unfinished proof), `project` (the ledger in `trust/trusted-base.md`), `kernel` (Lean's postulates
+plus `ofReduceBool` / `trustCompiler`), and `spec` (the LeanRV64D Sail primitives and the Aeneas
+runtime). `sorry` must stay empty and the command flags it when it is not. `project` is the count
+that membership review controls. The command reports; `check-strong-export-closure` and
+`check-extraction-closure` are the checks that fail a build.
+
 Use focused checks while iterating, then run the broader gate after a coherent proof or
 trust-boundary change. Prefer fixing verification failures over working around them.
 

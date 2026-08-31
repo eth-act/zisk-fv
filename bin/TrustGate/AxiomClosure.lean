@@ -51,4 +51,43 @@ def rawAxiomDepsForTheorem (env : Environment) (name : Name) : Array Name :=
   let st := ((Lean.CollectAxioms.collect name).run env).run {} |>.snd
   st.axioms.qsort (fun a b => a.toString < b.toString)
 
+/-- The RAW, UNFILTERED axiom closure of `roots` taken all at once.
+
+`Lean.CollectAxioms.State` carries the `visited` set, so threading one state
+through every root walks the shared constant graph a single time instead of
+once per root. That is what makes a union over thousands of project
+declarations affordable. -/
+def rawAxiomUnion (env : Environment) (roots : Array Name) : Array Name := Id.run do
+  let mut st : Lean.CollectAxioms.State := {}
+  for r in roots do
+    st := ((Lean.CollectAxioms.collect r).run env).run st |>.snd
+  return st.axioms.qsort (fun a b => a.toString < b.toString)
+
+/-- Lean's three postulates, plus the two the compiled-certificate tactics
+(`native_decide`, `bv_decide`) add. Trusted unconditionally, so they are
+reported apart from the axioms membership review actually controls.
+
+`sorryAx` is deliberately NOT here. It is not a postulate anyone chose to
+trust; it is the marker of a proof that was never finished. It gets its own
+scope so it can never be read as ordinary kernel trust. -/
+def kernelAxioms : Array Name :=
+  #[`propext, `Classical.choice, `Quot.sound, `Lean.ofReduceBool,
+    `Lean.trustCompiler]
+
+/-- Which trust scope `n` belongs to:
+
+  * `sorry`   -- `sorryAx`, an unfinished proof. Never acceptable.
+  * `project` -- `ZiskFv.*`, the ledger in `trust/trusted-base.md`.
+  * `kernel`  -- see `kernelAxioms`.
+  * `spec`    -- everything else, i.e. the LeanRV64D Sail-translation
+    primitives and the Aeneas runtime.
+
+`sorry` is tested first, so a `ZiskFv.*`-namespaced `sorryAx` alias could not
+hide behind the `project` bucket either. -/
+def scopeOf (n : Name) : String :=
+  if n == `sorryAx then "sorry"
+  else if isProjectAxiom n then "project"
+  else if kernelAxioms.contains n then "kernel"
+  else "spec"
+
 end TrustGate.AxiomClosure

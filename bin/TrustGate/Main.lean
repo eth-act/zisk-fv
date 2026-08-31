@@ -6,6 +6,8 @@ Subcommands:
   check-deps PATH              Compare regenerated baseline against PATH.
   check-no-output-eq-v2 PATH   Type-walk; fail on forbidden Names from PATH.
   print-global-binders         Print global theorem binder baseline rows.
+  print-axiom-union            Print the union of every axiom the ZiskFv.*
+                               declarations reach, grouped by trust scope.
   all                          Run check-deps + check-no-output-eq-v2 against
                                trust/generated/baseline-equiv-axiom-deps.txt and
                                trust/forbidden-types.txt.
@@ -453,6 +455,55 @@ def cmdPrintTreeEdges (env : Environment) (rootStr : String) : IO UInt32 := do
     IO.println s!"{p}\t{c}\t{pk.toTag}\t{ck.toTag}"
   return 0
 
+/-- Subcommand: print the union of every axiom the project's own declarations
+reach, once, grouped by trust scope.
+
+The tree carries 138 `#print axioms` commands, so an ordinary `lake build`
+prints ~130 near-identical closures, each dominated by the same Sail
+floating-point primitives. That volume hides the number that matters. This
+walks every auditable `ZiskFv.*` constant in one pass and reports the union
+instead:
+
+  * `sorry`   -- `sorryAx`, an unfinished proof. Reported first, and flagged.
+  * `project` -- `ZiskFv.*` axioms, the ledger in `trust/trusted-base.md`
+  * `kernel`  -- Lean's postulates plus `ofReduceBool` / `trustCompiler`
+  * `spec`    -- LeanRV64D Sail primitives and the Aeneas runtime
+
+`sorry` is a scope of its own because it is not trust anyone chose. Folding
+`sorryAx` in with `propext` would print an unfinished proof under a heading
+that reads as unconditional kernel trust -- in the one report whose whole job
+is to surface it.
+
+It reports; it does not gate. `check-strong-export-closure` and
+`check-extraction-closure` are the checks that fail a build. -/
+def cmdPrintAxiomUnion (env : Environment) : IO UInt32 := do
+  let roots := ConstantClosure.allAuditableProjectConsts env
+  if roots.isEmpty then
+    IO.eprintln "trust-gate: no auditable `ZiskFv.*` constants -- did ZiskFv fail to import?"
+    return 1
+  let union := AxiomClosure.rawAxiomUnion env roots
+  let bucket (s : String) : Array Name :=
+    union.filter (fun n => AxiomClosure.scopeOf n == s)
+  let sorries := bucket "sorry"
+  let project := bucket "project"
+  let kernel := bucket "kernel"
+  let spec := bucket "spec"
+  IO.println s!"# axiom union over {roots.size} auditable `ZiskFv.*` constants"
+  IO.println s!"# sorry {sorries.size}   project {project.size}   \
+kernel {kernel.size}   spec {spec.size}   total {union.size}"
+  unless sorries.isEmpty do
+    IO.println "# !! `sorryAx` IS IN THE UNION -- a ZiskFv.* declaration rests on an \
+unfinished proof."
+  for (label, names) in
+      [("sorry", sorries), ("project", project), ("kernel", kernel), ("spec", spec)] do
+    IO.println ""
+    IO.println s!"## {label} ({names.size})"
+    if names.isEmpty then
+      IO.println "  (none)"
+    else
+      for n in names do IO.println s!"  {n}"
+  return 0
+
 def usage : IO Unit := do
   IO.println "Usage: trust-gate <subcommand>"
   IO.println "  regenerate-deps                regen axiom-dep baseline → stdout"
@@ -470,6 +521,7 @@ def usage : IO Unit := do
   IO.println "  check-strong-export-binders BASELINE FORBIDDEN  check strong export binder baseline + forbidden-type walk"
   IO.println "  check-extraction-closure       assert every ZiskFv.Compliance.{Extraction,Decode}.* RAW axiom closure ⊆ {propext, Classical.choice, Quot.sound}"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
+  IO.println "  print-axiom-union              print the union of every axiom the ZiskFv.* declarations reach, grouped by trust scope"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   match args with
@@ -513,6 +565,8 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
     cmdCheckStrongExportBinders env baselinePath forbiddenPath
   | ["check-extraction-closure"] =>
     cmdCheckExtractionClosure env
+  | ["print-axiom-union"] =>
+    cmdPrintAxiomUnion env
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/generated/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline
