@@ -464,9 +464,15 @@ floating-point primitives. That volume hides the number that matters. This
 walks every auditable `ZiskFv.*` constant in one pass and reports the union
 instead:
 
+  * `sorry`   -- `sorryAx`, an unfinished proof. Reported first, and flagged.
   * `project` -- `ZiskFv.*` axioms, the ledger in `trust/trusted-base.md`
   * `kernel`  -- Lean's postulates plus `ofReduceBool` / `trustCompiler`
   * `spec`    -- LeanRV64D Sail primitives and the Aeneas runtime
+
+`sorry` is a scope of its own because it is not trust anyone chose. Folding
+`sorryAx` in with `propext` would print an unfinished proof under a heading
+that reads as unconditional kernel trust -- in the one report whose whole job
+is to surface it.
 
 It reports; it does not gate. `check-strong-export-closure` and
 `check-extraction-closure` are the checks that fail a build. -/
@@ -478,13 +484,18 @@ def cmdPrintAxiomUnion (env : Environment) : IO UInt32 := do
   let union := AxiomClosure.rawAxiomUnion env roots
   let bucket (s : String) : Array Name :=
     union.filter (fun n => AxiomClosure.scopeOf n == s)
+  let sorries := bucket "sorry"
   let project := bucket "project"
   let kernel := bucket "kernel"
   let spec := bucket "spec"
   IO.println s!"# axiom union over {roots.size} auditable `ZiskFv.*` constants"
-  IO.println s!"# project {project.size}   kernel {kernel.size}   spec {spec.size}   total {union.size}"
+  IO.println s!"# sorry {sorries.size}   project {project.size}   \
+kernel {kernel.size}   spec {spec.size}   total {union.size}"
+  unless sorries.isEmpty do
+    IO.println "# !! `sorryAx` IS IN THE UNION -- a ZiskFv.* declaration rests on an \
+unfinished proof."
   for (label, names) in
-      [("project", project), ("kernel", kernel), ("spec", spec)] do
+      [("sorry", sorries), ("project", project), ("kernel", kernel), ("spec", spec)] do
     IO.println ""
     IO.println s!"## {label} ({names.size})"
     if names.isEmpty then

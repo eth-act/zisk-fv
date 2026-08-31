@@ -156,10 +156,11 @@ lake build --log-level=warning
 lake exe trust-gate print-axiom-union
 ```
 
-The union groups every axiom the `ZiskFv.*` declarations reach into `project` (the ledger in
-`trust/trusted-base.md`), `kernel` (Lean's postulates plus `ofReduceBool` / `trustCompiler`), and
-`spec` (the LeanRV64D Sail primitives and the Aeneas runtime). `project` is the count that
-membership review controls. The command reports; `check-strong-export-closure` and
+The union groups every axiom the `ZiskFv.*` declarations reach into `sorry` (`sorryAx`, an
+unfinished proof), `project` (the ledger in `trust/trusted-base.md`), `kernel` (Lean's postulates
+plus `ofReduceBool` / `trustCompiler`), and `spec` (the LeanRV64D Sail primitives and the Aeneas
+runtime). `sorry` must stay empty and the command flags it when it is not. `project` is the count
+that membership review controls. The command reports; `check-strong-export-closure` and
 `check-extraction-closure` are the checks that fail a build.
 
 Use focused checks while iterating, then run the broader gate after a coherent proof or

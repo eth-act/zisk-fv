@@ -170,7 +170,9 @@ provide (that gate filters out `sorryAx` and restricts to `ZiskFv.*`), so a
 leaked external `sorryAx` / `ofReduceBool` / `trustCompiler` from the imported
 Aeneas runtime is caught here.
 `lake exe trust-gate print-axiom-union` reports, once, the union of every axiom
-the `ZiskFv.*` declarations reach, grouped into `project` / `kernel` / `spec`.
+the `ZiskFv.*` declarations reach, grouped into `sorry` / `project` / `kernel` /
+`spec`. `sorryAx` gets a scope of its own so an unfinished proof can never read
+as ordinary kernel trust; that bucket must stay empty.
 It replaces reading the ~130 per-declaration `#print axioms` closures a plain
 `lake build` prints; pair it with `lake build --log-level=warning`, which
 suppresses those info lines. It reports and never fails — the gates above are
