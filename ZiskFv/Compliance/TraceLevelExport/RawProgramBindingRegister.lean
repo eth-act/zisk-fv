@@ -220,9 +220,8 @@ theorem store_reg_u32_zero_not_reg
   have e1 := ZiskFv.Compliance.Extraction.cast_one_i64
   have e31 := ZiskFv.Compliance.Extraction.cast_31_i64
   split_ifs at h <;>
-    first
-    | (rw [Result.ok.injEq] at h; subst z
-       simp [hself, zisk_inst.STORE_REG])
+    (rw [Result.ok.injEq] at h; subst z
+     simp [hself, zisk_inst.STORE_REG])
 
 theorem src_a_reg_pres_store (self z : zisk_inst_builder.ZiskInstBuilder)
     (reg : Std.U64) (usp : Bool)

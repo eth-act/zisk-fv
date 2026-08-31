@@ -278,9 +278,8 @@ private theorem src_b_imm_pres_store (self z : zisk_inst_builder.ZiskInstBuilder
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩
 
 theorem src_b_imm_a_pres (self z : zisk_inst_builder.ZiskInstBuilder)
     (v : Std.U64)
@@ -289,9 +288,8 @@ theorem src_b_imm_a_pres (self z : zisk_inst_builder.ZiskInstBuilder)
       z.i.a_use_sp_imm1 = self.i.a_use_sp_imm1 := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩
 
 theorem src_b_imm_data_pins (self z : zisk_inst_builder.ZiskInstBuilder)
     (v : Std.U64)

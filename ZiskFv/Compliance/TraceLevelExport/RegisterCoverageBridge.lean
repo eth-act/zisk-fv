@@ -770,7 +770,7 @@ theorem stepWritesReg_cslot_on_bootWalk
           (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_offset := by
         rw [h_e_eq]
         show (ZiskFv.AirsClean.Main.cMemMessage _).ptr = _
-        simp only []
+        dsimp only
         rw [h_addr_spec.2.2.1, h_store_ind, zero_mul, add_zero]
       rw [← h_e_ptr]; exact heq
     -- Step B: Both sides are boot boundary reg values with .val < 32, both
@@ -994,7 +994,7 @@ theorem stepWritesReg_cslot_on_bootWalk_b
           (mainTableRowAtOrZero trace.program trace.mainTable m).rom.store_offset := by
         rw [h_e_eq]
         show (ZiskFv.AirsClean.Main.cMemMessage _).ptr = _
-        simp only []
+        dsimp only
         rw [h_addr_spec.2.2.1, h_store_ind, zero_mul, add_zero]
       rw [← h_e_ptr]; exact heq
     have h_val_lt_b : (last.2.regPreMessage last.1).ptr.val < 32 :=

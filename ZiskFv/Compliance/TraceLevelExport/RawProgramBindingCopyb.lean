@@ -275,9 +275,8 @@ private theorem copyb_src_b_imm_pres_store (self z : zisk_inst_builder.ZiskInstB
     z.i.store_offset = self.i.store_offset ∧ z.i.store = self.i.store := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
+  obtain ⟨_, _, h⟩ := bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; exact ⟨rfl, rfl⟩
 
 /-- The conditional immediate builder preserves the honest destination-register
     store pins through either `CopyB` or the requested operation arm. -/

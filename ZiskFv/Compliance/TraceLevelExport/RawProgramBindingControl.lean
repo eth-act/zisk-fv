@@ -119,9 +119,8 @@ private theorem src_a_imm_pres_store
     z.i.store = self.i.store := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_a_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; rfl)
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; rfl
 
 private theorem src_b_imm_pres_store
     (self z : zisk_inst_builder.ZiskInstBuilder) (v : Std.U64)
@@ -129,9 +128,8 @@ private theorem src_b_imm_pres_store
     z.i.store = self.i.store := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm,
     lift, bind_ok, bind_assoc, Bind.bind, pure, Pure.pure] at h
-  first
-  | (obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-     rw [Result.ok.injEq] at h; subst h; rfl)
+  obtain ⟨_, _, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h; subst h; rfl
 
 private theorem nop_store_pin
     (self : riscv2zisk_context.Riscv2ZiskContext)
@@ -374,22 +372,20 @@ private theorem decode_u_rawUType_imm
     · interval_cases k <;>
         simp [hlow, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
           BitVec.getLsbD_and, BitVec.getLsbD_ofNat, Nat.testBit] <;>
-        first
-        | (have hz := hlow _ (by omega)
-           simpa only [BitVec.getLsbD_eq_getElem (by omega)] using hz)
+        (have hz := hlow _ (by omega)
+         simpa only [BitVec.getLsbD_eq_getElem (by omega)] using hz)
     · interval_cases k <;>
         simp [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
           BitVec.getLsbD_and, BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
           Nat.testBit_or, Nat.testBit_shiftLeft, Nat.testBit_and,
           Nat.testBit_mod_two_pow, Nat.testBit, hrdBit, hopBit] <;>
-        first
-        | (rw [show (BitVec.ofNat 32 (rd <<< 7))[_] = false by
-                 rw [← BitVec.getLsbD_eq_getElem (by omega)]
-                 exact hrdHigh _ (by omega),
-               show (BitVec.ofNat 32 opcode)[_] = false by
-                 rw [← BitVec.getLsbD_eq_getElem (by omega)]
-                 exact hopHigh _ (by omega)]
-           simp)
+        (rw [show (BitVec.ofNat 32 (rd <<< 7))[_] = false by
+               rw [← BitVec.getLsbD_eq_getElem (by omega)]
+               exact hrdHigh _ (by omega),
+             show (BitVec.ofNat 32 opcode)[_] = false by
+               rw [← BitVec.getLsbD_eq_getElem (by omega)]
+               exact hopHigh _ (by omega)]
+         simp)
   · simp [BitVec.getLsbD, hk]
 
 private theorem rawJType_rd (imm rd : Nat) (hrd : rd < 32) :
