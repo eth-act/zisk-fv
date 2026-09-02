@@ -26,7 +26,21 @@ pil-extract clean-component --pilout <path> --air <needle>
 
 pil-extract mem-air-facts --pilout <path> [--air Mem]
                  [--pil-source <path>] [--output <path>]
+
+pil-extract circuit-shim [--output <path>]
+
+pil-extract mem-align-rom --pil-source <path> --rust-source <path>
+                 [--output <path>]
+
+pil-extract mem-generated-artifact --pilout <path> [--air Mem]
+                 [--output <path>]
+
+pil-extract mem-generated-constraint-bridge [--output <path>]
 ```
+
+The canonical invocation of each, with the flags the build actually passes, is
+`nix/extracted-lean.nix`; `pil-extract <subcommand> --help` is authoritative for
+the flags themselves.
 
 - `air`: emit Lean constraint definitions for one AIR, or list AIRs.
 - `bus-emissions`: emit bus-emission specs from `gsum_debug_data` hints.
@@ -67,11 +81,18 @@ pil-extract mem-air-facts --pilout <path> [--air Mem]
 - `--mem-align-pil-source <path>`: optional `mem_align.pil` source path for
   the machine-checked MemAlign value-width coverage row.
 
-Output shape mirrors `openvm-fv/OpenvmFv/Extraction/*.lean`: one `constraint_N`
-definition per pilout constraint, typed over `Circuit F ExtF C` (from
-`LeanZKCircuit.OpenVM.Circuit`), with witness-column references rendered as
-`Circuit.main c (id := <stage>) (column := <col_idx>) (row := row) (rotation :=
-<rowOffset>)`. Debug lines from the pilout are preserved as Lean comments.
+Output shape follows `openvm-fv/OpenvmFv/Extraction/*.lean`: one
+`constraint_N_<suffix>` definition per pilout constraint (see "Constraint kinds"
+below for the suffix), typed over `Circuit F ExtF C` where `Circuit` is the
+four-field class the `circuit-shim` subcommand generates locally as
+`Extraction.Circuit` (`src/main.rs:566`). That shim exists precisely to avoid the
+deleted root `ZiskFv.Circuit` API and to avoid colliding with Clean's root
+`Circuit` monad; `LeanZKCircuit` is not a Lake dependency of this repository.
+Witness-column references render as `Extraction.Circuit.main c (id := <stage>)
+(column := <col_idx>) (row := row) (rotation := 0)`, with the signed pilout row
+offset folded into the `row` argument rather than into `rotation` — see "Negative
+row rotations" below. Debug lines from the pilout are preserved as Lean
+comments.
 
 ## Pilout structure observations
 
@@ -133,6 +154,12 @@ defs.
 `lookup-wiring` is intentionally separate from `bus-emissions`. The latter
 targets the older `F`-valued `BusEmissionSpec` interface and still replaces a
 hint operand containing `Challenge`, `AirValue`, or `AirGroupValue` with `0`.
+The link shapes are not a fixed pair. `LinkShape` (`src/lookup_wiring.rs:1556`)
+currently has seven constructors — `direct`, `cluster2`, `derivedMixed2`,
+`directZeroTail`, `cluster2ZeroTail`, `directAssumesNegForm`,
+`directAssumesNegFormZeroTail` — so read that enum rather than this note for the
+current set.
+
 The lookup-wiring manifest has a closed `Expr` syntax with distinct typed
 constructors for witness, fixed, challenge, AIR value, AIR-group value, and
 opaque operand kinds; it never uses that fallback.
@@ -470,11 +497,17 @@ vocabularies, and the measured residual blind spots.
 ## Mirror gate (`tools/mirror-roundtrip`, eth-act/zisk-fv#304)
 
 The round-trip gate above ends at `build/extraction/`. Nothing in its argument
-touches `ZiskFv/`, and no Lean under `ZiskFv/` imports a per-AIR
-`Extraction.<AIR>` module at all, so a constraint can round-trip perfectly and
-still be restated wrongly, partially, or not at all in the handwritten Lean the
-proof actually consumes. This gate closes that second direction for the
-polynomial content.
+touches `ZiskFv/`, so a constraint can round-trip perfectly and still be restated
+wrongly, partially, or not at all in the handwritten Lean the proof actually
+consumes. This gate closes that second direction for the polynomial content.
+
+Seven modules under `ZiskFv/` do import a per-AIR `Extraction.<AIR>` module —
+`AirsClean/{Main,Mem,Arith,Binary,MemAlign,MemAlignByte}MirrorWeld.lean` and
+`AirsClean/MemAlignRomTable.lean` — but only to pin a handwritten mirror to the
+generated text definitionally (issue #296; see `lakefile.toml`'s `Extraction`
+lib comment for why exactly those join the main Lake graph). The proof surface
+the mirrors serve is still handwritten, so the second direction still needs
+checking.
 
 How the two differ:
 
@@ -483,7 +516,7 @@ How the two differ:
 | decides | `pilout` vs `build/extraction/` | `build/extraction/` vs `ZiskFv/AirsClean/**` |
 | both sides are | generated | one generated, one handwritten |
 | a failure means | the extractor dropped or distorted a constraint | a constraint has no mirror, or a mirror has no constraint |
-| its verdict is | `OK` at HEAD | `FAILED` at HEAD, and the failures are the finding |
+| its verdict is | `OK` at HEAD | `OK` at HEAD (176/176 covered, 0 failing) |
 | the fix is | change the generator and rerun | proof work on a protected interface |
 
 It reuses `poly.py`, `check.to_poly`, `lean_parse.py`, `pilout_wire.py` and
@@ -496,13 +529,19 @@ predicate, and pairs the two sets by canonical form rather than by index. The
 comparable rule is implemented twice, off the emitted Lean and off the pilout
 operands, and the two index sets must agree on every run.
 
-Five finding classes: `MATCHED`; `GAP`, a comparable constraint no mirror clause
-has the canonical form of; `STRENGTHENING`, a mirror clause no constraint has the
-form of — a *syntactic* class, so the report also runs a cofactor search and says
-when the clause is in fact implied by a constraint and therefore weaker rather
-than stronger; `RECLASSIFICATION`, a pairing that turns on a lane's kind;
-`UNBACKED`, an equation over a row field this AIR has no lane for, which has no
-canonical form to pair with and so is reported rather than compared.
+Eight finding classes. Four are coverage: `MATCHED`, canonical forms agree;
+`OUT_OF_ROOT`, a declared out-of-root mirror canonically restates it;
+`BOOL_TYPED`, a `col*(1-col)=0` whose column is pinned to {0,1} by typing rather
+than by a restated equation; and `WELD_COVERED`, a constraint bound on the RHS of
+a kernel-checked `Iff.rfl` weld (#296), which is stronger evidence than a
+canonical match. Four are findings: `GAP`, a comparable constraint none of the
+four coverage routes reaches; `STRENGTHENING`, a mirror clause no constraint has
+the form of — a *syntactic* class, so the report also runs a cofactor search and
+says when the clause is in fact implied by a constraint and therefore weaker
+rather than stronger; `RECLASSIFICATION`, a pairing that turns on a lane's kind;
+and `UNBACKED`, an equation over a row field this AIR has no lane for, which has
+no canonical form to pair with and so is reported rather than compared.
+`tools/mirror-roundtrip/README.md` has the authoritative table.
 
 Besides the pairing, the run holds its own scope: `survey.CLASSIFICATION` against
 the declarations actually under the mirror root, every `NEAR_*`-classified
@@ -521,11 +560,16 @@ gap here is not extraction drift and re-running populate cannot change it.
 Deliberately not in `trust/scripts/check-all.sh` either, for #303's reason — that
 CI job has no `build/`.
 
-**This step fails at HEAD**, and that is the deliverable rather than a wiring
-bug: 35 comparable generated constraints have no mirror clause of their AIR.
-Those are findings for the owner. Mirrors and `Valid_<AIR>` validators are
-protected proof interfaces, so closing one is proof work — not something the tool
-may do, and not something to silence with a baseline here.
+**This step passes at HEAD** — 176/176 comparable generated constraints covered,
+0 failing. It did not when this gate landed: the 35-constraint gap and the #329
+residuals were disposed by proof work, not by a baseline. The MemAlign `L1`
+reclassification was fixed with a real fixed-column schema (#332), the Mem
+delegation was classified, and the remainder (2 strengthening, 3 unbacked, and
+the Main `SEGMENT_L1` alias) are declared with cited sources, each re-verified
+live on every run and each backed by a withdrawal mutation in `acceptance.py`.
+Mirrors and `Valid_<AIR>` validators are protected proof interfaces, so closing a
+future finding is proof work — not something the tool may do, and not something
+to silence with a baseline here.
 
 `tools/mirror-roundtrip/README.md` carries the full argument, the declared
 exclusions with their citations, and the measured blind spots.
@@ -534,9 +578,9 @@ exclusions with their citations, and the measured blind spots.
 
 PIL2 uses a postfix `'` to denote "previous-row" cells (row rotation `-1`),
 as in `'set_pc` and `'c[0]` inside the PC-handshake constraint
-(`main.pil:409-410`). `Circuit.main` / `Circuit.preprocessed` from
-`LeanZKCircuit.OpenVM.Circuit` both type rotation as `ℕ`, so a negative
-rotation can't live in the rotation field. The extractor rewrites
+(`main.pil:409-410`). `Extraction.Circuit.main` / `.preprocessed` both type
+rotation as `ℕ`, so a negative rotation cannot live in the rotation field. The
+extractor rewrites
 `row_offset = -k` (k > 0) to `(row := row - k) (rotation := 0)` — evaluated
 cells are definitionally identical, so this is sound wherever `row ≥ k`.
 
@@ -551,9 +595,14 @@ constraint layer (e.g. `Airs/Main.lean::pc_handshake_to_next_pc`) must
 provide a `segment_l1 (row + 1) = 0` witness to derive the useful
 specialization.
 
-Positive row rotations are still rejected loudly — ZisK's pilout doesn't
-use them and supporting them would require auditing every AIR for
-`row + k` semantics.
+Positive row offsets are supported by the same rewrite, rendering as
+`(row := row + k) (rotation := 0)` (`src/main.rs:818` for witness columns, `:837`
+for fixed columns, with a test at `:3634`), and ZisK's pilout does use
+them: `tools/pilout-roundtrip/README.md:334` measures 52 emitted sites with a
+negative offset and 27 with a positive one. The saturation argument above is
+specific to the negative direction; positive offsets have the dual issue at the
+last row, since PIL's row domain is cyclic mod N and Lean's `ℕ` is not. No gate
+checks that direction — see `tools/pilout-roundtrip/README.md:334-339`.
 
 ## Extending
 

@@ -96,11 +96,18 @@ For ADDI/SUB the missing piece is (2): no
 `addi_compositional_with_binaryadd` / `sub_compositional_with_binaryadd`
 exists in `Spec/`.
 
-For ADDW/ADDIW/SUBW the missing piece is *both* (1) and (2): the
-W-variant Binary-SM is `BinaryExtension` (PIL AIR #12), which is
-**not extracted** at all (`docs/extraction/air-inventory.md` lists it as
-"❌ row-constraints missing"). No `Valid_BinaryExtension` AIR
-exists in the Lean tree.
+For ADDW/ADDIW/SUBW the missing piece is (2), and identifying the
+right supplier for (1) is itself open. `BinaryExtension` (PIL AIR #12)
+*is* extracted (`nix/extracted-lean.nix`), and
+`Valid_BinaryExtension` exists (`Airs/Binary/BinaryExtension.lean:61`,
+consumed by `Soundness.lean` and `Airs/OperationBus/`) — but it exposes
+the shift and sign-extension opcode family (`OP_SLL`/`OP_SRL`/`OP_SRA`,
+their `_W` forms, `OP_SEXT_*`), not `OP_ADD_W`. ADDW reaches the bus as
+opcode 26 with `m32 = 1` (`Airs/BusShape.lean:594`), and
+`addw_compositional` (`ZiskCircuit/Addw.lean:52`) matches Main's packed
+`c` against the bus lanes without taking any Binary-SM validator as a
+hypothesis. So no in-tree lemma supplies chunk correctness for the
+W variants.
 -/
 
 set_option maxHeartbeats 2400000
