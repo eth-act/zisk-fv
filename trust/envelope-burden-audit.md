@@ -154,7 +154,7 @@ public premises.
 This is the same bucket-(c) category as class 1 (subword-store preserved bytes
 above) — a constructor-carried fact that is not a consequence of constraints or
 channel balance — applied to the branch and FENCE control-flow constructors.
-Source: P4-PR1 / `docs/ai/plan/RESEARCH_PR94_CLOSEOUT.md`. It corrects an earlier
+Source: P4-PR1 closeout research, which was not retained in-tree. It corrects an earlier
 bucket-(a) classification (the per-family rows above listed branch/FENCE
 "exec-row shape" as derivable bucket-(a) burden; that was aspirational and false
 against the live ensemble).

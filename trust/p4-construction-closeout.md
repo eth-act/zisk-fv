@@ -6,8 +6,10 @@ chosen direction. It does **not** itself execute the GitHub closures or the
 salvage rebuild — those happen later (see "What this record does and does not
 do" below).
 
-- **Plan:** `docs/ai/plan/PLAN_ENDGAME_P4_CLOSEOUT.md`
-- **Research / evidence base:** `docs/ai/plan/RESEARCH_PR94_CLOSEOUT.md`
+- **Plan:** the P4 closeout plan, which was not retained in-tree.
+- **Research / evidence base:** the PR-94 closeout research, which was not
+  retained in-tree. The findings it established are recorded in this file and in
+  `trust/envelope-burden-audit.md`.
 - **Salvage manifest:** `trust/p4-salvage-manifest.md`
 - **Audit corrections:** `trust/envelope-burden-audit.md` (exec-row bucket-(c)
   class + PC/nextPC bucket-(b)-pending-infra)
