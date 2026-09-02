@@ -9,9 +9,9 @@ used by an accepted trace: an SD of the non-zero doubleword `42`, followed by
 an LD of the same word.  The table has the physical Mem fixed schema, so its
 first row is the actual segment boundary rather than a synthetic prefix.
 
-Regenerate the sidecar literals with the arithmetic recorded in
-`docs/ai/plan/PLAN_MEM_PREFIX_221.md`; they solve `mem.pil`'s generated
-segment and permutation equations for `std_alpha = 0`, `std_gamma = 1`.
+Regenerate the sidecar literals by solving `mem.pil`'s generated segment and
+permutation equations for `std_alpha = 0`, `std_gamma = 1`. The step-by-step
+arithmetic was not retained in-tree.
 -/
 
 namespace ZiskFv.Compliance

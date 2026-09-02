@@ -16,8 +16,8 @@ leaves `store_pc = false`, the correct behaviour for the `x0` pseudo-ops).  We
 keep that explicit hypothesis; the other pins are unconditional.
 
 Sound: NO native_decide / bv_decide / ofReduceBool / trustCompiler / `sorry`.
-Proof bodies ported from `docs/ai/aeneas-proof-reference/{LuiPins,AuipcPins,
-JalPins,JalrPins}.lean`; shared helpers live in `Extraction/Helpers.lean`.
+Proof bodies ported from the rc2-typechecked LUI/AUIPC/JAL/JALR reference proofs;
+shared helpers live in `Extraction/Helpers.lean`.
 -/
 import ZiskFv.Compliance.AeneasBridgeTrust.Extraction.Helpers
 

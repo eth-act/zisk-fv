@@ -20,7 +20,7 @@ This module holds:
 
 The shared helpers are defined ONCE here and reused by every entry-point module
 under `Extraction/`. Proof bodies are ported from the rc2-typechecked reference
-(`docs/ai/aeneas-proof-reference/*.lean`) and the v4.28.0 probe; the static-pin
+proofs and the v4.28.0 probe; the static-pin
 fields (`op` / `is_external_op` / `m32` / `set_pc` / `store_pc`) are never
 written by the register-source / immediate-source / index-width builders, so the
 numBits-hidden register comparisons are case-split (`split_ifs`) WITHOUT ever
