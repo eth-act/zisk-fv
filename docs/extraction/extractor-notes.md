@@ -98,7 +98,10 @@ comments.
 
 - The top-level `PilOut` contains `air_groups`. The current ZisK pilout has
   one group named `Zisk` with 35 AIRs.
-- `BinaryAdd` lives at `airs[11]`: 198 expressions, 9 constraints.
+- `BinaryAdd` lives at `airs[23]`: 120 expressions, 9 constraints. Indices are not
+  stable across pilout regenerations — the twelve `Dma*` AIRs occupy `airs[0..11]`
+  and shifted everything after them — so read positions off `air --list` rather
+  than copying them out of a doc.
 - `air.constraints[i]` is a oneof `{firstRow, lastRow, everyRow, everyFrame}`;
   each variant carries `expression_idx` (an `Operand.Expression` wrapper around
   a `uint32`) and an optional `debug_line`.

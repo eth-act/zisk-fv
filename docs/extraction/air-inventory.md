@@ -21,38 +21,56 @@ cargo run --manifest-path tools/pil-extract/Cargo.toml -- \
 
 ## AIRs
 
-The pilout declares **35** AIRs in one group `Zisk` (see
-[`extractor-notes.md`](extractor-notes.md) "Pilout structure observations"; the
-10 extracted ones are listed in `nix/extracted-lean.nix` and cross-checked in
-both directions by `tools/pilout-roundtrip/check.py`'s `DECLARED_AIRS`). The
-table below covers the first 22 — the RV64IM-relevant span plus the precompile
-and table AIRs adjacent to it. Indices `#22`–`#34` are not yet transcribed here;
-read them off `--list`.
+All **35** AIRs of the pilout's single `Zisk` group, as reported by `--list`
+against the flake-built `build/zisk.pilout`. Ten are extracted; the other 25 are
+not. The extracted set is declared in `nix/extracted-lean.nix` and cross-checked
+in both directions by `tools/pilout-roundtrip/check.py`'s `DECLARED_AIRS`.
 
-| #    | AIR               | RV64IM role                                        | Extraction status                                             |
-| ---: | ---               | ---                                                | ---                                                           |
-| 0    | Main              | Central decoded-instruction and operation-bus row. | Extracted; wrapped by `ZiskFv/Airs/Main/`.                    |
-| 1    | Rom               | Program storage.                                   | Not on the current per-opcode equivalence path.               |
-| 2    | Mem               | Memory state machine.                              | Partially modeled through memory-row and bus bridges.         |
-| 3    | RomData           | ROM data section.                                  | Not on the current per-opcode equivalence path.               |
-| 4    | InputData         | Public-input infrastructure.                       | Out of current per-opcode scope.                              |
-| 5    | MemAlign          | Memory alignment.                                  | Extracted/wrapped where needed for current load/store proofs. |
-| 6    | MemAlignByte      | Memory byte alignment.                             | Extracted/wrapped where needed for current load/store proofs. |
-| 7    | MemAlignReadByte  | Memory read-byte alignment.                        | Extracted/wrapped where needed for current load/store proofs. |
-| 8    | MemAlignWriteByte | Memory write-byte alignment.                       | Extracted/wrapped where needed for current load/store proofs. |
-| 9    | Arith             | MUL/DIV/REM family.                                | Extracted; wrapped by `ZiskFv/Airs/Arith/`.                   |
-| 10   | Binary            | Boolean, comparison, and packed binary relations.  | Extracted; wrapped by `ZiskFv/Airs/Binary/`.                  |
-| 11   | BinaryAdd         | ADD/SUB carry chains.                              | Extracted; wrapped by `ZiskFv/Airs/Binary/BinaryAdd.lean`.    |
-| 12   | BinaryExtension   | Shifts and extension paths.                        | Extracted; wrapped by `ZiskFv/Airs/Binary/`.                  |
-| 13   | Add256            | Precompile/internal family.                        | Out of RV64IM scope.                                          |
-| 14   | ArithEq           | Precompile/internal family.                        | Out of RV64IM scope.                                          |
-| 15   | ArithEq384        | Precompile/internal family.                        | Out of RV64IM scope.                                          |
-| 16   | Keccakf           | Precompile.                                        | Out of RV64IM scope.                                          |
-| 17   | Sha256f           | Precompile.                                        | Out of RV64IM scope.                                          |
-| 18   | U256Delegation    | ZisK-internal operation.                           | Out of RV64IM scope.                                          |
-| 19   | SpecifiedRanges   | Range-check lookup table.                          | Used through range/table proof infrastructure.                |
-| 20   | VirtualTable0     | Internal lookup table.                             | Used through table proof infrastructure where relevant.       |
-| 21   | VirtualTable1     | Internal lookup table.                             | Used through table proof infrastructure where relevant.       |
+**Indices move.** They are positions in `air_groups[0].airs`, not stable ids: the
+twelve `Dma*` AIRs at `#0`–`#11` displaced everything after them relative to an
+earlier pilout. Re-read them from `--list` after any `nix run .#populate`; do not
+cite them from memory.
+
+|    # | AIR                    | RV64IM role                                          | Extraction status |
+| ----: | ---------------------- | ---------------------------------------------------- | --- |
+|    0 | Dma                    | DMA engine.                                          | Out of RV64IM scope. |
+|    1 | DmaMemCpy              | DMA memcpy path.                                     | Out of RV64IM scope. |
+|    2 | DmaInputCpy            | DMA input-copy path.                                 | Out of RV64IM scope. |
+|    3 | Dma64Aligned           | 64-bit aligned DMA.                                  | Out of RV64IM scope. |
+|    4 | Dma64AlignedInputCpy   | 64-bit aligned DMA input copy.                       | Out of RV64IM scope. |
+|    5 | Dma64AlignedMemSet     | 64-bit aligned DMA memset.                           | Out of RV64IM scope. |
+|    6 | Dma64AlignedMem        | 64-bit aligned DMA memory path.                      | Out of RV64IM scope. |
+|    7 | Dma64AlignedMemCpy     | 64-bit aligned DMA memcpy.                           | Out of RV64IM scope. |
+|    8 | DmaUnaligned           | Unaligned DMA.                                       | Out of RV64IM scope. |
+|    9 | DmaPrePost             | DMA pre/post fixup.                                  | Out of RV64IM scope. |
+|   10 | DmaPrePostMemCpy       | DMA pre/post memcpy.                                 | Out of RV64IM scope. |
+|   11 | DmaPrePostInputCpy     | DMA pre/post input copy.                             | Out of RV64IM scope. |
+|   12 | Main                   | Central decoded-instruction and operation-bus row.   | **Extracted**; wrapped by `ZiskFv/Airs/Main/`. |
+|   13 | Rom                    | Program storage.                                     | Not on the current per-opcode equivalence path. |
+|   14 | Mem                    | Memory state machine.                                | **Extracted**; welded by `ZiskFv/AirsClean/MemMirrorWeld.lean`. |
+|   15 | RomData                | ROM data section.                                    | Not on the current per-opcode equivalence path. |
+|   16 | InputData              | Public-input infrastructure.                         | Out of current per-opcode scope. |
+|   17 | MemAlign               | Memory alignment.                                    | **Extracted**; wrapped for current load/store proofs. |
+|   18 | MemAlignByte           | Memory byte alignment.                               | **Extracted**; Clean component + mirror weld. |
+|   19 | MemAlignReadByte       | Memory read-byte alignment.                          | **Extracted**; Clean component. |
+|   20 | MemAlignWriteByte      | Memory write-byte alignment.                         | **Extracted**, but no mirror or component — see below. |
+|   21 | Arith                  | MUL/DIV/REM family.                                  | **Extracted**; wrapped by `ZiskFv/Airs/Arith/`. |
+|   22 | Binary                 | Boolean, comparison, and packed binary relations.    | **Extracted**; wrapped by `ZiskFv/Airs/Binary/`. |
+|   23 | BinaryAdd              | ADD/SUB carry chains.                                | **Extracted**; wrapped by `ZiskFv/Airs/Binary/BinaryAdd.lean`. |
+|   24 | BinaryExtension        | Shifts and sign-extension paths.                     | **Extracted**; wrapped by `ZiskFv/Airs/Binary/`. |
+|   25 | Add256                 | Precompile/internal family.                          | Out of RV64IM scope. |
+|   26 | ArithEq                | Precompile/internal family.                          | Out of RV64IM scope. |
+|   27 | ArithEq384             | Precompile/internal family.                          | Out of RV64IM scope. |
+|   28 | Keccakf                | Precompile.                                          | Out of RV64IM scope. |
+|   29 | Sha256f                | Precompile.                                          | Out of RV64IM scope. |
+|   30 | Poseidon2              | Precompile.                                          | Out of RV64IM scope. |
+|   31 | Blake2br               | Precompile.                                          | Out of RV64IM scope. |
+|   32 | SpecifiedRanges        | Range-check lookup table.                            | Used through range/table proof infrastructure. |
+|   33 | VirtualTable0          | Internal lookup table.                               | Used through table proof infrastructure where relevant. |
+|   34 | VirtualTable1          | Internal lookup table.                               | Used through table proof infrastructure where relevant. |
+
+Constraint totals: 4095 across all 35 AIRs, of which 355 are in the 10 extracted
+ones — the denominator both round-trip gates work against.
 
 ## MemAlignWriteByte reads the MemAlignByte template
 

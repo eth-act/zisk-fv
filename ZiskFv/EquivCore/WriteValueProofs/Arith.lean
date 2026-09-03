@@ -97,7 +97,7 @@ For ADDI/SUB the missing piece is (2): no
 exists in `Spec/`.
 
 For ADDW/ADDIW/SUBW the missing piece is (2), and identifying the
-right supplier for (1) is itself open. `BinaryExtension` (PIL AIR #12)
+right supplier for (1) is itself open. `BinaryExtension` (PIL AIR #24)
 *is* extracted (`nix/extracted-lean.nix`), and
 `Valid_BinaryExtension` exists (`Airs/Binary/BinaryExtension.lean:61`,
 consumed by `Soundness.lean` and `Airs/OperationBus/`) — but it exposes
