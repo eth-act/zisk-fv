@@ -20,13 +20,9 @@
 # Git worktrees for isolated agent work.
 .worktrees/
 
-docs/site/*.png
-
 # Proof-tree visualizer regenerable artifact (1+ MB; rebuild with
 # `lake exe trust-gate print-tree-edges <root>`).
 trust/proof-tree/edges.tsv
-
-docs/superpowers/
 
 .playwright-mcp
 
