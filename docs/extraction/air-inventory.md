@@ -74,7 +74,7 @@ ones — the denominator both round-trip gates work against.
 
 ## MemAlignWriteByte reads the MemAlignByte template
 
-`MemAlignWriteByte` (#8) is not modelled on its own terms. The reading this note
+`MemAlignWriteByte` (#20) is not modelled on its own terms. The reading this note
 records, and which `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean` machine-checks,
 is that its generated polynomials are the `ZiskFv.Airs.MemAlignByte` predicates
 read at the *WriteByte* column layout — the same PIL template with the
