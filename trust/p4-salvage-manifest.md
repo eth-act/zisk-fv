@@ -2,10 +2,10 @@
 
 This manifest records what is genuinely sound and reusable from the off-the-rails
 P4 construction stack, and what is **not** clean salvage, so the rebuild
-(`PLAN_ENDGAME_P4_CLOSEOUT.md` PR2/PR3) can pull the sound parts before the stale
-PRs are closed. It is the durable companion to the closeout decision record
-(`trust/p4-construction-closeout.md`) and the research evidence base
-(`docs/ai/plan/RESEARCH_PR94_CLOSEOUT.md`).
+(the P4 closeout plan's PR2/PR3) can pull the sound parts before the stale PRs
+are closed. It is the durable companion to the closeout decision record
+(`trust/p4-construction-closeout.md`); the PR-94 research evidence base it was
+written against was not retained in-tree.
 
 **Source branches (do not delete until the rebuild lands):**
 

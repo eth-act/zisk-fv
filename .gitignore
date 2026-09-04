@@ -13,6 +13,12 @@
 # active stream = one local STATUS.md at its root; never committed.
 /STATUS.md
 
+# Agent workstream index and plans (see CLAUDE.md / AGENTS.md). Working
+# notes for whoever is driving a stream, not a project artifact: they go
+# stale against the tree, and a stale plan read as current is worse than
+# no plan. Kept local, one copy in the base dir; never committed.
+docs/ai/
+
 # Local-dev convenience symlink (see CLAUDE.md). Points outside the repo;
 # do not commit.
 .claude/
@@ -20,13 +26,9 @@
 # Git worktrees for isolated agent work.
 .worktrees/
 
-docs/site/*.png
-
 # Proof-tree visualizer regenerable artifact (1+ MB; rebuild with
 # `lake exe trust-gate print-tree-edges <root>`).
 trust/proof-tree/edges.tsv
-
-docs/superpowers/
 
 .playwright-mcp
 

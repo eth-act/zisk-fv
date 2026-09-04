@@ -20,8 +20,8 @@ runCommand "clean-source" {
   version = "git-${builtins.substring 0 7 clean-src.rev}";
 
   meta = {
-    description = "Clean DSL source tree (Verified-zkEVM/clean) for path-based Lake require";
-    homepage = "https://github.com/Verified-zkEVM/clean";
+    description = "Clean DSL source tree (codygunton/clean fork of Verified-zkEVM/clean) for path-based Lake require";
+    homepage = "https://github.com/codygunton/clean";
   };
 } ''
   mkdir -p $out

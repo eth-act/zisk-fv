@@ -188,7 +188,6 @@ trust-boundary change. Prefer fixing verification failures over working around t
 - `trust/defects.md`: known defects and theorem-scope exclusions.
 - `docs/extraction/`: extractor and AIR orientation notes.
 - `nix/README.md`, `flake.nix`, `flake.lock`: reproducible build inputs and commands.
-- `docs/ai/PROJECTS.md` and `docs/ai/plan/`: agent workstream index and plans.
 
 Historical docs removed from the tree should be recovered with `git show` only when needed for the
 current task; do not paste old plans back into active instructions.

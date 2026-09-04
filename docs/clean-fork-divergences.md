@@ -1,26 +1,26 @@
 # Clean fork divergences (`codygunton/clean` vs upstream `Verified-zkEVM/clean`)
 
 The `clean-src` flake input (`flake.nix`) points at **`github:codygunton/clean`**, a fork of
-`Verified-zkEVM/clean`. This file records every patch the fork carries *beyond* upstream, why it exists,
-and whether it is an **upstream-PR candidate** — so we remember to contribute them back rather than carry
-them indefinitely. (The flake comment already notes the fork is meant to re-point at upstream once changes
-merge.)
+`Verified-zkEVM/clean`. This file records each **semantic** patch the fork carries *beyond* upstream,
+why it exists, and whether it is an **upstream-PR candidate** — so we remember to contribute them back
+rather than carry them indefinitely. Purely cosmetic or proof-ergonomic patches are not given entries
+here; the `clean-src` comment in `flake.nix` is the complete patch list, and currently carries one such
+patch (`structure-instance notation in the *_mk lemmas`). (That comment also notes the fork is meant to
+re-point at upstream once changes merge.)
 
-> Maintenance: when you add/remove a fork patch, update this file AND the `clean-src` comment in
+> Maintenance: when you add/remove a semantic fork patch, update this file AND the `clean-src` comment in
 > `flake.nix` (and re-pin `flake.lock`). When an entry lands upstream, delete it here and drop the patch.
+>
+> Do not record per-patch commit hashes here. A fork rebase rewrites them — it has already invalidated
+> this file's hashes twice — while `flake.nix`'s `inputs.clean-src` comment sits next to the pinned rev
+> and `flake.lock` holds the immutable one. Those are the provenance sources of truth.
 
 ---
 
-> **D0 retired 2026-08-11.** `Air.Flat`'s nonzero-balance helpers and the
-> `Clean.Fin` namespace hygiene landed upstream (the PR-398 lineage the fork is
-> now rebased onto), so the entry is deleted per the maintenance rule above.
-> Upstream's `exists_push_of_pull` carries the same strengthened conclusion the
-> fork's `exists_nonzero_push_of_pull` did, with the disequalities swapped.
-
 ## D1 — `Air.Flat` indexed adjacent-row (transition) constraints  · zisk-fv #100 / #226  · **UPSTREAM CANDIDATE (strong)**
 
-- **Fork main / provenance:** `port-zero-mult-gating` @ `bf5e40ed`; introduced by commit
-  `497e4a41`.
+- **Fork branch:** `port-zero-mult-gating`; see `flake.nix`'s `clean-src` comment for the patch that
+  introduces it.
 - **What:** an *additive* transition-constraint facility on the modern `Air.Flat` layer:
   - `Air.Flat.Component.transition : Nat → Environment F → Environment F → Prop := fun _ _ _ => True`;
   - `Air.Flat.Table.TransitionConstraints` applies it at every row index to the canonical predecessor/current
@@ -58,8 +58,8 @@ merge.)
 
 ## D2 — `Air.Flat` component-owned indexed fixed columns  · zisk-fv #243 / S1b  · **UPSTREAM CANDIDATE (strong)**
 
-- **Fork main / provenance:** `port-zero-mult-gating` @ `bf5e40ed`; introduced by commit
-  `c87617d8`.
+- **Fork branch:** `port-zero-mult-gating`; see `flake.nix`'s `clean-src` comment for the patch that
+  introduces it.
 - **What:** `IndexedFixedColumns` declares a physical capacity, a raw-or-fixed layout for each effective
   output cell, and periodic fixed values. `Component` owns an optional schema; `Table` stores only raw rows
   and definitionally materializes canonical effective `table` rows. The same rows feed constraints, channel
@@ -79,12 +79,14 @@ merge.)
 
 ## D3 — `Air.Flat` intrinsic cyclic successor transitions  · zisk-fv #242 / S4  · **UPSTREAM CANDIDATE (strong)**
 
-- **Fork main / provenance:** `port-zero-mult-gating` @ `bf5e40ed`, introduced by the same
-  commit (PR [codygunton/clean#2](https://github.com/codygunton/clean/pull/2)).
+- **Fork branch:** `port-zero-mult-gating`; a *separate* patch from D2's, offered upstream as PR
+  [codygunton/clean#2](https://github.com/codygunton/clean/pull/2). See `flake.nix`'s `clean-src`
+  comment for the patch list and its order.
 - **What:** an additive `Component.cyclicSuccessorTransition` predicate with a
-  trivial default, `Table.successorIndex` and `successorEnvironment` over the
-  component's materialized effective rows, and table/ensemble predicates that
-  apply it at every row. The `Fin table.length` successor is modulo the effective
+  trivial default, `successorEnvironment` over the component's materialized
+  effective rows (indexed through an internal successor-index relation, which
+  zisk-fv does not name directly), and table/ensemble predicates that apply it
+  at every row. The `Fin table.length` successor is modulo the effective
   length, so the final effective row maps definitionally to row zero.
 - **Why:** D1 deliberately retains predecessor/current semantics, including
   row-zero predecessor saturation. MemAlign's unmasked bus-133 lookup reads
