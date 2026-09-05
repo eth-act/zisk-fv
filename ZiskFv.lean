@@ -6,6 +6,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.AirsClean.Binary.Wiring
 import ZiskFv.AirsClean.BinaryAdd.Wiring
+import ZiskFv.AirsClean.ArithMul.Wiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice

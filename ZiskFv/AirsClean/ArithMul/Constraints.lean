@@ -70,7 +70,7 @@ def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
       + row.flags.main_mul * (row.chunks.c_0 + row.chunks.c_1 * 65536)
       + row.flags.main_div * (row.chunks.a_0 + row.chunks.a_1 * 65536)
     c_hi := row.flags.bus_res1
-    flag := 0
+    flag := row.flags.div_by_zero
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }
@@ -128,7 +128,7 @@ def secondaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
     b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
     c_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
     c_hi := row.flags.bus_res1
-    flag := 0
+    flag := row.flags.div_by_zero
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }
