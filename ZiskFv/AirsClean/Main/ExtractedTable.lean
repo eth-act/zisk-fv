@@ -225,4 +225,81 @@ theorem extractedMainTable_rowInput (source : SingleSegmentSource FGL FGL)
     (mainRowOfCircuit source row) (mainRowOfCircuit_fixedCells source row).1
     (mainRowOfCircuit_fixedCells source row).2
 
+/-! ## Generated physical predicates imply the constructed local assertions
+
+The conclusions below stop at the exact obligations supplied by the generated
+Main polynomials. `Operations.ConstraintsHold` additionally requires every ROM
+lookup to be contained in its concrete table. Ensemble acceptance additionally
+requires the emitted operation, memory, register, and range interactions to be
+balanced by their provider tables. Neither fact follows from the row-local
+polynomials, so neither is assumed or claimed here. -/
+
+/-- At one physical index, the 29 generated row-local predicates imply every
+    `assertZero` in the instantiated Main component. This is stated against the
+    component's actual `operations.constraints`, including its concrete row
+    variable and offset. -/
+theorem extractedMainTable_localAssertionsAt (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (row : Fin source.height) (h : GeneratedLocalConstraintsAt source row) :
+    ∀ e ∈ (componentWithRomMemAndOpBus length program).operations.constraints,
+      (extractedMainTable source length program data).environmentAt ⟨row, by simp⟩ e = 0 := by
+  let component := componentWithRomMemAndOpBus length program
+  let env := (extractedMainTable source length program data).environmentAt ⟨row, by simp⟩
+  have hrow : component.rowInput env = mainRowOfCircuit source row := by
+    exact extractedMainTable_rowInput source length program data row
+  have hv : eval env component.rowInputVar = mainRowOfCircuit source row := by
+    simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+      eval_varFromOffset_valueFromOffset] using hrow
+  rw [Air.Flat.Component.constraints_eq]
+  exact assertions_of_extractedGeneratedLocalConstraints source row length program
+    component.rowInputVar component.rowOffset env h hv
+
+/-- The local assertion conclusion holds at every physical table index when
+    the corresponding generated row-local predicates do. -/
+theorem extractedMainTable_localAssertions (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (h : ∀ row : Fin source.height, GeneratedLocalConstraintsAt source row) :
+    ∀ row : Fin source.height,
+      ∀ e ∈ (componentWithRomMemAndOpBus length program).operations.constraints,
+        (extractedMainTable source length program data).environmentAt ⟨row, by simp⟩ e = 0 := by
+  intro row
+  exact extractedMainTable_localAssertionsAt source length program data row (h row)
+
+/-- Generated constraint 18 gives the predecessor/current PC assertion on the
+    decoded effective table rows. The table and extraction interfaces both use
+    saturated natural subtraction, so physical row zero reads itself as its
+    predecessor and is gated by `SEGMENT_L1 = 1`. This is the PC conjunct of
+    the component transition; its source-C-copy conjunct still requires the
+    generated public-boundary constraints `3`, `4`, `9`, and `10`. -/
+theorem extractedMainTable_pcHandshakeAt (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (row : Fin source.height)
+    (h : Main.extraction.constraint_18_every_row source row) :
+    pcHandshakeBetween
+      ((componentWithRomMemAndOpBus length program).rowInput
+        ((extractedMainTable source length program data).previousEnvironment ⟨row, by simp⟩))
+      ((componentWithRomMemAndOpBus length program).rowInput
+        ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩)) := by
+  have hpc := pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18 source row h
+  unfold Air.Flat.Table.previousEnvironment
+  rw [extractedMainTable_rowInput source length program data
+      ⟨row.val - 1, by omega⟩,
+    extractedMainTable_rowInput source length program data row]
+  simpa [mainRowOfCircuit] using hpc
+
+/-- The remaining per-row `ConstraintsHold` gap is exactly concrete lookup
+    containment; interaction balance is a separate ensemble-level obligation. -/
+theorem extractedMainTable_constraintsHold_iff_assertions_and_lookups
+    (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (row : Fin source.height) :
+    (componentWithRomMemAndOpBus length program).operations.ConstraintsHold
+        ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩) ↔
+      (∀ e ∈ (componentWithRomMemAndOpBus length program).operations.constraints,
+          (extractedMainTable source length program data).environmentAt ⟨row, by simp⟩ e = 0) ∧
+      (∀ lookup ∈ (componentWithRomMemAndOpBus length program).operations.lookups,
+          lookup.Contains
+            ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩)) := by
+  rfl
+
 end ZiskFv.AirsClean.Main
