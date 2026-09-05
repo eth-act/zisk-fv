@@ -265,6 +265,8 @@ def _classification_map(manifest: dict[str, Any] | None) -> dict[tuple[int, int,
 
 def observe(pilout_path: Path, extraction_dir: Path, prior: dict[str, Any] | None) -> dict[str, Any]:
     parsed = pilout_wire.load(pilout_path)
+    if unknown := parsed.unknown_fields():
+        raise CoverageError(f"unrecognized pilout schema fields: {unknown}")
     classifications = _classification_map(prior)
     airs = []
     for ref in parsed.airs():
@@ -275,6 +277,12 @@ def observe(pilout_path: Path, extraction_dir: Path, prior: dict[str, Any] | Non
                 "group_index": ref.airgroup_idx,
                 "air_index": ref.air_idx,
                 "name": ref.air_name,
+                "row_count": ref.air.num_rows,
+                "stage_widths": ref.air.stage_widths,
+                "fixed_columns": ref.air.num_fixed_cols,
+                "periodic_columns": ref.air.num_periodic_cols,
+                "air_value_stages": ref.air.air_value_stages,
+                "custom_commits": ref.air.custom_commit_names,
                 "constraint_indices": list(range(len(ref.air.constraints))),
                 "constraint_kinds": [constraint.kind for constraint in ref.air.constraints],
                 "classification": classifications.get(key, {"extraction": "unclassified"}),
@@ -287,6 +295,10 @@ def observe(pilout_path: Path, extraction_dir: Path, prior: dict[str, Any] | Non
             "base_field_prime": parsed.base_field_prime,
             "air_group_count": len(parsed.air_groups),
             "global_constraint_count": parsed.num_global_constraints,
+            "challenge_counts": parsed.num_challenges,
+            "proof_value_counts": parsed.num_proof_values,
+            "public_value_count": parsed.num_public_values,
+            "public_table_count": parsed.num_public_tables,
         },
         "airs": airs,
         "lookup_routes": lookup_routes(pilout_path, parsed),
@@ -361,16 +373,38 @@ def compare(expected: dict[str, Any], actual: dict[str, Any]) -> str:
     )
 
 
+def report(expected: dict[str, Any], observed: dict[str, Any]) -> dict[str, Any]:
+    result = {"matches": expected == observed, "pilout": observed["pilout"], "sections": {}}
+    keys = {"airs": lambda item: f"{item['group_index']}/{item['air_index']}/{item['name']}",
+            "lookup_routes": lambda item: str(item["hint_index"]),
+            "validated_links": lambda item: item["name"],
+            "generated_outputs": lambda item: item["path"]}
+    for section, key in keys.items():
+        before = {key(item): item for item in expected.get(section, [])}
+        after = {key(item): item for item in observed.get(section, [])}
+        result["sections"][section] = {
+            "count": len(after),
+            "added": sorted(after.keys() - before.keys()),
+            "removed": sorted(before.keys() - after.keys()),
+            "changed": sorted(k for k in before.keys() & after.keys() if before[k] != after[k]),
+        }
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilout", type=Path, default=DEFAULT_PILOUT)
     parser.add_argument("--extraction", type=Path, default=DEFAULT_EXTRACTION)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--report", type=Path, help="write a compact machine-readable review report")
     parser.add_argument("--update", action="store_true", help="write observed structure for explicit review")
     args = parser.parse_args(argv)
     try:
         prior = json.loads(args.manifest.read_text()) if args.manifest.is_file() else None
         observed = observe(args.pilout, args.extraction, prior)
+        if args.report:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(canonical(report(prior or {}, observed)), encoding="utf-8")
         if args.update:
             args.manifest.write_text(canonical(observed), encoding="utf-8")
             try:

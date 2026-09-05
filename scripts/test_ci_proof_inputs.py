@@ -16,7 +16,9 @@ class ProofInputsTests(unittest.TestCase):
 
     def test_release_inputs_require_full_mutations(self):
         for path in ["flake.lock", "tools/pil-extract/src/main.rs", "zisk",
-                     "nix/zisk-pilout.nix", "tools/adversarial-mutations/run.py"]:
+                     "nix/zisk-pilout.nix", "tools/adversarial-mutations/run.py",
+                     "nix/mutation-compiler.nix", "nix/populate.nix", "lean-toolchain",
+                     "tools/extraction-coverage/check.py", "tools/pilout-roundtrip/check.py"]:
             with self.subTest(path=path):
                 self.assertTrue(classify([path], "pull_request")["run_mutations"])
 

@@ -2,6 +2,7 @@
   "airs": [
     {
       "air_index": 0,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -110,12 +111,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Dma"
+      "name": "Dma",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        34,
+        7
+      ]
     },
     {
       "air_index": 1,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -170,12 +180,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "DmaMemCpy"
+      "name": "DmaMemCpy",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        22,
+        6
+      ]
     },
     {
       "air_index": 2,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -226,12 +245,46 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "DmaInputCpy"
+      "name": "DmaInputCpy",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        16,
+        6
+      ]
     },
     {
       "air_index": 3,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -418,12 +471,42 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Dma64Aligned"
+      "name": "Dma64Aligned",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        35,
+        12
+      ]
     },
     {
       "air_index": 4,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -538,12 +621,44 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Dma64AlignedInputCpy"
+      "name": "Dma64AlignedInputCpy",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        25,
+        9
+      ]
     },
     {
       "air_index": 5,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -678,12 +793,46 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Dma64AlignedMemSet"
+      "name": "Dma64AlignedMemSet",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        14,
+        5
+      ]
     },
     {
       "air_index": 6,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -856,12 +1005,44 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Dma64AlignedMem"
+      "name": "Dma64AlignedMem",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        26,
+        6
+      ]
     },
     {
       "air_index": 7,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1010,12 +1191,63 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Dma64AlignedMemCpy"
+      "name": "Dma64AlignedMemCpy",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        31,
+        10
+      ]
     },
     {
       "air_index": 8,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1176,12 +1408,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "DmaUnaligned"
+      "name": "DmaUnaligned",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        24,
+        4
+      ]
     },
     {
       "air_index": 9,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1326,12 +1567,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "DmaPrePost"
+      "name": "DmaPrePost",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        66,
+        10
+      ]
     },
     {
       "air_index": 10,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1418,12 +1668,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "DmaPrePostMemCpy"
+      "name": "DmaPrePostMemCpy",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        55,
+        10
+      ]
     },
     {
       "air_index": 11,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1474,12 +1733,219 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "DmaPrePostInputCpy"
+      "name": "DmaPrePostInputCpy",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        32,
+        7
+      ]
     },
     {
       "air_index": 12,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -1778,12 +2244,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 3,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Main"
+      "name": "Main",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        38,
+        8
+      ]
     },
     {
       "air_index": 13,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1798,12 +2273,45 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [
+        "rom"
+      ],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Rom"
+      "name": "Rom",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        1,
+        1
+      ]
     },
     {
       "air_index": 14,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -1882,12 +2390,37 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Mem"
+      "name": "Mem",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        13,
+        3
+      ]
     },
     {
       "air_index": 15,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -1944,12 +2477,43 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "RomData"
+      "name": "RomData",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        6,
+        3
+      ]
     },
     {
       "air_index": 16,
+      "air_value_stages": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -2016,12 +2580,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "InputData"
+      "name": "InputData",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        9,
+        4
+      ]
     },
     {
       "air_index": 17,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2112,12 +2685,25 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "MemAlign"
+      "name": "MemAlign",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        29,
+        6
+      ]
     },
     {
       "air_index": 18,
+      "air_value_stages": [
+        1,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2160,12 +2746,25 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "MemAlignByte"
+      "name": "MemAlignByte",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        16,
+        4
+      ]
     },
     {
       "air_index": 19,
+      "air_value_stages": [
+        1,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2196,12 +2795,26 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "MemAlignReadByte"
+      "name": "MemAlignReadByte",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        10,
+        3
+      ]
     },
     {
       "air_index": 20,
+      "air_value_stages": [
+        1,
+        2,
+        2,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2242,12 +2855,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "MemAlignWriteByte"
+      "name": "MemAlignWriteByte",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        14,
+        4
+      ]
     },
     {
       "air_index": 21,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2388,12 +3010,24 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Arith"
+      "name": "Arith",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        44,
+        15
+      ]
     },
     {
       "air_index": 22,
+      "air_value_stages": [
+        1,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2432,12 +3066,24 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Binary"
+      "name": "Binary",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        39,
+        5
+      ]
     },
     {
       "air_index": 23,
+      "air_value_stages": [
+        1,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2466,12 +3112,24 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "BinaryAdd"
+      "name": "BinaryAdd",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        10,
+        3
+      ]
     },
     {
       "air_index": 24,
+      "air_value_stages": [
+        1,
+        2
+      ],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "generated",
@@ -2498,12 +3156,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "BinaryExtension"
+      "name": "BinaryExtension",
+      "periodic_columns": 0,
+      "row_count": 4194304,
+      "stage_widths": [
+        29,
+        6
+      ]
     },
     {
       "air_index": 25,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -2586,12 +3253,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 1,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Add256"
+      "name": "Add256",
+      "periodic_columns": 0,
+      "row_count": 1048576,
+      "stage_widths": [
+        47,
+        17
+      ]
     },
     {
       "air_index": 26,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -2806,12 +3482,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "ArithEq"
+      "name": "ArithEq",
+      "periodic_columns": 0,
+      "row_count": 1048576,
+      "stage_widths": [
+        43,
+        13
+      ]
     },
     {
       "air_index": 27,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -2972,12 +3657,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "ArithEq384"
+      "name": "ArithEq384",
+      "periodic_columns": 0,
+      "row_count": 1048576,
+      "stage_widths": [
+        33,
+        13
+      ]
     },
     {
       "air_index": 28,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -7850,12 +8544,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Keccakf"
+      "name": "Keccakf",
+      "periodic_columns": 0,
+      "row_count": 131072,
+      "stage_widths": [
+        2137,
+        293
+      ]
     },
     {
       "air_index": 29,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -8088,12 +8791,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Sha256f"
+      "name": "Sha256f",
+      "periodic_columns": 0,
+      "row_count": 262144,
+      "stage_widths": [
+        102,
+        3
+      ]
     },
     {
       "air_index": 30,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -8242,12 +8954,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 2,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Poseidon2"
+      "name": "Poseidon2",
+      "periodic_columns": 0,
+      "row_count": 131072,
+      "stage_widths": [
+        35,
+        5
+      ]
     },
     {
       "air_index": 31,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -8642,12 +9363,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 3,
       "group": "Zisk",
       "group_index": 0,
-      "name": "Blake2br"
+      "name": "Blake2br",
+      "periodic_columns": 0,
+      "row_count": 262144,
+      "stage_widths": [
+        159,
+        12
+      ]
     },
     {
       "air_index": 32,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -8690,12 +9420,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 59,
       "group": "Zisk",
       "group_index": 0,
-      "name": "SpecifiedRanges"
+      "name": "SpecifiedRanges",
+      "periodic_columns": 0,
+      "row_count": 1048576,
+      "stage_widths": [
+        29,
+        15
+      ]
     },
     {
       "air_index": 33,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -8718,12 +9457,21 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 52,
       "group": "Zisk",
       "group_index": 0,
-      "name": "VirtualTable0"
+      "name": "VirtualTable0",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        8,
+        5
+      ]
     },
     {
       "air_index": 34,
+      "air_value_stages": [],
       "classification": {
         "citation": "docs/extraction/air-inventory.md",
         "extraction": "unsupported",
@@ -8746,9 +9494,17 @@
         "every_row",
         "every_row"
       ],
+      "custom_commits": [],
+      "fixed_columns": 73,
       "group": "Zisk",
       "group_index": 0,
-      "name": "VirtualTable1"
+      "name": "VirtualTable1",
+      "periodic_columns": 0,
+      "row_count": 2097152,
+      "stage_widths": [
+        8,
+        5
+      ]
     }
   ],
   "generated_outputs": [
@@ -70810,8 +71566,17 @@
   "pilout": {
     "air_group_count": 1,
     "base_field_prime": 18446744069414584321,
+    "challenge_counts": [
+      0,
+      2
+    ],
     "global_constraint_count": 1,
-    "name": "zisk"
+    "name": "zisk",
+    "proof_value_counts": [
+      8
+    ],
+    "public_table_count": 0,
+    "public_value_count": 68
   },
   "schema_version": 1,
   "validated_links": [
@@ -71840,6 +72605,15 @@
     },
     {
       "air": "Arith",
+      "constraint_index": 61,
+      "hint_indices": [
+        1116
+      ],
+      "name": "link_Arith_61",
+      "shape": "directZeroTail"
+    },
+    {
+      "air": "Arith",
       "constraint_index": 63,
       "hint_indices": [
         1118
@@ -71902,6 +72676,16 @@
       ],
       "name": "link_BinaryAdd_4",
       "shape": "cluster2"
+    },
+    {
+      "air": "BinaryAdd",
+      "constraint_index": 5,
+      "hint_indices": [
+        1197,
+        1198
+      ],
+      "name": "link_BinaryAdd_5",
+      "shape": "cluster2ZeroTail"
     },
     {
       "air": "BinaryAdd",

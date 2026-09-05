@@ -17,10 +17,14 @@ def classify(paths: list[str], event: str) -> dict:
         "flake.nix", "flake.lock", "lakefile.toml", "lake-manifest.json", "lean-toolchain",
         "zisk", ".gitmodules", ".gitignore", ".rgignore", "AGENTS.md",
     }
-    release_roots = ("tools/pil-extract/", "tools/virtual-tables/", "tools/adversarial-mutations/")
+    release_roots = ("tools/pil-extract/", "tools/virtual-tables/", "tools/adversarial-mutations/",
+                     "tools/extraction-coverage/", "tools/pilout-roundtrip/", "tools/mirror-roundtrip/")
     release_files = {
         "flake.lock", "flake.nix", "zisk", ".gitmodules", "nix/zisk-pilout.nix",
         "nix/pil2-compiler.nix", "nix/extracted-lean.nix", "nix/pil-extract.nix",
+        "nix/mutation-compiler.nix", "nix/populate.nix", "nix/virtual-table-check.nix",
+        "lean-toolchain", "lake-manifest.json", "lakefile.toml",
+        "tools/check-generated-modules.sh",
     }
     matched = sorted({path for path in paths if path.endswith(".lean")
                       or path in proof_files or path.startswith(proof_roots)})

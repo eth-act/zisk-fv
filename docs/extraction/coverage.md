@@ -9,7 +9,7 @@ must not disappear by shrinking the set a gate chooses to inspect.
 Run the gate after `nix run .#populate`:
 
 ```bash
-python3 tools/extraction-coverage/check.py
+python3 tools/extraction-coverage/check.py --report build/extraction-coverage-report.json
 python3 tools/extraction-coverage/selftest.py
 ```
 
@@ -59,3 +59,6 @@ supported lookup templates, and adversarial mutations test whether meaningful
 source changes reach those layers. A green coverage inventory means every
 structural item has an explicit disposition, not that every AIR is modeled or
 proved.
+
+The CI artifact includes a compact report of added, removed, and changed AIRs,
+routes, links, and outputs. The full manifest remains the reviewed baseline.

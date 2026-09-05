@@ -271,7 +271,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: extraction-mutation-evidence
-          path: mutation-results/
+          path: |
+            mutation-results/
+            build/extraction-coverage-report.json
           if-no-files-found: warn
           retention-days: 30
 
