@@ -24,4 +24,6 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+lake build trust-gate || exit 1
+lake env lean tools/trust-gate-tests/RawAxiomUnion.lean || exit 1
 exec lake exe trust-gate check-extraction-closure
