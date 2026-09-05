@@ -603,7 +603,7 @@ fn find_links(
             continue;
         }
 
-        if zero_tail_template_scope(air_name) {
+        if zero_tail_template_scope(air_name, *constraint_index) {
             let pair_matches = zero_tail_pair_matches(
                 constraint,
                 hints,
@@ -722,11 +722,14 @@ fn find_links(
     Ok((links, unlinked))
 }
 
-/// The approved zero-tail route is deliberately bounded to the MemAlign
-/// family. Other unlinked shapes, including Arith c61/c62, retain their
-/// recorded disposition until separately approved.
-fn zero_tail_template_scope(air_name: &str) -> bool {
+/// Zero-tail compression is accepted only at audited macro applications. The
+/// MemAlign family uses it throughout; BinaryAdd c5 and Arith c61 are the two
+/// operation-bus templates whose pilout constraints omit the source macro's
+/// trailing literal-zero slots.
+fn zero_tail_template_scope(air_name: &str, constraint_index: usize) -> bool {
     matches!(air_name, "MemAlign" | "MemAlignByte" | "MemAlignReadByte")
+        || (air_name == "BinaryAdd" && constraint_index == 5)
+        || (air_name == "Arith" && constraint_index == 61)
 }
 
 /// The Binary c10 final-byte lookup shares its accumulator constraint with
@@ -1886,6 +1889,14 @@ mod tests {
         assert!(prelude.contains("| .direct, [hint], [] =>"));
         assert!(prelude.contains("| .derivedMixed2, [], [left, right] =>"));
         assert!(prelude.contains("| _, _, _ => none"));
+    }
+
+    #[test]
+    fn operation_zero_tail_scope_is_constraint_specific() {
+        assert!(zero_tail_template_scope("BinaryAdd", 5));
+        assert!(zero_tail_template_scope("Arith", 61));
+        assert!(!zero_tail_template_scope("BinaryAdd", 4));
+        assert!(!zero_tail_template_scope("Arith", 62));
     }
 
     fn hint(proves: bool, slots: Vec<Ast>) -> HintData {
