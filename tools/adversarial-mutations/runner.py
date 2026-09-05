@@ -461,9 +461,12 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
             copy_tree_cow(entry, target)
         else:
             shutil.copy2(entry, target, follow_symlinks=False)
-    shutil.copy2(pilout, destination / "build" / "zisk.pilout")
-    shutil.copytree(lean_artifact_dir(extraction),
-                    destination / "build" / "extraction" / "Extraction")
+    target_pilout = destination / "build" / "zisk.pilout"
+    shutil.copy2(pilout, target_pilout)
+    target_pilout.chmod(target_pilout.stat().st_mode | stat.S_IWUSR)
+    target_extraction = destination / "build" / "extraction" / "Extraction"
+    shutil.copytree(lean_artifact_dir(extraction), target_extraction)
+    make_tree_writable(target_extraction)
     container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         sidecar = container / name
@@ -494,9 +497,16 @@ def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
     build = proof_tree / "build"
     target_extraction = build / "extraction"
     if target_extraction.exists():
+        make_tree_writable(target_extraction)
         shutil.rmtree(target_extraction)
-    shutil.copy2(pilout, build / "zisk.pilout")
-    shutil.copytree(lean_artifact_dir(extraction), target_extraction / "Extraction")
+    target_pilout = build / "zisk.pilout"
+    if target_pilout.exists():
+        target_pilout.unlink()
+    shutil.copy2(pilout, target_pilout)
+    target_pilout.chmod(target_pilout.stat().st_mode | stat.S_IWUSR)
+    copied_extraction = target_extraction / "Extraction"
+    shutil.copytree(lean_artifact_dir(extraction), copied_extraction)
+    make_tree_writable(copied_extraction)
     container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         sidecar = container / name

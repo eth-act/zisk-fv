@@ -172,10 +172,37 @@ def test_private_dependency_copy() -> None:
         check(original.read_text() == "baseline", "dependency cache write escaped private copy")
 
 
+def test_readonly_artifact_restore() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        repo = root / "repo"
+        proof = root / "proof"
+        extraction = root / "nix-extraction"
+        (repo / "build/extraction").mkdir(parents=True)
+        (repo / "build/extraction/lakefile.toml").write_text("package Extraction\n")
+        (proof / "build/extraction/Extraction/nested").mkdir(parents=True)
+        (proof / "build/extraction/Extraction/nested/old.lean").write_text("old")
+        (proof / "build/zisk.pilout").write_text("old")
+        (extraction / "Extraction/nested").mkdir(parents=True)
+        (extraction / "Extraction/nested/New.lean").write_text("new")
+        pilout = root / "new.pilout"
+        pilout.write_text("new")
+        for tree in (proof / "build/extraction", extraction, extraction / "Extraction",
+                     extraction / "Extraction/nested"):
+            tree.chmod(0o555)
+        (proof / "build/zisk.pilout").chmod(0o444)
+        (extraction / "Extraction/nested/New.lean").chmod(0o444)
+        runner.install_proof_artifacts(repo, proof, pilout, extraction)
+        check((proof / "build/extraction/Extraction/nested/New.lean").read_text() == "new",
+              "read-only extraction was not restored")
+        check((proof / "build/zisk.pilout").read_text() == "new",
+              "read-only pilout was not replaced")
+
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
              test_artifact_and_semantic_baselines, test_log_archive,
-             test_private_dependency_copy]
+             test_private_dependency_copy, test_readonly_artifact_restore]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")
