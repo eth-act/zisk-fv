@@ -855,12 +855,23 @@ def main(argv: list[str]) -> int:
                   [5, 7, 32, 38, 50] if args.profile == "boundary" else list(range(1, 53)))
         args.results_dir.mkdir(parents=True, exist_ok=True)
         results = []
+        setup_commands: list[dict[str, Any]] = []
+        setup_failure: str | None = None
         work_root = args.work_root or (args.repo.resolve().parent / ".zisk-fv-mutation-work")
         work_root.mkdir(parents=True, exist_ok=True)
         suite_state = Path(tempfile.mkdtemp(prefix="zisk-mutation-suite-", dir=work_root))
         args._frozen_repository = repository_identity(args.repo)
         try:
-            for number in rounds:
+            if args.zisk_source is None:
+                resolved_source, source_command = resolve_pinned_zisk(
+                    args.repo, args.compile_timeout,
+                    args.results_dir / "suite-resolve-zisk-source.log")
+                setup_commands.append(dataclasses.asdict(source_command))
+                if resolved_source is None:
+                    setup_failure = "could not resolve pinned ZisK source for suite"
+                else:
+                    args.zisk_source = resolved_source
+            for number in ([] if setup_failure else rounds):
                 per_round = argparse.Namespace(**vars(args))
                 per_round.command = "full"
                 per_round.round = number
@@ -879,6 +890,8 @@ def main(argv: list[str]) -> int:
         aggregate = {
             "profile": args.profile,
             "rounds": rounds,
+            "setup_commands": setup_commands,
+            "setup_failure": setup_failure,
             "counts": {name: sum(r.get("outcome") == name for r in results)
                        for name in ("invalid", "equivalent", "compiler", "extractor",
                                     "fidelity", "proof", "infrastructure")},
@@ -897,7 +910,8 @@ def main(argv: list[str]) -> int:
         (args.results_dir / "summary.json").write_text(
             json.dumps(aggregate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(json.dumps(aggregate, indent=2, sort_keys=True))
-        return 0 if (aggregate["complete"] and not aggregate["infrastructure_rounds"]
+        return 0 if (not setup_failure and aggregate["complete"]
+                     and not aggregate["infrastructure_rounds"]
                      and not aggregate["unexpected_rounds"]) else 1
     try:
         result = boundary(args) if args.command == "boundary" else full(args)
