@@ -110,6 +110,17 @@
           zisk-pilout = self.packages.${system}.zisk-pilout;
         };
 
+        packages.zisk-fixed-data = self.packages.${system}.zisk-pilout.fixed;
+        packages.mutation-compiler = pkgs.callPackage ./nix/mutation-compiler.nix {
+          inherit pil2-proofman-src;
+          pil2-compiler = self.packages.${system}.pil2-compiler;
+          fixed-data = self.packages.${system}.zisk-fixed-data;
+        };
+        apps.compile-mutation = {
+          type = "app";
+          program = "${self.packages.${system}.mutation-compiler}/bin/compile-mutation";
+        };
+
         apps.populate = {
           type = "app";
           program = "${pkgs.callPackage ./nix/populate.nix {
