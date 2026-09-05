@@ -243,4 +243,41 @@ theorem materializedRow_divByZero_eq_zero_of_mulMode
   rw [hDiv] at hScope
   simpa using hScope.1
 
+set_option maxRecDepth 10000 in
+/-- Every actual polynomial assertion in the live completed Arith circuit
+follows from generated constraints 0–48 on the raw source row. Lookups are
+intentionally absent from this boundary. -/
+theorem sharedMainComplete_assertions_of_generatedPolynomialAssertions
+    (source : C FGL FGL) (sourceRow : Nat)
+    (v : Var ArithMulRow FGL) (offset : Nat) (env : Environment FGL)
+    (h : GeneratedPolynomialAssertions source sourceRow)
+    (hv : eval env v = materializedRow source sourceRow) :
+    ∀ e ∈ ((sharedMainComplete v).operations offset).shallowConstraints,
+      env e = 0 := by
+  have hs := polynomialSpec_materializedRow source sourceRow h
+  rw [← hv] at hs
+  simp only [PolynomialSpec, Spec, C46Spec, SharedDivBlockSpec, DivModeSpec,
+    DivBoundarySpec, DivInverseSumSpec, DivScopeSpec, DivWModeSpec,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field] at hs
+  rcases hs with ⟨hSpec, hC46, hMode, hBoundary, hInverse, hScope, hW⟩
+  rcases hSpec with ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩
+  rcases hMode with
+    ⟨h0, h1, h2, h3, h4, h5, h39, h40, h41, h42, h43, h44, h45⟩
+  rcases hBoundary with
+    ⟨h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+      h23, h24⟩
+  rcases hScope with ⟨h26, h27, h28, h29, h30⟩
+  rcases hW with ⟨h47, h48⟩
+  simp only [sharedMainComplete, mainWithArithTable, main, circuit_norm,
+    Operations.shallowConstraints, forall_eq_or_imp]
+  simp only [← sub_eq_add_neg]
+  exact ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38,
+    hC46, h0, h1, h2, h3, h4, h5,
+    h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+    h23, h24, hInverse, h26, h27, h28, h29, h30,
+    h39, h40, h41, h42, h43, h44, h45, hC46, h47, h48⟩
+
 end ZiskFv.AirsClean.ArithMul
