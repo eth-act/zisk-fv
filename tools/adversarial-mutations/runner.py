@@ -358,6 +358,13 @@ def nix_direct_extraction(repo: Path, source: Path, pilout: Path, timeout: int,
     return (candidates[-1] if candidates else None), result
 
 
+def compile_mutation_source(repo: Path, source: Path, output: Path, timeout: int,
+                            log: Path) -> CommandResult:
+    return run_command(
+        nix("run", "--no-write-lock-file", ".#compile-mutation", "--",
+            str(source.resolve()), str(output.resolve())), repo, timeout, log)
+
+
 def locked_zisk_revision(repo: Path) -> str:
     lock = json.loads((repo / "flake.lock").read_text(encoding="utf-8"))
     node_name = lock["nodes"]["root"]["inputs"]["zisk-src"]
@@ -458,6 +465,25 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                               complete=False)
                 return result
 
+        if item.air not in DIRECT_SOURCE_AIRS:
+            compiler_baseline = getattr(args, "_compiler_baseline", None)
+            if compiler_baseline is None:
+                baseline_compiled = work / "baseline-compiler.pilout"
+                baseline_compile_cmd = compile_mutation_source(
+                    args.repo, source, baseline_compiled, args.compile_timeout,
+                    logs / "baseline-compiler-control.log")
+                result["commands"].append(dataclasses.asdict(baseline_compile_cmd))
+                if (baseline_compile_cmd.exit_code != 0 or baseline_compile_cmd.timed_out
+                        or not baseline_compiled.is_file()
+                        or not semdiff.compare(Path(base_pilout), baseline_compiled)["equal"]):
+                    result.update(outcome="infrastructure",
+                                  reason="mutation compiler baseline control did not reproduce the pinned circuit",
+                                  complete=False)
+                    return result
+                compiler_baseline = (baseline_compiled, baseline_compile_cmd)
+                args._compiler_baseline = compiler_baseline
+            result["mutation_compiler_baseline"] = identity(compiler_baseline[0])
+
         if item.air in DIRECT_SOURCE_AIRS:
             mutant_pilout = Path(base_pilout)
             compile_result = CommandResult(
@@ -466,9 +492,12 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             Path(compile_result.log).write_text(
                 f"{item.air} is extracted directly from source; baseline pilout reused.\n")
         else:
-            mutant_pilout, compile_result = nix_output_path(
-                args.repo, "zisk-pilout", source_copy, args.compile_timeout,
-                logs / "mutant-pilout.log", locked_rev)
+            mutant_pilout = work / "mutant.pilout"
+            compile_result = compile_mutation_source(
+                args.repo, source_copy, mutant_pilout, args.compile_timeout,
+                logs / "mutant-pilout.log")
+            if not mutant_pilout.is_file():
+                mutant_pilout = None
         result["commands"].append(dataclasses.asdict(compile_result))
         if mutant_pilout is None:
             log_text = Path(compile_result.log).read_text(encoding="utf-8", errors="replace")
@@ -482,14 +511,9 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                       "source build failed without the expected compiler diagnostic")
             result.update(outcome=outcome, reason=reason, complete=expected_rejection)
             return result
-        if item.air in DIRECT_SOURCE_AIRS:
-            mutant_extract, extract_result = nix_direct_extraction(
-                args.repo, source_copy, Path(base_pilout), args.compile_timeout,
-                logs / "mutant-extraction.log")
-        else:
-            mutant_extract, extract_result = nix_output_path(
-                args.repo, "extracted-lean", source_copy, args.compile_timeout,
-                logs / "mutant-extraction.log", locked_rev)
+        mutant_extract, extract_result = nix_direct_extraction(
+            args.repo, source_copy, Path(mutant_pilout), args.compile_timeout,
+            logs / "mutant-extraction.log")
         result["commands"].append(dataclasses.asdict(extract_result))
         if mutant_extract is None:
             result.update(outcome="extractor" if extract_result.exit_code == 1 else "infrastructure",
@@ -652,6 +676,8 @@ def main(argv: list[str]) -> int:
             value = full(per_round)
             if hasattr(per_round, "_baseline_proof"):
                 args._baseline_proof = per_round._baseline_proof
+            if hasattr(per_round, "_compiler_baseline"):
+                args._compiler_baseline = per_round._compiler_baseline
             (args.results_dir / f"round-{number:02d}.json").write_text(
                 json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             results.append(value)

@@ -37,11 +37,19 @@ python3 tools/adversarial-mutations/runner.py apply \
 ```
 
 `full` is the evidence-producing mode. It copies the pinned source, applies one
-fixture, builds `.#zisk-pilout` and `.#extracted-lean` through the repository's
-flake with a content-addressed source override, runs the independent round-trip
+fixture, builds the pilout and extracted Lean through the repository's pinned
+production tools, runs the independent round-trip
 gate, and builds both an isolated unmutated proof tree and an isolated mutant
 proof tree. The baseline must pass before a mutant failure can be called a proof
 detection. Nix input revisions remain those in `flake.lock`.
+
+For PIL mutations the runner uses `.#compile-mutation`, which installs the three
+actual fixed-column payloads produced by the pinned ZisK generators and invokes
+the pinned compiler directly on the private source copy. Its unmutated output
+must be canonically equal to `.#zisk-pilout` before any mutant is classified.
+This avoids rebuilding the Rust/C++ fixed generators 47 times without replacing
+their data with stubs. ArithTable and MemAlignRom mutations reuse the baseline
+pilout because those production extraction paths read ZisK source directly.
 
 ```bash
 python3 tools/adversarial-mutations/runner.py full --round 32 \
