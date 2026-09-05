@@ -47,6 +47,13 @@ For PIL mutations the runner uses `.#compile-mutation`, which installs the three
 actual fixed-column payloads produced by the pinned ZisK generators and invokes
 the pinned compiler directly on the private source copy. Its unmutated output
 must be canonically equal to `.#zisk-pilout` before any mutant is classified.
+The baseline compiler also runs in a disposable source copy. Its actual
+`Main.fixed` output must match both modeled Main fixed columns over all physical
+rows, and the fixed-data checker must reject an interior corruption and a
+truncated file. The report records that check and the fixed payload's identity.
+`--baseline-compiler-pilout` supplies an additional cached comparison; it does
+not skip fresh compilation, since pilout equality alone cannot establish the
+contents of separately emitted fixed data.
 This avoids rebuilding the Rust/C++ fixed generators 47 times without replacing
 their data with stubs. ArithTable and MemAlignRom mutations reuse the baseline
 pilout because those production extraction paths read ZisK source directly.

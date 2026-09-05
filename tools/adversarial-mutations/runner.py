@@ -614,20 +614,18 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
         if item.air not in DIRECT_SOURCE_AIRS:
             compiler_baseline = getattr(args, "_compiler_baseline", None)
             if compiler_baseline is None:
-                if args.baseline_compiler_pilout is not None:
-                    baseline_compiled = args.baseline_compiler_pilout.resolve()
-                    baseline_compile_cmd = CommandResult(
-                        ["precompiled-mutation-baseline", str(baseline_compiled)],
-                        str(args.repo), 0, 0.0, False,
-                        str(logs / "baseline-compiler-control.log"))
-                    Path(baseline_compile_cmd.log).write_text(
-                        "Externally supplied mutation-compiler baseline; canonical equality checked.\n")
-                else:
-                    state = getattr(args, "_suite_state", work)
-                    baseline_compiled = state / "baseline-compiler.pilout"
-                    baseline_compile_cmd = compile_mutation_source(
-                        args.repo, source, baseline_compiled, args.compile_timeout,
-                        logs / "baseline-compiler-control.log")
+                # The compiler writes external payloads and *.fixed beside its
+                # source. Never invoke it on the immutable flake source itself.
+                # Recompile even when a cached pilout was supplied: fixed-to-file
+                # pilout equality does not establish fixed-column contents.
+                state = getattr(args, "_suite_state", work)
+                baseline_compiled = state / "baseline-compiler.pilout"
+                baseline_source = work / "baseline-source"
+                shutil.copytree(source, baseline_source, symlinks=False)
+                make_tree_writable(baseline_source)
+                baseline_compile_cmd = compile_mutation_source(
+                    args.repo, baseline_source, baseline_compiled, args.compile_timeout,
+                    logs / "baseline-compiler-control.log")
                 result["commands"].append(dataclasses.asdict(baseline_compile_cmd))
                 if (baseline_compile_cmd.exit_code != 0 or baseline_compile_cmd.timed_out
                         or not baseline_compiled.is_file()
@@ -636,9 +634,25 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                                   reason="mutation compiler baseline control did not reproduce the pinned circuit",
                                   complete=False)
                     return result
+                if (args.baseline_compiler_pilout is not None
+                        and not semdiff.compare(args.baseline_compiler_pilout,
+                                                baseline_compiled)["equal"]):
+                    raise CorpusError("cached compiler baseline differs from fresh pinned source")
+                baseline_fixed = baseline_source / "Main.fixed"
+                fixed_control = run_command(
+                    [sys.executable, str(args.repo / "tools/extraction-coverage/main_fixed.py"),
+                     "--pilout", str(baseline_compiled), "--fixed", str(baseline_fixed),
+                     "--selftest"], args.repo, args.check_timeout,
+                    logs / "baseline-main-fixed.log")
+                result["commands"].append(dataclasses.asdict(fixed_control))
+                if fixed_control.timed_out or fixed_control.exit_code != 0:
+                    raise CorpusError("compiled Main fixed-column control was not green")
+                args._main_fixed_baseline = identity(baseline_fixed)
+                shutil.rmtree(baseline_source)
                 compiler_baseline = (baseline_compiled, baseline_compile_cmd)
                 args._compiler_baseline = compiler_baseline
             result["mutation_compiler_baseline"] = identity(compiler_baseline[0])
+            result["main_fixed_baseline"] = args._main_fixed_baseline
 
         if item.air in DIRECT_SOURCE_AIRS:
             mutant_pilout = Path(base_pilout)
@@ -814,7 +828,7 @@ def parser() -> argparse.ArgumentParser:
         f.add_argument("--baseline-pilout", type=Path)
         f.add_argument("--baseline-extraction", type=Path)
         f.add_argument("--baseline-compiler-pilout", type=Path,
-                       help="cached unmutated compile-mutation output; canonical equality is required")
+                       help="additional cached baseline to compare against fresh pinned compilation")
         f.add_argument("--work-root", type=Path)
         f.add_argument("--compile-timeout", type=int, default=3600)
         f.add_argument("--check-timeout", type=int, default=300)

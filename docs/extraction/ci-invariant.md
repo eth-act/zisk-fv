@@ -16,7 +16,12 @@ checks the production MemAlign ROM builder, checks structural coverage, and runs
 both trust gates. The existing Aeneas production check runs in its parallel CI
 job and is required by the aggregate status.
 
-The same proof job then runs the mutation suite:
+The same proof job then runs the mutation suite.
+
+The suite's fresh compiler baseline also checks the actual Main fixed data
+against the model's first-row marker and row counter across the full physical
+domain. Polynomial pilout comparison alone does not cover separately emitted
+fixed-column contents.
 
 - Ordinary proof changes run the boundary profile covering the repaired table,
   byte-lookup, opcode, arithmetic-result, and virtual-table interfaces.
