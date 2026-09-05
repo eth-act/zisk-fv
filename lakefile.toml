@@ -1,7 +1,7 @@
 name = "zisk-fv"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["ZiskFv", "Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge"]
+defaultTargets = ["ZiskFv", "Extraction"]
 moreLeanArgs = ["--tstack=400000"]
 
 [leanOptions]
@@ -23,20 +23,19 @@ path = "build/sail-lean"
 # Auto-generated PIL2 extraction (per-AIR Lean files emitted by
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
 # `nix run .#populate` — never committed. The narrow, source-linked
-# `LookupWiring` and `MemGeneratedConstraintBridge` modules are compiled in
-# the main Lake graph; generated AIR files with `*MirrorWeld.lean` consumers join
-# them because those modules definitionally pin the handwritten mirrors. The
-# remaining generated AIR files stay direct-tested until a Clean-Components-aware
-# emitter supports them.
+# Every emitted Lean module is compiled in the main Lake graph. This keeps a new
+# or accidentally omitted generated artifact from silently falling outside the
+# formal build.
 [[lean_lib]]
 name = "Extraction"
 srcDir = "build/extraction"
-roots = ["Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge", "Extraction.MemAlignRom"]
+roots = ["Extraction"]
 globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifact",
   "Extraction.LookupWiring", "Extraction.MemGeneratedConstraintBridge", "Extraction.MemAlignRom",
-  "Extraction.Arith", "Extraction.Main", "Extraction.MemAlign",
+  "Extraction.Arith", "Extraction.ArithTable", "Extraction.Main", "Extraction.MemAlign",
   "Extraction.MemAlignByte", "Extraction.MemAlignReadByte", "Extraction.MemAlignWriteByte",
-  "Extraction.Binary", "Extraction.BinaryAdd"]
+  "Extraction.Binary", "Extraction.BinaryAdd", "Extraction.BinaryExtension",
+  "Extraction.Buses", "Extraction.MemoryBuses"]
 
 # Clean DSL (Verified-zkEVM/clean) source tree. Populated by
 # `nix run .#populate` from the pinned `clean-src` flake input.
