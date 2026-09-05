@@ -97,6 +97,11 @@ def test_classification() -> None:
         failed.log = str(log)
         check(runner.classify(valid, different, ["Main.lean"], command(), command(), failed)[0]
               == "proof", "proof classification")
+        log.write_text(
+            "error: ZiskFv/AirsClean/MainMirrorWeld.lean:1: "
+            "(deterministic) timeout at whnf, maximum number of heartbeats reached\n")
+        check(runner.classify(valid, different, ["Main.lean"], command(), command(), failed)[0]
+              == "infrastructure", "Lean heartbeat timeout counted as a proof kill")
     check(runner.classify(valid, different, ["Main.lean"], command(), command(), command())[0]
           == "fidelity", "fidelity classification")
     check(runner.classify(valid, different, ["Main.lean"], command(), command(),

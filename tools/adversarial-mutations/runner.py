@@ -251,6 +251,10 @@ def classify(item: Round, semantic: dict[str, Any] | None, changed: list[str],
         return "fidelity", "mutated artifacts passed the proof build"
     if mutant_proof.exit_code == 1:
         diagnostic = first_diagnostic(Path(mutant_proof.log))
+        if diagnostic and ("timeout" in diagnostic.lower()
+                           or "maximum number of heartbeats" in diagnostic.lower()):
+            return "infrastructure", (
+                "mutant proof hit a Lean resource timeout; timeouts are not kills")
         patterns = diagnostic_patterns(item)
         if not diagnostic or not patterns or not any(p in diagnostic for p in patterns):
             return "infrastructure", (
