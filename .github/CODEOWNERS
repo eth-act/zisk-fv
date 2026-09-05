@@ -20,6 +20,18 @@
 /.github/workflows/             @codygunton
 /.github/CODEOWNERS             @codygunton
 
+# Extraction fidelity and required-check classification are proof boundaries.
+/tools/pil-extract/             @codygunton
+/tools/pilout-roundtrip/         @codygunton
+/tools/mirror-roundtrip/         @codygunton
+/tools/virtual-tables/           @codygunton
+/tools/adversarial-mutations/    @codygunton
+/scripts/ci_proof_inputs.py      @codygunton
+/scripts/test_ci_proof_inputs.py @codygunton
+/nix/                           @codygunton
+/flake.nix                      @codygunton
+/flake.lock                     @codygunton
+
 # Files that hold the current source trust declarations themselves.
 # Keep this in sync with `trust/allowed-axiom-files.txt`: each axiom,
 # opaque, constant, or unsafe/partial declaration in these files is

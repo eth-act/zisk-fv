@@ -22,7 +22,7 @@ path = "build/sail-lean"
 
 # Auto-generated PIL2 extraction (per-AIR Lean files emitted by
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
-# `nix run .#populate` — never committed. The narrow, source-linked
+# `nix run .#populate` — never committed.
 # Every emitted Lean module is compiled in the main Lake graph. This keeps a new
 # or accidentally omitted generated artifact from silently falling outside the
 # formal build.
