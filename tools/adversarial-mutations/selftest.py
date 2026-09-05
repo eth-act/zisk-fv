@@ -49,6 +49,8 @@ def test_isolation_and_precondition() -> None:
         copy = Path(tmp) / "copy"
         original = synthetic_source(base, item).read_bytes()
         shutil.copytree(base, copy)
+        synthetic_source_path(copy, item).chmod(0o444)
+        runner.make_tree_writable(copy)
         changed = runner.apply_mutation(copy, item)
         check(synthetic_source_path(base, item).read_bytes() == original,
               "source tree was mutated in place")
@@ -119,9 +121,29 @@ def test_artifact_and_semantic_baselines() -> None:
         print("SKIP pilout semantic baseline: build/zisk.pilout absent")
 
 
+def test_log_archive() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        logs = root / "work-logs"
+        logs.mkdir()
+        local = logs / "local.log"
+        external = root / "baseline.log"
+        local.write_text("local")
+        external.write_text("baseline")
+        result = {"commands": [{"log": str(local)}, {"log": str(external)}],
+                  "workspace": str(root)}
+        archive = root / "archive"
+        runner.archive_logs(result, logs, archive)
+        check(result["commands"] == [{"log": "logs/local.log"},
+                                     {"log": "logs/baseline.log"}],
+              "archived log paths are not portable")
+        check((archive / "logs/baseline.log").read_text() == "baseline",
+              "external baseline log was not archived")
+
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
-             test_artifact_and_semantic_baselines]
+             test_artifact_and_semantic_baselines, test_log_archive]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")

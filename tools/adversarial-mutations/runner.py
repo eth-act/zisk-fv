@@ -129,6 +129,20 @@ def apply_mutation(source_root: Path, item: Round) -> Path:
     return target
 
 
+def make_tree_writable(root: Path) -> None:
+    for directory, dirs, files in os.walk(root):
+        path = Path(directory)
+        path.chmod(path.stat().st_mode | stat.S_IWUSR | stat.S_IXUSR)
+        for name in dirs:
+            child = path / name
+            if not child.is_symlink():
+                child.chmod(child.stat().st_mode | stat.S_IWUSR | stat.S_IXUSR)
+        for name in files:
+            child = path / name
+            if not child.is_symlink():
+                child.chmod(child.stat().st_mode | stat.S_IWUSR)
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as stream:
@@ -371,6 +385,21 @@ def locked_zisk_revision(repo: Path) -> str:
     return lock["nodes"][node_name]["locked"]["rev"]
 
 
+def repository_identity(repo: Path) -> dict[str, Any]:
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
+                          check=True, text=True, capture_output=True).stdout.strip()
+    status = subprocess.run(["git", "status", "--porcelain"], cwd=repo,
+                            check=True, text=True, capture_output=True).stdout.splitlines()
+    dirty = [line[3:] for line in status if len(line) > 3]
+    proof_prefixes = ("ZiskFv/", "tools/pil-extract/", "lakefile.toml", "lean-toolchain",
+                      "flake.nix", "flake.lock", "nix/extracted-lean.nix",
+                      "nix/zisk-pilout.nix", "nix/mutation-compiler.nix")
+    relevant = [path for path in dirty if path.startswith(proof_prefixes)]
+    if relevant:
+        raise CorpusError(f"proof-relevant repository files are dirty: {relevant}")
+    return {"head": head, "dirty_paths": dirty}
+
+
 def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
                     extraction: Path) -> None:
     shutil.copytree(repo, destination, symlinks=True,
@@ -400,6 +429,46 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
         shutil.copy2(src_root, destination / "build" / "extraction" / "Extraction.lean")
 
 
+def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
+                            extraction: Path) -> None:
+    """Replace all generated inputs in the suite-local proof workspace."""
+    build = proof_tree / "build"
+    target_extraction = build / "extraction"
+    if target_extraction.exists():
+        shutil.rmtree(target_extraction)
+    shutil.copy2(pilout, build / "zisk.pilout")
+    shutil.copytree(lean_artifact_dir(extraction), target_extraction / "Extraction")
+    container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
+        sidecar = container / name
+        if sidecar.is_file():
+            shutil.copy2(sidecar, target_extraction / name)
+    original = repo / "build" / "extraction"
+    for name in ("lakefile.toml", "Extraction.lean"):
+        scaffold = original / name
+        if scaffold.is_file():
+            shutil.copy2(scaffold, target_extraction / name)
+
+
+def archive_logs(result: dict[str, Any], logs: Path, archive: Path) -> None:
+    archive.mkdir(parents=True, exist_ok=True)
+    archived_logs = archive / "logs"
+    if archived_logs.exists():
+        raise CorpusError(f"result archive already exists: {archived_logs}")
+    shutil.copytree(logs, archived_logs)
+    for command in result.get("commands", []):
+        original = Path(command["log"])
+        if original.parent != logs and original.is_file():
+            target = archived_logs / original.name
+            if not target.exists():
+                shutil.copy2(original, target)
+        if original.is_file() or (archived_logs / original.name).is_file():
+            command["log"] = str(Path("logs") / original.name)
+    result["logs"] = "logs"
+    result["workspace"] = None
+    result["workspace_retained"] = False
+
+
 def full(args: argparse.Namespace) -> dict[str, Any]:
     item = round_by_number(args.round)
     identity_record, _ = load_corpus()
@@ -412,6 +481,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                               "expected_detection_layer": expected_detection_layer(item),
                               "workspace": str(work), "commands": []}
     try:
+        result["repository"] = repository_identity(args.repo)
         locked_rev = locked_zisk_revision(args.repo)
         if not locked_rev.startswith(identity_record["zisk_revision"]):
             raise CorpusError(
@@ -428,6 +498,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             source = args.zisk_source.resolve()
         source_copy = work / "zisk-source"
         shutil.copytree(source, source_copy, symlinks=False)
+        make_tree_writable(source_copy)
         before_identity = identity(source)
         apply_mutation(source_copy, item)
         result["source"] = {"pinned": before_identity, "copy": str(source_copy),
@@ -468,10 +539,20 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
         if item.air not in DIRECT_SOURCE_AIRS:
             compiler_baseline = getattr(args, "_compiler_baseline", None)
             if compiler_baseline is None:
-                baseline_compiled = work / "baseline-compiler.pilout"
-                baseline_compile_cmd = compile_mutation_source(
-                    args.repo, source, baseline_compiled, args.compile_timeout,
-                    logs / "baseline-compiler-control.log")
+                if args.baseline_compiler_pilout is not None:
+                    baseline_compiled = args.baseline_compiler_pilout.resolve()
+                    baseline_compile_cmd = CommandResult(
+                        ["precompiled-mutation-baseline", str(baseline_compiled)],
+                        str(args.repo), 0, 0.0, False,
+                        str(logs / "baseline-compiler-control.log"))
+                    Path(baseline_compile_cmd.log).write_text(
+                        "Externally supplied mutation-compiler baseline; canonical equality checked.\n")
+                else:
+                    state = getattr(args, "_suite_state", work)
+                    baseline_compiled = state / "baseline-compiler.pilout"
+                    baseline_compile_cmd = compile_mutation_source(
+                        args.repo, source, baseline_compiled, args.compile_timeout,
+                        logs / "baseline-compiler-control.log")
                 result["commands"].append(dataclasses.asdict(baseline_compile_cmd))
                 if (baseline_compile_cmd.exit_code != 0 or baseline_compile_cmd.timed_out
                         or not baseline_compiled.is_file()
@@ -522,11 +603,17 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
 
         semantic = semdiff.compare(Path(base_pilout), mutant_pilout)
         changed = extraction_delta(Path(base_extract), mutant_extract)
+        changed_stems = {Path(name).stem for name in changed}
+        missing_historical = sorted(set(item.expected_artifacts) - changed_stems)
         result["inputs"] = {"baseline_pilout": identity(Path(base_pilout)),
                             "mutant_pilout": identity(mutant_pilout),
                             "baseline_extraction": identity(Path(base_extract)),
                             "mutant_extraction": identity(mutant_extract)}
         result["semantic_diff"], result["artifact_delta"] = semantic, changed
+        result["historical_artifact_expectation"] = {
+            "expected": list(item.expected_artifacts),
+            "missing": missing_historical,
+        }
 
         roundtrip = run_command(
             [sys.executable, str(args.repo / "tools/pilout-roundtrip/check.py"),
@@ -546,6 +633,12 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                           reason="baseline round-trip control was not green", complete=False)
             return result
 
+        if missing_historical:
+            result.update(outcome="extractor",
+                          reason="mutant extraction lost historically observed artifacts",
+                          complete=True)
+            return result
+
         if (semantic["equal"] and not changed) or roundtrip.exit_code != 0:
             outcome, reason = classify(item, semantic, changed, roundtrip, None, None)
             result.update(outcome=outcome, reason=reason, complete=True)
@@ -555,24 +648,25 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                           reason="proof controls explicitly skipped", complete=False)
             return result
 
-        baseline_tree, mutant_tree = work / "proof-baseline", work / "proof-mutant"
-        copy_proof_tree(args.repo, mutant_tree, mutant_pilout, mutant_extract)
+        state = getattr(args, "_suite_state", work)
+        proof_tree = state / "proof-work"
+        if not proof_tree.exists():
+            copy_proof_tree(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
+            seed_cache = args.repo / ".lake"
+            if seed_cache.is_dir():
+                shutil.copytree(seed_cache, proof_tree / ".lake", symlinks=True)
         proof_argv = nix("develop", "--no-write-lock-file", "-c", "lake", "build",
                          "--log-level=warning")
-        baseline_proof = getattr(args, "_baseline_proof", None)
-        if baseline_proof is None:
-            copy_proof_tree(args.repo, baseline_tree, Path(base_pilout), Path(base_extract))
-            baseline_proof = run_command(proof_argv, baseline_tree, args.proof_timeout,
-                                         logs / "baseline-proof.log")
-            args._baseline_proof = baseline_proof
-        baseline_cache = Path(baseline_proof.cwd) / ".lake"
-        mutant_cache = mutant_tree / ".lake"
-        if baseline_proof.exit_code == 0 and baseline_cache.is_dir() and not mutant_cache.exists():
-            # Each mutant receives its own cache copy. Lake may rewrite it;
-            # sharing a writable cache between concurrent rounds would break
-            # isolation and make stale artifacts possible evidence.
-            shutil.copytree(baseline_cache, mutant_cache, symlinks=True)
-        mutant_proof = run_command(proof_argv, mutant_tree, args.proof_timeout,
+        install_proof_artifacts(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
+        baseline_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
+                                     logs / "baseline-proof.log")
+        if baseline_proof.timed_out or baseline_proof.exit_code != 0:
+            result["commands"].append(dataclasses.asdict(baseline_proof))
+            result.update(outcome="infrastructure", reason="baseline proof control was not green",
+                          complete=False)
+            return result
+        install_proof_artifacts(args.repo, proof_tree, mutant_pilout, mutant_extract)
+        mutant_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
                                    logs / "mutant-proof.log")
         result["commands"] += [dataclasses.asdict(baseline_proof),
                                dataclasses.asdict(mutant_proof)]
@@ -581,20 +675,29 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
         diagnostic = first_diagnostic(Path(mutant_proof.log)) if mutant_proof.exit_code else None
         result["proof_diagnostic"] = diagnostic
         if semantic["equal"] and item.historical_class == "SYNTACTIC":
+            false_positive = mutant_proof.exit_code == 1
             result["control"] = {
                 "semantically_equivalent": True,
-                "proof_false_positive": mutant_proof.exit_code == 1,
+                "proof_false_positive": false_positive,
             }
-            if outcome == "proof":
-                outcome = "equivalent"
+            outcome = "equivalent"
+            if false_positive:
                 reason = "equivalent circuit triggered the recorded proof-boundary false positive"
+            else:
+                reason = "equivalent circuit preserved proof success"
         result.update(outcome=outcome, reason=reason, complete=True)
         return result
     except (CorpusError, OSError, ValueError, subprocess.SubprocessError) as exc:
         result.update(outcome="infrastructure", reason=str(exc), complete=False)
         return result
     finally:
-        if args.cleanup and result.get("complete"):
+        archive = getattr(args, "_archive_dir", None)
+        if archive is not None:
+            try:
+                archive_logs(result, logs, archive)
+            except (CorpusError, OSError) as exc:
+                result.update(outcome="infrastructure", reason=str(exc), complete=False)
+        if getattr(args, "_force_cleanup", False) or (args.cleanup and result.get("complete")):
             shutil.rmtree(work, ignore_errors=True)
 
 
@@ -631,6 +734,8 @@ def parser() -> argparse.ArgumentParser:
                    help="pinned source tree; defaults to the flake input store path")
         f.add_argument("--baseline-pilout", type=Path)
         f.add_argument("--baseline-extraction", type=Path)
+        f.add_argument("--baseline-compiler-pilout", type=Path,
+                       help="cached unmutated compile-mutation output; canonical equality is required")
         f.add_argument("--work-root", type=Path)
         f.add_argument("--compile-timeout", type=int, default=3600)
         f.add_argument("--check-timeout", type=int, default=300)
@@ -644,6 +749,8 @@ def parser() -> argparse.ArgumentParser:
     suite = sub.add_parser("suite")
     full_options(suite, include_round=False)
     suite.add_argument("--profile", choices=("boundary", "full"), required=True)
+    suite.add_argument("--round", action="append", type=int, choices=range(1, 53),
+                       help="override the profile's round set; repeatable")
     suite.add_argument("--results-dir", type=Path, required=True)
     return out
 
@@ -665,22 +772,29 @@ def main(argv: list[str]) -> int:
         print(target)
         return 0
     if args.command == "suite":
-        rounds = [5, 7, 32, 38, 50] if args.profile == "boundary" else list(range(1, 53))
+        rounds = (args.round if args.round else
+                  [5, 7, 32, 38, 50] if args.profile == "boundary" else list(range(1, 53)))
         args.results_dir.mkdir(parents=True, exist_ok=True)
         results = []
-        for number in rounds:
-            per_round = argparse.Namespace(**vars(args))
-            per_round.command = "full"
-            per_round.round = number
-            per_round.output = None
-            value = full(per_round)
-            if hasattr(per_round, "_baseline_proof"):
-                args._baseline_proof = per_round._baseline_proof
-            if hasattr(per_round, "_compiler_baseline"):
-                args._compiler_baseline = per_round._compiler_baseline
-            (args.results_dir / f"round-{number:02d}.json").write_text(
-                json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-            results.append(value)
+        suite_state = Path(tempfile.mkdtemp(prefix="zisk-mutation-suite-",
+                                            dir=args.work_root))
+        try:
+            for number in rounds:
+                per_round = argparse.Namespace(**vars(args))
+                per_round.command = "full"
+                per_round.round = number
+                per_round.output = None
+                per_round._suite_state = suite_state
+                per_round._archive_dir = args.results_dir / f"round-{number:02d}"
+                per_round._force_cleanup = True
+                value = full(per_round)
+                if hasattr(per_round, "_compiler_baseline"):
+                    args._compiler_baseline = per_round._compiler_baseline
+                (per_round._archive_dir / "result.json").write_text(
+                    json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                results.append(value)
+        finally:
+            shutil.rmtree(suite_state, ignore_errors=True)
         aggregate = {
             "profile": args.profile,
             "rounds": rounds,

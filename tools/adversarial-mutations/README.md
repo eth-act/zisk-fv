@@ -91,8 +91,16 @@ python3 tools/adversarial-mutations/runner.py suite \
   --profile full --results-dir mutation-results/full
 ```
 
-The suite builds the baseline proof once, copies its Lake cache into each private
-mutant tree, and never shares a writable cache. Its summary fails on incomplete,
+For focused reproduction, repeat `--round`, for example
+`--round 7 --round 38`; profile defaults remain fixed when no override is given.
+
+The suite owns one private proof workspace and restores the pinned generated
+artifacts before every round. A green baseline build is required immediately
+before installing that round's mutant artifacts. This keeps one mutable Lake
+cache without allowing a previous mutant to serve as the baseline. Each source
+copy and transient workspace is deleted after its logs and JSON are copied under
+`results-dir/round-NN/`; uploaded reports therefore contain no inaccessible
+temporary log paths. Its summary fails on incomplete,
 infrastructure, or unexpected detection layers. The target is proof detection
 for every valid mutation except round 27's documented fidelity scope boundary.
 The three commutativity controls retain their historical expected false-positive
@@ -101,8 +109,9 @@ diagnostics until the syntactic weld behavior is deliberately normalized.
 ## Outcomes and evidence
 
 The JSON report records commands, working directories, input sizes and SHA-256
-identities, elapsed times, exit codes, log paths, canonical constraint deltas,
-generated-file deltas, and the expected historical layer.
+identities, elapsed times, exit codes, portable log paths, canonical constraint
+deltas, generated-file deltas, historical observations, and the post-hardening
+expected detection layer.
 Full-mode workspaces and their logs are retained by default. `--cleanup` removes
 the workspace after a complete run.
 
