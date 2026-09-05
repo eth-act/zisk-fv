@@ -354,39 +354,165 @@ theorem materializeAddresses_mainValue (row : MainRowWithRom FGL)
       mainValue (extractedMainRow row) id column r rotation := by
   rfl
 
-/-- The generated row-local polynomial slice. Static lookup membership and
-    trace transitions are separate obligations; this is not trace acceptance. -/
+/-- Read one committed Main stage-1 cell from an arbitrary extracted circuit. -/
+@[reducible]
+def extractedMainCell {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row column : ℕ) : FGL :=
+  Extraction.Circuit.main c (id := 1) (column := column) (row := row) (rotation := 0)
+
+/-- Construct the Clean effective-row view directly from a physical extraction row.
+
+    The 38 committed fields are the exact inverse of `mainValue`. The remaining
+    fields have distinct sources: `segment_l1` and `main_step` come from PIL's
+    fixed/public lanes, `addr0` and `addr2` are the inlined address expressions,
+    and the unused model-only `im_high_degree_2` is explicitly zero. -/
+def materializeExtractedMainRow {C : Type → Type → Sort u}
+    [Extraction.Circuit FGL FGL C] (c : C FGL FGL) (row : ℕ) : MainRowWithRom FGL :=
+  { core :=
+      { a_0 := extractedMainCell c row 0
+        a_1 := extractedMainCell c row 1
+        b_0 := extractedMainCell c row 2
+        b_1 := extractedMainCell c row 3
+        c_0 := extractedMainCell c row 4
+        c_1 := extractedMainCell c row 5
+        flag := extractedMainCell c row 6
+        pc := extractedMainCell c row 7
+        is_external_op := extractedMainCell c row 19
+        op := extractedMainCell c row 20
+        m32 := extractedMainCell c row 28
+        ind_width := extractedMainCell c row 18
+        set_pc := extractedMainCell c row 25
+        jmp_offset1 := extractedMainCell c row 26
+        jmp_offset2 := extractedMainCell c row 27
+        store_pc := extractedMainCell c row 21
+        im_high_degree_2 := 0
+        segment_l1 := Extraction.Circuit.preprocessed c
+          (column := 0) (row := row) (rotation := 0) }
+    rom :=
+      { a_offset_imm0 := extractedMainCell c row 10
+        a_imm1 := extractedMainCell c row 11
+        b_offset_imm0 := extractedMainCell c row 15
+        b_imm1 := extractedMainCell c row 16
+        store_offset := extractedMainCell c row 24
+        a_src_imm := extractedMainCell c row 8
+        a_src_mem := extractedMainCell c row 9
+        is_precompiled := extractedMainCell c row 12
+        b_src_imm := extractedMainCell c row 13
+        b_src_mem := extractedMainCell c row 14
+        store_mem := extractedMainCell c row 22
+        store_ind := extractedMainCell c row 23
+        b_src_ind := extractedMainCell c row 17
+        a_src_reg := extractedMainCell c row 35
+        b_src_reg := extractedMainCell c row 36
+        store_reg := extractedMainCell c row 37
+        addr0 := extractedMainCell c row 10
+        addr1 := extractedMainCell c row 29
+        addr2 := extractedMainCell c row 24 +
+          extractedMainCell c row 23 * extractedMainCell c row 0
+        main_step := Extraction.Circuit.exposed c (index := 1) * 4194304 +
+          Extraction.Circuit.preprocessed c (column := 1) (row := row) (rotation := 0)
+        a_reg_prev_mem_step := extractedMainCell c row 30
+        b_reg_prev_mem_step := extractedMainCell c row 31
+        store_reg_prev_mem_step := extractedMainCell c row 32
+        store_reg_prev_value_0 := extractedMainCell c row 33
+        store_reg_prev_value_1 := extractedMainCell c row 34 } }
+
+/-- Every committed stage-1 source cell survives raw-row materialization. -/
+theorem materializeExtractedMainRow_mainValue {C : Type → Type → Sort u}
+    [Extraction.Circuit FGL FGL C] (c : C FGL FGL) (row : ℕ) (column : Fin 38) :
+    mainValue (extractedMainRow (materializeExtractedMainRow c row))
+        1 column row 0 =
+      Extraction.Circuit.main c (id := 1) (column := column)
+        (row := row) (rotation := 0) := by
+  fin_cases column <;> rfl
+
+/-- The address constructor is idempotent on a raw materialized row. -/
+theorem materializeAddresses_materializeExtractedMainRow
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : ℕ) :
+    materializeAddresses (materializeExtractedMainRow c row) =
+      materializeExtractedMainRow c row := by
+  rfl
+
+/-- Raw extraction uses PIL's actual effective-step expression. It coincides
+    with the Clean single-segment fixed schema only under these explicit pins;
+    no arbitrary extracted segment is identified with that schema. -/
+theorem materializeExtractedMainRow_fixedSchema_of_segmentZero
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : ℕ)
+    (hsegment : Extraction.Circuit.exposed c (index := 1) = 0)
+    (hl1 : Extraction.Circuit.preprocessed c
+      (column := 0) (row := row) (rotation := 0) = mainFixedColumns.fixedAt 0 row)
+    (hstep : Extraction.Circuit.preprocessed c
+      (column := 1) (row := row) (rotation := 0) = mainFixedColumns.fixedAt 1 row) :
+    (materializeExtractedMainRow c row).core.segment_l1 =
+        mainFixedColumns.fixedAt 0 row ∧
+      (materializeExtractedMainRow c row).rom.main_step =
+        mainFixedColumns.fixedAt 1 row := by
+  constructor
+  · exact hl1
+  · simp [materializeExtractedMainRow, hsegment, hstep]
+
+/-- The generated row-local polynomial slice at an arbitrary extraction
+    carrier and physical row. Static lookup membership and trace transitions
+    are separate obligations; this is not trace acceptance. -/
+def GeneratedLocalConstraintsAt {C : Type → Type → Sort u}
+    [Extraction.Circuit FGL FGL C] (c : C FGL FGL) (row : ℕ) : Prop :=
+  Main.extraction.constraint_22_every_row c row ∧
+  Main.extraction.constraint_28_every_row c row ∧
+  Main.extraction.constraint_7_every_row c row ∧
+  Main.extraction.constraint_13_every_row c row ∧
+  Main.extraction.constraint_8_every_row c row ∧
+  Main.extraction.constraint_14_every_row c row ∧
+  Main.extraction.constraint_15_every_row c row ∧
+  Main.extraction.constraint_16_every_row c row ∧
+  Main.extraction.constraint_17_every_row c row ∧
+  Main.extraction.constraint_33_every_row c row ∧
+  Main.extraction.constraint_32_every_row c row ∧
+  Main.extraction.constraint_29_every_row c row ∧
+  Main.extraction.constraint_23_every_row c row ∧
+  Main.extraction.constraint_24_every_row c row ∧
+  Main.extraction.constraint_25_every_row c row ∧
+  Main.extraction.constraint_26_every_row c row ∧
+  Main.extraction.constraint_27_every_row c row ∧
+  Main.extraction.constraint_30_every_row c row ∧
+  Main.extraction.constraint_31_every_row c row ∧
+  Main.extraction.constraint_34_every_row c row ∧
+  Main.extraction.constraint_35_every_row c row ∧
+  Main.extraction.constraint_36_every_row c row ∧
+  Main.extraction.constraint_37_every_row c row ∧
+  Main.extraction.constraint_5_every_row c row ∧
+  Main.extraction.constraint_11_every_row c row ∧
+  Main.extraction.constraint_6_every_row c row ∧
+  Main.extraction.constraint_12_every_row c row ∧
+  Main.extraction.constraint_1_every_row c row ∧
+  Main.extraction.constraint_2_every_row c row
+
+/-- The modeled-row specialization retained for the predicate-level welds. -/
 def GeneratedLocalConstraints (row : MainRowWithRom FGL) : Prop :=
-  ∀ constraint ∈
-    [Main.extraction.constraint_22_every_row,
-      Main.extraction.constraint_28_every_row,
-      Main.extraction.constraint_7_every_row,
-      Main.extraction.constraint_13_every_row,
-      Main.extraction.constraint_8_every_row,
-      Main.extraction.constraint_14_every_row,
-      Main.extraction.constraint_15_every_row,
-      Main.extraction.constraint_16_every_row,
-      Main.extraction.constraint_17_every_row,
-      Main.extraction.constraint_33_every_row,
-      Main.extraction.constraint_32_every_row,
-      Main.extraction.constraint_29_every_row,
-      Main.extraction.constraint_23_every_row,
-      Main.extraction.constraint_24_every_row,
-      Main.extraction.constraint_25_every_row,
-      Main.extraction.constraint_26_every_row,
-      Main.extraction.constraint_27_every_row,
-      Main.extraction.constraint_30_every_row,
-      Main.extraction.constraint_31_every_row,
-      Main.extraction.constraint_34_every_row,
-      Main.extraction.constraint_35_every_row,
-      Main.extraction.constraint_36_every_row,
-      Main.extraction.constraint_37_every_row,
-      Main.extraction.constraint_5_every_row,
-      Main.extraction.constraint_11_every_row,
-      Main.extraction.constraint_6_every_row,
-      Main.extraction.constraint_12_every_row,
-      Main.extraction.constraint_1_every_row,
-      Main.extraction.constraint_2_every_row], constraint (extractedMainRow row) 0
+  GeneratedLocalConstraintsAt (extractedMainRow row) 0
+
+/-- Row-local generated equations transfer from the physical circuit to the
+    concretely materialized Clean row. -/
+theorem generatedLocalConstraints_materializeExtractedMainRow
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : ℕ) (h : GeneratedLocalConstraintsAt c row) :
+    GeneratedLocalConstraints (materializeExtractedMainRow c row) := by
+  simpa [GeneratedLocalConstraints, GeneratedLocalConstraintsAt,
+    materializeExtractedMainRow, extractedMainCell, extractedMainRow, mainValue] using h
+
+/-- Generated constraint 18 gives the physical predecessor/current PC
+    handshake for concretely materialized rows. At row zero, Lean's natural
+    subtraction makes the predecessor row zero, exactly as in the generated
+    expression. -/
+theorem pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : ℕ)
+    (h : Main.extraction.constraint_18_every_row c row) :
+    pcHandshakeBetween (materializeExtractedMainRow c (row - 1))
+      (materializeExtractedMainRow c row) := by
+  simpa [Main.extraction.constraint_18_every_row, pcHandshakeBetween,
+    materializeExtractedMainRow, extractedMainCell] using h
 
 /-- Generated equations imply all four modeled polynomial predicates after
     constructing the model-only addresses. This supplies the reverse direction
@@ -398,20 +524,16 @@ theorem specs_of_generatedLocalConstraints (row : MainRowWithRom FGL)
       SourceSpec (materializeAddresses row) ∧
       AddressSpec (materializeAddresses row) := by
   have hs : Spec row.core := (spec_weld row).mpr (by
-    simp only [GeneratedLocalConstraints, List.mem_cons,
-      forall_eq_or_imp] at h
+    simp only [GeneratedLocalConstraints, GeneratedLocalConstraintsAt] at h
     tauto)
   have hb : RomBoolSpec row := (romBoolSpec_weld row).mpr (by
-    simp only [GeneratedLocalConstraints, List.mem_cons,
-      forall_eq_or_imp] at h
+    simp only [GeneratedLocalConstraints, GeneratedLocalConstraintsAt] at h
     tauto)
   have hi : SourceSpec row := (sourceSpec_weld row).mpr (by
-    simp only [GeneratedLocalConstraints, List.mem_cons,
-      forall_eq_or_imp] at h
+    simp only [GeneratedLocalConstraints, GeneratedLocalConstraintsAt] at h
     tauto)
   have ha := (addressSpec_generatedSlice_weld row).mpr (by
-    simp only [GeneratedLocalConstraints, List.mem_cons,
-      forall_eq_or_imp] at h
+    simp only [GeneratedLocalConstraints, GeneratedLocalConstraintsAt] at h
     tauto)
   exact ⟨hs, hb, hi, rfl, ha.1, rfl, ha.2⟩
 
@@ -435,6 +557,22 @@ theorem assertions_of_generatedLocalConstraints
   rcases hs with ⟨hs, hb, hi, ha⟩
   simp only [← sub_eq_add_neg, sub_eq_zero] at *
   tauto
+
+/-- All live Main polynomial assertions hold on a Clean variable whose value
+    is the concrete materialization of a physical extraction row. -/
+theorem assertions_of_extractedGeneratedLocalConstraints
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : ℕ)
+    (length : ℕ) (program : Program length)
+    (v : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h : GeneratedLocalConstraintsAt c row)
+    (hv : eval env v = materializeExtractedMainRow c row) :
+    ∀ e ∈ ((mainWithRomMemAndOpBus length program v).operations offset).constraints,
+      env e = 0 := by
+  apply assertions_of_generatedLocalConstraints length program
+    (materializeExtractedMainRow c row) v offset env
+    (generatedLocalConstraints_materializeExtractedMainRow c row h)
+  simpa [materializeAddresses_materializeExtractedMainRow] using hv
 
 /-! ### From the live assertion list
 
