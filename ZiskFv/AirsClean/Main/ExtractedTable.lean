@@ -225,6 +225,19 @@ theorem extractedMainTable_rowInput (source : SingleSegmentSource FGL FGL)
     (mainRowOfCircuit source row) (mainRowOfCircuit_fixedCells source row).1
     (mainRowOfCircuit_fixedCells source row).2
 
+/-- The expression-level row decoder used by the component transition reads
+    the same constructed effective row. -/
+theorem extractedMainTable_evalRow (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (row : Fin source.height) :
+    Eval.eval
+        ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩)
+        (varFromOffset (F := FGL) MainRowWithRom 0) =
+      mainRowOfCircuit source row := by
+  simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
+    eval_varFromOffset_valueFromOffset] using
+    extractedMainTable_rowInput source length program data row
+
 /-! ## Generated physical predicates imply the constructed local assertions
 
 The conclusions below stop at the exact obligations supplied by the generated
@@ -286,6 +299,104 @@ theorem extractedMainTable_pcHandshakeAt (source : SingleSegmentSource FGL FGL)
       ⟨row.val - 1, by omega⟩,
     extractedMainTable_rowInput source length program data row]
   simpa [mainRowOfCircuit] using hpc
+
+/-- Generated b-source-C constraints 4 and 10 imply the intrinsic source-C
+    copy on the physical single-segment schema. At row zero the intrinsic
+    equation is disabled by `SEGMENT_L1 = 1`, while the generated equations
+    select exposed indices 3 and 4 (`segment_previous_c[0]` and `[1]`). At
+    every later in-domain row, including the terminal physical row,
+    `SEGMENT_L1 = 0`, so the blend reduces to the predecessor's committed `c`
+    value without constraining either exposed boundary value. The terminal
+    exports at indices 6 and 7 belong to generated constraints 20 and 21 and
+    are not part of this predecessor-copy transition. -/
+theorem sourceCCopyBetween_mainRowOfCircuit (source : SingleSegmentSource FGL FGL)
+    (row : Fin source.height)
+    (h4 : Main.extraction.constraint_4_every_row source row)
+    (h10 : Main.extraction.constraint_10_every_row source row) :
+    sourceCCopyBetween (mainRowOfCircuit source (row - 1))
+      (mainRowOfCircuit source row) := by
+  by_cases hzero : row.val = 0
+  · simp [hzero, sourceCCopyBetween, mainRowOfCircuit, materializeExtractedMainRow,
+      singleSegmentPreprocessedValue, mainFixedColumns_segment_l1_first]
+  · have hpositive : 0 < row.val := Nat.pos_of_ne_zero hzero
+    have hcapacity : row.val < mainFixedCapacity :=
+      lt_of_lt_of_le row.isLt source.height_le_capacity
+    have hsegment := mainFixedColumns_segment_l1_nonfirst row hpositive hcapacity
+    simp [Main.extraction.constraint_4_every_row,
+      Main.extraction.constraint_10_every_row, singleSegmentMainValue,
+      singleSegmentPreprocessedValue, hsegment] at h4 h10
+    simpa [sourceCCopyBetween, mainRowOfCircuit, materializeExtractedMainRow,
+      extractedMainCell, singleSegmentMainValue, singleSegmentPreprocessedValue,
+      hsegment] using And.intro h4 h10
+
+/-- The source-C copy equation holds on the decoded predecessor/current table
+    rows, with arbitrary exposed boundary values preserved in the source. -/
+theorem extractedMainTable_sourceCCopyAt (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (row : Fin source.height)
+    (h4 : Main.extraction.constraint_4_every_row source row)
+    (h10 : Main.extraction.constraint_10_every_row source row) :
+    sourceCCopyBetween
+      ((componentWithRomMemAndOpBus length program).rowInput
+        ((extractedMainTable source length program data).previousEnvironment ⟨row, by simp⟩))
+      ((componentWithRomMemAndOpBus length program).rowInput
+        ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩)) := by
+  unfold Air.Flat.Table.previousEnvironment
+  rw [extractedMainTable_rowInput source length program data
+      ⟨row.val - 1, by omega⟩,
+    extractedMainTable_rowInput source length program data row]
+  exact sourceCCopyBetween_mainRowOfCircuit source row h4 h10
+
+/-- Generated constraints 18, 4, and 10 supply the complete intrinsic Clean
+    Main transition at one constructed physical table row. Constraints 3 and 9
+    use the same exposed indices 3 and 4 for the corresponding a-source copy,
+    but the current intrinsic `transitionBetween` contains only the b-source
+    copy. They therefore have no transition conjunct to prove here; adding one
+    would strengthen the maintained model. -/
+theorem extractedMainTable_transitionBetweenAt (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (row : Fin source.height)
+    (h18 : Main.extraction.constraint_18_every_row source row)
+    (h4 : Main.extraction.constraint_4_every_row source row)
+    (h10 : Main.extraction.constraint_10_every_row source row) :
+    transitionBetween
+      ((componentWithRomMemAndOpBus length program).rowInput
+        ((extractedMainTable source length program data).previousEnvironment ⟨row, by simp⟩))
+      ((componentWithRomMemAndOpBus length program).rowInput
+        ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩)) := by
+  exact ⟨extractedMainTable_pcHandshakeAt source length program data row h18,
+    extractedMainTable_sourceCCopyAt source length program data row h4 h10⟩
+
+/-- The live component carries the maintained Main transition function. -/
+theorem componentWithRomMemAndOpBus_transition_eq
+    (length : Nat) (program : Program length) :
+    (componentWithRomMemAndOpBus length program).transition = pcHandshakeTransition := by
+  rfl
+
+/-- The physical generated predecessor equations imply the constructed
+    table's complete `TransitionConstraints`; no modeled transition or public
+    boundary equality is supplied by the caller. -/
+theorem extractedMainTable_transitionConstraints (source : SingleSegmentSource FGL FGL)
+    (length : Nat) (program : Program length) (data : ProverData FGL)
+    (h : ∀ row : Fin source.height,
+      Main.extraction.constraint_18_every_row source row ∧
+      Main.extraction.constraint_4_every_row source row ∧
+      Main.extraction.constraint_10_every_row source row) :
+    (extractedMainTable source length program data).TransitionConstraints := by
+  intro index
+  rw [show (extractedMainTable source length program data).component =
+      componentWithRomMemAndOpBus length program from rfl,
+    componentWithRomMemAndOpBus_transition_eq]
+  let row : Fin source.height := ⟨index.val, by simpa using index.isLt⟩
+  have hrow := h row
+  unfold pcHandshakeTransition Air.Flat.Table.previousEnvironment
+  rw [extractedMainTable_evalRow source length program data
+      ⟨index.val - 1, by simpa [row] using (show row.val - 1 < source.height by omega)⟩,
+    extractedMainTable_evalRow source length program data row]
+  exact ⟨by
+      simpa [row, mainRowOfCircuit] using
+        pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18 source row hrow.1,
+    sourceCCopyBetween_mainRowOfCircuit source row hrow.2.1 hrow.2.2⟩
 
 /-- The remaining per-row `ConstraintsHold` gap is exactly concrete lookup
     containment; interaction balance is a separate ensemble-level obligation. -/
