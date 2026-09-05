@@ -187,6 +187,8 @@ trust-boundary change. Prefer fixing verification failures over working around t
 - `trust/trusted-base.md`: human-readable trust ledger.
 - `trust/defects.md`: known defects and theorem-scope exclusions.
 - `docs/extraction/`: extractor and AIR orientation notes.
+- `docs/adversarial-mutation-sweep.md`: mutation-testing results — which injected ZisK
+  constraint defects `lake build` catches, which it misses, and why.
 - `nix/README.md`, `flake.nix`, `flake.lock`: reproducible build inputs and commands.
 
 Historical docs removed from the tree should be recovered with `git show` only when needed for the
