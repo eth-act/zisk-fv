@@ -77,19 +77,17 @@ component's committed fixed schema.
   `addr2` are not AIR witness columns (the generated stage-1 header lists 38
   columns and only `addr1`, column 29, is among them), because PIL inlines
   those two address expressions into the memory-bus emission instead of
-  committing them. They pin mirror-only witnesses, so the mirror is *stronger*
-  than the AIR there, in the direction that is safe for soundness.
+  committing them. `materializeAddresses` constructs these two cells;
+  `assertions_of_generatedLocalConstraints` proves the live polynomial
+  assertions from generated equations on that materialized row.
 * `RomBoolSpec` (`Main/Circuit.lean:346`) had, before this module, no consumer
   anywhere in `ZiskFv/` — it was a published predicate nothing checked against
   anything. `romBoolSpec_weld` and
   `romBoolSpec_row_of_mainWithRomAndMemBus_constraints` are now its only uses,
   and both pin it to the extraction.
-* It does **not** certify the column layout itself: `mainValue` is handwritten
-  from the generated header. Nothing on this branch pins it. A *compensating*
-  pair of slips — mirror and column map wrong in the same direction — would
-  still be `rfl`. Arith closes that with
-  `trust/scripts/check-arith-column-map.py`; a Main analogue is gate wiring and
-  is deliberately not added here.
+* The handwritten `mainValue` column map is checked against the generated
+  header by `trust/scripts/check-weld-column-maps.py`;
+  `extractedMainRowCircuit_pinned` pins the instance to that checked map.
 * It does **not** rest on `mainValue`'s `0` answers outside the modeled lanes,
   nor on the `preprocessed` / `challenge` / `exposed` stubs. That is checked for
   all 29 by `weldedConstraints_readOnlyModeledLanes` and
@@ -341,6 +339,102 @@ theorem addressSpec_weld (row : MainRowWithRom FGL) :
       (Main.extraction.constraint_1_every_row (extractedMainRow row) 0
       ∧ Main.extraction.constraint_2_every_row (extractedMainRow row) 0) :=
   fun h => (addressSpec_generatedSlice_weld row).mp ⟨h.2.1, h.2.2.2⟩
+
+/-- Materialize the two uncommitted address expressions directly from their
+    PIL operands (`main.pil:188-197`). No caller-supplied address pin is needed. -/
+def materializeAddresses (row : MainRowWithRom FGL) : MainRowWithRom FGL :=
+  { row with rom := { row.rom with
+      addr0 := row.rom.a_offset_imm0
+      addr2 := row.rom.store_offset + row.rom.store_ind * row.core.a_0 } }
+
+/-- Materialization preserves every committed witness cell used by Main. -/
+theorem materializeAddresses_mainValue (row : MainRowWithRom FGL)
+    (id column r rotation : ℕ) :
+    mainValue (extractedMainRow (materializeAddresses row)) id column r rotation =
+      mainValue (extractedMainRow row) id column r rotation := by
+  rfl
+
+/-- The generated row-local polynomial slice. Static lookup membership and
+    trace transitions are separate obligations; this is not trace acceptance. -/
+def GeneratedLocalConstraints (row : MainRowWithRom FGL) : Prop :=
+  ∀ constraint ∈
+    [Main.extraction.constraint_22_every_row,
+      Main.extraction.constraint_28_every_row,
+      Main.extraction.constraint_7_every_row,
+      Main.extraction.constraint_13_every_row,
+      Main.extraction.constraint_8_every_row,
+      Main.extraction.constraint_14_every_row,
+      Main.extraction.constraint_15_every_row,
+      Main.extraction.constraint_16_every_row,
+      Main.extraction.constraint_17_every_row,
+      Main.extraction.constraint_33_every_row,
+      Main.extraction.constraint_32_every_row,
+      Main.extraction.constraint_29_every_row,
+      Main.extraction.constraint_23_every_row,
+      Main.extraction.constraint_24_every_row,
+      Main.extraction.constraint_25_every_row,
+      Main.extraction.constraint_26_every_row,
+      Main.extraction.constraint_27_every_row,
+      Main.extraction.constraint_30_every_row,
+      Main.extraction.constraint_31_every_row,
+      Main.extraction.constraint_34_every_row,
+      Main.extraction.constraint_35_every_row,
+      Main.extraction.constraint_36_every_row,
+      Main.extraction.constraint_37_every_row,
+      Main.extraction.constraint_5_every_row,
+      Main.extraction.constraint_11_every_row,
+      Main.extraction.constraint_6_every_row,
+      Main.extraction.constraint_12_every_row,
+      Main.extraction.constraint_1_every_row,
+      Main.extraction.constraint_2_every_row], constraint (extractedMainRow row) 0
+
+/-- Generated equations imply all four modeled polynomial predicates after
+    constructing the model-only addresses. This supplies the reverse direction
+    without assuming the two address equalities absent from the physical AIR. -/
+theorem specs_of_generatedLocalConstraints (row : MainRowWithRom FGL)
+    (h : GeneratedLocalConstraints row) :
+    Spec (materializeAddresses row).core ∧
+      RomBoolSpec (materializeAddresses row) ∧
+      SourceSpec (materializeAddresses row) ∧
+      AddressSpec (materializeAddresses row) := by
+  have hs : Spec row.core := (spec_weld row).mpr (by
+    simp only [GeneratedLocalConstraints, List.mem_cons,
+      forall_eq_or_imp] at h
+    tauto)
+  have hb : RomBoolSpec row := (romBoolSpec_weld row).mpr (by
+    simp only [GeneratedLocalConstraints, List.mem_cons,
+      forall_eq_or_imp] at h
+    tauto)
+  have hi : SourceSpec row := (sourceSpec_weld row).mpr (by
+    simp only [GeneratedLocalConstraints, List.mem_cons,
+      forall_eq_or_imp] at h
+    tauto)
+  have ha := (addressSpec_generatedSlice_weld row).mpr (by
+    simp only [GeneratedLocalConstraints, List.mem_cons,
+      forall_eq_or_imp] at h
+    tauto)
+  exact ⟨hs, hb, hi, rfl, ha.1, rfl, ha.2⟩
+
+/-- Every live Main polynomial assertion follows from the generated slice on
+    the materialized row. Lookup membership is deliberately not inferred from
+    local equations. -/
+theorem assertions_of_generatedLocalConstraints
+    (length : ℕ) (program : Program length) (row : MainRowWithRom FGL)
+    (v : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h : GeneratedLocalConstraints row)
+    (hv : eval env v = materializeAddresses row) :
+    ∀ e ∈ ((mainWithRomMemAndOpBus length program v).operations offset).constraints,
+      env e = 0 := by
+  have hs := specs_of_generatedLocalConstraints row h
+  simp only [mainWithRomMemAndOpBus, mainWithRomAndMemBus, mainWithRom, main,
+    circuit_norm]
+  rw [← hv] at hs
+  simp only [Spec, RomBoolSpec, SourceSpec, AddressSpec, circuit_norm,
+    sub_eq_add_neg, neg_one_mul] at hs
+  simp only [forall_eq_or_imp, circuit_norm]
+  rcases hs with ⟨hs, hb, hi, ha⟩
+  simp only [← sub_eq_add_neg, sub_eq_zero] at *
+  tauto
 
 /-! ### From the live assertion list
 
@@ -635,7 +729,7 @@ theorem weldedConstraints_probeBridge (row : MainRowWithRom FGL) (r : ℕ) :
    Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl,
    Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl⟩
 
-/-! ## Part B — the nine `exposed`-reading constraints
+/-! ## Part B — trace and public-input constraints
 
 `ExtractedMainRow` stubs `preprocessed` / `challenge` / `exposed` to `0`
 because none of the 29 Part A constraints reads them. Nine more of the 39
@@ -643,7 +737,8 @@ because none of the 29 Part A constraints reads them. Nine more of the 39
 `38` — read `Extraction.Circuit.exposed` (`main.pil`'s public `airval`s) and,
 for six of the nine, `Extraction.Circuit.preprocessed` (`SEGMENT_L1`) and a
 neighboring trace row (`row - 1` or `row + 1`). `MainExposed` is a second
-`Extraction.Circuit` carrier for exactly those nine: it bundles the seven
+`Extraction.Circuit` carrier for those nine and the predecessor-PC equation:
+it bundles the seven
 `airval` values Part B's constraints read plus a row-indexed view of the
 trace, and its `main` lane reuses Part A's `mainValue` (via `extractedMainRow`)
 rather than re-deriving the column map. -/
@@ -759,7 +854,7 @@ theorem constraint_21_weld (c : MainExposed FGL FGL) (r : ℕ) :
 /-- `main/pil/main.pil:423 Main.SEGMENT_L1'*(Main.segment_next_pc-(next_pc'))`
     — the last-row next-`pc` boundary pin. `next_pc` is `main.pil:421`'s
     `expected_current_pc` shifted one row, the same three-way `set_pc`/`flag`
-    split `constraint_18_every_row` (the un-welded pc handshake) evaluates at
+    split `constraint_18_every_row` (the predecessor-PC handshake) evaluates at
     `row - 1`; here it is evaluated at the constraint's own `row`, gated by
     `SEGMENT_L1` one row ahead. -/
 theorem constraint_19_weld (c : MainExposed FGL FGL) (r : ℕ) :
