@@ -85,7 +85,7 @@ def expected_detection_layer(item: Round) -> str:
     if item.historical_class == "REJECTED":
         return "compiler"
     if item.historical_class == "SYNTACTIC":
-        return "equivalent_false_positive"
+        return "equivalent"
     if item.historical_class == "EQUIVALENT" and item.number != 50:
         return "equivalent"
     if item.number == 27:
@@ -693,9 +693,9 @@ def main(argv: list[str]) -> int:
         }
         def meets_expected(value: dict[str, Any]) -> bool:
             expected = value.get("expected_detection_layer")
-            if expected == "equivalent_false_positive":
+            if expected == "equivalent":
                 return (value.get("outcome") == "equivalent"
-                        and value.get("control", {}).get("proof_false_positive") is True)
+                        and value.get("control", {}).get("proof_false_positive") is not True)
             return value.get("outcome") == expected
         aggregate["unexpected_rounds"] = [r.get("round") for r in results
                                           if not meets_expected(r)]
