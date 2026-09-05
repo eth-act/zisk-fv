@@ -1,4 +1,5 @@
 import Clean.Circuit.Lookup
+import Extraction.ArithTable
 import ZiskFv.Field.Goldilocks
 
 /-!
@@ -101,6 +102,13 @@ namespace ZiskFv.AirsClean.ArithTable
 
 open Goldilocks
 
+/-- Interpret an extracted structured row in the exact 15-column order used by
+    the live Clean static table. -/
+def extractedRow (row : Extraction.ArithTable.ArithTableRow) : fields 15 FGL :=
+  #v[row.op, row.m32, row.div, row.na, row.nb, row.np, row.nr, row.sext,
+    row.div_by_zero, row.div_overflow, row.main_mul, row.main_div, row.signed,
+    row.range_ab, row.range_cd]
+
 /-- The 74 rows of ZisK's `arith_table`, each a `fields 15` tuple in
     PIL column order `[op, m32, div, na, nb, np, nr, sext,
     div_by_zero, div_overflow, main_mul, main_div, signed, range_ab,
@@ -181,6 +189,12 @@ def rows : Vector (fields 15 FGL) 74 :=
     #v[(191:FGL), (1:FGL), (1:FGL), (1:FGL), (0:FGL), (0:FGL), (0:FGL), (0:FGL), (1:FGL), (0:FGL), (0:FGL), (0:FGL), (1:FGL), (15:FGL), (12:FGL)],
     #v[(191:FGL), (1:FGL), (1:FGL), (1:FGL), (0:FGL), (1:FGL), (1:FGL), (1:FGL), (1:FGL), (0:FGL), (0:FGL), (0:FGL), (1:FGL), (15:FGL), (16:FGL)],
     #v[(191:FGL), (1:FGL), (1:FGL), (1:FGL), (1:FGL), (1:FGL), (0:FGL), (0:FGL), (0:FGL), (1:FGL), (0:FGL), (0:FGL), (1:FGL), (16:FGL), (15:FGL)]]
+
+/-- The live Clean ROM is exactly the generated upstream table, with each
+    structured row projected in PIL column order. -/
+theorem rows_toList_eq_extracted :
+    rows.toList = Extraction.ArithTable.arith_table.map extractedRow := by
+  rfl
 
 /-- ZisK's `arith_table` as a Clean `StaticTable` over `fields 15`
     rows. `row` indexes the 74-row enumeration; `index` decodes the
