@@ -27,7 +27,7 @@ constraint at that circuit turns it into a polynomial over `MainRowWithRom`
 fields, and the weld theorems say that polynomial is *definitionally* the one
 the mirror asserts.
 
-## Coverage: 38 of the 144 generated constraints
+## Coverage: 39 of the 144 generated constraints
 
 `Extraction/Main.lean` defines `constraint_0_every_row` …
 `constraint_143_every_row`. They partition by their PIL source comment:
@@ -50,18 +50,11 @@ The other 10 read `Extraction.Circuit.exposed` (`main.pil`'s public `airval`s:
 `main_last_segment`, `segment_initial_pc`, `segment_previous_c`,
 `segment_next_pc`, `segment_last_c`) — cells with no representative in
 `MainRowWithRom`, which is why they had no mirror counterpart before this
-module. 9 of them — `0`, `3`, `4`, `9`, `10`, `19`, `20`, `21`, `38` — are
-welded in "Part B" below, over a new carrier `MainExposed` that adds an
-exposed lane and a row-indexed view of the trace. `18` — pc handshake
-(`main.pil:410`) — is **not** welded: `pcHandshakeBetween`
-(`Main/Circuit.lean:708`) reproduces the polynomial but substitutes the
-witness field `core.segment_l1` for the generated `preprocessed (column := 0)`
-(`SEGMENT_L1`). That substitution is backed by `mainFixedColumns`
-(`Main/Circuit.lean:768`), which maps slot 17 to fixed column 0 — so this is
-*not* a claimed defect — but `18` reads `preprocessed(0)` at `row`, `main` at
-`row - 1`, *and* `exposed`, none of which line up with an `Iff.rfl` against
-`pcHandshakeBetween`'s two-`MainRowWithRom` shape without weakening one side or
-the other; left as a recorded gap rather than forced.
+module. All ten — `0`, `3`, `4`, `9`, `10`, `18`, `19`, `20`, `21`, `38` — are
+welded in Part B over `MainExposed`. The PC handshake (`18`) uses the predecessor
+row and the same `segment_l1` fixed-column projection as the other trace welds.
+These identities do not independently establish that a raw trace has the
+component's committed fixed schema.
 
 ## What the weld does and does not certify
 
@@ -722,6 +715,15 @@ instance extractedMainExposedCircuit : Extraction.Circuit FGL FGL MainExposed wh
   preprocessed := tracePreprocessedValue
   challenge := traceChallengeValue
   exposed := traceExposedValue
+
+/-- The physical predecessor-row PC handshake uses the same fixed-column
+    projection as the other trace welds. This pins the polynomial; the
+    correspondence of `segment_l1` to the committed fixed column remains the
+    component fixed-schema obligation. -/
+theorem constraint_18_weld (c : MainExposed FGL FGL) (r : ℕ) :
+    pcHandshakeBetween (c.rows (r - 1)) (c.rows r) ↔
+      Main.extraction.constraint_18_every_row c r := by
+  rfl
 
 /-- `main/pil/main.pil:86 Main.main_last_segment*(1-Main.main_last_segment)` —
     the `main_last_segment` booleanity pin. Reads only the exposed lane, no

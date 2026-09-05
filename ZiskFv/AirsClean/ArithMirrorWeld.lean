@@ -53,8 +53,8 @@ the one the mirror asserts.
   soundness proof.
 * The five `Iff` welds pin their mirror predicates exactly — the predicate holds
   *iff* the corresponding run of generated constraints does — so for those 37 the
-  mirror asserts neither less nor more than the AIR. `spec_carryChain_weld` is an
-  implication only, so it does not forbid `Spec` asserting more than the AIR does.
+  mirror asserts neither less nor more than the AIR. `spec_carryChain_weld` and
+  `spec_of_generatedCarryChain` prove the carry-chain correspondence in both directions.
 * It does **not** certify the column layout itself: `mainValue` is handwritten.
   That map is pinned separately by `trust/scripts/check-weld-column-maps.py`
   (Arith's entry in `trust/weld-airs.toml`), against the extractor's own
@@ -71,9 +71,9 @@ the one the mirror asserts.
 
 ## Trust note
 
-No axiom, `sorry`, `native_decide`, or other trust marker is added. Every weld
-below is `Iff.rfl` except `constraint_36_of_spec`, which is `linear_combination`
-over a `rfl`-pinned restatement of the generated polynomial (see there).
+No axiom, `sorry`, `native_decide`, or other trust marker is added. The carry-chain
+proofs use polynomial normalization through `linear_combination`; the remaining
+welds use definitional equality.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
