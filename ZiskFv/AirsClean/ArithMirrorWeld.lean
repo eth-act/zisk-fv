@@ -306,10 +306,10 @@ and it is why the weld for this constraint is `linear_combination` rather than
 `rfl`. Do not "fix" it by reordering `Constraints.lean`: that `main` definition is
 consumed by `linear_combination` proofs in `ZiskFv/AirsClean/ArithMul/Circuit.lean`.
 
-`gen36` restates the generated polynomial in the generated order; `gen36_pin`
-checks that restatement against the extraction by `Iff.rfl`, so no algebraic
-normalization is allowed to hide a transcription slip — `linear_combination` is
-then used only to cross the commuted addend pair. -/
+`gen36` restates the generated polynomial; `gen36_pin` checks the corresponding
+equation in both directions by kernel-checked polynomial normalization. This
+permits reassociation and commutation while preserving the generated equation.
+`constraint_36_of_spec` then relates it to the live specification. -/
 
 /-- `constraint_36_every_row`'s polynomial, written in the order the extractor
     emits it. Pinned to the generated definition by `gen36_pin`. -/
