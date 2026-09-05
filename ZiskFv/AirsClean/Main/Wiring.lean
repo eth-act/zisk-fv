@@ -22,6 +22,7 @@ def operationExprToClean (row : Var MainRowWithRom FGL) :
   | .constant "0" => some 0
   | .constant "1" => some 1
   | .constant "2" => some 2
+  | .constant "3" => some 3
   | .constant "4" => some 4
   | .constant "8" => some 8
   | .constant "16" => some 16
@@ -66,6 +67,12 @@ def operationExprToClean (row : Var MainRowWithRom FGL) :
   | .witness 1 26 0 => some row.core.jmp_offset1
   | .witness 1 27 0 => some row.core.jmp_offset2
   | .witness 1 28 0 => some row.core.m32
+  | .witness 1 29 0 => some row.rom.addr1
+  | .witness 1 30 0 => some row.rom.a_reg_prev_mem_step
+  | .witness 1 31 0 => some row.rom.b_reg_prev_mem_step
+  | .witness 1 32 0 => some row.rom.store_reg_prev_mem_step
+  | .witness 1 33 0 => some row.rom.store_reg_prev_value_0
+  | .witness 1 34 0 => some row.rom.store_reg_prev_value_1
   | .witness 1 35 0 => some row.rom.a_src_reg
   | .witness 1 36 0 => some row.rom.b_src_reg
   | .witness 1 37 0 => some row.rom.store_reg
