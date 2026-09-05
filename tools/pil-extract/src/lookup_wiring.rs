@@ -1554,10 +1554,6 @@ fn write_prelude(out: &mut String) {
     out.push_str("  piop : String\n  proves : Bool\n  busId : Expr\n");
     out.push_str("  multiplicity : Expr\n  slots : List Slot\n\n");
     out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | derivedMixed2\n  | directZeroTail\n  | cluster2ZeroTail\n  | directAssumesNegForm\n  | directAssumesNegFormZeroTail\n  deriving Repr, DecidableEq\n\n");
-    out.push_str("structure ValidatedLink where\n");
-    out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
-    out.push_str("  accumulator : Expr\n  alpha : Expr\n  gamma : Expr\n  constraint : Expr\n  template : Expr\n");
-    out.push_str("  hints : List HintTuple\n  derivedTuples : List DerivedTuple\n\n");
     out.push_str("structure ConstraintOnly where\n");
     out.push_str("  air : String\n  constraintIndex : Nat\n  constraint : Expr\n\n");
     out.push_str("structure AirStatus where\n");
@@ -1630,6 +1626,23 @@ fn write_prelude(out: &mut String) {
     out.push_str("  let rightMix := stdMix alpha gamma right.busId right.slots\n");
     out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
     out.push_str("    (.add (.mul (signedDerivedSelector left) rightMix) (.mul (signedDerivedSelector right) leftMix))\n\n");
+    out.push_str("def templateOf (shape : LinkShape) (alpha gamma accumulator : Expr)\n");
+    out.push_str("    (hints : List HintTuple) (derivedTuples : List DerivedTuple) : Option Expr :=\n");
+    out.push_str("  match shape, hints, derivedTuples with\n");
+    out.push_str("  | .direct, [hint], [] => some (normalise (directTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | .cluster2, [left, right], [] => some (normalise (cluster2Template alpha gamma accumulator left right))\n");
+    out.push_str("  | .derivedMixed2, [], [left, right] => some (normalise (derivedMixed2Template alpha gamma accumulator left right))\n");
+    out.push_str("  | .directZeroTail, [hint], [] => some (normalise (directZeroTailTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | .cluster2ZeroTail, [left, right], [] => some (normalise (cluster2ZeroTailTemplate alpha gamma accumulator left right))\n");
+    out.push_str("  | .directAssumesNegForm, [hint], [] => some (normalise (directAssumesNegFormTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | .directAssumesNegFormZeroTail, [hint], [] => some (normalise (directAssumesNegFormZeroTailTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | _, _, _ => none\n\n");
+    out.push_str("structure ValidatedLink where\n");
+    out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
+    out.push_str("  accumulator : Expr\n  alpha : Expr\n  gamma : Expr\n  constraint : Expr\n  template : Expr\n");
+    out.push_str("  hints : List HintTuple\n  derivedTuples : List DerivedTuple\n");
+    out.push_str("  templateFromShape : templateOf shape alpha gamma accumulator hints derivedTuples = some template\n");
+    out.push_str("  constraintEqualsTemplate : constraint = template\n\n");
 }
 
 fn write_air_status(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -1744,11 +1757,6 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
             label
         )?,
     }
-    writeln!(
-        out,
-        "example : constraint_{} = template_{} := by rfl",
-        label, label
-    )?;
     writeln!(out, "def link_{} : ValidatedLink := {{", label)?;
     writeln!(out, "  air := \"{}\",", lean_string(&air.air_name))?;
     writeln!(out, "  constraintIndex := {},", link.constraint_index)?;
@@ -1771,7 +1779,9 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
     writeln!(out, "  constraint := constraint_{},", label)?;
     writeln!(out, "  template := template_{},", label)?;
     writeln!(out, "  hints := [{}],", (0..link.hints.len()).map(|index| format!("hint_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
-    writeln!(out, "  derivedTuples := [{}]", (0..link.derived_tuples.len()).map(|index| format!("derivedTuple_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    writeln!(out, "  derivedTuples := [{}],", (0..link.derived_tuples.len()).map(|index| format!("derivedTuple_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    out.push_str("  templateFromShape := by rfl\n");
+    out.push_str("  constraintEqualsTemplate := by rfl\n");
     out.push_str("}\n\n");
     Ok(())
 }
@@ -1857,6 +1867,20 @@ fn ident(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validated_link_carries_shape_computed_kernel_equalities() {
+        let mut prelude = String::new();
+        write_prelude(&mut prelude);
+
+        assert!(prelude.contains(
+            "templateFromShape : templateOf shape alpha gamma accumulator hints derivedTuples = some template"
+        ));
+        assert!(prelude.contains("constraintEqualsTemplate : constraint = template"));
+        assert!(prelude.contains("| .direct, [hint], [] =>"));
+        assert!(prelude.contains("| .derivedMixed2, [], [left, right] =>"));
+        assert!(prelude.contains("| _, _, _ => none"));
+    }
 
     fn hint(proves: bool, slots: Vec<Ast>) -> HintData {
         HintData {
