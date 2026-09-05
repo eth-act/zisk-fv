@@ -70,31 +70,35 @@ def singleSegmentPreprocessedValue (source : SingleSegmentSource FGL FGL)
 def singleSegmentExposedValue (source : SingleSegmentSource FGL FGL) (index : Nat) : FGL :=
   if h : index = 1 then 0 else source.otherExposed ⟨index, h⟩
 
-instance singleSegmentSourceCircuit : Extraction.Circuit FGL FGL SingleSegmentSource where
-  main := singleSegmentMainValue
-  preprocessed := singleSegmentPreprocessedValue
-  challenge := fun source index => source.challenges index
-  exposed := singleSegmentExposedValue
+/-- The physical source represented in the already-audited free extraction
+    carrier. This keeps every circuit lane explicit without introducing a
+    second `Extraction.Circuit` instance. -/
+def SingleSegmentSource.toCircuit
+    (source : SingleSegmentSource FGL FGL) : MainProbe FGL FGL where
+  mainCell := singleSegmentMainValue source
+  preprocessedCell := singleSegmentPreprocessedValue source
+  challengeCell := source.challenges
+  exposedCell := singleSegmentExposedValue source
 
 @[simp] theorem singleSegmentSourceCircuit_main
     (source : SingleSegmentSource FGL FGL) (id column row rotation : Nat) :
-    Extraction.Circuit.main source (id := id) (column := column)
+    Extraction.Circuit.main source.toCircuit (id := id) (column := column)
         (row := row) (rotation := rotation) =
       singleSegmentMainValue source id column row rotation := rfl
 
 @[simp] theorem singleSegmentSourceCircuit_preprocessed
     (source : SingleSegmentSource FGL FGL) (column row rotation : Nat) :
-    Extraction.Circuit.preprocessed source (column := column)
+    Extraction.Circuit.preprocessed source.toCircuit (column := column)
         (row := row) (rotation := rotation) =
       singleSegmentPreprocessedValue source column row rotation := rfl
 
 @[simp] theorem singleSegmentSourceCircuit_challenge
     (source : SingleSegmentSource FGL FGL) (index : Nat) :
-    Extraction.Circuit.challenge source (index := index) = source.challenges index := rfl
+    Extraction.Circuit.challenge source.toCircuit (index := index) = source.challenges index := rfl
 
 @[simp] theorem singleSegmentSourceCircuit_exposed
     (source : SingleSegmentSource FGL FGL) (index : Nat) :
-    Extraction.Circuit.exposed source (index := index) =
+    Extraction.Circuit.exposed source.toCircuit (index := index) =
       singleSegmentExposedValue source index := rfl
 
 /-- One raw 38-cell physical stage-1 source row. -/
@@ -105,7 +109,7 @@ def sourceStage1Row (source : SingleSegmentSource FGL FGL) (row : Nat) : Vector 
     cell exactly. -/
 theorem sourceStage1Cell_preserved (source : SingleSegmentSource FGL FGL) (row : Nat)
     (column : Fin 38) :
-    Extraction.Circuit.main source (id := 1) (column := column)
+    Extraction.Circuit.main source.toCircuit (id := 1) (column := column)
         (row := row) (rotation := 0) =
       (sourceStage1Row source row)[column] := by
   change singleSegmentMainValue source 1 column row 0 = _
@@ -114,25 +118,25 @@ theorem sourceStage1Cell_preserved (source : SingleSegmentSource FGL FGL) (row :
 /-- Stage-2 cells are retained in the source rather than stubbed. -/
 theorem sourceStage2Cell_preserved (source : SingleSegmentSource FGL FGL)
     (column row rotation : Nat) :
-    Extraction.Circuit.main source (id := 2) (column := column)
+    Extraction.Circuit.main source.toCircuit (id := 2) (column := column)
         (row := row) (rotation := rotation) =
       source.otherMain 2 column row rotation := by
   simp [singleSegmentMainValue]
 
 /-- `main_segment` is zero by the source's single-segment scope. -/
 theorem sourceMainSegment_zero (source : SingleSegmentSource FGL FGL) :
-    Extraction.Circuit.exposed source (index := 1) = 0 := by
+    Extraction.Circuit.exposed source.toCircuit (index := 1) = 0 := by
   simp [singleSegmentExposedValue]
 
 /-- All other public values are retained in the source rather than stubbed. -/
 theorem sourceOtherExposed_preserved (source : SingleSegmentSource FGL FGL)
     (index : { index : Nat // index ≠ 1 }) :
-    Extraction.Circuit.exposed source (index := index) = source.otherExposed index := by
+    Extraction.Circuit.exposed source.toCircuit (index := index) = source.otherExposed index := by
   simp [singleSegmentExposedValue, index.property]
 
 /-- Construct the effective Clean row from one physical source row. -/
 def mainRowOfCircuit (source : SingleSegmentSource FGL FGL) (row : Nat) : MainRowWithRom FGL :=
-  materializeExtractedMainRow source row
+  materializeExtractedMainRow source.toCircuit row
 
 /-- The constructor is an inverse for every one of the 38 committed cells. -/
 theorem mainRowOfCircuit_sourceCell (source : SingleSegmentSource FGL FGL) (row : Nat)
@@ -253,7 +257,7 @@ polynomials, so neither is assumed or claimed here. -/
     variable and offset. -/
 theorem extractedMainTable_localAssertionsAt (source : SingleSegmentSource FGL FGL)
     (length : Nat) (program : Program length) (data : ProverData FGL)
-    (row : Fin source.height) (h : GeneratedLocalConstraintsAt source row) :
+    (row : Fin source.height) (h : GeneratedLocalConstraintsAt source.toCircuit row) :
     ∀ e ∈ (componentWithRomMemAndOpBus length program).operations.constraints,
       (extractedMainTable source length program data).environmentAt ⟨row, by simp⟩ e = 0 := by
   let component := componentWithRomMemAndOpBus length program
@@ -264,14 +268,14 @@ theorem extractedMainTable_localAssertionsAt (source : SingleSegmentSource FGL F
     simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar,
       eval_varFromOffset_valueFromOffset] using hrow
   rw [Air.Flat.Component.constraints_eq]
-  exact assertions_of_extractedGeneratedLocalConstraints source row length program
+  exact assertions_of_extractedGeneratedLocalConstraints source.toCircuit row length program
     component.rowInputVar component.rowOffset env h hv
 
 /-- The local assertion conclusion holds at every physical table index when
     the corresponding generated row-local predicates do. -/
 theorem extractedMainTable_localAssertions (source : SingleSegmentSource FGL FGL)
     (length : Nat) (program : Program length) (data : ProverData FGL)
-    (h : ∀ row : Fin source.height, GeneratedLocalConstraintsAt source row) :
+    (h : ∀ row : Fin source.height, GeneratedLocalConstraintsAt source.toCircuit row) :
     ∀ row : Fin source.height,
       ∀ e ∈ (componentWithRomMemAndOpBus length program).operations.constraints,
         (extractedMainTable source length program data).environmentAt ⟨row, by simp⟩ e = 0 := by
@@ -287,13 +291,14 @@ theorem extractedMainTable_localAssertions (source : SingleSegmentSource FGL FGL
 theorem extractedMainTable_pcHandshakeAt (source : SingleSegmentSource FGL FGL)
     (length : Nat) (program : Program length) (data : ProverData FGL)
     (row : Fin source.height)
-    (h : Main.extraction.constraint_18_every_row source row) :
+    (h : Main.extraction.constraint_18_every_row source.toCircuit row) :
     pcHandshakeBetween
       ((componentWithRomMemAndOpBus length program).rowInput
         ((extractedMainTable source length program data).previousEnvironment ⟨row, by simp⟩))
       ((componentWithRomMemAndOpBus length program).rowInput
         ((extractedMainTable source length program data).environmentAt ⟨row, by simp⟩)) := by
-  have hpc := pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18 source row h
+  have hpc := pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18
+    source.toCircuit row h
   unfold Air.Flat.Table.previousEnvironment
   rw [extractedMainTable_rowInput source length program data
       ⟨row.val - 1, by omega⟩,
@@ -311,8 +316,8 @@ theorem extractedMainTable_pcHandshakeAt (source : SingleSegmentSource FGL FGL)
     are not part of this predecessor-copy transition. -/
 theorem sourceCCopyBetween_mainRowOfCircuit (source : SingleSegmentSource FGL FGL)
     (row : Fin source.height)
-    (h4 : Main.extraction.constraint_4_every_row source row)
-    (h10 : Main.extraction.constraint_10_every_row source row) :
+    (h4 : Main.extraction.constraint_4_every_row source.toCircuit row)
+    (h10 : Main.extraction.constraint_10_every_row source.toCircuit row) :
     sourceCCopyBetween (mainRowOfCircuit source (row - 1))
       (mainRowOfCircuit source row) := by
   by_cases hzero : row.val = 0
@@ -334,8 +339,8 @@ theorem sourceCCopyBetween_mainRowOfCircuit (source : SingleSegmentSource FGL FG
 theorem extractedMainTable_sourceCCopyAt (source : SingleSegmentSource FGL FGL)
     (length : Nat) (program : Program length) (data : ProverData FGL)
     (row : Fin source.height)
-    (h4 : Main.extraction.constraint_4_every_row source row)
-    (h10 : Main.extraction.constraint_10_every_row source row) :
+    (h4 : Main.extraction.constraint_4_every_row source.toCircuit row)
+    (h10 : Main.extraction.constraint_10_every_row source.toCircuit row) :
     sourceCCopyBetween
       ((componentWithRomMemAndOpBus length program).rowInput
         ((extractedMainTable source length program data).previousEnvironment ⟨row, by simp⟩))
@@ -356,9 +361,9 @@ theorem extractedMainTable_sourceCCopyAt (source : SingleSegmentSource FGL FGL)
 theorem extractedMainTable_transitionBetweenAt (source : SingleSegmentSource FGL FGL)
     (length : Nat) (program : Program length) (data : ProverData FGL)
     (row : Fin source.height)
-    (h18 : Main.extraction.constraint_18_every_row source row)
-    (h4 : Main.extraction.constraint_4_every_row source row)
-    (h10 : Main.extraction.constraint_10_every_row source row) :
+    (h18 : Main.extraction.constraint_18_every_row source.toCircuit row)
+    (h4 : Main.extraction.constraint_4_every_row source.toCircuit row)
+    (h10 : Main.extraction.constraint_10_every_row source.toCircuit row) :
     transitionBetween
       ((componentWithRomMemAndOpBus length program).rowInput
         ((extractedMainTable source length program data).previousEnvironment ⟨row, by simp⟩))
@@ -379,9 +384,9 @@ theorem componentWithRomMemAndOpBus_transition_eq
 theorem extractedMainTable_transitionConstraints (source : SingleSegmentSource FGL FGL)
     (length : Nat) (program : Program length) (data : ProverData FGL)
     (h : ∀ row : Fin source.height,
-      Main.extraction.constraint_18_every_row source row ∧
-      Main.extraction.constraint_4_every_row source row ∧
-      Main.extraction.constraint_10_every_row source row) :
+      Main.extraction.constraint_18_every_row source.toCircuit row ∧
+      Main.extraction.constraint_4_every_row source.toCircuit row ∧
+      Main.extraction.constraint_10_every_row source.toCircuit row) :
     (extractedMainTable source length program data).TransitionConstraints := by
   intro index
   rw [show (extractedMainTable source length program data).component =
@@ -395,7 +400,8 @@ theorem extractedMainTable_transitionConstraints (source : SingleSegmentSource F
     extractedMainTable_evalRow source length program data row]
   exact ⟨by
       simpa [row, mainRowOfCircuit] using
-        pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18 source row hrow.1,
+        pcHandshakeBetween_materializeExtractedMainRow_of_constraint_18
+          source.toCircuit row hrow.1,
     sourceCCopyBetween_mainRowOfCircuit source row hrow.2.1 hrow.2.2⟩
 
 /-- The remaining per-row `ConstraintsHold` gap is exactly concrete lookup
