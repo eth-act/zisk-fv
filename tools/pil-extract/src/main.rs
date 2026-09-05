@@ -1156,7 +1156,7 @@ fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, m
         out.push_str("/-- One slot of a bus emission tuple. `name` is a debug\n");
         out.push_str("    string (verbatim from the PIL macro call site); `value`\n");
         out.push_str("    is the rendered Lean expression. -/\n");
-        out.push_str("structure BusEmissionSlot {C : Type → Type → Sort u} {F ExtF : Type}\n");
+        out.push_str("structure BusEmissionSlot {C : Type → Type → Type u} {F ExtF : Type}\n");
         out.push_str("    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] where\n");
         out.push_str("  name : String\n");
         out.push_str("  value : C F ExtF → ℕ → F\n\n");
@@ -1165,7 +1165,7 @@ fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, m
         out.push_str("    `5000 = OPERATION_BUS_ID`); `is_proves = true` marks\n");
         out.push_str("    the proves-side (secondary state machine), `false` the\n");
         out.push_str("    assumes-side (the consumer, typically Main). -/\n");
-        out.push_str("structure BusEmissionSpec {C : Type → Type → Sort u} {F ExtF : Type}\n");
+        out.push_str("structure BusEmissionSpec {C : Type → Type → Type u} {F ExtF : Type}\n");
         out.push_str("    [Field F] [Field ExtF] [Extraction.Circuit F ExtF C] where\n");
         out.push_str("  bus_id : ℕ\n");
         out.push_str("  is_proves : Bool\n");
@@ -1257,7 +1257,7 @@ fn write_bus_emissions_for_air(
             out.push_str(&format!("--   slot: {}\n", nm));
         }
         out.push_str(&format!(
-            "@[simp]\ndef bus_emission_{}_{} {{C : Type → Type → Sort u}} {{F ExtF : Type}}\n",
+            "@[simp]\ndef bus_emission_{}_{} {{C : Type → Type → Type u}} {{F ExtF : Type}}\n",
             sanitized, n
         ));
         out.push_str(
@@ -3789,6 +3789,14 @@ mod tests {
         let mut h = make_hint("Lookup", 0, 5000, const_operand(vec![1]), vec![]);
         h.name = "im_col".into();
         assert!(parse_bus_emission(&PilOut::default(), &Air::default(), &h).is_err());
+    }
+
+    #[test]
+    fn bus_emission_structures_use_type_valued_circuit_carriers() {
+        let mut out = String::new();
+        write_bus_emissions_prelude(&mut out, "AIRs {Main}", 5000, "Buses");
+        assert!(out.contains("C : Type → Type → Type u"));
+        assert!(!out.contains("C : Type → Type → Sort u"));
     }
 
     // ============================================================
