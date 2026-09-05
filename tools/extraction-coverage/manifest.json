@@ -71621,6 +71621,33 @@
     },
     {
       "air": "Main",
+      "constraint_index": 43,
+      "hint_indices": [
+        628
+      ],
+      "name": "link_Main_43",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 44,
+      "hint_indices": [
+        630
+      ],
+      "name": "link_Main_44",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 45,
+      "hint_indices": [
+        637
+      ],
+      "name": "link_Main_45",
+      "shape": "directAssumesNegFormZeroTail"
+    },
+    {
+      "air": "Main",
       "constraint_index": 46,
       "hint_indices": [
         625
@@ -72735,6 +72762,15 @@
       ],
       "name": "link_BinaryExtension_3",
       "shape": "cluster2"
+    },
+    {
+      "air": "BinaryExtension",
+      "constraint_index": 4,
+      "hint_indices": [
+        1220
+      ],
+      "name": "link_BinaryExtension_4",
+      "shape": "directZeroTail"
     },
     {
       "air": "BinaryExtension",
