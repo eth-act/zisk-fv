@@ -240,7 +240,8 @@ def generated_outputs(directory: Path) -> list[dict[str, str]]:
     candidates = sorted(
         path for path in directory.rglob("*")
         if path.is_file() and path.name != "lakefile.toml"
-        and path.suffix not in {".olean", ".ilean", ".c", ".json"}
+        and ".lake" not in path.relative_to(directory).parts
+        and path.suffix not in {".olean", ".ilean"}
     )
     outputs = []
     for path in candidates:

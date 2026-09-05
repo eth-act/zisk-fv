@@ -26,6 +26,8 @@
 /tools/mirror-roundtrip/         @codygunton
 /tools/virtual-tables/           @codygunton
 /tools/adversarial-mutations/    @codygunton
+/tools/extraction-coverage/       @codygunton
+/tools/check-generated-modules.sh @codygunton
 /scripts/ci_proof_inputs.py      @codygunton
 /scripts/test_ci_proof_inputs.py @codygunton
 /nix/                           @codygunton

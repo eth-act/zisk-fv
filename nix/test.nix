@@ -220,6 +220,8 @@ LEAN
 
     # 7. Require the closed generated-module inventory as well as compilation.
     # The generated Mem source must also stay synchronized with the FV APIs.
+    run "extraction coverage inventory" python3 tools/extraction-coverage/check.py
+    run "extraction coverage negative controls" python3 tools/extraction-coverage/selftest.py
     run "generated module inventory" tools/check-generated-modules.sh
     run "mutation harness self-tests" python3 tools/adversarial-mutations/selftest.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
