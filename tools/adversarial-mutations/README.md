@@ -106,6 +106,9 @@ for every valid mutation except round 27's documented fidelity scope boundary.
 The three commutativity controls retain their historical expected false-positive
 diagnostics until the syntactic weld behavior is deliberately normalized.
 
+By default, large transient caches live in `.zisk-fv-mutation-work` beside the
+repository rather than in `/tmp`; `--work-root` overrides this location.
+
 ## Outcomes and evidence
 
 The JSON report records commands, working directories, input sizes and SHA-256

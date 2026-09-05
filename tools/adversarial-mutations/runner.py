@@ -391,9 +391,16 @@ def repository_identity(repo: Path) -> dict[str, Any]:
     status = subprocess.run(["git", "status", "--porcelain"], cwd=repo,
                             check=True, text=True, capture_output=True).stdout.splitlines()
     dirty = [line[3:] for line in status if len(line) > 3]
-    proof_prefixes = ("ZiskFv/", "tools/pil-extract/", "lakefile.toml", "lean-toolchain",
-                      "flake.nix", "flake.lock", "nix/extracted-lean.nix",
-                      "nix/zisk-pilout.nix", "nix/mutation-compiler.nix")
+    proof_prefixes = (
+        "ZiskFv/", "ZiskFv.lean", "trust/", "tools/pil-extract/",
+        "tools/pilout-roundtrip/", "tools/mirror-roundtrip/",
+        "tools/adversarial-mutations/", "tools/check-generated-modules.sh",
+        "tools/extraction-coverage/", "scripts/ci_proof_inputs.py",
+        "scripts/test_ci_proof_inputs.py", ".github/workflows/proofs.yml",
+        ".github/workflows/trust-gate.yml",
+        "lakefile.toml", "lake-manifest.json", "lean-toolchain", "flake.nix", "flake.lock",
+        "nix/extracted-lean.nix", "nix/zisk-pilout.nix", "nix/mutation-compiler.nix",
+        "nix/test.nix")
     relevant = [path for path in dirty if path.startswith(proof_prefixes)]
     if relevant:
         raise CorpusError(f"proof-relevant repository files are dirty: {relevant}")
@@ -472,8 +479,10 @@ def archive_logs(result: dict[str, Any], logs: Path, archive: Path) -> None:
 def full(args: argparse.Namespace) -> dict[str, Any]:
     item = round_by_number(args.round)
     identity_record, _ = load_corpus()
+    work_root = args.work_root or (args.repo.resolve().parent / ".zisk-fv-mutation-work")
+    work_root.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix=f"zisk-mutation-{item.number:02d}-",
-                                dir=args.work_root))
+                                dir=work_root))
     logs = work / "logs"
     logs.mkdir()
     result: dict[str, Any] = {"round": item.number, "mode": "full",
@@ -776,8 +785,9 @@ def main(argv: list[str]) -> int:
                   [5, 7, 32, 38, 50] if args.profile == "boundary" else list(range(1, 53)))
         args.results_dir.mkdir(parents=True, exist_ok=True)
         results = []
-        suite_state = Path(tempfile.mkdtemp(prefix="zisk-mutation-suite-",
-                                            dir=args.work_root))
+        work_root = args.work_root or (args.repo.resolve().parent / ".zisk-fv-mutation-work")
+        work_root.mkdir(parents=True, exist_ok=True)
+        suite_state = Path(tempfile.mkdtemp(prefix="zisk-mutation-suite-", dir=work_root))
         try:
             for number in rounds:
                 per_round = argparse.Namespace(**vars(args))
