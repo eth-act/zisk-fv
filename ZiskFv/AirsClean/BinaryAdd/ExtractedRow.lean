@@ -15,6 +15,7 @@ membership obligations with caller-supplied range assumptions.
 namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
+open Air.Flat
 
 variable {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
 
@@ -39,14 +40,24 @@ theorem extractedRow_columns (c : C FGL FGL) (r : ℕ) :
       ∧ (extractedRow c r).cout_1 = Extraction.Circuit.main c 1 9 r 0 := by
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-/-- Generated constraints c0–c3 establish the four local polynomial assertions
-on the exact Clean row above. -/
+/-- Generated constraints c0–c3 establish every polynomial assertion emitted by
+the live Clean `main` operation list on the exact row above.  Range lookups and
+the operation-bus interaction are separate operations and are not claimed here. -/
 theorem extractedRow_localAssertions (c : C FGL FGL) (r : ℕ)
+    (v : Var BinaryAddRow FGL) (offset : ℕ) (env : Environment FGL)
     (h : BinaryAdd.extraction.constraint_0_every_row c r
       ∧ BinaryAdd.extraction.constraint_1_every_row c r
       ∧ BinaryAdd.extraction.constraint_2_every_row c r
-      ∧ BinaryAdd.extraction.constraint_3_every_row c r) :
-    constraints_at (BinaryMirrorWeld.BinaryAdd.validOfCircuit c) r :=
-  (BinaryMirrorWeld.BinaryAdd.constraints_at_weld c r).mpr h
+      ∧ BinaryAdd.extraction.constraint_3_every_row c r)
+    (hv : eval env v = extractedRow c r) :
+    ∀ e ∈ (main v).operations offset |>.constraints, env e = 0 := by
+  have hc := (BinaryMirrorWeld.BinaryAdd.constraints_at_weld c r).mpr h
+  have hc' : CoreFacts (extractedRow c r) := by
+    simpa only [CoreFacts, constraints_at, sub_eq_add_neg] using hc
+  rw [← hv] at hc'
+  simp only [main, circuit_norm]
+  simp only [CoreFacts, circuit_norm, sub_eq_add_neg] at hc'
+  simp only [forall_eq_or_imp, circuit_norm]
+  tauto
 
 end ZiskFv.AirsClean.BinaryAdd
