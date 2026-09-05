@@ -392,15 +392,8 @@ def repository_identity(repo: Path) -> dict[str, Any]:
                             check=True, text=True, capture_output=True).stdout.splitlines()
     dirty = [line[3:] for line in status if len(line) > 3]
     proof_prefixes = (
-        "ZiskFv/", "ZiskFv.lean", "trust/", "tools/pil-extract/",
-        "tools/pilout-roundtrip/", "tools/mirror-roundtrip/",
-        "tools/adversarial-mutations/", "tools/check-generated-modules.sh",
-        "tools/extraction-coverage/", "scripts/ci_proof_inputs.py",
-        "scripts/test_ci_proof_inputs.py", ".github/workflows/proofs.yml",
-        ".github/workflows/trust-gate.yml",
-        "lakefile.toml", "lake-manifest.json", "lean-toolchain", "flake.nix", "flake.lock",
-        "nix/extracted-lean.nix", "nix/zisk-pilout.nix", "nix/mutation-compiler.nix",
-        "nix/test.nix")
+        "ZiskFv/", "ZiskFv.lean", "trust/", "tools/", "nix/", "scripts/", ".github/",
+        "lakefile.toml", "lake-manifest.json", "lean-toolchain", "flake.nix", "flake.lock")
     relevant = [path for path in dirty if path.startswith(proof_prefixes)]
     if relevant:
         raise CorpusError(f"proof-relevant repository files are dirty: {relevant}")
@@ -433,7 +426,9 @@ def require_frozen_repository(repo: Path, expected: dict[str, Any]) -> None:
 def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
                     extraction: Path) -> None:
     shutil.copytree(repo, destination, symlinks=True,
-                    ignore=shutil.ignore_patterns(".git", ".lake", "build", "result*"))
+                    ignore=shutil.ignore_patterns(
+                        ".git", ".lake", "build", "target", "tmp", "__pycache__",
+                        "result", "result-*", "mutation-results", ".zisk-fv-mutation-work"))
     (destination / "build").mkdir()
     original_build = repo / "build"
     for entry in original_build.iterdir():
