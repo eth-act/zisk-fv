@@ -623,7 +623,10 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             compile_result = compile_mutation_source(
                 args.repo, source_copy, mutant_pilout, args.compile_timeout,
                 logs / "mutant-pilout.log")
-            if not mutant_pilout.is_file():
+            # A compiler may leave a partial output behind when it fails or is
+            # killed. Never pass that file to extraction or count it as a kill.
+            if (compile_result.timed_out or compile_result.exit_code != 0
+                    or not mutant_pilout.is_file()):
                 mutant_pilout = None
         result["commands"].append(dataclasses.asdict(compile_result))
         if mutant_pilout is None:
