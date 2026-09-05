@@ -1643,6 +1643,11 @@ fn write_prelude(out: &mut String) {
     out.push_str("  hints : List HintTuple\n  derivedTuples : List DerivedTuple\n");
     out.push_str("  templateFromShape : templateOf shape alpha gamma accumulator hints derivedTuples = some template\n");
     out.push_str("  constraintEqualsTemplate : constraint = template\n\n");
+    out.push_str("theorem ValidatedLink.constraintValidated (link : ValidatedLink) :\n");
+    out.push_str("    templateOf link.shape link.alpha link.gamma link.accumulator\n");
+    out.push_str("      link.hints link.derivedTuples = some link.constraint := by\n");
+    out.push_str("  rw [link.constraintEqualsTemplate]\n");
+    out.push_str("  exact link.templateFromShape\n\n");
 }
 
 fn write_air_status(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -1877,6 +1882,7 @@ mod tests {
             "templateFromShape : templateOf shape alpha gamma accumulator hints derivedTuples = some template"
         ));
         assert!(prelude.contains("constraintEqualsTemplate : constraint = template"));
+        assert!(prelude.contains("theorem ValidatedLink.constraintValidated"));
         assert!(prelude.contains("| .direct, [hint], [] =>"));
         assert!(prelude.contains("| .derivedMixed2, [], [left, right] =>"));
         assert!(prelude.contains("| _, _, _ => none"));
