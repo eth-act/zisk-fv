@@ -105,4 +105,13 @@ theorem memoryInteraction_mem_component_operations :
   rw [component_interactionsWith_memBus]
   simp
 
+/-- There are no further live MemAlign memory interactions: the complete
+    roster is the single c37-derived interaction above. -/
+theorem memoryInteraction_roster_complete :
+    component.operations.interactionsWith MemBusChannel.toRaw =
+      [((MemBusChannel.emitted
+          (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
+          (memBusMessageExpr component.rowInputVar)).toRaw)] :=
+  component_interactionsWith_memBus
+
 end ZiskFv.AirsClean.MemAlign
