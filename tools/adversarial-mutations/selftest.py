@@ -141,9 +141,22 @@ def test_log_archive() -> None:
               "external baseline log was not archived")
 
 
+def test_private_dependency_copy() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source, destination = root / "source", root / "destination"
+        (source / ".lake").mkdir(parents=True)
+        original = source / ".lake/cache"
+        original.write_text("baseline")
+        runner.copy_tree_cow(source, destination)
+        (destination / ".lake/cache").write_text("mutant")
+        check(original.read_text() == "baseline", "dependency cache write escaped private copy")
+
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
-             test_artifact_and_semantic_baselines, test_log_archive]
+             test_artifact_and_semantic_baselines, test_log_archive,
+             test_private_dependency_copy]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")

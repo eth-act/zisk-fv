@@ -416,8 +416,14 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
     for entry in original_build.iterdir():
         if entry.name in {"zisk.pilout", "extraction"}:
             continue
-        os.symlink(entry.resolve(), destination / "build" / entry.name,
-                   target_is_directory=entry.is_dir())
+        target = destination / "build" / entry.name
+        resolved = entry.resolve()
+        if entry.is_symlink() and str(resolved).startswith("/nix/store/"):
+            os.symlink(resolved, target, target_is_directory=resolved.is_dir())
+        elif entry.is_dir():
+            copy_tree_cow(entry, target)
+        else:
+            shutil.copy2(entry, target, follow_symlinks=False)
     shutil.copy2(pilout, destination / "build" / "zisk.pilout")
     shutil.copytree(lean_artifact_dir(extraction),
                     destination / "build" / "extraction" / "Extraction")
@@ -434,6 +440,15 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
     src_root = original_build / "extraction" / "Extraction.lean"
     if src_root.is_file():
         shutil.copy2(src_root, destination / "build" / "extraction" / "Extraction.lean")
+
+
+def copy_tree_cow(source: Path, destination: Path) -> None:
+    """Private copy, using reflinks where the filesystem supports them."""
+    proc = subprocess.run(
+        ["cp", "-a", "--reflink=auto", str(source), str(destination)],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    if proc.returncode != 0:
+        raise CorpusError(f"failed to copy mutable build input {source}: {proc.stdout.strip()}")
 
 
 def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
@@ -663,7 +678,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             copy_proof_tree(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
             seed_cache = args.repo / ".lake"
             if seed_cache.is_dir():
-                shutil.copytree(seed_cache, proof_tree / ".lake", symlinks=True)
+                copy_tree_cow(seed_cache, proof_tree / ".lake")
         proof_argv = nix("develop", "--no-write-lock-file", "-c", "lake", "build",
                          "--log-level=warning")
         install_proof_artifacts(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
