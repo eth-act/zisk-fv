@@ -5,8 +5,7 @@ name: proofs
 # A green proof run is the formal-verification claim that every per-opcode
 # equivalence theorem typechecks against the pinned upstream artifacts.
 #
-# Cost: ~30 min cold (no Nix store cache), ~5 min warm. flake.lock
-# pins every build input (sail/sail-riscv/zisk/pil2-* sources +
+# flake.lock pins every build input (sail/sail-riscv/zisk/pil2-* sources +
 # nixpkgs rev) by content hash, so the same build runs across machines.
 
 on:
@@ -153,6 +152,23 @@ jobs:
     runs-on: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'merge_group') && '["ubuntu-latest"]' || format('["self-hosted-ghr","{0}"]', needs.pick-runner.outputs.runner)) }}
     timeout-minutes: 240
     steps:
+      - name: Prepare hosted proof runner
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        run: |
+          # The proof cache and private mutation workspace coexist. Reclaim
+          # unused hosted toolchains before restoring either cache.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/share/swift /usr/local/share/boost
+          sudo docker image prune --all --force
+          # Large individual Lean elaborations can exceed hosted RAM even
+          # with reduced concurrency. Keep a bounded swap reserve.
+          sudo fallocate -l 8G /mnt/zisk-fv-proof.swap
+          sudo chmod 600 /mnt/zisk-fv-proof.swap
+          sudo mkswap /mnt/zisk-fv-proof.swap
+          sudo swapon /mnt/zisk-fv-proof.swap
+          df -h /
+          free -m
+
       - uses: actions/checkout@v4
         with:
           # Production-backed extraction checks depend on zisk/{riscv,core}
@@ -211,7 +227,7 @@ jobs:
           # warm cache, main) measured peak kernel `used` = 10.5 GiB.
           # That fits the 16 GiB L runner with headroom after the sd
           # proof-memory fix, and matches nix/test.nix's default.
-          LEAN_NUM_THREADS: "4"
+          LEAN_NUM_THREADS: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && '2' || '4' }}
           # The independent Aeneas production-extraction completeness check
           # (step 5/10) is the single largest cost (~1.5h) and is unrelated to
           # the Lake proof graph. Run it in the parallel
@@ -263,7 +279,7 @@ jobs:
       - name: Run extraction mutation invariant
         env:
           MUTATION_PROFILE: ${{ needs.proof-inputs.outputs.run_mutations == 'true' && 'full' || 'boundary' }}
-          LEAN_NUM_THREADS: "4"
+          LEAN_NUM_THREADS: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && '2' || '4' }}
         run: python3 tools/adversarial-mutations/runner.py suite --profile "$MUTATION_PROFILE" --results-dir mutation-results
 
       - name: Upload mutation evidence
