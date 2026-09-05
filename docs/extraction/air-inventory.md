@@ -91,7 +91,8 @@ Beyond the per-AIR constraint files, the extraction emits:
 | --- | --- |
 | `Circuit.lean` | the four-field `Extraction.Circuit` class shim every per-AIR file is typed over |
 | `LookupWiring.lean` | the constraint-linked lookup-wiring manifest, plus an `AirStatus` row for every pilout AIR |
-| `MemAlignRom.lean` | MemAlignRom's PIL fixed columns |
+| `MemAlignRom.lean` | All six MemAlignRom fixed columns observed from the pinned PIL compiler executing the upstream builder |
+| `MemAlignRom.tsv` | The production compiler's physical rows, consumed by the Lean emitter and checked by `nix run .#virtual-table-check` |
 | `MemGeneratedArtifact.lean` | the typed Mem generated-artifact contract |
 | `MemGeneratedConstraintBridge.lean` | the bridge from `Extraction.Mem` to ProverData-backed Mem sources |
 | `MemAirFacts.md` | the Mem AIR facts audit report |

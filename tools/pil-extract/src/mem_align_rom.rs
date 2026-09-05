@@ -1,15 +1,15 @@
 //! Extract the fixed 256-row MemAlign ROM from its upstream PIL definition.
 //!
 //! `MemAlignRom` is virtual, so it is intentionally absent from pilout's AIR
-//! list. Its authoritative rows instead come from the `OFFSET` and `WIDTH`
-//! fixed-column definitions plus the fixed-column builder in
-//! `mem_align_rom.pil`. The Rust state-machine source supplies the separately
+//! list. Its rows are observed from the pinned PIL compiler after it executes
+//! the upstream fixed-column builder in `mem_align_rom.pil`. No builder logic
+//! is reimplemented here. The Rust state-machine source supplies the separately
 //! checked physical table parameters (id, size, and padding-row index).
 
 use std::fmt::Write;
 use std::path::Path;
 
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{ensure, Context, Result};
 use regex::Regex;
 
 const EXPECTED_TABLE_ID: usize = 133;
@@ -27,7 +27,12 @@ struct Row {
 }
 
 /// Parse the upstream PIL fixed columns and emit `Extraction.MemAlignRom`.
-pub fn run(pil_source: &Path, rust_source: &Path, output: Option<&Path>) -> Result<String> {
+pub fn run(
+    pil_source: &Path,
+    rust_source: &Path,
+    compiled_rows: &Path,
+    output: Option<&Path>,
+) -> Result<String> {
     let pil = std::fs::read_to_string(pil_source)
         .with_context(|| format!("failed to read {}", pil_source.display()))?;
     let rust = std::fs::read_to_string(rust_source)
@@ -53,11 +58,11 @@ pub fn run(pil_source: &Path, rust_source: &Path, output: Option<&Path>) -> Resu
         "MemAlignRom lookup_proves tuple no longer has the expected six-column shape"
     );
 
-    let offsets = fixed_column(&pil, "OFFSET", table_size)?;
-    let widths = fixed_column(&pil, "WIDTH", table_size)?;
     let program_rows = program_rows(&pil)?;
-    let rows = build_rows(&offsets, &widths, program_rows)?;
-    ensure!(rows.len() == table_size, "row builder emitted {} rows", rows.len());
+    ensure!(program_rows < table_size, "program exceeds physical table size");
+    let compiled = std::fs::read_to_string(compiled_rows)
+        .with_context(|| format!("failed to read {}", compiled_rows.display()))?;
+    let rows = parse_compiled_rows(&compiled, table_size)?;
 
     let lean = emit_lean(&rows, table_id, table_size, padding_row, program_rows);
     if let Some(path) = output {
@@ -113,300 +118,27 @@ fn int_array(source: &str, name: &str) -> Result<Vec<usize>> {
         .collect()
 }
 
-fn fixed_column(source: &str, name: &str, length: usize) -> Result<Vec<usize>> {
-    let without_comments = source
-        .lines()
-        .map(|line| line.split_once("//").map_or(line, |(before, _)| before))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let declaration = format!("col fixed {name}");
-    let start = without_comments
-        .find(&declaration)
-        .with_context(|| format!("fixed column {name} not found"))?;
-    let tail = &without_comments[start + declaration.len()..];
-    let equals = tail
-        .find('=')
-        .with_context(|| format!("fixed column {name} has no initializer"))?;
-    let semicolon = tail[equals + 1..]
-        .find(';')
-        .with_context(|| format!("fixed column {name} has no terminating semicolon"))?;
-    let initializer = &tail[equals + 1..equals + 1 + semicolon];
-    let mut parser = FixedColumnParser::new(initializer);
-    let (mut values, tail_fill) = parser.list(true)?;
-    parser.finish()?;
-    if let Some(fill) = tail_fill {
-        ensure!(values.len() <= length, "fixed column {name} prefix exceeds {length} rows");
-        values.resize(length, fill);
-    }
+/// Parse rows observed from the compiler, preserving every column and row.
+fn parse_compiled_rows(source: &str, table_size: usize) -> Result<Vec<Row>> {
+    let mut lines = source.lines();
     ensure!(
-        values.len() == length,
-        "fixed column {name} has {} rows, expected {length}",
-        values.len()
+        lines.next() == Some("PC\tDELTA_PC\tDELTA_ADDR\tOFFSET\tWIDTH\tFLAGS"),
+        "compiled MemAlignRom column order differs from the lookup tuple"
     );
-    Ok(values)
-}
-
-struct FixedColumnParser<'a> {
-    input: &'a [u8],
-    position: usize,
-}
-
-impl<'a> FixedColumnParser<'a> {
-    fn new(input: &'a str) -> Self {
-        Self {
-            input: input.as_bytes(),
-            position: 0,
-        }
-    }
-
-    fn list(&mut self, allow_tail: bool) -> Result<(Vec<usize>, Option<usize>)> {
-        self.skip_space();
-        self.expect(b'[')?;
-        let mut values = Vec::new();
-        let mut tail_fill = None;
-        loop {
-            self.skip_space_and_commas();
-            if self.consume(b']') {
-                break;
-            }
-            let (item, item_tail) = if self.peek() == Some(b'[') {
-                self.list(false)?
-            } else {
-                let value = self.natural()?;
-                if self.consume_bytes(b"...") {
-                    ensure!(allow_tail, "ellipsis is only supported in the outer fixed-column list");
-                    (Vec::new(), Some(value))
-                } else {
-                    (vec![value], None)
-                }
-            };
-            ensure!(item_tail.is_none() || tail_fill.is_none(), "multiple fixed-column ellipses");
-            if let Some(fill) = item_tail {
-                tail_fill = Some(fill);
-            } else {
-                let repeat = if self.consume(b':') { self.natural()? } else { 1 };
-                for _ in 0..repeat {
-                    values.extend_from_slice(&item);
-                }
-            }
-        }
-        Ok((values, tail_fill))
-    }
-
-    fn finish(&mut self) -> Result<()> {
-        self.skip_space();
-        ensure!(self.position == self.input.len(), "unexpected fixed-column syntax after initializer");
-        Ok(())
-    }
-
-    fn natural(&mut self) -> Result<usize> {
-        self.skip_space();
-        let start = self.position;
-        while self.peek().is_some_and(|byte| byte.is_ascii_digit()) {
-            self.position += 1;
-        }
-        ensure!(start != self.position, "expected a natural-number fixed-column value");
-        std::str::from_utf8(&self.input[start..self.position])
-            .expect("digits are UTF-8")
-            .parse()
-            .context("fixed-column value does not fit usize")
-    }
-
-    fn skip_space_and_commas(&mut self) {
-        loop {
-            self.skip_space();
-            if !self.consume(b',') {
-                break;
-            }
-        }
-    }
-
-    fn skip_space(&mut self) {
-        while self.peek().is_some_and(|byte| byte.is_ascii_whitespace()) {
-            self.position += 1;
-        }
-    }
-
-    fn expect(&mut self, byte: u8) -> Result<()> {
-        ensure!(self.consume(byte), "expected `{}` in fixed-column initializer", byte as char);
-        Ok(())
-    }
-
-    fn consume(&mut self, byte: u8) -> bool {
-        self.skip_space();
-        if self.peek() == Some(byte) {
-            self.position += 1;
-            true
-        } else {
-            false
-        }
-    }
-
-    fn consume_bytes(&mut self, bytes: &[u8]) -> bool {
-        if self.input[self.position..].starts_with(bytes) {
-            self.position += bytes.len();
-            true
-        } else {
-            false
-        }
-    }
-
-    fn peek(&self) -> Option<u8> {
-        self.input.get(self.position).copied()
-    }
-}
-
-fn build_rows(offsets: &[usize], widths: &[usize], program_rows: usize) -> Result<Vec<Row>> {
-    ensure!(offsets.len() == widths.len(), "OFFSET/WIDTH length mismatch");
-    ensure!(program_rows == 188, "MemAlignRom program size changed: expected 188, got {program_rows}");
-    ensure!(offsets.len() == EXPECTED_TABLE_SIZE, "MemAlignRom must have 256 fixed rows");
-
-    let mut rows = Vec::with_capacity(offsets.len());
-    for line in 0..offsets.len() {
-        let mut pc = 0i64;
-        let mut delta_pc = 0i64;
-        let mut delta_addr = 0i64;
-        let mut is_write = 0i64;
-        let mut reset = 0i64;
-        let mut selectors = [0i64; 8];
-        let mut up_to_down = 0i64;
-        let mut down_to_up = 0i64;
-
-        if line == 0 || line > program_rows {
-            reset = 1;
-        } else if line < 41 {
-            if line % 2 == 1 {
-                delta_pc = line as i64;
-                reset = 1;
-                mark_range(&mut selectors, offsets[line + 1], widths[line + 1]);
-                up_to_down = 1;
-            } else {
-                pc = (line - 1) as i64;
-                delta_pc = -pc;
-                mark_one(&mut selectors, offsets[line]);
-            }
-        } else if line < 101 {
-            if line % 3 == 2 {
-                delta_pc = line as i64;
-                reset = 1;
-                mark_complement_range(&mut selectors, offsets[line + 2], widths[line + 2]);
-                up_to_down = 1;
-            } else if line % 3 == 0 {
-                pc = (line - 1) as i64;
-                delta_pc = 1;
-                is_write = 1;
-                mark_range(&mut selectors, offsets[line + 1], widths[line + 1]);
-                up_to_down = 1;
-            } else {
-                pc = (line - 1) as i64;
-                delta_pc = -pc;
-                is_write = 1;
-                mark_one(&mut selectors, offsets[line]);
-            }
-        } else if line < 134 {
-            if line % 3 == 2 {
-                delta_pc = line as i64;
-                reset = 1;
-                mark_from(&mut selectors, offsets[line + 1]);
-                up_to_down = 1;
-            } else if line % 3 == 0 {
-                pc = (line - 1) as i64;
-                delta_pc = 1;
-                mark_one(&mut selectors, offsets[line]);
-            } else {
-                pc = (line - 1) as i64;
-                delta_pc = -pc;
-                delta_addr = 1;
-                mark_before(&mut selectors, (offsets[line - 1] + widths[line - 1]) % 8);
-                down_to_up = 1;
-            }
-        } else if line < 189 {
-            if line % 5 == 4 {
-                delta_pc = line as i64;
-                reset = 1;
-                mark_before(&mut selectors, offsets[line + 2]);
-                up_to_down = 1;
-            } else if line % 5 == 0 {
-                pc = (line - 1) as i64;
-                delta_pc = 1;
-                is_write = 1;
-                mark_from(&mut selectors, offsets[line + 1]);
-                up_to_down = 1;
-            } else if line % 5 == 1 {
-                pc = (line - 1) as i64;
-                delta_pc = 1;
-                is_write = 1;
-                mark_one(&mut selectors, offsets[line]);
-            } else if line % 5 == 2 {
-                pc = (line - 1) as i64;
-                delta_pc = 1;
-                delta_addr = 1;
-                is_write = 1;
-                mark_before(&mut selectors, (offsets[line - 1] + widths[line - 1]) % 8);
-                down_to_up = 1;
-            } else {
-                pc = (line - 1) as i64;
-                delta_pc = -pc;
-                mark_from(&mut selectors, (offsets[line - 2] + widths[line - 2]) % 8);
-                down_to_up = 1;
-            }
-        } else {
-            bail!("MemAlignRom row {line} has no source builder case");
-        }
-
-        let flags = selectors
-            .iter()
-            .enumerate()
-            .map(|(index, selector)| selector * (1i64 << index))
-            .sum::<i64>()
-            + is_write * 256
-            + reset * 512
-            + up_to_down * 1024
-            + down_to_up * 2048;
+    let mut rows = Vec::new();
+    for (index, line) in lines.enumerate() {
+        let values = line.split('\t')
+            .map(|value| value.parse::<i64>().context("invalid compiled fixed-column value"))
+            .collect::<Result<Vec<_>>>()?;
+        ensure!(values.len() == 6, "compiled MemAlignRom row {index} must have six columns");
         rows.push(Row {
-            pc,
-            delta_pc,
-            delta_addr,
-            offset: offsets[line] as i64,
-            width: widths[line] as i64,
-            flags,
+            pc: values[0], delta_pc: values[1], delta_addr: values[2],
+            offset: values[3], width: values[4], flags: values[5],
         });
     }
+    ensure!(rows.len() == table_size,
+        "compiled MemAlignRom has {} rows, expected {table_size}", rows.len());
     Ok(rows)
-}
-
-fn mark_one(selectors: &mut [i64; 8], index: usize) {
-    selectors[index] = 1;
-}
-
-fn mark_range(selectors: &mut [i64; 8], offset: usize, width: usize) {
-    for (index, selector) in selectors.iter_mut().enumerate() {
-        if index >= offset && index < offset + width {
-            *selector = 1;
-        }
-    }
-}
-
-fn mark_complement_range(selectors: &mut [i64; 8], offset: usize, width: usize) {
-    for (index, selector) in selectors.iter_mut().enumerate() {
-        if index < offset || index >= offset + width {
-            *selector = 1;
-        }
-    }
-}
-
-fn mark_from(selectors: &mut [i64; 8], offset: usize) {
-    for (index, selector) in selectors.iter_mut().enumerate() {
-        if index >= offset {
-            *selector = 1;
-        }
-    }
-}
-
-fn mark_before(selectors: &mut [i64; 8], end: usize) {
-    for selector in selectors.iter_mut().take(end) {
-        *selector = 1;
-    }
 }
 
 fn emit_lean(
@@ -423,7 +155,7 @@ fn emit_lean(
     writeln!(out, "# Extracted MemAlignRom fixed table.").unwrap();
     out.push('\n');
     writeln!(out, "Auto-generated by `pil-extract mem-align-rom` from the fixed").unwrap();
-    writeln!(out, "`OFFSET`/`WIDTH` columns and row builder in").unwrap();
+    writeln!(out, "columns observed by the pinned PIL compiler executing").unwrap();
     writeln!(out, "`zisk/state-machines/mem/pil/mem_align_rom.pil:6-313`.").unwrap();
     writeln!(out, "The physical table parameters are checked against").unwrap();
     writeln!(out, "`zisk/state-machines/mem/src/mem_align_rom_sm.rs::MemAlignRomSM`.").unwrap();
@@ -437,7 +169,7 @@ fn emit_lean(
         rows.len() - program_rows
     )
     .unwrap();
-    writeln!(out, "whose exact tuple is `[0, 0, 0, 0, 0, 512]`.").unwrap();
+
     writeln!(out, "-/").unwrap();
     out.push('\n');
     writeln!(out, "namespace Extraction.MemAlignRom").unwrap();
@@ -489,32 +221,26 @@ fn lean_fgl(value: i64) -> String {
 mod tests {
     use super::*;
 
+    const HEADER: &str = "PC\tDELTA_PC\tDELTA_ADDR\tOFFSET\tWIDTH\tFLAGS\n";
+
     #[test]
-    fn parses_nested_repetition_and_outer_padding() {
-        let source = "col fixed OFFSET = [0, [[0, 1]:2, 3], 0...];";
-        assert_eq!(
-            fixed_column(source, "OFFSET", 8).unwrap(),
-            vec![0, 0, 1, 0, 1, 3, 0, 0],
-        );
+    fn compiled_rows_preserve_all_fields_and_signs() {
+        let rows = parse_compiled_rows(&format!("{HEADER}1\t-1\t0\t0\t1\t1\n"), 1).unwrap();
+        assert_eq!(rows[0], Row {
+            pc: 1, delta_pc: -1, delta_addr: 0, offset: 0, width: 1, flags: 1,
+        });
     }
 
     #[test]
-    fn builder_preserves_the_reset_padding_tuple() {
-        let offsets = vec![0; EXPECTED_TABLE_SIZE];
-        let widths = vec![0; EXPECTED_TABLE_SIZE];
-        let rows = build_rows(&offsets, &widths, 188).unwrap();
-        assert_eq!(rows.len(), EXPECTED_TABLE_SIZE);
-        assert_eq!(
-            rows[0],
-            Row {
-                pc: 0,
-                delta_pc: 0,
-                delta_addr: 0,
-                offset: 0,
-                width: 0,
-                flags: 512,
-            }
-        );
-        assert_eq!(rows[189].flags, 512);
+    fn rejects_missing_extra_or_misordered_columns_and_rows() {
+        for source in [
+            format!("{HEADER}0\t0\t0\t0\t0\n"),
+            format!("{HEADER}0\t0\t0\t0\t0\t512\t0\n"),
+            format!("{HEADER}0\t0\t0\t0\t0\t512\n0\t0\t0\t0\t0\t512\n"),
+            HEADER.to_string(),
+            format!("{}0\t0\t0\t0\t0\t512\n", HEADER.replace("PC\tDELTA_PC", "DELTA_PC\tPC")),
+        ] {
+            assert!(parse_compiled_rows(&source, 1).is_err());
+        }
     }
 }

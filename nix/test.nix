@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas }:
+, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -158,6 +158,8 @@ writeShellApplication {
       python3 tools/pilout-roundtrip/check.py --quiet
       python3 tools/pilout-roundtrip/selftest.py > /dev/null
     '
+
+    run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
 
     # 4. Mirror round trip (eth-act/zisk-fv#304), the other direction of step 3.
     # Step 3 decides that the extractor moved every pilout constraint into

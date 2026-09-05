@@ -161,6 +161,10 @@ struct MemAlignRomCmd {
     #[arg(long)]
     rust_source: PathBuf,
 
+    /// Six-column TSV emitted by the pinned PIL compiler's fixed-row observer.
+    #[arg(long)]
+    compiled_rows: PathBuf,
+
     /// Output path for the generated Lean module. If omitted, prints to stdout.
     #[arg(long)]
     output: Option<PathBuf>,
@@ -273,6 +277,7 @@ fn main() -> Result<()> {
             let rendered = mem_align_rom::run(
                 &args.pil_source,
                 &args.rust_source,
+                &args.compiled_rows,
                 args.output.as_deref(),
             )?;
             if args.output.is_none() {

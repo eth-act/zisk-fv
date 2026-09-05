@@ -46,6 +46,21 @@ Lean axiom ledger:
 - Sail-to-Lean extraction for the official `riscv/sail-riscv` semantics.
 - ZisK RV64IM circuit-to-Lean extraction from flake-pinned ZisK/PIL inputs.
 
+The virtual MemAlign ROM is obtained by executing the pinned PIL compiler on
+the upstream `MemAlignRom()` template and observing all six fixed columns before
+virtual-table lowering. `tools/virtual-tables/export-mem-align-rom.cjs` uses the
+compiler's `onAirEnd` hook; it does not reconstruct the row-building algorithm.
+The isolated invocation is checked against the production call shape, and a
+zero-multiplicity consumer lets the standard library finish the isolated compile.
+`pil-extract mem-align-rom --compiled-rows` preserves every observed row and
+checks dimensions, column order, and upstream Rust table parameters. The
+generated `MemAlignRom.tsv` is retained beside the extraction artifacts.
+`nix run .#virtual-table-check` compares all production rows with generated Lean
+and requires the sweep's round-50 builder mutation to reach Lean. It is also
+part of `nix run .#test`. This removes duplicated builder logic from the
+extraction boundary; it does not prove compiler correctness or claim that every
+ROM mutation violates instruction soundness.
+
 ## Current Classes
 
 | Class                         | Declarations | In global closure | Removability                                                                                             |
