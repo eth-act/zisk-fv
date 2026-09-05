@@ -10,6 +10,10 @@ import ZiskFv.AirsClean.BinaryAdd.ExtractedRow
 import ZiskFv.AirsClean.Binary.ExtractedRow
 import ZiskFv.AirsClean.ArithMul.Wiring
 import ZiskFv.AirsClean.ArithMul.ExtractedRow
+import ZiskFv.AirsClean.Main.Wiring
+import ZiskFv.AirsClean.Main.RomWiring
+import ZiskFv.AirsClean.Main.MemoryWiring
+import ZiskFv.AirsClean.BinaryExtension.ExtractedWiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
