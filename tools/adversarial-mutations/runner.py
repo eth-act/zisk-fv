@@ -404,7 +404,30 @@ def repository_identity(repo: Path) -> dict[str, Any]:
     relevant = [path for path in dirty if path.startswith(proof_prefixes)]
     if relevant:
         raise CorpusError(f"proof-relevant repository files are dirty: {relevant}")
-    return {"head": head, "dirty_paths": dirty}
+    tracked_raw = subprocess.run(["git", "ls-files", "-z"], cwd=repo, check=True,
+                                 capture_output=True).stdout
+    tracked = [p.decode() for p in tracked_raw.split(b"\0") if p]
+    proof_files = sorted(path for path in tracked if path.startswith(proof_prefixes))
+    digest = hashlib.sha256()
+    for relative in proof_files:
+        digest.update(relative.encode() + b"\0")
+        digest.update((repo / relative).read_bytes())
+        digest.update(b"\0")
+    return {"head": head, "dirty_paths": dirty, "proof_relevant_dirty": relevant,
+            "proof_file_count": len(proof_files), "proof_source_sha256": digest.hexdigest()}
+
+
+def frozen_repository_key(value: dict[str, Any]) -> tuple[Any, ...]:
+    return (value["head"], value["proof_source_sha256"],
+            tuple(value["proof_relevant_dirty"]))
+
+
+def require_frozen_repository(repo: Path, expected: dict[str, Any]) -> None:
+    current = repository_identity(repo)
+    if frozen_repository_key(current) != frozen_repository_key(expected):
+        raise CorpusError(
+            f"proof repository changed during mutation suite: expected "
+            f"{frozen_repository_key(expected)}, got {frozen_repository_key(current)}")
 
 
 def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
@@ -505,7 +528,11 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                               "expected_detection_layer": expected_detection_layer(item),
                               "workspace": str(work), "commands": []}
     try:
-        result["repository"] = repository_identity(args.repo)
+        current_repository = repository_identity(args.repo)
+        frozen_repository = getattr(args, "_frozen_repository", current_repository)
+        args._frozen_repository = frozen_repository
+        require_frozen_repository(args.repo, frozen_repository)
+        result["repository"] = frozen_repository
         locked_rev = locked_zisk_revision(args.repo)
         if not locked_rev.startswith(identity_record["zisk_revision"]):
             raise CorpusError(
@@ -679,8 +706,9 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             seed_cache = args.repo / ".lake"
             if seed_cache.is_dir():
                 copy_tree_cow(seed_cache, proof_tree / ".lake")
-        proof_argv = nix("develop", "--no-write-lock-file", "-c", "lake", "build",
-                         "--log-level=warning")
+        proof_argv = nix("develop", "--no-write-lock-file", str(args.repo.resolve()),
+                         "-c", "lake", "build", "--log-level=warning")
+        require_frozen_repository(args.repo, frozen_repository)
         install_proof_artifacts(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
         baseline_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
                                      logs / "baseline-proof.log")
@@ -690,6 +718,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                           complete=False)
             return result
         install_proof_artifacts(args.repo, proof_tree, mutant_pilout, mutant_extract)
+        require_frozen_repository(args.repo, frozen_repository)
         mutant_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
                                    logs / "mutant-proof.log")
         result["commands"] += [dataclasses.asdict(baseline_proof),
@@ -715,6 +744,12 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
         result.update(outcome="infrastructure", reason=str(exc), complete=False)
         return result
     finally:
+        frozen = getattr(args, "_frozen_repository", None)
+        if frozen is not None:
+            try:
+                require_frozen_repository(args.repo, frozen)
+            except (CorpusError, OSError, subprocess.SubprocessError) as exc:
+                result.update(outcome="infrastructure", reason=str(exc), complete=False)
         archive = getattr(args, "_archive_dir", None)
         if archive is not None:
             try:
@@ -803,6 +838,7 @@ def main(argv: list[str]) -> int:
         work_root = args.work_root or (args.repo.resolve().parent / ".zisk-fv-mutation-work")
         work_root.mkdir(parents=True, exist_ok=True)
         suite_state = Path(tempfile.mkdtemp(prefix="zisk-mutation-suite-", dir=work_root))
+        args._frozen_repository = repository_identity(args.repo)
         try:
             for number in rounds:
                 per_round = argparse.Namespace(**vars(args))
