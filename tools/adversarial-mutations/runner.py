@@ -260,6 +260,25 @@ def classify(item: Round, semantic: dict[str, Any] | None, changed: list[str],
     return "infrastructure", "mutant proof ended with an infrastructure exit"
 
 
+def classify_equivalent_control(mutant_proof: CommandResult, outcome: str,
+                                reason: str) -> tuple[str, str, dict[str, bool]]:
+    """Apply the SYNTACTIC-control policy without hiding command failures."""
+    proof_green = not mutant_proof.timed_out and mutant_proof.exit_code == 0
+    false_positive = outcome == "proof"
+    control = {"semantically_equivalent": True,
+               "proof_green": proof_green,
+               "proof_false_positive": false_positive}
+    if proof_green:
+        return "equivalent", "equivalent circuit preserved proof success", control
+    if false_positive:
+        return ("equivalent",
+                "equivalent circuit triggered the recorded proof-boundary false positive",
+                control)
+    # A timeout, signal, abnormal exit, or unrelated diagnostic remains the
+    # infrastructure result assigned by classify().
+    return outcome, reason, control
+
+
 def boundary(args: argparse.Namespace) -> dict[str, Any]:
     item = round_by_number(args.round)
     semantic = semdiff.compare(args.baseline_pilout, args.mutant_pilout)
@@ -726,17 +745,10 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
         diagnostic = first_diagnostic(Path(mutant_proof.log)) if mutant_proof.exit_code else None
         result["proof_diagnostic"] = diagnostic
         if semantic["equal"] and item.historical_class == "SYNTACTIC":
-            false_positive = mutant_proof.exit_code == 1
-            result["control"] = {
-                "semantically_equivalent": True,
-                "proof_false_positive": false_positive,
-            }
-            outcome = "equivalent"
-            if false_positive:
-                reason = "equivalent circuit triggered the recorded proof-boundary false positive"
-            else:
-                reason = "equivalent circuit preserved proof success"
-        result.update(outcome=outcome, reason=reason, complete=True)
+            outcome, reason, result["control"] = classify_equivalent_control(
+                mutant_proof, outcome, reason)
+        result.update(outcome=outcome, reason=reason,
+                      complete=outcome != "infrastructure")
         return result
     except (CorpusError, OSError, ValueError, subprocess.SubprocessError) as exc:
         result.update(outcome="infrastructure", reason=str(exc), complete=False)

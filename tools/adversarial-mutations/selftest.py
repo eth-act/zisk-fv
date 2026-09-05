@@ -104,6 +104,25 @@ def test_classification() -> None:
     check(runner.classify(valid, different, ["Main.lean"], command(), command(1),
                           command(1))[0] == "infrastructure", "baseline control classification")
 
+    outcome, _, control = runner.classify_equivalent_control(
+        command(), "fidelity", "mutant proof passed")
+    check(outcome == "equivalent" and control["proof_green"],
+          "green equivalent control classification")
+    for failed in (command(None, True), command(2), command(-15)):
+        outcome, _, control = runner.classify_equivalent_control(
+            failed, "infrastructure", "abnormal proof command")
+        check(outcome == "infrastructure" and not control["proof_green"]
+              and not control["proof_false_positive"],
+              "equivalent control hid an infrastructure failure")
+    outcome, _, control = runner.classify_equivalent_control(
+        command(1), "infrastructure", "unrelated diagnostic")
+    check(outcome == "infrastructure" and not control["proof_false_positive"],
+          "unrelated equivalent-control failure counted as a false positive")
+    outcome, _, control = runner.classify_equivalent_control(
+        command(1), "proof", "matched proof boundary")
+    check(outcome == "equivalent" and control["proof_false_positive"],
+          "matched equivalent-control false positive was lost")
+
 
 def test_artifact_and_semantic_baselines() -> None:
     with tempfile.TemporaryDirectory() as tmp:
