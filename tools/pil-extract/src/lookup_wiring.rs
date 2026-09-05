@@ -723,13 +723,14 @@ fn find_links(
 }
 
 /// Zero-tail compression is accepted only at audited macro applications. The
-/// MemAlign family uses it throughout. BinaryAdd c5, Arith c61, and Main c45
-/// are operation-bus applications whose pilout constraints omit the source
-/// macro's trailing literal-zero slots. Main c43/c44 use the audited
-/// assumes-side negative-multiplicity form recognized in the same scoped
-/// matching pass.
+/// MemAlign family uses it throughout. BinaryExtension c4, BinaryAdd c5,
+/// Arith c61, and Main c45 are operation-bus applications whose pilout
+/// constraints omit the source macro's trailing literal-zero slots. Main
+/// c43/c44 use the audited assumes-side negative-multiplicity form recognized
+/// in the same scoped matching pass.
 fn zero_tail_template_scope(air_name: &str, constraint_index: usize) -> bool {
     matches!(air_name, "MemAlign" | "MemAlignByte" | "MemAlignReadByte")
+        || (air_name == "BinaryExtension" && constraint_index == 4)
         || (air_name == "BinaryAdd" && constraint_index == 5)
         || (air_name == "Arith" && constraint_index == 61)
         || (air_name == "Main" && matches!(constraint_index, 43..=45))
@@ -1897,11 +1898,14 @@ mod tests {
     #[test]
     fn operation_zero_tail_scope_is_constraint_specific() {
         assert!(zero_tail_template_scope("BinaryAdd", 5));
+        assert!(zero_tail_template_scope("BinaryExtension", 4));
         assert!(zero_tail_template_scope("Arith", 61));
         assert!(zero_tail_template_scope("Main", 43));
         assert!(zero_tail_template_scope("Main", 44));
         assert!(zero_tail_template_scope("Main", 45));
         assert!(!zero_tail_template_scope("BinaryAdd", 4));
+        assert!(!zero_tail_template_scope("BinaryExtension", 3));
+        assert!(!zero_tail_template_scope("BinaryExtension", 5));
         assert!(!zero_tail_template_scope("Arith", 62));
         assert!(!zero_tail_template_scope("Main", 42));
         assert!(!zero_tail_template_scope("Main", 46));
