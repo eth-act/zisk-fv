@@ -61,6 +61,25 @@ part of `nix run .#test`. This removes duplicated builder logic from the
 extraction boundary; it does not prove compiler correctness or claim that every
 ROM mutation violates instruction soundness.
 
+The extraction-fidelity checks also compile every generated Lean module and
+freeze the complete structural inventory under `tools/extraction-coverage/`.
+`ValidatedLink` contains kernel proofs tying its actual operands and shape to
+its constraint. Maintained wiring checks cover all eight Binary byte tuples,
+BinaryAdd c5, and Arith c61; the Clean arithmetic table is proved equal to the
+generated Rust-derived rows. Arith's physical operation tuple carries
+`div_by_zero` in its flag slot, including the supported zero-divisor DIV/REM
+cases. The modeled primary/secondary messages preserve that field; MUL's zero
+flag follows from the existing division-scope constraint and MUL mode.
+
+`MainMirrorWeld` constructs model-only addresses and raw Main rows, preserving
+all committed columns and deriving the live local polynomial assertions and
+predecessor-PC equation from generated constraints. These are row-level facts,
+not a replacement of `AcceptedZiskTrace` by physical trace acceptance. Exact
+channel balance, static lookup membership, fixed/public trace schemas, and full
+source-to-model trace construction remain distinct proof obligations. No trust
+allowlist or known-defect exclusion is expanded by these fidelity checks. The
+CI protocol is documented in `docs/extraction/ci-invariant.md`.
+
 ## Current Classes
 
 | Class                         | Declarations | In global closure | Removability                                                                                             |
