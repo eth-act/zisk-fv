@@ -5,10 +5,9 @@ import ZiskFv.AirsClean.BinaryExtension.Circuit
 # Source-linked BinaryExtension interactions
 
 The generated lookup ledger exposes the eight bus-124 consumers through
-validated links 5, 0, 1, 2, and 3. The bus-5000 provider has no source hint;
-the ledger therefore retains constraint 4 as `ConstraintOnly`. This module
-decodes all eight hinted tuples into the live table-consumer circuit and checks
-constraint 4 against its exact, source-derived operation tuple.
+validated links 5, 0, 1, 2, and 3. It exposes the bus-5000 provider through
+the source hint attached to the checked zero-tail link for constraint 4. This
+module decodes those source tuples into the live table-consumer circuit.
 
 Decoding returns an `Option`. Unsupported generated syntax returns `none`, and every
 source binding below proves a concrete `some` result. Thus an unsupported term
@@ -192,91 +191,53 @@ theorem byteInteraction_mem_tableConsumer_operations (index : Fin 8) :
   rw [tableConsumer_interactionsWith_binaryExtensionTable]
   fin_cases index <;> simp [byteMessage]
 
-/-! ## Constraint-derived operation provider -/
+/-! ## Source-hinted operation provider -/
 
-private def sourceColumn (column : Nat) : Expr := Expr.witness 1 column 0
-private def sourceConstant (value : String) : Expr := Expr.constant value
-private def sourceAdd (lhs rhs : Expr) : Expr := Expr.add lhs rhs
-private def sourceSub (lhs rhs : Expr) : Expr := Expr.sub lhs rhs
-private def sourceMul (lhs rhs : Expr) : Expr := Expr.mul lhs rhs
+/-- The operation provider is the exact pilout hint #1220 carried by generated
+    c4's checked zero-tail link. -/
+theorem operationHint_mem_link :
+    hint_BinaryExtension_4_0 ∈ link_BinaryExtension_4.hints := by
+  simp [link_BinaryExtension_4]
 
-private def sourceALo : Expr :=
-  sourceAdd
-    (sourceAdd
-      (sourceAdd (sourceColumn 1) (sourceMul (sourceConstant "256") (sourceColumn 2)))
-      (sourceMul (sourceConstant "65536") (sourceColumn 3)))
-    (sourceMul (sourceConstant "16777216") (sourceColumn 4))
+/-- Pin the source spelling and direction. Pilout calls this route `Lookup`,
+    with `proves = true`; the Clean operation is consequently a positive push. -/
+theorem operationHint_metadata :
+    hint_BinaryExtension_4_0.hintIndex = 1220 ∧
+      hint_BinaryExtension_4_0.piop = "Lookup" ∧
+      hint_BinaryExtension_4_0.proves = true ∧
+      hint_BinaryExtension_4_0.busId = Expr.constant "5000" ∧
+      hint_BinaryExtension_4_0.multiplicity = Expr.constant "1" := by
+  simp [hint_BinaryExtension_4_0]
 
-private def sourceAHi : Expr :=
-  sourceAdd
-    (sourceAdd
-      (sourceAdd (sourceColumn 5) (sourceMul (sourceConstant "256") (sourceColumn 6)))
-      (sourceMul (sourceConstant "65536") (sourceColumn 7)))
-    (sourceMul (sourceConstant "16777216") (sourceColumn 8))
+/-- The generated link pins c4 to the direct zero-tail shape rather than
+    accepting a freely reconstructed polynomial. -/
+theorem operationLink_source_constraint :
+    link_BinaryExtension_4.air = "BinaryExtension" ∧
+      link_BinaryExtension_4.constraintIndex = 4 ∧
+      link_BinaryExtension_4.shape = .directZeroTail ∧
+      link_BinaryExtension_4.constraint = constraint_BinaryExtension_4 ∧
+      link_BinaryExtension_4.template = template_BinaryExtension_4 := by
+  simp [link_BinaryExtension_4]
 
-private def sourceCLo : Expr :=
-  sourceAdd (sourceAdd (sourceAdd (sourceAdd (sourceAdd (sourceAdd
-    (sourceAdd (sourceColumn 10) (sourceColumn 12)) (sourceColumn 14))
-    (sourceColumn 16)) (sourceColumn 18)) (sourceColumn 20)) (sourceColumn 22))
-    (sourceColumn 24)
+/-- The generated proof field checks that the c4 constraint is exactly the
+    selected source-hint template. -/
+theorem operationLink_constraintValidated :
+    templateOf link_BinaryExtension_4.shape link_BinaryExtension_4.alpha
+        link_BinaryExtension_4.gamma link_BinaryExtension_4.accumulator
+        link_BinaryExtension_4.hints link_BinaryExtension_4.derivedTuples =
+      some link_BinaryExtension_4.constraint :=
+  link_BinaryExtension_4.constraintValidated
 
-private def sourceCHi : Expr :=
-  sourceAdd (sourceAdd (sourceAdd (sourceAdd (sourceAdd (sourceAdd
-    (sourceAdd (sourceColumn 11) (sourceColumn 13)) (sourceColumn 15))
-    (sourceColumn 17)) (sourceColumn 19)) (sourceColumn 21)) (sourceColumn 23))
-    (sourceColumn 25)
-
-/-- The c4 tuple reconstructed from the exact mixed constraint. The four
-    literal-zero tail slots are present here even though the source accumulator
-    omits them. -/
-def operationTupleFromConstraint : DerivedTuple := {
-  piop := "Operation"
-  proves := true
-  busId := sourceConstant "5000"
-  multiplicity := sourceConstant "1"
-  slots :=
-    [ ⟨"op", sourceColumn 0⟩
-    , ⟨"a_lo", sourceAdd (sourceMul (sourceColumn 26)
-        (sourceSub sourceALo (sourceColumn 27))) (sourceColumn 27)⟩
-    , ⟨"a_hi", sourceAdd (sourceMul (sourceColumn 26)
-        (sourceSub sourceAHi (sourceColumn 28))) (sourceColumn 28)⟩
-    , ⟨"b_lo", sourceAdd (sourceMul (sourceColumn 26)
-        (sourceSub (sourceAdd (sourceColumn 9)
-          (sourceMul (sourceConstant "256") (sourceColumn 27))) sourceALo)) sourceALo⟩
-    , ⟨"b_hi", sourceAdd (sourceMul (sourceColumn 26)
-        (sourceSub (sourceColumn 28) sourceAHi)) sourceAHi⟩
-    , ⟨"c_lo", sourceCLo⟩
-    , ⟨"c_hi", sourceCHi⟩
-    , ⟨"flag", sourceConstant "0"⟩
-    , ⟨"main_step", sourceConstant "0"⟩
-    , ⟨"extended_arg", sourceConstant "0"⟩
-    , ⟨"extra_args[0]", sourceConstant "0"⟩ ]
-}
-
-/-- Direct provider template for a constraint-derived tuple. -/
-def directDerivedZeroTailTemplate (alpha gamma accumulator : Expr)
-    (tuple : DerivedTuple) : Expr :=
-  if tuple.proves then
-    .sub (.mul accumulator (stdMix alpha gamma tuple.busId (zeroTailSlots tuple.slots)))
-      tuple.multiplicity
-  else
-    .add (.mul accumulator (stdMix alpha gamma tuple.busId (zeroTailSlots tuple.slots)))
-      tuple.multiplicity
-
-/-- Generated c4 is exactly the direct bus-5000 provider relation for the
-    derived tuple above. This is the source link absent from the hint ledger. -/
-theorem operationTuple_derived_from_constraint4 :
-    constraintOnly_BinaryExtension_4.constraint =
-      directDerivedZeroTailTemplate (Expr.challenge 2 0) (Expr.challenge 2 1)
-        (Expr.witness 2 5 0) operationTupleFromConstraint := by
-  rfl
-
-theorem operationTuple_metadata :
-    operationTupleFromConstraint.piop = "Operation" ∧
-      operationTupleFromConstraint.proves = true ∧
-      operationTupleFromConstraint.busId = Expr.constant "5000" ∧
-      operationTupleFromConstraint.multiplicity = Expr.constant "1" := by
-  simp [operationTupleFromConstraint, sourceConstant]
+/-- Pilout supplies all 11 source slots. Its final four slots are explicit
+    literal zeros named `0`; they are not padding inferred from c4. -/
+theorem operationHint_arity_and_zero_tail :
+    hint_BinaryExtension_4_0.slots.length = 11 ∧
+      hint_BinaryExtension_4_0.slots.drop 7 =
+        [ ⟨"0", Expr.constant "0"⟩
+        , ⟨"0", Expr.constant "0"⟩
+        , ⟨"0", Expr.constant "0"⟩
+        , ⟨"0", Expr.constant "0"⟩ ] := by
+  simp [hint_BinaryExtension_4_0]
 
 @[reducible]
 def opBusMessageTuple (message : OpBusMessage (Expression FGL)) :
@@ -285,10 +246,10 @@ def opBusMessageTuple (message : OpBusMessage (Expression FGL)) :
     message.c_lo, message.c_hi, message.flag, message.main_step,
     message.extended_arg, message.extra_args_0]
 
-/-- The derived c4 slots decode successfully to all 11 live operation-bus
+/-- The source c4 hint slots decode successfully to all 11 live operation-bus
     lanes in their physical order. -/
 theorem operationTuple_decode_success (row : Var BinaryExtensionRow FGL) :
-    decodeSourceSlots row operationTupleFromConstraint.slots =
+    decodeSourceSlots row hint_BinaryExtension_4_0.slots =
       some (opBusMessageTuple (opBusMessageExpr row)) := by
   rfl
 
