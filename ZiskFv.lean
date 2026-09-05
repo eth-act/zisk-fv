@@ -256,6 +256,7 @@ import ZiskFv.AirsClean.ArithMirrorWeld
 -- constraint definitions `@[simp]`, so importing it from anywhere with ZiskFv
 -- dependents would add them to the default simp set for every downstream module.
 import ZiskFv.AirsClean.MainMirrorWeld
+import ZiskFv.AirsClean.Main.ExtractedTable
 -- `rfl`-level weld of the two MemAlign constraint mirrors (`Valid_MemAlign` and
 -- the Clean component's `Spec`/`transitionRows`/`cyclicSuccessorTransitionRows`)
 -- to the generated `Extraction.MemAlign.constraint_N_every_row` predicates. This
