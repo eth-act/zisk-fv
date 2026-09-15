@@ -296,10 +296,10 @@ them, so what they defend is the repository's build, not the theorem's statement
 | 1 | **The Arith ROM table is never compiled.** `Extraction.ArithTable` is absent from `lakefile.toml`'s `globs` and imported by nothing; it could not elaborate anyway, because `pil-extract` emits `import ZiskFv.Fundamentals.Goldilocks`, a module that has not existed since `84828e96`. The model's own 74 rows are a literal transcription whose "Verbatim from …" docstring nothing checks. | 5, 26, 33, 36 | build log shows no `Built Extraction.ArithTable` |
 | 2 | **Binary's byte-table lookup tuples are unwelded.** `BinaryMirrorWeld` welds `Binary` constraints 0-6; `Binary/Wiring.lean` welds constraint 10. Constraints 7-9 and 11-13 — the remaining `BINARY_TABLE` lookups — are named nowhere under `ZiskFv/`. Transposing the two operand bytes in one of them is accepted. | 7, 16, 22 | rounds 4 and 25 hit constraint 10 and *were* caught |
 | 3 | **An AIR's row equations are welded; the tuple it publishes on the operation bus is not.** `Arith` constraint 61 (the bus result) and `BinaryAdd` constraint 5 (the bus opcode) are both outside every welded set. BinaryAdd can advertise `OP_SUB` while computing `a + b`; Arith can transpose the two 16-bit limbs of its announced result. The model supplies these tuples itself — `BinaryAdd/Bridge.lean:62` hard-codes `op := 10`. | 32, 38, 46 | two independent draws (38, 46) hit the same constraint |
-| 4 | **Range-check ids are unwelded.** Widening `MAX_RANGE` on the register-ordering check changes nine constraints across four AIRs and not one of them is named by a theorem. This is the check that forces a register read to name the most recent previous access. | 27 | consistent with the repository's own note that `SpecifiedRanges` is not composed |
+| 4 | **Range-check ids are unwelded.** Widening `MAX_RANGE` on the register-ordering check changes nine constraints across four AIRs and not one of them is named by a theorem. This is the check that forces a register read to name the most recent previous access. | 27 | the provider side does not exist: `SpecifiedRanges` has no extracted constraint family, no live Clean component, and no provider in the ensemble (#19) |
 
-Mechanisms 1 and 4 are documented scope limits of the extraction; mechanisms 2 and
-3 are the sharper result, because there the constraint *is* extracted, *is*
+Mechanism 4 is blocked on a missing provider rather than on wiring — see the scope note below.
+Mechanisms 1, 2 and 3 are the sharper result, because there the constraint *is* extracted, *is*
 compiled, and the round-trip gate confirms it arrived faithfully — it simply has
 no theorem attached. `Binary` constraint 10 being welded while 11 is not is the
 whole gap in one line.
@@ -404,28 +404,42 @@ broken artifact plus a gate that does not cover the generated library. Fix the
 import, add the module to the globs, prove `rows = arith_table` by `decide`, and
 extend the reachability gate to `build/extraction/`.**
 
-### D · Known out of scope — round 27
+### D · Should be caught, but blocked on a provider that does not exist — round 27
 
-This one is already in the ledger, twice over.
+I first recorded this as a documented scope exclusion. That was wrong, and the
+correction matters.
 
-`trust/trusted-base.md:896` states plainly: *“This slice does **not** claim
-register/memory access-ordering soundness.”* The same section analyses
-`main.pil:447`’s `MAX_RANGE` margin down to the zero-margin case at
-`main_segment = 0` and concludes: *“`447` remains genuinely unmodelled and is still
-an extraction-fidelity gap.”*
+The round mutates `main.pil:334` — the **per-row** register-ordering check
+(`b_mem_step - b_reg_prev_mem_step - 1`), not `main.pil:447`, which is the
+per-register boundary check. Per-row register ordering is single-segment RV64IM
+and is squarely in scope.
 
-There is also a mechanical reason the mutation cannot move the proof. The Lean
-register-ordering argument does not come from ZisK’s range checks at all: it comes
-from `Air.Flat.BalancedInteractions` being **message-exact** (`∀ msg, balanceOf
-interactions msg = 0`, not a challenge-mixed sum) plus timestamp separation mod 4
-(`trust/trusted-base.md:784-816`). No `MAX_RANGE`, and no
-`*_reg_prev_mem_step` ordering constraint, appears anywhere under `ZiskFv/`.
+`trust/trusted-base.md:896` does say *"This slice does **not** claim
+register/memory access-ordering soundness."* That disclaims the **claim**, which
+is a statement about what is currently proved. It does not put the area out of
+scope. Register ordering is tracked as in-scope missing work at #330, #19 and
+#348.
 
-**Verdict: expected miss, correctly scoped.** Worth recording, though, that the
-proof and the circuit establish access ordering by *different* mechanisms — the
-circuit by range check, the model by exact multiset balance — so the Lean side
-offers no coverage of the circuit’s, and the ledger’s own “closed-world” caveat
-(`trusted-base.md:801-806`) is what carries the weight.
+What genuinely blocks it is narrower and more concrete than a scope decision.
+The mutation changes nine constraints across four AIRs, all of them range-check
+lookups on buses 102, 103, 106 and 107. Tying those tuples buys nothing on its
+own, because **the provider side is not in the ensemble**: `SpecifiedRanges` is
+an explicit absent-AIR result in `LookupWiring`, with no extracted constraint
+family and no live Clean component. Clean's `RawChannel.Consistent` applies only
+once *both* interaction sides participate in a balanced ensemble, and
+`PLAN_S3_LOOKUP_WIRING.md` records that a detached `Table.fromStatic` lookup
+substituted for the missing provider would itself be laundering.
+
+There is also a mechanical reason the mutation cannot move the proof today. The
+Lean register-ordering argument comes from `Air.Flat.BalancedInteractions` being
+**message-exact** plus timestamp separation mod 4
+(`trust/trusted-base.md:784-816`), not from ZisK's range checks. No `MAX_RANGE`
+and no `*_reg_prev_mem_step` ordering constraint appears anywhere under
+`ZiskFv/`.
+
+**Verdict: in scope, correctly missed today, and blocked on #19 rather than on
+wiring.** Worth recording that proof and circuit establish ordering by
+*different* mechanisms, so the Lean side offers no coverage of the circuit's.
 
 ### Summary
 
@@ -434,10 +448,9 @@ offers no coverage of the circuit’s, and the ledger’s own “closed-world”
 | should be caught — check exists, unwired | 7, 16, 22 | 3 |
 | should be caught — needs a `proves_operation` template first | 32, 38, 46 | 3 |
 | should be caught — broken generated module + gate blind spot | 5, 26, 33, 36 | 4 |
-| known out of scope, documented in the trust ledger | 27 | 1 |
+| should be caught — blocked on a provider that is not modelled | 27 | 1 |
 
-**Ten of the eleven misses are fidelity gaps that should close. One is a
-documented scope exclusion.** None of the ten is a false theorem: `root_soundness`
+**All eleven misses are fidelity gaps that should close.** None of them is a false theorem: `root_soundness`
 is true of the model it is stated over. What is unchecked is whether that model is
 still ZisK — and for the bus and lookup tuples, the extractor has already done most
 of the work needed to check it.
@@ -1280,8 +1293,13 @@ The mutated identity is
 which is what forces a register read to name the *most recent* previous access
 rather than an arbitrary earlier one. That is the same ordering argument the
 register-consistency work depends on, so this is the most load-bearing of the
-missed rounds. It is consistent with the repository's own documented scope note
-that the range/table AIRs (`SpecifiedRanges`) are not composed into the ensemble.
+missed rounds. It is in scope for single-segment RV64IM: `main.pil:334` is the **per-row**
+register-ordering check, not `main.pil:447`'s per-register boundary check. What
+blocks it is that the provider side does not exist — `SpecifiedRanges` is an
+absent-AIR result in `LookupWiring`, with no extracted constraint family and no
+component in the ensemble — so tying these tuples buys nothing until #19 lands.
+`trust/trusted-base.md:896` disclaims the access-ordering *claim*; it does not
+put the area out of scope.
 
 **Where it lands in the generated Lean.**
 
