@@ -1,0 +1,169 @@
+# stash@{22}
+# date: 2026-05-02 06:06:13 -0400
+# message: On lean-toolchain-4.29: WIP lean-4.29 bump (lakefile.toml, lean-toolchain, manifest)
+#
+diff --git a/lake-manifest.json b/lake-manifest.json
+index d4c05306..24d4efba 100644
+--- a/lake-manifest.json
++++ b/lake-manifest.json
+@@ -1,7 +1,17 @@
+ {"version": "1.1.0",
+  "packagesDir": ".lake/packages",
+  "packages":
+- [{"type": "path",
++ [{"url": "https://github.com/leanprover-community/mathlib4",
++   "type": "git",
++   "subDir": null,
++   "scope": "leanprover-community",
++   "rev": "8a178386ffc0f5fef0b77738bb5449d50efeea95",
++   "name": "mathlib",
++   "manifestFile": "lake-manifest.json",
++   "inputRev": "v4.29.0",
++   "inherited": false,
++   "configFile": "lakefile.lean"},
++  {"type": "path",
+    "scope": "",
+    "name": "LeanRV",
+    "manifestFile": "lake-manifest.json",
+@@ -12,27 +22,17 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "",
+-   "rev": "8631b11de51c68288b519e8032019524b84a365f",
++   "rev": "7db49396607110fe4cdbf167c05b7f1fd336fc38",
+    "name": "LeanZKCircuit",
+    "manifestFile": "lake-manifest.json",
+-   "inputRev": "v4.26.0",
+-   "inherited": false,
+-   "configFile": "lakefile.lean"},
+-  {"url": "https://github.com/leanprover-community/mathlib4",
+-   "type": "git",
+-   "subDir": null,
+-   "scope": "leanprover-community",
+-   "rev": "2df2f0150c275ad53cb3c90f7c98ec15a56a1a67",
+-   "name": "mathlib",
+-   "manifestFile": "lake-manifest.json",
+-   "inputRev": "v4.26.0",
++   "inputRev": "v4.28.0-rc1",
+    "inherited": false,
+    "configFile": "lakefile.lean"},
+   {"url": "https://github.com/leanprover-community/plausible",
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "160af9e8e7d4ae448f3c92edcc5b6a8522453f11",
++   "rev": "83e90935a17ca19ebe4b7893c7f7066e266f50d3",
+    "name": "plausible",
+    "manifestFile": "lake-manifest.json",
+    "inputRev": "main",
+@@ -42,7 +42,7 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "3591c3f664ac3719c4c86e4483e21e228707bfa2",
++   "rev": "c5d5b8fe6e5158def25cd28eb94e4141ad97c843",
+    "name": "LeanSearchClient",
+    "manifestFile": "lake-manifest.json",
+    "inputRev": "main",
+@@ -52,7 +52,7 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "e9f31324f15ead11048b1443e62c5deaddd055d2",
++   "rev": "48d5698bc464786347c1b0d859b18f938420f060",
+    "name": "importGraph",
+    "manifestFile": "lake-manifest.json",
+    "inputRev": "main",
+@@ -62,17 +62,17 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "b4fb2aa5290ebf61bc5f80a5375ba642f0a49192",
++   "rev": "3c52dee17f0cd89c1ec14de78920d1bdaa3d26b3",
+    "name": "proofwidgets",
+    "manifestFile": "lake-manifest.json",
+-   "inputRev": "v0.0.83",
++   "inputRev": "v0.0.95",
+    "inherited": true,
+    "configFile": "lakefile.lean"},
+   {"url": "https://github.com/leanprover-community/aesop",
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "2f6d238744c4cb07fdc91240feaf5d4221a27931",
++   "rev": "7152850e7b216a0d409701617721b6e469d34bf6",
+    "name": "aesop",
+    "manifestFile": "lake-manifest.json",
+    "inputRev": "master",
+@@ -82,7 +82,7 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "9312503909aa8e8bb392530145cc1677a6298574",
++   "rev": "707efb56d0696634e9e965523a1bbe9ac6ce141d",
+    "name": "Qq",
+    "manifestFile": "lake-manifest.json",
+    "inputRev": "master",
+@@ -92,7 +92,7 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover-community",
+-   "rev": "24241822ef9d3e7f6a3bcc53ad136e12663db8f3",
++   "rev": "756e3321fd3b02a85ffda19fef789916223e578c",
+    "name": "batteries",
+    "manifestFile": "lake-manifest.json",
+    "inputRev": "main",
+@@ -102,10 +102,10 @@
+    "type": "git",
+    "subDir": null,
+    "scope": "leanprover",
+-   "rev": "933fce7e893f65969714c60cdb4bd8376786044e",
++   "rev": "7802da01beb530bf051ab657443f9cd9bc3e1a29",
+    "name": "Cli",
+    "manifestFile": "lake-manifest.json",
+-   "inputRev": "v4.26.0",
++   "inputRev": "v4.29.0",
+    "inherited": true,
+    "configFile": "lakefile.toml"}],
+  "name": "«zisk-fv»",
+diff --git a/lakefile.toml b/lakefile.toml
+index 7ab8d806..7c23a5c9 100644
+--- a/lakefile.toml
++++ b/lakefile.toml
+@@ -7,15 +7,10 @@ moreLeanArgs = ["--tstack=400000"]
+ [leanOptions]
+ pp.unicode.fun = true
+ 
+-[[require]]
+-name = "mathlib"
+-scope = "leanprover-community"
+-rev = "v4.26.0"
+-
+ [[require]]
+ name = "LeanZKCircuit"
+ git = "https://github.com/NethermindEth/leanzkcircuit.git"
+-rev = "v4.26.0"
++rev = "v4.28.0-rc1"  # LeanZKCircuit's highest branch; transitive deps overridden by mathlib (declared last)
+ 
+ # Sail-Lean RV64D spec is built locally from primary source via
+ # Docker (`docker/build-sail-lean.sh`). Lake reads from the local
+@@ -25,5 +20,12 @@ rev = "v4.26.0"
+ name = "LeanRV"
+ path = "build/sail-lean"
+ 
++# Declare mathlib LAST so its transitive dep revs (aesop, Qq, batteries, Cli)
++# win when LeanZKCircuit references different revs.
++[[require]]
++name = "mathlib"
++scope = "leanprover-community"
++rev = "v4.29.0"
++
+ [[lean_lib]]
+ name = "ZiskFv"
+diff --git a/lean-toolchain b/lean-toolchain
+index e59446d5..14791d72 100644
+--- a/lean-toolchain
++++ b/lean-toolchain
+@@ -1 +1 @@
+-leanprover/lean4:v4.26.0
++leanprover/lean4:v4.29.0

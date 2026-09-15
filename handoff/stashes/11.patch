@@ -1,0 +1,50 @@
+# stash@{11}
+# date: 2026-06-13 14:44:22 -0400
+# message: On endgame-p3-pr4: pre-p3-restack status endgame-p3-pr4 2026-06-13
+#
+diff --git a/STATUS.md b/STATUS.md
+index a418930b..ac13c414 100644
+--- a/STATUS.md
++++ b/STATUS.md
+@@ -1,19 +1,26 @@
+-Active plan: docs/ai/plan/ENDGAME_ROADMAP.md (metaplan) →
+-docs/ai/plan/PLAN_ENDGAME_P1.md (first phase, ready for execution)
++Active plan: docs/ai/plan/PLAN_ENDGAME_P3.md (authoritative copy in parent
++checkout until P3-PR1/#84 lands; tracking/status files stay out of PR payloads).
+ 
+-Current focus: Clean Completeness Proofs stream is COMPLETE — all five wave
+-PRs (#69–#73) merged 2026-06-12. The Endgame campaign is set up: six phases
+-from the envelope-conditional global theorem to a trace-level public
+-statement, anchored to issues #61/#74–#78. Plan sizing convention: ~5 PRs
+-per phase plan, written only when the phase is staffed.
++Current focus: P3-PR4, memory-argument construction core:
++`MemoryPrefixStateAlignment` plus constructors for `MemoryTimelineEvidence`.
++Worktree/branch: `.worktrees/endgame-p3-pr4` / `endgame-p3-pr4`, based on
++`origin/main` at `b3c29670`, with P3-PR2 and P3-PR3 dependency commits applied.
+ 
+-Blocking: none. P1 can be staffed now (two agents: A = PRs 1→2→3
+-finalization + kernel-only closure; B = PRs 4→5 ADD instantiation + bucket
+-audit). P3 (#76 memory argument) can be staffed in parallel once an agent
+-frees up; its plan is written at that point.
++Already done: P3-PR1 #84, P3-PR2 #85, P3-PR3 #86, and P3-PR4 #87 are open
++and queued for review. #85/#86/#87 diffs contain only intended source/gate
++files; no planning/tracking markdown.
+ 
+-Open follow-ups carried from the completeness stream (recorded in P1-PR1):
+-signed Arith completeness disjuncts; table-op scope extensions; wave
+-worktree/branch cleanup pending Cody's deletion approval.
++Blocking: none for local PR4 proof work. PR4 is stacked on
++`endgame-p3-pr4-base` for a clean review diff until #85/#86 merge.
+ 
+-Next step: hand PLAN_ENDGAME_P1.md to the P1 agent(s).
++Next step: continue to P3-PR5 after rechecking the plan and dependency state.
++
++Last checkpoint: clean PR4 worktree baseline passed `lake build` and
++`trust/scripts/check-all.sh`. The first V1 gate run only failed because `zisk`
++was not initialized in the fresh worktree; after `git submodule update --init
++zisk`, V1 passed all 18 checks. PR4 focused checks, full `lake build`,
++`trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`, and
++`nix run .#test` all passed; the new construction witness closes with only
++standard Lean axioms. PR #87 file list is exactly `ZiskFv.lean`,
++`Construction.lean`, `memory_timeline_construction_witness.lean`, and
++`check-all-semantic.sh`.

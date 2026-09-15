@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zisk-fv · Glossary</title>
+<style>
+  :root{--ink:#1a1a1a;--soft:#5a5a52;--rule:#d8d4c8;--bg:#fdfcf7;--accent:#7a2e1d;--new:#2d6a5a;--code:#f3efe2}
+  *{box-sizing:border-box} html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:48rem;margin:0 auto;padding:3.2rem 1.6rem 5rem}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.1rem;margin-bottom:1.8rem}
+  .kicker{font-variant:small-caps;letter-spacing:.12em;color:var(--accent);font-size:.82rem;font-weight:600}
+  h1{font-size:2rem;line-height:1.1;margin:.3rem 0 .4rem;font-weight:600}
+  .sub{color:var(--soft);font-style:italic;font-size:1rem}
+  .pin{color:var(--soft);font-size:.78rem;margin-top:.5rem;font-style:italic}
+  nav.cats{margin:1.4rem 0 0;font-size:.86rem;color:var(--soft)}
+  nav.cats a{color:var(--accent);text-decoration:none;margin-right:.7rem;white-space:nowrap}
+  nav.cats a:hover{text-decoration:underline}
+  h2{font-size:1.18rem;margin:2.4rem 0 .2rem;font-weight:600;border-bottom:1px solid var(--rule);padding-bottom:.3rem;scroll-margin-top:1rem}
+  h2 .n{color:var(--soft);font-weight:400;font-size:.9rem;font-variant:small-caps;margin-left:.4rem}
+  h2.newcat{border-bottom-color:var(--new)} h2.newcat .tag{font-size:.62rem;color:#fff;background:var(--new);border-radius:9px;padding:.05rem .4rem;vertical-align:middle;margin-left:.5rem;font-variant:small-caps;letter-spacing:.04em}
+  dl{margin:.7rem 0 0} dt{font-weight:600;margin-top:1.05rem}
+  dt code,dd code{background:var(--code);padding:.06em .32em;border-radius:3px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.84em}
+  dd{margin:.2rem 0 0;color:#2a2a28} dd .path{color:var(--soft);font-style:italic} .x{color:var(--accent)}
+  footer{margin-top:3rem;padding-top:1.1rem;border-top:1px solid var(--rule);color:var(--soft);font-size:.85rem} footer a{color:var(--accent)}
+  @media print{body{background:#fff}.wrap{max-width:none;padding:0}nav.cats{display:none}h2{break-after:avoid}dt{break-after:avoid}dd,dt{break-inside:avoid}}
+</style>
+</head>
+<body>
+<a href="../index.html" title="Course home" style="position:fixed;top:.7rem;left:.7rem;z-index:50;font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:.78rem;font-weight:600;text-decoration:none;background:#7a2e1d;color:#fff;padding:.32rem .66rem;border-radius:20px;box-shadow:0 1px 5px rgba(0,0,0,.22)">⌂&nbsp;Home</a>
+<div class="wrap">
+<header class="top">
+  <div class="kicker">zisk-fv · reference</div>
+  <h1>Glossary</h1>
+  <div class="sub">The shared vocabulary. Every lesson uses these terms with these meanings.</div>
+  <div class="pin">Pinned to <code>main @ e731db56</code>. Terms read from the tree (the prose docs lag the code).</div>
+  <nav class="cats">
+    <a href="#build">Build &amp; generation</a>
+    <a href="#circuit">Circuit / AIR (RHS)</a>
+    <a href="#spec">Spec (LHS)</a>
+    <a href="#tower">Proof tower</a>
+    <a href="#top">Trace-level top ★new</a>
+    <a href="#trust">Trust gate</a>
+    <a href="#complete">Completeness</a>
+  </nav>
+</header>
+
+<h2 id="build">Build &amp; generation <span class="n">how inputs are produced</span></h2>
+<dl>
+  <dt>Nix flake / <code>flake.lock</code></dt><dd>Reproducible build definition; <code>flake.lock</code> pins every input by content hash — the audit surface for build inputs. <span class="path">flake.nix, nix/</span></dd>
+  <dt><code>nix run .#populate</code></dt><dd>Builds the generated derivations and copies outputs into the tree. Run once before <code>lake build</code>.</dd>
+  <dt>PIL / PIL2 · <code>.pilout</code></dt><dd>ZisK's constraint DSL; the pil2-compiler composes all AIRs into <code>build/zisk.pilout</code> (protobuf, 22 AIRs).</dd>
+  <dt><code>pil-extract</code></dt><dd>Rust tool: reads <code>.pilout</code> and emits per-AIR Lean constraints (<code>air</code> mode → gitignored <code>build/extraction/</code>) and committed Clean components (<code>clean-component</code> mode → <code>AirsClean/</code>). <span class="path">tools/pil-extract</span></dd>
+  <dt>Aeneas</dt><dd>Rust→Lean extraction of ZisK's production lowering (on the <code>zisk/</code> submodule), backing the completeness harness and the <code>aeneasBridgeTrust</code> hypothesis.</dd>
+</dl>
+
+<h2 id="circuit">Circuit / AIR — the RHS <span class="n">what ZisK computes</span></h2>
+<dl>
+  <dt>AIR <span class="n">(Algebraic Intermediate Representation)</span></dt><dd>One circuit's constraint set. ZisK has ~22 AIRs; ~10 are on the RV64IM path (Main, Binary, BinaryAdd, BinaryExtension, Arith, Mem, MemAlign…).</dd>
+  <dt><code>Valid_&lt;AIR&gt;</code></dt><dd>A Lean record of named columns + simp lemmas wrapping an AIR, mirroring its PIL constraints. Constructibility risk lives here (over-strong ⇒ vacuous). <span class="path">ZiskFv/Airs/</span></dd>
+  <dt>Operation bus / <code>matches_entry</code></dt><dd>The model for how an instruction maps to circuit rows; replaces explicit interaction tracking. <span class="path">Airs/OperationBus</span></dd>
+  <dt>Goldilocks / FGL</dt><dd>The field (<code>p = 2⁶⁴ − 2³² + 1</code>); <code>FGL</code> is the Lean <code>Field</code> instance. <span class="path">ZiskFv/Field/Goldilocks.lean</span></dd>
+  <dt>Clean / <code>AirsClean</code></dt><dd>The Clean ZK-circuit DSL; <code>AirsClean/</code> holds generated <code>Row</code>/<code>Constraints</code> + hand-written <code>Circuit</code>/<code>Spec</code>/<code>Soundness</code>/<code>Bridge</code>. <span class="path">ZiskFv/AirsClean/ (74)</span></dd>
+  <dt><code>validOfRow</code></dt><dd>The bridge lowering a Clean row into the legacy <code>Valid_&lt;AIR&gt;</code> record — so <code>AirsClean</code> feeds, not replaces, <code>Airs</code>. <span class="path">AirsClean/&lt;AIR&gt;/Bridge.lean</span></dd>
+</dl>
+
+<h2 id="spec">Spec — the LHS <span class="n">the reference truth</span></h2>
+<dl>
+  <dt>Sail · <code>execute_instruction</code></dt><dd>The official RISC-V spec language; <code>sail-riscv</code> compiled to Lean is the LHS reference. <code>execute_instruction</code> maps a decoded instruction + state to the next state. <span class="path">build/sail-lean/</span></dd>
+  <dt>Pure spec</dt><dd>Per-opcode bridge files restating Sail semantics in proof-friendly form. <span class="path">ZiskFv/SailSpec/</span></dd>
+</dl>
+
+<h2 id="tower">Proof tower <span class="n">where LHS meets RHS</span></h2>
+<dl>
+  <dt><code>EquivCore/&lt;Op&gt;</code></dt><dd>The real per-opcode proof: <code>Sail.execute = bus_effect.2</code>, given a well-formed AIR row. <span class="path">ZiskFv/EquivCore/ (95)</span></dd>
+  <dt>Promise hypothesis</dt><dd>A caller-supplied assumption a theorem takes as a parameter instead of proving — the residual trust. (The new top, below, discharges many of these from a trace.)</dd>
+  <dt>Wrapper / <code>Compliance.equiv_&lt;OP&gt;</code></dt><dd>Discharges the AIR-row/table facts from the provider's <code>Valid_</code> spec. <span class="path">ZiskFv/Compliance/Wrappers/</span></dd>
+  <dt><code>equiv_&lt;OP&gt;</code> (canonical)</dt><dd>The 63 public per-opcode theorems in channel-balance form; OUTPUT-EQ-free by gate. <span class="path">ZiskFv/Equivalence/ (63)</span></dd>
+  <dt><code>OpEnvelope</code></dt><dd>A 63-arm inductive; each constructor carries an opcode's data + promises as fields. <span class="path">ZiskFv/Compliance/OpEnvelope.lean</span></dd>
+  <dt><code>zisk_riscv_compliant_program_bus</code></dt><dd><span class="x">The OLD headline.</span> Given an <code>OpEnvelope</code> + 3 hypotheses (<code>aeneasBridgeTrust</code>, <code>memoryTimelineConstruction</code>, <code>NoKnownDefect</code>), proves the channel-balance conclusion. Conditioned: the envelope is assumed. <span class="path">ZiskFv/Compliance.lean:95</span></dd>
+</dl>
+
+<h2 id="top" class="newcat">Trace-level top <span class="tag">new</span> <span class="n">builds what the old top assumed</span></h2>
+<dl>
+  <dt><code>construction_&lt;op&gt;_sound</code></dt><dd>Per-opcode theorems that <em>construct</em> the inputs (build the envelope / step compliance) rather than assume them. 20 <code>Construction*</code> modules. <span class="path">ZiskFv/Compliance/Construction*.lean</span></dd>
+  <dt>AcceptedTrace · ProgramBinding</dt><dd>An accepted full-ensemble trace and its program binding — the input the trace-level export reasons over (in place of a hand-built <code>OpEnvelope</code>).</dd>
+  <dt><code>StrongRowConstructionData</code></dt><dd>A sum type, one arm per opcode; each arm packages that construction's genuinely-irreducible residual binders (decode pins, Sail reads, operand/lane bridges, exec-row facts; loads also add memory-timeline evidence). It does NOT package op-bus provider-match evidence — that's derived from <code>trace.balanced</code>. <span class="path">TraceLevelExport.lean</span></dd>
+  <dt><code>root_soundness</code></dt><dd><span class="x">The NEW headline.</span> Given an <code>AcceptedTrace</code>, a binding, a per-row <code>StrongRowConstructionData</code> classification, and per-row defect-exclusion (<code>h_known_bugs</code>), proves <em>every row</em> satisfies the channel-balance conclusion — with <strong>no caller-supplied <code>OpEnvelope</code></strong>. Covers all 63 archetypes via 3 routes; <strong>0 project axioms</strong>. <span class="path">ZiskFv/Soundness.lean:21</span></dd>
+  <dt>The three routes</dt><dd>(1) <em>Env-constructed</em> — 22 op-bus ALU arms: envelope built from the trace, fed to the old global theorem, 3 hyps discharged in place. (2) <em>Direct-lift</em> — 27 control-flow/U-type/load/store/unsigned-M arms: lift <code>construction_&lt;op&gt;_sound</code>'s <code>bus_effect</code> form to channel-balance via defeq. (3) <em>Defect-narrowed</em> — 7 signed-M arms + FENCE, gated by <code>h_known_bugs</code>.</dd>
+</dl>
+
+<h2 id="trust">Trust gate <span class="n">guards the claim</span></h2>
+<dl>
+  <dt>Trust gate</dt><dd>Two layers: V1 syntactic (<code>check-all.sh</code>, no build) + V2 semantic (<code>check-all-semantic.sh</code>, needs oleans). <span class="path">trust/scripts/</span></dd>
+  <dt>Trust ledger</dt><dd>The recorded trusted axioms + source-text hashes; currently <span class="x">0 axioms</span>. <span class="path">trust/generated/baseline-axioms.txt</span></dd>
+  <dt>Caller-burden ledger</dt><dd>One line per binder on every canonical theorem; the diff is the audit surface (a real discharge removes more than it adds).</dd>
+  <dt>Strong-export gates <span class="n">new</span></dt><dd><code>check-strong-export-closure.sh</code> + <code>check-strong-export-binders.sh</code> pin the trace-level export's axiom closure (expected empty) and exact binder list; <code>check-construction-theorem-binders.sh</code> deep-renders the construction theorems' binders. <span class="path">trust/generated/baseline-strong-export-*.txt</span></dd>
+  <dt>Constructibility / anti-laundering</dt><dd>Over-strong <code>Valid_&lt;AIR&gt;</code> ⇒ vacuous theorems; the hypothesis-count + caller-burden baselines must shrink, not just move trust around.</dd>
+  <dt><code>Defects.NoKnownDefect</code> / <code>trust/defects.md</code></dt><dd>The known-defect carve-out (e.g. the DIV/REM signed remainder-bound bug). "Compliant" means "modulo known defects."</dd>
+</dl>
+
+<h2 id="complete">Completeness <span class="n">the coverage side</span></h2>
+<dl>
+  <dt><code>root_completeness</code></dt><dd>An acceptance/coverage theorem: every Sail-executable RV64IM word (outside the FENCE decode gap) is accepted by the production ZisK path; Aeneas-gate mediated. <span class="path">ZiskFv/Completeness/Rv64im</span></dd>
+</dl>
+
+<footer>
+  Part of the <strong>zisk-fv architecture</strong> teaching workspace ·
+  back to <a href="../lessons/0001-the-territory-map.html">Lesson 01</a> · <a href="../index.html">Home</a>.
+  A term wrong or missing? Tell your teacher.
+</footer>
+</div>
+</body>
+</html>

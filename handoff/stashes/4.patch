@@ -1,0 +1,26 @@
+# stash@{4}
+# date: 2026-07-09 12:40:17 -0400
+# message: On issue-219-single-add: landing-prep-projects-bookkeeping
+#
+diff --git a/docs/ai/PROJECTS.md b/docs/ai/PROJECTS.md
+index 4d1add9c..dffb5c47 100644
+--- a/docs/ai/PROJECTS.md
++++ b/docs/ai/PROJECTS.md
+@@ -1,5 +1,17 @@
+ # Projects
+ 
++## Single Add 219
++
++Plan: `docs/ai/plan/PLAN_SINGLE_ADD_219.md` (issue #219), worktree
++`.worktrees/issue-219-single-add`, branch `issue-219-single-add`. The stream builds the first
++non-degenerate forward `BalancedChannels` / `constraints_hold` construction for the full RV64IM
++ensemble, starting from the merged #225 RegisterBoundary work on `origin/main`. Current state:
++`singleAddAcceptedTrace : AcceptedZiskTrace 1` is implemented with actual table-derived MemBus/OpBus
++balance, constraints, transitions, main height, and fixed-column certificates; post-#220 fidelity
++commit `056c66f` repaired the concrete ADD jump offsets to `4/4`, with focused witness build
++passing.
++#115 PR #236 remains a separate review checkpoint and is not absorbed here.
++
+ ## Aeneas Bridge 111
+ 
+ Plan: `docs/ai/plan/PLAN_AENEAS_BRIDGE_111.md` (issue #111). Discharge

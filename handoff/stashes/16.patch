@@ -1,0 +1,14 @@
+# stash@{16}
+# date: 2026-06-04 11:49:38 -0400
+# message: On main: preserve main reconstruction before rv-completeness recovery
+#
+diff --git a/ZiskFv.lean b/ZiskFv.lean
+index 1841b9b0..986ff33b 100644
+--- a/ZiskFv.lean
++++ b/ZiskFv.lean
+@@ -129,3 +129,5 @@ import ZiskFv.AirsClean.FullEnsemble
+ import ZiskFv.AirsClean.FullEnsemble.Balance
+ import ZiskFv.Compliance.RowProvenance
+ import ZiskFv.Compliance
++import ZiskFv.Completeness.Rv64imShapes
++import ZiskFv.Completeness.SailDecode

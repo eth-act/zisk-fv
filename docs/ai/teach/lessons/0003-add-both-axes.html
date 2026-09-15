@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lesson 03 · ADD, Both Axes</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#5f5f56; --rule:#d8d4c8; --bg:#fdfcf7;
+    --accent:#7a2e1d; --snd:#2d5a4a; --cmp:#7a3e6a; --gold:#9a7b1f; --new:#2d6a5a;
+    --code:#f1ecdd; --ok:#2d6a3f; --no:#9a2b1f;
+  }
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.79em}
+  a{color:var(--accent)}
+  .home{display:inline-block;margin-bottom:1.4rem;font-size:.8rem;text-decoration:none;color:var(--soft)}
+  .home:hover{color:var(--accent)}
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);font-size:.82rem;font-weight:600}
+  h1{font-size:2.05rem;line-height:1.08;margin:.3rem 0 .5rem;font-weight:600}
+  .lede{font-size:1.08rem;color:#33332e}
+  .lede em{color:var(--accent);font-style:normal}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.3rem;margin-bottom:2rem}
+  .pin{font-size:.78rem;color:var(--soft);font-style:italic;margin-top:.5rem}
+  .win{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);
+    padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem}
+  .win b{font-variant:small-caps;letter-spacing:.06em;color:var(--gold)}
+  h2{font-size:1.32rem;margin:2.6rem 0 .5rem;font-weight:600}
+  h2 .num{color:var(--soft);font-weight:400;margin-right:.45rem}
+  p{margin:.7rem 0}
+  .soft{color:var(--soft)}
+  cite{display:block;color:var(--soft);font-style:normal;font-size:.73rem;font-family:ui-monospace,Menlo,monospace;margin-top:.15rem}
+  /* shared encoding box */
+  .enc{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:.8rem 1rem;margin:1.1rem 0;font-size:.86rem}
+  .enc .bits{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:#444;margin:.4rem 0;letter-spacing:.02em}
+  .enc .ask{display:flex;gap:.7rem;margin-top:.6rem}
+  .enc .ask>div{flex:1;border-radius:5px;padding:.45rem .6rem;font-size:.83rem}
+  .enc .ask .s{background:#eef4f0;border:1px solid #c4d8cd} .enc .ask .s b{color:var(--snd)}
+  .enc .ask .c{background:#f3ecf1;border:1px solid #d8c6d2} .enc .ask .c b{color:var(--cmp)}
+  /* two-column tower */
+  .tower2{display:flex;gap:.7rem;margin:1.2rem 0}
+  .twr{flex:1;min-width:0}
+  .twr .cap{font-variant:small-caps;letter-spacing:.05em;font-weight:600;font-size:.9rem;text-align:center;padding:.3rem;border-radius:5px}
+  .twr.s .cap{background:#e7f0eb;color:var(--snd)} .twr.c .cap{background:#f1e7ee;color:var(--cmp)}
+  .twr .updir{text-align:center;color:var(--soft);font-size:.85rem;margin:.1rem 0}
+  .rung{border:1px solid var(--rule);border-radius:5px;background:#fff;padding:.4rem .55rem;margin:.28rem 0;font-size:.79rem}
+  .twr.s .rung{border-left:3px solid var(--snd)} .twr.c .rung{border-left:3px solid var(--cmp)}
+  .rung .t{font-weight:600;display:block}
+  .rung .p{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.7rem;display:block;margin-top:.1rem;word-break:break-all}
+  .rung .d{display:block;margin-top:.3rem;font-size:.76rem;line-height:1.42;color:#39362f}
+  .rung .d code{font-size:.92em}
+  /* IDE call-stack walk */
+  .walk{border:1px solid var(--rule);border-radius:7px;background:#f4f8f6;padding:1rem 1.1rem 1.1rem;margin:1.3rem 0}
+  .walk .cap{font-variant:small-caps;letter-spacing:.05em;color:var(--snd);font-weight:600;margin-bottom:.2rem}
+  .walk .hint{font-size:.82rem;color:var(--soft);margin:0 0 .7rem}
+  ol.stack{list-style:none;counter-reset:s;margin:0;padding:0}
+  ol.stack>li{counter-increment:s;position:relative;padding:.1rem 0 .85rem 1.5rem;border-left:2px solid #b9d3c8;margin-left:.4rem}
+  ol.stack>li:last-child{border-left:2px solid transparent}
+  ol.stack>li::before{content:counter(s);position:absolute;left:-.72rem;top:0;width:1.35rem;height:1.35rem;
+    background:var(--snd);color:#fff;border-radius:50%;font-size:.72rem;font-family:ui-monospace,Menlo,monospace;
+    display:flex;align-items:center;justify-content:center}
+  .stack .fn{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:.83rem;font-weight:600;color:#1c1c1c}
+  .stack .at{font-family:ui-monospace,Menlo,monospace;font-size:.72rem;color:var(--soft);margin-left:.4rem}
+  .stack .to{display:block;font-size:.76rem;color:#39362f;margin-top:.18rem}
+  .stack .to code{font-size:.92em}
+  .stack .to .ln{color:var(--accent);font-family:ui-monospace,Menlo,monospace;font-weight:600}
+  .stack .aux{display:block;font-size:.73rem;color:var(--soft);margin-top:.12rem}
+  .stack .base{display:block;font-size:.76rem;color:var(--snd);margin-top:.18rem;font-style:italic}
+  .rung.top{background:#f0f6f2}
+  .twr.c .rung.top{background:#f6eef3}
+  @media(max-width:720px){.tower2{flex-direction:column}}
+  .quant{display:flex;gap:.7rem;margin:1.1rem 0;font-size:.84rem}
+  .quant>div{flex:1;border-radius:6px;padding:.6rem .8rem}
+  .quant .s{background:#eef4f0;border:1px solid #c4d8cd} .quant .c{background:#f3ecf1;border:1px solid #d8c6d2}
+  .quant .h{font-variant:small-caps;letter-spacing:.04em;font-weight:600} .quant .s .h{color:var(--snd)} .quant .c .h{color:var(--cmp)}
+  .quant code{font-size:.74em}
+  /* the join callout */
+  .join{border:2px solid var(--accent);border-radius:8px;background:#faf4ee;padding:1rem 1.1rem;margin:1.5rem 0}
+  .join .h{font-variant:small-caps;letter-spacing:.06em;color:var(--accent);font-weight:600;margin-bottom:.35rem;font-size:1.02rem}
+  .join code{background:#fff}
+  .flag{border:1px solid var(--new);border-radius:7px;background:#edf5f1;padding:.75rem 1rem;margin:1.2rem 0;font-size:.9rem}
+  .flag .h{font-variant:small-caps;letter-spacing:.05em;color:var(--new);font-weight:600;margin-bottom:.25rem}
+  .lab{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:1.1rem 1.1rem 1.3rem;margin:1.4rem 0}
+  .lab .tag{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;color:var(--accent);font-weight:600}
+  .lab h3{margin:.15rem 0 .2rem;font-size:1.05rem}
+  .q{border-top:1px solid var(--rule);padding:.7rem 0 .2rem;margin-top:.6rem}
+  .q .stmt{font-size:.9rem;margin-bottom:.45rem}
+  .btns{display:flex;gap:.5rem}
+  .btns button{flex:1;border:1px solid var(--rule);background:#fff;border-radius:6px;padding:.4rem;cursor:pointer;
+    font-family:inherit;font-size:.84rem;font-variant:small-caps;letter-spacing:.04em;transition:all .12s}
+  .btns button:hover{border-color:var(--accent)}
+  .btns button.right{background:#e7f1ea;border-color:#9ec3ad;color:var(--ok);font-weight:600}
+  .btns button.wrong{background:#f6e7e4;border-color:#d3a79e;color:var(--no)}
+  .fb{font-size:.78rem;color:var(--soft);margin-top:.4rem;min-height:1.1rem;display:none}
+  .fb.show{display:block}
+  .score{margin-top:.8rem;font-size:.84rem;font-weight:600;color:var(--new);min-height:1.2rem}
+  .src{border-top:1px solid var(--rule);margin-top:2.6rem;padding-top:1rem;font-size:.86rem;color:var(--soft)}
+  .src b{color:var(--ink);font-variant:small-caps;letter-spacing:.04em}
+  .ask2{background:#f6f1e1;border:1px solid var(--rule);border-radius:5px;padding:.6rem .9rem;margin-top:1.3rem;font-size:.86rem}
+  .ask2 b{color:var(--accent)}
+  .nav{display:flex;justify-content:space-between;margin-top:1.6rem;font-size:.82rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="home" href="../index.html">&larr; teaching home</a>
+
+<header class="top">
+  <div class="kicker">Lesson 03 · zisk-fv architecture</div>
+  <h1>ADD, Both Axes</h1>
+  <p class="lede">One opcode, traced up <em>both</em> arcs at once. Soundness asks
+  “does this one ADD row match Sail?” Completeness asks “is <em>every</em> ADD word
+  covered?” They start from the same encoding, climb two different towers, and —
+  the punchline — <em>never meet inside the kernel</em>.</p>
+  <p class="pin">Validated against <code>main @ e731db56</code>, 2026-06-22. Builds
+  on <a href="0002-two-axes-one-tree.html">Lesson 02</a>.</p>
+  <div class="win"><b>Your win</b> — Recite ADD's soundness tower and completeness
+  ladder rung by rung (with the file each lives in), say what each axis quantifies
+  over, and name precisely where the join is — and isn't.</div>
+</header>
+
+<h2><span class="num">1</span>One encoding, two questions</h2>
+<p>ADD is the R-type word <code>funct7=0, funct3=0, opcode=0x33</code> over any
+register triple. Both axes start here and ask opposite questions.</p>
+<div class="enc">
+  <b>ADD encoding</b>
+  <div class="bits">[ funct7=0000000 | rs2 | rs1 | funct3=000 | rd | opcode=0110011 ]</div>
+  <div class="ask">
+    <div class="s"><b>Soundness →</b> take <em>one</em> circuit row whose decoded
+    op is <code>OP_ADD</code>; show Sail's <code>execute</code> agrees with the
+    state effect ZisK commits.</div>
+    <div class="c"><b>Completeness →</b> take the <em>whole set</em>
+    <code>{ rawRType 0 rs2 rs1 0 rd 0x33 }</code> (32×32×32 words); show ZisK
+    decodes/lowers/materializes/covers every one.</div>
+  </div>
+</div>
+
+<h2><span class="num">2</span>The two towers, rung by rung</h2>
+<p>Read bottom-to-top. Each rung says <em>what it actually does</em> to the rung
+below it — not just its name. Left: the equivalence tower (one concrete row).
+Right: the coverage ladder (a set of 32-bit words).</p>
+
+<div class="tower2">
+  <div class="twr s">
+    <div class="cap">Soundness · ADD</div>
+    <div class="rung top"><span class="t">root_soundness</span><span class="p">Soundness.lean:21</span><span class="d">Reads row i out of the AcceptedTrace's materialized Main + Binary tables, <b>builds</b> the provider table / row / bus entries itself, and feeds them to canonical equiv_ADD. No OpEnvelope is passed in.</span></div>
+    <div class="updir">↑ supplies its leftover hyps via</div>
+    <div class="rung"><span class="t">RowData_add</span><span class="p">TraceLevelExport.lean:1667</span><span class="d">A struct of the facts the trace alone can't give: Main decode pins (op=OP_ADD, active=1, m32=0, store_pc=0), the 4 Sail reads (r1,r2,PC,rd), the lane bridges a_0/a_1/b_0/b_1 = lo/hi 32 bits of the operand regs, and exec-row shape (len 2, mult −1/+1, nextPC, rd ptr).</span></div>
+    <div class="updir">↑ same fact, channel vocabulary</div>
+    <div class="rung"><span class="t">equiv_ADD (canonical)</span><span class="p">Equivalence/Add.lean:21</span><span class="d">Restates the goal as <code>execute … = state_effect_via_channels ⟨exec_row,[e0,e1,e2]⟩ state</code>. That LHS is <em>definitionally</em> <code>(bus_effect …).2</code> — one rewrite (state_effect_via_channels_eq_bus_effect_2), then <code>exact</code> the wrapper. e0,e1 = operand reads; e2 = the rd write.</span></div>
+    <div class="updir">↑ derives the row's op-flags, then delegates</div>
+    <div class="rung"><span class="t">Compliance.equiv_ADD (wrapper)</span><span class="p">Compliance/Wrappers/Add.lean:43</span><span class="d"><b>This is "promise discharge."</b> Given a validated provider <code>Air.Flat.Table</code> + a row in it + its <code>Spec</code>: extracts the per-byte table facts — <code>wf_properties</code> × 8 lanes = each byte's range bounds (<code>a,b,c &lt; 256, cin &lt; 2</code>) + its add-with-carry equation (<code>c_byte = (cin+a+b)%256</code>) — plus the row's boolean/def columns (<code>core_every_row</code>); and <em>derives</em> mode32=0 and b_op=OP_ADD by reading the opcode off the op-bus match (<code>b_op + 16·mode32 = 10</code>) instead of assuming them.</span></div>
+    <div class="updir">↑ the actual arithmetic equivalence</div>
+    <div class="rung"><span class="t">equiv_ADD_of_static_row</span><span class="p">EquivCore/Add.lean:378</span><span class="d">The real proof (see §3). Circuit adds the operands as an 8-byte carry chain; pins the top carry to 0; proves Main's output lanes c_0/c_1 equal the byte recomposition of r1_val + r2_val. Delegates the bookkeeping to equiv_ADD_of_wf.</span></div>
+    <div class="updir">↑ specifies the intended result</div>
+    <div class="rung"><span class="t">execute_RTYPE_add_pure</span><span class="p">SailSpec/add.lean:19</span><span class="d">The pure spec: <code>AddInput → AddOutput</code>, <code>nextPC = PC+4</code>, <code>rd = (rd≠0) ? r1_val + r2_val : ∅</code> (BitVec 64 add, wraps mod 2⁶⁴). Its <code>_equiv</code> lemma strips the Sail state monad down to this.</span></div>
+  </div>
+
+  <div class="twr c">
+    <div class="cap">Completeness · ADD</div>
+    <div class="rung top"><span class="t">root_completeness</span><span class="p">Rv64im.lean:5919</span><span class="d">Assembles every family's obligations: concludes <code>∀ raw, sailExecutable raw → ¬knownDecodeGap raw → ziskCircuitCoveredWithSoundnessInput raw</code>. Takes the iface + 6 hyps (sail-subset, decode, lower, rows, opcode, soundness-input).</span></div>
+    <div class="updir">↑ one disjunct per family</div>
+    <div class="rung"><span class="t">supported_decode_shape_completeness_*</span><span class="p">Rv64im.lean:2703</span><span class="d">Glues the per-family shape coverage into the whole supported-decode surface — RTYPE ∨ load ∨ store ∨ branch ∨ … — so any Sail-exec word lands in some covered family.</span></div>
+    <div class="updir">↑ instantiated for the RTYPE family as 4 props</div>
+    <div class="rung"><span class="t">RTypeRegister{SailExecutable, CircuitCoveredKnownGood, NoKnownGap, SoundnessInputComplete}</span><span class="p">Rv64im.lean:281,157,235,61</span><span class="d">Each unfolds to <code>∀ raw, RTypeRegisterShape raw → P</code>: P = sailExecutable raw · (ziskCircuitCovered raw ∧ ¬knownGap raw) · ¬knownGap raw · (ziskLowerable raw → ziskSoundnessInput raw).</span></div>
+    <div class="updir">↑ quantified over</div>
+    <div class="rung"><span class="t">RTypeRegisterShape</span><span class="p">Shapes.lean:139</span><span class="d"><code>∃ funct7 funct3 opcode ∈ allRTypeOpcodeShapes (28 entries), rd,rs1,rs2 ∈ regs, raw = rawRType …</code>. The whole R/RW/M register block — ADD, SUB, AND, …, and M-ext (funct7=1) ride inside.</span></div>
+    <div class="updir">↑ ADD is one entry: subset lemma</div>
+    <div class="rung"><span class="t">AddRawShape</span><span class="p">Shapes.lean:147,152</span><span class="d"><code>∃ rd rs1 rs2 ∈ regs, raw = rawRType 0 rs2 rs1 0 rd 0x33</code> — the exact 32³ ADD encodings. The subset lemma picks the (0,0,0x33) entry to land ADD in the family.</span></div>
+  </div>
+</div>
+
+<div class="quant">
+  <div class="s"><span class="h">Soundness quantifies</span> over <em>one row</em>
+  <code>i</code> with <code>op i = OP_ADD</code>: actual Sail state, actual circuit
+  columns, an equation between two states.</div>
+  <div class="c"><span class="h">Completeness quantifies</span>
+  <code>∀ raw, AddRawShape raw → …</code>: predicates on 32-bit words. No Sail
+  state, no addition — only “does ZisK decode/lower/materialize this word.”</div>
+</div>
+
+<div class="walk">
+  <div class="cap">Walking the soundness column in your IDE</div>
+  <p class="hint">Each numbered hop is a declaration to open; the indented line is
+  the exact spot <em>inside its proof</em> where it descends — go to that line and
+  ctrl-click the named symbol to land on the next hop. Helper calls (range/wf,
+  byte-chain) are noted but aren't the main descent.</p>
+  <ol class="stack">
+    <li><span class="fn">root_soundness</span><span class="at">Soundness.lean:21</span>
+      <span class="to">↳ <span class="ln">:10881</span> &nbsp;<code>| add d =&gt; exact stepStrong_add trace binding i d h_known</code></span></li>
+    <li><span class="fn">stepStrong_add</span><span class="at">TraceLevelExport.lean:7361</span>
+      <span class="aux">builds the provider env: <code>exists_add_provider_row_matches_from_binding</code> (:7384)</span>
+      <span class="to">↳ <span class="ln">:7494 / :7508</span> &nbsp;<code>exact (zisk_riscv_compliant_program_bus env …).2.2.2.2.2.2.2.1</code></span></li>
+    <li><span class="fn">zisk_riscv_compliant_program_bus</span><span class="at">Compliance.lean:95 — the OLD global theorem (still load-bearing!)</span>
+      <span class="aux">dispatches per family into <code>Compliance/Dispatch/*</code>; ADD lands in <code>Dispatch/ADD_RTYPEW.lean</code></span>
+      <span class="to">↳ <span class="ln">ADD_RTYPEW.lean:60</span> &nbsp;<code>exact ZiskFv.Equivalence.Add.equiv_ADD</code></span></li>
+    <li><span class="fn">Equivalence.Add.equiv_ADD</span><span class="at">Equivalence/Add.lean:21 — canonical, channel-balance form</span>
+      <span class="to">↳ <span class="ln">:58</span> <code>rw [state_effect_via_channels_eq_bus_effect_2]</code> &nbsp;then&nbsp; <span class="ln">:59</span> <code>exact ZiskFv.Compliance.equiv_ADD</code></span></li>
+    <li><span class="fn">Compliance.equiv_ADD</span><span class="at">Compliance/Wrappers/Add.lean:43 — the wrapper (promise discharge)</span>
+      <span class="aux">range/wf: <code>staticBinary_core_and_wf_of_table_spec</code> (:83); op-flag pins: <code>logic_row_mode_pins_of_emit_op_lt_16_of_static_spec</code> (:95)</span>
+      <span class="to">↳ <span class="ln">:99</span> &nbsp;<code>exact ZiskFv.EquivCore.Add.equiv_ADD_of_static_row</code></span></li>
+    <li><span class="fn">EquivCore.Add.equiv_ADD_of_static_row</span><span class="at">EquivCore/Add.lean:378 — the arithmetic equivalence</span>
+      <span class="aux">byte chain: <code>byte_chain_discharge_64_of_static_row</code> (:413); top carry=0: <code>carry_7_zero_ADD_of_static_chain</code> (:417)</span>
+      <span class="to">↳ <span class="ln">:432</span> &nbsp;<code>exact ZiskFv.EquivCore.Add.equiv_ADD_of_wf</code></span></li>
+    <li><span class="fn">EquivCore.Add.equiv_ADD_of_wf</span><span class="at">EquivCore/Add.lean:219 — assembles the state equation</span>
+      <span class="aux">rd value = byte recomposition: <code>WriteValueProofs.Arith.h_rd_val_arith_add_of_wf</code> (:337); bus→Sail writes: <code>bus_effect_matches_sail_alu_rrw</code> (:360)</span>
+      <span class="to">↳ <span class="ln">:357</span> &nbsp;<code>rw [equiv_ADD_sail …]</code> &nbsp;(the Sail→pure-spec reduction)</span></li>
+    <li><span class="fn">EquivCore.Add.equiv_ADD_sail</span><span class="at">EquivCore/Add.lean:97</span>
+      <span class="to">↳ <span class="ln">:115</span> &nbsp;<code>… PureSpec.execute_RTYPE_add_pure_equiv</code></span></li>
+    <li><span class="fn">PureSpec.execute_RTYPE_add_pure_equiv / _add_pure</span><span class="at">SailSpec/add.lean:33 / :19</span>
+      <span class="base">base of the column — the pure Sail spec. No further descent.</span></li>
+  </ol>
+</div>
+
+<div class="flag">
+  <div class="h">Architecture note you just uncovered</div>
+  The new top does <b>not replace</b> the old global theorem — it <b>wraps</b> it.
+  Hop 2 (<code>stepStrong_add</code>) calls hop 3
+  (<code>zisk_riscv_compliant_program_bus</code>). So “assume an OpEnvelope → construct
+  it from a trace” added a layer <em>above</em> the old headline; the old theorem is
+  still load-bearing in every per-row proof. Worth weighing in the rebuild: two
+  headline theorems, one stacked on the other.
+</div>
+
+<h2><span class="num">3</span>What the soundness proof actually proves</h2>
+<p>This is the intellectual content the rung names hide. The Main AIR holds the
+operands and result as 32-bit lanes — <code>a_0,a_1</code> = lo/hi of r1,
+<code>b_0,b_1</code> = lo/hi of r2, <code>c_0,c_1</code> = lo/hi of rd. The
+<em>actual</em> 64-bit addition happens in the Binary AIR, byte by byte:</p>
+<ul style="font-size:.88rem">
+  <li>The Binary row exposes 8 result bytes <code>free_in_c_0 … free_in_c_7</code>
+  and 7 inter-byte carries <code>carry_0 … carry_6</code>. Each byte's validity comes
+  from the static binary table's <code>wf_properties</code> (§ above):
+  <code>range_conditions</code> (it's a genuine byte, cin a bit) plus
+  <code>wf_ADD</code> (<code>c_byte = (cin+a+b)%256</code>, <code>cout = (cin+a+b)/256</code>) —
+  surfaced here as <code>c0_lt … c7_lt</code> and the carry equations
+  <code>cin_eq</code>/<code>pi_ne</code>.</li>
+  <li><code>byte_chain_discharge_64_of_static_row</code>
+  (EquivCore/Bridge/Binary.lean:1919, invoked at Add.lean:413) chains those into:
+  the recomposition <code>Σ free_in_c_k · 256ᵏ</code> equals the true sum of the
+  operand bytes.</li>
+  <li><code>carry_7_zero_ADD_of_static_chain</code> (Bridge/Binary.lean:2176,
+  invoked at Add.lean:417) pins the <em>8th</em> carry to 0 — ADD has no carry-out
+  of bit 63; the result wraps mod 2⁶⁴, exactly matching the spec's
+  <code>BitVec 64</code> add.</li>
+  <li>The proof then shows Main's output lanes equal the byte recomposition:
+  <code>c_0 = Σ_{k&lt;4} byteₖ·256ᵏ</code>, <code>c_1 = Σ_{4≤k&lt;8} byteₖ·256ᵏ</code>
+  (Add.lean:422–431), i.e. <code>rd = r1_val + r2_val</code>.</li>
+</ul>
+<p class="soft" style="font-size:.86rem">So the equation
+<code>execute … = (bus_effect …).2</code> bottoms out in: <em>the circuit's
+byte-decomposed carry-chain sum, with the top carry forced to zero, equals the
+spec's wrapping 64-bit add</em>. Everything above this rung is plumbing that
+delivers a validated Binary row and re-dresses the conclusion.</p>
+
+<h2><span class="num">4</span>Where they join — and where they don't</h2>
+<p>Tower 2's top rung includes <code>RTypeRegisterSoundnessInputComplete</code>.
+The name promises the handshake: coverage should deliver exactly the inputs the
+soundness side consumes. Unfold it and you get
+<code>∀ raw in shape, ziskLowerable raw → ziskSoundnessInput raw</code>
+(<code>Rv.lean:146</code>). So far so good — until you ask what
+<code>ziskSoundnessInput</code> <em>is</em>.</p>
+
+<div class="join">
+  <div class="h">The join is nominal, not structural</div>
+  <code>ziskSoundnessInput</code> is an <b>abstract field</b> of
+  <code>Rv.Interface</code> — just <code>RawInstruction → Prop</code>
+  (<code>Rv.lean:29</code>). It is <b>never</b> tied in-tree to the soundness
+  world's concrete <code>RowData_add</code> / <code>AcceptedTrace</code>. Verified:
+  <code>Compliance/</code> never mentions <code>Completeness</code>, and
+  <code>Completeness/</code> touches <code>Compliance</code> only in two FENCE
+  carve-out <em>comments</em>. The two ADD proofs <b>never compose in the Lean
+  kernel.</b> The handshake is intended — the names line up — but it lives in the
+  out-of-repo Aeneas harness, not in <code>lake build</code>.
+</div>
+
+<div class="flag">
+  <div class="h">Re-architecture flag — the biggest structural seam</div>
+  This is the central thing to weigh for the rebuild. A unified architecture could
+  make <code>ziskSoundnessInput raw</code> <em>definitionally produce</em> the
+  <code>RowData_add</code> the soundness theorem demands — so a green
+  <code>lake build</code> would compose both axes end-to-end for ADD, instead of
+  leaving the join to Aeneas. Today the two arcs are independent abstractions of
+  “the same” ZisK execution, bridged only by matching names.
+</div>
+
+<div class="lab">
+  <span class="tag">Retrieval practice</span>
+  <h3>Soundness or completeness — ADD edition</h3>
+  <p class="soft" style="font-size:.82rem;margin:.2rem 0 .3rem">Each describes ADD's
+  treatment on exactly one axis. Pick it.</p>
+  <div id="quiz"></div>
+  <div class="score" id="score"></div>
+</div>
+
+<div class="src">
+  <p><b>Primary source</b> — open <a href="../../../../ZiskFv/Completeness/Rv64im/Shapes.lean">Shapes.lean</a>
+  lines 139–160 (<code>RTypeRegisterShape</code>, <code>AddRawShape</code>, and the
+  subset lemma) beside <a href="../../../../ZiskFv/Compliance/TraceLevelExport.lean">TraceLevelExport.lean</a>
+  line 1667 (<code>RowData_add</code>). Reading the abstract word-predicate and the
+  concrete residual structure side by side is the fastest way to feel why they
+  don't compose. Then <code>Rv.lean:23–148</code> for the <code>Interface</code> and
+  its predicate algebra.</p>
+  <p>Reference: <a href="../reference/add-both-axes.html">ADD · both-axes trace card</a>
+  (printable) · <a href="../reference/glossary.html">glossary</a> ·
+  prev <a href="0002-two-axes-one-tree.html">02 · Two Axes, One Tree</a>.</p>
+  <div class="ask2"><b>Ask your teacher.</b> Want the SUB or a load opcode traced
+  the same way, or a closer look at how <code>RowData_add</code>'s binders get
+  discharged inside the strong export? Ask — that's the next natural step.</div>
+</div>
+
+<div class="nav">
+  <a href="0002-two-axes-one-tree.html">&larr; 02 · Two Axes, One Tree</a>
+  <span class="soft">Next · 04 — the new top &amp; its completeness mirror</span>
+</div>
+
+</div>
+
+<script>
+const QS = [
+  {s:"Proves one row whose decoded op is OP_ADD agrees with Sail.", a:"s",
+   why:"Soundness — concrete, per-row, over actual Sail state."},
+  {s:"Quantifies over all 32×32×32 ADD-encoded words.", a:"c",
+   why:"Completeness — ∀ raw, AddRawShape raw → covered."},
+  {s:"Packages its leftover obligations as the RowData_add structure.", a:"s",
+   why:"Soundness — RowData_add bundles the residual binders consumed by the strong export."},
+  {s:"Places ADD inside RTypeRegisterShape via a subset lemma.", a:"c",
+   why:"Completeness — add_raw_shape_subset_r_type_register_shape (Shapes.lean:152)."},
+  {s:"Constructs the OpEnvelope from a row of an AcceptedTrace.", a:"s",
+   why:"Soundness — the trace-level export builds the envelope; no caller supplies it."},
+  {s:"Reaches its goal through ShapeSoundnessInputComplete on an abstract iface field.", a:"c",
+   why:"Completeness — the bridge predicate lands on ziskSoundnessInput, an abstract Rv.Interface field."},
+];
+let answered = 0, correct = 0;
+const quiz = document.getElementById('quiz');
+const score = document.getElementById('score');
+QS.forEach((q, i) => {
+  const wrap = document.createElement('div'); wrap.className = 'q';
+  const stmt = document.createElement('div'); stmt.className = 'stmt';
+  stmt.textContent = (i+1) + '. ' + q.s; wrap.appendChild(stmt);
+  const btns = document.createElement('div'); btns.className = 'btns';
+  const fb = document.createElement('div'); fb.className = 'fb';
+  [['s','Soundness'],['c','Completeness']].forEach(([k,label]) => {
+    const b = document.createElement('button'); b.textContent = label;
+    b.onclick = () => {
+      if (wrap.dataset.done) return;
+      wrap.dataset.done = '1'; answered++;
+      if (k === q.a) { b.className = 'right'; correct++; }
+      else {
+        b.className = 'wrong';
+        [...btns.children].forEach(c => { if (c.textContent === (q.a==='s'?'Soundness':'Completeness')) c.className='right'; });
+      }
+      fb.textContent = q.why; fb.className = 'fb show';
+      score.textContent = answered + '/' + QS.length + ' answered · ' + correct + ' correct'
+        + (answered === QS.length ? (correct === QS.length ? ' — ADD locked on both axes.' : ' — review the misses above.') : '');
+    };
+    btns.appendChild(b);
+  });
+  wrap.appendChild(btns); wrap.appendChild(fb); quiz.appendChild(wrap);
+});
+</script>
+</body>
+</html>

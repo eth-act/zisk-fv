@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lesson 02 · Two Axes, One Tree</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#5f5f56; --rule:#d8d4c8; --bg:#fdfcf7;
+    --accent:#7a2e1d; --snd:#2d5a4a; --cmp:#7a3e6a; --gold:#9a7b1f; --new:#2d6a5a;
+    --code:#f1ecdd; --ok:#2d6a3f; --no:#9a2b1f;
+  }
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.79em}
+  a{color:var(--accent)}
+  .home{display:inline-block;margin-bottom:1.4rem;font-size:.8rem;text-decoration:none;color:var(--soft)}
+  .home:hover{color:var(--accent)}
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);font-size:.82rem;font-weight:600}
+  h1{font-size:2.05rem;line-height:1.08;margin:.3rem 0 .5rem;font-weight:600}
+  .lede{font-size:1.08rem;color:#33332e}
+  .lede em{color:var(--accent);font-style:normal}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.3rem;margin-bottom:2rem}
+  .pin{font-size:.78rem;color:var(--soft);font-style:italic;margin-top:.5rem}
+  .win{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);
+    padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem}
+  .win b{font-variant:small-caps;letter-spacing:.06em;color:var(--gold)}
+  h2{font-size:1.32rem;margin:2.6rem 0 .5rem;font-weight:600}
+  h2 .num{color:var(--soft);font-weight:400;margin-right:.45rem}
+  p{margin:.7rem 0}
+  .soft{color:var(--soft)}
+  cite{display:block;color:var(--soft);font-style:normal;font-size:.73rem;font-family:ui-monospace,Menlo,monospace;margin-top:.15rem}
+  /* two-axis definition cards */
+  .axes{display:flex;gap:.7rem;margin:1.3rem 0}
+  .ax{flex:1;border-radius:6px;padding:.7rem .8rem;font-size:.86rem}
+  .ax.s{background:#eef4f0;border:1px solid #c4d8cd}
+  .ax.c{background:#f3ecf1;border:1px solid #d8c6d2}
+  .ax .h{font-weight:600;font-variant:small-caps;letter-spacing:.05em;font-size:.95rem}
+  .ax.s .h{color:var(--snd)} .ax.c .h{color:var(--cmp)}
+  .ax .dir{font-family:ui-monospace,Menlo,monospace;font-size:.72rem;color:var(--soft);margin:.3rem 0}
+  .ax .thm{font-family:ui-monospace,Menlo,monospace;font-size:.71rem;display:block;margin-top:.4rem;color:#444}
+  /* the dual claim */
+  .dual{border:1px solid var(--new);border-radius:7px;background:#edf5f1;padding:.8rem 1rem;margin:1.3rem 0}
+  .dual .h{font-variant:small-caps;letter-spacing:.05em;color:var(--new);font-weight:600;margin-bottom:.3rem}
+  /* layer table: both axes per layer */
+  table.layers{border-collapse:collapse;width:100%;margin:1.1rem 0;font-size:.8rem}
+  table.layers th,table.layers td{border:1px solid var(--rule);padding:.4rem .55rem;vertical-align:top;text-align:left}
+  table.layers th{background:#f3eee0;font-variant:small-caps;letter-spacing:.04em;font-weight:600}
+  table.layers th.s{color:var(--snd)} table.layers th.c{color:var(--cmp)}
+  table.layers td.lyr{font-weight:600;width:8.4rem;background:#faf7ee}
+  table.layers code{font-size:.74em;background:#fffdf6}
+  table.layers tr.top td{background:#f0f6f2}
+  .seam{border:1px solid var(--rule);border-left:3px solid var(--accent);background:#faf6ee;padding:.7rem 1rem;margin:1.2rem 0;font-size:.9rem;border-radius:0 5px 5px 0}
+  .seam b{color:var(--accent);font-variant:small-caps;letter-spacing:.04em}
+  .stale{border:1px solid var(--rule);border-left:3px solid var(--no);background:#f7ecea;padding:.6rem 1rem;margin:1.1rem 0;font-size:.86rem;border-radius:0 5px 5px 0}
+  .stale b{color:var(--no);font-variant:small-caps;letter-spacing:.04em}
+  /* interactive classifier */
+  .lab{border:1px solid var(--rule);border-radius:6px;background:#fffdf6;padding:1.1rem 1.1rem 1.3rem;margin:1.4rem 0}
+  .lab .tag{font-variant:small-caps;letter-spacing:.08em;font-size:.74rem;color:var(--accent);font-weight:600}
+  .lab h3{margin:.15rem 0 .2rem;font-size:1.05rem}
+  .q{border-top:1px solid var(--rule);padding:.7rem 0 .2rem;margin-top:.6rem}
+  .q .stmt{font-size:.9rem;margin-bottom:.45rem}
+  .btns{display:flex;gap:.5rem}
+  .btns button{flex:1;border:1px solid var(--rule);background:#fff;border-radius:6px;padding:.4rem;cursor:pointer;
+    font-family:inherit;font-size:.84rem;font-variant:small-caps;letter-spacing:.04em;transition:all .12s}
+  .btns button:hover{border-color:var(--accent)}
+  .btns button.right{background:#e7f1ea;border-color:#9ec3ad;color:var(--ok);font-weight:600}
+  .btns button.wrong{background:#f6e7e4;border-color:#d3a79e;color:var(--no)}
+  .fb{font-size:.78rem;color:var(--soft);margin-top:.4rem;min-height:1.1rem;display:none}
+  .fb.show{display:block}
+  .score{margin-top:.8rem;font-size:.84rem;font-weight:600;color:var(--new);min-height:1.2rem}
+  .src{border-top:1px solid var(--rule);margin-top:2.6rem;padding-top:1rem;font-size:.86rem;color:var(--soft)}
+  .src b{color:var(--ink);font-variant:small-caps;letter-spacing:.04em}
+  .ask{background:#f6f1e1;border:1px solid var(--rule);border-radius:5px;padding:.6rem .9rem;margin-top:1.3rem;font-size:.86rem}
+  .ask b{color:var(--accent)}
+  .nav{display:flex;justify-content:space-between;margin-top:1.6rem;font-size:.82rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="home" href="../index.html">&larr; teaching home</a>
+
+<header class="top">
+  <div class="kicker">Lesson 02 · zisk-fv architecture</div>
+  <h1>Two Axes, One Tree</h1>
+  <p class="lede">The tree proves <em>two</em> different things about ZisK, and
+  they are duals. <em>Soundness</em>: nothing ZisK accepts is a lie about RISC-V.
+  <em>Completeness</em>: nothing true about RISC-V is left uncovered. Neither is
+  worth much alone — and they run end-to-end <em>side by side</em>, layer for layer.</p>
+  <p class="pin">Validated against <code>main @ e731db56</code>, 2026-06-22.
+  Supersedes Lesson 01's soundness-weighted map.</p>
+  <div class="win"><b>Your win</b> — Draw the repo as two co-equal axes, each
+  running raw-word&nbsp;→&nbsp;headline; name each layer's job on each axis; and
+  say <em>where</em> each headline is discharged (in-tree vs the Aeneas seam).</div>
+</header>
+
+<h2><span class="num">1</span>The two claims, precisely</h2>
+<p>Pin the exact statements first — everything else hangs off these.</p>
+
+<div class="axes">
+  <div class="ax s">
+    <div class="h">Soundness</div>
+    <div class="dir">accepted&nbsp;trace ⇒ Sail&nbsp;spec&nbsp;agrees</div>
+    For every row of an accepted ZisK trace, the Sail spec's
+    <code>execute_instruction</code> equals the state effect ZisK's circuit
+    commits to. Per-opcode, climbed to one trace-level theorem.
+    <span class="thm">root_soundness<cite>ZiskFv/Soundness.lean:21</cite></span>
+  </div>
+  <div class="ax c">
+    <div class="h">Completeness</div>
+    <div class="dir">Sail-executable&nbsp;word ⇒ ZisK&nbsp;covers&nbsp;it</div>
+    Every Sail-executable RV64IM raw word is decoded, lowered, materialized and
+    soundness-input-covered by ZisK's circuit surface — except explicitly
+    recorded decode gaps.
+    <span class="thm">root_completeness<cite>ZiskFv/Completeness/Rv64im.lean:5919</cite></span>
+  </div>
+</div>
+
+<div class="dual">
+  <div class="h">Why you need both</div>
+  Soundness alone is <em>vacuously</em> satisfiable: a circuit that accepts
+  <em>nothing</em> never disagrees with Sail. Completeness rules that out — it
+  forces the circuit to actually implement the ISA. Soundness = “no accepted
+  lie.” Completeness = “no rejected truth.” Together they say ZisK
+  <em>faithfully and totally</em> realizes RV64IM, modulo shared carve-outs (§4).
+</div>
+
+<h2><span class="num">2</span>One substrate, two arcs</h2>
+<p>Both axes consume the <em>same</em> extracted circuit. They share the bottom
+of the tree and diverge above the per-opcode layer — soundness climbs an
+equivalence tower, completeness climbs a coverage ladder.</p>
+
+<table class="layers">
+  <thead><tr><th>Layer</th><th class="s">Soundness job</th><th class="c">Completeness job</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="lyr">Extraction<br><span class="soft">pil-extract</span></td>
+      <td>Emits the AIR algebraic constraints the equivalence proofs consume.</td>
+      <td>Same emission supplies the decode/lower/materialize surface the <code>Interface</code> abstracts.</td>
+    </tr>
+    <tr>
+      <td class="lyr">Circuit<br><span class="soft">Airs / AirsClean / ZiskCircuit</span></td>
+      <td><code>Valid_&lt;AIR&gt;</code> rows + circuit semantics in BitVec/FGL.</td>
+      <td>Those rows feed <code>RowMaterializationComplete iface</code>.<cite>Rv.lean:60</cite></td>
+    </tr>
+    <tr>
+      <td class="lyr">Per-opcode</td>
+      <td><code>equiv_&lt;OP&gt;</code> : Sail.execute = state_effect_via_channels.<cite>Equivalence/Add.lean:21</cite></td>
+      <td>Per-family <code>…SailExecutable</code> / <code>…CircuitCoveredKnownGood</code> / <code>…NoKnownGap</code>.<cite>Rv64im.lean:281,157,235</cite></td>
+    </tr>
+    <tr>
+      <td class="lyr">Aggregation</td>
+      <td>OpEnvelope dispatch → old global <code>zisk_riscv_compliant_program_bus</code>.<cite>Compliance.lean</cite></td>
+      <td>Shape-family ladder → <code>supported_decode_shape_completeness_*</code>.<cite>Rv64im.lean:2703</cite></td>
+    </tr>
+    <tr class="top">
+      <td class="lyr">Headline</td>
+      <td><b>Constructs</b> the envelope from an <code>AcceptedTrace</code> — no caller envelope.<cite>Soundness.lean:21</cite></td>
+      <td><code>root_completeness iface</code> + 6 interface hypotheses.<cite>Rv64im.lean:5919</cite></td>
+    </tr>
+    <tr>
+      <td class="lyr">Discharge</td>
+      <td><b>In-tree.</b> A green <code>lake build</code> <em>is</em> the proof. 0 project axioms.</td>
+      <td><b>Interface-mediated.</b> <code>iface</code> hyps discharged out-of-repo by the Aeneas harness.<cite>Rv64im.lean:7–13</cite></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="num">3</span>The completeness vocabulary</h2>
+<p>The soundness side you mostly know from Lesson 01. The completeness side has
+its own small algebra, all hanging off one record:</p>
+<ul style="font-size:.88rem">
+  <li><code>Rv.Interface</code> — abstracts ZisK's decode/lower/materialize surface as a Lean structure.<cite>Completeness/Rv.lean:23</cite></li>
+  <li><code>LoweringComplete</code>, <code>RowMaterializationComplete</code>, <code>OpcodeCoverageComplete</code> — the three “the circuit can build it” obligations.<cite>Rv.lean:50,60,55</cite></li>
+  <li><code>SailExecutableContainedIn</code> — the containment direction: Sail-runnable words ⊆ supported decode.<cite>Rv.lean:113</cite></li>
+  <li><code>SoundnessInputComplete</code> — the bridge predicate: coverage delivers exactly the inputs the <em>soundness</em> theorems demand. This is the only place the two axes touch by name.<cite>Rv.lean:143</cite></li>
+  <li><code>knownGap</code> — the recorded decode carve-out (e.g. FENCE).<cite>Rv.lean:35</cite></li>
+</ul>
+
+<h2><span class="num">4</span>Shared carve-outs — the real integration point</h2>
+<p>Both axes carry the <em>same</em> exclusions, and that is what makes them one
+story rather than two:</p>
+<ul style="font-size:.88rem">
+  <li><b>Decode gaps</b> (<code>knownGap</code> / <code>…AvoidingKnownDecodeBugs</code>) — FENCE-style words ZisK doesn't decode.</li>
+  <li><b>Known bugs</b> — the DIV/REM signed remainder-bound defect the project itself found. Soundness narrows it via <code>h_known_bugs</code>; completeness via <code>AvoidKnownBugs</code>.<cite>trust/defects.md · Rv.lean:75</cite></li>
+</ul>
+<p class="soft" style="font-size:.86rem">A re-architecture flag: the carve-out set is stated <em>twice</em>, once per
+axis, with no shared source of truth. Candidate for unification.</p>
+
+<div class="seam"><b>The seam to remember</b> — The two arcs do <em>not</em>
+cross-reference in code. <code>AcceptedTrace</code> (soundness) and
+<code>Rv.Interface</code> (completeness) are independent Lean abstractions of
+“the same” ZisK execution. <code>SoundnessInputComplete</code> is the one
+named bridge. Whether they <em>should</em> share a substrate is a live
+re-architecture question — hold it for the build/CI lesson.</div>
+
+<div class="stale"><b>Doc check</b> — <code>README.md</code> and
+<code>CLAUDE.md</code> still frame the project as the soundness arc and name only
+<code>zisk_riscv_compliant_program_bus</code>. They under-draw completeness too.
+Trust the tree, not the prose.</div>
+
+<div class="lab">
+  <span class="tag">Retrieval practice</span>
+  <h3>Soundness or completeness?</h3>
+  <p class="soft" style="font-size:.82rem;margin:.2rem 0 .3rem">Each statement is
+  true of exactly <em>one</em> axis. Pick it — immediate feedback below each.</p>
+  <div id="quiz"></div>
+  <div class="score" id="score"></div>
+</div>
+
+<div class="src">
+  <p><b>Primary source</b> — read the header docstring of
+  <a href="../../../../ZiskFv/Completeness/Rv64im.lean">ZiskFv/Completeness/Rv64im.lean</a>
+  (lines 1–13) for the completeness framing in the authors' own words, then the
+  signature of <code>root_completeness</code> at line 5919. Pair it with
+  <a href="../../../../ZiskFv/Compliance/TraceLevelExport.lean">TraceLevelExport.lean</a>
+  line 10976 for the soundness headline. The two docstrings side by side are the
+  cleanest statement of the two axes anywhere in the repo.</p>
+  <p>See also the <a href="../reference/glossary.html">glossary</a> ·
+  Lesson 01 <a href="0001-the-territory-map.html">The Territory Map</a>.</p>
+  <div class="ask"><b>Ask your teacher.</b> Anything unclear — why completeness
+  is interface-mediated, what the Aeneas harness actually discharges, whether the
+  two-arc decoupling is a smell — ask me directly. That's what I'm here for.</div>
+</div>
+
+<div class="nav">
+  <a href="0001-the-territory-map.html">&larr; 01 · The Territory Map</a>
+  <span class="soft">Next · 03 — ADD end-to-end, both axes</span>
+</div>
+
+</div>
+
+<script>
+const QS = [
+  {s:"A ZisK that accepts no traces at all satisfies this axis for free.", a:"s",
+   why:"Soundness only constrains accepted traces — accept nothing and it holds vacuously. Completeness is the axis that forbids the empty circuit."},
+  {s:"This axis is what stops ZisK from silently dropping an instruction.", a:"c",
+   why:"Completeness: every Sail-executable RV64IM word must be covered by ZisK's circuit (modulo recorded gaps)."},
+  {s:"This axis says: whatever ZisK accepts, the Sail spec agrees with it.", a:"s",
+   why:"Soundness — the circuit ⇒ spec direction, climbed through equiv_<OP> to the trace-level export."},
+  {s:"Proving this axis needs work done outside the Lean repo.", a:"c",
+   why:"Completeness is interface-mediated: the Rv.Interface hypotheses are discharged out-of-repo by the Aeneas harness."},
+  {s:"This axis is settled entirely by a green lake build — nothing external.", a:"s",
+   why:"Soundness — 0 project axioms; the in-tree build is the whole proof."},
+  {s:"This axis is the one that could fail even if every accepted row is correct.", a:"c",
+   why:"Completeness — a circuit can be perfectly sound yet still leave instructions uncovered."},
+];
+let answered = 0, correct = 0;
+const quiz = document.getElementById('quiz');
+const score = document.getElementById('score');
+QS.forEach((q, i) => {
+  const wrap = document.createElement('div'); wrap.className = 'q';
+  const stmt = document.createElement('div'); stmt.className = 'stmt';
+  stmt.textContent = (i+1) + '. ' + q.s; wrap.appendChild(stmt);
+  const btns = document.createElement('div'); btns.className = 'btns';
+  const fb = document.createElement('div'); fb.className = 'fb';
+  [['s','Soundness'],['c','Completeness']].forEach(([k,label]) => {
+    const b = document.createElement('button'); b.textContent = label;
+    b.onclick = () => {
+      if (wrap.dataset.done) return;
+      wrap.dataset.done = '1'; answered++;
+      if (k === q.a) { b.className = 'right'; correct++; }
+      else {
+        b.className = 'wrong';
+        [...btns.children].forEach(c => { if (c.textContent === (q.a==='s'?'Soundness':'Completeness')) c.className='right'; });
+      }
+      fb.textContent = q.why; fb.className = 'fb show';
+      score.textContent = answered + '/' + QS.length + ' answered · ' + correct + ' correct'
+        + (answered === QS.length ? (correct === QS.length ? ' — both axes locked in.' : ' — review the misses above.') : '');
+    };
+    btns.appendChild(b);
+  });
+  wrap.appendChild(btns); wrap.appendChild(fb); quiz.appendChild(wrap);
+});
+</script>
+</body>
+</html>

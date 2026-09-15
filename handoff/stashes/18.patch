@@ -1,0 +1,346 @@
+# stash@{18} (captured with --include-untracked)
+# message: On op-bus-and-global-compliance: preserve untracked files before removing op-bus worktree
+#
+diff --git a/build b/build
+new file mode 120000
+index 00000000..5f852f9b
+--- /dev/null
++++ b/build
+@@ -0,0 +1 @@
++/home/cody/zisk-fv/build
+\ No newline at end of file
+diff --git a/docs/fv/h-match-clo-gap.md b/docs/fv/h-match-clo-gap.md
+new file mode 100644
+index 00000000..a4583296
+--- /dev/null
++++ b/docs/fv/h-match-clo-gap.md
+@@ -0,0 +1,329 @@
++# The `h_match_clo` gap — discovered while attempting Phase B (BinaryExtension shape)
++
++> **Status: held, not committed.** This is investigation notes captured
++> while executing `docs/fv/plans/op-bus-and-global-compliance.md` so we
++> don't lose the finding. The fix decision is open.
++
++## What the gap is
++
++zisk-fv's per-opcode equivalence theorems for the BinaryExtension
++family — `equiv_SLL`, `equiv_SRL`, `equiv_SRA` — accept a
++user-supplied hypothesis named `h_match_clo` of shape:
++
++```lean
++(h_match_clo : m.c_0 r_main
++    = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
++      + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
++      + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
++      + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
++```
++
++i.e. *Main's `c_0` equals the sum of `v.free_in_c_0..7`* — the first
++eight columns of `Valid_BinaryExtension`'s flat `free_in_c` accessors,
++treated as the "low half." (Companion `h_match_chi` similarly sums
++indices 8..15 — the "high half.")
++
++The proof body never derives this equation — it just substitutes it
++in via `h_match_clo` / `h_match_chi` and proceeds. Whoever calls
++`equiv_SLL` is on the hook for producing it.
++
++## Why nothing has tripped over it
++
++No live caller. The `equiv_<OP>` theorems are written conditionally
++("**if** you can hand me this matching equation, **then** SLL matches
++Sail"), and there is currently no global compliance theorem that
++discharges the antecedent end-to-end. So the user-supplied promise is
++never tested. The proofs build; the trust gate passes; everything is
++**vacuously fine in isolation**.
++
++## How the gap surfaced
++
++Phase A of the OpBus plan added the trusted axiom
++`op_bus_perm_sound_BinaryExtension` (`ZiskFv/Airs/OperationBus/Bridge.lean`),
++which delivers a matching tuple `matches_entry (opBus_row_Main m r_main)
++(opBus_row_BinaryExtension v r_binary)`. To consume it in `equiv_SLL`
++we'd extract its c-lane conjuncts as the source of truth for
++`h_match_clo`. But the conjunct that comes out of the bus does **not**
++have the shape the existing proof expects.
++
++The bus's c_lo (per `bus_emission_BinaryExtension_0` in
++`build/extraction/Extraction/Buses.lean`, faithful to
++`zisk/state-machines/binary/pil/binary_extension.pil:118`'s
++`proves_operation`) sums the witness columns at indices 10, 12, 14,
++16, 18, 20, 22, 24 — i.e.
++
++```
++free_in_c_0 + free_in_c_2 + free_in_c_4 + free_in_c_6
++  + free_in_c_8 + free_in_c_10 + free_in_c_12 + free_in_c_14
++```
++
++(every other column, the "even" indices in the flat layout). The
++existing `h_match_clo` sums `free_in_c_0..7` (the first eight
++sequentially). These are **different sums of different bytes**.
++
++## The deeper inconsistency
++
++The PIL declares `col witness bits(32) free_in_c[BYTES][2]` —
++a 2-D array. The PIL2 extractor flattens this to 16 flat columns
++(`free_in_c[0]..free_in_c[15]`, mapped to stage-1 columns 10..25).
++The mapping it picks is **row-major**: `free_in_c[j][k] ↦ flat[2j + k]`.
++That's why the bus emission for `c[0] = Σ_j free_in_c[j][0]` lands on
++even flat indices.
++
++Meanwhile `ZiskFv/Airs/Binary/BinaryExtension.lean:40-45` documents
++the named-accessor convention as if the layout were **column-major**:
++
++> The `free_in_c` array is split logically into a low half (indices
++> 0..7) and a high half (indices 8..15), where `free_in_c_<i>` is the
++> byte-`i` low-32-bit contribution to the 64-bit shift result and
++> `free_in_c_<i+8>` is its high-32-bit contribution.
++
++`ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean:95-123`
++encodes the same column-major reading into `ByteLookupHypotheses`:
++
++```
++e0.c_lo_byte = v.free_in_c_0 row ∧ e0.c_hi_byte = v.free_in_c_8 row
++e1.c_lo_byte = v.free_in_c_1 row ∧ e1.c_hi_byte = v.free_in_c_9 row
++...
++```
++
++`docs/fv/plans/sext-axiom-elimination.md:54-55` writes the convention
++`Σ_{i∈0..7}` for c_lo and `Σ_{i∈8..15}` for c_hi as if it were
++established truth.
++
++So the codebase is **internally self-consistent** with column-major,
++the extractor is **internally self-consistent** with row-major, and
++the two layers were never connected because nothing derived
++`h_match_clo` from the actual bus. Phase A is the first thing that
++tries to bridge them, and that's when the disagreement shows.
++
++## Which side is correct?
++
++Cannot determine from inside Lean alone. The pilout protobuf has
++the symbol-table layout that resolves the ambiguity; consulting it
++(or running an end-to-end ZisK execution and observing the bus
++tuples) would settle whether row-major or column-major matches the
++real circuit. Until then, both readings are plausible.
++
++If the extractor is right (row-major), then `Valid_BinaryExtension`'s
++named-accessor doc + `BinaryExtensionPackedCorrect`'s
++`ByteLookupHypotheses` + `equiv_SLL/SRL/SRA`'s `h_match_clo` shape
++are all stating something false about real traces — the theorems
++would survive (they're conditional) but the antecedents are
++unfulfillable.
++
++If the named accessor is right (column-major), then the extractor's
++2-D flattening is wrong and `opBus_row_BinaryExtension` would need
++its `c_lo`/`c_hi` formulas changed to match.
++
++## What this says in simple terms
++
++The proof of `equiv_SLL` succeeds because `h_match_clo` is a
++**promise the caller makes that the proof never has to verify**. The
++proof body uses the equation as a substitution and never asks where
++it came from. Since no global theorem currently calls `equiv_SLL`,
++the promise is never tested — the gap is invisible.
++
++The first thing that tries to discharge the promise from the actual
++bus protocol (Phase A's OpBus axiom) discovers that the promise, as
++currently shaped, can't be discharged: the bus delivers a different
++sum of different bytes.
++
++## Comparison with openvm-fv
++
++openvm-fv's analogous theorem (`OpenvmFv/Equivalence/Shift.lean:1798`,
++`shift_spec`) does **not** have a `h_match_clo`-style hypothesis. Its
++shape is whole-AIR:
++
++```lean
++theorem shift_spec (air : Valid_VmAirWrapper_shift FBB ExtF)
++    (h_constraints : allHold_allRows air)
++    (h_bus_axioms : ∀ row ≤ air.last_row, … axiomsPerRow air row)
++    (h_bus_wellformedness : ∀ row ≤ air.last_row, … wf_propertiesToAssumePerRow air row) :
++  ∃ instruction_fields_list : List Shift_instruction_fields,
++    air.buses = bus_from_instruction_fields instruction_fields_list ∧
++    instruction_fields_list.Forall Shift_instruction_fields.spec
++```
++
++The user supplies the whole AIR plus universal-over-rows hypotheses;
++the proof derives the bus-row ↔ instruction correspondence
++**internally** and produces an existential. There is no per-row,
++per-opcode "Main's `c_0` equals this specific sum of provider
++columns" equation supplied from outside.
++
++openvm-fv's design therefore **structurally cannot** have a
++`h_match_clo`-style escape valve: its theorem is at the AIR level,
++not the per-`(r_main, r_binary)` level, so the bus-shape derivation
++must happen inside the proof. Any layout-convention conflict between
++the extractor and the named accessor would show up as a proof
++failure rather than an unfulfillable hypothesis.
++
++zisk-fv's per-opcode `equiv_<OP>` shape is the reason the gap could
++go unnoticed.
++
++## Implications for the OpBus plan
++
++Phase A (the OpBus axioms in `Airs/OperationBus/Bridge.lean`) is
++unaffected — its statements are correct relative to the actual bus
++emission. What it exposes is that Phase B for the BinaryExtension
++shape (and likely Binary's per-byte shape) cannot be a mechanical
++"thread the axiom through" pass. It needs:
++
++1. A decision on which layout convention is correct.
++2. Whichever side is wrong, fix it — and update every dependent
++   downstream file (`BinaryExtensionPackedCorrect`, the SLL/SRL/SRA
++   discharge lemma `h_rd_val_shift_sll`, the docstring on
++   `Valid_BinaryExtension`).
++
++Phase C (global compliance theorem) is the real reason this matters:
++the global theorem is what would actually need to discharge
++`h_match_clo` from a bus tuple. If the layout mismatch isn't
++resolved, Phase C cannot close. Adopting an openvm-fv-style whole-AIR
++shape for the global theorem would be the natural place to do that
++work — derive matching tuples internally, never accept them as
++caller-supplied equations.
++
++## The pattern is widespread — survey of all 63 equiv theorems
++
++`h_match_clo` is not a one-off. The same "user-supplied promise the
++proof never has to verify" pattern appears across nearly every
++canonical `equiv_<OP>` in the project, in three escalating tiers of
++detachment from ZisK's actual circuit witnesses.
++
++### Tier 3 — Main + Provider AIR (24 opcodes; "best-shaped")
++
++The theorem takes both `Valid_Main` and a `Valid_<Provider>`
++parameter, plus a row index `r_binary` into the provider, plus
++`h_match_clo`/`h_match_chi` as **user-supplied equations** asserting
++Main's `c` lanes equal specific sums of the provider's columns:
++
++* **BinaryAdd shape (2):** `Add` (refactored in Phase B.1 pilot —
++  matches_entry now bundled inside `add_circuit_holds`), `Addi`.
++* **Binary AIR shape — base-256 packed (6):** `And`, `Andi`, `Or`,
++  `Ori`, `Xor`, `Xori`. Shape:
++  `m.c_0 = v.free_in_c_0 + v.free_in_c_1*256 + v.free_in_c_2*65536
++   + v.free_in_c_3*16777216`.
++* **BinaryExtension shape — sequential 0..7 (12):** `Sll`, `Slli`,
++  `Sra`, `Srai`, `Srl`, `Srli`, `Shift`, `ShiftLI`, `ShiftR`,
++  `ShiftRA`, `ShiftRAI`, `ShiftRLI`. Shape:
++  `m.c_0 = v.free_in_c_0 + v.free_in_c_1 + … + v.free_in_c_7`.
++  This is the shape that disagrees with the actual bus emission —
++  see the body of this note.
++* **Mem / signed-load (3):** `Lb`, `Lh`, `Lw`. Same BinaryExtension
++  shape as above plus `Mem` provider.
++* **Mem / unsigned-load (3):** `LoadBU`, `LoadHU`, `LoadWU`. Three
++  MemAlign* providers + Mem.
++* **Mem (1):** `LoadD`.
++
++In all of these, the c-lane equation is a free promise: the proof
++body substitutes it and never derives it from anything.
++
++### Tier 2 — Main only, no Provider (12 opcodes)
++
++The theorem takes `Valid_Main` and `r_main` but **no
++`Valid_<Provider>`**. The provider's columns are *loose field
++elements* introduced as bound parameters with no AIR backing:
++
++* `Slt`, `Slti`, `Sltu`, `Sltiu` (compare; the c output is "fl7" — a
++  user-supplied loose element).
++* `Sub`, `Subw` (subtract; user supplies the per-byte loose
++  elements `c0..c7`).
++* `Addiw`, `Addw` (W-variant adds; same pattern).
++* `Auipc`, `Jal`, `Jalr`, `Lui` (no Binary involvement; PC/immediate
++  routing only).
++
++For the compares and W-arithmetic, the user passes ~50 loose field
++elements (`a0..a7`, `b0..b7`, `c0..c7`, `cin0..cin7`, `fl0..fl7`,
++`pi0..pi7`) plus `consumer_byte_match_chain` hypotheses asserting
++those satisfy the BinaryTable relation. Then `h_match_clo` ties
++Main's `c_0` to one of the loose elements (e.g. `m.c_0 = fl7`).
++
++There is **no link to any actual Binary AIR row**. The user could
++fabricate any 50 field elements that satisfy the table relation
++locally and the proof would close. The theorem proves "if the user
++can supply such witnesses, then SLT matches Sail" — it does not
++prove "ZisK's Binary AIR computes SLT correctly."
++
++### Tier 1 — No Valid_<AIR> at all (24 opcodes; most detached)
++
++The theorem takes **no `Valid_<AIR>` parameters**, neither Main nor
++any provider. The opcodes here are:
++
++* All 6 branches: `Beq`, `Bne`, `Blt`, `Bge`, `Bltu`, `Bgeu`
++  (`BranchEqual` etc.).
++* All 8 mul/div/rem variants: `Mul`, `MulH`, `MulHU`, `MulHSU`,
++  `MulW`, `Div`, `Divu`, `Divuw`, `Divw`, `Rem`, `Remu`, `Remuw`,
++  `Remw`.
++* All 4 stores: `StoreB`, `StoreD`, `StoreH`, `StoreW`.
++* `Fence`.
++
++`equiv_MUL` is the most extreme example: it takes 23 loose field
++elements (`a₀..a₃`, `b₀..b₃`, `c₀..c₃`, `d₀..d₃`, `cy₀..cy₆`) plus
++the actual 4×4 multiplication carry-chain identity (`hC31..hC38`) as
++**user-supplied equations**, plus `h_byte_lo`/`h_byte_hi` promises
++matching them to `e2`'s memory-bus bytes, plus `h_op1`/`h_op2`
++promises matching them to Sail's input values. Nothing connects
++those field elements to the actual ArithMul AIR's witnesses. The
++theorem is essentially "if you can fabricate field elements
++satisfying long-multiplication's algebraic identity AND match them
++to e2's bytes AND pack them to equal Sail's inputs, then MUL
++matches Sail." The actual ZisK Mul circuit could be doing anything
++and the theorem would still hold.
++
++### Summary
++
++| Tier | # opcodes | Provider AIR linkage | What's promised by the user |
++|------|-----------:|----------------------|-----------------------------|
++| 3 | 24 | `Valid_Main` + `Valid_<Provider>` | `m.c_0/c_1` equals a specific column-sum on provider |
++| 2 | 12 | `Valid_Main` only | `m.c_0/c_1` equals a loose field element + table-chain assertions |
++| 1 | 24 | none | the entire opcode-arithmetic identity, supplied as loose-element equations |
++| (refactored) | 1 | `Valid_Main` + `Valid_BinaryAdd` (matches_entry bundled inside `add_circuit_holds` and discharged via OpBus axiom) | none of the bus-shape equations — derived inside the proof |
++
++Phase B.1's ADD pilot is the first opcode whose `equiv_<OP>` proof
++**actually derives** `matches_entry` from the bus protocol (via the
++new Phase A axiom). All 62 others are still in one of the three
++tiers above.
++
++### Why this matters for the global compliance theorem
++
++The plan's Phase C (a single `zisk_riscv_compliant` theorem) needs
++to discharge the antecedents of every `equiv_<OP>` end-to-end. For
++Tier 3 it needs to derive `h_match_clo`/`h_match_chi` from the bus.
++For Tier 2 it additionally needs to introduce a `Valid_<Provider>`
++and derive the loose-element bridges. For Tier 1 it needs to
++introduce both AIRs from scratch and derive 50+ promised equations.
++
++In other words: closing Phase C is not just refactoring — it
++requires *proving* the equations that 62 of 63 `equiv_<OP>` theorems
++currently *assume*. This is the substance of Phase B (B.2 range,
++B.3 transpile-bridge, B.4 bus-shape in the plan). The plan
++underestimates the effort: each tier requires its own bridging
++infrastructure (per-byte ↔ packed lemmas, BinaryTable consumers,
++Arith carry-chain wrappers, etc.) before the OpBus axiom can carry
++the cross-AIR consistency.
++
++The simplest way to think about the current state: the project has
++**the LHS half** of every per-opcode equivalence — the Sail spec
++side is rigorous and complete. The RHS half — that the *real* ZisK
++circuit produces witnesses matching the spec — is **almost entirely
++delegated to caller-supplied hypotheses** that no caller exists to
++discharge. Phase A added the first axiom that lets some of those
++hypotheses be discharged (the cross-AIR matching). The
++discharge-derivation lemmas needed to actually use that axiom for
++each shape are still to be written.
++
++## Files to revisit if pursuing this
++
++- `ZiskFv/Airs/Binary/BinaryExtension.lean:40-45` (named-accessor doc)
++- `ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean:91-123`
++  (`ByteLookupHypotheses` row→column mapping)
++- `ZiskFv/Equivalence/{Sll,Srl,Sra}.lean` (`h_match_clo`/`h_match_chi`
++  shape)
++- `ZiskFv/Equivalence/RdValDerivation/BinaryShift.lean::h_rd_val_shift_sll`
++  (the discharge lemma that consumes the user-supplied shape)
++- `ZiskFv/Airs/OperationBus.lean::opBus_row_BinaryExtension` (Phase A,
++  uses extractor row-major)
++- `build/extraction/Extraction/Buses.lean::bus_emission_BinaryExtension_0`
++  (extractor output; row-major)
++- `tools/pil-extract/` (the source of the row-major flattening)
++- `zisk/state-machines/binary/pil/binary_extension.pil:118` (PIL)

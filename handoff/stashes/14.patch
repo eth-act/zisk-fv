@@ -1,0 +1,59 @@
+# stash@{14}
+# date: 2026-06-13 14:44:22 -0400
+# message: On endgame-p3-pr5: pre-p3-restack status endgame-p3-pr5 2026-06-13
+#
+diff --git a/STATUS.md b/STATUS.md
+index a418930b..d3664666 100644
+--- a/STATUS.md
++++ b/STATUS.md
+@@ -1,19 +1,35 @@
+-Active plan: docs/ai/plan/ENDGAME_ROADMAP.md (metaplan) →
+-docs/ai/plan/PLAN_ENDGAME_P1.md (first phase, ready for execution)
++Active plan: parent checkout `docs/ai/plan/PLAN_ENDGAME_P3.md`
++(not present on this stacked code branch; tracking files stay out of PR payloads).
+ 
+-Current focus: Clean Completeness Proofs stream is COMPLETE — all five wave
+-PRs (#69–#73) merged 2026-06-12. The Endgame campaign is set up: six phases
+-from the envelope-conditional global theorem to a trace-level public
+-statement, anchored to issues #61/#74–#78. Plan sizing convention: ~5 PRs
+-per phase plan, written only when the phase is staffed.
++Current focus: P3-PR5, metric-moving memory boundary reduction and LD
++instantiation. Worktree/branch: `.worktrees/endgame-p3-pr5` /
++`endgame-p3-pr5`, stacked on `origin/endgame-p3-pr4`.
+ 
+-Blocking: none. P1 can be staffed now (two agents: A = PRs 1→2→3
+-finalization + kernel-only closure; B = PRs 4→5 ADD instantiation + bucket
+-audit). P3 (#76 memory argument) can be staffed in parallel once an agent
+-frees up; its plan is written at that point.
++Already done: P3-PR1 #84, P3-PR2 #85, P3-PR3 #86, P3-PR4 #87, and P3-PR5 #88
++are open and queued for review. PR5 depends on #85-#87 code and #82 is already
++on `origin/main`. Latest GitHub check: #84-#88 are OPEN/CLEAN with no review
++comments or status checks reported.
+ 
+-Open follow-ups carried from the completeness stream (recorded in P1-PR1):
+-signed Arith completeness disjuncts; table-op scope extensions; wave
+-worktree/branch cleanup pending Cody's deletion approval.
++Progress: `zisk_riscv_compliant_program_bus` now takes
++`env.memoryTimelineConstructionEvidence` instead of opaque
++`env.memoryTimelineEvidence`; `exec_eq` exposes the construction-shaped
++boundary. ADD was updated, `global_theorem_instantiation_ld.lean` now builds a
++concrete LD envelope, and LDSD/Misc/Remaining derive per-load timeline evidence
++locally from construction evidence instead of threading `h_memory_timeline`.
+ 
+-Next step: hand PLAN_ENDGAME_P1.md to the P1 agent(s).
++Blocking: metric-plan mismatch. `trust/scripts/regenerate.sh` was rerun after
++the PR5 edits; all generated baselines stayed byte-identical except a date-only
++`baseline-zisk-riscv-compliant.txt` churn, which was reverted. Canonical load
++caller-burden still exposes `LoadPromises`; changing it without a real new
++derivation would split/rename the promise, not discharge it.
++
++Next step: wait for #88 reviewer adjudication. If accepted, P3 closes as a
++global boundary reduction with a named P4-bound residual. If rejected, broaden
++P3/P4 so canonical load APIs derive Sail-memory byte agreement from
++accepted-trace construction rather than requiring `LoadPromises`.
++
++Last checkpoint: forbidden-pattern scan clean; `lake build ZiskFv.Compliance`,
++ADD/LD instantiation files, `trust/scripts/check-all.sh`,
++`trust/scripts/check-all-semantic.sh`, regenerate, and global closure print all
++ran successfully. Full `nix run .#test` also passed. Regenerate produced only
++date churn, reverted, so `trust/generated/` is clean.

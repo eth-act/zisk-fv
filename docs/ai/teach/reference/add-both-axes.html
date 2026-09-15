@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reference · ADD, both axes</title>
+<style>
+  :root{--ink:#1a1a1a;--soft:#5f5f56;--rule:#cfcabb;--bg:#fff;--accent:#7a2e1d;--snd:#2d5a4a;--cmp:#7a3e6a}
+  *{box-sizing:border-box} html{font-size:15px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Iowan Old Style",Palatino,Georgia,serif;line-height:1.4}
+  .wrap{max-width:52rem;margin:0 auto;padding:1.6rem 1.4rem 3rem}
+  a{color:var(--accent)} .home{font-size:.78rem;text-decoration:none;color:var(--soft)}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.82em;background:#f3efe4;padding:.03em .3em;border-radius:3px}
+  h1{font-size:1.5rem;margin:.5rem 0 .2rem}
+  .sub{color:var(--soft);font-size:.85rem;margin-bottom:1rem}
+  .enc{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;border:1px solid var(--rule);border-radius:5px;padding:.5rem .7rem;background:#faf8f2;margin:.6rem 0}
+  table{border-collapse:collapse;width:100%;margin:.7rem 0;font-size:.78rem}
+  th,td{border:1px solid var(--rule);padding:.32rem .5rem;text-align:left;vertical-align:top}
+  th{background:#f1ece0;font-variant:small-caps;letter-spacing:.03em}
+  th.s{color:var(--snd)} th.c{color:var(--cmp)}
+  td.r{font-weight:600;white-space:nowrap;background:#faf8f2}
+  td code{font-size:.92em;background:#f6f3ea}
+  .loc{color:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:.92em;display:block}
+  .note{border-left:3px solid var(--accent);background:#faf4ee;padding:.5rem .8rem;margin:.9rem 0;font-size:.83rem}
+  .note b{color:var(--accent);font-variant:small-caps;letter-spacing:.04em}
+  @media print{.home{display:none} body{font-size:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="home" href="../lessons/0003-add-both-axes.html">&larr; lesson 03</a>
+<h1>ADD · both-axes trace card</h1>
+<div class="sub">Validated against <code>main @ e731db56</code>. Bottom row = base; top row = headline.</div>
+
+<div class="enc">ADD = [ funct7 0000000 | rs2 | rs1 | funct3 000 | rd | opcode 0110011 ]&nbsp;&nbsp;(rawRType 0 rs2 rs1 0 rd 0x33)</div>
+
+<table>
+  <thead><tr><th>Layer</th><th class="s">Soundness (per row)</th><th class="c">Completeness (per word-set)</th></tr></thead>
+  <tbody>
+    <tr><td class="r">Headline</td>
+      <td><code>root_soundness</code><span class="loc">Soundness.lean:21</span></td>
+      <td><code>root_completeness</code><span class="loc">Rv64im.lean:5919</span></td></tr>
+    <tr><td class="r">Aggregate</td>
+      <td><code>RowData_add</code> residual binders<span class="loc">TraceLevelExport.lean:1667</span></td>
+      <td><code>supported_decode_shape_completeness_*</code><span class="loc">Rv64im.lean:2703</span></td></tr>
+    <tr><td class="r">Family / bridge</td>
+      <td><code>equiv_ADD</code> canonical (channel-balance)<span class="loc">Equivalence/Add.lean:21</span></td>
+      <td><code>RTypeRegister{SailExecutable,CircuitCoveredKnownGood,NoKnownGap,SoundnessInputComplete}</code><span class="loc">Rv64im.lean:281,157,235,61</span></td></tr>
+    <tr><td class="r">Discharge</td>
+      <td><code>Compliance.equiv_ADD</code> — derives mode32=0 &amp; b_op=OP_ADD from the op-bus match (<code>b_op+16·mode32=10</code>); pulls 8× <code>wf_properties</code> (byte range + add-carry eqn) + <code>core_every_row</code> from table.Spec<span class="loc">Wrappers/Add.lean:43; wf_properties BinaryTable.lean:295</span></td>
+      <td><code>RTypeRegisterShape</code>: ∃ (funct7,funct3,opcode)∈28 shapes, regs; raw=rawRType…<span class="loc">Shapes.lean:139</span></td></tr>
+    <tr><td class="r">Core / shape</td>
+      <td><code>equiv_ADD_of_static_row</code> — 8-byte carry chain, carry_7=0, c_0/c_1 = byte recomposition of r1+r2<span class="loc">EquivCore/Add.lean:378; chain Bridge/Binary.lean:1919,2176</span></td>
+      <td><code>AddRawShape ⊆ RTypeRegisterShape</code> via the (0,0,0x33) entry<span class="loc">Shapes.lean:147,152</span></td></tr>
+    <tr><td class="r">Base</td>
+      <td><code>execute_RTYPE_add_pure</code> (Sail pure spec)<span class="loc">SailSpec/add.lean:19</span></td>
+      <td><code>AddRawShape raw</code> — the exact ADD-word set<span class="loc">Shapes.lean:147</span></td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Quantifier</b> — Soundness: <code>∃</code> one row <code>i</code>
+with <code>op i = OP_ADD</code>, concrete Sail state. Completeness:
+<code>∀ raw, AddRawShape raw → …</code>, abstract 32-bit words.</div>
+
+<div class="note"><b>Soundness call stack</b> (top→base; open each, jump at the noted line):
+<code>root_soundness</code> Soundness.lean:21
+→ (:10881) <code>stepStrong_add</code> :7361
+→ (:7494) <code>zisk_riscv_compliant_program_bus</code> Compliance.lean:95 [old global]
+→ (Dispatch/ADD_RTYPEW.lean:60) <code>Equivalence.Add.equiv_ADD</code> :21
+→ (:59) <code>Compliance.equiv_ADD</code> Wrappers/Add.lean:43
+→ (:99) <code>equiv_ADD_of_static_row</code> EquivCore/Add.lean:378
+→ (:432) <code>equiv_ADD_of_wf</code> :219
+→ (:357) <code>equiv_ADD_sail</code> :97
+→ (:115) <code>execute_RTYPE_add_pure_equiv</code> SailSpec/add.lean:33. &nbsp;<i>Note: the new top wraps the old global theorem (hop 2→3), not replaces it.</i></div>
+
+<div class="note"><b>The join is nominal</b> — <code>RTypeRegisterSoundnessInputComplete</code>
+unfolds to <code>… → ziskSoundnessInput raw</code> (<code>Rv.lean:146</code>), but
+<code>ziskSoundnessInput : RawInstruction → Prop</code> is an abstract
+<code>Rv.Interface</code> field (<code>Rv.lean:29</code>) — never tied in-tree to
+<code>RowData_add</code>. The two towers do not compose in the kernel;
+<code>Compliance/</code> ⟂ <code>Completeness/</code> (only FENCE carve-out comments
+overlap). The handshake lives in the out-of-repo Aeneas harness.</div>
+
+</div>
+</body>
+</html>

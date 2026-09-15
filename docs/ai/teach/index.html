@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zisk-fv · Architecture — course home</title>
+<style>
+  :root{--ink:#1a1a1a;--soft:#5f5f56;--rule:#d8d4c8;--bg:#fdfcf7;--accent:#7a2e1d;--gold:#9a7b1f;--done:#2d6a3f;--code:#f1ecdd}
+  *{box-sizing:border-box} html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:48rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  code{background:var(--code);padding:.05em .32em;border-radius:3px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.82em}
+  a{color:var(--accent)}
+  .kicker{font-variant:small-caps;letter-spacing:.13em;color:var(--accent);font-size:.82rem;font-weight:600}
+  h1{font-size:2.2rem;line-height:1.06;margin:.3rem 0 .5rem;font-weight:600}
+  .why{font-size:1.05rem;color:#33332e;font-style:italic}
+  .pin{color:var(--soft);font-size:.78rem;margin-top:.5rem;font-style:italic}
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:1.4rem;margin-bottom:1.8rem}
+  .next{background:#f6f1e1;border:1px solid var(--rule);border-left:3px solid var(--gold);padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.95rem;border-radius:0 5px 5px 0}
+  .next b{font-variant:small-caps;letter-spacing:.05em;color:var(--gold)}
+  h2{font-size:1.15rem;margin:2.4rem 0 .6rem;font-weight:600;font-variant:small-caps;letter-spacing:.05em;color:var(--soft);border-bottom:1px solid var(--rule);padding-bottom:.3rem}
+  .lesson{display:block;text-decoration:none;color:inherit;border:1px solid var(--rule);border-radius:8px;background:#fffdf6;padding:.85rem 1rem;margin:.6rem 0;transition:all .12s}
+  .lesson:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(122,46,29,.08);transform:translateY(-1px)}
+  .lesson .row1{display:flex;align-items:baseline;gap:.6rem}
+  .lesson .no{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:#fff;background:var(--accent);border-radius:5px;padding:.1rem .45rem;flex:none}
+  .lesson .ttl{font-weight:600;font-size:1.08rem}
+  .lesson .badge{margin-left:auto;font-size:.7rem;font-variant:small-caps;letter-spacing:.06em;padding:.12rem .5rem;border-radius:20px;flex:none}
+  .badge.done{background:#e6f0e8;color:var(--done);border:1px solid #bcd8c2}
+  .badge.soon{background:#efe9d8;color:var(--soft);border:1px solid var(--rule)}
+  .lesson .desc{font-size:.9rem;color:#33332e;margin:.4rem 0 0}
+  .lesson .take{font-size:.82rem;color:var(--soft);margin:.35rem 0 0}
+  .lesson .take b{color:var(--done);font-variant:small-caps;letter-spacing:.04em;font-weight:600}
+  .planned{border-style:dashed;background:#fbf9f1}
+  .planned:hover{transform:none;box-shadow:none;border-color:var(--rule);cursor:default} .planned .no{background:var(--soft)}
+  .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.5rem;margin:.5rem 0}
+  .lk{border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.5rem .7rem;text-decoration:none;color:inherit;font-size:.86rem;transition:border-color .12s}
+  .lk:hover{border-color:var(--accent)} .lk .t{font-weight:600} .lk .d{color:var(--soft);font-size:.78rem;margin-top:.15rem}
+  .lk .ic{font-family:ui-monospace,Menlo,monospace;color:var(--accent);margin-right:.35rem}
+  .note{font-size:.85rem;color:var(--soft);background:#f4f1e6;border:1px solid var(--rule);border-radius:6px;padding:.6rem .9rem;margin-top:.6rem}
+  footer{margin-top:3rem;padding-top:1.1rem;border-top:1px solid var(--rule);color:var(--soft);font-size:.83rem}
+  @media print{.lesson:hover{box-shadow:none;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="kicker">teaching workspace</div>
+  <h1>zisk-fv · Architecture</h1>
+  <p class="why">Build an accurate mental model of this repo's architecture — proof structure first, then build &amp; CI — in order to deliberately re-architect it.</p>
+  <div class="pin">Regenerated against <code>main @ e731db56</code> on restart. The architecture grew a new trace-level top since the last pass; the prose docs (README/CLAUDE) haven't caught up — lessons trust the tree.</div>
+  <div class="next"><b>Continue →</b> Newest: <a href="lessons/0003-add-both-axes.html">Lesson 03 — ADD, Both Axes</a> (one opcode up both towers). Then ask your teacher for Lesson 04.</div>
+</header>
+
+<h2>Lessons</h2>
+
+<a class="lesson" href="lessons/0001-the-territory-map.html">
+  <div class="row1"><span class="no">01</span><span class="ttl">The Territory Map</span><span class="badge done">done</span></div>
+  <div class="desc">The repo as two arcs (Sail spec ↔ ZisK circuit) meeting at the per-opcode theorems, climbed to the top — now including the <em>new</em> top: per-opcode sound constructions + the trace-level export. Plus trust gate &amp; CI.</div>
+  <div class="take"><b>Takeaway —</b> the headline is shifting from "assume an <code>OpEnvelope</code>" (old global theorem) to "construct it from an accepted trace" (<code>root_soundness</code>); 0 axioms; docs lag code.</div>
+</a>
+
+<a class="lesson" href="lessons/0002-two-axes-one-tree.html">
+  <div class="row1"><span class="no">02</span><span class="ttl">Two Axes, One Tree</span><span class="badge done">done</span></div>
+  <div class="desc">The repo proves <em>two</em> dual claims and they run side by side, layer for layer: <em>soundness</em> (accept ⇒ Sail agrees, fully in-tree, <code>root_soundness</code>) and <em>completeness</em> (Sail-executable ⇒ ZisK covers it, interface-mediated, <code>root_completeness</code>). Their shared substrate, shared carve-outs, and the seam between them.</div>
+  <div class="take"><b>Takeaway —</b> soundness alone is vacuous (a reject-everything circuit passes it); completeness closes that gap. The two arcs don't cross-reference in code — <code>SoundnessInputComplete</code> is the one named bridge. Both axes, every step, from here on.</div>
+</a>
+
+<a class="lesson" href="lessons/0003-add-both-axes.html">
+  <div class="row1"><span class="no">03</span><span class="ttl">ADD, Both Axes</span><span class="badge done">done</span></div>
+  <div class="desc">One opcode traced up <em>both</em> towers, rung by rung with <code>file:line</code>: the soundness equivalence tower (Sail pure spec → EquivCore → wrapper → canonical <code>equiv_ADD</code> → <code>RowData_add</code> → trace export) and the completeness coverage ladder (<code>AddRawShape</code> ⊆ <code>RTypeRegisterShape</code> → family obligations → <code>root_completeness</code>).</div>
+  <div class="take"><b>Takeaway —</b> soundness quantifies one row; completeness quantifies ∀ ADD-word. They <em>never compose in the kernel</em>: the bridge <code>ShapeSoundnessInputComplete</code> lands on <code>ziskSoundnessInput</code>, an abstract <code>Rv.Interface</code> field — the real handshake is out-of-repo (Aeneas). The central re-arch seam.</div>
+</a>
+
+<div class="lesson planned">
+  <div class="row1"><span class="no">04</span><span class="ttl">The New Top &amp; Its Completeness Mirror</span><span class="badge soon">planned</span></div>
+  <div class="desc"><code>StrongRowConstructionData</code> + the three coverage routes + residual, in parallel with the shape-family coverage ladder. Residuals on both axes.</div>
+</div>
+
+<div class="lesson planned">
+  <div class="row1"><span class="no">05</span><span class="ttl">The RHS Circuit Stack</span><span class="badge soon">planned</span></div>
+  <div class="desc"><code>pil-extract</code> → <code>Airs</code> vs <code>AirsClean</code> → <code>ZiskCircuit</code>: the <code>validOfRow</code> seam — and how the same rows feed <code>RowMaterializationComplete</code> on the completeness side.</div>
+</div>
+
+<div class="lesson planned">
+  <div class="row1"><span class="no">06</span><span class="ttl">Build System &amp; CI Sanity</span><span class="badge soon">planned</span></div>
+  <div class="desc">The Nix derivations, cachix, and <code>proofs.yml</code> shape — including the Aeneas completeness harness (the ~1h31m bottleneck that discharges the <code>iface</code> hypotheses). Is the pipeline sensible?</div>
+</div>
+
+<h2>Reference</h2>
+<div class="links">
+  <a class="lk" href="reference/glossary.html"><div class="t"><span class="ic">▤</span>Glossary</div><div class="d">Every term — incl. the new trace-level top (AcceptedTrace, StrongRowConstructionData, the strong export). Printable.</div></a>
+  <a class="lk" href="reference/add-both-axes.html"><div class="t"><span class="ic">▦</span>ADD · both-axes trace card</div><div class="d">One-page printable: ADD up the soundness tower beside the completeness ladder, layer by layer, with file:line + the nominal join.</div></a>
+</div>
+
+<h2>Workspace</h2>
+<div class="links">
+  <a class="lk" href="MISSION.md"><div class="t"><span class="ic">◎</span>MISSION.md</div><div class="d">Why we're learning this; what success looks like.</div></a>
+  <a class="lk" href="RESOURCES.md"><div class="t"><span class="ic">❡</span>RESOURCES.md</div><div class="d">Trusted sources — and which in-repo docs are stale.</div></a>
+  <a class="lk" href="NOTES.md"><div class="t"><span class="ic">✎</span>NOTES.md</div><div class="d">Calibration, preferences, lesson plan, validation discipline.</div></a>
+</div>
+<div class="links" style="margin-top:.5rem">
+  <a class="lk" href="learning-records/0001-restart-against-main-architecture-evolved.md"><div class="t"><span class="ic">LR</span>0001 · Restart against main; architecture evolved</div></a>
+  <a class="lk" href="learning-records/0002-completeness-is-a-co-equal-axis.md"><div class="t"><span class="ic">LR</span>0002 · Completeness is a co-equal axis</div></a>
+</div>
+
+<div class="note"><b>Validation status:</b> every lesson claim checked against repo source at <code>main @ e731db56</code>, cited by <code>file:line</code>. <code>build/</code> and <code>.lake/</code> are populated in the base dir (a <code>lake build</code> has run before); a green build against this exact HEAD hasn't been re-confirmed this session — ask your teacher to run <code>lake build</code> for fresh kernel ground truth. <b>Note:</b> README/CLAUDE.md are stale (still cite only the old global theorem).</div>
+
+<footer>
+  Teaching workspace at <code>docs/ai/teach/</code> on the base dir's <code>main</code> · v1 archived on the <code>review</code> branch · served locally.
+  Your teacher (Claude) is on call.
+</footer>
+</div>
+</body>
+</html>

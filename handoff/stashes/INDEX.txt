@@ -1,0 +1,24 @@
+stash@{0}  2026-08-19 21:37:30 -0400  On 357-register-derivation: incomplete source-column extension
+stash@{1}  2026-08-19 16:44:54 -0400  On 357-register-derivation: abort-357-cherry-pick-conflicts
+stash@{2}  2026-08-18 13:43:32 -0400  WIP on 330-registerboundary-fidelity: 5b278658 #357: replace register field usages in Construction/EquivCore (310 → 238)
+stash@{3}  2026-07-15 18:07:42 -0400  On refactor-1: raw Aristotle phase-2 export (pre-restack lineage)
+stash@{4}  2026-07-09 12:40:17 -0400  On issue-219-single-add: landing-prep-projects-bookkeeping
+stash@{5}  2026-06-24 23:41:35 -0400  On clarity/root-soundness-shape: WIP: AcceptedZiskTrace numInstructions parameterization (infinite whnf in mainOfTable lemmas)
+stash@{6}  2026-06-22 10:36:59 -0400  On main: pre-main-restart: bank stray working-tree changes (incl docs/ai deletions)
+stash@{7}  2026-06-19 22:14:38 -0400  On p4-loads-stores: step-d Fold-B port + load-residual reduction — REVERTS loads to direct-lift (conflicts with no-direct-lift goal); redo via old-theorem memory-evidence change later
+stash@{8}  2026-06-19 02:25:06 -0400  On p4-loads-stores: laundered signed-M (vacuous: carries h_env_defect+h_known_bugs; redo honestly)
+stash@{9}  2026-06-17 11:00:47 -0400  On ci/split-aeneas-from-gate: park ci/split-aeneas-from-gate before switching base dir to review
+stash@{10}  2026-06-13 14:44:22 -0400  On endgame-p3-pr3: pre-p3-restack status endgame-p3-pr3 2026-06-13
+stash@{11}  2026-06-13 14:44:22 -0400  On endgame-p3-pr4: pre-p3-restack status endgame-p3-pr4 2026-06-13
+stash@{12}  2026-06-13 14:44:22 -0400  On endgame-p3-pr2: pre-p3-restack status endgame-p3-pr2 2026-06-13
+stash@{13}  2026-06-13 14:44:22 -0400  On endgame-p3-pr1: pre-p3-restack status endgame-p3-pr1 2026-06-13
+stash@{14}  2026-06-13 14:44:22 -0400  On endgame-p3-pr5: pre-p3-restack status endgame-p3-pr5 2026-06-13
+stash@{15}  2026-06-09 16:11:52 -0400  WIP on main: b62c73d7 Restore explicit trust axioms
+stash@{16}  2026-06-04 11:49:38 -0400  On main: preserve main reconstruction before rv-completeness recovery
+stash@{17}  2026-06-04 11:20:13 -0400  On retire-transpiler-axioms: cleanup before post-merge workspace reset
+stash@{18}  2026-06-01 14:04:47 -0400  On op-bus-and-global-compliance: preserve untracked files before removing op-bus worktree
+stash@{19}  2026-06-01 14:04:40 -0400  On clean-air-integration: preserve untracked files before removing clean-full worktree
+stash@{20}  2026-05-30 23:19:51 -0400  On cleanup/wrapper-rename-vocab: backup before moving trust-doc branch out of worktree
+stash@{21}  2026-05-04 11:57:36 -0400  On nix-migration: sd.lean memory optimization
+stash@{22}  2026-05-02 06:06:13 -0400  On lean-toolchain-4.29: WIP lean-4.29 bump (lakefile.toml, lean-toolchain, manifest)
+stash@{23}  2026-05-01 10:48:55 -0400  WIP on nix-lake-build: 8b491bd test: cap lake build at -j 4 (OOM under default fan-out)

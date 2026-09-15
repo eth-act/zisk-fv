@@ -1,0 +1,163 @@
+# stash@{23}
+# date: 2026-05-01 10:48:55 -0400
+# message: WIP on nix-lake-build: 8b491bd test: cap lake build at -j 4 (OOM under default fan-out)
+#
+diff --git a/flake.nix b/flake.nix
+index 2aadc425..527eb0de 100644
+--- a/flake.nix
++++ b/flake.nix
+@@ -57,6 +57,12 @@
+           zisk-pilout = self.packages.${system}.zisk-pilout;
+         };
+ 
++        packages.zisk-fv-oleans = pkgs.callPackage ./nix/zisk-fv-oleans.nix {
++          sail-lean-tree = self.packages.${system}.sail-lean-tree;
++          zisk-pilout = self.packages.${system}.zisk-pilout;
++          extracted-lean = self.packages.${system}.extracted-lean;
++        };
++
+         apps.populate = {
+           type = "app";
+           program = "${pkgs.callPackage ./nix/populate.nix {
+diff --git a/nix/zisk-fv-oleans.nix b/nix/zisk-fv-oleans.nix
+new file mode 100644
+index 00000000..94de40d1
+--- /dev/null
++++ b/nix/zisk-fv-oleans.nix
+@@ -0,0 +1,136 @@
++{ stdenv, lib, elan, cacert, git, curl,
++  sail-lean-tree, zisk-pilout, extracted-lean }:
++
++# Nix derivation that runs `lake exe cache get && lake build` and
++# captures the resulting `.lake/build/` tree.
++#
++# `lake exe cache get` needs network access to fetch mathlib oleans
++# from Mathlib's azure cache. The whole derivation is therefore
++# fixed-output — Nix allows network during build, but the output's
++# hash must match `outputHash` exactly. Lean toolchain pin
++# (lean-toolchain), Lake manifest (lake-manifest.json), the source
++# tree, and the build artefacts (sail-lean-tree, zisk-pilout,
++# extracted-lean) all flow into the hash, so any change to those
++# inputs invalidates this derivation and rebuilds.
++#
++# To capture the hash on first build:
++#   1. Set `outputHash = lib.fakeHash;` below.
++#   2. `nix build .#zisk-fv-oleans --print-build-logs`
++#   3. Nix prints the actual hash in the error; paste it back.
++
++stdenv.mkDerivation {
++  pname = "zisk-fv-oleans";
++  version = "1.0";
++
++  # The source tree lake reads. Exclude build artefacts that would
++  # change cache hash unnecessarily; keep Lean source + lake config.
++  src = lib.cleanSourceWith {
++    src = ../.;
++    filter = path: type:
++      let baseName = baseNameOf (toString path);
++      in baseName != ".lake"
++         && baseName != "build"
++         && baseName != "result"
++         && baseName != "target"
++         && baseName != ".worktrees"
++         && baseName != "node_modules";
++  };
++
++  nativeBuildInputs = [ elan cacert git curl ];
++
++  configurePhase = ''
++    runHook preConfigure
++    chmod -R +w .
++
++    # Populate build/ and ZiskFv/Extraction/ from the upstream
++    # derivations (already cachix-cached when run via flake).
++    mkdir -p build ZiskFv/Extraction
++    # Copy (not symlink) sail-lean so lake can write its own .lake/
++    # build artefacts into the tree. Nix-store paths are read-only.
++    cp -rL ${sail-lean-tree} build/sail-lean
++    chmod -R u+w build/sail-lean
++    cp -L ${zisk-pilout} build/zisk.pilout
++    chmod u+w build/zisk.pilout
++    for f in ${extracted-lean}/*.lean; do
++      cp --no-preserve=mode "$f" "ZiskFv/Extraction/$(basename "$f")"
++    done
++
++    # elan needs HOME for its config + caches.
++    export HOME=$TMPDIR/home
++    mkdir -p $HOME
++
++    # SSL certs for fetching Lean toolchain / mathlib oleans.
++    export SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
++    runHook postConfigure
++  '';
++
++  buildPhase = ''
++    runHook preBuild
++
++    # Fetch mathlib's pre-built oleans from Mathlib's azure cache.
++    # This is the network-using step that requires the FOD wrapping.
++    lake exe cache get
++
++    # Build everything else (project oleans, equivalence theorems).
++    # Capture stdout+stderr for downstream lint inspection. Lake has
++    # no -j flag; parallelism is implicit. Local builders have plenty
++    # of RAM; CI doesn't actually run this — it pulls the FOD output
++    # from cachix.
++    lake build 2>&1 | tee build.log
++    test "''${PIPESTATUS[0]}" = "0"
++
++    runHook postBuild
++  '';
++
++  installPhase = ''
++    runHook preInstall
++    mkdir -p $out
++
++    # The .lake/build/ tree (project oleans) is the primary output.
++    cp -r .lake/build $out/build
++
++    # The mathlib + dependent packages' oleans (network-fetched).
++    # Only keep the .lake/build subtree of each package — that's
++    # what `lake build` consumes downstream. Skipping mathlib's full
++    # source tree (incl. .github/ scripts that Nix's fixupPhase
++    # would otherwise patch shebangs in, breaking determinism).
++    mkdir -p $out/packages
++    for pkg_dir in .lake/packages/*/; do
++      pkg=$(basename "$pkg_dir")
++      if [ -d "$pkg_dir/.lake/build" ]; then
++        mkdir -p "$out/packages/$pkg/.lake"
++        cp -r "$pkg_dir/.lake/build" "$out/packages/$pkg/.lake/build"
++      fi
++    done
++
++    # Build log + extracted warnings (for the cleanup follow-up:
++    # the user wants to grep this for unused-hypothesis warnings).
++    cp build.log $out/build.log
++    grep -E "warning:|linter\." build.log > $out/warnings.txt || true
++
++    # Normalise mtimes so the FOD hash is stable across rebuilds.
++    # Without this, `cp`'s default mtime-preservation (or current-
++    # time stamping) makes the output content-addressed hash differ
++    # between builds even though file BYTES are identical.
++    find $out -exec touch -h -d @1 {} +
++
++    runHook postInstall
++  '';
++
++  # Skip Nix's automatic shebang patching of .sh files in the output;
++  # it varies with the bash store path and breaks output determinism.
++  dontFixup = true;
++
++  # Fixed-output derivation: enables network access during build,
++  # in exchange for a content-addressed output. First build will
++  # fail with a hash mismatch; paste the printed hash into
++  # outputHash and rebuild.
++  outputHashAlgo = "sha256";
++  outputHashMode = "recursive";
++  outputHash = "sha256-3h3f7ED+tx8AiLOEcJcjio/lSi44vWr/lNzxAkeFlSA=";
++
++  meta = with lib; {
++    description = "zisk-fv .lake/build/ tree (Lean oleans)";
++    license = with licenses; [ asl20 mit ];
++  };
++}

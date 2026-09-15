@@ -1,0 +1,255 @@
+# stash@{19} (captured with --include-untracked)
+# message: On clean-air-integration: preserve untracked files before removing clean-full worktree
+#
+diff --git a/docs/fv/openvm-fv-comparison.md b/docs/fv/openvm-fv-comparison.md
+new file mode 100644
+index 00000000..4de6ad20
+--- /dev/null
++++ b/docs/fv/openvm-fv-comparison.md
+@@ -0,0 +1,162 @@
++# zisk-fv vs openvm-fv trust and assumption comparison
++
++This note compares the current `clean-air-integration` branch of
++`zisk-fv` with `openvm-fv` at commit
++`8f067fd56465d2e9fc6f56ea6a3ecdd2e55ee508`.
++
++The main point: comparing only Lean `axiom` declarations is misleading.
++OpenVM has a much smaller source-axiom surface, but its opcode equivalence
++theorems carry a substantial caller-side hypothesis surface. zisk-fv has
++more source axioms, mostly the transpile contracts, but a lower average
++caller burden per opcode and a mechanically checked trust ledger.
++
++## OpenVM theorem-side hypothesis accounting
++
++OpenVM has 45 opcode equivalence theorems in
++`OpenvmFv/Equivalence/Equivalence.lean`. Counting the recurring
++`Prop`/hypothesis binders in those theorem statements gives:
++
++```text
++45 opcode theorems
++345 hypothesis binders total
++7.67 average hypotheses/opcode
++```
++
++By recurring binder:
++
++```text
++h_row                    45
++h_constraints            45
++h_is_valid               45
++h_bus_wellformedness     45
++h_bus                    45
++h_opcode                 43
++h_bus_axioms             41
++h_imm                    19
++risc_v_assumptions       17
++```
++
++By opcode family:
++
++```text
++AUIPC                         1 * 6  = 6
++ALU ops                       9 * 8  = 72
++BEQ/BNE                       2 * 8  = 16
++BLT/BLTU/BGE/BGEU             4 * 8  = 32
++DIV/DIVU/REM/REMU             4 * 7  = 28
++JALR                          1 * 7  = 7
++JAL/LUI                       2 * 8  = 16
++LB/LH                         2 * 8  = 16
++SLT/SLTI/SLTU/SLTIU           4 * 8  = 32
++MUL                           1 * 6  = 6
++MULH/MULHSU/MULHU             3 * 6  = 18
++SLL/SLLI/SRL/SRLI/SRA/SRAI    6 * 8  = 48
++LW/LBU/LHU/SW/SH/SB           6 * 8  = 48
++```
++
++The important OpenVM theorem-side assumptions are:
++
++* `h_constraints`: the selected row satisfies the extracted chip
++  constraints.
++* `h_is_valid`: the selected row is active.
++* `h_bus_axioms`: per-row bus-entry axioms, including execution/memory
++  timestamp and PC bounds where applicable.
++* `h_bus_wellformedness`: bus entries read by the chip satisfy their
++  semantic/well-formedness predicates.
++* `h_bus`: `bus_effect ... .1`, meaning the execution/memory bus reads
++  match the external Sail state.
++* `risc_v_assumptions`: machine mode, MPRV off, a single readable/writable
++  PMA region, HTIF disabled, and required CSR/register presence.
++* `h_opcode` / `h_imm`: opcode-selection and immediate/register-mode pins.
++
++OpenVM's report also lists infrastructure assumptions:
++
++* S1-S4: specification/platform modifications disabling Zca, Zicfilp,
++  CLINT, and PMP.
++* A1-A4: RISC-V state assumptions: machine mode, MPRV off, PMA setup,
++  no HTIF, and required `misa`/`mseccfg` register presence.
++* I1-I4: correctness of the OpenVM lookup/bus interaction mechanism, the
++  proof system, the Sail Lean specification, and Lean's kernel.
++
++## zisk-fv accounting
++
++The current branch has:
++
++```text
++63 canonical opcode theorems
++304 canonical hypothesis binders total
++4.83 average hypotheses/opcode
++```
++
++The largest canonical theorem-side hypothesis counts are:
++
++```text
++SLLW / SRLW / SRAW      20 each
++DIVW / REMW             12 each
++DIV / REM                9 each
++DIVUW / REMUW / JALR      7 each
++```
++
++The source trust ledger records 53 axioms:
++
++* 42 transpile contracts in `ZiskFv/Trusted/Transpiler.lean`.
++* 1 memory-state bridge axiom: `row_models_sail_state_load`.
++* 4 platform-scope assumptions.
++* 6 Clean component completeness placeholders. These are documented as
++  non-security-critical completeness-direction axioms.
++
++The global compliance theorem closure currently contains 50 of those
++source axioms.
++
++## Where OpenVM is stronger
++
++OpenVM is stronger on source-level axiom minimization. It formalizes its
++transpiler in Lean as `Transpiler.transpile_op`, and program-bus
++well-formedness says a bus entry must be produced by that Lean
++transpiler:
++
++```lean
++def ProgramBusEntry.operand_properties (entry : ProgramBusEntry FBB) : Prop :=
++  ∃ instruction data,
++    (Transpiler.transpile_op instruction entry.multiplicity entry.pc = .some data) ∧
++    (ProgramBusEntry.deserialise FBB data = entry)
++```
++
++OpenVM then proves opcode-specific lemmas about `transpile_op` rather than
++declaring a separate source axiom per opcode. That is a cleaner
++transpiler story than zisk-fv's current 42 `transpile_*` axioms.
++
++OpenVM also does not carry the same explicit defect predicates that
++currently weaken some zisk-fv arithmetic paths.
++
++## Where zisk-fv is stronger
++
++zisk-fv is stronger on scope and audit discipline:
++
++* It targets RV64IM with 63 opcodes, while OpenVM verifies RV32IM with
++  45 opcodes.
++* It has a global compliance theorem,
++  `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`.
++* Its average theorem-side caller burden is lower despite the broader ISA
++  target.
++* It has checked trust ledgers:
++  `trust/baseline-axioms.txt`,
++  `trust/baseline-zisk-riscv-compliant.txt`,
++  `trust/baseline-hypothesis-count.txt`,
++  `trust/baseline-caller-burden.txt`, and
++  `trust/baseline-wrapper-caller-burden.txt`.
++* It mechanically guards against promise-hypothesis laundering and retired
++  OUTPUT-EQ-style binders.
++* Known defects are explicit in `docs/fv/defects.md` and in theorem
++  surfaces, rather than being implicit caveats.
++
++## Net assessment
++
++OpenVM has fewer Lean-level source axioms and a better formalized
++transpiler path. zisk-fv has broader RV64 coverage, a global theorem,
++lower average theorem-side caller burden, and a much more explicit trust
++governance system.
++
++The highest-value zisk-fv hardening step relative to OpenVM is to retire
++the 42 `transpile_*` axioms into a Lean model/proof of ZisK's transpiler,
++or at least into a smaller, structured transpiler-correctness interface.
+diff --git a/docs/fv/plans/lean-transpiler-differential-pinning.md b/docs/fv/plans/lean-transpiler-differential-pinning.md
+new file mode 100644
+index 00000000..bb2cc1c0
+--- /dev/null
++++ b/docs/fv/plans/lean-transpiler-differential-pinning.md
+@@ -0,0 +1,78 @@
++# Lean Transpiler Model With Exhaustive Differential Evidence
++
++## Summary
++
++Create a new branch from the Clean refactor branch, for example
++`transpiler-model-diff-pinning`.
++
++The goal is to replace scattered, hand-audited transpiler evidence with a
++centralized Lean model plus exhaustive differential tests against the pinned
++production Rust transpiler. This branch should not claim to prove the Rust
++transpiler correct and should not retire the existing `transpile_*` axioms by
++default. It should make the trust boundary sharper: circuit proofs can target a
++Lean transpiler model, while Rust-vs-Lean agreement is pinned by exhaustive test
++evidence.
++
++## Key Changes
++
++- Add a non-Trusted Lean transpiler model for the RV64IM subset.
++  - Define compact `Rv64Inst` / `Rv64Op` input types and a `ZiskStaticRow`
++    output type.
++  - Model static ROM/Main row fields: opcode, source selectors, source
++    immediates and indices, store kind and offset, `store_pc`, `set_pc`,
++    `ind_width`, `jmp_offset1`, `jmp_offset2`, `is_external_op`, `m32`, and row
++    count.
++  - Keep runtime values out of this model. Register contents, memory values,
++    and Sail-state bridges remain separate circuit/dataflow facts.
++
++- Add a Rust differential harness against production ZisK.
++  - Construct `riscv::RiscvInstruction` cases directly.
++  - Call production `Riscv2ZiskContext::convert`.
++  - Project resulting `ZiskInst` rows into the same static schema as the Lean
++    model.
++  - Compare Lean output and Rust output field-for-field.
++
++- Implement proof-field exhaustive testing.
++  - Exhaust all register fields for every covered opcode.
++  - Exhaust all shift immediates.
++  - Exhaust all 12-bit I/S/B immediates.
++  - For U/J immediates, provide sharded exhaustive mode plus a default
++    boundary/partition suite for normal CI.
++  - Exclude compressed instructions, precompile/DMA pattern rewrites, custom
++    ZisK ops, ECALL/EBREAK, and floating-point paths.
++
++- Document the corrected trust story.
++  - Current `transpile_*` axioms bundle static transpiler pins with runtime
++    dataflow facts.
++  - The Lean model covers only static transpiler facts.
++  - Future axiom retirement requires additional ROM/Main/register/memory bridge
++    theorems.
++  - Rust-vs-Lean agreement remains external evidence unless hax or another
++    extraction path is adopted.
++
++## Test Plan
++
++- Run the Lean model examples through `lake build`.
++- Run Rust projection unit tests for `ZiskInstBuilder` behavior: `x0` source
++  rewrite, `rd = x0` store elision, immediate splitting, `store_pc`, `set_pc`,
++  `ind_width`, and `m32`.
++- Run differential suites:
++  - quick proof-field suite for CI;
++  - full sharded suite for U/J exhaustive coverage;
++  - mismatch reports include opcode, case id, input fields, Rust rows, Lean
++    rows, and differing fields.
++- Preserve existing gates:
++  - `lake build`
++  - `trust/scripts/check-all.sh`
++  - `trust/scripts/check-all-semantic.sh`
++  - `git diff --check`
++
++## Assumptions
++
++- This branch is evidence-building and model-building, not full axiom
++  retirement.
++- Differential testing strengthens the audit story but does not constitute a
++  Lean proof of production Rust.
++- Any discovered mismatch blocks the branch until classified as a Lean model
++  bug, production behavior not currently modeled, or an existing trust/proof
++  mismatch requiring a follow-up.

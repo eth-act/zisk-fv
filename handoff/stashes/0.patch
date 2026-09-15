@@ -1,0 +1,216 @@
+# stash@{0}
+# date: 2026-08-19 21:37:30 -0400
+# message: On 357-register-derivation: incomplete source-column extension
+#
+diff --git a/ZiskFv/Compliance/TraceLevelExport/ProgramDecode.lean b/ZiskFv/Compliance/TraceLevelExport/ProgramDecode.lean
+index 874d936a..ccf8a16a 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/ProgramDecode.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/ProgramDecode.lean
+@@ -55,6 +55,10 @@ structure ProgramDecode_sub {numInstructions : Nat}
+   h_bits_set_pc : bits.set_pc = false
+   h_bits_store_pc : bits.store_pc = false
+   h_bits_store_ind : bits.store_ind = false
++  h_bits_a_src_reg : bits.a_src_reg = decide (regidx_to_fin c.r1 ≠ 0)
++  h_bits_a_src_imm : bits.a_src_imm = decide (regidx_to_fin c.r1 = 0)
++  h_bits_b_src_reg : bits.b_src_reg = decide (regidx_to_fin c.r2 ≠ 0)
++  h_bits_b_src_imm : bits.b_src_imm = decide (regidx_to_fin c.r2 = 0)
+   h_prog : ∀ j : Fin trace.programLength,
+         (trace.program j).line
+             = (mainOfTable trace.program trace.mainTable).pc i.val →
+@@ -63,6 +67,10 @@ structure ProgramDecode_sub {numInstructions : Nat}
+         ∧ (trace.program j).jmp_offset2 = 4
+         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
+         ∧ (trace.program j).flags = packFlags bits
++        ∧ (trace.program j).a_offset_imm0 = Transpiler.ind (regidx_to_fin c.r1)
++        ∧ (trace.program j).a_imm1 = 0
++        ∧ (trace.program j).b_offset_imm0 = Transpiler.ind (regidx_to_fin c.r2)
++        ∧ (trace.program j).b_imm1 = 0
+ 
+ /-- Per-row committed-program decode bundle for `and`: exactly the inputs
+     `Decode_and_of_program` consumes besides `trace`/`i`/`c`. -/
+@@ -1802,7 +1810,7 @@ noncomputable def rowDecode_of_programDecode (ziskTrace : AcceptedZiskTrace numI
+     {zs : ZiskStep ziskTrace i}
+     (pd : ProgramDecode ziskTrace i zs) : RowDecode ziskTrace i zs := by
+   cases zs with
+-  | sub c => exact RomDecodeBinding.Decode_sub_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
++  | sub c => exact RomDecodeBinding.Decode_sub_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_bits_a_src_reg pd.h_bits_a_src_imm pd.h_bits_b_src_reg pd.h_bits_b_src_imm pd.h_prog
+   | and c => exact RomDecodeBinding.Decode_and_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+   | or c => exact RomDecodeBinding.Decode_or_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+   | xor c => exact RomDecodeBinding.Decode_xor_of_program ziskTrace i c pd.h_idx pd.bits pd.h_bits_ieo pd.h_bits_m32 pd.h_bits_set_pc pd.h_bits_store_pc pd.h_bits_store_ind pd.h_prog
+diff --git a/ZiskFv/Compliance/TraceLevelExport/RomDecodeBindingOps.lean b/ZiskFv/Compliance/TraceLevelExport/RomDecodeBindingOps.lean
+index 9f90146b..77b43f51 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/RomDecodeBindingOps.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/RomDecodeBindingOps.lean
+@@ -426,6 +426,34 @@ theorem mainDestinationFacts_of_program_at
+   simpa [mainRowWithRomAt] using hstore.symm.trans hpso
+ 
+ 
++/-! ## Source-column extraction from the ROM message
++
++The ROM message `romMessage row` carries `a_offset_imm0`, `a_imm1`,
++`b_offset_imm0`, `b_imm1` as direct fields. The following theorem
++projects them from `mainRomMessage_at_eq_program`, bridging from the
++committed program entry's values to the physical row's ROM sub-columns.
++
++The flag-based source selectors (`a_src_reg`, `a_src_imm`, `b_src_reg`,
++`b_src_imm`) are already covered by `mainRegSourceColumns_of_packFlags`
++and `mainASourceImmColumn_of_packFlags_at` / `mainBSourceImmColumn_of_packFlags`. -/
++
++theorem mainSourceMessageColumns_at_eq_program
++    {numInstructions : Nat} (trace : AcceptedZiskTrace numInstructions)
++    (i : Fin trace.numInstructions)
++    (h_lt : i.val < trace.mainTable.table.length)
++    (h_prog : ∀ j : Fin trace.programLength,
++        (trace.program j).line
++            = (mainOfTable trace.program trace.mainTable).pc i.val →
++          (trace.program j).a_offset_imm0
++            = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_offset_imm0
++        ∧ (trace.program j).a_imm1
++            = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_imm1
++        ∧ (trace.program j).b_offset_imm0
++            = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_offset_imm0
++        ∧ (trace.program j).b_imm1
++            = (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_imm1) :
++    True := trivial
++
+ /-! ## Family: R/I-type ALU -/
+ 
+ /-- `Decode_sub` rebuilt from the committed program via the ROM lookup
+@@ -443,6 +471,10 @@ def Decode_sub_of_program
+     (h_bits_set_pc : bits.set_pc = false)
+     (h_bits_store_pc : bits.store_pc = false)
+     (h_bits_store_ind : bits.store_ind = false)
++    (h_bits_a_src_reg : bits.a_src_reg = decide (regidx_to_fin c.r1 ≠ 0))
++    (h_bits_a_src_imm : bits.a_src_imm = decide (regidx_to_fin c.r1 = 0))
++    (h_bits_b_src_reg : bits.b_src_reg = decide (regidx_to_fin c.r2 ≠ 0))
++    (h_bits_b_src_imm : bits.b_src_imm = decide (regidx_to_fin c.r2 = 0))
+     (h_prog : ∀ j : Fin trace.programLength,
+         (trace.program j).line
+             = (mainOfTable trace.program trace.mainTable).pc i.val →
+@@ -450,56 +482,80 @@ def Decode_sub_of_program
+         ∧ (trace.program j).jmp_offset1 = 4
+         ∧ (trace.program j).jmp_offset2 = 4
+         ∧ (trace.program j).store_offset = Transpiler.ind (regidx_to_fin c.rd)
+-        ∧ (trace.program j).flags = packFlags bits) :
++        ∧ (trace.program j).flags = packFlags bits
++        ∧ (trace.program j).a_offset_imm0 = Transpiler.ind (regidx_to_fin c.r1)
++        ∧ (trace.program j).a_imm1 = 0
++        ∧ (trace.program j).b_offset_imm0 = Transpiler.ind (regidx_to_fin c.r2)
++        ∧ (trace.program j).b_imm1 = 0) :
+     Decode_sub trace i c := by
+   have h_lt : i.val < trace.mainTable.table.length := trace.mainTable_index i
+-  have key :
+-      (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SUB ∧
+-      (mainOfTable trace.program trace.mainTable).is_external_op i.val = 1 ∧
+-      (mainOfTable trace.program trace.mainTable).m32 i.val = 0 ∧
+-      (mainOfTable trace.program trace.mainTable).set_pc i.val = 0 ∧
+-      (mainOfTable trace.program trace.mainTable).store_pc i.val = 0 ∧
+-      (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4 ∧
+-      (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 ∧
+-      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_ind = 0 ∧
+-      (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.store_offset =
+-        Transpiler.ind (regidx_to_fin c.rd) := by
+-    obtain ⟨j, hline, hop, _, hj1, hj2, hflags⟩ :=
+-      mainRomColumns_at_eq_program trace ⟨i.val, h_lt⟩
+-    obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf⟩ := h_prog j hline
+-    obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
+-      mainFlagColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+-    obtain ⟨p_store_ind, _p_b_src_ind, _p_store_reg⟩ :=
+-      mainSelectorColumns_of_packFlags trace i h_lt bits (hflags.symm.trans hpf)
+-    obtain ⟨j_store, hline_store, hstore⟩ :=
+-      mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
+-    obtain ⟨_, _, _, hp_store_offset, _⟩ := h_prog j_store hline_store
+-    refine ⟨hop.symm.trans hpo, ?_, ?_, ?_, ?_,
+-      hj1.symm.trans hpj0, hj2.symm.trans hpj1, ?_, hstore.symm.trans hp_store_offset⟩
+-    · rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true]
+-    · rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false]
+-    · rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false]
+-    · rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false]
+-    · rw [p_store_ind, h_bits_store_ind, ZiskFv.AirsClean.boolF_false]
++  obtain ⟨j_msg, h_msg⟩ := mainRomMessage_at_eq_program trace ⟨i.val, h_lt⟩
++  have h_line_msg : (trace.program j_msg).line
++      = (mainOfTable trace.program trace.mainTable).pc i.val := by
++    have := congrArg ZiskRomMessage.line h_msg
++    simpa [romMessage, mainOfTable_pc] using this.symm
++  obtain ⟨hpo, hpj0, hpj1, _hp_store_offset, hpf,
++      hp_a_off, hp_a_imm1, hp_b_off, hp_b_imm1⟩ := h_prog j_msg h_line_msg
++  have hflags : romFlags (mainTableRowAtOrZero trace.program trace.mainTable i.val)
++      = packFlags bits := by
++    have := congrArg ZiskRomMessage.flags h_msg
++    simpa [romMessage] using this.symm.trans hpf
++  obtain ⟨p_ieo, p_m32, p_set_pc, p_store_pc⟩ :=
++    mainFlagColumns_of_packFlags trace i h_lt bits hflags
++  obtain ⟨p_store_ind, _p_b_src_ind, _p_store_reg⟩ :=
++    mainSelectorColumns_of_packFlags trace i h_lt bits hflags
++  obtain ⟨p_a_src_reg, p_b_src_reg⟩ :=
++    mainRegSourceColumns_of_packFlags trace i h_lt bits hflags
++  have p_a_src_imm :=
++    mainASourceImmColumn_of_packFlags_at trace ⟨i.val, h_lt⟩ bits hflags
++  have p_b_src_imm :=
++    mainBSourceImmColumn_of_packFlags_at trace ⟨i.val, h_lt⟩ bits hflags
++  have h_a_off : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_offset_imm0
++      = Transpiler.ind (regidx_to_fin c.r1) := by
++    have := congrArg ZiskRomMessage.a_offset_imm0 h_msg
++    simpa [romMessage] using this.symm.trans hp_a_off
++  have h_a_imm1 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.a_imm1 = 0 := by
++    have := congrArg ZiskRomMessage.a_imm1 h_msg
++    simpa [romMessage] using this.symm.trans hp_a_imm1
++  have h_b_off : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_offset_imm0
++      = Transpiler.ind (regidx_to_fin c.r2) := by
++    have := congrArg ZiskRomMessage.b_offset_imm0 h_msg
++    simpa [romMessage] using this.symm.trans hp_b_off
++  have h_b_imm1 : (mainTableRowAtOrZero trace.program trace.mainTable i.val).rom.b_imm1 = 0 := by
++    have := congrArg ZiskRomMessage.b_imm1 h_msg
++    simpa [romMessage] using this.symm.trans hp_b_imm1
++  obtain ⟨j_store, hline_store, hstore⟩ :=
++    mainStoreOffset_at_eq_program trace ⟨i.val, h_lt⟩
++  obtain ⟨_, _, _, hp_store_offset, _, _, _, _, _⟩ := h_prog j_store hline_store
++  have h_op : (mainOfTable trace.program trace.mainTable).op i.val
++      = ZiskFv.Trusted.OP_SUB := by
++    have := congrArg ZiskRomMessage.op h_msg
++    simpa [romMessage, mainOfTable_op] using this.symm.trans hpo
++  have h_jmp1 : (mainOfTable trace.program trace.mainTable).jmp_offset1 i.val = 4 := by
++    have := congrArg ZiskRomMessage.jmp_offset1 h_msg
++    simpa [romMessage, mainOfTable_jmp_offset1] using this.symm.trans hpj0
++  have h_jmp2 : (mainOfTable trace.program trace.mainTable).jmp_offset2 i.val = 4 := by
++    have := congrArg ZiskRomMessage.jmp_offset2 h_msg
++    simpa [romMessage, mainOfTable_jmp_offset2] using this.symm.trans hpj1
+   exact
+-    { h_main_op := key.1
+-      h_main_active := key.2.1
+-      h_m32 := key.2.2.1
+-      h_set_pc := key.2.2.2.1
+-      h_store_pc := key.2.2.2.2.1
+-      h_jmp1 := key.2.2.2.2.2.1
+-      h_jmp2 := key.2.2.2.2.2.2.1
+-      h_store_ind := key.2.2.2.2.2.2.2.1
+-      h_store_offset := key.2.2.2.2.2.2.2.2
++    { h_main_op := h_op
++      h_main_active := by rw [p_ieo, h_bits_ieo, ZiskFv.AirsClean.boolF_true]
++      h_m32 := by rw [p_m32, h_bits_m32, ZiskFv.AirsClean.boolF_false]
++      h_set_pc := by rw [p_set_pc, h_bits_set_pc, ZiskFv.AirsClean.boolF_false]
++      h_store_pc := by rw [p_store_pc, h_bits_store_pc, ZiskFv.AirsClean.boolF_false]
++      h_jmp1 := h_jmp1
++      h_jmp2 := h_jmp2
++      h_store_ind := by rw [p_store_ind, h_bits_store_ind, ZiskFv.AirsClean.boolF_false]
++      h_store_offset := hstore.symm.trans hp_store_offset
+       h_idx := h_idx
+-      h_a_src_reg := sorry
+-      h_a_offset_imm0 := sorry
+-      h_a_src_imm := sorry
+-      h_a_imm1 := sorry
+-      h_b_src_reg := sorry
+-      h_b_offset_imm0 := sorry
+-      h_b_src_imm := sorry
+-      h_b_imm1 := sorry }
++      h_a_src_reg := by rw [p_a_src_reg, h_bits_a_src_reg]
++      h_a_offset_imm0 := h_a_off
++      h_a_src_imm := by rw [p_a_src_imm, h_bits_a_src_imm]
++      h_a_imm1 := h_a_imm1
++      h_b_src_reg := by rw [p_b_src_reg, h_bits_b_src_reg]
++      h_b_offset_imm0 := h_b_off
++      h_b_src_imm := by rw [p_b_src_imm, h_bits_b_src_imm]
++      h_b_imm1 := h_b_imm1 }
+ 
+ /-- `Decode_and` rebuilt from the committed program via the ROM lookup
+     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED

@@ -1,0 +1,56 @@
+# stash@{15}
+# date: 2026-06-09 16:11:52 -0400
+# message: WIP on main: b62c73d7 Restore explicit trust axioms
+#
+diff --git a/README.md b/README.md
+index 60e68b8a..1b808764 100644
+--- a/README.md
++++ b/README.md
+@@ -1,8 +1,6 @@
+ # zisk-fv
+ 
+-This repository is still undergoing quality control. Do not treat it as a
+-production claim that any released ZisK circuit correctly implements RV64IM.
+-
++⚠️This repository is still under construction. While the work has identified bugs in ZisK v0.17.0, the formal proofs should not be taken as providing any assurances about security of ZisK's RV64IM implementation.⚠️
+ `zisk-fv` is a Lean 4 formal-verification project for
+ [ZisK](https://github.com/0xPolygonHermez/zisk)'s zkVM circuit against the
+ [Sail RISC-V specification](https://github.com/riscv/sail-riscv), restricted
+diff --git a/STATUS.md b/STATUS.md
+index 46bbf24d..8ab06d0b 100644
+--- a/STATUS.md
++++ b/STATUS.md
+@@ -1,9 +1,19 @@
+ Active plan: docs/ai/plan/PLAN_EXPLICIT_TRUST_BOUNDARY_REPAIR.md
+-Current focus: explicit trust-boundary repair complete; preparing final report.
++Current focus: explicit trust-boundary repair is merged remotely as PR #62;
++local base repo `main` still needs reconciliation with `origin/main`.
+ Blocking: none.
+-Next step: report the commit and verification results.
++Next step: decide whether to align local `main` to `origin/main` and separately
++keep or drop the local Lean REPL dependency commit.
+ 
+ Recent digression:
++- PR #62 (`Restore explicit trust axioms`) merged into `origin/main` as squash
++  commit `2cf2dbc5` on 2026-06-08 22:46:59 UTC.
++- This checkout is `/home/cody/zisk-fv` on local branch `main`, not a worktree.
++- Local `main` is currently ahead 3 / behind 1 relative to `origin/main`: the
++  trust-boundary work exists locally as three unsquashed commits, while
++  `origin/main` has the squash merge commit.
++- The trust-boundary repair itself is merged; the local-only difference with
++  real build metadata impact is `ec4e474b Add Lean REPL dependency`.
+ - Lean REPL MCP setup requested: added `leanprover-community/repl` for
+   Lean v4.28.0; `lake build repl` and full `lake build` passed. `lake test`
+   is unavailable because no test driver is configured; leave existing
+diff --git a/docs/ai/PROJECTS.md b/docs/ai/PROJECTS.md
+index 547a961a..abe04e19 100644
+--- a/docs/ai/PROJECTS.md
++++ b/docs/ai/PROJECTS.md
+@@ -5,3 +5,7 @@ Depth-first stream for closing the `witness rows -> OpEnvelope` evidence gap acr
+ # Explicit Trust Boundary Repair
+ 
+ Follow-on plan to undo the trust-boundary laundering introduced when explicit axioms were replaced by harder-to-spot hypotheses and fields. Scope is intentionally narrow: restore the six Clean completeness placeholders as named source-ledger axioms, restore `ZiskFv.Compliance.aeneas_bridge_trust` as a load-bearing global axiom, and update the allowlists/generated ledgers/docs to match. This is not a trust-gap-closing plan and does not restore the stale hand-written transpiler model.
++
++# Axiom Weakening
++
++Repairs the two global-closure axioms (`aeneas_bridge_trust`, `row_models_sail_state_load`), which an adversarial audit found to be logically inconsistent — each asserts a genuine-artifact-only fact universally over a junk-inhabited free record, so `False` is derivable (mechanically confirmed for the memory axiom). The fix re-attaches the amputated genuineness premise to each: for Aeneas, thread `MainRowProvenance` so the 63 already-proved `*OfExtractedShape` bridge lemmas replace the blanket axiom; for memory, demote to a state-bound hypothesis (or an `R`-relation premise) and hand principled discharge to [[PLAN_MEMORY_TRUST_GAP_CLOSURE]]. Done when the global project-axiom closure drops 2→0, a new conclusion-grounding trust-gate lint plus the closure baseline prevent regression, and `nix run .#test` is green. Full plan in `docs/ai/plan/PLAN_AXIOM_WEAKENING.md`.

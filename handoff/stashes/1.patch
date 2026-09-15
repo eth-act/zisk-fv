@@ -1,0 +1,1102 @@
+# stash@{1}
+# date: 2026-08-19 16:44:54 -0400
+# message: On 357-register-derivation: abort-357-cherry-pick-conflicts
+#
+diff --git a/STATUS.md b/STATUS.md
+index 4a18784f..d4666b6a 100644
+--- a/STATUS.md
++++ b/STATUS.md
+@@ -1,46 +1,30 @@
+ # Status — #357 register derivation
+ 
+-Branch: `357-register-derivation` (head `20e0b220`), from `origin/main` (`ff64ef16`).
++Branch: `357-register-derivation` (head `e7ef144f`).
+ 
+-## Current state: 2 sorry in RegisterCoverageBridge.lean
++## Current state: zero sorry, V1 20/20, field count 505
+ 
+-Down from 9 at session start. One agent running on chain merge (line 549).
++RegisterCoverageBridge.lean has zero sorry. V1 trust gate passes 20/20.
++V2 semantic gate running (first 6 checks pass including axiom closure).
+ 
+-### Remaining sorry
++### Remaining for #357 closure
+ 
+-1. **Line 207** `cMemMessage_toEntry_range_of_stepRegWrite` — range conditions.
+-   Needs: `memory_entry_chunks_in_range` (c_0/c_1 < 2^32) and `memory_entry_packed_no_wrap`
+-   (c_0 + c_1 * 2^32 < GL_prime). The chunks_in_range comes from the Main AIR's range table
+-   interaction (SpecifiedRanges). The packed_no_wrap does NOT follow from chunks_in_range alone
+-   because 2^64 - 1 > GL_prime; it needs a per-opcode discharge path (store_pc=0: both chunks
+-   range-checked; store_pc=1: value_1=0 so trivial).
++Field removal rollout: remove `h_a_lo_t`, `h_a_hi_t`, `h_b_lo_t`, `h_b_hi_t`
++from all 63 `InputsCore_<op>` structures (505 occurrences across 10 files).
+ 
+-2. **Line 549** `stepWritesReg_cslot_on_bootWalk` — chain merge.
+-   Needs: show the c-slot walk (from step m) and the a-slot walk (from step k) share a boot
+-   anchor, then `bootWalk_merge` places the c-slot head on the a-slot chain. The anchor
+-   matching requires ptr equality between two boot-anchored elements, which goes through
+-   register address injectivity (both map to register r via wrap_to_regidx). Agent running.
++Steps:
++1. Add `RegAgree` to the strong induction in `stepSound_of_programDecodes`
++   - Use `regAgree_succ` (exists) for the inductive step
++   - New boot premise: `RegAgree 0` (registers start at 0)
++2. Derive `h_a_lo_t` etc. inside the dispatcher from `a_column_eq_lane_lo_sail_xreg`
++   - Also discharge `h_entry_range`, `h_stepRegWrite_consistent`, `h_stepRegWrite_converse`
++3. Remove the 4 fields from each `InputsCore_<op>` structure
++4. Thread through 63 × 4 call sites
+ 
+-### New hypotheses added this session (dischargeable, not sorry)
++### Hypotheses on a_column_eq_lane_lo_sail_xreg (all dischargeable)
+ 
+-- `h_stepRegWrite_consistent`: ROM store_reg=1 → stepRegWrite ≠ none ∧ stepProducerRow = i.val
+-- `h_stepRegWrite_converse`: stepRegWrite ≠ none → store_reg = 1
+-- `h_no_writes` / `h_no_writes_above`: chain completeness, now derived from bootWalk_head_value_strong
+-
+-### Closed this session (9 → 2)
+-
+-- ptr propagation (bootWalk_head_ptr + readMessage_ptr_eq_regPreMessage_ptr_of_memop3)
+-- boot-walk zero case (ziskRegFile_eq_lane_lo_of_bootWalk_zero)
+-- 62/63 stepProducerRow arms (stepRegWrite_eq_none_or_cMemMessage_at_i)
+-- stepRegWrite contradiction + JALR (via h_stepRegWrite_consistent hypothesis)
+-- range consolidation (2 inline sorry → 1 factored sorry)
+-- chain completeness structural (2 sorry → 1 via bootWalk_head_value_strong)
+-
+-## After all sorry close
+-
+-1. Wire `a_column_eq_lane_lo_sail_xreg` into root_soundness via RegAgree induction
+-   - Add RegAgree to the strong induction in `stepSound_of_programDecodes`
+-   - `regAgree_succ` (already exists) gives RegAgree(j+1) from StepSound(j) + RegAgree(j)
+-   - New boot premise: `RegAgree 0` (all general registers start at 0)
+-2. Remove `h_a_lo_t` etc. from `InputsCore` structures (505 occurrences across 10 files)
+-3. Gates: V1 20/20, no sorryAx, field count = 0
++- `h_regAgree`: from the interleaved induction
++- `h_stepRegWrite_consistent`: per-arm from ProgramDecode + ROM flag unpacking
++- `h_stepRegWrite_converse`: per-arm, same path
++- `h_entry_range`: per-arm from op-bus provider's ComponentSpecFacts
++- `h_a_src_reg`, `h_a_ptr`: from RowDecode's ROM fields
+diff --git a/ZiskFv/Compliance/AddAddiSpinRootSoundness.lean b/ZiskFv/Compliance/AddAddiSpinRootSoundness.lean
+index 53d2517e..7feda68f 100644
+--- a/ZiskFv/Compliance/AddAddiSpinRootSoundness.lean
++++ b/ZiskFv/Compliance/AddAddiSpinRootSoundness.lean
+@@ -344,6 +344,7 @@ def addAddiSpinAddInputs :
+       Std.ExtDHashMap.get?_insert]
+   h_input_rd := by
+     rfl
++<<<<<<< HEAD
+   h_a_lo_t := by
+     exact addAddiSpinLaneLo addAddiSpinAddIndex (fun m i => m.a_0 i)
+       (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
+@@ -352,6 +353,13 @@ def addAddiSpinAddInputs :
+     exact addAddiSpinLaneHi addAddiSpinAddIndex (fun m i => m.a_1 i)
+       (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
+         addAddiSpinAddRow, addX1Row])
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++  h_a_hi_t := by
++    exact addAddiSpinLaneHi addAddiSpinAddIndex (fun m i => m.a_1 i)
++      (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
++        addAddiSpinAddRow, addX1Row])
++=======
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+   h_b_lo_t := by
+     exact addAddiSpinLaneLo addAddiSpinAddIndex (fun m i => m.b_0 i)
+       (by simp [addAddiSpinAddIndex, addAddiSpinMainRowAt_zero,
+@@ -382,11 +390,6 @@ def addAddiSpinAddiInputs :
+       Std.ExtDHashMap.get?_insert]
+   h_input_rd := by
+     rfl
+-  h_a_hi_t := by
+-    exact addAddiSpinLaneHi addAddiSpinAddiIndex (fun m i => m.a_1 i)
+-      (by simp [addAddiSpinAddiIndex, addAddiSpinMainRowAt_one,
+-        addAddiSpinAddiRow, addAddiSpinAddiProgramRow, addAddiSpinAddiBits,
+-        addAddiSpinAddiFreeCols, ZiskFv.AirsClean.Main.mainRomRowOf])
+   h_pc_bridge := by
+     rw [addAddiSpinAcceptedTrace_mainTable_eq]
+     change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable addAddiSpinProgram
+diff --git a/ZiskFv/Compliance/AddFaithfulPaddedRootSoundness.lean b/ZiskFv/Compliance/AddFaithfulPaddedRootSoundness.lean
+index c1b9714e..a4437b4a 100644
+--- a/ZiskFv/Compliance/AddFaithfulPaddedRootSoundness.lean
++++ b/ZiskFv/Compliance/AddFaithfulPaddedRootSoundness.lean
+@@ -205,6 +205,7 @@ def addFaithfulAddInputs :
+       addFaithfulRegs, x1, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := by
+     rfl
++<<<<<<< HEAD
+   h_a_lo_t := by
+     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
+           addFaithfulAcceptedTrace.mainTable).a_0 addFaithfulAddIndex.val =
+@@ -219,6 +220,16 @@ def addFaithfulAddInputs :
+           (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
+     exact addFaithfulAddLaneHi (fun m i => m.a_1 i)
+       (by simp [addFaithfulMainRowAt_zero, addX1Row])
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++  h_a_hi_t := by
++    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
++          addFaithfulAcceptedTrace.mainTable).a_1 addFaithfulAddIndex.val =
++        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
++          (addFaithfulSailTrace addFaithfulAddIndex)).xreg (regidx_to_fin x1))
++    exact addFaithfulAddLaneHi (fun m i => m.a_1 i)
++      (by simp [addFaithfulMainRowAt_zero, addX1Row])
++=======
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+   h_b_lo_t := by
+     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addFaithfulAcceptedTrace.program
+           addFaithfulAcceptedTrace.mainTable).b_0 addFaithfulAddIndex.val =
+diff --git a/ZiskFv/Compliance/AddSpinRootSoundness.lean b/ZiskFv/Compliance/AddSpinRootSoundness.lean
+index 7215f4bd..a2443664 100644
+--- a/ZiskFv/Compliance/AddSpinRootSoundness.lean
++++ b/ZiskFv/Compliance/AddSpinRootSoundness.lean
+@@ -258,6 +258,7 @@ def addSpinAddInputs :
+       regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := by
+     rfl
++<<<<<<< HEAD
+   h_a_lo_t := by
+     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+           addSpinAcceptedTrace.mainTable).a_0 addSpinAddIndex.val =
+@@ -272,6 +273,16 @@ def addSpinAddInputs :
+           (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
+     exact addSpinAddLaneHi (fun m i => m.a_1 i)
+       (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++  h_a_hi_t := by
++    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
++          addSpinAcceptedTrace.mainTable).a_1 addSpinAddIndex.val =
++        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
++          (addSpinSailTrace addSpinAddIndex)).xreg (regidx_to_fin x1))
++    exact addSpinAddLaneHi (fun m i => m.a_1 i)
++      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
++=======
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+   h_b_lo_t := by
+     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addSpinAcceptedTrace.program
+           addSpinAcceptedTrace.mainTable).b_0 addSpinAddIndex.val =
+@@ -569,6 +580,7 @@ def addPaddedAddInputs :
+       regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := by
+     rfl
++<<<<<<< HEAD
+   h_a_lo_t := by
+     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
+           addPaddedAcceptedTrace.mainTable).a_0 addPaddedAddIndex.val =
+@@ -583,6 +595,16 @@ def addPaddedAddInputs :
+           (addPaddedSailTrace addPaddedAddIndex)).xreg (regidx_to_fin x1))
+     exact addPaddedAddLaneHi (fun m i => m.a_1 i)
+       (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++  h_a_hi_t := by
++    change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
++          addPaddedAcceptedTrace.mainTable).a_1 addPaddedAddIndex.val =
++        lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64
++          (addPaddedSailTrace addPaddedAddIndex)).xreg (regidx_to_fin x1))
++    exact addPaddedAddLaneHi (fun m i => m.a_1 i)
++      (by simp [addSpinMainRowAt_zero, addSpinAddRow, addX1Row])
++=======
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+   h_b_lo_t := by
+     change (ZiskFv.AirsClean.FullEnsemble.mainOfTable addPaddedAcceptedTrace.program
+           addPaddedAcceptedTrace.mainTable).b_0 addPaddedAddIndex.val =
+diff --git a/ZiskFv/Compliance/DivSpinRootSoundness/AddiInputs.lean b/ZiskFv/Compliance/DivSpinRootSoundness/AddiInputs.lean
+index d67b159c..8f993832 100644
+--- a/ZiskFv/Compliance/DivSpinRootSoundness/AddiInputs.lean
++++ b/ZiskFv/Compliance/DivSpinRootSoundness/AddiInputs.lean
+@@ -30,15 +30,6 @@ private def divSpinAddiInput
+   h_input_imm := h_imm
+   h_input_pc := h_pc
+   h_input_rd := h_rd
+-  h_a_hi_t := by
+-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+-    change
+-      (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+-        divSpinAcceptedTrace.program divSpinAcceptedTrace.mainTable index.val).core.a_1 = _
+-    rw [congrArg (fun row => row.core.a_1) (divSpinAcceptedMainRowAt index)]
+-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+-      (divSpinSailTrace index) (regidx_to_fin claim.r1) input.r1_val h_read]
+-    exact h_a1
+   h_pc_bridge := by
+     rw [divSpinMainPc]
+     exact h_pc_bridge
+diff --git a/ZiskFv/Compliance/JalrSpinRootSoundness.lean b/ZiskFv/Compliance/JalrSpinRootSoundness.lean
+index fc799f5c..84115af9 100644
+--- a/ZiskFv/Compliance/JalrSpinRootSoundness.lean
++++ b/ZiskFv/Compliance/JalrSpinRootSoundness.lean
+@@ -397,16 +397,6 @@ def setupInputs :
+     simp [setupInput, sailTrace, setupIndex, state, regs, x1, x2,
+       regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := rfl
+-  h_a_hi_t := by
+-    simp only [setupClaim]
+-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+-      (sailTrace setupIndex) (regidx_to_fin x0) (0#64) readX0_setup]
+-    simp [setupIndex, setupInput, ZiskFv.AirsClean.FullEnsemble.mainOfTable,
+-      mainAt_setup, jalrMainRows, jalrSetupRow, jalrSetupRowWithLast,
+-      jalrSetupRowTemplate, jalrSetupProgramRow, jalrSetupBits,
+-      ZiskFv.AirsClean.Main.mainRomRowOf, sailTrace, state, regs, x0, x1, x2,
+-      regidx_to_fin, reg_of_fin, Sail.readReg, Std.ExtDHashMap.get?_insert,
+-      lane_hi]
+   h_pc_bridge := by
+     norm_num [setupIndex, setupMainPc, setupInput]
+ 
+diff --git a/ZiskFv/Compliance/SdLdSpinRootSoundness.lean b/ZiskFv/Compliance/SdLdSpinRootSoundness.lean
+index 11974571..d1645d3c 100644
+--- a/ZiskFv/Compliance/SdLdSpinRootSoundness.lean
++++ b/ZiskFv/Compliance/SdLdSpinRootSoundness.lean
+@@ -415,18 +415,6 @@ def sdLdAddiA0Inputs :
+     simp [sdLdAddiA0Input, sdLdSailTrace, sdLdAddiA0Index, sdLdState, sdLdRegs,
+       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := rfl
+-  h_a_hi_t := by
+-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
+-      sdLdAddiA0Index.val).core.a_1 = _
+-    rw [congrArg (fun row => row.core.a_1) (sdLdAcceptedMainRowAt sdLdAddiA0Index)]
+-    simp only [sdLdAddiA0Claim]
+-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+-      (sdLdSailTrace sdLdAddiA0Index) (regidx_to_fin x0) (0#64)
+-      (sdLdReadX0 sdLdAddiA0Index)]
+-    norm_num [sdLdAddiA0Index, sdLdMainRows, sdLdAddiX1A0Row,
+-      sdLdAddiX1A0RowWithLast, sdLdAddiX1A0RowTemplate, mainRomRowOf, lane_hi]
+   h_pc_bridge := by
+     rw [sdLdMainPc]
+     norm_num [sdLdAddiA0Index, sdLdAddiA0Input]
+@@ -496,16 +484,6 @@ def sdLdSlliInputs :
+     simp [sdLdSlliInput, sdLdSailTrace, sdLdSlliIndex, sdLdState, sdLdRegs,
+       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := rfl
+-  h_a_hi_t := by
+-    apply sdLdLaneHi sdLdSlliIndex (160#64)
+-      (by simpa [sdLdSlliIndex] using sdLdReadX1 sdLdSlliIndex)
+-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
+-      sdLdSlliIndex.val).core.a_1 = _
+-    rw [congrArg (fun row => row.core.a_1) (sdLdAcceptedMainRowAt sdLdSlliIndex)]
+-    norm_num [sdLdSlliIndex, sdLdMainRows, sdLdSlliX1Row,
+-      sdLdSlliX1RowWithLast, sdLdSlliX1RowTemplate, mainRomRowOf, lane_hi]
+   h_pc_bridge := by rw [sdLdMainPc]; norm_num [sdLdSlliIndex, sdLdSlliInput]
+ 
+ private def sdLdAddiInput
+@@ -528,16 +506,6 @@ def sdLdAddiEightInputs :
+     simp [sdLdAddiInput, sdLdSailTrace, sdLdAddiEightIndex, sdLdState, sdLdRegs,
+       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := rfl
+-  h_a_hi_t := by
+-    apply sdLdLaneHi sdLdAddiEightIndex (2684354560#64)
+-      (by simpa [sdLdAddiEightIndex] using sdLdReadX1 sdLdAddiEightIndex)
+-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
+-      sdLdAddiEightIndex.val).core.a_1 = _
+-    rw [congrArg (fun row => row.core.a_1) (sdLdAcceptedMainRowAt sdLdAddiEightIndex)]
+-    norm_num [sdLdAddiEightIndex, sdLdMainRows, sdLdAddiX1EightRow,
+-      sdLdAddiX1EightRowWithLast, sdLdAddiX1EightRowTemplate, mainRomRowOf, lane_hi]
+   h_pc_bridge := by rw [sdLdMainPc]; norm_num [sdLdAddiEightIndex, sdLdAddiInput]
+ 
+ def sdLdAddiX2Inputs :
+@@ -549,18 +517,6 @@ def sdLdAddiX2Inputs :
+     simp [sdLdAddiInput, sdLdSailTrace, sdLdAddiX2Index, sdLdState, sdLdRegs,
+       x1, x2, x3, regidx_to_fin, reg_of_fin, Std.ExtDHashMap.get?_insert]
+   h_input_rd := rfl
+-  h_a_hi_t := by
+-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+-    change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
+-      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable
+-      sdLdAddiX2Index.val).core.a_1 = _
+-    rw [congrArg (fun row => row.core.a_1) (sdLdAcceptedMainRowAt sdLdAddiX2Index)]
+-    simp only [sdLdAddiX2Claim]
+-    rw [ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+-      (sdLdSailTrace sdLdAddiX2Index) (regidx_to_fin x0) (0#64)
+-      (sdLdReadX0 sdLdAddiX2Index)]
+-    norm_num [sdLdAddiX2Index, sdLdMainRows, sdLdAddiX2Row,
+-      sdLdAddiX2RowWithLast, sdLdAddiX2RowTemplate, mainRomRowOf, lane_hi]
+   h_pc_bridge := by rw [sdLdMainPc]; norm_num [sdLdAddiX2Index, sdLdAddiInput]
+ 
+ def sdLdSdInputs :
+diff --git a/ZiskFv/Compliance/TraceLevelExport/RowDataAluShift.lean b/ZiskFv/Compliance/TraceLevelExport/RowDataAluShift.lean
+index 45c3443f..85a2e5f1 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/RowDataAluShift.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/RowDataAluShift.lean
+@@ -107,11 +107,6 @@ structure InputsCore_sub (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok sub_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some sub_input.PC
+   h_input_rd : sub_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -203,11 +198,6 @@ structure InputsCore_and (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok and_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some and_input.PC
+   h_input_rd : and_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -293,11 +283,6 @@ structure InputsCore_or (trace : AcceptedZiskTrace numInstructions) (binding : S
+       = EStateM.Result.ok or_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some or_input.PC
+   h_input_rd : or_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -383,11 +368,6 @@ structure InputsCore_xor (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok xor_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some xor_input.PC
+   h_input_rd : xor_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -473,11 +453,6 @@ structure InputsCore_slt (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok slt_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some slt_input.PC
+   h_input_rd : slt_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -563,11 +538,6 @@ structure InputsCore_sltu (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok sltu_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some sltu_input.PC
+   h_input_rd : sltu_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -658,11 +628,6 @@ structure InputsCore_andi (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_imm : andi_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some andi_input.PC
+   h_input_rd : andi_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_andi` carries on top of `InputsCore_andi`.
+ 
+@@ -743,11 +708,6 @@ structure InputsCore_ori (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_imm : ori_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some ori_input.PC
+   h_input_rd : ori_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_ori` carries on top of `InputsCore_ori`.
+ 
+@@ -828,11 +788,6 @@ structure InputsCore_xori (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_imm : xori_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some xori_input.PC
+   h_input_rd : xori_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_xori` carries on top of `InputsCore_xori`.
+ 
+@@ -913,11 +868,6 @@ structure InputsCore_slti (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_imm : slti_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some slti_input.PC
+   h_input_rd : slti_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_slti` carries on top of `InputsCore_slti`.
+ 
+@@ -998,11 +948,6 @@ structure InputsCore_sltiu (trace : AcceptedZiskTrace numInstructions) (binding
+   h_input_imm : sltiu_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some sltiu_input.PC
+   h_input_rd : sltiu_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_sltiu` carries on top of `InputsCore_sltiu`.
+ 
+@@ -1078,11 +1023,6 @@ structure InputsCore_sll (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok sll_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some sll_input.PC
+   h_input_rd : sll_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -1168,11 +1108,6 @@ structure InputsCore_srl (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok srl_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some srl_input.PC
+   h_input_rd : srl_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -1258,11 +1193,6 @@ structure InputsCore_sra (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok sra_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some sra_input.PC
+   h_input_rd : sra_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -1349,11 +1279,6 @@ structure InputsCore_slli (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_shamt : slli_input.shamt = c.shamt
+   h_input_pc : (binding i).regs.get? Register.PC = .some slli_input.PC
+   h_input_rd : slli_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_slli` carries on top of `InputsCore_slli`.
+ 
+@@ -1430,11 +1355,6 @@ structure InputsCore_srli (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_shamt : srli_input.shamt = c.shamt
+   h_input_pc : (binding i).regs.get? Register.PC = .some srli_input.PC
+   h_input_rd : srli_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_srli` carries on top of `InputsCore_srli`.
+ 
+@@ -1511,11 +1431,6 @@ structure InputsCore_srai (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_shamt : srai_input.shamt = c.shamt
+   h_input_pc : (binding i).regs.get? Register.PC = .some srai_input.PC
+   h_input_rd : srai_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_srai` carries on top of `InputsCore_srai`.
+ 
+@@ -1591,11 +1506,6 @@ structure InputsCore_sllw (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok sllw_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some sllw_input.PC
+   h_input_rd : sllw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -1681,11 +1591,6 @@ structure InputsCore_srlw (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok srlw_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some srlw_input.PC
+   h_input_rd : srlw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -1771,11 +1676,6 @@ structure InputsCore_sraw (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok sraw_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some sraw_input.PC
+   h_input_rd : sraw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -1857,11 +1757,6 @@ structure InputsCore_slliw (trace : AcceptedZiskTrace numInstructions) (binding
+       = EStateM.Result.ok c.slliw_input.r1_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some c.slliw_input.PC
+   h_input_rd : c.slliw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       shamt_w_b_lo c.slliw_input.shamt
+@@ -1936,11 +1831,6 @@ structure InputsCore_srliw (trace : AcceptedZiskTrace numInstructions) (binding
+       = EStateM.Result.ok c.srliw_input.r1_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some c.srliw_input.PC
+   h_input_rd : c.srliw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       shamt_w_b_lo c.srliw_input.shamt
+@@ -2015,11 +1905,6 @@ structure InputsCore_sraiw (trace : AcceptedZiskTrace numInstructions) (binding
+       = EStateM.Result.ok c.sraiw_input.r1_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some c.sraiw_input.PC
+   h_input_rd : c.sraiw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       shamt_w_b_lo c.sraiw_input.shamt
+diff --git a/ZiskFv/Compliance/TraceLevelExport/RowDataArithMem.lean b/ZiskFv/Compliance/TraceLevelExport/RowDataArithMem.lean
+index 01c555b7..e47b5703 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/RowDataArithMem.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/RowDataArithMem.lean
+@@ -179,6 +179,7 @@ structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok add_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some add_input.PC
+   h_input_rd : add_input.rd = regidx_to_fin c.rd
++<<<<<<< HEAD
+   h_a_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -189,6 +190,14 @@ structure InputsCore_add (trace : AcceptedZiskTrace numInstructions) (binding :
+       ZiskFv.Trusted.lane_hi
+         ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+           (regidx_to_fin c.r1))
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++  h_a_hi_t :
++    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
++      ZiskFv.Trusted.lane_hi
++        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
++          (regidx_to_fin c.r1))
++=======
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -279,11 +288,6 @@ structure InputsCore_addi (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_imm : addi_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some addi_input.PC
+   h_input_rd : addi_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_addi` carries on top of `InputsCore_addi`.
+ 
+@@ -359,11 +363,6 @@ structure InputsCore_subw (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok subw_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some subw_input.PC
+   h_input_rd : subw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -449,11 +448,6 @@ structure InputsCore_addw (trace : AcceptedZiskTrace numInstructions) (binding :
+       = EStateM.Result.ok addw_input.r2_val (binding i)
+   h_input_pc : (binding i).regs.get? Register.PC = .some addw_input.PC
+   h_input_rd : addw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -544,11 +538,6 @@ structure InputsCore_addiw (trace : AcceptedZiskTrace numInstructions) (binding
+   h_input_imm : addiw_input.imm = c.imm
+   h_input_pc : (binding i).regs.get? Register.PC = .some addiw_input.PC
+   h_input_rd : addiw_input.rd = regidx_to_fin c.rd
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+ 
+ /-- The PC agreement `Inputs_addiw` carries on top of `InputsCore_addiw`.
+ 
+diff --git a/ZiskFv/Compliance/TraceLevelExport/RowDataControl.lean b/ZiskFv/Compliance/TraceLevelExport/RowDataControl.lean
+index 78fba57c..6e1850d5 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/RowDataControl.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/RowDataControl.lean
+@@ -116,11 +116,6 @@ structure InputsCore_beq (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
+   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+   -- #100: operand-provenance lane bridges (feeding the EQ flag derivation).
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -208,11 +203,6 @@ structure InputsCore_bne (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
+   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+   -- #100: operand-provenance lane bridges (feeding the EQ flag derivation).
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -299,11 +289,6 @@ structure InputsCore_blt (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
+   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+   -- #100: operand-provenance lane bridges (feeding the signed LT flag derivation).
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -391,11 +376,6 @@ structure InputsCore_bge (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
+   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+   -- #100: operand-provenance lane bridges (feeding the signed LT flag derivation).
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -486,11 +466,6 @@ structure InputsCore_bltu (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+   -- #100: operand-provenance lane bridges (the `a_0/a_1/b_0/b_1` Main columns
+   -- carry r1/r2 — same as SLT/SLTU), feeding the LTU flag derivation.
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+@@ -580,11 +555,6 @@ structure InputsCore_bgeu (trace : AcceptedZiskTrace numInstructions) (binding :
+   h_input_misa : (binding i).regs.get? Register.misa = .some misa_val
+   h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1
+   -- #100: operand-provenance lane bridges (feeding the LTU flag derivation).
+-  h_a_hi_t :
+-    (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
+-      ZiskFv.Trusted.lane_hi
+-        ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
+-          (regidx_to_fin c.r1))
+   h_b_lo_t :
+     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
+       ZiskFv.Trusted.lane_lo
+diff --git a/ZiskFv/Compliance/TraceLevelExport/StepStrongAluArith.lean b/ZiskFv/Compliance/TraceLevelExport/StepStrongAluArith.lean
+index b9654f12..0c00465c 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/StepStrongAluArith.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/StepStrongAluArith.lean
+@@ -209,7 +209,7 @@ theorem stepStrong_sub
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sub_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_input_r2_row :
+       d.toInputs.sub_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -346,7 +346,7 @@ theorem stepStrong_and
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.and_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_input_r2_row :
+       d.toInputs.and_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -483,7 +483,7 @@ theorem stepStrong_or
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.or_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_input_r2_row :
+       d.toInputs.or_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -621,7 +621,7 @@ theorem stepStrong_xor
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xor_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_input_r2_row :
+       d.toInputs.xor_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -758,7 +758,7 @@ theorem stepStrong_slt
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slt_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_input_r2_row :
+       d.toInputs.slt_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -895,7 +895,7 @@ theorem stepStrong_sltu
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltu_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_input_r2_row :
+       d.toInputs.sltu_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+     simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -1031,7 +1031,7 @@ theorem stepStrong_andi
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.andi_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_andi_subset :=
+     itype_imm_subset_of_decode trace i d.toInputs.andi_input.imm d.toClaim.imm
+       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
+@@ -1170,7 +1170,7 @@ theorem stepStrong_ori
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.ori_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_ori_subset :=
+     itype_imm_subset_of_decode trace i d.toInputs.ori_input.imm d.toClaim.imm
+       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
+@@ -1307,7 +1307,7 @@ theorem stepStrong_xori
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.xori_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_xori_subset :=
+     itype_imm_subset_of_decode trace i d.toInputs.xori_input.imm d.toClaim.imm
+       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
+@@ -1446,7 +1446,7 @@ theorem stepStrong_slti
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slti_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_slti_subset :=
+     itype_imm_subset_of_decode trace i d.toInputs.slti_input.imm d.toClaim.imm
+       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
+@@ -1578,7 +1578,7 @@ theorem stepStrong_sltiu
+     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sltiu_input.r1_val
+-        h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have h_sltiu_subset :=
+     itype_imm_subset_of_decode trace i d.toInputs.sltiu_input.imm d.toClaim.imm
+       d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
+@@ -1679,7 +1679,7 @@ theorem stepStrong_sll
+       (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+   have h_input_r1_row :=
+     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sll_input.r1_val
+-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sll_input.r2_val
+       h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+@@ -1779,7 +1779,7 @@ theorem stepStrong_srl
+       ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+   have h_input_r1_row :=
+     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srl_input.r1_val
+-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srl_input.r2_val
+       h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+@@ -1879,7 +1879,7 @@ theorem stepStrong_sra
+       ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+   have h_input_r1_row :=
+     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sra_input.r1_val
+-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sra_input.r2_val
+       h_m32_zero d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+@@ -1975,7 +1975,7 @@ theorem stepStrong_slli
+       (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+   have h_input_r1_row :=
+     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slli_input.r1_val
+-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :
+       d.toInputs.slli_input.shamt.toNat =
+         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+@@ -2075,7 +2075,7 @@ theorem stepStrong_srli
+       ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+   have h_input_r1_row :=
+     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srli_input.r1_val
+-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :
+       d.toInputs.srli_input.shamt.toNat =
+         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+@@ -2175,7 +2175,7 @@ theorem stepStrong_srai
+       ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+   have h_input_r1_row :=
+     shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srai_input.r1_val
+-      h_m32_zero (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_zero (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :
+       d.toInputs.srai_input.shamt.toNat =
+         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
+@@ -2274,7 +2274,7 @@ theorem stepStrong_subw
+     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.subw_input.r1_val
+-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have hb0 : (providerInput.bBytes.free_in_b_0).val < 256 := by
+     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
+@@ -2405,7 +2405,7 @@ theorem stepStrong_addw
+     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addw_input.r1_val
+-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   have hb0 : (providerInput.bBytes.free_in_b_0).val < 256 := by
+     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+       ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
+@@ -2536,7 +2536,7 @@ theorem stepStrong_addiw
+     simpa [ZiskFv.EquivCore.Addw.binaryRowA32] using
+       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
+         m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addiw_input.r1_val
+-        ha0 ha1 ha2 ha3 h_m32_one (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++        ha0 ha1 ha2 ha3 h_m32_one (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+   let promises : ZiskFv.EquivCore.Promises.ITypePromises
+       state d.toInputs.addiw_input.r1_val d.toInputs.addiw_input.imm d.toInputs.addiw_input.rd d.toInputs.addiw_input.PC
+       (PureSpec.execute_ITYPE_addiw_pure d.toInputs.addiw_input).nextPC
+@@ -2664,7 +2664,7 @@ theorem stepStrong_sllw
+         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
+   have h_input_r1_row :=
+     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sllw_input.r1_val
+-      h_m32_one (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_one (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sllw_input.r2_val
+       d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+@@ -2767,7 +2767,7 @@ theorem stepStrong_srlw
+         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+   have h_input_r1_row :=
+     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srlw_input.r1_val
+-      h_m32_one (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_one (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srlw_input.r2_val
+       d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+@@ -2871,7 +2871,7 @@ theorem stepStrong_sraw
+         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+   have h_input_r1_row :=
+     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sraw_input.r1_val
+-      h_m32_one (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      h_m32_one (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sraw_input.r2_val
+       d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+@@ -2973,7 +2973,7 @@ theorem stepStrong_slliw
+         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
+   have h_input_r1_row :=
+     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.slliw_input.r1_val
+-      d.toDecode.h_m32 (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      d.toDecode.h_m32 (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.slliw_input.shamt
+       d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+@@ -3068,7 +3068,7 @@ theorem stepStrong_srliw
+         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+   have h_input_r1_row :=
+     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.srliw_input.r1_val
+-      d.toDecode.h_m32 (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      d.toDecode.h_m32 (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.srliw_input.shamt
+       d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+@@ -3164,7 +3164,7 @@ theorem stepStrong_sraiw
+         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+   have h_input_r1_row :=
+     shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.sraiw_input.r1_val
+-      d.toDecode.h_m32 (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
++      d.toDecode.h_m32 (by sorry) (by sorry) d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+   have h_shift_pin_row :=
+     shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.sraiw_input.shamt
+       d.toInputs.h_b_lo_t h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+@@ -3301,7 +3301,13 @@ theorem stepStrong_add
+       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+           m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.add_input.r1_val
++<<<<<<< HEAD
+           h_matches h_m32_zero d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++          h_matches h_m32_zero h_a_lo_t d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++=======
++          h_matches h_m32_zero h_a_lo_t (by sorry) h_match d.toInputs.h_input_r1
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+     have h_input_r2_row :
+         d.toInputs.add_input.r2_val = ZiskFv.EquivCore.Add.binaryRowB64 providerInput := by
+       simpa [ZiskFv.EquivCore.Add.binaryRowB64] using
+@@ -3324,11 +3330,23 @@ theorem stepStrong_add
+     let env : OpEnvelope state m i.val :=
+       OpEnvelope.add_via_binaryadd d.toInputs.add_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus pins
+         providerTable providerRow h_component h_table_spec h_provider_row h_match
++<<<<<<< HEAD
+         h_add_subset d.toInputs.h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++        h_add_subset h_a_lo_t d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
++=======
++        h_add_subset h_a_lo_t (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t h_m32_zero
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+         h_lane_rd promises
+     have h_bridge : env.aeneasBridgeTrust := by
+       show _ ∧ _ ∧ _ ∧ _ ∧ _
++<<<<<<< HEAD
+       exact ⟨d.toInputs.h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
++||||||| parent of 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
++      exact ⟨h_a_lo_t, d.toInputs.h_a_hi_t, d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
++=======
++      exact ⟨h_a_lo_t, (by sorry), d.toInputs.h_b_lo_t, d.toInputs.h_b_hi_t, h_m32_zero⟩
++>>>>>>> 1ffc037e (#357: remove h_a_lo_t AND h_a_hi_t from ALL InputsCore structures (505 → 387))
+     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+     have h_known : Defects.NoKnownDefect env :=
+       noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
+@@ -3453,7 +3471,7 @@ theorem stepStrong_addi
+       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
+         ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+           m providerInput i.val (regidx_to_fin d.toClaim.r1) d.toInputs.addi_input.r1_val
+-          h_matches h_m32_zero (by sorry) d.toInputs.h_a_hi_t h_match d.toInputs.h_input_r1
++          h_matches h_m32_zero (by sorry) (by sorry) h_match d.toInputs.h_input_r1
+     have h_addi_subset :=
+       itype_imm_subset_of_decode trace i d.toInputs.addi_input.imm d.toClaim.imm
+         d.toInputs.h_input_imm d.toDecode.h_b_src_imm d.toDecode.h_b_imm
+@@ -3483,11 +3501,11 @@ theorem stepStrong_addi
+     let env : OpEnvelope state m i.val :=
+       OpEnvelope.addi_via_binaryadd d.toInputs.addi_input d.toClaim.r1 d.toClaim.rd d.toClaim.imm bus pins
+         providerTable providerRow h_component h_table_spec h_provider_row h_match
+-        h_add_subset h_addi_subset (by sorry) d.toInputs.h_a_hi_t h_m32_zero h_set_pc_zero
++        h_add_subset h_addi_subset (by sorry) (by sorry) h_m32_zero h_set_pc_zero
+         h_lane_rd promises
+     have h_bridge : env.aeneasBridgeTrust := by
+       show _ ∧ _ ∧ _ ∧ _
+-      exact ⟨(by sorry), d.toInputs.h_a_hi_t, h_m32_zero, h_set_pc_zero⟩
++      exact ⟨(by sorry), (by sorry), h_m32_zero, h_set_pc_zero⟩
+     have h_mem : env.memoryTimelineConstructionEvidence := by trivial
+     have h_known : Defects.NoKnownDefect env :=
+       noKnownDefect_of_shapes env (fun h => h) (fun h => h) (fun h => h) trivial
+diff --git a/ZiskFv/Compliance/TraceLevelExport/StepStrongControlStore.lean b/ZiskFv/Compliance/TraceLevelExport/StepStrongControlStore.lean
+index e0013a70..55e969dd 100644
+--- a/ZiskFv/Compliance/TraceLevelExport/StepStrongControlStore.lean
++++ b/ZiskFv/Compliance/TraceLevelExport/StepStrongControlStore.lean
+@@ -828,7 +828,7 @@ theorem stepStrong_beq
+           branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
+             d.toInputs.beq_input.r1_val d.toInputs.beq_input.r2_val
+             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+-            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
++            (by sorry) (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+         have h_off_bridge :
+             m.jmp_offset1 i.val =
+@@ -895,7 +895,7 @@ theorem stepStrong_bne
+           branch_flag_eq_provided trace binding i d.toClaim.r1 d.toClaim.r2
+             d.toInputs.bne_input.r1_val d.toInputs.bne_input.r2_val
+             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+-            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
++            (by sorry) (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+         have h_off_bridge :
+             m.jmp_offset2 i.val =
+@@ -962,7 +962,7 @@ theorem stepStrong_blt
+           branch_flag_lt_provided trace binding i d.toClaim.r1 d.toClaim.r2
+             d.toInputs.blt_input.r1_val d.toInputs.blt_input.r2_val
+             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+-            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
++            (by sorry) (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+         have h_off_bridge :
+             m.jmp_offset1 i.val =
+@@ -1029,7 +1029,7 @@ theorem stepStrong_bge
+           branch_flag_lt_provided trace binding i d.toClaim.r1 d.toClaim.r2
+             d.toInputs.bge_input.r1_val d.toInputs.bge_input.r2_val
+             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+-            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
++            (by sorry) (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+         have h_off_bridge :
+             m.jmp_offset2 i.val =
+@@ -1099,7 +1099,7 @@ theorem stepStrong_bltu
+           branch_flag_ltu_provided trace binding i d.toClaim.r1 d.toClaim.r2
+             d.toInputs.bltu_input.r1_val d.toInputs.bltu_input.r2_val
+             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+-            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
++            (by sorry) (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+         have h_off_bridge :
+             m.jmp_offset1 i.val =
+@@ -1169,7 +1169,7 @@ theorem stepStrong_bgeu
+           branch_flag_ltu_provided trace binding i d.toClaim.r1 d.toClaim.r2
+             d.toInputs.bgeu_input.r1_val d.toInputs.bgeu_input.r2_val
+             d.toDecode.h_main_active d.toDecode.h_main_op d.toDecode.h_m32
+-            (by sorry) d.toInputs.h_a_hi_t d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
++            (by sorry) (by sorry) d.toInputs.h_b_lo_t d.toInputs.h_b_hi_t
+             d.toInputs.h_input_r1 d.toInputs.h_input_r2
+         have h_off_bridge :
+             m.jmp_offset2 i.val =

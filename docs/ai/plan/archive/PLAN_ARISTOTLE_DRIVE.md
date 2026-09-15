@@ -1,0 +1,272 @@
+# PLAN: Driving the refactor with Aristotle (operator guide)
+
+Claude is the operator: it scopes turns, submits, monitors, receives, verifies, and opens
+PRs. Cody reviews PRs and approves anything touching protected surfaces. Aristotle executes
+phase-scale work orders. The refactor plan itself is `docs/refactor/FINAL-PLAN.md`; this
+document is only about how to drive it.
+
+## WHERE WE ARE (dashboard — maintain this section first; updated 2026-07-19)
+
+**Position: Phase 3 static/Arith families ALL CLOSED; Phase-4 PILOT (R16) in flight —
+the go/no-go experiment.** Stack = PRs **#255 … #283** (UNMERGED BY POLICY until the
+end-of-refactor LoC go/no-go — owner ruling 2026-07-19), turn worktrees
+`.worktrees/refactor-{0-phase0-1p3,1..16}`, tip = `refactor-16` (R16 at Aristotle,
+watcher `be5utr6ai`). Pilot budget: 2 turns / ≥5K net deletion or the refactor stops.
+
+| Phase (FINAL-PLAN) | State |
+| --- | --- |
+| 0 audit surface + 1.3 root_completeness rename | ✅ done (T0–T2 era) |
+| 2 seam-derived facts (binder removal, ten Dispatch families) | ✅ closed at T0 boundary (T3) |
+| 3 Clean Spec as interface — BinaryAdd | ✅ deleted (T4 pilot + T5b) |
+| 3 — BinaryExtension | ✅ deleted (T7, PR #272) |
+| 3 — Binary (largest static family) | ✅ deleted (T8, PR #273) |
+| 3 — Arith group | ✅ CLOSED (R10–R15 + local seam, PRs #274–#278, #283): `Airs/Arith/` dissolved, live ensemble on `componentComplete` (#279 remediated), Mul+Div wrapper bundles derived. Residuals: boundary-class fast follow-up; owner-gated compat binders (#282) |
+| 3 — Mem/Main + data-memory slice (MemAlign trio, LDSD) | ⬜ next after Arith closes |
+| 4 per-shape envelopes (~12 arms), dispatch collapse | ⬜ after Phase 3 |
+
+### Turn ledger (canonical tracking — one row per Aristotle work order)
+
+The durable key is the **work-order number**: `REFACTOR_N_PROMPT.md` lives in (and was
+submitted from) worktree `refactor-N`. The "T" labels used in conversation/PR prose are
+aliases that drifted (a failed turn was retried as "T5b"; `refactor-2` was receive-only),
+so track by R-number; each row's provenance is in that worktree's STATUS.md and PR body.
+
+| Work order | Alias | Content | Outcome |
+| --- | --- | --- | --- |
+| R0 (`refactor-0-phase0-1p3`) | — | Phase 0 audit surface + 1.3 rename | landed (stack base era, incl. PR #255 Lake base) |
+| R1 (received in `refactor-2`) | T1 | finish Phase 2: seam-derived facts | landed; Phase-2 output split into stacked reviewable PRs (#256–#271 era) |
+| R3 | T3 | Phase 2.3+2.4 wrapper-surface shrink | landed (same split-PR era) |
+| R4 | T4 | Phase 2.3+2.4 remainder | landed; Phase 2 closed at T0 boundary |
+| R5 | T5 | Phase 3 pilot: BinaryAdd on Clean `Spec` | FAILED (destructive re-seed → cold-build spiral, cancelled at 11.5h; committed work salvaged) |
+| R6 | T5b | pilot completion: BinaryAdd legacy deleted | landed, −1,038 net |
+| R7 | T6 | roll pt 1: five family Interfaces + Q2 audits | landed |
+| R8 | T7 | roll pt 2: BinaryExtension migrated + deleted | PR #272 |
+| R9 | T8 | Binary (largest static family) migrated + deleted | PR #273 |
+| R10 | T9 | Arith Q2 audits — both gates FAILED honestly; bridges relocated | PR #274 |
+| R11 | T10 | `mainComplete` mirrors complete every audited constraint | PR #275 |
+| R12 | T11 | `Airs/Arith/` dissolved + live-supply swap (2 operator pauses; projection sorries filled locally) | PR #276 |
+| R13 | T12 | mode-boolean conjuncts removed; Mul wrappers on Clean supply | PR #277 |
+| R14 | T13 | ArithDiv witness upgrade audit — REFUSED as unconstructible (live ensemble validates the shared ArithMul provider; `vOfDivuRow` zeroes the absent inverse witness → `1 = 0` on real DIV rows); zero proof-code delta | PR #278 (docs-only blocker) |
+| R15 | — | Live shared Arith provider completed: `inv_sum_all_bs` col, `componentComplete` (full frozen constraint set, component-sound), ensemble swap w/ real witness values; constructibility precheck clean. Honest residual: Div-view transport seam | PR #283 |
+| local | — | The R15 residual seam: projection from live `constraints_hold` → Div view → `ArithDivTableWitness` on `mainComplete` → 8 wrappers' row bundles derived. **Arith family CLOSED** (residuals: boundary-class fast follow-up; owner-gated #282) | landed on PR #283 (`9fa49b51`) |
+| R16 | — | **Phase-4 PILOT (go/no-go turn 1/2)**: collapse logic/compare/shift (22 opcodes, ~7K per-opcode lines) into parametric per-class equivs + instance tables; `Equivalence/` statements byte-identical; budget ≥5K net deletion in ≤2 turns or the refactor stops | **IN FLIGHT** |
+
+Line count: 220,189 at stack base → 218,994 after R9; Arith turns temporarily +~450
+(supply scaffolding) — net deletion resumes as R14 discharges and Mem/Main fall.
+
+Standing watch items: (1) closeout-thread landings on main (#265/#266/#270) overlap the
+Binary/Arith surfaces this stack reworked — the eventual rebase onto main is a deliberate
+operator task, never mechanical; (2) `Compliance/Defects.lean` is frozen — the Arith
+record models keep their old namespaces in `AirsClean/*/Semantics.lean` because the
+defect boundary is typed over them; re-scoping that is human-gated.
+
+## Derisk plan (adopted 2026-07-19, after the Arith arc's ROI review)
+
+The Arith arc exposed a gap CLASS (issue #279): the circuit the ensemble actually
+validates can cover fewer generated constraints than the Lean mirrors suggest, with the
+difference silently carried as caller premises. Discovering such gaps mid-turn costs
+3–6h each (R10, R14 were audit-only turns). Mitigation — shift discovery and shallow
+work local; reserve Aristotle for pre-verified bulk sweeps:
+
+1. **Live-provider coverage matrix — DONE (2026-07-19; full tables on issue #279).**
+   Verdict: the gap class is CONTAINED. New items found: exactly one — Main's source-C
+   copy constraint (`main.pil:386`, carried as JALR-bridge premises; fix = extend
+   Main's transition beside the PC handshake, witness re-discharge sites enumerated).
+   Known/planned: MemAlign-general = closeout #242's exact scope (MemAlignRom not
+   extracted) — the refactor must NOT attempt MemAlign deletion before #242.
+   Vanishing at rebase: Mem's `mem_replay_segment_ranges` (deleted on main by #265).
+   Wart (not load-bearing): ArithTable over-claiming projections (`ArithTable.lean:
+   66-75`), flagged for disposition. Everything else validated-live or by-design.
+   Consequence for pricing: the Phase-4 pilot's supply for ALU/compare/logic/shift/
+   M-ext shapes is complete once R15 lands; Mem/Main Phase 3 has one small pre-priced
+   item (source-C) and no hidden skeletons.
+2. **Pre-priced work orders only.** No Aristotle turn is submitted for a family until
+   its matrix row is known and the work order carries: the exact constraint/citation
+   list, the witness-repair precheck (which concrete rows need which real values), and
+   the supply path. Audit-only Aristotle turns are retired — audits are local.
+3. **Local fast-path for shallow work.** Projection/routing lemmas, witness value
+   fixes, and audit tables are done locally (proven: the R12-era projection lemmas,
+   19+49 clauses, first-try in minutes). Aristotle gets only bulk mechanical sweeps
+   with the completion-contract prompt.
+4. **Sequencing + budget gate (REVISED per owner ruling 2026-07-19).** NO MERGES until
+   the refactor proves its LoC reduction — the stack is explicitly experimental; if the
+   deletion doesn't materialize, the whole stack is dropped, so intermediate merges are
+   off the table. Sequencing: Arith closed → **Phase-4 PILOT immediately** with the
+   hard budget: two turns to demonstrate ≥5K net deletion, else stop and hand priority
+   to the closeout thread. Mem/Main Phase-3 migration only if the pilot validates the
+   thesis AND the coverage matrix prices it.
+
+## PR policy (owner ruling 2026-07-19)
+
+Claude authors PRs as Aristotle's proxy AND is the reviewer of record. Every PR from
+now on must carry, on the PR itself: (a) the review commentary and evidence (checks
+run, spot-verifications, move-diffs, independent recomputations); (b) a record of any
+corrections/steering applied to Aristotle's output (decontamination beyond the standard
+protocol, local fixes, refused/reworked pieces); (c) gate results on the committed
+tree. Retroactive backfill of earlier PRs is not required. Merges are Cody's alone and
+deferred until the end-of-refactor go/no-go.
+
+## Fixed facts (learned the hard way)
+
+- **One project, always continued**: `9c5aee26-2cfe-4a9c-92b6-b9c304c66afa`. `aristotle
+  submit` always creates a NEW project with no context — never use it for this stream.
+- **Its server-side tree is whatever we last re-seeded.** Every turn must attach a fresh
+  snapshot tarball and open with the re-seed bootstrap instruction. Skipping this caused
+  the #253/#254 revert contamination.
+- **Re-seeding must NOT destroy its build artifacts.** T5 revealed the dominant cost: a
+  naive tree replacement discards `.lake`, forcing a cold ~9k-job build inside its
+  22-minute command windows (progress persists across windows, but hours are burned
+  before its own edits even compile). The bootstrap prompt must instruct: preserve
+  `.lake` across the replacement (extract the tarball OVER the tree; Lake is
+  content-addressed, so artifacts for unchanged modules stay valid), run
+  `lake exe cache get` after installing (mathlib artifacts), and size every build
+  command to complete within the ~22-minute execution window (per-module/per-directory
+  slices for deep-import edits, re-invoking as needed since progress is cached).
+- **Snapshot = `git archive HEAD`** of the turn's base commit (~1.8 MB). Never
+  `--project-dir`/attach a live checkout (13 GB `.lake` → apparent hang). The archive has
+  no branch history (prompts must not reference commits/branches as available) and no
+  `zisk` submodule (trust check 13 cannot run in its sandbox — the prompt must
+  pre-authorize deferring exactly that check, nothing else).
+- **Known benign residue in downloads** (decontaminate on receive, anything else = stop):
+  `lake-manifest.json` Clean-pin reverts (its Lake cache regenerates it; discard via
+  `git show HEAD:lake-manifest.json > lake-manifest.json`), lost executable bits
+  (`git diff --summary | grep 'mode change 100755 => 100644'` → `chmod +x`), and
+  **reverts of operator commits made AFTER the submitted tarball** (its tree predates
+  them; restore each such file from HEAD).
+- **Mid-task messages can CANCEL the in-flight work task.** A follow-up prompt to the
+  project while a task runs may supersede it (observed: T5's work task CANCELED at
+  ~11.5h by a user follow-up; a 34-minute Q&A task replaced it). Some Q&A reaches the
+  running task without cancelling it, but the safe assumption is: do not message the
+  project mid-task unless prepared to lose the run; committed checkpoints survive
+  (server-side repo persists), uncommitted and unverified work may not. Salvage path:
+  `download` the project tree, verify locally on the warm cache, land the partial.
+- **Prompt lint before submitting**: every file path, gate name, and baseline the prompt
+  references must exist at the submitted commit (`git grep` against the tarball tree).
+  The retired caller-burden ledger reference cost us a full turn refusal.
+- **Turns take ~2h+.** `aristotle show <project> | head -1` reports the latest task state
+  (`RUNNING` / `COMPLETE (started …)`), which is the polling surface.
+
+## Turn lifecycle
+
+1. **Prepare** — new worktree `refactor-N`, branch `refactor-N`, at the exact tip of
+   `refactor-(N-1)`; copy `.lake` from the previous worktree; init the `zisk` submodule.
+   Write `REFACTOR_N_PROMPT.md` (template below), prompt-lint it, commit, push.
+2. **Submit** —
+   ```bash
+   cd .worktrees/refactor-N
+   tarball=/tmp/refactor-N-$(git rev-parse --short HEAD).tar.gz
+   git archive --format=tar.gz -o "$tarball" HEAD
+   atl continue 9c5aee26-2cfe-4a9c-92b6-b9c304c66afa "PROMPT" --files "$tarball"
+   ```
+   (positionals BEFORE `--files` — it is greedy). The bootstrap PROMPT must use the
+   NON-DESTRUCTIVE install wording: *"Attached is <tarball>, the authoritative
+   source-of-truth tree (it integrates all of your prior accepted work). Install it by
+   extracting OVER your existing tree — do NOT delete `.lake` or other build artifacts;
+   Lake is content-addressed, so unchanged files keep their cache and only real deltas
+   rebuild. If the build is cold anyway, try `lake exe cache get` first. After
+   installing, every tracked file's content must exactly match the tarball. Then read
+   REFACTOR_N_PROMPT.md at its root and carry out that work order in full."*
+   Never say "replace your working tree" — T5 showed that wording destroys the sandbox
+   build cache and costs the whole turn.
+3. **Monitor** — background watcher, harness notifies on exit. Hard-won details: the
+   CLI's retry path emits to **stderr** (capture `2>&1` or the state is invisible), DNS
+   blips must not kill the loop, the state can be `COMPLETE_WITH_ERRORS` (still done —
+   e.g. only the pre-authorized check-13 gap), and the loop must require a task id
+   different from the previous turn's before accepting a terminal state:
+   ```bash
+   old=<previous task id>; proj=9c5aee26-…
+   while :; do
+     out=$(aristotle show "$proj" 2>&1) || true
+     tid=$(printf '%s\n' "$out" | grep -m1 '^Task:' | awk '{print $2}')
+     printf '%s\n' "$out" | head -1 | grep -qE 'COMPLETE|FAILED' && [ -n "$tid" ] \
+       && [ "$tid" != "$old" ] && { printf 'turn done: %s\n' "$tid"; break; }
+     sleep 600
+   done
+   ```
+   After a session restart, recover with `aristotle list` + `show`.
+4. **Receive** — `aristotle download 9c5aee26-… --destination <scratch>/turn-N.tar.gz`;
+   extract with `--strip-components=1` over the `refactor-N` worktree.
+5. **Decontaminate** — apply the known-residue fixes; diff must then contain only files the
+   run's summary accounts for. Unexpected files → stop, investigate, never commit them.
+6. **Verify** — full `lake build`; V1 (must be 16/16 locally, including check 13); V2;
+   `trust/generated/` byte-unchanged unless the work order explicitly said otherwise;
+   `Audit.lean` golden tests untouched and passing.
+7. **Land** — commit with a real message crediting the run, push, open the stacked PR
+   (base `refactor-(N-1)`), update `STATUS.md`. Merging is always Cody's.
+   Then **review the PR** (not just the gates) and post findings as a PR comment:
+   (a) mechanical conclusion check — no diff line may touch a theorem conclusion
+   (`state_effect_via_channels`/`execute_instruction`/`bus_effect` grep over the commit);
+   (b) full read of every NEW module/structure (laundering check: derived, not renamed);
+   (c) spot-read the largest changed file per category (canonical/wrapper/construction/
+   dispatch) for hypothesis-set preservation; (d) zero added `sorry`/`admit`;
+   (e) note cosmetic issues for a later pass instead of churning the PR.
+8. **Prep the next turn immediately** while context is fresh: re-enumerate what remains.
+
+## Scope calibration — the core fix
+
+Evidence so far: given an open-ended "finish Phase 2", Aristotle delivers one coherent
+lemma family (~+120 lines) and stops at the first clean commit, despite capability for far
+more. The correction is contractual, not motivational:
+
+- **One turn = one full plan phase** (or an explicitly enumerated half of an L-rated
+  phase), expressed as a **numbered deliverables list** (5–12 items), each with its own
+  acceptance criterion. Never "finish phase X" as the whole instruction.
+- Every prompt carries a **completion contract**, verbatim:
+  > The turn is complete when every numbered item is either done or carries a verified
+  > blocker note. A clean build or a committed chunk is a checkpoint, not a stop
+  > condition: after finishing an item, proceed immediately to the next. Committing and
+  > reporting with items silently unattempted is a failed turn.
+- **Blocked-item protocol**: skip it, document the precise blocker (file, theorem, error),
+  continue with the next item.
+- **Reporting contract**: the run summary must contain a per-item status table
+  (done / blocked+why / not reached) plus the metrics the item's criterion names
+  (e.g. before/after binder counts).
+- **On receive, measure**: if fewer than ~60% of items were attempted and no blockers are
+  documented, the next turn's prompt opens with that gap, and a `--mode ask` follow-up
+  ("what stopped you after item k?") is cheap and worth it.
+
+## Remaining schedule (maps FINAL-PLAN §9) — HISTORICAL; superseded by the dashboard above
+
+The table below is the original pre-T3 sketch, kept for provenance. The actual turn
+history is in the dashboard's turn ledger; the "T5 Phase 3 roll" row expanded into
+T5b–T12 (one family or family-stage per turn).
+
+| Turn | Work order | Exit criteria |
+| --- | --- | --- |
+| T3 | Phase 2.3 + 2.4 in full: remove seam-derivable binders (`providerTable`, `providerRow`, `h_component`, `h_table_spec`, `h_match`, `h_lane_rd`, pins) from the equiv/wrapper signatures of EVERY shape family (enumerate the ten Dispatch families in the prompt), feeding StepStrong* from `DerivedRowFacts` | per-family before/after parameter counts; `trust/generated/` byte-unchanged; gates green |
+| T4 | Phase 3 pilot on BinaryAdd: generic `rowAt`-view lemma, EquivCore consumes the Clean `Spec`, delete `AirsClean/BinaryAdd/Bridge.lean`; document the Q2 constraint-agreement spot-check | bridge file gone; no `Valid_BinaryAdd` consumer added; Q2 note in the run summary |
+| T5 | Phase 3 roll: remaining families; delete each `Valid_<AIR>` as it becomes consumer-free | `AirsClean/*/Bridge` count →0 trend; `Valid_Main` reference count reported |
+| T6 | Phase 4.1–4.2: per-shape envelopes (`OpEnvelope` → ~12 shape arms), one parametric `equiv_S` per shape + instance table; unify `EquivCore/`/`Equivalence/` | new-opcode cost = 1 instance row; naming hazard N1 resolved |
+| T7 | Phase 4.3–4.4: dependent-match dispatch replaces `Dispatch/` fan-out; split >1000-line files by shape | `exec_eq` conjunction gone from the internal lemma's conclusion shape (still T0/T1 discipline) |
+
+L-rated phases may legitimately need two turns; scope the full phase anyway, expect an
+honest partial with blocker notes, and re-enumerate the remainder as the next turn.
+
+Separate, human-gated (never an autonomous Aristotle turn): upstream #398 adoption and any
+Clean pin move; anything T2-tier per FINAL-PLAN §7.
+
+## Autonomy defaults
+
+Claude drives steps 3–8 for every turn without asking, and auto-submits the next turn when
+(a) the previous turn landed green through V2, (b) the work order matches this schedule,
+and (c) nothing touches protected surfaces (root statements, trust ledgers/baselines,
+Clean/flake pins, `Audit.lean`). Claude stops and asks Cody when any of those fail, when
+decontamination finds unexpected files, or when a turn must deviate from the schedule.
+Every landed turn is reported with worktree path, branch, PR number, and gate results.
+
+## Prompt template (`REFACTOR_N_PROMPT.md`)
+
+1. **Situation** — tree-truth + tarball re-seed instruction (delivery-mode robust);
+   sandbox limitations (no branch history; no `zisk` submodule → check 13 deferred to the
+   operator, all other checks mandatory).
+2. **Done vs. remaining** — updated each turn; name the seam facts that now exist.
+3. **Numbered work order** — items with per-item acceptance criteria.
+4. **Completion contract + blocked-item protocol** — verbatim from above.
+5. **Hard constraints** — T0 discipline, `Audit.lean` untouchable, no new trust markers,
+   no baseline creation/edits, gates that must pass, new-commits-only.
+6. **Reporting contract** — per-item table + required metrics in the run summary.
+
+## CLOSED (2026-08-03)
+
+Spike ended per owner decision — see issues #323 (closure + reasoning) and #324 (salvage).
+All 18 stack PRs closed unmerged against #323.
