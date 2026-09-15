@@ -294,6 +294,8 @@ let rawAdjIn  = null;  // Map<id, Set<id>> (child  -> parents)
 let rawDepth  = null;  // Map<id, number> BFS depth from ROOT
 let rawInDeg  = null;
 let rawOutDeg = null;
+let rawToCollapsed = null;  // Map<raw id, top-panel collapsed cluster id>
+let topNodeById = null;     // Map<collapsed cluster id, top-panel node with layout coords>
 
 // ─── Panel state (one entry per panel) ──────────────────────────────────────
 function newPanel(id) {
@@ -427,6 +429,7 @@ async function load() {
   P.T = newPanel("T");
   P.B = newPanel("B");
   installPanel(P.T, collapsed.nodes, collapsed.links);
+  topNodeById = new Map(P.T.nodes.map(n => [n.id, n]));
   // Bottom panel starts empty.
   resize();
   initZoom(P.T);
@@ -526,6 +529,7 @@ function buildCollapsedGraph() {
     collapseOf.set(id, ns);
     if (!clusterKind.has(ns)) clusterKind.set(ns, "namespace");
   }
+  rawToCollapsed = collapseOf;
   // Build collapsed nodes with full member lists + metadata.
   const cNodes = new Map();
   for (const id of rawNodes.keys()) {
@@ -684,14 +688,29 @@ function layout(p) {
     }
     return out;
   };
+  const orderBottomByTopOverview = p.id === "B" &&
+    p.nodes.some(n => n.topXNorm != null);
   for (let depth = 1; depth <= maxDepth; depth++) {
     const layerNodes = byDepth.get(depth) || [];
     if (!layerNodes.length) continue;
     for (const node of layerNodes) {
       const parents = parentsOf.get(node.id) || [];
-      node._bary = parents.length ? d3.mean(parents, p2 => p2.x) : node.x;
+      const topAnchor = orderBottomByTopOverview && node.topXNorm != null
+        ? node.topXNorm * p.layoutWidth
+        : null;
+      const parentBary = parents.length ? d3.mean(parents, p2 => p2.x) : node.x;
+      // Bottom drill-downs are raw-node expansions of top clusters. Bias their
+      // ordering toward the clicked overview layout so equivalent namespaces and
+      // opcode templates stay in roughly the same left-to-right region.
+      node._bary = topAnchor == null ? parentBary : (0.7 * topAnchor + 0.3 * parentBary);
     }
     const ordered = placeRecursive(layerNodes.slice(), 0);
+    if (orderBottomByTopOverview) {
+      ordered.sort((a, b) =>
+        (a.topXNorm ?? 0.5) - (b.topXNorm ?? 0.5) ||
+        d3.ascending(a.topClusterId || "", b.topClusterId || "") ||
+        d3.ascending(a.id, b.id));
+    }
     const n = ordered.length;
     ordered.forEach((node, i) => {
       node.x = (p.layoutWidth * (i + 1)) / (n + 1);
@@ -964,43 +983,30 @@ function populateBottomFromTopClick(topNode) {
       if (!include.has(nxt)) { include.add(nxt); back.push(nxt); }
     }
   }
-  // Re-rooted BFS depth: start from any node in `include` with no included parent.
-  const subDepth = new Map();
-  const roots = [];
-  for (const id of include) {
-    let hasParentIn = false;
-    for (const p of (rawAdjIn.get(id) || [])) {
-      if (include.has(p)) { hasParentIn = true; break; }
-    }
-    if (!hasParentIn) roots.push(id);
-  }
-  for (const r of roots) subDepth.set(r, 0);
-  const q = [...roots];
-  while (q.length) {
-    const cur = q.shift();
-    const d = subDepth.get(cur);
-    for (const t of (rawAdjOut.get(cur) || [])) {
-      if (!include.has(t)) continue;
-      if (!subDepth.has(t) || subDepth.get(t) > d + 1) {
-        subDepth.set(t, d + 1);
-        q.push(t);
-      }
-    }
-  }
   // Build node + link arrays.
   const seedSet = new Set(seeds);
   const nodes = [];
   for (const id of include) {
     const raw = rawNodes.get(id);
     if (!raw) continue;
+    const topClusterId = rawToCollapsed?.get(id) || id;
+    const topCluster = topNodeById?.get(topClusterId);
+    const topXNorm = topCluster && P.T?.layoutWidth
+      ? topCluster.x / P.T.layoutWidth
+      : null;
     nodes.push({
       id,
       kind: raw.kind,
       isTemplate: false,
       isSeed: seedSet.has(id),
-      depth: subDepth.get(id) ?? 0,
+      // Use the same global longest-path layer as the overview. The bottom
+      // graph is a raw expansion, not an independent local DAG, so this keeps
+      // vertical positions comparable across panels.
+      depth: rawDepth.get(id) ?? 0,
       inDeg: rawInDeg.get(id) ?? 0,
       outDeg: rawOutDeg.get(id) ?? 0,
+      topClusterId,
+      topXNorm,
     });
   }
   const links = [];
