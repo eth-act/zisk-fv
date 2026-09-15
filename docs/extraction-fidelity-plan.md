@@ -170,14 +170,28 @@ remote before anything is built on it; W0c before any tie because without the le
 
 *Small. No proof work.*
 
-0. **Handoff intake.** `git fetch --all --prune`. Restore the S3 plan into its gitignored home
-   without tracking it:
-   `git checkout origin/handoff-docs -- docs/ai/plan/archive/PLAN_S3_LOOKUP_WIRING.md`.
-   Apply nothing else from that branch to the tree. For every branch the revision-1 machine flagged
-   as possibly live (`fix-orphan-modules`, `issue-242-memalign*`, the `330-*` cluster), record a
-   one-line disposition in the W0a PR: reused under which workstream, superseded by which merged PR,
-   or scratch. Merge none of them in W0a; a branch that turns out to be reusable is scheduled under
-   the workstream it serves.
+0. **Handoff intake.** The handoff landed on 2026-09-15: `origin/handoff-docs` at `d85e5af5`
+   carries the gitignored plans and 24 stash patches; the revision-1 machine's branches are on
+   `origin`, four of them under `handoff/` because their local and remote tips had diverged. If
+   `docs/ai/plan/archive/PLAN_S3_LOOKUP_WIRING.md` is absent, restore it without tracking it:
+   `git show origin/handoff-docs:docs/ai/plan/archive/PLAN_S3_LOOKUP_WIRING.md > docs/ai/plan/archive/PLAN_S3_LOOKUP_WIRING.md`.
+   Apply nothing else from that branch to the tree. Record a one-line disposition in the W0a PR
+   (reused under which workstream, superseded by which merged PR, or scratch) for each of:
+   - `origin/fix-orphan-modules` and `origin/handoff/fix-orphan-modules` (July; reachability
+     gating, DivSpin modules). Main already carries check 18/20; expect superseded.
+   - `origin/issue-242-memalign-templates` (July; +707 lines in `lookup_wiring.rs`, exact MemAlign
+     zero-tail forms). Main already links those forms; expect superseded, but read it before W4.
+   - `origin/issue-242-memalign-rom-d3` (July; MemAlign ROM provider slice, Clean cyclic successor
+     pin). Compare with the W9 route already on this branch before calling it superseded.
+   - `origin/handoff/issue-242-memalign`, `origin/issue-242-memalign{,-fidelity,-timeline}`.
+   - `origin/closeout-cert-burndown` at `92bbb1e3`: an **unverified** commit adding
+     `arithRangeHalfBlockId` and the half-block layout to `ZiskFv/AirsClean/RangeTables.lean`,
+     mirroring `arith_range_table_helpers.rs::OFFSETS`. No build or gate was run on it. It sits on
+     W12's gap; evaluate it there, not here.
+   - the `330-*` cluster and `origin/330-registerboundary-fidelity`: #330/#348 territory, outside
+     this plan; note them for those issues.
+   Merge none of them in W0a; a branch that turns out to be reusable is scheduled under the
+   workstream it serves.
 1. Import `ZiskFv.AirsClean.MemAlign.ExtractedWiring` and
    `ZiskFv.AirsClean.MemAlignByte.ExtractedWiring` from `ZiskFv.lean`. They build; the only defect
    is reachability. Fast gate must read 20/20.
@@ -453,7 +467,10 @@ half.
 
 *Large: modelling, not wiring. Unchanged from revision 1.*
 
-Arith c61 is tied on the baseline (`ArithMul/Wiring.lean`), but buses 330/331 still have no channel:
+Arith c61 is tied on the baseline (`ArithMul/Wiring.lean`), but buses 330/331 still have no channel.
+`origin/closeout-cert-burndown` (`92bbb1e3`) holds an unverified half-block layout for the Arith
+indexed range table in `RangeTables.lean`; build and gate it before deciding whether it is the
+surrogate channel's data side or a false start. Otherwise:
 `grep` for them under `ZiskFv/Channels/` returns nothing. Follow S3's route: a typed surrogate range
 channel, extend the `SpecifiedRanges` slice, link to c49-64 rather than parse. Settle whether the
 emitter learns sub-components or the model merges `ArithMul`/`ArithDiv`.
