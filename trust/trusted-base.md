@@ -78,7 +78,9 @@ not a replacement of `AcceptedZiskTrace` by physical trace acceptance. Exact
 channel balance, static lookup membership, fixed/public trace schemas, and full
 source-to-model trace construction remain distinct proof obligations. No trust
 allowlist or known-defect exclusion is expanded by these fidelity checks. The
-CI protocol is documented in `docs/extraction/ci-invariant.md`.
+CI protocol is documented in `docs/extraction/ci-invariant.md`. Mutation rounds
+run manually rather than in the proof job; a CAUGHT claim requires a result file
+from the current checkout.
 
 ## Current Classes
 

@@ -17,21 +17,9 @@ def classify(paths: list[str], event: str) -> dict:
         "flake.nix", "flake.lock", "lakefile.toml", "lake-manifest.json", "lean-toolchain",
         "zisk", ".gitmodules", ".gitignore", ".rgignore", "AGENTS.md",
     }
-    release_roots = ("tools/pil-extract/", "tools/virtual-tables/", "tools/adversarial-mutations/",
-                     "tools/extraction-coverage/", "tools/pilout-roundtrip/", "tools/mirror-roundtrip/")
-    release_files = {
-        "flake.lock", "flake.nix", "zisk", ".gitmodules", "nix/zisk-pilout.nix",
-        "nix/pil2-compiler.nix", "nix/extracted-lean.nix", "nix/pil-extract.nix",
-        "nix/mutation-compiler.nix", "nix/populate.nix", "nix/virtual-table-check.nix",
-        "lean-toolchain", "lake-manifest.json", "lakefile.toml",
-        "tools/check-generated-modules.sh",
-    }
     matched = sorted({path for path in paths if path.endswith(".lean")
                       or path in proof_files or path.startswith(proof_roots)})
-    release = sorted({path for path in paths if path in release_files
-                      or path.startswith(release_roots) or path.startswith("zisk/")})
-    return {"run_proofs": force or bool(matched), "run_mutations": force or bool(release),
-            "matched": matched, "release_inputs": release,
+    return {"run_proofs": force or bool(matched), "matched": matched,
             "reason": "scheduled/manual validation" if force else
                 "proof inputs changed" if matched else "no proof inputs changed"}
 
@@ -84,8 +72,7 @@ def main() -> None:
     payload = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
     result = classify(changed_paths(event, payload, os.environ["GITHUB_SHA"]), event)
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-        for key in ("run_proofs", "run_mutations"):
-            output.write(f"{key}={str(result[key]).lower()}\n")
+        output.write(f"run_proofs={str(result['run_proofs']).lower()}\n")
         output.write(f"reason={result['reason']}\n")
     print(json.dumps(result, indent=2))
     if summary := os.environ.get("GITHUB_STEP_SUMMARY"):

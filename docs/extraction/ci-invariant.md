@@ -16,30 +16,25 @@ checks the production MemAlign ROM builder, checks structural coverage, and runs
 both trust gates. The existing Aeneas production check runs in its parallel CI
 job and is required by the aggregate status.
 
-The same proof job then runs the mutation suite.
+Mutation rounds do not run in CI. They are deliberately run by hand through
+`tools/adversarial-mutations/runner.py suite`; a single round includes a full
+proof build and the regression profile takes hours.
 
 The suite's fresh compiler baseline also checks the actual Main fixed data
 against the model's first-row marker and row counter across the full physical
 domain. Polynomial pilout comparison alone does not cover separately emitted
 fixed-column contents.
 
-- Ordinary proof changes run the boundary profile covering the repaired table,
-  byte-lookup, opcode, arithmetic-result, and virtual-table interfaces.
-- Extraction inputs, toolchains, and fidelity tooling changes run all 52 rounds.
-- Scheduled and manual runs also run all 52 rounds.
-
-A timeout, failed baseline, missing artifact, wrong diagnostic, surviving
-expected kill, or rejected equivalence control fails the suite. Round 27 retains
-its documented range-scope disposition; it is not counted as a proved weld.
-Read `tools/adversarial-mutations/README.md` for the exact evidence protocol.
-The uploaded artifact contains per-round reports and logs, plus a compact
-coverage-change report. Historical verdicts are not evidence for the current
-checkout.
+The cheap extraction-fidelity checks remain in `nix run .#test`: the structural
+coverage inventory, the closed generated-module inventory, the polynomial round
+trips, and the mutation-harness self-tests. Read
+`tools/adversarial-mutations/README.md` for the manual evidence protocol. A
+CAUGHT claim requires a mutation-results file produced from the current
+checkout; historical verdicts are hypotheses until re-run.
 
 PR and merge-group code runs on GitHub-hosted runners with read-only repository
 permissions and without cache-publishing credentials. Trusted main and scheduled
-runs retain the repository's existing runner selection. Mutable proof caches
-must stay private to each mutation suite.
+runs retain the repository's existing runner selection.
 
 After this workflow is merged and has produced the status, repository branch
 protection must require **required proof checks**, with code-owner review for
@@ -51,7 +46,7 @@ required jobs are rejected by the aggregate job.
 For a future intentional source update, refresh generated inputs with
 `nix run .#populate`, inspect the coverage report and any manifest changes,
 repair the affected source-to-model proofs, and rerun `nix run .#test` plus the
-full mutation suite. Do not refresh trust allowlists or weaken validators to
+full mutation suite by hand. Do not refresh trust allowlists or weaken validators to
 turn a regression green. No source update is part of this implementation.
 
 These gates check extraction fidelity and the modeled proof surface. They do

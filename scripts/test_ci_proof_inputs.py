@@ -14,23 +14,10 @@ class ProofInputsTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(classify([path], "pull_request")["run_proofs"])
 
-    def test_release_inputs_require_full_mutations(self):
-        for path in ["flake.lock", "tools/pil-extract/src/main.rs", "zisk",
-                     "nix/zisk-pilout.nix", "tools/adversarial-mutations/run.py",
-                     "nix/mutation-compiler.nix", "nix/populate.nix", "lean-toolchain",
-                     "tools/extraction-coverage/check.py", "tools/pilout-roundtrip/check.py"]:
-            with self.subTest(path=path):
-                self.assertTrue(classify([path], "pull_request")["run_mutations"])
-
-    def test_ordinary_proof_edit_uses_boundary_suite(self):
-        result = classify(["ZiskFv/Soundness.lean"], "pull_request")
-        self.assertTrue(result["run_proofs"])
-        self.assertFalse(result["run_mutations"])
-
-    def test_docs_skip_but_scheduled_runs_do_not(self):
+    def test_docs_skip_but_scheduled_proof_runs_do_not(self):
         self.assertFalse(classify(["README.md"], "push")["run_proofs"])
         for event in ["schedule", "workflow_dispatch"]:
-            self.assertTrue(classify([], event)["run_mutations"])
+            self.assertTrue(classify([], event)["run_proofs"])
 
     def test_pr_compares_base_to_actual_tested_merge(self):
         with patch("ci_proof_inputs.subprocess.check_output", return_value=b"a b.lean\0") as run:
