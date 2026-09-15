@@ -4,7 +4,9 @@
 commit `019eec25`; this revision re-baselines it onto branch `extraction-fidelity-hardening`, whose
 62 commits of 2026-09-05 already implement several workstreams by a different route. The gitignored
 `docs/ai/plan/extraction-fidelity-hardening.md` on the original machine records how those commits
-were produced; it is not needed to execute this plan.*
+were produced; it is not needed to execute this plan. The plan is executed on the machine that
+holds this branch. The machine that wrote revision 1 hands over through the `handoff-docs` branch
+described in W0a step 0 and then stands down; its working copy of revision 1 is retired.*
 
 Tracking: umbrella **#368**, children **#369-#376**. Existing issues this builds on: #354, #366,
 #348, #358, #268, #328/#103, #330, #19. Issue bodies still carry revision-1 numbers; update them
@@ -107,9 +109,9 @@ that surfaces only at switch-over.
 6. **Ledger semantics**: exposed-to-build and exposed-to-root are separate columns; a tie on a bus
    with no provider in `fullRv64imSoundEnsemble` is a third state, "tied, not composed"; residuals
    live in a declaration file with an issue and a PIL citation, never an `exempt` key.
-7. **`PLAN_S3_LOOKUP_WIRING.md` is unavailable** on this machine; it was gitignored. The four
-   rulings quoted below are the record. If the original resurfaces, add it under `docs/ai/` and cite
-   it; do not wait for it.
+7. **`PLAN_S3_LOOKUP_WIRING.md` was gitignored on the revision-1 machine.** It arrives on the
+   `handoff-docs` branch and is restored into `docs/ai/plan/archive/`, which stays gitignored (W0a
+   step 0). Until it is restored, the four rulings quoted below are the record; do not wait for it.
 
 ## Burn-down
 
@@ -168,6 +170,14 @@ remote before anything is built on it; W0c before any tie because without the le
 
 *Small. No proof work.*
 
+0. **Handoff intake.** `git fetch --all --prune`. Restore the S3 plan into its gitignored home
+   without tracking it:
+   `git checkout origin/handoff-docs -- docs/ai/plan/archive/PLAN_S3_LOOKUP_WIRING.md`.
+   Apply nothing else from that branch to the tree. For every branch the revision-1 machine flagged
+   as possibly live (`fix-orphan-modules`, `issue-242-memalign*`, the `330-*` cluster), record a
+   one-line disposition in the W0a PR: reused under which workstream, superseded by which merged PR,
+   or scratch. Merge none of them in W0a; a branch that turns out to be reusable is scheduled under
+   the workstream it serves.
 1. Import `ZiskFv.AirsClean.MemAlign.ExtractedWiring` and
    `ZiskFv.AirsClean.MemAlignByte.ExtractedWiring` from `ZiskFv.lean`. They build; the only defect
    is reachability. Fast gate must read 20/20.
@@ -192,7 +202,8 @@ remote before anything is built on it; W0c before any tie because without the le
 5. Run `lake build`, `trust/scripts/check-all.sh`, `trust/scripts/check-all-semantic.sh`,
    `nix run .#test`. Record the results in the PR.
 
-**Exit:** all four gates green on this branch, the branch on `origin`, no worktrees, no dirty files.
+**Exit:** all four gates green on this branch, the branch on `origin`, no worktrees, no dirty
+files, the S3 plan restored locally, and a disposition recorded for every flagged remote branch.
 
 ---
 
