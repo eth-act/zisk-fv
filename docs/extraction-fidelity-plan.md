@@ -67,9 +67,12 @@ that cannot rebuild ZisK's Rust workspace (crates.io returns 403 there). So:
     printf '%s %s\n' "$(curl -sIo /dev/null -w '%{http_code}' https://zisk-fv.cachix.org/$h.narinfo)" "$p"; done
   ```
 
-  Every line must print `200`. Pushing needs an auth token (`cachix authtoken`, or
-  `CACHIX_AUTH_TOKEN`). If the token is absent, **stop and report** "needs owner cachix push" with
-  the exact command; do not edit the workflow to work around it.
+  Every line must print `200`. Pushing needs an auth token. On this machine the owner keeps one at
+  `/home/lee/.open-secrets/cachix-token-cody-agent`, outside every repository; use it as
+  `CACHIX_AUTH_TOKEN="$(tr -d '\n' < /home/lee/.open-secrets/cachix-token-cody-agent)"` in front
+  of the push command. Never copy the token into a repository, a log, a PR body, or a report. If the
+  file is missing, **stop and report** "needs owner cachix push"; do not edit the workflow to work
+  around it.
 - A red CI run whose cause is unrelated to the PR (cache miss, crates.io 403, runner offline) is
   fixed by seeding the cache and `gh run rerun <run-id> --failed`, never by a workflow edit.
 - A PR is not ready for review until every check on `gh pr checks <N>` passes.
@@ -107,6 +110,8 @@ Every PR body has these sections, in this order, each present even if it says "n
   worktree instead of rebuilding Mathlib.
 - If `git status` shows the `zisk` submodule modified, run `git submodule update --force -- zisk`
   and never commit it.
+- The cachix token lives at `/home/lee/.open-secrets/cachix-token-cody-agent` (see the cache
+  rule). A no-op push of an already-cached path is the way to test it.
 
 ---
 
