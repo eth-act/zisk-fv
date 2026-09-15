@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 18, "op": "CONST_PERTURB", "air": "Arith", "kind": "pil", "desc": "witness width bits(16) -> bits(17)", "old": "    col witness bits(16) a[CHUNKS_INPUT];", "new": "    col witness bits(17) a[CHUNKS_INPUT];"}

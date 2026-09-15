@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/mem/pil/mem_align_rom.pil	2026-09-04 16:11:16.586872801 -0400
++++ ${SWEEP_ROOT}/rounds/50/zisk/state-machines/mem/pil/mem_align_rom.pil	2026-09-04 16:58:00.375251015 -0400
+@@ -121,7 +121,7 @@
+                 // is_write = 0;
+                 reset = 1;
+                 for (int j = 0; j < CHUNK_NUM; j++) {
+-                    if (j >= OFFSET[i+1] && j < OFFSET[i+1] + WIDTH[i+1]) {
++                    if (j >= WIDTH[i+1] && j < OFFSET[i+1] + OFFSET[i+1]) {
+                         sel[j] = 1;
+                     }
+                 }

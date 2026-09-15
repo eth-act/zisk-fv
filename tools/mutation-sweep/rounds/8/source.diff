@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/mem/pil/mem_align_rom.pil	2026-09-04 16:11:16.586872801 -0400
++++ ${SWEEP_ROOT}/rounds/8/zisk/state-machines/mem/pil/mem_align_rom.pil	2026-09-04 16:31:49.161891061 -0400
+@@ -228,7 +228,7 @@
+                 sel_down_to_up = 1;
+             }
+         }
+-        else if (line < 1+tsize[0]+tsize[1]+tsize[2]+tsize[3]) // RWVWR
++        else if (line < 1+tsize[0]+tsize[3]+tsize[2]+tsize[1]) // RWVWR
+         {
+             if (line % 5 == 4) {
+                 // pc = 0;

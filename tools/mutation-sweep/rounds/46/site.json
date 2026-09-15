@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 254, "op": "OPERAND_SWAP", "air": "Arith", "kind": "pil", "desc": "swap c[0] <-> c[1]", "old": "                          main_mul * (c[0] + c[1] * CHUNK_SIZE) +", "new": "                          main_mul * (c[1] + c[0] * CHUNK_SIZE) +"}

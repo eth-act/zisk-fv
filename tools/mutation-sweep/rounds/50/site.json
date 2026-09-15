@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align_rom.pil", "line": 124, "op": "OPERAND_SWAP", "air": "MemAlignRom", "kind": "direct", "desc": "swap OFFSET[i+1] <-> WIDTH[i+1]", "old": "                    if (j >= OFFSET[i+1] && j < OFFSET[i+1] + WIDTH[i+1]) {", "new": "                    if (j >= WIDTH[i+1] && j < OFFSET[i+1] + OFFSET[i+1]) {"}

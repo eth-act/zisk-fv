@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/src/arith_table_data.rs", "line": 150, "op": "TABLE_ROW_EDIT", "air": "ArithTable", "kind": "direct", "desc": "table row last field 16 -> 17", "old": "    [190, 3123, 12, 16],", "new": "    [190, 3123, 12, 17],"}

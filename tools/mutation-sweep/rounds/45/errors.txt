@@ -1,0 +1,20 @@
+23:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:76:19: Type mismatch
+30:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:89:19: Type mismatch
+37:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:96:10: Unknown identifier `link_Mem_31`
+38:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:97:10: Unknown identifier `hint_Mem_31_0`
+39:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:109:10: Unknown identifier `link_Mem_32`
+40:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:110:10: Unknown identifier `hint_Mem_32_0`
+41:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:130:0: Not a definitional equality: the left-hand side
+45:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:131:77: Type mismatch
+51:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:133:0: Not a definitional equality: the left-hand side
+55:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:134:77: Type mismatch
+61:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:136:0: Not a definitional equality: the left-hand side
+65:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:137:75: Type mismatch
+71:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:139:0: Not a definitional equality: the left-hand side
+75:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:140:75: Type mismatch
+81:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:151:2: Type mismatch
+91:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:162:2: Type mismatch
+101:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:173:2: Type mismatch
+111:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:184:2: Type mismatch
+121:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:215:64: Tactic `rfl` failed: The left-hand side
+127:error: Lean exited with code 1

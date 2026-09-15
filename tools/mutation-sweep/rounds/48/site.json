@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 476, "op": "SIGN_FLIP", "air": "Main", "kind": "pil", "desc": "'-' -> '+' at col 16", "old": "    set_pc * (1 - set_pc) === 0;", "new": "    set_pc * (1 + set_pc) === 0;"}

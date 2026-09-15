@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 207, "op": "OPERAND_SWAP", "air": "Arith", "kind": "pil", "desc": "swap eq[index] <-> carry[index-1]", "old": "        eq[index] + carry[index-1] - carry[index] * CHUNK_SIZE === 0;", "new": "        carry[index-1] + eq[index] - carry[index] * CHUNK_SIZE === 0;"}

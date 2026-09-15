@@ -1,0 +1,3 @@
+23:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:247:2: Type mismatch
+42:error: Lean exited with code 1
+45:error: build failed

@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/main/pil/main.pil	2026-09-04 16:11:16.596666267 -0400
++++ ${SWEEP_ROOT}/rounds/48/zisk/state-machines/main/pil/main.pil	2026-09-04 16:58:00.373198211 -0400
+@@ -473,7 +473,7 @@
+     store_pc * (1 - store_pc) === 0;
+     store_mem * (1 - store_mem) === 0;
+     store_ind * (1 - store_ind) === 0;
+-    set_pc * (1 - set_pc) === 0;
++    set_pc * (1 + set_pc) === 0;
+     m32 * (1 - m32) === 0;
+     b_src_ind * (1 - b_src_ind) === 0;
+     a_src_reg * (1 - a_src_reg) === 0;

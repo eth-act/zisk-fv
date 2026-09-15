@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align.pil", "line": 187, "op": "OPERAND_SWAP", "air": "MemAlign", "kind": "pil", "desc": "swap value[i] <-> assume_val[i]", "old": "        value[i] === sel_prove * prove_val[i] + sel_assume * assume_val[i];", "new": "        assume_val[i] === sel_prove * prove_val[i] + sel_assume * value[i];"}

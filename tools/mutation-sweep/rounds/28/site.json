@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem.pil", "line": 375, "op": "DROP_CONSTRAINT", "air": "Mem", "kind": "pil", "desc": "delete the identity", "old": "        l_increment + 2**22 * h_increment + 1 === addr_changes * (delta_addr - delta_step) + delta_step;", "new": "//        l_increment + 2**22 * h_increment + 1 === addr_changes * (delta_addr - delta_step) + delta_step;"}

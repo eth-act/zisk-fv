@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/binary/pil/binary.pil	2026-09-04 16:11:16.590974376 -0400
++++ ${SWEEP_ROOT}/rounds/23/zisk/state-machines/binary/pil/binary.pil	2026-09-04 16:34:52.099427951 -0400
+@@ -80,7 +80,7 @@
+ 
+     // Selectors not constrained by the table should be constrained
+     mode32 * (1 - mode32) === 0; // Resilent constraint
+-    cout * (1 - cout) === 0;
++    cout * (1 + cout) === 0;
+     result_is_a * (1 - result_is_a) === 0;
+     use_first_byte * (1 - use_first_byte) === 0;
+     c_is_signed * (1 - c_is_signed) === 0;

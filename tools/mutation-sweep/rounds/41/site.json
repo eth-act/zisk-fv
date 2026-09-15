@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 77, "op": "DROP_CONSTRAINT", "air": "Arith", "kind": "pil", "desc": "delete the identity", "old": "    div_overflow * (b[2] - (1 - m32) * 0xFFFF) === 0;", "new": "//    div_overflow * (b[2] - (1 - m32) * 0xFFFF) === 0;"}

@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/main/pil/main.pil	2026-09-04 16:11:16.596666267 -0400
++++ ${SWEEP_ROOT}/rounds/49/zisk/state-machines/main/pil/main.pil	2026-09-04 16:58:00.374839285 -0400
+@@ -390,7 +390,7 @@
+         b_src_imm * (b[index] - b_imm[index]) === 0;
+ 
+         // if is not an external op and op=0 set c = 0
+-        (1 - is_external_op) * (1 - op) * c[index] === 0;
++        (1 + is_external_op) * (1 - op) * c[index] === 0;
+ 
+         // if is not an external op and op=1 set c = b
+         (1 - is_external_op) * op * (b[index] - c[index]) === 0;

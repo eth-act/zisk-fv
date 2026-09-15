@@ -1,0 +1,1 @@
+{"file": "state-machines/binary/pil/binary_extension.pil", "line": 65, "op": "CONST_PERTURB", "air": "BinaryExtension", "kind": "pil", "desc": "mask 0x77 -> 0x76", "old": "6    0x77      0x00000000    0x00000000", "new": "6    0x76      0x00000000    0x00000000"}

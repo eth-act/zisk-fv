@@ -1,0 +1,8 @@
+22:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:330:2: Type mismatch
+28:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:36: Application type mismatch: The argument
+43:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:49: Application type mismatch: The argument
+63:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:64: Application type mismatch: The argument
+82:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:372:4: Application type mismatch: The argument
+102:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:372:52: Application type mismatch: The argument
+116:error: Lean exited with code 1
+524:error: build failed

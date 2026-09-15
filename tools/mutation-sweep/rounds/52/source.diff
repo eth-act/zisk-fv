@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/main/pil/main.pil	2026-09-04 16:11:16.596666267 -0400
++++ ${SWEEP_ROOT}/rounds/52/zisk/state-machines/main/pil/main.pil	2026-09-04 16:58:00.379481501 -0400
+@@ -179,7 +179,7 @@
+ 
+         addr0 === a_offset_imm0 + a_use_sp_imm1 * sp;
+         addr1 === b_offset_imm0 + b_src_ind * a[0] +  b_use_sp_imm1 * sp;
+-        addr2 === store_offset + store_ind * a[0] + store_use_sp * sp;
++        addr2 === store_offset + store_ind * a[0] - store_use_sp * sp;
+ 
+         // to avoid the addr1 overflow when a[0] has high value, this is not problem
+         // because use address of 32-bits
