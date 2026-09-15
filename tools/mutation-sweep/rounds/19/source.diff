@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/mem/pil/mem_align.pil	2026-09-04 16:11:16.587086132 -0400
++++ ${SWEEP_ROOT}/rounds/19/zisk/state-machines/mem/pil/mem_align.pil	2026-09-04 16:34:19.395960187 -0400
+@@ -93,7 +93,7 @@
+     const int CHUNKS_BY_RC = CHUNK_NUM / RC;
+ 
+     col witness bits(29) addr;
+-    col witness bits(3) offset;
++    col witness bits(4) offset;
+     col witness bits(4) width;
+     col witness bits(1) wr;
+     col witness bits(8) pc;

@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 393, "op": "SIGN_FLIP", "air": "Main", "kind": "pil", "desc": "'-' -> '+' at col 11", "old": "        (1 - is_external_op) * (1 - op) * c[index] === 0;", "new": "        (1 + is_external_op) * (1 - op) * c[index] === 0;"}

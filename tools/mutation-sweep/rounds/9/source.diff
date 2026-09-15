@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/binary/pil/binary.pil	2026-09-04 16:11:16.590974376 -0400
++++ ${SWEEP_ROOT}/rounds/9/zisk/state-machines/binary/pil/binary.pil	2026-09-04 16:31:49.166037613 -0400
+@@ -108,7 +108,7 @@
+     // Auxiliary columns (primarily used to lower the lookup call complexity)
+     col witness bits(10) b_op_or_sext;
+     col witness bits(1) mode32_and_c_is_signed;
+-    b_op_or_sext === mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00) + OP_SEXT_00 - b_op) + b_op;
++    b_op_or_sext === mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00) + OP_ADD - b_op) + b_op;
+     mode32_and_c_is_signed === mode32 * c_is_signed;
+ 
+     // Lookups

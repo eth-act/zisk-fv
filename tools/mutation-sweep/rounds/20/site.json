@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 98, "op": "DROP_CONSTRAINT", "air": "Arith", "kind": "pil", "desc": "delete the identity", "old": "    div_overflow * (1 - div) === 0;", "new": "//    div_overflow * (1 - div) === 0;"}

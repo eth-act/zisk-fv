@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/arith/pil/arith.pil	2026-09-04 16:11:16.595922968 -0400
++++ ${SWEEP_ROOT}/rounds/11/zisk/state-machines/arith/pil/arith.pil	2026-09-04 16:31:49.750098083 -0400
+@@ -142,7 +142,7 @@
+             + div * d[1]        // ⎫ div == 1 ➜ d or -d
+             - 2 * nr * d[1];    // ⎭ div == 0 ➜ 0
+ 
+-    eq[2] = fab * a[2] * b[0]
++    a[2] = fab * eq[2] * b[0]
+             + fab * a[1] * b[1]
+             + fab * a[0] * b[2]
+             + a[0] * nb_fa * m32 // ⎫ sign contribution when m32

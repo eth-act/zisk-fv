@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 393, "op": "SELECTOR_WEAKEN", "air": "Main", "kind": "pil", "desc": "selector is_external_op -> 1", "old": "        (1 - is_external_op) * (1 - op) * c[index] === 0;", "new": "        (1 - 1) * (1 - op) * c[index] === 0;"}

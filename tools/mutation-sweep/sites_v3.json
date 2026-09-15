@@ -1,0 +1,82 @@
+[
+ {
+  "file": "state-machines/mem/pil/mem.pil",
+  "line": 215,
+  "op": "DROP_CONSTRAINT",
+  "air": "Mem",
+  "kind": "pil",
+  "desc": "delete the identity",
+  "old": "        SEGMENT_LAST * (value[i] - segment_last_value[i]) === 0;",
+  "new": "//        SEGMENT_LAST * (value[i] - segment_last_value[i]) === 0;"
+ },
+ {
+  "file": "state-machines/arith/pil/arith.pil",
+  "line": 254,
+  "op": "OPERAND_SWAP",
+  "air": "Arith",
+  "kind": "pil",
+  "desc": "swap c[0] <-> c[1]",
+  "old": "                          main_mul * (c[0] + c[1] * CHUNK_SIZE) +",
+  "new": "                          main_mul * (c[1] + c[0] * CHUNK_SIZE) +"
+ },
+ {
+  "file": "state-machines/mem/pil/mem_align.pil",
+  "line": 127,
+  "op": "SIGN_FLIP",
+  "air": "MemAlign",
+  "kind": "pil",
+  "desc": "'-' -> '+' at col 12",
+  "old": "    wr * (1 - wr) === 0;",
+  "new": "    wr * (1 + wr) === 0;"
+ },
+ {
+  "file": "state-machines/main/pil/main.pil",
+  "line": 476,
+  "op": "SIGN_FLIP",
+  "air": "Main",
+  "kind": "pil",
+  "desc": "'-' -> '+' at col 16",
+  "old": "    set_pc * (1 - set_pc) === 0;",
+  "new": "    set_pc * (1 + set_pc) === 0;"
+ },
+ {
+  "file": "state-machines/main/pil/main.pil",
+  "line": 393,
+  "op": "SIGN_FLIP",
+  "air": "Main",
+  "kind": "pil",
+  "desc": "'-' -> '+' at col 11",
+  "old": "        (1 - is_external_op) * (1 - op) * c[index] === 0;",
+  "new": "        (1 + is_external_op) * (1 - op) * c[index] === 0;"
+ },
+ {
+  "file": "state-machines/mem/pil/mem_align_rom.pil",
+  "line": 124,
+  "op": "OPERAND_SWAP",
+  "air": "MemAlignRom",
+  "kind": "direct",
+  "desc": "swap OFFSET[i+1] <-> WIDTH[i+1]",
+  "old": "                    if (j >= OFFSET[i+1] && j < OFFSET[i+1] + WIDTH[i+1]) {",
+  "new": "                    if (j >= WIDTH[i+1] && j < OFFSET[i+1] + OFFSET[i+1]) {"
+ },
+ {
+  "file": "state-machines/arith/pil/arith.pil",
+  "line": 138,
+  "op": "OPERAND_SWAP",
+  "air": "Arith",
+  "kind": "pil",
+  "desc": "swap a[1] <-> b[0]",
+  "old": "    eq[1] = fab * a[1] * b[0]",
+  "new": "    eq[1] = fab * b[0] * a[1]"
+ },
+ {
+  "file": "state-machines/main/pil/main.pil",
+  "line": 182,
+  "op": "SIGN_FLIP",
+  "air": "Main",
+  "kind": "pil",
+  "desc": "'+' -> '-' at col 50",
+  "old": "        addr2 === store_offset + store_ind * a[0] + store_use_sp * sp;",
+  "new": "        addr2 === store_offset + store_ind * a[0] - store_use_sp * sp;"
+ }
+]

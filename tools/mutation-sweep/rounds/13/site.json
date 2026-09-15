@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 95, "op": "CONST_PERTURB", "air": "Main", "kind": "pil", "desc": "witness width bits(32) -> bits(33)", "old": "    col witness bits(32) b[RC];", "new": "    col witness bits(33) b[RC];"}

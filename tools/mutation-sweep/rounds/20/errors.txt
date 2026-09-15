@@ -1,0 +1,12 @@
+24:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:177:2: Type mismatch
+30:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:212:11: Type mismatch
+36:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:247:2: Type mismatch
+55:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:279:2: Type mismatch
+66:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:286:2: Type mismatch
+74:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:291:2: Type mismatch
+80:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:328:0: maximum recursion depth has been reached
+83:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:332:8: (kernel) unknown constant 'ZiskFv.AirsClean.ArithMul.gen36_pin'
+84:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:357:0: maximum recursion depth has been reached
+87:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:480:0: maximum recursion depth has been reached
+90:error: Lean exited with code 1
+498:error: build failed

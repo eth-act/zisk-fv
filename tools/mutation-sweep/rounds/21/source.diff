@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/arith/pil/arith.pil	2026-09-04 16:11:16.595922968 -0400
++++ ${SWEEP_ROOT}/rounds/21/zisk/state-machines/arith/pil/arith.pil	2026-09-04 16:34:19.544922622 -0400
+@@ -204,7 +204,7 @@
+ 
+     eq[0] - carry[0] * CHUNK_SIZE === 0;
+     for (int index = 1; index < (CHUNKS_OP - 1); ++index) {
+-        eq[index] + carry[index-1] - carry[index] * CHUNK_SIZE === 0;
++        carry[index-1] + eq[index] - carry[index] * CHUNK_SIZE === 0;
+     }
+     eq[CHUNKS_OP-1] + carry[CHUNKS_OP-2] === 0;
+ 

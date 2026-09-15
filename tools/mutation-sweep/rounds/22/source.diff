@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/binary/pil/binary.pil	2026-09-04 16:11:16.590974376 -0400
++++ ${SWEEP_ROOT}/rounds/22/zisk/state-machines/binary/pil/binary.pil	2026-09-04 16:34:19.685052140 -0400
+@@ -119,7 +119,7 @@
+         } else if (i == HALF_BYTES - 1) {
+             lookup_assumes(BINARY_TABLE_ID, [mode32, b_op, free_in_a[i], free_in_b[i], carry[i-1], free_in_c[i], carry[i] + 2*result_is_a + 4*use_first_byte + 8*mode32_and_c_is_signed]);
+         } else if (i < BYTES - 1) {
+-            lookup_assumes(BINARY_TABLE_ID, [0, b_op_or_sext, free_in_a[i], free_in_b[i], carry[i-1], free_in_c[i], carry[i] + 2*result_is_a + 4*use_first_byte + 8*mode32_and_c_is_signed]);
++            lookup_assumes(BINARY_TABLE_ID, [0, b_op_or_sext, free_in_b[i], free_in_a[i], carry[i-1], free_in_c[i], carry[i] + 2*result_is_a + 4*use_first_byte + 8*mode32_and_c_is_signed]);
+         } else  {
+             lookup_assumes(BINARY_TABLE_ID, [mode64, b_op_or_sext, free_in_a[i], free_in_b[i], carry[i-1], free_in_c[i], carry[i] + 2*result_is_a + 4*use_first_byte + 8*c_is_signed]);
+         }

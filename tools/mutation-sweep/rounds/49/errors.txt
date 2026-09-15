@@ -1,0 +1,4 @@
+21:error: ZiskFv/AirsClean/MainMirrorWeld.lean:243:2: Type mismatch
+28:error: ZiskFv/AirsClean/MainMirrorWeld.lean:284:2: Type mismatch
+43:error: Lean exited with code 1
+46:error: build failed

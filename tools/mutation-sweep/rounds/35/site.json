@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 469, "op": "DROP_CONSTRAINT", "air": "Main", "kind": "pil", "desc": "delete the identity", "old": "    is_precompiled * (1 - is_precompiled) === 0;", "new": "//    is_precompiled * (1 - is_precompiled) === 0;"}

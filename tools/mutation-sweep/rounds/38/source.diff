@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/arith/pil/arith.pil	2026-09-04 16:11:16.595922968 -0400
++++ ${SWEEP_ROOT}/rounds/38/zisk/state-machines/arith/pil/arith.pil	2026-09-04 16:52:40.226403291 -0400
+@@ -250,7 +250,7 @@
+     const expr bus_b0 = b[0] + b[1] * CHUNK_SIZE;
+     const expr bus_b1 = b[2] + b[3] * CHUNK_SIZE;
+ 
+-    const expr bus_res0 = secondary * (d[0] + d[1] * CHUNK_SIZE) +
++    const expr bus_res0 = secondary * (d[1] + d[0] * CHUNK_SIZE) +
+                           main_mul * (c[0] + c[1] * CHUNK_SIZE) +
+                           main_div * (a[0] + a[1] * CHUNK_SIZE);
+ 

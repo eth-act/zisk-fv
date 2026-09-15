@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/main/pil/main.pil	2026-09-04 16:11:16.596666267 -0400
++++ ${SWEEP_ROOT}/rounds/35/zisk/state-machines/main/pil/main.pil	2026-09-04 16:52:40.223656051 -0400
+@@ -466,7 +466,7 @@
+ 
+     a_src_imm * (1 - a_src_imm) === 0;
+     a_src_mem * (1 - a_src_mem) === 0;
+-    is_precompiled * (1 - is_precompiled) === 0;
++//    is_precompiled * (1 - is_precompiled) === 0;
+     b_src_imm * (1 - b_src_imm) === 0;
+     b_src_mem * (1 - b_src_mem) === 0;
+     is_external_op * (1 - is_external_op) === 0;

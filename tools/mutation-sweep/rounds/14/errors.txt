@@ -1,0 +1,15 @@
+22:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:413:2: Type mismatch
+29:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:419:2: Type mismatch
+36:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:425:2: Type mismatch
+43:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:427:0: maximum recursion depth has been reached
+46:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:465:2: Type mismatch
+81:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:538:2: Type mismatch
+103:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:553:2: Type mismatch
+118:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:846:0: maximum recursion depth has been reached
+121:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:927:0: maximum recursion depth has been reached
+124:error: Lean exited with code 1
+128:error: ZiskFv/AirsClean/MemAlign/Bridge.lean:197:2: Unknown identifier `hint_MemAlign_36_1.slots.map`
+129:error: ZiskFv/AirsClean/MemAlign/Bridge.lean:226:13: Unknown identifier `hint_MemAlign_36_1`
+130:error: ZiskFv/AirsClean/MemAlign/Bridge.lean:235:4: Tactic `rfl` failed: The left-hand side
+137:error: Lean exited with code 1
+170:error: build failed

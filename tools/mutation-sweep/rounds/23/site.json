@@ -1,0 +1,1 @@
+{"file": "state-machines/binary/pil/binary.pil", "line": 83, "op": "SIGN_FLIP", "air": "Binary", "kind": "pil", "desc": "'-' -> '+' at col 14", "old": "    cout * (1 - cout) === 0;", "new": "    cout * (1 + cout) === 0;"}

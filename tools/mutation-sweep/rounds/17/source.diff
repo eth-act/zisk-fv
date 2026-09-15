@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/mem/pil/mem.pil	2026-09-04 16:11:16.587333404 -0400
++++ ${SWEEP_ROOT}/rounds/17/zisk/state-machines/mem/pil/mem.pil	2026-09-04 16:34:18.931532080 -0400
+@@ -362,7 +362,7 @@
+             // - If the previous row was in dual mode, it must match the previous `step_dual`.
+             // - Otherwise, it must match the previous `step`.
+ 
+-            col witness bits(40) air.previous_step;
++            col witness bits(41) air.previous_step;
+             const expr previous_row_step = 'sel_dual * ('step_dual - 'step) + 'step;
+             previous_step === SEGMENT_L1 * (previous_segment_step - previous_row_step) + previous_row_step;
+         } else {

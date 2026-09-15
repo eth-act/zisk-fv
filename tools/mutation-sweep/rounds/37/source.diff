@@ -1,0 +1,11 @@
+--- ${SWEEP_ROOT}/zisk-pristine/state-machines/mem/pil/mem_align_rom.pil	2026-09-04 16:11:16.586872801 -0400
++++ ${SWEEP_ROOT}/rounds/37/zisk/state-machines/mem/pil/mem_align_rom.pil	2026-09-04 16:52:40.229682453 -0400
+@@ -17,7 +17,7 @@
+ 
+     // table_size = combinations * program_size
+     const int tsize[4] = [one_word_combinations*spsize[0], one_word_combinations*spsize[1], two_word_combinations*spsize[2], two_word_combinations*spsize[3]];
+-    const int psize = tsize[0] + tsize[1] + tsize[2] + tsize[3];
++    const int psize = tsize[1] + tsize[0] + tsize[2] + tsize[3];
+ 
+     // Offset is set to DEFAULT_OFFSET and width to DEFAULT_WIDTH in aligned memory accesses.
+     // Offset and width are set to 0 in padding lines.

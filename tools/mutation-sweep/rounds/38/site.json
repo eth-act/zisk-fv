@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 253, "op": "OPERAND_SWAP", "air": "Arith", "kind": "pil", "desc": "swap d[0] <-> d[1]", "old": "    const expr bus_res0 = secondary * (d[0] + d[1] * CHUNK_SIZE) +", "new": "    const expr bus_res0 = secondary * (d[1] + d[0] * CHUNK_SIZE) +"}
