@@ -14,6 +14,8 @@ import ZiskFv.AirsClean.Main.Wiring
 import ZiskFv.AirsClean.Main.RomWiring
 import ZiskFv.AirsClean.Main.MemoryWiring
 import ZiskFv.AirsClean.BinaryExtension.ExtractedWiring
+import ZiskFv.AirsClean.MemAlign.ExtractedWiring
+import ZiskFv.AirsClean.MemAlignByte.ExtractedWiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
