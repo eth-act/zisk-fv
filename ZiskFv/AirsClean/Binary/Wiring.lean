@@ -123,6 +123,15 @@ def BinaryLookupTuple.ofHint (tuple : HintTuple) : BinaryLookupTuple :=
 def BinaryLookupTuple.ofDerived (tuple : DerivedTuple) : BinaryLookupTuple :=
   ⟨tuple.piop, tuple.proves, tuple.busId, tuple.multiplicity, tuple.slots⟩
 
+/-- The raw source value expected in an input/output byte slot.  PIL emits
+`x + 0` for bytes 0--6 and a bare witness for the derived terminal tuple. -/
+@[reducible]
+def expectedByteSlotValue (firstColumn : ℕ) (byte : Fin 8) : Expr :=
+  if byte = 7 then
+    .witness 1 (firstColumn + byte.val) 0
+  else
+    .add (.witness 1 (firstColumn + byte.val) 0) (.constant "0")
+
 @[reducible]
 def lookupMessageTuples : Vector (List (Expression FGL)) 8 := #v[
   lookupMessageTuple (lookupMessage0 tableConsumerComponent.rowInputVar),
@@ -159,12 +168,25 @@ structure BinaryByteWiring where
   lookupBus : source.busId = Expr.constant "125"
   lookupIsAssumes : source.proves = false
   lookupMultiplicity : source.multiplicity = Expr.constant "1"
+  sourceAValue : (source.slots.get? 2).map (·.value) =
+    some (expectedByteSlotValue 1 byte)
+  sourceBValue : (source.slots.get? 3).map (·.value) =
+    some (expectedByteSlotValue 9 byte)
+  sourceCValue : (source.slots.get? 5).map (·.value) =
+    some (expectedByteSlotValue 17 byte)
   slotInterpretation : lookupSlotsToClean source.slots = some (lookupMessageTupleAt byte)
 
 @[reducible]
 def byte0Wiring : BinaryByteWiring :=
-  ⟨0, link_Binary_11, ValidatedLink.constraintValidated link_Binary_11,
-    .ofHint hint_Binary_11_0, [], [], rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : ((BinaryLookupTuple.ofHint hint_Binary_11_0).slots.get? 2).map (·.value) =
+        some (expectedByteSlotValue 1 0) := by rfl
+    have hb : ((BinaryLookupTuple.ofHint hint_Binary_11_0).slots.get? 3).map (·.value) =
+        some (expectedByteSlotValue 9 0) := by rfl
+    have hc : ((BinaryLookupTuple.ofHint hint_Binary_11_0).slots.get? 5).map (·.value) =
+        some (expectedByteSlotValue 17 0) := by rfl
+    exact ⟨0, link_Binary_11, ValidatedLink.constraintValidated link_Binary_11,
+      .ofHint hint_Binary_11_0, [], [], rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte1Wiring : BinaryByteWiring :=
