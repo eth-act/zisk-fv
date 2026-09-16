@@ -103,24 +103,15 @@ struct HintData {
     slots: Vec<Slot>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum LinkShape {
     Direct,
     Cluster2,
-    DerivedMixed2,
+    GsumFinalRow,
     DirectZeroTail,
     Cluster2ZeroTail,
     DirectAssumesNegForm,
     DirectAssumesNegFormZeroTail,
-}
-
-#[derive(Clone)]
-struct DerivedTuple {
-    piop: String,
-    proves: bool,
-    bus_id: Ast,
-    multiplicity: Ast,
-    slots: Vec<Slot>,
 }
 
 struct LinkedConstraint {
@@ -130,8 +121,20 @@ struct LinkedConstraint {
     alpha: Ast,
     gamma: Ast,
     hints: Vec<HintData>,
-    derived_tuples: Vec<DerivedTuple>,
+    direct_terms: Vec<Ast>,
     shape: LinkShape,
+}
+
+#[derive(Clone)]
+struct MixedConstraint {
+    index: usize,
+    expression: Ast,
+}
+
+struct UnlinkedConstraint {
+    index: usize,
+    expression: Ast,
+    reason: String,
 }
 
 #[derive(Clone)]
@@ -139,6 +142,67 @@ struct MixCandidate {
     hint: usize,
     alpha: Ast,
     gamma: Ast,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MatchRoute {
+    ClusterZeroTail,
+    DirectZeroTail,
+    DirectAssumesNeg,
+    DirectAssumesNegZeroTail,
+}
+
+struct RouteScope {
+    route: MatchRoute,
+    air: &'static str,
+    constraints: &'static [usize],
+}
+
+const ALL_CONSTRAINTS: &[usize] = &[];
+
+/// Audited recognizer scope, indexed independently by template route and AIR.
+/// An empty constraint list means every constraint in that AIR.
+const ROUTE_SCOPES: &[RouteScope] = &[
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "MemAlign", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "Binary", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "BinaryExtension", constraints: &[4] },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "BinaryAdd", constraints: &[5] },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "Arith", constraints: &[61] },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlign", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "Binary", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "BinaryExtension", constraints: &[4] },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "BinaryAdd", constraints: &[5] },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "Arith", constraints: &[61] },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlign", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "Binary", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "BinaryExtension", constraints: &[4] },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "BinaryAdd", constraints: &[5] },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "Arith", constraints: &[61] },
+    RouteScope { route: MatchRoute::DirectAssumesNeg, air: "Main", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlign", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Binary", constraints: ALL_CONSTRAINTS },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryExtension", constraints: &[4] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryAdd", constraints: &[5] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Arith", constraints: &[61] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Main", constraints: &[43, 44, 45] },
+];
+
+fn route_scope(route: MatchRoute, air_name: &str, constraint_index: usize) -> bool {
+    ROUTE_SCOPES.iter().any(|scope| {
+        scope.route == route
+            && scope.air == air_name
+            && (scope.constraints.is_empty() || scope.constraints.contains(&constraint_index))
+    })
 }
 
 struct AirManifest {
@@ -149,7 +213,7 @@ struct AirManifest {
     emitted_constraint_file: bool,
     mixed_constraint_count: usize,
     unlinked_mixed_constraint_count: usize,
-    unlinked_constraints: Vec<(usize, Ast)>,
+    unlinked_constraints: Vec<UnlinkedConstraint>,
     gsum_hint_count: usize,
     links: Vec<LinkedConstraint>,
 }
@@ -318,7 +382,11 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     for air in &airs {
         write_constraint_only_entries(&mut out, air)?;
         for link in &air.links {
-            write_link(&mut out, air, link)?;
+            if link.shape == LinkShape::GsumFinalRow {
+                write_final_row_link(&mut out, air, link)?;
+            } else {
+                write_link(&mut out, air, link)?;
+            }
         }
     }
     out.push_str("def airStatuses : List AirStatus := [\n");
@@ -328,12 +396,12 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     out.push_str("]\n\n");
     out.push_str("def unlinkedMixedConstraints : List ConstraintOnly := [\n");
     for air in &airs {
-        for (constraint_index, _) in &air.unlinked_constraints {
+        for constraint in &air.unlinked_constraints {
             writeln!(
                 out,
                 "  constraintOnly_{}_{} ,",
                 ident(&air.air_name),
-                constraint_index
+                constraint.index
             )?;
         }
     }
@@ -341,12 +409,28 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     out.push_str("def validatedLinks : List ValidatedLink := [\n");
     for air in &airs {
         for link in &air.links {
-            writeln!(
-                out,
-                "  link_{}_{} ,",
-                ident(&air.air_name),
-                link.constraint_index
-            )?;
+            if link.shape != LinkShape::GsumFinalRow {
+                writeln!(
+                    out,
+                    "  link_{}_{} ,",
+                    ident(&air.air_name),
+                    link.constraint_index
+                )?;
+            }
+        }
+    }
+    out.push_str("]\n\n");
+    out.push_str("def validatedFinalRows : List ValidatedFinalRow := [\n");
+    for air in &airs {
+        for link in &air.links {
+            if link.shape == LinkShape::GsumFinalRow {
+                writeln!(
+                    out,
+                    "  link_{}_{} ,",
+                    ident(&air.air_name),
+                    link.constraint_index
+                )?;
+            }
         }
     }
     out.push_str("]\n\nend Extraction.LookupWiring\n");
@@ -368,10 +452,10 @@ fn build_air_manifest(
     for (constraint_index, constraint) in air.constraints.iter().enumerate() {
         let expression_index = constraint_expression_index(constraint, constraint_index)?;
         if expression_uses_extf(air, expression_index, &mut extf_expressions)? {
-            mixed_constraints.push((
-                constraint_index,
-                resolver.expression(expression_index)?,
-            ));
+            mixed_constraints.push(MixedConstraint {
+                index: constraint_index,
+                expression: resolver.expression(expression_index)?,
+            });
         }
     }
 
@@ -406,7 +490,12 @@ fn build_air_manifest(
     let unlinked_constraints = if emitted_constraint_file {
         mixed_constraints
             .into_iter()
-            .filter(|(index, _)| !linked_constraints.contains(index))
+            .filter(|constraint| !linked_constraints.contains(&constraint.index))
+            .map(|constraint| UnlinkedConstraint {
+                index: constraint.index,
+                expression: constraint.expression,
+                reason: "no remaining gsum hint matched an audited link route".to_string(),
+            })
             .collect()
     } else {
         Vec::new()
@@ -523,7 +612,7 @@ fn protocol_challenges(pilout: &PilOut) -> Vec<Ast> {
 
 fn find_links(
     air_name: &str,
-    constraints: &[(usize, Ast)],
+    constraints: &[MixedConstraint],
     hints: &[HintData],
     challenges: &[Ast],
 ) -> Result<(Vec<LinkedConstraint>, usize)> {
@@ -557,7 +646,9 @@ fn find_links(
             }
         }
     }
-    for (constraint_index, constraint) in constraints {
+    for mixed_constraint in constraints {
+        let constraint_index = mixed_constraint.index;
+        let constraint = &mixed_constraint.expression;
         let pair_matches = pair_matches(constraint, hints, &consumed, &by_mix);
         if pair_matches.len() > 1 {
             bail!(
@@ -569,13 +660,13 @@ fn find_links(
             consumed.insert(left);
             consumed.insert(right);
             links.push(LinkedConstraint {
-                constraint_index: *constraint_index,
+                constraint_index,
                 constraint: constraint.clone(),
                 accumulator,
                 alpha,
                 gamma,
                 hints: vec![hints[left].clone(), hints[right].clone()],
-                derived_tuples: Vec::new(),
+                direct_terms: Vec::new(),
                 shape: LinkShape::Cluster2,
             });
             continue;
@@ -591,19 +682,56 @@ fn find_links(
         if let Some((hint, accumulator, alpha, gamma)) = single_matches.into_iter().next() {
             consumed.insert(hint);
             links.push(LinkedConstraint {
-                constraint_index: *constraint_index,
+                constraint_index,
                 constraint: constraint.clone(),
                 accumulator,
                 alpha,
                 gamma,
                 hints: vec![hints[hint].clone()],
-                derived_tuples: Vec::new(),
+                direct_terms: Vec::new(),
                 shape: LinkShape::Direct,
             });
             continue;
         }
 
-        if zero_tail_template_scope(air_name, *constraint_index) {
+        if route_scope(
+            MatchRoute::DirectAssumesNeg,
+            air_name,
+            constraint_index,
+        ) {
+            let sign_form_matches = direct_assumes_neg_form_matches(
+                constraint,
+                hints,
+                &consumed,
+                &by_mix,
+            );
+            if sign_form_matches.len() > 1 {
+                bail!(
+                    "constraint #{constraint_index} has {} possible direct assumes-neg template links",
+                    sign_form_matches.len()
+                );
+            }
+            if let Some((hint, accumulator, alpha, gamma)) = sign_form_matches.into_iter().next() {
+                consumed.insert(hint);
+                links.push(LinkedConstraint {
+                    constraint_index,
+                    constraint: constraint.clone(),
+                    accumulator,
+                    alpha,
+                    gamma,
+                    hints: vec![hints[hint].clone()],
+                    direct_terms: Vec::new(),
+                    shape: LinkShape::DirectAssumesNegForm,
+                });
+                continue;
+            }
+        }
+
+        if route_scope(
+            MatchRoute::ClusterZeroTail,
+            air_name,
+            constraint_index,
+        ) {
             let pair_matches = zero_tail_pair_matches(
                 constraint,
                 hints,
@@ -620,18 +748,24 @@ fn find_links(
                 consumed.insert(left);
                 consumed.insert(right);
                 links.push(LinkedConstraint {
-                    constraint_index: *constraint_index,
+                    constraint_index,
                     constraint: constraint.clone(),
                     accumulator,
                     alpha,
                     gamma,
                     hints: vec![hints[left].clone(), hints[right].clone()],
-                    derived_tuples: Vec::new(),
+                    direct_terms: Vec::new(),
                     shape: LinkShape::Cluster2ZeroTail,
                 });
                 continue;
             }
+        }
 
+        if route_scope(
+            MatchRoute::DirectZeroTail,
+            air_name,
+            constraint_index,
+        ) {
             let single_matches = zero_tail_single_matches(
                 constraint,
                 hints,
@@ -647,45 +781,24 @@ fn find_links(
             if let Some((hint, accumulator, alpha, gamma)) = single_matches.into_iter().next() {
                 consumed.insert(hint);
                 links.push(LinkedConstraint {
-                    constraint_index: *constraint_index,
+                    constraint_index,
                     constraint: constraint.clone(),
                     accumulator,
                     alpha,
                     gamma,
                     hints: vec![hints[hint].clone()],
-                    derived_tuples: Vec::new(),
+                    direct_terms: Vec::new(),
                     shape: LinkShape::DirectZeroTail,
                 });
                 continue;
             }
+        }
 
-            let sign_form_matches = direct_assumes_neg_form_matches(
-                constraint,
-                hints,
-                &consumed,
-                &by_mix,
-            );
-            if sign_form_matches.len() > 1 {
-                bail!(
-                    "constraint #{constraint_index} has {} possible direct assumes-neg template links",
-                    sign_form_matches.len()
-                );
-            }
-            if let Some((hint, accumulator, alpha, gamma)) = sign_form_matches.into_iter().next() {
-                consumed.insert(hint);
-                links.push(LinkedConstraint {
-                    constraint_index: *constraint_index,
-                    constraint: constraint.clone(),
-                    accumulator,
-                    alpha,
-                    gamma,
-                    hints: vec![hints[hint].clone()],
-                    derived_tuples: Vec::new(),
-                    shape: LinkShape::DirectAssumesNegForm,
-                });
-                continue;
-            }
-
+        if route_scope(
+            MatchRoute::DirectAssumesNegZeroTail,
+            air_name,
+            constraint_index,
+        ) {
             let composed_matches = direct_assumes_neg_form_zero_tail_matches(
                 constraint,
                 hints,
@@ -701,198 +814,114 @@ fn find_links(
             if let Some((hint, accumulator, alpha, gamma)) = composed_matches.into_iter().next() {
                 consumed.insert(hint);
                 links.push(LinkedConstraint {
-                    constraint_index: *constraint_index,
+                    constraint_index,
                     constraint: constraint.clone(),
                     accumulator,
                     alpha,
                     gamma,
                     hints: vec![hints[hint].clone()],
-                    derived_tuples: Vec::new(),
+                    direct_terms: Vec::new(),
                     shape: LinkShape::DirectAssumesNegFormZeroTail,
                 });
                 continue;
             }
         }
 
-        if let Some(link) = derived_mixed_link(air_name, *constraint_index, constraint) {
-            links.push(link);
+        if let Some((selector, group_value, gsum, direct_terms)) =
+            gsum_final_row_parts(constraint)
+        {
+            links.push(LinkedConstraint {
+                constraint_index,
+                constraint: constraint.clone(),
+                accumulator: gsum,
+                alpha: selector,
+                gamma: group_value,
+                hints: Vec::new(),
+                direct_terms,
+                shape: LinkShape::GsumFinalRow,
+            });
+            continue;
         }
     }
     let unlinked = constraints.len().saturating_sub(links.len());
     Ok((links, unlinked))
 }
 
-/// Zero-tail compression is accepted only at audited macro applications. The
-/// MemAlign family uses it throughout. BinaryExtension c4, BinaryAdd c5,
-/// Arith c61, and Main c45 are operation-bus applications whose pilout
-/// constraints omit the source macro's trailing literal-zero slots. Main
-/// c43/c44 use the audited assumes-side negative-multiplicity form recognized
-/// in the same scoped matching pass.
-fn zero_tail_template_scope(air_name: &str, constraint_index: usize) -> bool {
-    matches!(air_name, "MemAlign" | "MemAlignByte" | "MemAlignReadByte")
-        || (air_name == "BinaryExtension" && constraint_index == 4)
-        || (air_name == "BinaryAdd" && constraint_index == 5)
-        || (air_name == "Arith" && constraint_index == 61)
-        || (air_name == "Main" && matches!(constraint_index, 43..=45))
+fn add_terms(terms: &[Ast]) -> Ast {
+    terms
+        .iter()
+        .cloned()
+        .reduce(Ast::add)
+        .unwrap_or_else(|| Ast::constant("0"))
 }
 
-/// The Binary c10 final-byte lookup shares its accumulator constraint with
-/// `proves_operation`, but pilout supplies no gsum hint payload for either
-/// tuple. Keep that provenance explicit: this is a constraint-derived link,
-/// accepted only when its independently reconstructed mixed template is
-/// definitionally the extracted AST. The template itself is generic; c10 is
-/// the only approved application in this pass.
-fn derived_mixed_link(
-    air_name: &str,
-    constraint_index: usize,
-    constraint: &Ast,
-) -> Option<LinkedConstraint> {
-    if air_name != "Binary" || constraint_index != 10 {
+fn collect_add_terms(value: &Ast, terms: &mut Vec<Ast>) {
+    if let Ast::Add(lhs, rhs) = value {
+        collect_add_terms(lhs, terms);
+        collect_add_terms(rhs, terms);
+    } else {
+        terms.push(value.clone());
+    }
+}
+
+fn gsum_final_row_template(
+    selector: Ast,
+    group_value: Ast,
+    gsum: Ast,
+    direct_terms: &[Ast],
+) -> Ast {
+    normalise(Ast::mul(
+        selector,
+        Ast::sub(Ast::sub(group_value, gsum), add_terms(direct_terms)),
+    ))
+}
+
+/// Recognize only the last-row global-sum closure emitted by PIL:
+/// L1 times (airGroupValue minus gsum minus the sum of direct terms).
+fn gsum_final_row_parts(constraint: &Ast) -> Option<(Ast, Ast, Ast, Vec<Ast>)> {
+    let Ast::Mul(selector, body) = constraint else {
+        return None;
+    };
+    if !matches!(selector.as_ref(), Ast::Fixed { row_offset: 1, .. }) {
         return None;
     }
-    let alpha = Ast::Challenge { stage: 2, index: 0 };
-    let gamma = Ast::Challenge { stage: 2, index: 1 };
-    let accumulator = Ast::Witness {
-        stage: 2,
-        column: 4,
-        row_offset: 0,
-    };
-    let derived_tuples = binary_c10_derived_tuples();
-    let [left, right] = derived_tuples.as_slice() else {
-        unreachable!("Binary c10 has exactly two derived tuples");
-    };
-    (normalise(derived_mixed_template(
-        accumulator.clone(),
-        left,
-        right,
-        &alpha,
-        &gamma,
-    )) == *constraint)
-        .then_some(LinkedConstraint {
-            constraint_index,
-            constraint: constraint.clone(),
-            accumulator,
-            alpha,
-            gamma,
-            hints: Vec::new(),
-            derived_tuples,
-            shape: LinkShape::DerivedMixed2,
-        })
-}
-
-fn witness(column: u32) -> Ast {
-    Ast::Witness {
-        stage: 1,
-        column,
-        row_offset: 0,
-    }
-}
-
-fn slot(name: &str, value: Ast) -> Slot {
-    Slot {
-        name: name.to_string(),
-        value,
-    }
-}
-
-/// Constraint-derived c10 operands. The source's `proves_operation` macro
-/// has three trailing zero slots, already omitted in the raw mixed AST. We
-/// retain exactly the AST's eight nonzero operation slots rather than invent
-/// a hint-shaped eleven-slot tuple.
-fn binary_c10_derived_tuples() -> Vec<DerivedTuple> {
-    let mode64 = Ast::sub(Ast::constant("1"), witness(33));
-    let lookup_flags = Ast::add(
-        Ast::add(
-            Ast::add(witness(32), Ast::mul(Ast::constant("2"), witness(34))),
-            Ast::mul(Ast::constant("4"), witness(35)),
-        ),
-        Ast::mul(Ast::constant("8"), witness(36)),
-    );
-    let a_lo = Ast::add(
-        Ast::add(
-            Ast::add(witness(1), Ast::mul(Ast::constant("256"), witness(2))),
-            Ast::mul(Ast::constant("65536"), witness(3)),
-        ),
-        Ast::mul(Ast::constant("16777216"), witness(4)),
-    );
-    let a_hi = Ast::add(
-        Ast::add(
-            Ast::add(witness(5), Ast::mul(Ast::constant("256"), witness(6))),
-            Ast::mul(Ast::constant("65536"), witness(7)),
-        ),
-        Ast::mul(Ast::constant("16777216"), witness(8)),
-    );
-    let b_lo = Ast::add(
-        Ast::add(
-            Ast::add(witness(9), Ast::mul(Ast::constant("256"), witness(10))),
-            Ast::mul(Ast::constant("65536"), witness(11)),
-        ),
-        Ast::mul(Ast::constant("16777216"), witness(12)),
-    );
-    let b_hi = Ast::add(
-        Ast::add(
-            Ast::add(witness(13), Ast::mul(Ast::constant("256"), witness(14))),
-            Ast::mul(Ast::constant("65536"), witness(15)),
-        ),
-        Ast::mul(Ast::constant("16777216"), witness(16)),
-    );
-    let c_lo = Ast::add(
-        Ast::add(
-            Ast::add(
-                Ast::add(witness(17), Ast::mul(Ast::constant("256"), witness(18))),
-                Ast::mul(Ast::constant("65536"), witness(19)),
+    let (group_value, gsum, direct_sum) = match body.as_ref() {
+        Ast::Sub(lhs, direct_sum) => match lhs.as_ref() {
+            Ast::Sub(group_value, gsum) => (
+                group_value.as_ref(),
+                gsum.as_ref(),
+                Some(direct_sum.as_ref()),
             ),
-            Ast::mul(Ast::constant("16777216"), witness(20)),
-        ),
-        witness(32),
-    );
-    let c_hi = Ast::add(
-        Ast::add(
-            Ast::add(witness(21), Ast::mul(Ast::constant("256"), witness(22))),
-            Ast::mul(Ast::constant("65536"), witness(23)),
-        ),
-        Ast::mul(Ast::constant("16777216"), witness(24)),
-    );
-
-    vec![
-        DerivedTuple {
-            piop: "Lookup".to_string(),
-            proves: false,
-            bus_id: Ast::constant("125"),
-            multiplicity: Ast::constant("1"),
-            slots: vec![
-                slot("mode64", mode64),
-                slot("b_op_or_sext", witness(37)),
-                slot("free_in_a[7]", witness(8)),
-                slot("free_in_b[7]", witness(16)),
-                slot("carry[6]", witness(31)),
-                slot("free_in_c[7]", witness(24)),
-                slot(
-                    "carry[7] + 2 * result_is_a + 4 * use_first_byte + 8 * c_is_signed",
-                    lookup_flags,
-                ),
-            ],
+            Ast::AirGroupValue(_) => (lhs.as_ref(), direct_sum.as_ref(), None),
+            _ => return None,
         },
-        DerivedTuple {
-            piop: "Operation".to_string(),
-            proves: true,
-            bus_id: Ast::constant("5000"),
-            multiplicity: Ast::constant("1"),
-            slots: vec![
-                slot(
-                    "op",
-                    Ast::add(witness(0), Ast::mul(Ast::constant("16"), witness(33))),
-                ),
-                slot("a_lo", a_lo),
-                slot("a_hi", a_hi),
-                slot("b_lo", b_lo),
-                slot("b_hi", b_hi),
-                slot("c_lo", c_lo),
-                slot("c_hi", c_hi),
-                slot("flag", witness(32)),
-            ],
-        },
-    ]
+        _ => return None,
+    };
+    if !matches!(group_value, Ast::AirGroupValue(_))
+        || !matches!(gsum, Ast::Witness { stage: 2, .. })
+    {
+        return None;
+    }
+    let mut direct_terms = Vec::new();
+    if let Some(direct_sum) = direct_sum {
+        collect_add_terms(direct_sum, &mut direct_terms);
+        if !direct_terms.iter().all(|term| matches!(term, Ast::AirValue(_))) {
+            return None;
+        }
+    }
+    let parts = (
+        selector.as_ref().clone(),
+        group_value.clone(),
+        gsum.clone(),
+        direct_terms,
+    );
+    (gsum_final_row_template(
+        parts.0.clone(),
+        parts.1.clone(),
+        parts.2.clone(),
+        &parts.3,
+    ) == *constraint)
+        .then_some(parts)
 }
 
 fn single_matches(
@@ -1434,48 +1463,6 @@ fn zero_tail_cluster_template(
     )
 }
 
-/// The same accumulator/correction shape as `cluster_template`, but with
-/// operands reconstructed from the constraint rather than supplied by gsum
-/// hints. Keeping the operand type distinct prevents a derived tuple from
-/// acquiring invented hint provenance.
-fn derived_mixed_template(
-    accumulator: Ast,
-    left: &DerivedTuple,
-    right: &DerivedTuple,
-    alpha: &Ast,
-    gamma: &Ast,
-) -> Ast {
-    let left_mix = derived_std_mix(left, alpha, gamma).expect("derived tuple has a slot");
-    let right_mix = derived_std_mix(right, alpha, gamma).expect("derived tuple has a slot");
-    Ast::sub(
-        Ast::mul(accumulator, Ast::mul(left_mix.clone(), right_mix.clone())),
-        Ast::add(
-            Ast::mul(derived_signed_multiplicity(left), right_mix),
-            Ast::mul(derived_signed_multiplicity(right), left_mix),
-        ),
-    )
-}
-
-fn derived_std_mix(tuple: &DerivedTuple, alpha: &Ast, gamma: &Ast) -> Option<Ast> {
-    let mut values = tuple.slots.iter().rev();
-    let mut value = values.next()?.value.clone();
-    for slot in values {
-        value = Ast::add(Ast::mul(value, alpha.clone()), slot.value.clone());
-    }
-    Some(Ast::add(
-        Ast::add(Ast::mul(value, alpha.clone()), tuple.bus_id.clone()),
-        gamma.clone(),
-    ))
-}
-
-fn derived_signed_multiplicity(tuple: &DerivedTuple) -> Ast {
-    if tuple.proves {
-        tuple.multiplicity.clone()
-    } else {
-        field_neg(tuple.multiplicity.clone())
-    }
-}
-
 /// The upstream macro normalizes only neutral field syntax before emitting its
 /// constraint. Keep this deliberately small: it is not an algebraic solver.
 fn normalise(value: Ast) -> Ast {
@@ -1535,8 +1522,8 @@ fn write_prelude(out: &mut String) {
     out.push_str("Lossless, constraint-linked extraction of gsum lookup wiring.\n\n");
     out.push_str("A `ValidatedLink` contains a hint tuple only after its `constraint`\n");
     out.push_str("is definitionally equal to the standard template instantiated with\n");
-    out.push_str("that tuple. A `DerivedTuple` instead records a tuple reconstructed\n");
-    out.push_str("from an exact constraint template when the source has no gsum hint.\n");
+    out.push_str("that tuple. Final-row links instead retain the exact group value,\n");
+    out.push_str("global-sum accumulator, selector, and direct terms.\n");
     out.push_str("Hints which have no such link are represented only by their per-AIR\n");
     out.push_str("count; their tuple payload is deliberately withheld.\n");
     out.push_str("-/\n\n");
@@ -1560,9 +1547,9 @@ fn write_prelude(out: &mut String) {
     out.push_str("structure DerivedTuple where\n");
     out.push_str("  piop : String\n  proves : Bool\n  busId : Expr\n");
     out.push_str("  multiplicity : Expr\n  slots : List Slot\n\n");
-    out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | derivedMixed2\n  | directZeroTail\n  | cluster2ZeroTail\n  | directAssumesNegForm\n  | directAssumesNegFormZeroTail\n  deriving Repr, DecidableEq\n\n");
+    out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | gsumFinalRow\n  | directZeroTail\n  | cluster2ZeroTail\n  | directAssumesNegForm\n  | directAssumesNegFormZeroTail\n  deriving Repr, DecidableEq\n\n");
     out.push_str("structure ConstraintOnly where\n");
-    out.push_str("  air : String\n  constraintIndex : Nat\n  constraint : Expr\n\n");
+    out.push_str("  air : String\n  constraintIndex : Nat\n  constraint : Expr\n  reason : String\n\n");
     out.push_str("structure AirStatus where\n");
     out.push_str("  groupIndex : Nat\n  airIndex : Nat\n  group : String\n  air : String\n");
     out.push_str("  emittedConstraintFile : Bool\n  mixedConstraintCount : Nat\n");
@@ -1626,19 +1613,16 @@ fn write_prelude(out: &mut String) {
     out.push_str("  let rightMix := stdMix alpha gamma right.busId (zeroTailSlots right.slots)\n");
     out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
     out.push_str("    (.add (.mul (signedSelector left) rightMix) (.mul (signedSelector right) leftMix))\n\n");
-    out.push_str("def signedDerivedSelector (tuple : DerivedTuple) : Expr :=\n");
-    out.push_str("  if tuple.proves then tuple.multiplicity else negSelector tuple.multiplicity\n\n");
-    out.push_str("def derivedMixed2Template (alpha gamma accumulator : Expr) (left right : DerivedTuple) : Expr :=\n");
-    out.push_str("  let leftMix := stdMix alpha gamma left.busId left.slots\n");
-    out.push_str("  let rightMix := stdMix alpha gamma right.busId right.slots\n");
-    out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
-    out.push_str("    (.add (.mul (signedDerivedSelector left) rightMix) (.mul (signedDerivedSelector right) leftMix))\n\n");
+    out.push_str("def addTerms : List Expr → Expr\n");
+    out.push_str("  | [] => .constant \"0\"\n");
+    out.push_str("  | first :: rest => rest.foldl Expr.add first\n\n");
+    out.push_str("def gsumFinalRowTemplate (selector groupValue gsum : Expr) (directTerms : List Expr) : Expr :=\n");
+    out.push_str("  .mul selector (.sub (.sub groupValue gsum) (addTerms directTerms))\n\n");
     out.push_str("def templateOf (shape : LinkShape) (alpha gamma accumulator : Expr)\n");
     out.push_str("    (hints : List HintTuple) (derivedTuples : List DerivedTuple) : Option Expr :=\n");
     out.push_str("  match shape, hints, derivedTuples with\n");
     out.push_str("  | .direct, [hint], [] => some (normalise (directTemplate alpha gamma accumulator hint))\n");
     out.push_str("  | .cluster2, [left, right], [] => some (normalise (cluster2Template alpha gamma accumulator left right))\n");
-    out.push_str("  | .derivedMixed2, [], [left, right] => some (normalise (derivedMixed2Template alpha gamma accumulator left right))\n");
     out.push_str("  | .directZeroTail, [hint], [] => some (normalise (directZeroTailTemplate alpha gamma accumulator hint))\n");
     out.push_str("  | .cluster2ZeroTail, [left, right], [] => some (normalise (cluster2ZeroTailTemplate alpha gamma accumulator left right))\n");
     out.push_str("  | .directAssumesNegForm, [hint], [] => some (normalise (directAssumesNegFormTemplate alpha gamma accumulator hint))\n");
@@ -1655,6 +1639,17 @@ fn write_prelude(out: &mut String) {
     out.push_str("      link.hints link.derivedTuples = some link.constraint := by\n");
     out.push_str("  rw [link.constraintEqualsTemplate]\n");
     out.push_str("  exact link.templateFromShape\n\n");
+    out.push_str("structure ValidatedFinalRow where\n");
+    out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
+    out.push_str("  selector : Expr\n  groupValue : Expr\n  gsum : Expr\n  directTerms : List Expr\n");
+    out.push_str("  constraint : Expr\n  template : Expr\n  hints : List HintTuple\n");
+    out.push_str("  templateFromTerms : normalise (gsumFinalRowTemplate selector groupValue gsum directTerms) = template\n");
+    out.push_str("  constraintEqualsTemplate : constraint = template\n\n");
+    out.push_str("theorem ValidatedFinalRow.constraintValidated (link : ValidatedFinalRow) :\n");
+    out.push_str("    normalise (gsumFinalRowTemplate link.selector link.groupValue link.gsum link.directTerms) =\n");
+    out.push_str("      link.constraint := by\n");
+    out.push_str("  rw [link.constraintEqualsTemplate]\n");
+    out.push_str("  exact link.templateFromTerms\n\n");
 }
 
 fn write_air_status(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -1677,28 +1672,31 @@ fn write_air_status(out: &mut String, air: &AirManifest) -> Result<()> {
 }
 
 fn write_constraint_only_entries(out: &mut String, air: &AirManifest) -> Result<()> {
-    for (constraint_index, constraint) in &air.unlinked_constraints {
+    for constraint in &air.unlinked_constraints {
         writeln!(
             out,
             "def constraintOnly_{}_{} : ConstraintOnly := {{",
             ident(&air.air_name),
-            constraint_index
+            constraint.index
         )?;
         writeln!(out, "  air := \"{}\",", lean_string(&air.air_name))?;
-        writeln!(out, "  constraintIndex := {},", constraint_index)?;
-        writeln!(out, "  constraint := {}", lean_expr(constraint))?;
+        writeln!(out, "  constraintIndex := {},", constraint.index)?;
+        writeln!(
+            out,
+            "  constraint := {},",
+            lean_expr(&constraint.expression)
+        )?;
+        writeln!(out, "  reason := \"{}\"", lean_string(&constraint.reason))?;
         out.push_str("}\n\n");
     }
     Ok(())
 }
 
 fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> Result<()> {
+    debug_assert_ne!(link.shape, LinkShape::GsumFinalRow);
     let label = format!("{}_{}", ident(&air.air_name), link.constraint_index);
     for (index, hint) in link.hints.iter().enumerate() {
         write_hint(out, &format!("hint_{}_{}", label, index), hint)?;
-    }
-    for (index, tuple) in link.derived_tuples.iter().enumerate() {
-        write_derived_tuple(out, &format!("derivedTuple_{}_{}", label, index), tuple)?;
     }
     writeln!(out, "def constraint_{} : Expr := {}", label, lean_expr(&link.constraint))?;
     match link.shape {
@@ -1721,16 +1719,7 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
             label,
             label
         )?,
-        LinkShape::DerivedMixed2 => writeln!(
-            out,
-            "def template_{} : Expr := normalise (derivedMixed2Template ({}) ({}) ({}) derivedTuple_{}_0 derivedTuple_{}_1)",
-            label,
-            lean_expr(&link.alpha),
-            lean_expr(&link.gamma),
-            lean_expr(&link.accumulator),
-            label,
-            label
-        )?,
+        LinkShape::GsumFinalRow => unreachable!(),
         LinkShape::DirectZeroTail => writeln!(
             out,
             "def template_{} : Expr := normalise (directZeroTailTemplate ({}) ({}) ({}) hint_{}_0)",
@@ -1778,7 +1767,7 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
         match link.shape {
             LinkShape::Direct => "direct",
             LinkShape::Cluster2 => "cluster2",
-            LinkShape::DerivedMixed2 => "derivedMixed2",
+            LinkShape::GsumFinalRow => unreachable!(),
             LinkShape::DirectZeroTail => "directZeroTail",
             LinkShape::Cluster2ZeroTail => "cluster2ZeroTail",
             LinkShape::DirectAssumesNegForm => "directAssumesNegForm",
@@ -1791,8 +1780,42 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
     writeln!(out, "  constraint := constraint_{},", label)?;
     writeln!(out, "  template := template_{},", label)?;
     writeln!(out, "  hints := [{}],", (0..link.hints.len()).map(|index| format!("hint_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
-    writeln!(out, "  derivedTuples := [{}],", (0..link.derived_tuples.len()).map(|index| format!("derivedTuple_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    out.push_str("  derivedTuples := [],\n");
     out.push_str("  templateFromShape := by rfl\n");
+    out.push_str("  constraintEqualsTemplate := by rfl\n");
+    out.push_str("}\n\n");
+    Ok(())
+}
+
+fn write_final_row_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> Result<()> {
+    debug_assert_eq!(link.shape, LinkShape::GsumFinalRow);
+    let label = format!("{}_{}", ident(&air.air_name), link.constraint_index);
+    writeln!(out, "def constraint_{} : Expr := {}", label, lean_expr(&link.constraint))?;
+    writeln!(
+        out,
+        "def template_{} : Expr := normalise (gsumFinalRowTemplate ({}) ({}) ({}) [{}])",
+        label,
+        lean_expr(&link.alpha),
+        lean_expr(&link.gamma),
+        lean_expr(&link.accumulator),
+        link.direct_terms.iter().map(lean_expr).collect::<Vec<_>>().join(", ")
+    )?;
+    writeln!(out, "def link_{} : ValidatedFinalRow := {{", label)?;
+    writeln!(out, "  air := \"{}\",", lean_string(&air.air_name))?;
+    writeln!(out, "  constraintIndex := {},", link.constraint_index)?;
+    out.push_str("  shape := .gsumFinalRow,\n");
+    writeln!(out, "  selector := {},", lean_expr(&link.alpha))?;
+    writeln!(out, "  groupValue := {},", lean_expr(&link.gamma))?;
+    writeln!(out, "  gsum := {},", lean_expr(&link.accumulator))?;
+    writeln!(
+        out,
+        "  directTerms := [{}],",
+        link.direct_terms.iter().map(lean_expr).collect::<Vec<_>>().join(", ")
+    )?;
+    writeln!(out, "  constraint := constraint_{},", label)?;
+    writeln!(out, "  template := template_{},", label)?;
+    out.push_str("  hints := [],\n");
+    out.push_str("  templateFromTerms := by rfl\n");
     out.push_str("  constraintEqualsTemplate := by rfl\n");
     out.push_str("}\n\n");
     Ok(())
@@ -1807,25 +1830,6 @@ fn write_hint(out: &mut String, name: &str, hint: &HintData) -> Result<()> {
     writeln!(out, "  multiplicity := {},", lean_expr(&hint.multiplicity))?;
     out.push_str("  slots := [\n");
     for slot in &hint.slots {
-        writeln!(
-            out,
-            "    {{ name := \"{}\", value := {} }},",
-            lean_string(&slot.name),
-            lean_expr(&slot.value)
-        )?;
-    }
-    out.push_str("  ]\n}\n\n");
-    Ok(())
-}
-
-fn write_derived_tuple(out: &mut String, name: &str, tuple: &DerivedTuple) -> Result<()> {
-    writeln!(out, "def {} : DerivedTuple := {{", name)?;
-    writeln!(out, "  piop := \"{}\",", lean_string(&tuple.piop))?;
-    writeln!(out, "  proves := {},", tuple.proves)?;
-    writeln!(out, "  busId := {},", lean_expr(&tuple.bus_id))?;
-    writeln!(out, "  multiplicity := {},", lean_expr(&tuple.multiplicity))?;
-    out.push_str("  slots := [\n");
-    for slot in &tuple.slots {
         writeln!(
             out,
             "    {{ name := \"{}\", value := {} }},",
@@ -1891,24 +1895,31 @@ mod tests {
         assert!(prelude.contains("constraintEqualsTemplate : constraint = template"));
         assert!(prelude.contains("theorem ValidatedLink.constraintValidated"));
         assert!(prelude.contains("| .direct, [hint], [] =>"));
-        assert!(prelude.contains("| .derivedMixed2, [], [left, right] =>"));
         assert!(prelude.contains("| _, _, _ => none"));
+        assert!(prelude.contains("structure ValidatedFinalRow where"));
+        assert!(prelude.contains("theorem ValidatedFinalRow.constraintValidated"));
     }
 
     #[test]
-    fn operation_zero_tail_scope_is_constraint_specific() {
-        assert!(zero_tail_template_scope("BinaryAdd", 5));
-        assert!(zero_tail_template_scope("BinaryExtension", 4));
-        assert!(zero_tail_template_scope("Arith", 61));
-        assert!(zero_tail_template_scope("Main", 43));
-        assert!(zero_tail_template_scope("Main", 44));
-        assert!(zero_tail_template_scope("Main", 45));
-        assert!(!zero_tail_template_scope("BinaryAdd", 4));
-        assert!(!zero_tail_template_scope("BinaryExtension", 3));
-        assert!(!zero_tail_template_scope("BinaryExtension", 5));
-        assert!(!zero_tail_template_scope("Arith", 62));
-        assert!(!zero_tail_template_scope("Main", 42));
-        assert!(!zero_tail_template_scope("Main", 46));
+    fn recognizer_scope_is_per_route_and_air() {
+        assert!(route_scope(MatchRoute::DirectZeroTail, "BinaryAdd", 5));
+        assert!(route_scope(MatchRoute::DirectZeroTail, "BinaryExtension", 4));
+        assert!(route_scope(MatchRoute::DirectZeroTail, "Arith", 61));
+        assert!(route_scope(MatchRoute::ClusterZeroTail, "Binary", 10));
+        assert!(route_scope(MatchRoute::DirectAssumesNeg, "Main", 81));
+        assert!(route_scope(
+            MatchRoute::DirectAssumesNegZeroTail,
+            "Main",
+            43,
+        ));
+        assert!(route_scope(MatchRoute::ClusterZeroTail, "BinaryAdd", 5));
+        assert!(!route_scope(MatchRoute::DirectZeroTail, "BinaryAdd", 4));
+        assert!(!route_scope(MatchRoute::DirectZeroTail, "Arith", 62));
+        assert!(!route_scope(
+            MatchRoute::DirectAssumesNegZeroTail,
+            "Main",
+            46,
+        ));
     }
 
     fn hint(proves: bool, slots: Vec<Ast>) -> HintData {
@@ -2130,27 +2141,4 @@ mod tests {
         );
     }
 
-    #[test]
-    fn derived_mixed_link_has_no_hint_provenance() {
-        let alpha = Ast::Challenge { stage: 2, index: 0 };
-        let gamma = Ast::Challenge { stage: 2, index: 1 };
-        let accumulator = Ast::Witness {
-            stage: 2,
-            column: 4,
-            row_offset: 0,
-        };
-        let tuples = binary_c10_derived_tuples();
-        let constraint = normalise(derived_mixed_template(
-            accumulator,
-            &tuples[0],
-            &tuples[1],
-            &alpha,
-            &gamma,
-        ));
-        let link = derived_mixed_link("Binary", 10, &constraint).expect("c10 link");
-
-        assert!(link.hints.is_empty());
-        assert_eq!(link.derived_tuples.len(), 2);
-        assert!(matches!(link.shape, LinkShape::DerivedMixed2));
-    }
 }
