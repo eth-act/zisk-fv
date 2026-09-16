@@ -1,1 +1,177 @@
 # Declared extraction-exposure residuals. Keep entries source-cited and issue-linked.
+
+# Main's two row-level continuation messages. The proof target is one segment,
+# so it does not model the bus-1000 handoff to a successor segment.
+[[residual]]
+constraint = "Main.47"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:501-505"
+
+[[residual]]
+constraint = "Main.48"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:501-505"
+
+# The unrolled register-current messages are selected only for a successor
+# segment. They remain explicit despite using modeled memory bus 10; #354
+# explains why omission on a modeled bus is not merely an absent sidecar.
+[[residual]]
+constraint = "Main.51"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.54"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.57"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.60"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.63"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.66"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.69"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.72"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.75"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.78"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.81"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.84"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.87"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.90"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.93"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.96"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.99"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.102"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.105"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.108"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.111"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.114"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.117"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.120"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.123"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.126"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.129"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.132"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.135"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.138"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+[[residual]]
+constraint = "Main.141"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:454"
+
+# The segment-index range message exists only to support multi-segment traces.
+[[residual]]
+constraint = "Main.142"
+issue = "https://github.com/eth-act/zisk-fv/issues/373"
+pil = "zisk/state-machines/main/pil/main.pil:541"

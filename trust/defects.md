@@ -18,6 +18,25 @@ Excluding an entire opcode is allowed only when the defect covers the whole
 opcode. Ordinary out-of-scope items, such as precompiles or non-RV64IM
 extensions, belong in scope documentation rather than this ledger.
 
+## Declared single-segment extraction residuals
+
+The generated exposure ledger records 34 Main constraints as explicit scope
+residuals for the single-segment theorem target. These are not silently treated
+as covered and do not add a `DefectId`: the individual constraint, tracking
+issue, and PIL citation are registered in `trust/exposure-residuals.toml`.
+
+| Constraints | Source | Single-segment disposition |
+|---|---|---|
+| `Main.47`, `Main.48` | `main.pil:501-505` | The two `MAIN_CONTINUATION_ID` row messages connect consecutive segments; bus 1000 has no channel in `fullRv64imSoundEnsemble`. |
+| `Main.51`, `Main.54`, …, `Main.141` (31 constraints) | `main.pil:454` | One unrolled current-register memory message per register, selected by `1 - main_last_segment`; a one-segment execution has no successor-segment current access. |
+| `Main.142` | `main.pil:541` | The range message constrains `main_segment`, which the modeled one-segment table fixes to zero. |
+
+The middle row requires the caution identified in #354: these 31 terms use the
+modeled memory bus 10, so omitting them from a multi-segment balance argument
+could distort that argument rather than merely omit an unmodeled sidecar. Their
+residual status is therefore justified only by the theorem's single-segment
+scope and must not be generalized to a multi-segment claim.
+
 | Kind                      | Meaning                                                                                                                    | Theorem treatment                                                                                                                                        |
 |---------------------------|----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `implementation-semantic` | ZisK intentionally or accidentally implements less than the RV64IM Sail behavior for an in-scope opcode.                   | Prove compliance on the complement of a precise defect predicate.                                                                                        |
