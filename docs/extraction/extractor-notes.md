@@ -233,8 +233,8 @@ It produces two files:
   intermediates) are **omitted** — Clean's channel-balance machinery
   subsumes them; they are listed in the generated docstring for the record.
 - **`Constraints.lean`** — `main : Var <Air>Row FGL → Circuit FGL Unit`,
-  a do-block of source range/table lookups, one `assertZero` per F-only
-  pilout constraint, and the reconstructed channel pulls and push. Named
+  a do-block of source range/table lookups, zero or more `assertZero`s (one
+  per F-only pilout constraint), and the reconstructed channel pulls and push. Named
   reducible message builders keep the channel tuples auditable. The
   permutation/lookup running-product constraints
   (the ones `--air` skip-stubs as ExtF-mixing) are **not** emitted as
