@@ -129,6 +129,11 @@ Not stops, with the required action instead:
 - **A finding worth the owner's attention that blocks nothing.** Put it under "Owner decisions
   requested" or "Open hypotheses" in the PR body and continue.
 - **Finishing a workstream.** Open the PR, then cut the next branch immediately.
+- **A long process is running** (an evidence suite, a full gate, a CI job). Advance every other
+  workstream the dependency rules allow while it runs, checking the process between steps. End a
+  turn only when every allowed workstream is blocked on a running process, and then say exactly
+  which process, its progress, and its expected finish time, so the owner can re-prompt "continue
+  per plan" at the right moment. Ending a turn with unblocked work left is not permitted.
 
 The owner reads PR bodies and PR comments. Never edit GitHub issues before W0c has printed the
 ledger. Never mutate issue relationships.
