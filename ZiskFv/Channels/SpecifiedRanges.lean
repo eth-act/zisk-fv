@@ -77,4 +77,21 @@ theorem registerStepMessage_guarantees_iff (value : FGL) (data : ProverData FGL)
       rangeTable24.Spec value := by
   simp [RegisterStepRangeChannel, registerStepMessage, registerStepRangeId]
 
+/-- The typed surrogate for Arith's bus-330 indexed range lookups.  Unlike the
+fixed-width slices above, the range id is part of the message and selects a row
+of the constructive upstream Arith range table. -/
+instance ArithRangeChannel : Channel FGL SpecifiedRangeMessage where
+  name := "ArithRange330"
+  Guarantees msg _ := arithRangeTable.Spec #v[msg.rangeId, msg.value]
+
+@[reducible]
+def arithRangeMessage {F : Type} (rangeId value : F) : SpecifiedRangeMessage F :=
+  { rangeId, value }
+
+theorem arithRangeMessage_guarantees_iff (rangeId value : FGL)
+    (data : ProverData FGL) :
+    ArithRangeChannel.Guarantees (arithRangeMessage rangeId value) data ↔
+      arithRangeTable.Spec #v[rangeId, value] := by
+  rfl
+
 end ZiskFv.Channels.SpecifiedRanges

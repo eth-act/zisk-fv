@@ -9,6 +9,7 @@ import ZiskFv.AirsClean.BinaryAdd.Wiring
 import ZiskFv.AirsClean.BinaryAdd.ExtractedRow
 import ZiskFv.AirsClean.Binary.ExtractedRow
 import ZiskFv.AirsClean.ArithMul.Wiring
+import ZiskFv.AirsClean.ArithMul.RangeWiring
 import ZiskFv.AirsClean.ArithMul.ExtractedRow
 import ZiskFv.AirsClean.Main.Wiring
 import ZiskFv.AirsClean.Main.RomWiring
