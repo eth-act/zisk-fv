@@ -212,6 +212,17 @@ impl<'a> CleanExprRenderer<'a> {
                 })?;
                 Ok(format!("row.{}", field))
             }
+            OperandKind::FixedCol(f)
+                if self.air.name.as_deref() == Some("MemAlign")
+                    && f.idx == 0
+                    && f.row_offset == 0 =>
+            {
+                let field = self
+                    .col_to_field
+                    .get(&PREPROCESSED_L1_FIELD_KEY)
+                    .ok_or_else(|| anyhow!("MemAlign's preprocessed L1 field is missing"))?;
+                Ok(format!("row.{}", field))
+            }
             OperandKind::Expression(e) => self.render_by_idx(e.idx as usize),
             other => bail!(
                 "operand kind {:?} is not supported by the Clean-Component emitter \
@@ -219,6 +230,36 @@ impl<'a> CleanExprRenderer<'a> {
                 other
             ),
         }
+    }
+}
+
+fn expr_uses_rotated_witness(air: &Air, idx: usize) -> Result<bool> {
+    fn operand_uses_rotated_witness(air: &Air, operand: Option<&Operand>) -> Result<bool> {
+        let operand = operand.ok_or_else(|| anyhow!("operand missing"))?;
+        match operand.operand.as_ref() {
+            Some(OperandKind::WitnessCol(w)) => Ok(w.row_offset != 0),
+            Some(OperandKind::Expression(e)) => expr_uses_rotated_witness(air, e.idx as usize),
+            Some(_) => Ok(false),
+            None => bail!("operand has no kind"),
+        }
+    }
+
+    let expr = air
+        .expressions
+        .get(idx)
+        .ok_or_else(|| anyhow!("expression index {} out of range", idx))?;
+    match expr
+        .operation
+        .as_ref()
+        .ok_or_else(|| anyhow!("expression has no operation"))?
+    {
+        ExprOp::Add(op) => Ok(operand_uses_rotated_witness(air, op.lhs.as_ref())?
+            || operand_uses_rotated_witness(air, op.rhs.as_ref())?),
+        ExprOp::Sub(op) => Ok(operand_uses_rotated_witness(air, op.lhs.as_ref())?
+            || operand_uses_rotated_witness(air, op.rhs.as_ref())?),
+        ExprOp::Mul(op) => Ok(operand_uses_rotated_witness(air, op.lhs.as_ref())?
+            || operand_uses_rotated_witness(air, op.rhs.as_ref())?),
+        ExprOp::Neg(op) => operand_uses_rotated_witness(air, op.value.as_ref()),
     }
 }
 
@@ -296,6 +337,7 @@ struct CleanBusEmission {
 
 const PROVABLE_STRUCT_FIELD_LIMIT: usize = 16;
 const NESTED_ROW_CHUNK_SIZE: usize = 12;
+const PREPROCESSED_L1_FIELD_KEY: u32 = u32::MAX;
 
 fn row_accessors(fields: &[RowField]) -> HashMap<u32, String> {
     fields
@@ -700,10 +742,17 @@ fn render_row_file(air_name: &str, fields: &[RowField], omitted: &[String]) -> S
     ));
     out.push_str("Stage-1 columns (one struct field each):\n\n");
     for f in fields {
-        out.push_str(&format!(
-            "* `{}` — pilout column {} (`{}`)\n",
-            f.lean_name, f.col_idx, f.pilout_name
-        ));
+        if f.col_idx == PREPROCESSED_L1_FIELD_KEY {
+            out.push_str(&format!(
+                "* `{}` — pilout preprocessed column 0 (`{}`)\n",
+                f.lean_name, f.pilout_name
+            ));
+        } else {
+            out.push_str(&format!(
+                "* `{}` — pilout column {} (`{}`)\n",
+                f.lean_name, f.col_idx, f.pilout_name
+            ));
+        }
     }
     if !omitted.is_empty() {
         out.push_str(&format!(
@@ -819,6 +868,7 @@ fn render_constraints_file(
     // channel `push` below, so they are skipped here, exactly as the
     // hand-written `Constraints.lean` does.
     let mut assertions: Vec<(usize, String, Option<String>)> = Vec::new();
+    let mut cross_row_constraints: Vec<(usize, Option<String>)> = Vec::new();
     for (idx, c) in air.constraints.iter().enumerate() {
         let kind = c
             .constraint
@@ -838,6 +888,10 @@ fn render_constraints_file(
         if expr_uses_extf(pilout, air, expr_idx)? {
             // Permutation/lookup running-product constraint — represented
             // by the channel `push`, not an `assertZero`.
+            continue;
+        }
+        if air_name == "MemAlign" && expr_uses_rotated_witness(air, expr_idx)? {
+            cross_row_constraints.push((idx, debug_line.filter(|s| !s.is_empty())));
             continue;
         }
         let rendered = renderer.render_by_idx(expr_idx)?;
@@ -941,6 +995,16 @@ fn render_constraints_file(
     ));
     out.push_str("## Trust note\n\n");
     out.push_str("No axioms. Pure operational declaration.\n");
+    if !cross_row_constraints.is_empty() {
+        out.push_str("\nCross-row constraints are deliberately not flattened into `main`; they\n");
+        out.push_str("belong to the component transition predicates. Omitted source constraints:\n");
+        for (idx, debug) in &cross_row_constraints {
+            match debug.as_deref().map(pil_source_location) {
+                Some(loc) => out.push_str(&format!("* constraint {} ({})\n", idx, loc)),
+                None => out.push_str(&format!("* constraint {}\n", idx)),
+            }
+        }
+    }
     out.push_str("-/\n\n");
 
     out.push_str(&format!("namespace ZiskFv.AirsClean.{}\n\n", air_name));
@@ -1118,6 +1182,16 @@ fn render_constraints_file(
             "  {}.emit {} (memBusDualMessageExpr row)\n",
             channel_value, pushes[1].multiplicity
         ));
+    } else if air_name == "MemAlign" {
+        out.push_str(&format!(
+            "  -- Bus emission: MemAlign's selector-gated tuple on {} {}.\n  \
+             -- Multiplicity and slots come directly from the proves-side hint.\n",
+            channel.bus_label(), push.busid
+        ));
+        out.push_str(&format!(
+            "  {}.emit {} ({} row)\n",
+            channel_value, push.multiplicity, push_name
+        ));
     } else {
         out.push_str(&format!(
             "  -- Bus emission: {} pushes its proves-side tuple onto {} {}.\n  \
@@ -1161,12 +1235,19 @@ pub fn run(
             .as_deref()
             .ok_or_else(|| anyhow!("air has no name"))?,
     );
-    let fields = row_fields(pilout, &hit);
+    let mut fields = row_fields(pilout, &hit);
     if fields.is_empty() {
         bail!(
             "AIR `{}` has no stage-1 witness columns; cannot build a Clean row",
             air_name
         );
+    }
+    if air_name == "MemAlign" {
+        fields.push(RowField {
+            col_idx: PREPROCESSED_L1_FIELD_KEY,
+            lean_name: "preL1".to_string(),
+            pilout_name: "MemAlign.L1".to_string(),
+        });
     }
     let omitted = omitted_stage2_columns(pilout, &hit);
     let row = render_row_file(&air_name, &fields, &omitted);
@@ -1247,11 +1328,15 @@ mod tests {
     use crate::pilout::{operand, Air, Expression, Operand, PilOut};
 
     fn witness(col_idx: u32) -> Operand {
+        witness_at(col_idx, 0)
+    }
+
+    fn witness_at(col_idx: u32, row_offset: i32) -> Operand {
         Operand {
             operand: Some(OperandKind::WitnessCol(operand::WitnessCol {
                 stage: 1,
                 col_idx,
-                row_offset: 0,
+                row_offset,
             })),
         }
     }
@@ -1294,6 +1379,25 @@ mod tests {
             col_to_field: &map,
         };
         assert_eq!(r.render_by_idx(0).unwrap(), "row.a_0");
+    }
+
+    #[test]
+    fn rotated_witness_detection_reaches_nested_expressions() {
+        let air = Air {
+            expressions: vec![
+                add(witness_at(0, 1), constant(vec![])),
+                mul(
+                    Operand {
+                        operand: Some(OperandKind::Expression(operand::Expression { idx: 0 })),
+                    },
+                    witness(1),
+                ),
+                add(witness(0), witness(1)),
+            ],
+            ..Default::default()
+        };
+        assert!(expr_uses_rotated_witness(&air, 1).unwrap());
+        assert!(!expr_uses_rotated_witness(&air, 2).unwrap());
     }
 
     /// `cell * 1` folds; a genuine product is preserved.
