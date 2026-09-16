@@ -1,4 +1,13 @@
 # Clean-component sources become enforced here only after a dedicated review
-# has established byte identity. W0d is report-only, so this registry is empty.
+# has established byte identity.
 
 [air]
+
+[air.BinaryAdd]
+expected = "identical"
+
+[air.MemAlignByte]
+expected = "identical"
+
+[air.MemAlignReadByte]
+expected = "identical"

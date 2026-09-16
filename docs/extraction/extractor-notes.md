@@ -233,11 +233,18 @@ It produces two files:
   intermediates) are **omitted** — Clean's channel-balance machinery
   subsumes them; they are listed in the generated docstring for the record.
 - **`Constraints.lean`** — `main : Var <Air>Row FGL → Circuit FGL Unit`,
-  a do-block of one `assertZero` per F-only pilout constraint followed by
-  the operation-bus `OpBusChannel.push`; plus `<air>Elaborated :
-  ElaboratedCircuit`. The permutation/lookup running-product constraints
+  a do-block of source range/table lookups, one `assertZero` per F-only
+  pilout constraint, and the reconstructed channel pulls and push. Named
+  reducible message builders keep the channel tuples auditable. The
+  permutation/lookup running-product constraints
   (the ones `--air` skip-stubs as ExtF-mixing) are **not** emitted as
   `assertZero`s — they are *represented* by the channel `push`.
+
+`ElaboratedCircuit` remains in each AIR's maintained `Circuit.lean`, not in
+generated `Constraints.lean`. That file owns the component-level name, local
+length, output, and complete channel-requirements list; keeping the generated
+file at the `main`/interaction layer avoids an import cycle and prevents the
+extractor from duplicating component policy.
 
 The op-bus `push` tuple is reconstructed from the AIR's proves-side
 `gsum_debug_data` hint (the `proves_operation(…)` PIL macro). Its 11 slots
@@ -250,7 +257,8 @@ slot-for-slot faithful to the hand-written `opBus_row_<Air>`
 cross-check D-EXT mandates.
 
 C0g validated this on **BinaryAdd** (op-bus); C1 extended it for the
-**memory-bus** shape and validated on **MemAlignByte**. Both AIRs'
+**memory-bus** shape and validated on **MemAlignByte** and
+**MemAlignReadByte**. These three AIRs'
 committed `{Row,Constraints}.lean` are the generated output verbatim
 (faithful-by-construction) — `lake build` is green and the opcodes'
 axiom closures are unchanged. Like every other extractor shape,
