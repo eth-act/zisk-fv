@@ -16,6 +16,7 @@
   "23": ["BinaryMirrorWeld"],
   "24": ["ArithMirrorWeld"],
   "25": ["ZiskFv/AirsClean/Binary/Wiring.lean", "ZiskFv.AirsClean.Binary.Wiring"],
+  "27": ["ZiskFv/AirsClean/Main/Wiring.lean", "ZiskFv.AirsClean.Main.Wiring"],
   "28": ["Mem.RangeWiring", "MemMirrorWeld"],
   "29": ["MainMirrorWeld"],
   "30": ["MainMirrorWeld"],
