@@ -227,6 +227,18 @@ two memory-bus provider hints in source order, preserving both six-slot tuples
 and their `num_reps` multiplicities (`sel` and `sel_dual`) as channel `emit`s.
 An empty F-only constraint set remains valid, as required by BinaryExtension.
 
+MemAlign's generated component is explicitly **single-row only**: constraints
+0–15 and 29 contain rotated witness cells and are listed with source citations
+as excluded cross-row constraints, not flattened or claimed as generated
+transition predicates. The remaining 16 local F constraints include fixed
+column 0 through the explicit `preL1` projection. Its six-slot memory emission
+uses the source multiplicity `sel_prove - (sel_up_to_down + sel_down_to_up)`.
+This is emission support, not replacement of the maintained component or its
+cross-row proof obligations.
+
+When the generated row needs nested chunks, `Constraints.lean` imports its
+generated `Row`, not the unused handwritten `Spec` with a different row layout.
+
 It produces two files:
 
 - **`Row.lean`** — the AIR's *stage-1* witness columns as a
