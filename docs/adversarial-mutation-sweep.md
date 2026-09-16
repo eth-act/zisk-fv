@@ -309,8 +309,15 @@ whole gap in one line.
 The mirror welds are a real, kernel-checked defence, and they cover the row
 algebra of every modelled AIR. What they do not cover is the **interface** — the
 lookup and bus tuples through which the AIRs talk to each other, and the ROM data
-they consult. 186 of 355 extracted constraints are named by some theorem; the 169
+they consult. 185 of 355 extracted constraints are named by some theorem; the 170
 that are not are almost exactly that interface layer.
+
+*Correction, 2026-09-15.* The first version of this report said 186 and 169. The count was a
+textual search, and it counted `MemAlignByte.extraction.constraint_9_every_row`, whose only
+occurrence under `ZiskFv/` at this commit is inside a doc comment in `MemAlignByteMirrorWeld.lean`
+describing a negative control that failed to typecheck. A comment is not coverage. The exposure
+ledger (`tools/mirror-roundtrip/exposure.py`) reproduces 168 exposed at this commit, not 167;
+the rule still calibrates at 31 of 31.
 
 
 ---

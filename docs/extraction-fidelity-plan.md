@@ -160,20 +160,22 @@ missed**.
 
 A rule held over all 31 rounds carrying a semantic diff: a mutation is caught iff it changes a
 constraint that is either named as `<Air>.extraction.constraint_N_every_row` under `ZiskFv/`, or
-covered by a consumed `ValidatedLink`. Applied to the whole population at that commit: **167 of 355
-extracted constraints were exposed.**
+covered by a consumed `ValidatedLink`. Applied to the whole population at that commit: **168 of 355
+extracted constraints were exposed.** (Revision 1 said 167; its textual count took a doc comment in
+`MemAlignByteMirrorWeld.lean` naming `MemAlignByte.extraction.constraint_9_every_row` as coverage.
+W0c's calibration found it; the sweep report carries the same correction.)
 
 | constraint class | covered | exposed |
 |---|--:|--:|
 | pure base field | 151 | 1 |
-| reaches a challenge (cubic extension of Goldilocks) | 12 | 157 |
+| reaches a challenge (cubic extension of Goldilocks) | 11 | 158 |
 | air value only, no challenge | 25 | 9 |
 
 The gap is the stage-2 constraints, and what is exposed there is not the logUp algebra, which the
 project assumes through `channels_balanced`. It is the **bus tuple** folded into the
 accumulator-update constraint. ZisK has no message column.
 
-**Scope.** Single-segment RV64IM, no precompiles, no recursion: **34 of the 167 are out of scope,
+**Scope.** Single-segment RV64IM, no precompiles, no recursion: **34 of the 168 are out of scope,
 all Main's, all cross-segment** (the 31 `main.pil:452` currents, c47/c48 on bus 1000, c142 on bus
 106). **133 were in scope.**
 
@@ -220,9 +222,13 @@ them, and that surfaces only at switch-over.
 
 ## Burn-down
 
-1. **Exposure**, `trust/generated/exposure-ledger.txt`, per AIR and per class, two columns. Last
-   measured 167 / 355 at `019eec25`; recomputed by W0c. Terminal value is the count of declared,
-   cited residuals, printed separately.
+1. **Exposure**, `trust/generated/exposure-ledger.txt`, per AIR and per class, two columns. At
+   `019eec25`: 168 / 355 exposed to the build. W0c's first reading on this branch: 143 exposed to
+   the build, **350 exposed to the root theorem's closure**, 11 tied but not composed, 100 wirable.
+   The root column is the headline: almost nothing extracted is inside `root_soundness`'s import
+   closure today, and that column moves only through W14 (the model re-exports the generated
+   component) or through a tie that a `Soundness.lean` proof consumes. Terminal value is the count
+   of declared, cited residuals, printed separately.
 2. **Generated share**: components whose `Row.lean` and `Constraints.lean` come from the emitter.
    Today **0 of 10**.
 3. **Literal inventory**: constants with a kernel `pin` theorem. Today **3 of about 50**.
@@ -353,7 +359,7 @@ Printed separately: **wirable**, generated links consumed by nothing. Never in t
    historical status); print the **re-run set** (rounds whose prediction changed since their last
    observation). Exit nonzero only on a malformed input.
 3. Calibrate once: in a throwaway worktree at `019eec25`, `nix run .#populate`, run `exposure.py`
-   and confirm 167 exposed-to-build and the rule at 31/31 against the historical statuses. Paste
+   and confirm 168 exposed-to-build and the rule at 31/31 against the historical statuses. Paste
    both outputs in the PR body. Delete the worktree.
 4. Add `run "exposure ledger" python3 tools/mirror-roundtrip/exposure.py` to `nix/test.nix`.
 5. Commit the ledger for this branch and paste it in the PR body with the re-run set.
@@ -362,7 +368,7 @@ Printed separately: **wirable**, generated links consumed by nothing. Never in t
 
 **Report**: the calibration outputs, this branch's ledger, the re-run set, the wirable count.
 
-**Exit**: 167 reproduced at `019eec25`; the branch's ledger committed; the umbrella issue's table
+**Exit**: 168 reproduced at `019eec25`; the branch's ledger committed; the umbrella issue's table
 can be replaced by the ledger's output (do that in W0d's bookkeeping).
 
 ---
