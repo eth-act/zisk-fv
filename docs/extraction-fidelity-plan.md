@@ -32,7 +32,9 @@ Every agent executing any part of this plan follows this section. It is not advi
   `build/`, `tools/extraction-coverage/manifest.json`, evidence directories, and the regenerated
   ledger do not count. State the hand-written line count in the PR body.
 - **Sequencing.** W0b, W0c, W0d merge in order, but implementation is pipelined: as soon as the
-  W0b PR is open and green, cut `w0c-ledger` from `w0b-harness` and implement W0c; open its PR only
+  W0b PR is open and its local `nix run .#test` has passed, cut `w0c-ledger` from `w0b-harness`
+  and implement W0c. **Do not wait for GitHub checks**; they re-run what was already run locally
+  and exist for the owner's merge, not for the next workstream. Open the W0c PR only
   after W0b has merged, after `git rebase --onto extraction-fidelity-hardening w0b-harness
   w0c-ledger`. Same for W0d on W0c. Waiting for a merge is never idle time. After W0, the order is
   the one in *Sequencing* below; a workstream marked *independent* may be started while another PR
@@ -77,7 +79,9 @@ that cannot rebuild ZisK's Rust workspace (crates.io returns 403 there). So:
   around it.
 - A red CI run whose cause is unrelated to the PR (cache miss, crates.io 403, runner offline) is
   fixed by seeding the cache and `gh run rerun <run-id> --failed`, never by a workflow edit.
-- A PR is not ready for review until every check on `gh pr checks <N>` passes.
+- A PR is not ready to **merge** until every check on `gh pr checks <N>` passes. Pending checks
+  never block the next workstream; a failing check is reported and fixed while the next workstream
+  proceeds.
 
 ### PR body
 
