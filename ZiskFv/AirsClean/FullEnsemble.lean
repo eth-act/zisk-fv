@@ -13,7 +13,7 @@ import ZiskFv.AirsClean.MemAlignRomSlice
 import ZiskFv.AirsClean.MemAlignRangeSlice
 import ZiskFv.AirsClean.MemAlignByte.Circuit
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
-import ZiskFv.AirsClean.RegisterBoundary
+import ZiskFv.AirsClean.Main.Wiring
 import Clean.Air.Vm
 
 /-!

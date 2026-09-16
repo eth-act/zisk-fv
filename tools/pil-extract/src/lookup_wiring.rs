@@ -388,6 +388,7 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
                 write_link(&mut out, air, link)?;
             }
         }
+        write_link_index_lists(&mut out, air)?;
     }
     out.push_str("def airStatuses : List AirStatus := [\n");
     for air in &airs {
@@ -435,6 +436,45 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     }
     out.push_str("]\n\nend Extraction.LookupWiring\n");
     Ok(out)
+}
+
+fn write_link_index_lists(out: &mut String, air: &AirManifest) -> Result<()> {
+    if air.air_name != "Main" {
+        return Ok(());
+    }
+    let reloads = air
+        .links
+        .iter()
+        .filter(|link| {
+            link.hints.len() == 1
+                && link.hints[0]
+                    .slots
+                    .iter()
+                    .any(|slot| slot.name.starts_with("Main.last_reg_mem_step["))
+        })
+        .collect::<Vec<_>>();
+    if reloads.len() != 31 {
+        bail!(
+            "Main reload link index expected 31 links, found {}",
+            reloads.len()
+        );
+    }
+    if reloads
+        .iter()
+        .any(|link| link.shape == LinkShape::GsumFinalRow)
+    {
+        bail!("Main reload link index contains a final-row link");
+    }
+    out.push_str("def links_Main_reload : List ValidatedLink := [\n");
+    for link in reloads {
+        writeln!(out, "  link_Main_{},", link.constraint_index)?;
+    }
+    out.push_str("]\n\n");
+    out.push_str(
+        "def link_Main_reload (index : Fin 31) : ValidatedLink :=\n  \
+         links_Main_reload.get (Fin.cast (by rfl) index)\n\n",
+    );
+    Ok(())
 }
 
 fn build_air_manifest(

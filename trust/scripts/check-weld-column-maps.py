@@ -162,10 +162,12 @@ OPTIONAL_KEYS = frozenset(
         "direction",
         "instance-main",
         "column-map-occurrence",
+        "airvalue-map",
     }
 )
 
 RECORDED_RE = re.compile(r"^(\d+)\s+(\S+)$")
+RECORDED_AIRVALUE_RE = re.compile(r"^airvalue\s+(\d+)\s+(\d+)\s+(\S+)$")
 STRUCT_RE = re.compile(r"^structure\s+([A-Za-z_][A-Za-z0-9_']*)\b")
 FIELD_RE = re.compile(r"^\s+([a-z_][A-Za-z0-9_']*)\s*:\s*(\S.*?)\s*$")
 INSTANCE_NAME_RE = re.compile(r"^instance\s+([A-Za-z_][A-Za-z0-9_']*)\s*[:({\[\n]")
@@ -248,11 +250,26 @@ def generated_columns(text: str, stage: int, where: Path) -> dict[int, str]:
     return columns
 
 
+def generated_air_values(text: str, where: Path) -> dict[tuple[int, int], str]:
+    header = re.compile(r"^--\s+stage (\d+) air value (\d+): (.+?)\s*$")
+    values: dict[tuple[int, int], str] = {}
+    for line in text.splitlines():
+        match = header.match(line)
+        if match:
+            key = (int(match.group(1)), int(match.group(2)))
+            if key in values:
+                raise CheckError(f"{where} declares stage-{key[0]} air value {key[1]} twice")
+            values[key] = match.group(3)
+    return values
+
+
 def recorded_columns(text: str, where: Path) -> dict[int, str]:
     columns: dict[int, str] = {}
     for lineno, raw in enumerate(text.splitlines(), start=1):
         line = raw.strip()
         if not line or line.startswith("#"):
+            continue
+        if RECORDED_AIRVALUE_RE.match(line):
             continue
         match = RECORDED_RE.match(line)
         if not match:
@@ -262,6 +279,21 @@ def recorded_columns(text: str, where: Path) -> dict[int, str]:
             raise CheckError(f"{where}:{lineno}: column {index} recorded twice")
         columns[index] = match.group(2)
     return columns
+
+
+def recorded_air_values(text: str, where: Path) -> dict[tuple[int, int], str]:
+    values: dict[tuple[int, int], str] = {}
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        match = RECORDED_AIRVALUE_RE.match(raw.strip())
+        if not match:
+            continue
+        key = (int(match.group(1)), int(match.group(2)))
+        if key in values:
+            raise CheckError(
+                f"{where}:{lineno}: stage-{key[0]} air value {key[1]} recorded twice"
+            )
+        values[key] = match.group(3)
+    return values
 
 
 def structures(text: str) -> dict[str, list[tuple[str, str]]]:
@@ -514,6 +546,7 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
     accessor = str(spec.get("accessor", "c.row"))
     stage = int(spec.get("stage", 1))  # type: ignore[arg-type]
     occurrence = int(spec.get("column-map-occurrence", 1))  # type: ignore[arg-type]
+    airvalue_map = spec.get("airvalue-map")
     aliases = dict(spec.get("aliases", {}))  # type: ignore[arg-type]
     unpinned = list(spec.get("unpinned-instances", []))  # type: ignore[arg-type]
 
@@ -527,6 +560,13 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
     )
     if not recorded:
         raise CheckError(f"{recording_path} records no columns; refusing to pass vacuously")
+    recorded_airvalues = recorded_air_values(
+        read(root, recording_path, f"[air.{air}] recorded air-value layout"), recording_path
+    )
+    if airvalue_map is not None and not recorded_airvalues:
+        raise CheckError(
+            f"[air.{air}] declares `airvalue-map` but {recording_path} records no air values"
+        )
 
     weld_text = read(root, weld_path, f"[air.{air}] weld module")
     arm = arm_regex(accessor)
@@ -655,6 +695,13 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
             failures.append(
                 f"[air.{air}] `theorem {pin}` does not bind `main := {instance_main}`"
             )
+        if airvalue_map is not None and not re.search(
+            rf"exposed\s*:=\s*{re.escape(str(airvalue_map))}(?![A-Za-z0-9_'])", statement
+        ):
+            failures.append(
+                f"[air.{air}] `theorem {pin}` does not bind "
+                f"`exposed := {airvalue_map}`"
+            )
         if instance_main != map_name:
             helper_body, _ = column_map_body(weld_text, instance_main, weld_path)
             if not re.search(
@@ -671,9 +718,8 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
 
     # When the extractor output is present, the recording must reproduce it.
     if (root / generated_path).exists():
-        generated = generated_columns(
-            (root / generated_path).read_text(), stage, generated_path
-        )
+        generated_text = (root / generated_path).read_text()
+        generated = generated_columns(generated_text, stage, generated_path)
         if not generated:
             raise CheckError(
                 f"{generated_path} exists but declares no `stage {stage} col` header; "
@@ -687,6 +733,19 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
                     f"{recorded.get(index)!r} -- rerun `trust/scripts/regenerate.sh`"
                 )
         source = f"reproduces the {len(generated)}-column header in {generated_path}"
+        if airvalue_map is not None:
+            generated_airvalues = generated_air_values(generated_text, generated_path)
+            if not generated_airvalues:
+                raise CheckError(
+                    f"{generated_path} exists but declares no air-value header; refusing to pass vacuously"
+                )
+            for key in sorted(set(generated_airvalues) | set(recorded_airvalues)):
+                if generated_airvalues.get(key) != recorded_airvalues.get(key):
+                    failures.append(
+                        f"[air.{air}] stage-{key[0]} air value {key[1]}: {generated_path} says "
+                        f"{generated_airvalues.get(key)!r} but {recording_path} records "
+                        f"{recorded_airvalues.get(key)!r} -- rerun `trust/scripts/regenerate.sh`"
+                    )
     else:
         source = f"{generated_path} absent (unpopulated tree), so the recording was not re-derived"
 
@@ -701,6 +760,11 @@ def check_air(root: Path, air: str, spec: dict[str, object]) -> tuple[list[str],
         f"`{row_type}` cell{alias_note}, all inside {direction} `def {map_name}`; "
         f"{binding}; {source}."
     )
+    if airvalue_map is not None:
+        summary += (
+            f" Air-value map `{airvalue_map}` is pinned with "
+            f"{len(recorded_airvalues)} recorded names."
+        )
     return failures, summary
 
 

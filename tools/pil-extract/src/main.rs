@@ -587,6 +587,7 @@ fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<Str
         .ok_or_else(|| anyhow!("air has no name"))?;
     let sanitized = sanitize(&name);
     let col_names = witness_column_names(pilout, &hit);
+    let air_values = air_value_names(pilout, &hit);
 
     let mut out = String::new();
     out.push_str("import Mathlib\n\n");
@@ -611,6 +612,16 @@ fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<Str
         entries.sort_by_key(|((stage, id), _)| (*stage, *id));
         for ((stage, id), nm) in entries {
             out.push_str(&format!("--   stage {} col {}: {}\n", stage, id, nm));
+        }
+        out.push('\n');
+    }
+    if !air_values.is_empty() {
+        out.push_str("-- air value names:\n");
+        for (stage, index, value_name) in &air_values {
+            out.push_str(&format!(
+                "--   stage {} air value {}: {}\n",
+                stage, index, value_name
+            ));
         }
         out.push('\n');
     }
@@ -2948,7 +2959,17 @@ fn scoped_symbol_names(
         } else {
             let total: u32 = sym.lengths.iter().product();
             for k in 0..total {
-                out.push((stage, sym.id + k, format!("{}[{}]", sym.name, k)));
+                let mut remainder = k;
+                let mut indices = vec![0; sym.lengths.len()];
+                for (index, length) in sym.lengths.iter().enumerate().rev() {
+                    indices[index] = remainder % length;
+                    remainder /= length;
+                }
+                let suffix = indices
+                    .iter()
+                    .map(|index| format!("[{}]", index))
+                    .collect::<String>();
+                out.push((stage, sym.id + k, format!("{}{}", sym.name, suffix)));
             }
         }
     }
@@ -4234,8 +4255,8 @@ mod tests {
                 r#type: SymbolType::AirValue as i32,
                 id: 15,
                 stage: Some(2),
-                dim: 1,
-                lengths: vec![3],
+                dim: 2,
+                lengths: vec![2, 2],
                 ..Default::default()
             }],
             ..Default::default()
@@ -4245,9 +4266,10 @@ mod tests {
         assert_eq!(
             names,
             vec![
-                (2, 15, "Mem.im_direct[0]".to_string()),
-                (2, 16, "Mem.im_direct[1]".to_string()),
-                (2, 17, "Mem.im_direct[2]".to_string()),
+                (2, 15, "Mem.im_direct[0][0]".to_string()),
+                (2, 16, "Mem.im_direct[0][1]".to_string()),
+                (2, 17, "Mem.im_direct[1][0]".to_string()),
+                (2, 18, "Mem.im_direct[1][1]".to_string()),
             ]
         );
     }
@@ -4807,7 +4829,7 @@ mod tests {
     }
 
     #[test]
-    fn render_air_includes_witness_column_name_header() {
+    fn render_air_includes_witness_and_air_value_name_headers() {
         // When pilout symbols name the witness columns, render_air emits a
         // sorted `-- stage S col C: name` block. The named-constraint
         // layer reads these to bind human-readable accessors.
@@ -4822,16 +4844,28 @@ mod tests {
                 }],
                 ..Default::default()
             }],
-            symbols: vec![pilout::Symbol {
-                name: "x".to_string(),
-                air_group_id: Some(0),
-                air_id: Some(0),
-                r#type: SymbolType::WitnessCol as i32,
-                id: 0,
-                stage: Some(1),
-                dim: 0,
-                ..Default::default()
-            }],
+            symbols: vec![
+                pilout::Symbol {
+                    name: "x".to_string(),
+                    air_group_id: Some(0),
+                    air_id: Some(0),
+                    r#type: SymbolType::WitnessCol as i32,
+                    id: 0,
+                    stage: Some(1),
+                    dim: 0,
+                    ..Default::default()
+                },
+                pilout::Symbol {
+                    name: "Demo.total".to_string(),
+                    air_group_id: Some(0),
+                    air_id: Some(0),
+                    r#type: SymbolType::AirValue as i32,
+                    id: 4,
+                    stage: Some(2),
+                    dim: 0,
+                    ..Default::default()
+                },
+            ],
             ..Default::default()
         };
         let hit = find_air(&pilout, "Demo").unwrap();
@@ -4844,6 +4878,12 @@ mod tests {
             out.contains("-- witness column names:")
                 && out.contains("--   stage 1 col 0: x"),
             "header missing column-name block:\n{}",
+            out
+        );
+        assert!(
+            out.contains("-- air value names:")
+                && out.contains("--   stage 2 air value 4: Demo.total"),
+            "header missing air-value-name block:\n{}",
             out
         );
     }

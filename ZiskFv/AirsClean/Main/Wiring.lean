@@ -1,5 +1,6 @@
 import Extraction.LookupWiring
 import ZiskFv.AirsClean.Main.Constraints
+import ZiskFv.AirsClean.RegisterBoundary
 
 /-!
 # Main operation-bus wiring
@@ -15,6 +16,7 @@ namespace ZiskFv.AirsClean.Main
 open Goldilocks
 open Extraction.LookupWiring
 open ZiskFv.Channels.OperationBus (OpBusMessage)
+open ZiskFv.Channels.MemoryBus (MemBusMessage)
 
 @[reducible]
 def operationExprToClean (row : Var MainRowWithRom FGL) :
@@ -191,5 +193,108 @@ theorem operationExprToClean_rejects_bare_step_parts (row : Var MainRowWithRom F
     operationExprToClean row (.airValue 1) = none
       ∧ operationExprToClean row (.fixed 1 0) = none := by
   exact ⟨rfl, rfl⟩
+
+/-! ## Register reload wiring -/
+
+abbrev ReloadRows :=
+  Fin 31 → Var ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL
+
+/-- The component-owned register address is substituted exactly as
+`RegisterBoundary`'s fixed schema does; the three reload cells remain the
+component's live row variables. -/
+@[reducible]
+def reloadRowAt (rows : ReloadRows) (index : Fin 31) :
+    Var ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL :=
+  { reg := Expression.const ((index.val + 1 : Nat) : FGL)
+    reloadTimestamp := (rows index).reloadTimestamp
+    reloadValue_0 := (rows index).reloadValue_0
+    reloadValue_1 := (rows index).reloadValue_1 }
+
+@[reducible]
+def reloadTuple (message : MemBusMessage (Expression FGL)) : List (Expression FGL) :=
+  [message.mem_op, message.ptr, message.timestamp, message.width,
+    message.value_0, message.value_1]
+
+@[reducible]
+def expectedReloadSlots (index : Fin 31) : List Slot :=
+  [ { name := "3", value := .constant "3" }
+  , { name := toString (index.val + 1), value := .constant (toString (index.val + 1)) }
+  , { name := s!"Main.last_reg_mem_step[{index.val}]",
+      value := .add (.airValue (70 + index.val)) (.constant "0") }
+  , { name := "8", value := .constant "8" }
+  , { name := s!"Main.last_reg_value[{index.val}][0]",
+      value := .add (.airValue (8 + 2 * index.val)) (.constant "0") }
+  , { name := s!"Main.last_reg_value[{index.val}][1]",
+      value := .add (.airValue (9 + 2 * index.val)) (.constant "0") } ]
+
+@[reducible]
+def reloadExprToClean (rows : ReloadRows) (register : Fin 31) :
+    Expr → Option (Expression FGL)
+  | .constant value =>
+      if value = "3" then some 3
+      else if value = "8" then some 8
+      else if value = toString (register.val + 1) then
+        some (Expression.const ((register.val + 1 : Nat) : FGL))
+      else none
+  | .airValue index =>
+      if index = 70 + register.val then some (rows register).reloadTimestamp
+      else if index = 8 + 2 * register.val then some (rows register).reloadValue_0
+      else if index = 9 + 2 * register.val then some (rows register).reloadValue_1
+      else none
+  | .add value (.constant "0") => reloadExprToClean rows register value
+  | _ => none
+
+@[reducible]
+def reloadSlotsToClean (rows : ReloadRows) (register : Fin 31) :
+    List Slot → Option (List (Expression FGL))
+  | [] => some []
+  | slot :: slots => do
+      return (← reloadExprToClean rows register slot.value) ::
+        (← reloadSlotsToClean rows register slots)
+
+theorem reloadLink_one_hint (index : Fin 31) :
+    (link_Main_reload index).hints.length = 1 := by
+  fin_cases index <;> rfl
+
+@[reducible]
+def reloadHint (index : Fin 31) : HintTuple :=
+  (link_Main_reload index).hints[0]'(by rw [reloadLink_one_hint index]; decide)
+
+/-- One quantified witness covers all 31 generated reload constraints. The
+slot equality pins both each pilout name and the air-value expression carrying
+that name; `reloadSlotsToClean` then ties those values to the modeled
+`RegisterBoundary` reload message. -/
+structure ReloadWiring (rows : ReloadRows) (index : Fin 31) where
+  linkShape : (link_Main_reload index).shape = .direct
+  constraintValidated :
+    templateOf (link_Main_reload index).shape
+      (link_Main_reload index).alpha (link_Main_reload index).gamma
+      (link_Main_reload index).accumulator (link_Main_reload index).hints
+      (link_Main_reload index).derivedTuples = some (link_Main_reload index).constraint
+  linkedHint : (link_Main_reload index).hints = [reloadHint index]
+  piop : (reloadHint index).piop = "Permutation"
+  bus : (reloadHint index).busId = .constant "10"
+  proves : (reloadHint index).proves = true
+  multiplicity : (reloadHint index).multiplicity = .constant "1"
+  exactNamedSlots : (reloadHint index).slots = expectedReloadSlots index
+  slotInterpretation :
+    reloadSlotsToClean rows index (reloadHint index).slots =
+      some (reloadTuple
+        (ZiskFv.AirsClean.RegisterBoundary.reloadMessageExpr (reloadRowAt rows index)))
+
+set_option maxRecDepth 10000 in
+def reloadWiring (rows : ReloadRows) (index : Fin 31) : ReloadWiring rows index where
+  linkShape := by fin_cases index <;> rfl
+  constraintValidated := ValidatedLink.constraintValidated (link_Main_reload index)
+  linkedHint := by fin_cases index <;> rfl
+  piop := by fin_cases index <;> rfl
+  bus := by fin_cases index <;> rfl
+  proves := by fin_cases index <;> rfl
+  multiplicity := by fin_cases index <;> rfl
+  exactNamedSlots := by fin_cases index <;> rfl
+  slotInterpretation := by
+    rw [show (reloadHint index).slots = expectedReloadSlots index by
+      fin_cases index <;> rfl]
+    fin_cases index <;> rfl
 
 end ZiskFv.AirsClean.Main
