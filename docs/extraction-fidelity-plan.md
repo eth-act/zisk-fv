@@ -66,7 +66,7 @@ that cannot rebuild ZisK's Rust workspace (crates.io returns 403 there). So:
   every affected derivation, then verify the cache holds it:
 
   ```bash
-  nix --extra-experimental-features 'nix-command flakes' build --print-out-paths \
+  nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths \
     .#zisk-pilout .#zisk-fixed-data .#extracted-lean .#pil-extract .#pil2-compiler \
     .#mutation-compiler .#virtual-table-check .#sail-lean-tree > /tmp/outs
   nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#cachix -c \
@@ -143,11 +143,20 @@ ledger. Never mutate issue relationships.
 - Lean and lake are only on `PATH` inside the dev shell:
   `nix --extra-experimental-features 'nix-command flakes' develop --command <cmd>`.
 - The full gate: `NIX_CONFIG='extra-experimental-features = nix-command flakes' nix run .#test`.
-- **New worktree, warm cache, verified.** `cp -a --reflink=auto /home/lee/zisk-fv-w0/.lake
-  <worktree>/.lake`, then in the dev shell `lake exe cache get` (Mathlib's olean cache; CI does the
-  same), then start `lake build --log-level=warning`. If its first lines print
-  `Built Mathlib.…`, the copy is incomplete: stop the build, rerun `lake exe cache get`, and start
-  again. Compiling Mathlib from source is never acceptable; it costs an hour for nothing.
+- **New worktree, reflinked cache, verified.** The volume supports reflinks, so a cache copy costs
+  nothing until a file is rewritten. Create every worktree like this and no other way:
+
+  ```bash
+  git worktree add /home/lee/zisk-fv-<id> -b <branch> <base>
+  cp -a --reflink=always /home/lee/zisk-fv/.lake  /home/lee/zisk-fv-<id>/.lake
+  cp -a --reflink=always /home/lee/zisk-fv/build  /home/lee/zisk-fv-<id>/build
+  ```
+
+  `--reflink=always` fails loudly if sharing is impossible; never fall back to a plain copy. Then in
+  the dev shell run `lake exe cache get`, then `lake build --log-level=warning`; if its first lines
+  print `Built Mathlib.…`, stop, rerun `lake exe cache get`, and start again. Compiling Mathlib from
+  source is never acceptable. Measure a worktree's real cost with `df` before and after, never
+  with `du`, which counts shared extents in full.
 - **One gate per PR.** `nix run .#test` runs `lake build` (step 6/10) and both trust gates (8/10,
   9/10) in the worktree it is run from. Run it once, in the worktree you developed in, after the
   workstream's own focused checks. Do not run `lake build` and both gates separately and then run
@@ -156,13 +165,26 @@ ledger. Never mutate issue relationships.
   and never commit it.
 - The cachix token lives at `/home/lee/.open-secrets/cachix-token-cody-agent` (see the cache
   rule). A no-op push of an already-cached path is the way to test it.
-- **Disk.** `/home` and `/nix/store` share one 1.7 TB volume, and every mutation round leaves its
-  per-round derivation outputs in the store as garbage. Rules: run **one** evidence suite at a
-  time, never two; before starting a suite, `df -h /home` must show at least 150 GB free, else run
-  `nix-collect-garbage --max-freed 300G` first; after every suite, run it again; pass `--cleanup`
-  to `runner.py suite`; measure free space with `df`, never with `du`, because worktree caches
-  are reflink copies and `du` overstates what deleting them frees. Remove a worktree's `.lake` and
-  `build/` once its PR is merged; recreate from the warm cache if the branch needs work again.
+- **Disk budget and cleanup.** `/home` and `/nix/store` share one 1.7 TB volume. These rules are
+  part of finishing a workstream, not housekeeping to do later:
+  1. **At most four workstream worktrees exist at once**, plus `/home/lee/zisk-fv` (the integration
+     checkout) and the cache-less `freeze/*` worktree. Before creating a fifth, remove one.
+  2. **When a PR is opened and its local gate is green**, its worktree is removed:
+     `git worktree remove --force /home/lee/zisk-fv-<id>`. Review fixes recreate it from the
+     reflinked cache in minutes. The branch stays on `origin`.
+  3. **When a PR merges**, delete the local branch (`git branch -D <branch>`), delete any
+     `result*` symlinks it left, and remove its worktree if step 2 did not.
+  4. **Never leave `result*` symlinks.** They are GC roots. Build for the cache with
+     `nix build --no-link --print-out-paths …`, and delete any `result*` found under a worktree.
+  5. **Evidence runs.** One suite at a time, never two. Before a suite, `df -h /home` must show at
+     least 150 GB free, else run `nix-collect-garbage --max-freed 300G` first. Run the suite with
+     `--cleanup`. After `--commit-evidence`, delete `mutation-results/` (the logs are not evidence),
+     delete anything left under `/home/lee/.zisk-fv-mutation-work`, and run
+     `nix-collect-garbage --max-freed 300G` again.
+  6. **Audit checkouts** (a detached worktree used to build and gate a foreign branch) are removed
+     the moment their finding is written into a PR body.
+  7. **Every PR body's Bookkeeping section lists** the worktrees created and removed and the
+     `df -h /home` free figure at the end of the workstream.
 
 ---
 
@@ -433,8 +455,8 @@ faithfulness.py`, `trust/generated-components.toml` (new), `nix/test.nix` (one `
 3. **First evidence run**, by hand, on this branch after 1 and 2 are committed, alone (no other
    suite running), with 150 GB free first:
    `runner.py suite --profile regression --results-dir mutation-results --cleanup` then
-   `--commit-evidence <short-sha>`. Budget: hours. Then `rule_check.py`, then
-   `nix-collect-garbage --max-freed 300G`.
+   `--commit-evidence <short-sha>`. Budget: hours. Then `rule_check.py`, then delete
+   `mutation-results/` and run `nix-collect-garbage --max-freed 300G` (disk rule 5).
 4. Bookkeeping, now permitted: replace #368's table with the ledger; on #375, #376, #372 record
    which rounds were observed CAUGHT with the evidence path. Close #375 and #376 only if all of
    their rounds are CAUGHT; close nothing else.
@@ -451,7 +473,8 @@ closes when this PR merges.
 
 Smallest first. *Independent* workstreams may be opened while another PR awaits review; dependent
 ones are stacked on the PR they depend on. There is always a next workstream: when every dependent
-one is stacked and waiting, take the next independent one.
+one is stacked and waiting, take the next independent one. The four-worktree cap (disk rule 1)
+bounds how many are in flight: opening a PR and removing its worktree is what frees a slot.
 
 | order | workstream | depends on | independent |
 |---|---|---|---|
