@@ -452,6 +452,20 @@ def rotate_witness_names(lines: List[str]) -> Applied:
     return lines, f"{len(names)} names in order", "the same names rotated by one column"
 
 
+def rotate_air_value_names(lines: List[str]) -> Applied:
+    """Shift every generated air-value name up one index."""
+    pattern = re.compile(r"^(--\s+stage\s+\d+\s+air value\s+\d+:\s)(.*)$")
+    found = [(i, match) for i, line in enumerate(lines)
+             if (match := pattern.match(line.strip()))]
+    if len(found) < 2:
+        raise MutationError("fewer than two air value names to rotate")
+    names = [match.group(2) for _, match in found]
+    for (i, match), name in zip(found, names[1:] + names[:1]):
+        indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+        lines[i] = indent + match.group(1) + name
+    return lines, f"{len(names)} names in order", "the same names rotated by one index"
+
+
 def stub_every_block(reason: str) -> Mutator:
     """Turn every constraint in the file into a skip stub, leaving no `def`.
 
@@ -657,6 +671,13 @@ MUTATIONS: List[Mutation] = [
         intent="the witness-column name header off by one against PilOut.symbols",
         expect_exit=EXIT_FAILED, expect=frozenset({ACCT}),
         apply=rotate_witness_names,
+    ),
+    Mutation(
+        name="AIRVALUE_NAME_SHIFT",
+        air="Main", target="air-value header rotated by one index",
+        intent="the air-value name legend off by one against PilOut.symbols",
+        expect_exit=EXIT_FAILED, expect=frozenset({ACCT}),
+        apply=rotate_air_value_names,
     ),
     Mutation(
         name="WIRING_DROP",

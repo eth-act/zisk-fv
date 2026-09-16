@@ -88,6 +88,22 @@ def generated_links(source: str) -> dict[tuple[str, int], tuple[str, tuple[int, 
     return links
 
 
+def generated_link_aliases(source: str) -> dict[str, set[str]]:
+    """Generated per-family list/accessor names that consume individual links."""
+    blocks = definition_blocks(source)
+    aliases: dict[str, set[str]] = defaultdict(set)
+    for name, block in blocks.items():
+        if not name.startswith("links_"):
+            continue
+        members = {match.group(0) for match in LINK_RE.finditer(block)}
+        for member in members:
+            aliases[member].add(name)
+            singular = name.replace("links_", "link_", 1)
+            if re.search(rf"\b{re.escape(name)}\b", blocks.get(singular, "")):
+                aliases[member].add(singular)
+    return aliases
+
+
 def imported_paths(path: Path, reach) -> list[Path]:
     out = []
     for module in reach.imports_of(str(path)):
@@ -207,7 +223,9 @@ def inventory() -> tuple[list[Row], int, set[int]]:
     reach = load_reachability()
     build_text = closure_text(reach, "ZiskFv")
     root_text = closure_text(reach, "ZiskFv.Soundness")
-    links = generated_links(LINKS.read_text(errors="replace"))
+    links_text = LINKS.read_text(errors="replace")
+    links = generated_links(links_text)
+    link_aliases = generated_link_aliases(links_text)
     providers = provider_buses(reach)
     residuals = residual_entries()
     rows = []
@@ -221,8 +239,13 @@ def inventory() -> tuple[list[Row], int, set[int]]:
         for index in sorted(declared):
             direct = f"{air}.extraction.constraint_{index}_every_row"
             link, buses = links.get((air, index), ("", ()))
-            build_link = bool(link and re.search(rf"\b{re.escape(link)}\b", build_text))
-            root_link = bool(link and re.search(rf"\b{re.escape(link)}\b", root_text))
+            link_names = {link} | link_aliases.get(link, set()) if link else set()
+            build_link = any(
+                re.search(rf"\b{re.escape(name)}\b", build_text) for name in link_names
+            )
+            root_link = any(
+                re.search(rf"\b{re.escape(name)}\b", root_text) for name in link_names
+            )
             if build_link:
                 consumed_any.add((air, index))
             build_exposed = direct not in build_text and not build_link
