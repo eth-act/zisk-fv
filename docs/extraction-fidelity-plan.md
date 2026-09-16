@@ -31,16 +31,20 @@ Every agent executing any part of this plan follows this section. It is not advi
 - **Size limit.** At most 800 changed lines of hand-written content per PR. Generated Lean under
   `build/`, `tools/extraction-coverage/manifest.json`, evidence directories, and the regenerated
   ledger do not count. State the hand-written line count in the PR body.
-- **Sequencing.** W0b, W0c, W0d merge in order, but implementation is pipelined: as soon as the
-  W0b PR is open and its local `nix run .#test` has passed, cut `w0c-ledger` from `w0b-harness`
-  and implement W0c. **Do not wait for GitHub checks**; they re-run what was already run locally
-  and exist for the owner's merge, not for the next workstream. Open the W0c PR only
-  after W0b has merged, after `git rebase --onto extraction-fidelity-hardening w0b-harness
-  w0c-ledger`. Same for W0d on W0c. Waiting for a merge is never idle time. After W0, the order is
-  the one in *Sequencing* below; a workstream marked *independent* may be started while another PR
-  awaits review; otherwise pipeline the same way and report "PR blocked on merge of #N".
-- **The agent never merges, never pushes to `main`, never force-pushes the integration branch,
-  never deletes a `freeze/*` branch, and never opens a second PR to `main` while #377 is open.**
+- **Sequencing.** Workstreams run in the order this file gives, without pauses. When the next
+  workstream depends on a PR that has not merged, **stack on it**: cut the new branch from the
+  parent branch, open the PR with `--base <parent-branch>`, and keep going. When the parent merges,
+  run `git rebase --onto <target> <parent-branch> <child>`, `git push --force-with-lease`, and
+  `gh pr edit <N> --base <target>`. Waiting for a merge, a review, or a GitHub check is never a
+  reason to stop.
+- **Phase A merges.** W0b, W0c and W0d change tooling and generated files only. Once such a PR's
+  checks are green and its nine sections are filled, the agent merges it into the integration
+  branch itself with `gh pr merge <N> --squash --delete-branch`, then retargets and rebases any
+  child PR. The owner's review of milestone 0 covers them. In Phase B the owner merges.
+- **The agent never pushes to `main`, never merges to `main`, never force-pushes the integration
+  branch or `main`, never deletes a `freeze/*` branch, and never opens a second PR to `main` while
+  #377 is open.** `git push --force-with-lease` on a `w*-` branch the agent created is allowed and
+  expected after a rebase.
 
 ### Commits
 
@@ -98,14 +102,36 @@ Every PR body has these sections, in this order, each present even if it says "n
 8. **Open hypotheses** — anything believed but not verified.
 9. **Owner decisions requested** — questions that block the next step, or "none".
 
-### Reporting and stopping
+### Autonomy, reporting and stopping
 
-- After each PR is open and green: report using the nine sections above, then continue to the next
-  workstream only if the sequencing rules allow it.
-- Stop and report when: a check fails for a reason the plan does not cover; a step needs a trust
-  marker, a new hypothesis, an allowlist edit, or a validator change; the cache token is missing;
-  an owner decision is requested; or a workstream's exit criterion cannot be met as written.
-- Never edit GitHub issues before W0c has printed the ledger. Never mutate issue relationships.
+The agent runs the whole sequence without asking for acknowledgement. Reports go into PR bodies
+and PR comments, not into a pause. **Anything not on the stop list below is not a stop.**
+
+Stop, report, and wait for the owner only when:
+
+1. a gate fails and the only fix in sight is a trust marker, an allowlist edit, a validator change,
+   a new caller-supplied hypothesis, or a change to a public theorem statement;
+2. a workstream's exit criterion cannot be met as written, after the fix was attempted;
+3. a step in this file says "owner decision" or "stop and report" by name;
+4. the cachix token file is missing;
+5. a git operation on a shared branch (`main`, the integration branch, `freeze/*`) would need
+   `--force` or a history rewrite;
+6. the sequencing table has no workstream left that the dependency rules allow.
+
+Not stops, with the required action instead:
+
+- **A measured number differs from a number in this file.** This file's numbers are expectations.
+  Record the measured number and the reason in the PR body, keep the measured one, continue. (The
+  167 → 168 calibration was this case.) A *rule* failing, such as the 31/31 check, is case 2.
+- **A GitHub check is pending or red for an infrastructure reason.** Seed the cache, rerun, continue
+  with the next workstream in parallel.
+- **A parent PR has not merged.** Stack on it (see Sequencing).
+- **A finding worth the owner's attention that blocks nothing.** Put it under "Owner decisions
+  requested" or "Open hypotheses" in the PR body and continue.
+- **Finishing a workstream.** Open the PR, then cut the next branch immediately.
+
+The owner reads PR bodies and PR comments. Never edit GitHub issues before W0c has printed the
+ledger. Never mutate issue relationships.
 
 ### Environment
 
@@ -326,8 +352,9 @@ regression profile is runnable; self-tests cover the additions.
 
 ## W0c · The exposure ledger — #369 (part)
 
-**Branch** `w0c-ledger` from the integration branch after W0b merged. **PR target** the
-integration branch. **Size** one PR.
+**Branch** `w0c-ledger`, cut from `w0b-harness` (stacked) or from the integration branch if W0b
+has merged. **PR target** the parent branch, retargeted to the integration branch when the parent
+merges. **Size** one PR.
 
 **Touches** `tools/mirror-roundtrip/exposure.py` (new), `tools/mirror-roundtrip/rule_check.py`
 (new), `trust/exposure-residuals.toml` (new, empty except a header), `trust/generated/
@@ -375,8 +402,9 @@ can be replaced by the ledger's output (do that in W0d's bookkeeping).
 
 ## W0d · The faithfulness report and the first evidence run — #369
 
-**Branch** `w0d-faithfulness` from the integration branch after W0c merged. **PR target** the
-integration branch. **Size** one PR for the report; the evidence run adds only JSON files.
+**Branch** `w0d-faithfulness`, cut from `w0c-ledger` (stacked) or from the integration branch if
+W0c has merged. **PR target** the parent branch, retargeted when it merges. **Size** one PR for the
+report; the evidence run adds only JSON files.
 
 **Touches** `tools/pil-extract` invocation only via a new script `tools/clean-components/
 faithfulness.py`, `trust/generated-components.toml` (new), `nix/test.nix` (one `run` line),
@@ -407,7 +435,9 @@ closes when this PR merges.
 
 ## Sequencing after W0
 
-Smallest first. *Independent* workstreams may be opened while another PR awaits review.
+Smallest first. *Independent* workstreams may be opened while another PR awaits review; dependent
+ones are stacked on the PR they depend on. There is always a next workstream: when every dependent
+one is stacked and waiting, take the next independent one.
 
 | order | workstream | depends on | independent |
 |---|---|---|---|
