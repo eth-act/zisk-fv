@@ -93,8 +93,6 @@ def expected_detection_layer(item: Round) -> str:
         return "equivalent"
     if item.historical_class == "EQUIVALENT" and item.number != 50:
         return "equivalent"
-    if item.number == 27:
-        return "fidelity"  # recorded scope boundary, not a promised weld
     return "proof"
 
 

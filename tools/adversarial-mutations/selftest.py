@@ -30,8 +30,8 @@ def test_corpus() -> None:
     check(sum(r.historical_class == "VALID" for r in rounds) == 35, "valid count")
     check(sum(r.expected_outcome == "proof" for r in rounds) == 24, "caught count")
     check(sum(r.expected_outcome == "fidelity" for r in rounds) == 11, "missed count")
-    check(runner.expected_detection_layer(runner.round_by_number(27)) == "fidelity",
-          "recorded scope boundary")
+    check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
+          "round 27 is caught after Main c41 is tied")
     check(runner.expected_detection_layer(runner.round_by_number(50)) == "proof",
           "production ROM target")
 
