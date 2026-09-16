@@ -151,6 +151,13 @@ ledger. Never mutate issue relationships.
   and never commit it.
 - The cachix token lives at `/home/lee/.open-secrets/cachix-token-cody-agent` (see the cache
   rule). A no-op push of an already-cached path is the way to test it.
+- **Disk.** `/home` and `/nix/store` share one 1.7 TB volume, and every mutation round leaves its
+  per-round derivation outputs in the store as garbage. Rules: run **one** evidence suite at a
+  time, never two; before starting a suite, `df -h /home` must show at least 150 GB free, else run
+  `nix-collect-garbage --max-freed 300G` first; after every suite, run it again; pass `--cleanup`
+  to `runner.py suite`; measure free space with `df`, never with `du`, because worktree caches
+  are reflink copies and `du` overstates what deleting them frees. Remove a worktree's `.lake` and
+  `build/` once its PR is merged; recreate from the warm cache if the branch needs work again.
 
 ---
 
@@ -418,9 +425,11 @@ faithfulness.py`, `trust/generated-components.toml` (new), `nix/test.nix` (one `
    Report-only unless `trust/generated-components.toml` has `expected = "identical"` for that AIR,
    in which case a non-empty diff fails. The file starts with no entries.
 2. Add the `run` line to `nix/test.nix`.
-3. **First evidence run**, by hand, on this branch after 1 and 2 are committed:
-   `runner.py suite --profile regression --results-dir mutation-results` then
-   `--commit-evidence <short-sha>`. Budget: hours. Then `rule_check.py`.
+3. **First evidence run**, by hand, on this branch after 1 and 2 are committed, alone (no other
+   suite running), with 150 GB free first:
+   `runner.py suite --profile regression --results-dir mutation-results --cleanup` then
+   `--commit-evidence <short-sha>`. Budget: hours. Then `rule_check.py`, then
+   `nix-collect-garbage --max-freed 300G`.
 4. Bookkeeping, now permitted: replace #368's table with the ledger; on #375, #376, #372 record
    which rounds were observed CAUGHT with the evidence path. Close #375 and #376 only if all of
    their rounds are CAUGHT; close nothing else.
