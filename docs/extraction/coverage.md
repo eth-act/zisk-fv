@@ -75,5 +75,8 @@ currently wirable but unconsumed; those are never counted as proof exposure.
 the same ten registered AIRs and compares each emitted `Row.lean` and
 `Constraints.lean` with its committed `ZiskFv/AirsClean/<Air>/` counterpart.
 The report preserves unsupported-emission reasons and changed-line counts.
-It becomes a failing equality gate for an AIR only after that AIR is reviewed
-and marked `expected = "identical"` in `trust/generated-components.toml`.
+It becomes a failing equality gate for an AIR only after that AIR is reviewed.
+`expected = "identical"` compares the emitted pair with its maintained source;
+after model switchover, `expected = "consumed"` compares against the populated
+`Extraction.Components.<Air>` pair and also requires both maintained modules to
+re-export those generated declarations.

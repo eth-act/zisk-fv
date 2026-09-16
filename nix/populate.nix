@@ -6,9 +6,9 @@
 #
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
-#   build/extraction/Extraction/*.lean     ← extracted-lean, including the
-#                                             Circuit shim and
-#                                             MemGeneratedArtifact/bridge files
+#   build/extraction/Extraction/           ← extracted-lean, including the
+#                                             Circuit shim, component modules,
+#                                             and MemGeneratedArtifact/bridge files
 #   build/extraction/MemAirFacts.md        ← extracted-lean
 #   build/clean-lean/                      ← clean-source.
 #   build/aeneas-lean/                      ← aeneas-lean-source (the
@@ -70,6 +70,9 @@ EOF
       cp --no-preserve=mode "$f" "build/extraction/Extraction/$base"
       chmod u+w "build/extraction/Extraction/$base"
     done
+    cp -r --no-preserve=mode "${extracted-lean}/Components" \
+      build/extraction/Extraction/Components
+    chmod -R u+w build/extraction/Extraction/Components
 
     echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
     cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
