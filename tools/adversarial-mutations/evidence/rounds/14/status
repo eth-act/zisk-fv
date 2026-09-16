@@ -1,0 +1,28 @@
+{
+  "build_exit": "1",
+  "build_seconds": "114",
+  "changed": [
+    "LookupWiring.lean",
+    "MemAlign.lean"
+  ],
+  "errors": "22:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:413:2: Type mismatch\n29:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:419:2: Type mismatch\n36:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:425:2: Type mismatch\n43:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:427:0: maximum recursion depth has been reached\n46:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:465:2: Type mismatch\n81:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:538:2: Type mismatch\n103:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:553:2: Type mismatch\n118:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:846:0: maximum recursion depth has been reached\n121:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:927:0: maximum recursion depth has been reached\n124:error: Lean exited with code 1\n128:error: ZiskFv/AirsClean/MemAlign/Bridge.lean:197:2: Unknown identifier `hint_MemAlign_36_1.slots.map`\n129:error: ZiskFv/AirsClean/MemAlign/Bridge.lean:226:13: Unknown identifier `hint_MemAlign_36_1`\n130:error: ZiskFv/AirsClean/MemAlign/Bridge.lean:235:4: Tactic `rfl` failed: The left-hand side\n137:error: Lean exited with code 1\n170:error: build failed\n",
+  "historical_reach": [
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`",
+    "* `MemAlign.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.LookupWiring",
+    "Extraction.MemAlign",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 32,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

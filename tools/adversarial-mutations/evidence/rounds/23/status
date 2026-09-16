@@ -1,0 +1,31 @@
+{
+  "build_exit": "1",
+  "build_seconds": "528",
+  "changed": [
+    "Binary.lean"
+  ],
+  "errors": "21:error: ZiskFv/AirsClean/BinaryMirrorWeld.lean:262:2: Type mismatch\n27:error: ZiskFv/AirsClean/BinaryMirrorWeld.lean:308:2: Type mismatch\n39:error: ZiskFv/AirsClean/BinaryMirrorWeld.lean:328:2: Type mismatch\n51:error: Lean exited with code 1\n460:error: build failed\n",
+  "historical_reach": [
+    "* `Binary.lean` \u2014 read by `ZiskFv/AirsClean/BinaryMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Binary",
+    "Extraction.LookupWiring",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 407,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

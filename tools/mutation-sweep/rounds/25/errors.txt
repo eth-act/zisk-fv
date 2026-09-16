@@ -1,7 +1,0 @@
-26:error: ZiskFv/AirsClean/Binary/Wiring.lean:55:2: Unknown identifier `derivedTuple_Binary_10_0.slots.map`
-27:error: ZiskFv/AirsClean/Binary/Wiring.lean:84:10: Unknown identifier `link_Binary_10`
-28:error: ZiskFv/AirsClean/Binary/Wiring.lean:85:17: Unknown identifier `derivedTuple_Binary_10_0`
-29:error: ZiskFv/AirsClean/Binary/Wiring.lean:86:20: Unknown identifier `derivedTuple_Binary_10_1`
-30:error: ZiskFv/AirsClean/Binary/Wiring.lean:93:19: Type mismatch
-36:error: Lean exited with code 1
-441:error: build failed

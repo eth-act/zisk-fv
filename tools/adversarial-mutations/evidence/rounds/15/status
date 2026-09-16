@@ -1,0 +1,33 @@
+{
+  "build_exit": "1",
+  "build_seconds": "115",
+  "changed": [
+    "MemAlignByte.lean",
+    "MemAlignReadByte.lean",
+    "MemAlignWriteByte.lean"
+  ],
+  "errors": "25:error: ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean:323:2: Type mismatch\n31:error: ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean:378:2: Type mismatch\n46:error: ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean:398:2: Type mismatch\n52:error: ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean:419:2: Type mismatch\n62:error: ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean:450:2: Type mismatch\n68:error: ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean:497:2: Type mismatch\n87:error: Lean exited with code 1\n120:error: build failed\n",
+  "historical_reach": [
+    "* `MemAlignByte.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean`",
+    "* `MemAlignReadByte.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean`",
+    "* `MemAlignWriteByte.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.LookupWiring",
+    "Extraction.MemAlign",
+    "Extraction.MemAlignByte",
+    "Extraction.MemAlignReadByte",
+    "Extraction.MemAlignWriteByte",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 35,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

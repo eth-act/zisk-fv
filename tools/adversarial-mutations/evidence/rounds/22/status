@@ -1,0 +1,35 @@
+{
+  "build_exit": "0",
+  "build_seconds": "512",
+  "changed": [
+    "Binary.lean",
+    "LookupWiring.lean"
+  ],
+  "errors": "",
+  "historical_reach": [
+    "* `Binary.lean` \u2014 read by `ZiskFv/AirsClean/BinaryMirrorWeld.lean`",
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Arith",
+    "Extraction.Binary",
+    "Extraction.LookupWiring",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.BinaryMirrorWeld",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 410,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

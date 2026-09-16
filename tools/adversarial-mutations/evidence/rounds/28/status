@@ -1,0 +1,31 @@
+{
+  "build_exit": "1",
+  "build_seconds": "196",
+  "changed": [
+    "LookupWiring.lean",
+    "Mem.lean"
+  ],
+  "errors": "27:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:76:19: Type mismatch\n34:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:89:19: Type mismatch\n41:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:102:19: Type mismatch\n48:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:109:10: Unknown identifier `link_Mem_32`\n49:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:110:10: Unknown identifier `hint_Mem_32_0`\n50:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:130:0: Not a definitional equality: the left-hand side\n54:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:131:77: Type mismatch\n60:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:133:0: Not a definitional equality: the left-hand side\n64:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:134:77: Type mismatch\n70:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:136:0: Not a definitional equality: the left-hand side\n74:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:137:75: Type mismatch\n80:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:139:0: Not a definitional equality: the left-hand side\n84:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:140:75: Type mismatch\n90:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:151:2: Type mismatch\n100:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:162:2: Type mismatch\n110:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:173:2: Type mismatch\n120:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:184:2: Type mismatch\n130:error: ZiskFv/AirsClean/Mem/RangeWiring.lean:215:64: Tactic `rfl` failed: The left-hand side\n136:error: Lean exited with code 1\n316:error: build failed\n",
+  "historical_reach": [
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`",
+    "* `Mem.lean` \u2014 read by `ZiskFv/AirsClean/MemMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.LookupWiring",
+    "Extraction.Main",
+    "Extraction.Mem",
+    "Extraction.MemAlign",
+    "Extraction.MemAlignByte",
+    "Extraction.MemAlignWriteByte",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.MainMirrorWeld",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemAlignByteMirrorWeld",
+    "ZiskFv.AirsClean.MemAlignMirrorWeld"
+  ],
+  "rebuilt_jobs": 184,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

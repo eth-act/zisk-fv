@@ -1,0 +1,34 @@
+{
+  "build_exit": "1",
+  "build_seconds": "536",
+  "changed": [
+    "Binary.lean",
+    "LookupWiring.lean"
+  ],
+  "errors": "26:error: ZiskFv/AirsClean/Binary/Wiring.lean:55:2: Unknown identifier `derivedTuple_Binary_10_0.slots.map`\n27:error: ZiskFv/AirsClean/Binary/Wiring.lean:84:10: Unknown identifier `link_Binary_10`\n28:error: ZiskFv/AirsClean/Binary/Wiring.lean:85:17: Unknown identifier `derivedTuple_Binary_10_0`\n29:error: ZiskFv/AirsClean/Binary/Wiring.lean:86:20: Unknown identifier `derivedTuple_Binary_10_1`\n30:error: ZiskFv/AirsClean/Binary/Wiring.lean:93:19: Type mismatch\n36:error: Lean exited with code 1\n441:error: build failed\n",
+  "historical_reach": [
+    "* `Binary.lean` \u2014 read by `ZiskFv/AirsClean/BinaryMirrorWeld.lean`",
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Arith",
+    "Extraction.Binary",
+    "Extraction.LookupWiring",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.BinaryMirrorWeld",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 408,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

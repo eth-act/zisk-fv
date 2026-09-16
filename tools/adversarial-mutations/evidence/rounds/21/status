@@ -1,0 +1,31 @@
+{
+  "build_exit": "1",
+  "build_seconds": "496",
+  "changed": [
+    "Arith.lean"
+  ],
+  "errors": "22:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:330:2: Type mismatch\n28:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:36: Application type mismatch: The argument\n43:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:49: Application type mismatch: The argument\n63:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:64: Application type mismatch: The argument\n82:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:372:4: Application type mismatch: The argument\n102:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:372:52: Application type mismatch: The argument\n116:error: Lean exited with code 1\n524:error: build failed\n",
+  "historical_reach": [
+    "* `Arith.lean` \u2014 read by `ZiskFv/AirsClean/ArithMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Arith",
+    "Extraction.LookupWiring",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 407,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

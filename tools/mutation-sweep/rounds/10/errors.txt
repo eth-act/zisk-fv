@@ -1,6 +1,0 @@
-23:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:425:2: Type mismatch
-30:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:431:2: Type mismatch
-37:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:465:2: Type mismatch
-72:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:538:2: Type mismatch
-94:error: Lean exited with code 1
-97:error: build failed

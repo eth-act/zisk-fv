@@ -1,0 +1,20 @@
+{
+  "build_exit": "1",
+  "build_seconds": "13",
+  "changed": [
+    "Arith.lean"
+  ],
+  "errors": "22:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:371:36: Application type mismatch: The argument\n37:error: Lean exited with code 1\n40:error: build failed\n",
+  "historical_reach": [
+    "* `Arith.lean` \u2014 read by `ZiskFv/AirsClean/ArithMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Arith",
+    "Extraction.Main"
+  ],
+  "rebuilt_jobs": 2,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}
