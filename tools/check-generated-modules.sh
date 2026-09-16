@@ -15,6 +15,8 @@ expected_modules=(
   BinaryExtension
   Buses
   Circuit
+  Components/BinaryAdd/Constraints
+  Components/BinaryAdd/Row
   LookupWiring
   Main
   Mem
@@ -35,7 +37,7 @@ if [[ ! -d "$generated_dir" ]]; then
 fi
 
 mapfile -t actual_modules < <(
-  find "$generated_dir" -maxdepth 1 -type f -name '*.lean' -printf '%f\n' |
+  find "$generated_dir" -type f -name '*.lean' -printf '%P\n' |
     sed 's/\.lean$//' | sort
 )
 mapfile -t sorted_expected < <(printf '%s\n' "${expected_modules[@]}" | sort)
@@ -49,7 +51,7 @@ fi
 
 compile_targets=()
 for module in "${expected_modules[@]}"; do
-  compile_targets+=("Extraction.$module")
+  compile_targets+=("Extraction.${module//\//.}")
 done
 
 cd "$repo_root"

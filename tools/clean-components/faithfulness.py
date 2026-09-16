@@ -20,6 +20,7 @@ PILOUT = ROOT / "build" / "zisk.pilout"
 OUTPUT_ROOT = ROOT / "build" / "clean-components"
 POLICY = ROOT / "trust" / "generated-components.toml"
 SOURCE_ROOT = ROOT / "ZiskFv" / "AirsClean"
+GENERATED_ROOT = ROOT / "build" / "extraction" / "Extraction" / "Components"
 
 MEMORY_BUS_AIRS = frozenset(
     {"MemAlign", "MemAlignByte", "MemAlignReadByte", "MemAlignWriteByte"}
@@ -49,9 +50,10 @@ def load_policy() -> dict[str, str]:
         if not isinstance(table, dict) or set(table) != {"expected"}:
             raise ValueError(f"{POLICY}: air.{air} must contain only `expected`")
         value = table["expected"]
-        if value != "identical":
+        if value not in {"identical", "consumed"}:
             raise ValueError(
-                f"{POLICY}: air.{air}.expected must be \"identical\", got {value!r}"
+                f"{POLICY}: air.{air}.expected must be \"identical\" or "
+                f"\"consumed\", got {value!r}"
             )
         expected[air] = value
     return expected
@@ -100,7 +102,7 @@ def failure_reason(stderr: str) -> str:
     return " | ".join(line.removeprefix("Error: ") for line in lines)
 
 
-def inspect_air(air: str, command: list[str]) -> Result:
+def inspect_air(air: str, command: list[str], policy: str | None) -> Result:
     destination = OUTPUT_ROOT / air
     destination.mkdir(parents=True, exist_ok=True)
     row = destination / "Row.lean"
@@ -138,7 +140,7 @@ def inspect_air(air: str, command: list[str]) -> Result:
     if not row.is_file() or not constraints.is_file():
         return Result(air, False, "extractor did not write both source files", None, None)
 
-    committed = SOURCE_ROOT / air
+    committed = GENERATED_ROOT / air if policy == "consumed" else SOURCE_ROOT / air
     return Result(
         air,
         True,
@@ -159,7 +161,7 @@ def main() -> int:
         return 2
 
     command = extractor_command()
-    results = [inspect_air(air, command) for air in DECLARED_AIRS]
+    results = [inspect_air(air, command, expected.get(air)) for air in DECLARED_AIRS]
 
     print("AIR                     emits  Row diff  Constraints diff  reason")
     print("----------------------  -----  --------  ----------------  ------")
@@ -177,16 +179,30 @@ def main() -> int:
     for result in results:
         if result.air not in expected:
             continue
+        policy = expected[result.air]
         if not result.emitted:
-            failures.append(f"{result.air}: expected identical, but emitter failed")
+            failures.append(f"{result.air}: expected {policy}, but emitter failed")
         elif result.row_diff or result.constraints_diff:
             failures.append(
-                f"{result.air}: expected identical, got Row={result.row_diff} "
+                f"{result.air}: expected {policy}, got Row={result.row_diff} "
                 f"Constraints={result.constraints_diff} changed lines"
             )
+        if policy == "consumed":
+            for leaf in ("Row", "Constraints"):
+                maintained = SOURCE_ROOT / result.air / f"{leaf}.lean"
+                expected_import = f"import Extraction.Components.{result.air}.{leaf}"
+                if not maintained.is_file() or expected_import not in maintained.read_text().splitlines():
+                    failures.append(
+                        f"{result.air}: consumed policy requires {maintained.relative_to(ROOT)} "
+                        f"to import {expected_import}"
+                    )
 
     emitted = sum(result.emitted for result in results)
-    print(f"\nsummary: {emitted} emit; {len(results) - emitted} do not; {len(expected)} enforced")
+    consumed = sum(policy == "consumed" for policy in expected.values())
+    print(
+        f"\nsummary: {emitted} emit; {len(results) - emitted} do not; "
+        f"{len(expected)} enforced; {consumed} consumed of {len(results)}"
+    )
     for failure in failures:
         print(f"faithfulness: {failure}", file=sys.stderr)
     return 1 if failures else 0

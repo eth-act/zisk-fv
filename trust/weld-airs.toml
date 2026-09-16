@@ -189,14 +189,3 @@ row-decl = ["ZiskFv/Airs/Binary/Binary.lean"]
 leaf-type-heads = ["ℕ"]
 generated = "build/extraction/Extraction/Binary.lean"
 recording = "trust/generated/weld-columns/binary.txt"
-
-[air.BinaryAdd]
-weld = "ZiskFv/AirsClean/BinaryMirrorWeld.lean"
-direction = "inverse"
-column-map = "validOfCircuit"
-column-map-occurrence = 2
-row-type = "Valid_BinaryAdd"
-row-decl = ["ZiskFv/Airs/Binary/BinaryAdd.lean"]
-leaf-type-heads = ["ℕ"]
-generated = "build/extraction/Extraction/BinaryAdd.lean"
-recording = "trust/generated/weld-columns/binary-add.txt"
