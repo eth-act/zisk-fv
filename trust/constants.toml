@@ -1,0 +1,488 @@
+# Registry of model literals checked against PIL and generated extraction.
+# `check-constants.py` validates both directions: every in-scope model
+# declaration is registered, and every registry entry resolves at all surfaces.
+
+[[constant]]
+name = "OP_ADD"
+kind = "opcode"
+value = 10
+pil = "zisk/pil/operations.pil:37"
+pil-symbol = "OP_ADD"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_ADD_pinned"
+
+[[constant]]
+name = "OP_EQ"
+kind = "opcode"
+value = 9
+pil = "zisk/pil/operations.pil:36"
+pil-symbol = "OP_EQ"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_EQ_pinned"
+
+[[constant]]
+name = "OP_LT"
+kind = "opcode"
+value = 7
+pil = "zisk/pil/operations.pil:34"
+pil-symbol = "OP_LT"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_LT_pinned"
+
+[[constant]]
+name = "OP_LTU"
+kind = "opcode"
+value = 6
+pil = "zisk/pil/operations.pil:33"
+pil-symbol = "OP_LTU"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_LTU_pinned"
+
+[[constant]]
+name = "OP_FLAG"
+kind = "opcode"
+value = 0
+pil = "zisk/pil/operations.pil:26"
+pil-symbol = "OP_FLAG"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_FLAG_pinned"
+
+[[constant]]
+name = "OP_COPYB"
+kind = "opcode"
+value = 1
+pil = "zisk/pil/operations.pil:27"
+pil-symbol = "OP_COPYB"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_COPYB_pinned"
+
+[[constant]]
+name = "OP_SLL_W"
+kind = "opcode"
+value = 36
+pil = "zisk/pil/operations.pil:62"
+pil-symbol = "OP_SLL_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SLL_W_pinned"
+
+[[constant]]
+name = "OP_SLL"
+kind = "opcode"
+value = 33
+pil = "zisk/pil/operations.pil:59"
+pil-symbol = "OP_SLL"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SLL_pinned"
+
+[[constant]]
+name = "OP_SRL"
+kind = "opcode"
+value = 34
+pil = "zisk/pil/operations.pil:60"
+pil-symbol = "OP_SRL"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SRL_pinned"
+
+[[constant]]
+name = "OP_SRA"
+kind = "opcode"
+value = 35
+pil = "zisk/pil/operations.pil:61"
+pil-symbol = "OP_SRA"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SRA_pinned"
+
+[[constant]]
+name = "OP_SRL_W"
+kind = "opcode"
+value = 37
+pil = "zisk/pil/operations.pil:63"
+pil-symbol = "OP_SRL_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SRL_W_pinned"
+
+[[constant]]
+name = "OP_SRA_W"
+kind = "opcode"
+value = 38
+pil = "zisk/pil/operations.pil:64"
+pil-symbol = "OP_SRA_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SRA_W_pinned"
+
+[[constant]]
+name = "OP_ADD_W"
+kind = "opcode"
+value = 26
+pil = "zisk/pil/operations.pil:54"
+pil-symbol = "OP_ADD_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_ADD_W_pinned"
+
+[[constant]]
+name = "OP_SUB_W"
+kind = "opcode"
+value = 27
+pil = "zisk/pil/operations.pil:55"
+pil-symbol = "OP_SUB_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_SUB_W_pinned"
+
+[[constant]]
+name = "OP_MUL"
+kind = "opcode"
+value = 180
+pil = "zisk/pil/operations.pil:75"
+pil-symbol = "OP_MUL"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_MUL_pinned"
+
+[[constant]]
+name = "OP_MULU"
+kind = "opcode"
+value = 176
+pil = "zisk/pil/operations.pil:71"
+pil-symbol = "OP_MULU"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_MULU_pinned"
+
+[[constant]]
+name = "OP_MULUH"
+kind = "opcode"
+value = 177
+pil = "zisk/pil/operations.pil:72"
+pil-symbol = "OP_MULUH"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_MULUH_pinned"
+
+[[constant]]
+name = "OP_MULSUH"
+kind = "opcode"
+value = 179
+pil = "zisk/pil/operations.pil:74"
+pil-symbol = "OP_MULSUH"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_MULSUH_pinned"
+
+[[constant]]
+name = "OP_MULH"
+kind = "opcode"
+value = 181
+pil = "zisk/pil/operations.pil:76"
+pil-symbol = "OP_MULH"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_MULH_pinned"
+
+[[constant]]
+name = "OP_MUL_W"
+kind = "opcode"
+value = 182
+pil = "zisk/pil/operations.pil:77"
+pil-symbol = "OP_MUL_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_MUL_W_pinned"
+
+[[constant]]
+name = "OP_SUB"
+kind = "opcode"
+value = 11
+pil = "zisk/pil/operations.pil:38"
+pil-symbol = "OP_SUB"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_SUB_pinned"
+
+[[constant]]
+name = "OP_AND"
+kind = "opcode"
+value = 14
+pil = "zisk/pil/operations.pil:41"
+pil-symbol = "OP_AND"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_AND_pinned"
+
+[[constant]]
+name = "OP_OR"
+kind = "opcode"
+value = 15
+pil = "zisk/pil/operations.pil:42"
+pil-symbol = "OP_OR"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_OR_pinned"
+
+[[constant]]
+name = "OP_XOR"
+kind = "opcode"
+value = 16
+pil = "zisk/pil/operations.pil:43"
+pil-symbol = "OP_XOR"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OP_XOR_pinned"
+
+[[constant]]
+name = "OP_SIGNEXTEND_B"
+kind = "opcode"
+value = 39
+pil = "zisk/pil/operations.pil:65"
+pil-symbol = "OP_SEXT_B"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SIGNEXTEND_B_pinned"
+
+[[constant]]
+name = "OP_SIGNEXTEND_H"
+kind = "opcode"
+value = 40
+pil = "zisk/pil/operations.pil:66"
+pil-symbol = "OP_SEXT_H"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SIGNEXTEND_H_pinned"
+
+[[constant]]
+name = "OP_SIGNEXTEND_W"
+kind = "opcode"
+value = 41
+pil = "zisk/pil/operations.pil:67"
+pil-symbol = "OP_SEXT_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/Arith.lean"
+pin = "OP_SIGNEXTEND_W_pinned"
+
+[[constant]]
+name = "OP_DIVU"
+kind = "opcode"
+value = 184
+pil = "zisk/pil/operations.pil:79"
+pil-symbol = "OP_DIVU"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_DIVU_pinned"
+
+[[constant]]
+name = "OP_REMU"
+kind = "opcode"
+value = 185
+pil = "zisk/pil/operations.pil:80"
+pil-symbol = "OP_REMU"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_REMU_pinned"
+
+[[constant]]
+name = "OP_DIV"
+kind = "opcode"
+value = 186
+pil = "zisk/pil/operations.pil:81"
+pil-symbol = "OP_DIV"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_DIV_pinned"
+
+[[constant]]
+name = "OP_REM"
+kind = "opcode"
+value = 187
+pil = "zisk/pil/operations.pil:82"
+pil-symbol = "OP_REM"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_REM_pinned"
+
+[[constant]]
+name = "OP_DIVU_W"
+kind = "opcode"
+value = 188
+pil = "zisk/pil/operations.pil:83"
+pil-symbol = "OP_DIVU_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_DIVU_W_pinned"
+
+[[constant]]
+name = "OP_REMU_W"
+kind = "opcode"
+value = 189
+pil = "zisk/pil/operations.pil:84"
+pil-symbol = "OP_REMU_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_REMU_W_pinned"
+
+[[constant]]
+name = "OP_DIV_W"
+kind = "opcode"
+value = 190
+pil = "zisk/pil/operations.pil:85"
+pil-symbol = "OP_DIV_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_DIV_W_pinned"
+
+[[constant]]
+name = "OP_REM_W"
+kind = "opcode"
+value = 191
+pil = "zisk/pil/operations.pil:86"
+pil-symbol = "OP_REM_W"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/ArithTable.lean"
+pin = "OP_REM_W_pinned"
+
+[[constant]]
+name = "REGISTER_STEP_RANGE_BUS_ID"
+kind = "bus-id"
+value = 102
+pil = "zisk/state-machines/main/pil/main.pil:333"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "REGISTER_STEP_RANGE_BUS_ID_pinned"
+
+[[constant]]
+name = "MEM_DISTANCE_RANGE_BUS_ID"
+kind = "bus-id"
+value = 103
+pil = "zisk/state-machines/mem/pil/mem.pil:267"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "MEM_DISTANCE_RANGE_BUS_ID_pinned"
+
+[[constant]]
+name = "MEM_VALUE_RANGE_BUS_ID"
+kind = "bus-id"
+value = 106
+pil = "zisk/state-machines/mem/pil/mem.pil:152"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "MEM_VALUE_RANGE_BUS_ID_pinned"
+
+[[constant]]
+name = "MEM_ALIGN_RANGE_BUS_ID"
+kind = "bus-id"
+value = 107
+pil = "zisk/state-machines/mem/pil/mem_align.pil:114"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "MEM_ALIGN_RANGE_BUS_ID_pinned"
+
+[[constant]]
+name = "BINARY_EXTENSION_TABLE_BUS_ID"
+kind = "bus-id"
+value = 124
+pil = "zisk/pil/opids.pil:21"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "BINARY_EXTENSION_TABLE_BUS_ID_pinned"
+
+[[constant]]
+name = "MAIN_CONTINUATION_BUS_ID"
+kind = "bus-id"
+value = 1000
+pil = "zisk/pil/opids.pil:5"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "MAIN_CONTINUATION_BUS_ID_pinned"
+
+[[constant]]
+name = "ROM_BUS_ID"
+kind = "bus-id"
+value = 7890
+pil = "zisk/pil/opids.pil:9"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "ROM_BUS_ID_pinned"
+
+[[constant]]
+name = "MEMORY_BUS_ID"
+kind = "bus-id"
+value = 10
+pil = "zisk/pil/opids.pil:12"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "MEMORY_BUS_ID_pinned"
+
+[[constant]]
+name = "OPERATION_BUS_ID"
+kind = "bus-id"
+value = 5000
+pil = "zisk/pil/opids.pil:2"
+model = "ZiskFv/RowShape/Contract.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OPERATION_BUS_ID_pinned"
+
+[[constant]]
+name = "BinaryTableChannel"
+kind = "channel"
+value = 125
+pil = "zisk/pil/opids.pil:20"
+model = "ZiskFv/Channels/BinaryTable.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "BINARY_TABLE_BUS_ID_pinned"
+
+[[constant]]
+name = "BinaryExtensionTableChannel"
+kind = "channel"
+value = 124
+pil = "zisk/pil/opids.pil:21"
+model = "ZiskFv/Channels/BinaryExtensionTable.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "BINARY_EXTENSION_TABLE_BUS_ID_pinned"
+
+[[constant]]
+name = "MemBusChannel"
+kind = "channel"
+value = 10
+pil = "zisk/pil/opids.pil:12"
+model = "ZiskFv/Channels/MemoryBus.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "MEMORY_BUS_ID_pinned"
+
+[[constant]]
+name = "OpBusChannel"
+kind = "channel"
+value = 5000
+pil = "zisk/pil/opids.pil:2"
+model = "ZiskFv/Channels/OperationBus.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "OPERATION_BUS_ID_pinned"
+
+[[constant]]
+name = "ZiskRomBus"
+kind = "channel"
+value = 7890
+pil = "zisk/pil/opids.pil:9"
+model = "ZiskFv/Channels/ZiskRomBus.lean"
+generated = "build/extraction/Extraction/LookupWiring.lean"
+pin = "ROM_BUS_ID_pinned"
+
+[[constant]]
+name = "memAlignFixedCapacity"
+kind = "extractor-item"
+value = 2097152
+pil = "zisk/pil/src/pil_helpers/traces.rs:331"
+model = "ZiskFv/AirsClean/MemAlign/Circuit.lean"
+issue = "eth-act/zisk-fv#366"
+status = "missing generated numRows field; not an exemption"
