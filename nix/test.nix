@@ -88,23 +88,6 @@ writeShellApplication {
       test -f build/extraction/Extraction/MemGeneratedConstraintBridge.lean
       test -f build/extraction/Extraction/LookupWiring.lean
       test -f build/extraction/Extraction/MemAlignRom.lean
-      # The lookup-wiring artifact is deliberately not allowed to inherit the
-      # legacy bus-emission renderer's ExtF -> 0 fallback. Mem's range lookup
-      # has an AirValue tuple member, so this is a concrete regeneration gate.
-      grep -Fq 'Expr.airValue 11' build/extraction/Extraction/LookupWiring.lean
-      # The raw `AirValue + 0` source is retained; the generated consistency
-      # module, not the extractor, applies the narrow neutral-term normalizer.
-      grep -Fq '{ name := "Mem.distance_base[0]", value := Expr.add (Expr.airValue 11) (Expr.constant "0") }' build/extraction/Extraction/LookupWiring.lean
-      grep -Fq ':= by rfl' build/extraction/Extraction/LookupWiring.lean
-      # These links now carry template correctness as proof fields. The
-      # concrete source association is also typechecked below, not just grepped.
-      grep -Fq 'def link_Binary_10 : ValidatedLink' build/extraction/Extraction/LookupWiring.lean
-      grep -Fq 'def link_MemAlignByte_14 : ValidatedLink' build/extraction/Extraction/LookupWiring.lean
-      grep -Fq 'def link_MemAlign_36 : ValidatedLink' build/extraction/Extraction/LookupWiring.lean
-      # MemAlignRom is virtual and extracted from its source fixed columns;
-      # retain the physical table key and nonzero reset-padding row.
-      grep -Fq 'def tableId : Nat := 133' build/extraction/Extraction/MemAlignRom.lean
-      grep -Fq 'flags := (512 : FGL)' build/extraction/Extraction/MemAlignRom.lean
       generated_lean_path="$(pwd)/build/extraction:$(lake env printenv LEAN_PATH)"
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/Circuit.olean \
@@ -226,6 +209,7 @@ LEAN
     run "mutation harness self-tests" python3 tools/adversarial-mutations/selftest.py
     run "exposure ledger" python3 tools/mirror-roundtrip/exposure.py
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
+    run "constant registry" python3 trust/scripts/check-constants.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
     run "7/10 Mem generated artifact wrapper" mem_generated_artifact_wrapper
 

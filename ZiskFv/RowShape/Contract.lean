@@ -1405,4 +1405,68 @@ ADDIW row-shape contract quantifies over the nominal register/imm shape.) -/
     drive the rd-write `pc + 4` derivation in JumpUType.
 
     **Trust class.** Same as JAL PC provenance contract. See
-    `trust/trusted-base.md` entry **TP-JALR**. -/
+`trust/trusted-base.md` entry **TP-JALR**. -/
+
+/-! ## Extraction constant pins
+
+These kernel-checked equalities are the Lean side of `trust/constants.toml`.
+The registry independently checks each value against its cited PIL line and a
+generated occurrence; these declarations prevent the model-side literal from
+drifting behind a comment-only citation. -/
+
+theorem OP_ADD_pinned : OP_ADD = 10 := rfl
+theorem OP_EQ_pinned : OP_EQ = 9 := rfl
+theorem OP_LT_pinned : OP_LT = 7 := rfl
+theorem OP_LTU_pinned : OP_LTU = 6 := rfl
+theorem OP_FLAG_pinned : OP_FLAG = 0 := rfl
+theorem OP_COPYB_pinned : OP_COPYB = 1 := rfl
+theorem OP_SLL_W_pinned : OP_SLL_W = 36 := rfl
+theorem OP_SLL_pinned : OP_SLL = 33 := rfl
+theorem OP_SRL_pinned : OP_SRL = 34 := rfl
+theorem OP_SRA_pinned : OP_SRA = 35 := rfl
+theorem OP_SRL_W_pinned : OP_SRL_W = 37 := rfl
+theorem OP_SRA_W_pinned : OP_SRA_W = 38 := rfl
+theorem OP_ADD_W_pinned : OP_ADD_W = 26 := rfl
+theorem OP_SUB_W_pinned : OP_SUB_W = 27 := rfl
+theorem OP_MUL_pinned : OP_MUL = 180 := rfl
+theorem OP_MULU_pinned : OP_MULU = 176 := rfl
+theorem OP_MULUH_pinned : OP_MULUH = 177 := rfl
+theorem OP_MULSUH_pinned : OP_MULSUH = 179 := rfl
+theorem OP_MULH_pinned : OP_MULH = 181 := rfl
+theorem OP_MUL_W_pinned : OP_MUL_W = 182 := rfl
+theorem OP_SUB_pinned : OP_SUB = 11 := rfl
+theorem OP_AND_pinned : OP_AND = 14 := rfl
+theorem OP_OR_pinned : OP_OR = 15 := rfl
+theorem OP_XOR_pinned : OP_XOR = 16 := rfl
+theorem OP_SIGNEXTEND_B_pinned : OP_SIGNEXTEND_B = 39 := rfl
+theorem OP_SIGNEXTEND_H_pinned : OP_SIGNEXTEND_H = 40 := rfl
+theorem OP_SIGNEXTEND_W_pinned : OP_SIGNEXTEND_W = 41 := rfl
+theorem OP_DIVU_pinned : OP_DIVU = 184 := rfl
+theorem OP_REMU_pinned : OP_REMU = 185 := rfl
+theorem OP_DIV_pinned : OP_DIV = 186 := rfl
+theorem OP_REM_pinned : OP_REM = 187 := rfl
+theorem OP_DIVU_W_pinned : OP_DIVU_W = 188 := rfl
+theorem OP_REMU_W_pinned : OP_REMU_W = 189 := rfl
+theorem OP_DIV_W_pinned : OP_DIV_W = 190 := rfl
+theorem OP_REM_W_pinned : OP_REM_W = 191 := rfl
+
+@[simp] def REGISTER_STEP_RANGE_BUS_ID : FGL := 102
+@[simp] def MEM_DISTANCE_RANGE_BUS_ID : FGL := 103
+@[simp] def MEM_VALUE_RANGE_BUS_ID : FGL := 106
+@[simp] def MEM_ALIGN_RANGE_BUS_ID : FGL := 107
+@[simp] def BINARY_EXTENSION_TABLE_BUS_ID : FGL := 124
+@[simp] def BINARY_TABLE_BUS_ID : FGL := 125
+@[simp] def MAIN_CONTINUATION_BUS_ID : FGL := 1000
+@[simp] def ROM_BUS_ID : FGL := 7890
+@[simp] def MEMORY_BUS_ID : FGL := 10
+
+theorem REGISTER_STEP_RANGE_BUS_ID_pinned : REGISTER_STEP_RANGE_BUS_ID = 102 := rfl
+theorem MEM_DISTANCE_RANGE_BUS_ID_pinned : MEM_DISTANCE_RANGE_BUS_ID = 103 := rfl
+theorem MEM_VALUE_RANGE_BUS_ID_pinned : MEM_VALUE_RANGE_BUS_ID = 106 := rfl
+theorem MEM_ALIGN_RANGE_BUS_ID_pinned : MEM_ALIGN_RANGE_BUS_ID = 107 := rfl
+theorem BINARY_EXTENSION_TABLE_BUS_ID_pinned : BINARY_EXTENSION_TABLE_BUS_ID = 124 := rfl
+theorem BINARY_TABLE_BUS_ID_pinned : BINARY_TABLE_BUS_ID = 125 := rfl
+theorem MAIN_CONTINUATION_BUS_ID_pinned : MAIN_CONTINUATION_BUS_ID = 1000 := rfl
+theorem ROM_BUS_ID_pinned : ROM_BUS_ID = 7890 := rfl
+theorem MEMORY_BUS_ID_pinned : MEMORY_BUS_ID = 10 := rfl
+theorem OPERATION_BUS_ID_pinned : OPERATION_BUS_ID = 5000 := rfl
