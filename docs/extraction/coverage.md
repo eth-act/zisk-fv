@@ -70,3 +70,10 @@ the root-soundness import closure, which consumed generated links are tied to a
 bus that `fullRv64imSoundEnsemble` does not compose, and which findings have a
 source-cited residual declaration. It also reports generated links that are
 currently wirable but unconsumed; those are never counted as proof exposure.
+
+`tools/clean-components/faithfulness.py` runs `pil-extract clean-component` for
+the same ten registered AIRs and compares each emitted `Row.lean` and
+`Constraints.lean` with its committed `ZiskFv/AirsClean/<Air>/` counterpart.
+The report preserves unsupported-emission reasons and changed-line counts.
+It becomes a failing equality gate for an AIR only after that AIR is reviewed
+and marked `expected = "identical"` in `trust/generated-components.toml`.
