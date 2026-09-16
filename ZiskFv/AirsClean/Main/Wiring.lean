@@ -187,6 +187,83 @@ theorem operationWiring_liveSlotEvaluation (env : Environment FGL)
   simp only [Option.map_some, opBusTuple, List.map_cons, List.map_nil, Expression.eval]
   simp [h_noPrecompile]
 
+/-- PIL's physical spelling of the b-side distance keeps the timestamp as
+`(1 + 4 * STEP) + 1`; the live component folds the two constants to `2`. -/
+@[reducible]
+def sourceBRegStepDistanceExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  ((1 + 4 * row.rom.main_step) + 1) - row.rom.b_reg_prev_mem_step - 1
+
+/-- PIL's physical spelling of the store-side distance keeps the timestamp as
+`(1 + 4 * STEP) + 2`; the live component folds the two constants to `3`. -/
+@[reducible]
+def sourceCRegStepDistanceExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  ((1 + 4 * row.rom.main_step) + 2) - row.rom.store_reg_prev_mem_step - 1
+
+/-- The generated c41 cluster is exactly the pair of b- and store-side
+bus-102 register-step range checks emitted by the live Main component. -/
+structure RegisterStepRangeWiring (row : Var MainRowWithRom FGL) where
+  link : ValidatedLink
+  bHint : HintTuple
+  cHint : HintTuple
+  c41Link : link = link_Main_41
+  linkedHints : link.hints = [bHint, cHint]
+  linkShape : link.shape = .cluster2
+  constraintValidated :
+    templateOf link.shape link.alpha link.gamma link.accumulator
+      link.hints link.derivedTuples = some link.constraint
+  bPiop : bHint.piop = "Range Check"
+  cPiop : cHint.piop = "Range Check"
+  bBus : bHint.busId = .constant "102"
+  cBus : cHint.busId = .constant "102"
+  bIsAssumes : bHint.proves = false
+  cIsAssumes : cHint.proves = false
+  bMultiplicityInterpretation :
+    operationExprToClean row bHint.multiplicity = some row.rom.b_src_reg
+  cMultiplicityInterpretation :
+    operationExprToClean row cHint.multiplicity = some row.rom.store_reg
+  bSlotInterpretation : operationSlotsToClean row bHint.slots =
+    some [sourceBRegStepDistanceExpr row]
+  cSlotInterpretation : operationSlotsToClean row cHint.slots =
+    some [sourceCRegStepDistanceExpr row]
+
+set_option maxRecDepth 10000 in
+@[reducible]
+def registerStepRangeWiring (row : Var MainRowWithRom FGL) :
+    RegisterStepRangeWiring row where
+  link := link_Main_41
+  bHint := hint_Main_41_0
+  cHint := hint_Main_41_1
+  c41Link := rfl
+  linkedHints := rfl
+  linkShape := rfl
+  constraintValidated := ValidatedLink.constraintValidated link_Main_41
+  bPiop := rfl
+  cPiop := rfl
+  bBus := rfl
+  cBus := rfl
+  bIsAssumes := rfl
+  cIsAssumes := rfl
+  bMultiplicityInterpretation := rfl
+  cMultiplicityInterpretation := rfl
+  bSlotInterpretation := rfl
+  cSlotInterpretation := rfl
+
+/-- The exact c41 b-side source slot evaluates to the live range message. -/
+theorem eval_sourceBRegStepDistanceExpr_eq_live (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    Expression.eval env (sourceBRegStepDistanceExpr row) =
+      Expression.eval env (bRegStepDistanceExpr row) := by
+  simp only [Expression.eval]
+  ring
+
+/-- The exact c41 store-side source slot evaluates to the live range message. -/
+theorem eval_sourceCRegStepDistanceExpr_eq_live (env : Environment FGL)
+    (row : Var MainRowWithRom FGL) :
+    Expression.eval env (sourceCRegStepDistanceExpr row) =
+      Expression.eval env (cRegStepDistanceExpr row) := by
+  simp only [Expression.eval]
+  ring
+
 /-- Raw AIR-value or fixed-column syntax is rejected unless it occurs in the
 audited physical STEP expression. -/
 theorem operationExprToClean_rejects_bare_step_parts (row : Var MainRowWithRom FGL) :
