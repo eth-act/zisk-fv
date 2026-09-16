@@ -62,3 +62,11 @@ proved.
 
 The CI artifact includes a compact report of added, removed, and changed AIRs,
 routes, links, and outputs. The full manifest remains the reviewed baseline.
+
+`tools/mirror-roundtrip/exposure.py` complements this structural denominator
+with the generated `trust/generated/exposure-ledger.txt`: for each extracted AIR
+and constraint class it records what is exposed to the normal Lake build and to
+the root-soundness import closure, which consumed generated links are tied to a
+bus that `fullRv64imSoundEnsemble` does not compose, and which findings have a
+source-cited residual declaration. It also reports generated links that are
+currently wirable but unconsumed; those are never counted as proof exposure.
