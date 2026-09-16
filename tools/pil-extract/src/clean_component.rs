@@ -284,6 +284,10 @@ struct CleanBusEmission {
     /// The bus id this push targets — recorded for provenance in the
     /// generated file's op-bus comment.
     busid: u64,
+    /// Rendered `num_reps` operand. Most existing generated components use
+    /// the channel's fixed `push` multiplicity; Mem has selector-gated
+    /// provider emissions and therefore consumes this value explicitly.
+    multiplicity: String,
     /// Per-slot rendered Lean expression, positional (slot 0 = op, …). The
     /// names are discarded — the slot *position* fixes the `OpBusMessage`
     /// field, mirroring `OpBusMessage`'s declared field order.
@@ -458,7 +462,7 @@ fn resolve_bus_push(
         {
             continue;
         }
-        let (busid, is_proves, piop, slots) = parse_op_bus_hint(&renderer, hint)
+        let (busid, is_proves, piop) = hint_route(hint)
             .with_context(|| format!("gsum_debug_data hint #{}", hi))?;
         // Keep only the proves-side push of the channel's PIOP kind on
         // the target bus — the assumes-side pulls and the inert
@@ -466,6 +470,8 @@ fn resolve_bus_push(
         if busid != bus_id || !is_proves || piop != want_piop {
             continue;
         }
+        let (_, _, _, multiplicity, slots) = parse_op_bus_hint(&renderer, hint)
+            .with_context(|| format!("gsum_debug_data hint #{}", hi))?;
         if found.is_some() {
             bail!(
                 "AIR `{}` has more than one proves-side `{}` emission on \
@@ -477,6 +483,7 @@ fn resolve_bus_push(
         }
         found = Some(CleanBusEmission {
             busid,
+            multiplicity,
             slot_values: slots,
         });
     }
@@ -515,11 +522,14 @@ fn resolve_bus_emissions(
         {
             continue;
         }
-        let (hint_bus, hint_proves, hint_piop, slots) = parse_op_bus_hint(&renderer, hint)
+        let (hint_bus, hint_proves, hint_piop) = hint_route(hint)
             .with_context(|| format!("gsum_debug_data hint #{}", hi))?;
         if hint_bus == bus_id && hint_proves == is_proves && hint_piop == piop {
+            let (_, _, _, multiplicity, slots) = parse_op_bus_hint(&renderer, hint)
+                .with_context(|| format!("gsum_debug_data hint #{}", hi))?;
             emissions.push(CleanBusEmission {
                 busid: hint_bus,
+                multiplicity,
                 slot_values: slots,
             });
         }
@@ -550,13 +560,45 @@ fn write_message_definition(
     out.push('\n');
 }
 
-/// Decode a `gsum_debug_data` hint into
-/// `(busid, is_proves, name_piop, slot_values)`, rendering each tuple
-/// slot through the Clean-row expression renderer.
+/// Read only a `gsum_debug_data` hint's routing fields. Tuple slots are
+/// deliberately left untouched until the caller knows that the hint belongs
+/// to the requested bus and PIOP kind.
+fn hint_route(hint: &Hint) -> Result<(u64, bool, String)> {
+    let outer = hint
+        .hint_fields
+        .first()
+        .ok_or_else(|| anyhow!("hint has no fields"))?;
+    let array = match outer.value.as_ref() {
+        Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
+        _ => bail!("gsum_debug_data outer field is not a HintFieldArray"),
+    };
+    let busid = match hint_field_by_name(array, "busid").and_then(|f| f.value.as_ref()) {
+        Some(hint_field::Value::Operand(op)) => {
+            const_operand_to_u64(op).ok_or_else(|| anyhow!("busid is not a constant"))?
+        }
+        _ => bail!("missing or non-operand busid"),
+    };
+    let is_proves = match hint_field_by_name(array, "type_piop").and_then(|f| f.value.as_ref()) {
+        Some(hint_field::Value::Operand(op)) => {
+            const_operand_to_u64(op).ok_or_else(|| anyhow!("type_piop is not a constant"))? != 0
+        }
+        _ => bail!("missing or non-operand type_piop"),
+    };
+    let name_piop = match hint_field_by_name(array, "name_piop").and_then(|f| f.value.as_ref()) {
+        Some(hint_field::Value::StringValue(s)) => s.clone(),
+        _ => bail!("missing or non-string name_piop"),
+    };
+    Ok((busid, is_proves, name_piop))
+}
+
+/// Decode a selected `gsum_debug_data` hint into
+/// `(busid, is_proves, name_piop, multiplicity, slot_values)`, rendering
+/// the multiplicity and each tuple slot through the Clean-row expression
+/// renderer.
 fn parse_op_bus_hint(
     renderer: &CleanExprRenderer<'_>,
     hint: &Hint,
-) -> Result<(u64, bool, String, Vec<String>)> {
+) -> Result<(u64, bool, String, String, Vec<String>)> {
     let outer = hint
         .hint_fields
         .first()
@@ -585,6 +627,10 @@ fn parse_op_bus_hint(
         Some(hint_field::Value::StringValue(s)) => s.clone(),
         _ => bail!("missing or non-string name_piop"),
     };
+    let multiplicity = match hint_field_by_name(array, "num_reps").and_then(|f| f.value.as_ref()) {
+        Some(hint_field::Value::Operand(op)) => render_clean_hint_operand(renderer, op)?,
+        _ => bail!("missing or non-operand num_reps"),
+    };
     let exprs_arr = match hint_field_by_name(array, "expressions").and_then(|f| f.value.as_ref()) {
         Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
         _ => bail!("missing or non-array expressions"),
@@ -600,34 +646,35 @@ fn parse_op_bus_hint(
         // the Clean-row renderer after an ExtF check. A challenge / AirValue
         // (directly or under an Expression) would be an ExtF leak — fail
         // loudly, never stub: the operation bus is F-only in ZisK's pilout.
-        let rendered = match op.operand.as_ref() {
-            Some(OperandKind::Constant(c)) => format_basefield(&c.value),
-            Some(OperandKind::Expression(e)) => {
-                let idx = e.idx as usize;
-                if expr_uses_extf(renderer.pilout, renderer.air, idx)? {
-                    bail!(
-                        "operation-bus slot references an ExtF operand (challenge / \
-                         AirValue); the Clean `OpBusMessage` is F-typed and the C0g \
-                         emitter will not silently stub it"
-                    );
-                }
-                renderer.render_by_idx(idx)?
-            }
-            Some(OperandKind::Challenge(_))
-            | Some(OperandKind::AirValue(_))
-            | Some(OperandKind::AirGroupValue(_)) => bail!(
-                "operation-bus slot references an ExtF operand (challenge / \
-                 AirValue); the Clean `OpBusMessage` is F-typed and the C0g \
-                 emitter will not silently stub it"
-            ),
-            other => bail!(
-                "operation-bus slot operand kind {:?} not supported",
-                other
-            ),
-        };
+        let rendered = render_clean_hint_operand(renderer, op)?;
         slots.push(rendered);
     }
-    Ok((busid, is_proves, name_piop, slots))
+    Ok((busid, is_proves, name_piop, multiplicity, slots))
+}
+
+fn render_clean_hint_operand(renderer: &CleanExprRenderer<'_>, op: &Operand) -> Result<String> {
+    match op.operand.as_ref() {
+        Some(OperandKind::Constant(c)) => Ok(format_basefield(&c.value)),
+        Some(OperandKind::Expression(e)) => {
+            let idx = e.idx as usize;
+            if expr_uses_extf(renderer.pilout, renderer.air, idx)? {
+                bail!(
+                    "bus hint operand references an ExtF value (challenge / \
+                     AirValue); the Clean channel is F-typed and the emitter \
+                     will not silently stub it"
+                );
+            }
+            renderer.render_by_idx(idx)
+        }
+        Some(OperandKind::Challenge(_))
+        | Some(OperandKind::AirValue(_))
+        | Some(OperandKind::AirGroupValue(_)) => bail!(
+            "bus hint operand references an ExtF value (challenge / \
+             AirValue); the Clean channel is F-typed and the emitter will \
+             not silently stub it"
+        ),
+        other => bail!("bus hint operand kind {:?} not supported", other),
+    }
 }
 
 /// Render the `Row.lean` content for the AIR: the `<Air>Row` `ProvableStruct`
@@ -800,15 +847,36 @@ fn render_constraints_file(
             debug_line.filter(|s| !s.is_empty()),
         ));
     }
-    let push = resolve_bus_push(pilout, hit, bus_id, channel, &col_to_field)?;
+    let pushes = if air_name == "Mem" && channel == ChannelKind::MemoryBus {
+        let emissions =
+            resolve_bus_emissions(pilout, hit, bus_id, true, "Permutation", &col_to_field)?;
+        if emissions.len() != 2 {
+            bail!(
+                "AIR `Mem` expected exactly two proves-side memory-bus emissions; found {}",
+                emissions.len()
+            );
+        }
+        emissions
+    } else {
+        vec![resolve_bus_push(
+            pilout,
+            hit,
+            bus_id,
+            channel,
+            &col_to_field,
+        )?]
+    };
+    let push = &pushes[0];
     let message_fields = channel.message_fields();
-    if push.slot_values.len() != message_fields.len() {
+    if pushes
+        .iter()
+        .any(|emission| emission.slot_values.len() != message_fields.len())
+    {
         bail!(
-            "AIR `{}` {} tuple has {} slots; the channel message declares \
+            "AIR `{}` has a {} tuple whose slot count differs from the channel's \
              {} fields — the positional slot↔field mapping is broken",
             air_name,
             channel.bus_label(),
-            push.slot_values.len(),
             message_fields.len()
         );
     }
@@ -824,13 +892,27 @@ fn render_constraints_file(
         None
     };
 
-    let range16 = resolve_bus_emissions(pilout, hit, 103, false, "Range Check", &col_to_field)?;
-    let dual_byte = resolve_bus_emissions(pilout, hit, 88, false, "Lookup", &col_to_field)?;
+    let range16 = if matches!(
+        air_name.as_str(),
+        "BinaryAdd" | "MemAlignByte" | "MemAlignReadByte"
+    ) {
+        resolve_bus_emissions(pilout, hit, 103, false, "Range Check", &col_to_field)?
+    } else {
+        Vec::new()
+    };
+    let dual_byte = if matches!(air_name.as_str(), "MemAlignByte" | "MemAlignReadByte") {
+        resolve_bus_emissions(pilout, hit, 88, false, "Lookup", &col_to_field)?
+    } else {
+        Vec::new()
+    };
 
     let mut out = String::new();
+    // Nested generated rows do not share the handwritten Spec's flat row
+    // interface. The operational declarations only need their own Row.
+    let row_import = if fields.len() > PROVABLE_STRUCT_FIELD_LIMIT { "Row" } else { "Spec" };
     out.push_str(&format!(
-        "import ZiskFv.AirsClean.{}.Spec\n",
-        air_name
+        "import ZiskFv.AirsClean.{}.{}\n",
+        air_name, row_import
     ));
     out.push_str("import ZiskFv.AirsClean.RangeTables\n");
     out.push_str("import Clean.Circuit.Basic\n");
@@ -879,6 +961,17 @@ fn render_constraints_file(
         message_fields,
         &push.slot_values,
     );
+
+    if air_name == "Mem" {
+        write_message_definition(
+            &mut out,
+            "memBusDualMessageExpr",
+            &row_ty,
+            message_type,
+            message_fields,
+            &pushes[1].slot_values,
+        );
+    }
 
     if let Some(pull) = &read_pull {
         if pull.slot_values.len() != message_fields.len() {
@@ -1006,13 +1099,29 @@ fn render_constraints_file(
         }
         out.push_str("  MemBusChannel.pull (memReadMessageExpr row)\n");
     }
-    out.push_str(&format!(
-        "  -- Bus emission: {} pushes its proves-side tuple onto {} {}.\n  \
-         -- Reconstructed from the proves-side `gsum_debug_data` hint;\n  \
-         -- slot-for-slot faithful to the hand-written reference.\n",
-        air_name, channel.bus_label(), push.busid
-    ));
-    out.push_str(&format!("  {}.push ({} row)\n", channel_value, push_name));
+    if air_name == "Mem" {
+        out.push_str(&format!(
+            "  -- Bus emissions: Mem's primary and dual provider tuples on {} {}.\n  \
+             -- Multiplicities and slots come directly from the two proves-side hints.\n",
+            channel.bus_label(), push.busid
+        ));
+        out.push_str(&format!(
+            "  {}.emit {} ({} row)\n",
+            channel_value, push.multiplicity, push_name
+        ));
+        out.push_str(&format!(
+            "  {}.emit {} (memBusDualMessageExpr row)\n",
+            channel_value, pushes[1].multiplicity
+        ));
+    } else {
+        out.push_str(&format!(
+            "  -- Bus emission: {} pushes its proves-side tuple onto {} {}.\n  \
+             -- Reconstructed from the proves-side `gsum_debug_data` hint;\n  \
+             -- slot-for-slot faithful to the hand-written reference.\n",
+            air_name, channel.bus_label(), push.busid
+        ));
+        out.push_str(&format!("  {}.push ({} row)\n", channel_value, push_name));
+    }
     out.push('\n');
 
     out.push_str(&format!("end ZiskFv.AirsClean.{}\n", air_name));
@@ -1161,6 +1270,99 @@ mod tests {
                 rhs: Some(rhs),
             })),
         }
+    }
+
+    fn bus_hint(bus_id: u8, piop: &str, multiplicity: Operand, slots: Vec<Operand>) -> Hint {
+        use crate::pilout::{HintField, HintFieldArray};
+        let field = |name: &str, value| HintField {
+            name: Some(name.to_string()),
+            value: Some(value),
+        };
+        Hint {
+            name: "gsum_debug_data".to_string(),
+            air_group_id: Some(0),
+            air_id: Some(0),
+            hint_fields: vec![field(
+                "",
+                hint_field::Value::HintFieldArray(HintFieldArray {
+                    hint_fields: vec![
+                        field("busid", hint_field::Value::Operand(constant(vec![bus_id]))),
+                        field("type_piop", hint_field::Value::Operand(constant(vec![1]))),
+                        field("name_piop", hint_field::Value::StringValue(piop.to_string())),
+                        field("num_reps", hint_field::Value::Operand(multiplicity)),
+                        field(
+                            "expressions",
+                            hint_field::Value::HintFieldArray(HintFieldArray {
+                                hint_fields: slots.into_iter()
+                                    .map(|slot| field("", hint_field::Value::Operand(slot)))
+                                    .collect(),
+                            }),
+                        ),
+                    ],
+                }),
+            )],
+        }
+    }
+
+    #[test]
+    fn binary_extension_emits_without_f_only_assertions() {
+        let air = Air {
+            name: Some("BinaryExtension".to_string()),
+            ..Default::default()
+        };
+        let pilout = PilOut {
+            hints: vec![bus_hint(
+                42, "Lookup", constant(vec![1]),
+                (0..11).map(|_| constant(vec![])).collect(),
+            )],
+            ..Default::default()
+        };
+        let hit = AirHit { airgroup_idx: 0, air_idx: 0, airgroup_name: "Zisk".into(), air: &air };
+        let source = render_constraints_file(&pilout, &hit, &[], 42, ChannelKind::OpBus).unwrap();
+        assert!(!source.contains("  assertZero ("));
+        assert!(source.contains("  OpBusChannel.push (opBusMessageExpr row)"));
+    }
+
+    #[test]
+    fn mem_emits_both_source_multiplicities_and_ignores_unselected_payloads() {
+        let air = Air {
+            name: Some("Mem".to_string()),
+            expressions: vec![
+                add(witness(0), constant(vec![])),
+                add(witness(1), constant(vec![])),
+            ],
+            ..Default::default()
+        };
+        let expression = |idx| Operand {
+            operand: Some(OperandKind::Expression(operand::Expression { idx })),
+        };
+        let mut pilout = PilOut {
+            hints: vec![
+                // An unselected hint's unsupported payload must not be rendered.
+                bus_hint(99, "Lookup", Operand::default(), vec![Operand::default()]),
+                bus_hint(10, "Permutation", expression(0),
+                    (1..=6).map(|n| constant(vec![n])).collect()),
+                bus_hint(10, "Permutation", expression(1),
+                    (7..=12).map(|n| constant(vec![n])).collect()),
+            ],
+            ..Default::default()
+        };
+        let fields = ["sel", "sel_dual"].into_iter().enumerate()
+            .map(|(index, name)| RowField {
+                col_idx: index as u32,
+                lean_name: name.to_string(),
+                pilout_name: name.to_string(),
+            }).collect::<Vec<_>>();
+        let hit = AirHit { airgroup_idx: 0, air_idx: 0, airgroup_name: "Zisk".into(), air: &air };
+        let source = render_constraints_file(&pilout, &hit, &fields, 10, ChannelKind::MemoryBus).unwrap();
+        assert!(source.contains("MemBusChannel.emit row.sel (memBusMessageExpr row)"));
+        assert!(source.contains("MemBusChannel.emit row.sel_dual (memBusDualMessageExpr row)"));
+        assert!(source.contains("value_1 := 6 }"));
+        assert!(source.contains("value_1 := 12 }"));
+        pilout.hints.pop();
+        let error = render_constraints_file(&pilout, &hit, &fields, 10, ChannelKind::MemoryBus)
+            .unwrap_err();
+        assert!(error.to_string().contains("expected exactly two"));
     }
 
     /// The identity fold makes a pass-through bus slot `cell + 0` render as
