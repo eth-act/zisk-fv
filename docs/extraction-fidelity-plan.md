@@ -31,10 +31,12 @@ Every agent executing any part of this plan follows this section. It is not advi
 - **Size limit.** At most 800 changed lines of hand-written content per PR. Generated Lean under
   `build/`, `tools/extraction-coverage/manifest.json`, evidence directories, and the regenerated
   ledger do not count. State the hand-written line count in the PR body.
-- **Sequencing.** W0b, W0c, W0d are strictly sequential: do not open the next until the previous
-  is merged. After W0, the order is the one in *Sequencing* below. A workstream marked
-  *independent* may be started while another PR awaits review; otherwise wait and report
-  "blocked on review of #N".
+- **Sequencing.** W0b, W0c, W0d merge in order, but implementation is pipelined: as soon as the
+  W0b PR is open and green, cut `w0c-ledger` from `w0b-harness` and implement W0c; open its PR only
+  after W0b has merged, after `git rebase --onto extraction-fidelity-hardening w0b-harness
+  w0c-ledger`. Same for W0d on W0c. Waiting for a merge is never idle time. After W0, the order is
+  the one in *Sequencing* below; a workstream marked *independent* may be started while another PR
+  awaits review; otherwise pipeline the same way and report "PR blocked on merge of #N".
 - **The agent never merges, never pushes to `main`, never force-pushes the integration branch,
   never deletes a `freeze/*` branch, and never opens a second PR to `main` while #377 is open.**
 
@@ -106,8 +108,15 @@ Every PR body has these sections, in this order, each present even if it says "n
 - Lean and lake are only on `PATH` inside the dev shell:
   `nix --extra-experimental-features 'nix-command flakes' develop --command <cmd>`.
 - The full gate: `NIX_CONFIG='extra-experimental-features = nix-command flakes' nix run .#test`.
-- A warmed Lake cache exists at `/home/lee/zisk-fv-w0/.lake/build`; copy or reflink it into a new
-  worktree instead of rebuilding Mathlib.
+- **New worktree, warm cache, verified.** `cp -a --reflink=auto /home/lee/zisk-fv-w0/.lake
+  <worktree>/.lake`, then in the dev shell `lake exe cache get` (Mathlib's olean cache; CI does the
+  same), then start `lake build --log-level=warning`. If its first lines print
+  `Built Mathlib.…`, the copy is incomplete: stop the build, rerun `lake exe cache get`, and start
+  again. Compiling Mathlib from source is never acceptable; it costs an hour for nothing.
+- **One gate per PR.** `nix run .#test` runs `lake build` (step 6/10) and both trust gates (8/10,
+  9/10) in the worktree it is run from. Run it once, in the worktree you developed in, after the
+  workstream's own focused checks. Do not run `lake build` and both gates separately and then run
+  the full test again. Use focused `lake build <target>` while iterating on Lean only.
 - If `git status` shows the `zisk` submodule modified, run `git submodule update --force -- zisk`
   and never commit it.
 - The cachix token lives at `/home/lee/.open-secrets/cachix-token-cody-agent` (see the cache
@@ -594,9 +603,11 @@ them. Do not extend them under this plan.
 
 ## Verification
 
-Per PR: the checks named in its workstream, plus `lake build`, `trust/scripts/check-all.sh`, and for
-generated artifacts `nix run .#populate` then `trust/scripts/check-all-semantic.sh`. Extractor and
-Nix changes need `nix run .#test` and a seeded cache before the PR opens.
+Per PR: the checks named in its workstream, then `nix run .#test` once in the developed worktree;
+it subsumes `lake build` and both trust gates. A PR that changes generated inputs runs
+`nix run .#populate` first. Extractor and Nix changes also need a seeded cache before the PR opens.
+A PR that changes no Lean, no generated input and no Nix still runs the full test once, and nothing
+else.
 
 Per workstream: the ledger diff; the re-run set executed and committed; the faithfulness report;
 the rule scored against current observations.
