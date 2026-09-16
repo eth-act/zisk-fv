@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enumerate and apply randomized single-site mutations to ZisK's in-scope sources.
+"""Enumerate and apply single-site mutations to ZisK's in-scope sources.
 
 A *site* is one concrete textual place in a pinned ZisK source file where a
 specific mutation operator applies. The operators are the ways a constraint
@@ -8,9 +8,8 @@ flipped sign, two operands transposed, a widened range, a mis-tagged opcode,
 a row-offset slip, a corrupted lookup-table row.
 
 Usage:
-  mutate.py list  <zisk-root>                 -> JSON array of all sites
-  mutate.py pick  <zisk-root> <seed> [--exclude f:l:op ...]  -> one site as JSON
-  mutate.py apply <zisk-root> <site-json>     -> rewrite the file in place
+This module is imported by ``runner.py list --sites``.  Its small command-line
+interface remains useful for focused operator development.
 """
 import json, os, random, re, sys
 
@@ -59,7 +58,11 @@ def op_drop_constraint(line, ext):
     return [("DROP_CONSTRAINT", line, "//" + line, "delete the identity")]
 
 def op_const_perturb(line, ext):
-    """Wrong constant: a power-of-two limb weight, a bound, a bit width."""
+    """Wrong constrained constant: a power-of-two limb weight or a mask.
+
+    ``bits(n)`` declarations are intentionally absent: pil2 lowers them to
+    witness hints rather than polynomial constraints.
+    """
     out = []
     for m in re.finditer(r"2\s*\*\*\s*(\d+)", line):
         e = int(m.group(1))
@@ -163,9 +166,66 @@ def op_table_row_edit(line, ext):
     return [("TABLE_ROW_EDIT", line, f"{m.group(1)}[{nb}]{m.group(3)}\n",
              f"table row last field {v} -> {v+1}")]
 
+
+def op_bus_id_swap(line, ext):
+    """Replace one explicit PIL bus identifier with a different bus."""
+    if ext != ".pil":
+        return []
+    out = []
+    for match in re.finditer(r"\b[A-Z][A-Z0-9_]*_ID\b", line):
+        old = match.group(0)
+        new_id = "MAIN_CONTINUATION_ID" if old == "MEMORY_ID" else "MEMORY_ID"
+        new = line[:match.start()] + new_id + line[match.end():]
+        out.append(("BUS_ID_SWAP", line, new, f"bus id {old} -> {new_id}"))
+    return out
+
+
+def op_selector_arg(line, ext):
+    """Replace a named ``sel:`` argument without guessing selector names."""
+    if ext != ".pil":
+        return []
+    match = re.search(r"\bsel\s*:\s*", line)
+    if match is None:
+        return []
+    new = line[:match.end()] + "0 * " + line[match.end():]
+    return [("SELECTOR_ARG", line, new, "selector argument multiplied by zero")]
+
+
+def op_multiplicity(line, ext):
+    """Replace a bus multiplicity with one."""
+    if ext != ".pil":
+        return []
+    match = re.search(r"\bmul\s*:\s*([^,)]+)", line)
+    if match is not None:
+        old = match.group(1).strip()
+        replacement = "0" if old == "1" else "1"
+        new = line[:match.start(1)] + replacement + line[match.end(1):]
+        return [("MULTIPLICITY", line, new,
+                 f"multiplicity argument {old} -> {replacement}")]
+    if (re.search(r"\b(?:lookup|permutation|direct_\w+)\w*\s*\(", line)
+            and re.search(r"\bmultiplicity\b", line)):
+        match = re.search(r"\bmultiplicity\b", line)
+        assert match is not None
+        new = line[:match.start()] + "1" + line[match.end():]
+        return [("MULTIPLICITY", line, new, "multiplicity -> 1")]
+    return []
+
+
+def op_airval(line, ext):
+    """Turn a scalar AIR value into a row-local witness column."""
+    if ext != ".pil":
+        return []
+    match = re.search(r"\bairval\s+([A-Za-z_]\w*(?:\[[^\]]+\])?)", line)
+    if match is None:
+        return []
+    new = line[:match.start()] + "col witness " + line[match.start(1):]
+    return [("AIRVAL", line, new,
+             f"airval {match.group(1)} -> row-local witness")]
+
 OPERATORS = [op_drop_constraint, op_const_perturb, op_sign_flip, op_operand_swap,
              op_selector_weaken, op_row_offset, op_range_widen, op_opcode_swap,
-             op_table_row_edit]
+             op_table_row_edit, op_bus_id_swap, op_selector_arg,
+             op_multiplicity, op_airval]
 
 def enumerate_sites(root):
     sites = []

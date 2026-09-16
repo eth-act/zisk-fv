@@ -9,10 +9,12 @@ Neither mode accepts an arbitrary build command as evidence of a kill.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import dataclasses
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -29,6 +31,9 @@ DIRECT_SOURCE_AIRS = {"ArithTable", "MemAlignRom"}
 
 sys.path.insert(0, str(HERE))
 import semdiff  # noqa: E402
+import sites  # noqa: E402
+
+REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50]
 
 
 class CorpusError(Exception):
@@ -91,6 +96,16 @@ def expected_detection_layer(item: Round) -> str:
     if item.number == 27:
         return "fidelity"  # recorded scope boundary, not a promised weld
     return "proof"
+
+
+def meets_expected(value: dict[str, Any]) -> bool:
+    if value.get("proof_skipped"):
+        return value.get("outcome") == "fidelity"
+    expected = value.get("expected_detection_layer")
+    if expected == "equivalent":
+        return (value.get("outcome") == "equivalent"
+                and value.get("control", {}).get("proof_false_positive") is not True)
+    return value.get("outcome") == expected
 
 
 def first_diagnostic(log: Path) -> str | None:
@@ -181,6 +196,15 @@ def extraction_manifest(path: Path) -> dict[str, str]:
 def extraction_delta(base: Path, mutant: Path) -> list[str]:
     left, right = extraction_manifest(base), extraction_manifest(mutant)
     return sorted(k for k in set(left) | set(right) if left.get(k) != right.get(k))
+
+
+def round_zero_summary(base_pilout: Path, compiled_pilout: Path,
+                       base_extraction: Path, compiled_extraction: Path) -> dict[str, Any]:
+    semantic = semdiff.compare(base_pilout, compiled_pilout)
+    changed = extraction_delta(base_extraction, compiled_extraction)
+    return {"canonical_pilout_equal": semantic["equal"],
+            "extraction_byte_delta": changed,
+            "passed": semantic["equal"] and not changed}
 
 
 def identity(path: Path) -> dict[str, Any]:
@@ -615,48 +639,61 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                               complete=False)
                 return result
 
-        if item.air not in DIRECT_SOURCE_AIRS:
-            compiler_baseline = getattr(args, "_compiler_baseline", None)
-            if compiler_baseline is None:
-                # The compiler writes external payloads and *.fixed beside its
-                # source. Never invoke it on the immutable flake source itself.
-                # Recompile even when a cached pilout was supplied: fixed-to-file
-                # pilout equality does not establish fixed-column contents.
-                state = getattr(args, "_suite_state", work)
-                baseline_compiled = state / "baseline-compiler.pilout"
-                baseline_source = work / "baseline-source"
-                shutil.copytree(source, baseline_source, symlinks=False)
-                make_tree_writable(baseline_source)
-                baseline_compile_cmd = compile_mutation_source(
-                    args.repo, baseline_source, baseline_compiled, args.compile_timeout,
-                    logs / "baseline-compiler-control.log")
-                result["commands"].append(dataclasses.asdict(baseline_compile_cmd))
-                if (baseline_compile_cmd.exit_code != 0 or baseline_compile_cmd.timed_out
-                        or not baseline_compiled.is_file()
-                        or not semdiff.compare(Path(base_pilout), baseline_compiled)["equal"]):
-                    result.update(outcome="infrastructure",
-                                  reason="mutation compiler baseline control did not reproduce the pinned circuit",
-                                  complete=False)
-                    return result
-                if (args.baseline_compiler_pilout is not None
-                        and not semdiff.compare(args.baseline_compiler_pilout,
-                                                baseline_compiled)["equal"]):
-                    raise CorpusError("cached compiler baseline differs from fresh pinned source")
-                baseline_fixed = baseline_source / "Main.fixed"
-                fixed_control = run_command(
-                    [sys.executable, str(args.repo / "tools/extraction-coverage/main_fixed.py"),
-                     "--pilout", str(baseline_compiled), "--fixed", str(baseline_fixed),
-                     "--selftest"], args.repo, args.check_timeout,
-                    logs / "baseline-main-fixed.log")
-                result["commands"].append(dataclasses.asdict(fixed_control))
-                if fixed_control.timed_out or fixed_control.exit_code != 0:
-                    raise CorpusError("compiled Main fixed-column control was not green")
-                args._main_fixed_baseline = identity(baseline_fixed)
-                shutil.rmtree(baseline_source)
-                compiler_baseline = (baseline_compiled, baseline_compile_cmd)
-                args._compiler_baseline = compiler_baseline
-            result["mutation_compiler_baseline"] = identity(compiler_baseline[0])
-            result["main_fixed_baseline"] = args._main_fixed_baseline
+        compiler_baseline = getattr(args, "_compiler_baseline", None)
+        if compiler_baseline is None:
+            # Round 0 is a causal control for every mutation, including the two
+            # AIRs whose table data is read directly from source.
+            state = getattr(args, "_suite_state", work)
+            baseline_compiled = state / "baseline-compiler.pilout"
+            baseline_source = work / "baseline-source"
+            shutil.copytree(source, baseline_source, symlinks=False)
+            make_tree_writable(baseline_source)
+            baseline_compile_cmd = compile_mutation_source(
+                args.repo, baseline_source, baseline_compiled, args.compile_timeout,
+                logs / "baseline-compiler-control.log")
+            result["commands"].append(dataclasses.asdict(baseline_compile_cmd))
+            if (baseline_compile_cmd.exit_code != 0 or baseline_compile_cmd.timed_out
+                    or not baseline_compiled.is_file()):
+                result.update(outcome="infrastructure",
+                              reason="mutation compiler baseline control did not complete",
+                              complete=False)
+                return result
+            if (args.baseline_compiler_pilout is not None
+                    and not semdiff.compare(args.baseline_compiler_pilout,
+                                            baseline_compiled)["equal"]):
+                raise CorpusError("cached compiler baseline differs from fresh pinned source")
+            baseline_extracted, extraction_command = nix_direct_extraction(
+                args.repo, baseline_source, baseline_compiled, args.compile_timeout,
+                logs / "baseline-extraction-control.log")
+            result["commands"].append(dataclasses.asdict(extraction_command))
+            if baseline_extracted is None:
+                result.update(outcome="infrastructure",
+                              reason="round-0 extraction did not complete", complete=False)
+                return result
+            control = round_zero_summary(Path(base_pilout), baseline_compiled,
+                                         Path(base_extract), baseline_extracted)
+            if not control["passed"]:
+                result.update(outcome="infrastructure",
+                              reason="round-0 recompile did not reproduce byte-identical extraction",
+                              round_zero_control=control, complete=False)
+                return result
+            baseline_fixed = baseline_source / "Main.fixed"
+            fixed_control = run_command(
+                [sys.executable, str(args.repo / "tools/extraction-coverage/main_fixed.py"),
+                 "--pilout", str(baseline_compiled), "--fixed", str(baseline_fixed),
+                 "--selftest"], args.repo, args.check_timeout,
+                logs / "baseline-main-fixed.log")
+            result["commands"].append(dataclasses.asdict(fixed_control))
+            if fixed_control.timed_out or fixed_control.exit_code != 0:
+                raise CorpusError("compiled Main fixed-column control was not green")
+            args._main_fixed_baseline = identity(baseline_fixed)
+            args._round_zero_control = control
+            shutil.rmtree(baseline_source)
+            compiler_baseline = (baseline_compiled, baseline_compile_cmd)
+            args._compiler_baseline = compiler_baseline
+        result["mutation_compiler_baseline"] = identity(compiler_baseline[0])
+        result["main_fixed_baseline"] = args._main_fixed_baseline
+        result["round_zero_control"] = args._round_zero_control
 
         if item.air in DIRECT_SOURCE_AIRS:
             mutant_pilout = Path(base_pilout)
@@ -740,8 +777,9 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             result.update(outcome=outcome, reason=reason, complete=True)
             return result
         if args.skip_proof:
-            result.update(outcome="infrastructure",
-                          reason="proof controls explicitly skipped", complete=False)
+            result.update(outcome="fidelity",
+                          reason="artifact delta reached the proof boundary; proof explicitly skipped",
+                          complete=True, proof_skipped=True)
             return result
 
         state = getattr(args, "_suite_state", work)
@@ -811,6 +849,10 @@ def parser() -> argparse.ArgumentParser:
     sub = out.add_subparsers(dest="command", required=True)
     listing = sub.add_parser("list")
     listing.add_argument("--json", action="store_true")
+    listing.add_argument("--sites", action="store_true",
+                         help="enumerate mutation sites in the pinned ZisK source")
+    listing.add_argument("--zisk-source", type=Path)
+    listing.add_argument("--compile-timeout", type=int, default=3600)
     apply = sub.add_parser("apply")
     apply.add_argument("--round", type=int, required=True, choices=range(1, 53))
     apply.add_argument("--source", type=Path, required=True)
@@ -845,16 +887,37 @@ def parser() -> argparse.ArgumentParser:
     full_options(f)
     suite = sub.add_parser("suite")
     full_options(suite, include_round=False)
-    suite.add_argument("--profile", choices=("boundary", "full"), required=True)
+    suite.add_argument("--profile", choices=("boundary", "regression", "full"), required=True)
     suite.add_argument("--round", action="append", type=int, choices=range(1, 53),
                        help="override the profile's round set; repeatable")
     suite.add_argument("--results-dir", type=Path, required=True)
+    suite.add_argument("--commit-evidence", metavar="SHORT_SHA",
+                       help="copy compact result JSON to evidence/results/SHORT_SHA")
     return out
 
 
 def main(argv: list[str]) -> int:
     args = parser().parse_args(argv)
     if args.command == "list":
+        if args.sites:
+            source = args.zisk_source
+            if source is None:
+                with tempfile.TemporaryDirectory() as tmp:
+                    source, command = resolve_pinned_zisk(
+                        REPO, args.compile_timeout, Path(tmp) / "resolve-zisk-source.log")
+                if source is None or command.exit_code != 0:
+                    raise SystemExit("could not resolve pinned ZisK source")
+            values = sites.enumerate_sites(str(source))
+            if args.json:
+                print(json.dumps(values, indent=2))
+            else:
+                for value in values:
+                    print(f"{value['file']}:{value['line']} {value['op']:18} "
+                          f"{value['air']:18} {value['desc']}")
+                print("counts " + json.dumps(dict(sorted(
+                    Counter(value["op"] for value in values).items()))))
+                print(f"total {len(values)}")
+            return 0
         identity_record, rounds = load_corpus()
         if args.json:
             print(json.dumps({"identity": identity_record,
@@ -869,8 +932,20 @@ def main(argv: list[str]) -> int:
         print(target)
         return 0
     if args.command == "suite":
-        rounds = (args.round if args.round else
-                  [5, 7, 32, 38, 50] if args.profile == "boundary" else list(range(1, 53)))
+        defaults = {"boundary": [5, 7, 32, 38, 50],
+                    "regression": REGRESSION_ROUNDS,
+                    "full": list(range(1, 53))}
+        rounds = args.round if args.round else defaults[args.profile]
+        evidence_destination = None
+        if args.commit_evidence:
+            head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=args.repo,
+                                  check=True, text=True, capture_output=True).stdout.strip()
+            if (not re.fullmatch(r"[0-9a-f]{7,12}", args.commit_evidence)
+                    or not head.startswith(args.commit_evidence)):
+                raise SystemExit("--commit-evidence must be a 7-12 character prefix of HEAD")
+            evidence_destination = HERE / "evidence" / "results" / args.commit_evidence
+            if evidence_destination.exists():
+                raise SystemExit(f"evidence destination already exists: {evidence_destination}")
         args.results_dir.mkdir(parents=True, exist_ok=True)
         results = []
         setup_commands: list[dict[str, Any]] = []
@@ -898,8 +973,10 @@ def main(argv: list[str]) -> int:
                 per_round._archive_dir = args.results_dir / f"round-{number:02d}"
                 per_round._force_cleanup = True
                 value = full(per_round)
-                if hasattr(per_round, "_compiler_baseline"):
-                    args._compiler_baseline = per_round._compiler_baseline
+                for name in ("_compiler_baseline", "_main_fixed_baseline",
+                             "_round_zero_control"):
+                    if hasattr(per_round, name):
+                        setattr(args, name, getattr(per_round, name))
                 (per_round._archive_dir / "result.json").write_text(
                     json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
                 results.append(value)
@@ -917,20 +994,22 @@ def main(argv: list[str]) -> int:
             "infrastructure_rounds": [r.get("round") for r in results
                                       if r.get("outcome") == "infrastructure"],
         }
-        def meets_expected(value: dict[str, Any]) -> bool:
-            expected = value.get("expected_detection_layer")
-            if expected == "equivalent":
-                return (value.get("outcome") == "equivalent"
-                        and value.get("control", {}).get("proof_false_positive") is not True)
-            return value.get("outcome") == expected
         aggregate["unexpected_rounds"] = [r.get("round") for r in results
                                           if not meets_expected(r)]
+        succeeded = (not setup_failure and aggregate["complete"]
+                     and not aggregate["infrastructure_rounds"]
+                     and not aggregate["unexpected_rounds"])
+        if evidence_destination is not None and succeeded:
+            evidence_destination.mkdir(parents=True)
+            for number in rounds:
+                shutil.copy2(args.results_dir / f"round-{number:02d}" / "result.json",
+                             evidence_destination / f"round-{number:02d}.json")
+            aggregate["committed_evidence"] = str(
+                evidence_destination.relative_to(args.repo))
         (args.results_dir / "summary.json").write_text(
             json.dumps(aggregate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(json.dumps(aggregate, indent=2, sort_keys=True))
-        return 0 if (not setup_failure and aggregate["complete"]
-                     and not aggregate["infrastructure_rounds"]
-                     and not aggregate["unexpected_rounds"]) else 1
+        return 0 if succeeded else 1
     try:
         result = boundary(args) if args.command == "boundary" else full(args)
     except (CorpusError, OSError, ValueError) as exc:

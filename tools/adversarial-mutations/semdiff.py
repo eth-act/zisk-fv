@@ -63,6 +63,34 @@ def decoded_constraints(path: Path) -> dict[tuple[str, int], Any]:
     return result
 
 
+def per_air_summary(base: dict, mutant: dict, changed: list[dict]) -> dict:
+    """Return the historical sweep's per-AIR changed-index shape."""
+    out = {}
+    for air in sorted({key[0] for key in base} | {key[0] for key in mutant}):
+        base_items = {index: item for (name, index), item in base.items() if name == air}
+        mutant_items = {index: item for (name, index), item in mutant.items() if name == air}
+        changed_indices = [
+            item["constraint"] for item in changed
+            if item["air"] == air and item["kind"] == "changed"
+        ]
+        representable = [
+            index for index in changed_indices
+            if base_items[index].expr is not None and mutant_items[index].expr is not None
+        ]
+        out[air] = {
+            "n_base": len(base_items),
+            "n_mut": len(mutant_items),
+            "changed": changed_indices,
+            "dropped": [item["constraint"] for item in changed
+                        if item["air"] == air and item["kind"] == "removed"],
+            "added": [item["constraint"] for item in changed
+                      if item["air"] == air and item["kind"] == "added"],
+            "changed_representable": representable,
+            "changed_unrepresentable": sorted(set(changed_indices) - set(representable)),
+        }
+    return out
+
+
 def compare(base_path: Path, mutant_path: Path) -> dict:
     if sha256(base_path) == sha256(mutant_path):
         # Byte equality is sufficient for equality, though byte inequality is
@@ -70,7 +98,8 @@ def compare(base_path: Path, mutant_path: Path) -> dict:
         decoded = decoded_constraints(base_path)
         return {"equal": True, "base_constraint_count": len(decoded),
                 "mutant_constraint_count": len(decoded), "changed": [],
-                "structurally_changed_but_equivalent": []}
+                "structurally_changed_but_equivalent": [],
+                "airs": per_air_summary(decoded, decoded, [])}
     base = decoded_constraints(base_path)
     mutant = decoded_constraints(mutant_path)
     changed = []
@@ -100,6 +129,7 @@ def compare(base_path: Path, mutant_path: Path) -> dict:
         "mutant_constraint_count": len(mutant),
         "changed": changed,
         "structurally_changed_but_equivalent": equivalent,
+        "airs": per_air_summary(base, mutant, changed),
     }
 
 

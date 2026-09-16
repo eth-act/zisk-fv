@@ -6,13 +6,16 @@ from __future__ import annotations
 import shutil
 import sys
 import tempfile
+from collections import Counter
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import runner  # noqa: E402
 import semdiff  # noqa: E402
+import sites  # noqa: E402
 
 
 def check(condition: bool, message: str) -> None:
@@ -140,9 +143,49 @@ def test_artifact_and_semantic_baselines() -> None:
         check(runner.artifact_delta(a, b) == ["x"], "artifact delta absent")
     pilout = runner.REPO / "build/zisk.pilout"
     if pilout.is_file():
-        check(semdiff.compare(pilout, pilout)["equal"], "pilout self-comparison")
+        comparison = semdiff.compare(pilout, pilout)
+        check(comparison["equal"], "pilout self-comparison")
+        check(comparison["airs"] and all(not item["changed"]
+              for item in comparison["airs"].values()), "per-AIR changed-index baseline")
     else:
         print("SKIP pilout semantic baseline: build/zisk.pilout absent")
+
+
+def test_site_operators() -> None:
+    source = runner.REPO / "zisk"
+    values = sites.enumerate_sites(str(source))
+    counts = Counter(value["op"] for value in values)
+    check(counts["BUS_ID_SWAP"] == 44, "bus-id site count")
+    check(counts["SELECTOR_ARG"] == 29, "selector-argument site count")
+    check(counts["MULTIPLICITY"] == 2, "multiplicity site count")
+    check(counts["AIRVAL"] == 23, "air-value site count")
+    check(not any("bits(" in value["old"] for value in values
+                  if value["op"] == "CONST_PERTURB"),
+          "bits declaration admitted as a constrained constant mutation")
+
+
+def test_round_zero_control() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        left, right = root / "left", root / "right"
+        left.mkdir(); right.mkdir()
+        (left / "Same.lean").write_text("same")
+        (right / "Same.lean").write_text("same")
+        with mock.patch.object(runner.semdiff, "compare", return_value={"equal": True}):
+            value = runner.round_zero_summary(root / "base", root / "compiled", left, right)
+        check(value["passed"] and value["extraction_byte_delta"] == [],
+              "byte-identical round zero rejected")
+        (right / "Same.lean").write_text("changed")
+        with mock.patch.object(runner.semdiff, "compare", return_value={"equal": True}):
+            value = runner.round_zero_summary(root / "base", root / "compiled", left, right)
+        check(not value["passed"] and value["extraction_byte_delta"] == ["Same.lean"],
+              "round-zero extraction drift accepted")
+    check(runner.meets_expected({"proof_skipped": True, "outcome": "fidelity",
+                                 "expected_detection_layer": "proof"}),
+          "explicitly skipped proof rejected at the artifact boundary")
+    check(not runner.meets_expected({"proof_skipped": True, "outcome": "proof",
+                                     "expected_detection_layer": "proof"}),
+          "proof-skipped result claimed a proof detection")
 
 
 def test_log_archive() -> None:
@@ -206,7 +249,8 @@ def test_readonly_artifact_restore() -> None:
 
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
-             test_artifact_and_semantic_baselines, test_log_archive,
+             test_artifact_and_semantic_baselines, test_site_operators,
+             test_round_zero_control, test_log_archive,
              test_private_dependency_copy, test_readonly_artifact_restore]
     for test in tests:
         test()
