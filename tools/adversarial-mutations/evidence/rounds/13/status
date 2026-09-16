@@ -1,0 +1,13 @@
+{
+  "build_exit": "",
+  "build_seconds": "",
+  "changed": [],
+  "errors": "",
+  "historical_reach": [],
+  "invalid": "",
+  "rebuilt": [],
+  "rebuilt_jobs": 0,
+  "roundtrip_exit": "",
+  "schema": 1,
+  "state": "NO_EXTRACTION_DELTA"
+}

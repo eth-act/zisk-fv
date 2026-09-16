@@ -1,0 +1,19 @@
+{
+  "build_exit": "1",
+  "build_seconds": "19",
+  "changed": [
+    "Main.lean"
+  ],
+  "errors": "21:error: ZiskFv/AirsClean/MainMirrorWeld.lean:243:2: Type mismatch\n28:error: ZiskFv/AirsClean/MainMirrorWeld.lean:284:2: Type mismatch\n43:error: Lean exited with code 1\n46:error: build failed\n",
+  "historical_reach": [
+    "* `Main.lean` \u2014 read by `ZiskFv/AirsClean/MainMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Main"
+  ],
+  "rebuilt_jobs": 1,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

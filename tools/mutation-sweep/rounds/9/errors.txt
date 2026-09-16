@@ -1,5 +1,0 @@
-21:error: ZiskFv/AirsClean/BinaryMirrorWeld.lean:287:2: Type mismatch
-27:error: ZiskFv/AirsClean/BinaryMirrorWeld.lean:308:2: Type mismatch
-39:error: ZiskFv/AirsClean/BinaryMirrorWeld.lean:310:0: maximum recursion depth has been reached
-42:error: Lean exited with code 1
-451:error: build failed

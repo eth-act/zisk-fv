@@ -36,6 +36,28 @@ python3 tools/adversarial-mutations/runner.py apply \
   --round 32 --source /tmp/zisk-copy
 ```
 
+Enumerate every operator site in the flake-pinned source:
+
+```bash
+python3 tools/adversarial-mutations/runner.py list --sites
+```
+
+The pinned tree has 770 sites:
+
+| operator | sites | operator | sites |
+| --- | ---: | --- | ---: |
+| `AIRVAL` | 23 | `BUS_ID_SWAP` | 44 |
+| `CONST_PERTURB` | 53 | `DROP_CONSTRAINT` | 139 |
+| `MULTIPLICITY` | 2 | `OPCODE_SWAP` | 10 |
+| `OPERAND_SWAP` | 176 | `RANGE_WIDEN` | 21 |
+| `ROW_OFFSET` | 6 | `SELECTOR_ARG` | 29 |
+| `SELECTOR_WEAKEN` | 31 | `SIGN_FLIP` | 162 |
+| `TABLE_ROW_EDIT` | 74 | | |
+
+`CONST_PERTURB` deliberately excludes `bits(n)`: those declarations lower to
+`witness_bits` hints, not constraints. `BUS_ID_SWAP` is restricted to PIL bus
+identifiers, and `SELECTOR_ARG` covers every named `sel:` argument.
+
 `full` is the evidence-producing mode. It copies the pinned source, applies one
 fixture, builds the pilout and extracted Lean through the repository's pinned
 production tools, runs the independent round-trip
@@ -47,7 +69,9 @@ For PIL mutations the runner uses `.#compile-mutation`, which installs the three
 actual fixed-column payloads produced by the pinned ZisK generators and invokes
 the pinned compiler directly on the private source copy. Its unmutated output
 must be canonically equal to `.#zisk-pilout` before any mutant is classified.
-The baseline compiler also runs in a disposable source copy. Its actual
+The baseline compiler also runs in a disposable source copy. Round 0 then runs
+production extraction against that fresh, unmutated compilation and requires
+byte-identical generated artifacts in addition to canonical pilout equality. Its actual
 `Main.fixed` output must match both modeled Main fixed columns over all physical
 rows, and the fixed-data checker must reject an interior corruption and a
 truncated file. The report records that check and the fixed payload's identity.
@@ -68,8 +92,8 @@ python3 tools/adversarial-mutations/runner.py full --round 32 \
 The pinned ZisK source defaults to the `zisk-src` flake input. `--zisk-source`
 may point at a previously resolved copy of that same revision. The runner checks
 the locked revision against the corpus identity either way. `--skip-proof` is a
-development option and deliberately returns an incomplete infrastructure result;
-it cannot publish a kill.
+development option: it records a complete artifact-boundary result but cannot
+publish a proof detection.
 
 `boundary` is the fast mode for comparing artifact pairs made elsewhere by the
 same production pipeline:
@@ -89,17 +113,24 @@ fidelity miss.
 
 CI-facing suites create their own source mutants through the full production
 pipeline. The boundary profile selects one mutation for each repaired interface
-(rounds 5, 7, 32, 38, and 50); the full profile runs all fixtures:
+(rounds 5, 7, 32, 38, and 50). The regression profile runs the eleven historical
+misses, the three commutativity controls, and round 50. The full profile runs all
+fixtures:
 
 ```bash
 python3 tools/adversarial-mutations/runner.py suite \
   --profile boundary --results-dir mutation-results/boundary
+python3 tools/adversarial-mutations/runner.py suite \
+  --profile regression --results-dir mutation-results/regression
 python3 tools/adversarial-mutations/runner.py suite \
   --profile full --results-dir mutation-results/full
 ```
 
 For focused reproduction, repeat `--round`, for example
 `--round 7 --round 38`; profile defaults remain fixed when no override is given.
+After a complete suite, `--commit-evidence <short-sha>` copies only the compact
+`round-NN.json` files (never logs) to `evidence/results/<short-sha>/`; the value
+must be a 7-12 character prefix of the checkout's `HEAD`.
 
 The suite owns one private proof workspace and restores the pinned generated
 artifacts before every round. A green baseline build is required immediately
@@ -140,7 +171,14 @@ bytes are recorded as identities but never compared for circuit meaning; the
 canonical comparison uses the same independent decoder and polynomial normal
 form as `tools/pilout-roundtrip`.
 
-## Reconstruction limit
+## Historical evidence and reconstruction limit
+
+`evidence/rounds/<n>/` retains only `site.json`, `semdiff.json` when one was
+produced, `note.md`, and a compact `status` record. The latter contains the
+historical build metadata and reachability text needed for
+`python3 tools/adversarial-mutations/report.py --check` to reproduce
+`docs/adversarial-mutation-sweep.md` byte-identically. These are historical
+observations from the report checkout, not current-checkout mutation results.
 
 The original exploratory harness and its command logs were not committed. This
 runner reconstructs the reported source edits and invokes the current pinned

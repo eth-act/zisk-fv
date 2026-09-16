@@ -1,0 +1,21 @@
+{
+  "build_exit": "1",
+  "build_seconds": "20",
+  "changed": [
+    "MemAlign.lean"
+  ],
+  "errors": "23:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:425:2: Type mismatch\n30:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:431:2: Type mismatch\n37:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:465:2: Type mismatch\n72:error: ZiskFv/AirsClean/MemAlignMirrorWeld.lean:538:2: Type mismatch\n94:error: Lean exited with code 1\n97:error: build failed\n",
+  "historical_reach": [
+    "* `MemAlign.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Binary",
+    "Extraction.MemAlign",
+    "ZiskFv.AirsClean.BinaryMirrorWeld"
+  ],
+  "rebuilt_jobs": 3,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}
