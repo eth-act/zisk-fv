@@ -205,45 +205,94 @@ def byte0Wiring : BinaryByteWiring :=
 
 @[reducible]
 def byte1Wiring : BinaryByteWiring :=
-  ⟨1, link_Binary_7, ValidatedLink.constraintValidated link_Binary_7,
-    .ofHint hint_Binary_7_0, [], [.ofHint hint_Binary_7_1],
-    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_7_0).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 1) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_7_0).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 1) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_7_0).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 1) := by rfl
+    exact ⟨1, link_Binary_7, ValidatedLink.constraintValidated link_Binary_7,
+      .ofHint hint_Binary_7_0, [], [.ofHint hint_Binary_7_1],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte2Wiring : BinaryByteWiring :=
-  ⟨2, link_Binary_7, ValidatedLink.constraintValidated link_Binary_7,
-    .ofHint hint_Binary_7_1, [.ofHint hint_Binary_7_0], [],
-    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_7_1).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 2) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_7_1).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 2) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_7_1).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 2) := by rfl
+    exact ⟨2, link_Binary_7, ValidatedLink.constraintValidated link_Binary_7,
+      .ofHint hint_Binary_7_1, [.ofHint hint_Binary_7_0], [],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte3Wiring : BinaryByteWiring :=
-  ⟨3, link_Binary_8, ValidatedLink.constraintValidated link_Binary_8,
-    .ofHint hint_Binary_8_0, [], [.ofHint hint_Binary_8_1],
-    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_8_0).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 3) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_8_0).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 3) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_8_0).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 3) := by rfl
+    exact ⟨3, link_Binary_8, ValidatedLink.constraintValidated link_Binary_8,
+      .ofHint hint_Binary_8_0, [], [.ofHint hint_Binary_8_1],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte4Wiring : BinaryByteWiring :=
-  ⟨4, link_Binary_8, ValidatedLink.constraintValidated link_Binary_8,
-    .ofHint hint_Binary_8_1, [.ofHint hint_Binary_8_0], [],
-    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_8_1).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 4) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_8_1).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 4) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_8_1).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 4) := by rfl
+    exact ⟨4, link_Binary_8, ValidatedLink.constraintValidated link_Binary_8,
+      .ofHint hint_Binary_8_1, [.ofHint hint_Binary_8_0], [],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte5Wiring : BinaryByteWiring :=
-  ⟨5, link_Binary_9, ValidatedLink.constraintValidated link_Binary_9,
-    .ofHint hint_Binary_9_0, [], [.ofHint hint_Binary_9_1],
-    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_9_0).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 5) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_9_0).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 5) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_9_0).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 5) := by rfl
+    exact ⟨5, link_Binary_9, ValidatedLink.constraintValidated link_Binary_9,
+      .ofHint hint_Binary_9_0, [], [.ofHint hint_Binary_9_1],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte6Wiring : BinaryByteWiring :=
-  ⟨6, link_Binary_9, ValidatedLink.constraintValidated link_Binary_9,
-    .ofHint hint_Binary_9_1, [.ofHint hint_Binary_9_0], [],
-    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_9_1).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 6) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_9_1).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 6) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_9_1).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 6) := by rfl
+    exact ⟨6, link_Binary_9, ValidatedLink.constraintValidated link_Binary_9,
+      .ofHint hint_Binary_9_1, [.ofHint hint_Binary_9_0], [],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byte7Wiring : BinaryByteWiring :=
-  ⟨7, link_Binary_10, ValidatedLink.constraintValidated link_Binary_10,
-    .ofDerived derivedTuple_Binary_10_0, [],
-    [.ofDerived derivedTuple_Binary_10_1], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  by
+    have ha : (BinaryLookupTuple.ofDerived derivedTuple_Binary_10_0).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 7) := by rfl
+    have hb : (BinaryLookupTuple.ofDerived derivedTuple_Binary_10_0).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 7) := by rfl
+    have hc : (BinaryLookupTuple.ofDerived derivedTuple_Binary_10_0).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 7) := by rfl
+    exact ⟨7, link_Binary_10, ValidatedLink.constraintValidated link_Binary_10,
+      .ofDerived derivedTuple_Binary_10_0, [], [.ofDerived derivedTuple_Binary_10_1],
+      rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
 
 @[reducible]
 def byteWirings : List BinaryByteWiring :=
