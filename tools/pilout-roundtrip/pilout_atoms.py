@@ -464,10 +464,11 @@ def constraints_reaching(air: pilout_wire.Air, kinds: frozenset) -> set[int]:
     return {i for i, c in enumerate(air.constraints) if visit(c.expression_idx)}
 
 
-def witness_column_names(
-    pilout: pilout_wire.PilOut, ref: pilout_wire.AirRef
+def _scoped_symbol_names(
+    pilout: pilout_wire.PilOut, ref: pilout_wire.AirRef, type_name: str,
+    preserve_dimensions: bool,
 ) -> dict[tuple[int, int], str]:
-    """Reconstruct `(stage, stage-relative column) -> name` from `PilOut.symbols`.
+    """Reconstruct `(stage, stage-relative index) -> name` from `PilOut.symbols`.
 
     Only the symbol table is read: a WITNESS_COL symbol carries `stage`, the
     starting `id`, and `lengths` for an array, and an array of total size `n`
@@ -479,7 +480,7 @@ def witness_column_names(
     """
     names: dict[tuple[int, int], str] = {}
     for symbol in pilout.symbols:
-        if (symbol.type_name != "WITNESS_COL"
+        if (symbol.type_name != type_name
                 or symbol.air_group_id != ref.airgroup_idx
                 or symbol.air_id != ref.air_idx):
             continue
@@ -489,16 +490,38 @@ def witness_column_names(
             total = 1
             for length in symbol.lengths:
                 total *= length
-            keys = [((symbol.stage, symbol.id + k), f"{symbol.name}[{k}]")
-                    for k in range(total)]
+            keys = []
+            for k in range(total):
+                if not preserve_dimensions:
+                    keys.append(((symbol.stage, symbol.id + k), f"{symbol.name}[{k}]"))
+                    continue
+                remainder = k
+                indices = [0] * len(symbol.lengths)
+                for position in range(len(symbol.lengths) - 1, -1, -1):
+                    indices[position] = remainder % symbol.lengths[position]
+                    remainder //= symbol.lengths[position]
+                suffix = "".join(f"[{index}]" for index in indices)
+                keys.append(((symbol.stage, symbol.id + k), f"{symbol.name}{suffix}"))
         for key, name in keys:
             if key in names:
                 raise PiloutAtomError(
-                    f"{ref.air_name}: two WITNESS_COL symbols claim {key}: "
+                    f"{ref.air_name}: two {type_name} symbols claim {key}: "
                     f"{names[key]!r} and {name!r}"
                 )
             names[key] = name
     return names
+
+
+def witness_column_names(
+    pilout: pilout_wire.PilOut, ref: pilout_wire.AirRef
+) -> dict[tuple[int, int], str]:
+    return _scoped_symbol_names(pilout, ref, "WITNESS_COL", False)
+
+
+def air_value_names(
+    pilout: pilout_wire.PilOut, ref: pilout_wire.AirRef
+) -> dict[tuple[int, int], str]:
+    return _scoped_symbol_names(pilout, ref, "AIR_VALUE", True)
 
 
 # A decoded constant is corroborated by the PIL source text when its decimal

@@ -105,9 +105,29 @@ def main(argv: list[str]) -> int:
             continue
         lines = header(air, spec, stage, len(columns))
         lines += [f"{index} {columns[index]}" for index in sorted(columns)]
+        airvalues = check.generated_air_values(
+            generated.read_text(), Path(str(spec["generated"]))
+        ) if "airvalue-map" in spec else {}
+        if "airvalue-map" in spec and not airvalues:
+            print(
+                f"regenerate-weld-columns: {air}: no air-value header in {spec['generated']}.",
+                file=sys.stderr,
+            )
+            status = 1
+            continue
+        if airvalues:
+            lines += [
+                "",
+                f"# Air values consumed through `{spec['airvalue-map']}`.",
+            ]
+            lines += [
+                f"airvalue {value_stage} {index} {airvalues[(value_stage, index)]}"
+                for value_stage, index in sorted(airvalues)
+            ]
         recording.parent.mkdir(parents=True, exist_ok=True)
         recording.write_text("\n".join(lines) + "\n")
-        print(f"  → {spec['recording']} ({len(columns)} columns)")
+        suffix = f", {len(airvalues)} air values" if airvalues else ""
+        print(f"  → {spec['recording']} ({len(columns)} columns{suffix})")
     return status
 
 
