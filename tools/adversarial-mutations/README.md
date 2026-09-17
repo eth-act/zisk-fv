@@ -140,7 +140,7 @@ copy and transient workspace is deleted after its logs and JSON are copied under
 `results-dir/round-NN/`; uploaded reports therefore contain no inaccessible
 temporary log paths. Its summary fails on incomplete,
 infrastructure, or unexpected detection layers. The target is proof detection
-for every valid mutation except round 27's documented fidelity scope boundary.
+for every valid mutation.
 The three commutativity controls retain their historical expected false-positive
 diagnostics until the syntactic weld behavior is deliberately normalized.
 
