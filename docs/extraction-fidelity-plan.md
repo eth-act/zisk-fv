@@ -6,7 +6,7 @@ size, CI, cache, commit and reporting rules) that revision 2 left implicit, and 
 workstream the same explicit shape: branch, target, size, files, steps, checks, report, exit.
 Where this file and an issue body disagree, this file wins.*
 
-Tracking: umbrella **#368**, children **#369-#376**. Milestone PR: **#377**. Existing issues this
+Tracking: umbrella **#368**, children **#369-#376** and **#392**. Milestone PR: **#377**. Existing issues this
 builds on: #354, #366, #348, #358, #268, #328/#103, #330, #19. Issue bodies still carry revision-1
 numbers; update them only after W0c prints the recomputed ones, and count that as bookkeeping.
 
@@ -510,6 +510,7 @@ bounds how many are in flight: opening a PR and removing its worktree is what fr
 | 9 | W13 | W11 | no |
 | 10 | W14, per AIR | W7 or W11 for that AIR | no |
 | 11 | W15 | W0c | **yes** |
+| 12 | W16 | W0c | **yes** |
 
 W1, W2, W6 and W9 are done on the baseline; W0d's evidence run is what closes their issues.
 
@@ -665,6 +666,30 @@ with an issue and a PIL citation. Confirm #354's caveat on `main.pil:452` before
 **Exit**: the ledger's residual count equals 34 and its terminal value is printed.
 
 ---
+
+## W16 · The two hand-modelled byte tables — #392
+
+**Branch** `w16-byte-tables`. Independent after W0c. **Cache seeding required** (exporter and
+populate change). Same class as W9, which closed the MemAlignRom half.
+
+`BinaryTable` and `BinaryExtensionTable` are `virtual` tables (`zisk.pil:121`, `:123`) whose
+contents a PIL script computes at compile time. The model carries both as hand-written indexed
+functions (`ZiskFv/AirsClean/BinaryTable.lean`, 1,989 lines; `BinaryExtensionTable.lean`, 1,295),
+both inside the root theorem's closure, and nothing compares them to ZisK's builder. This is the
+deepest unchecked assumption on the live ADD route: every byte-level fact about every Binary and
+BinaryExtension opcode comes from these two files.
+
+1. Export both tables through the hook W9 built (`tools/virtual-tables/export-mem-align-rom.cjs`).
+   Decide the artifact so `build/` does not grow by hundreds of megabytes: a compact encoding or a
+   per-opcode-block hash. Record the decision in `docs/extraction/extractor-notes.md`.
+2. Check the model against the export: a Python gate evaluating `rowOfIndex` over every index, or
+   a Lean statement over the exported rows. State which and why in the PR.
+3. Add both tables to the exposure ledger as their own rows, checked or unchecked.
+4. Add a mutation fixture editing `binary_table.pil:249` and require it to reach the check.
+
+**Exit**: the fixture observed CAUGHT with a committed result file; the ledger prints both tables
+as checked; the two model files unchanged or changed only to enable the check, with no new
+hypothesis.
 
 ## Present on the baseline, outside this plan
 
