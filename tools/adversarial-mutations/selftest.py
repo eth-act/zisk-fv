@@ -26,10 +26,18 @@ def check(condition: bool, message: str) -> None:
 def test_corpus() -> None:
     identity, rounds = runner.load_corpus()
     check(identity["zisk_revision"] == "b632745", "unexpected pinned identity")
-    check(len(rounds) == 52, "round count")
-    check(sum(r.historical_class == "VALID" for r in rounds) == 35, "valid count")
-    check(sum(r.expected_outcome == "proof" for r in rounds) == 24, "caught count")
-    check(sum(r.expected_outcome == "fidelity" for r in rounds) == 11, "missed count")
+    # The 52 rounds of the historical sweep keep the report's frozen invariants.
+    # Rounds added afterwards are marked NEW and are counted separately, so a
+    # new fixture can never move a number the report published.
+    historical = [r for r in rounds if r.historical_class != "NEW"]
+    check(len(historical) == 52, "historical round count")
+    check(sum(r.historical_class == "VALID" for r in historical) == 35, "valid count")
+    check(sum(r.expected_outcome == "proof" for r in historical) == 24, "caught count")
+    check(sum(r.expected_outcome == "fidelity" for r in historical) == 11, "missed count")
+    # Round 53 (W16): the byte-table fidelity gate's negative control.
+    check(len(rounds) == 53, "round count")
+    check(runner.expected_detection_layer(runner.round_by_number(53)) == "fidelity",
+          "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "fidelity",
           "recorded scope boundary")
     check(runner.expected_detection_layer(runner.round_by_number(50)) == "proof",

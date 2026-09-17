@@ -10,6 +10,8 @@
 #                                             Circuit shim and
 #                                             MemGeneratedArtifact/bridge files
 #   build/extraction/MemAirFacts.md        ← extracted-lean
+#   build/extraction/ByteTables/*.json     ← extracted-lean (per-opcode-block
+#                                            hashes of the two virtual byte tables)
 #   build/clean-lean/                      ← clean-source.
 #   build/aeneas-lean/                      ← aeneas-lean-source (the
 #                                             patched Aeneas Lean runtime;
@@ -74,6 +76,11 @@ EOF
     echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
     cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
     chmod u+w build/extraction/MemAirFacts.md
+
+    echo "▶ build/extraction/ByteTables/ ← ${extracted-lean}"
+    mkdir -p build/extraction/ByteTables
+    cp --no-preserve=mode "${extracted-lean}"/ByteTables/*.json build/extraction/ByteTables/
+    chmod u+w build/extraction/ByteTables/*.json
     cp --no-preserve=mode "${extracted-lean}/MemAlignRom.tsv" build/extraction/MemAlignRom.tsv
 
     echo "▶ build/clean-lean/ ← ${clean-source}"

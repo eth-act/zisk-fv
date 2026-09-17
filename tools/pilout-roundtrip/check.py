@@ -825,9 +825,18 @@ def nix_declared_airs(root: str) -> tuple[list[str] | None, str | None]:
     """The AIR names `nix/extracted-lean.nix` passes to `pil-extract air`.
 
     The build's own declaration of what gets extracted, read from the shell it
-    runs: the `for air in ... ; do` list plus every literal `--air NAME`. Second
-    opinion on `DECLARED_AIRS`, and the file a scope reduction would most
-    naturally be made in.
+    runs: the `for air in ... ; do` list of every loop that invokes
+    `pil-extract air`, plus every literal `--air NAME`. Second opinion on
+    `DECLARED_AIRS`, and the file a scope reduction would most naturally be made
+    in.
+
+    The loop body must invoke `pil-extract air` to count. `extracted-lean.nix`
+    also loops over the two `virtual` byte tables (`BinaryTable`,
+    `BinaryExtensionTable`) to hash their fixed columns, and those are not
+    extracted AIRs: they contribute no pilout constraints and no
+    `Extraction/<Air>.lean`. Counting them would make this check demand
+    `DECLARED_AIRS` entries that cannot exist. Narrowing remains impossible --
+    dropping a real AIR still drops its `pil-extract air` invocation.
     """
     path = os.path.join(root, "nix", "extracted-lean.nix")
     try:
@@ -836,7 +845,9 @@ def nix_declared_airs(root: str) -> tuple[list[str] | None, str | None]:
     except OSError as exc:
         return None, f"cannot read the build's AIR declaration {path}: {exc}"
     names: set[str] = set()
-    for match in re.finditer(r"for\s+air\s+in\s+(.*?);\s*do", text, re.S):
+    for match in re.finditer(r"for\s+air\s+in\s+(.*?);\s*do(.*?)\bdone\b", text, re.S):
+        if not re.search(r"pil-extract\s+air\b", match.group(2)):
+            continue
         for word in match.group(1).replace("\\\n", " ").split():
             names.add(word)
     for match in re.finditer(r"--air\s+(\S+)", text):

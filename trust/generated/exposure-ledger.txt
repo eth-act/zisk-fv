@@ -388,3 +388,7 @@ MemAlignWriteByte.11	challenge	1	1	0	0	-	-
 MemAlignWriteByte.12	challenge	1	1	0	0	-	-
 MemAlignWriteByte.13	challenge	1	1	0	0	-	-
 MemAlignWriteByte.14	air-value	1	1	0	0	-	-
+
+virtual-table	class	rows	opcode-blocks	status
+BinaryExtensionTable	virtual-table	3151872	9	checked
+BinaryTable	virtual-table	5505024	19	checked

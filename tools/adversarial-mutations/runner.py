@@ -33,7 +33,13 @@ sys.path.insert(0, str(HERE))
 import semdiff  # noqa: E402
 import sites  # noqa: E402
 
-REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50]
+def _round_choices() -> range:
+    """Valid --round values, read from the corpus rather than hardcoded."""
+    _, rounds = load_corpus()
+    return range(1, len(rounds) + 1)
+
+
+REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50, 53]
 
 
 class CorpusError(Exception):
@@ -60,8 +66,9 @@ def load_corpus() -> tuple[dict[str, Any], list[Round]]:
         raise CorpusError(f"unsupported corpus schema {raw.get('schema')!r}")
     rounds = [Round(*row[:-1], tuple(row[-1])) for row in raw["rounds"]]
     numbers = [item.number for item in rounds]
-    if numbers != list(range(1, 53)):
-        raise CorpusError(f"corpus must contain rounds 1..52 once; got {numbers}")
+    if numbers != list(range(1, len(rounds) + 1)):
+        raise CorpusError(
+            f"corpus must contain rounds 1..{len(rounds)} once; got {numbers}")
     valid_outcomes = {"invalid", "equivalent", "compiler", "extractor",
                       "fidelity", "proof", "infrastructure"}
     for item in rounds:
@@ -85,6 +92,10 @@ def diagnostic_patterns(item: Round) -> tuple[str, ...]:
 
 def expected_detection_layer(item: Round) -> str:
     """Post-hardening expectation, separate from the historical verdict."""
+    if item.historical_class == "NEW":
+        # Fixtures added after the sweep have no historical verdict to derive
+        # from; they state the layer they are meant to reach.
+        return item.expected_outcome
     if item.historical_class == "INVALID":
         return "invalid"
     if item.historical_class == "REJECTED":
@@ -190,6 +201,15 @@ def extraction_manifest(path: Path) -> dict[str, str]:
         candidate = container / name
         if candidate.is_file():
             result[name] = sha256(candidate)
+    # The two `virtual` byte tables never reach pilout, so they have no
+    # `Extraction/<Air>.lean`; the extractor emits per-opcode-block hashes for
+    # them instead. Without these entries a mutation inside `binary_table.pil`
+    # or `binary_extension_table.pil` changes no monitored artifact and is
+    # classified as a lost artifact rather than an extraction difference.
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        for candidate in sorted(byte_tables.glob("*.json")):
+            result[f"ByteTables/{candidate.name}"] = sha256(candidate)
     return result
 
 
@@ -854,10 +874,10 @@ def parser() -> argparse.ArgumentParser:
     listing.add_argument("--zisk-source", type=Path)
     listing.add_argument("--compile-timeout", type=int, default=3600)
     apply = sub.add_parser("apply")
-    apply.add_argument("--round", type=int, required=True, choices=range(1, 53))
+    apply.add_argument("--round", type=int, required=True, choices=_round_choices())
     apply.add_argument("--source", type=Path, required=True)
     b = sub.add_parser("boundary")
-    b.add_argument("--round", type=int, required=True, choices=range(1, 53))
+    b.add_argument("--round", type=int, required=True, choices=_round_choices())
     b.add_argument("--baseline-pilout", type=Path, required=True)
     b.add_argument("--mutant-pilout", type=Path, required=True)
     b.add_argument("--baseline-extraction", type=Path, required=True)
@@ -867,7 +887,7 @@ def parser() -> argparse.ArgumentParser:
     b.add_argument("--output", type=Path)
     def full_options(f: argparse.ArgumentParser, include_round: bool = True) -> None:
         if include_round:
-            f.add_argument("--round", type=int, required=True, choices=range(1, 53))
+            f.add_argument("--round", type=int, required=True, choices=_round_choices())
         f.add_argument("--repo", type=Path, default=REPO)
         f.add_argument("--zisk-source", type=Path,
                    help="pinned source tree; defaults to the flake input store path")
@@ -888,7 +908,7 @@ def parser() -> argparse.ArgumentParser:
     suite = sub.add_parser("suite")
     full_options(suite, include_round=False)
     suite.add_argument("--profile", choices=("boundary", "regression", "full"), required=True)
-    suite.add_argument("--round", action="append", type=int, choices=range(1, 53),
+    suite.add_argument("--round", action="append", type=int, choices=_round_choices(),
                        help="override the profile's round set; repeatable")
     suite.add_argument("--results-dir", type=Path, required=True)
     suite.add_argument("--commit-evidence", metavar="SHORT_SHA",
@@ -934,7 +954,7 @@ def main(argv: list[str]) -> int:
     if args.command == "suite":
         defaults = {"boundary": [5, 7, 32, 38, 50],
                     "regression": REGRESSION_ROUNDS,
-                    "full": list(range(1, 53))}
+                    "full": list(_round_choices())}
         rounds = args.round if args.round else defaults[args.profile]
         evidence_destination = None
         if args.commit_evidence:

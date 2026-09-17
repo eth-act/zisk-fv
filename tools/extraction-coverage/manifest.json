@@ -9509,6 +9509,14 @@
   ],
   "generated_outputs": [
     {
+      "kind": "table_digest",
+      "path": "ByteTables/BinaryExtensionTable.json"
+    },
+    {
+      "kind": "table_digest",
+      "path": "ByteTables/BinaryTable.json"
+    },
+    {
       "kind": "lean",
       "path": "Extraction.lean"
     },
