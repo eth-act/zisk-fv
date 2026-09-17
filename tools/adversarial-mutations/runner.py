@@ -185,7 +185,20 @@ def lean_artifact_dir(path: Path) -> Path:
 def extraction_manifest(path: Path) -> dict[str, str]:
     lean = lean_artifact_dir(path)
     container = path if lean != path else (path.parent if path.name == "Extraction" else path)
-    result = {p.name: sha256(p) for p in lean.glob("*.lean") if p.is_file()}
+    # Recurse: the generated Clean components live under
+    # `Extraction/Components/<Air>/`. A non-recursive scan left them
+    # unmonitored, so a mutation that changed only a component's `Row.lean` or
+    # `Constraints.lean` produced an empty artifact delta and was misread as a
+    # lost artifact. Top-level files keep their bare name so the corpus's
+    # existing stem entries (`Main`, `Binary`, ...) still match; nested files
+    # are keyed by their path under `Extraction/`.
+    result = {}
+    for candidate in sorted(lean.rglob("*.lean")):
+        if not candidate.is_file():
+            continue
+        relative = candidate.relative_to(lean)
+        key = candidate.name if relative.parent == Path(".") else relative.as_posix()
+        result[key] = sha256(candidate)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         candidate = container / name
         if candidate.is_file():
