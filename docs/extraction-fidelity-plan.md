@@ -427,6 +427,15 @@ extraction/coverage.md` (one paragraph). **Must not touch** `check_mirrors.py`'s
 | tied, not composed | covered by a consumed link whose bus has no provider in `fullRv64imSoundEnsemble`; the provider list is read from `ZiskFv/AirsClean/FullEnsemble.lean`, not hard-coded |
 | declared residual | listed in `trust/exposure-residuals.toml` with `constraint`, `issue`, `pil` fields |
 
+A constraint is also covered, in both columns, when its AIR's component is **generated and
+re-exported** by the model: `trust/generated-components.toml` marks the AIR `consumed`, the
+model's `ZiskFv/AirsClean/<Air>/Constraints.lean` is a re-export of
+`Extraction.Components.<Air>.Constraints`, and the extractor's per-component constraint map (a
+generated `Components/<Air>/Manifest` listing which `<Air>.lean` constraint indices the component's
+`assertZero` lines and bus pushes realise) names the constraint. Credit exactly the mapped indices,
+nothing more; an AIR marked `consumed` without a manifest covers nothing. This is the only way
+the root column moves under W14, and it is the ledger's job to show it.
+
 Printed separately: **wirable**, generated links consumed by nothing. Never in the numerator.
 
 **Steps**
@@ -652,8 +661,12 @@ byte-identical. **Cache seeding required.**
    `trust/weld-airs.toml` block.
 6. Run that AIR's re-run set and commit the evidence.
 
-**Exit**: generated share moves by one; both exposure columns unchanged or improved; the PR quotes
-both.
+**Exit**: generated share moves by one; the root column **drops** by the number of constraints the
+component manifest maps, and the build column is not worse; the PR quotes the before and after of
+both. Deleting the weld clauses removes the textual names the ledger used to count them, so before
+step 5 the ledger must credit the component (W0c's generated-component rule); if the extractor does
+not yet emit the manifest, add it in the same PR. Keeping a weld alive to hold the number, or
+editing the ledger, is laundering.
 
 ---
 
