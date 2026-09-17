@@ -56,11 +56,34 @@ def affected_constraints(path: Path, source_air: str) -> tuple[bool, list[tuple[
     return semantic, affected
 
 
-def classify_observation(data: dict, path: Path) -> str:
+# `runner.py full` reports the layer that detected a mutation. Only two of
+# those layers are observations of the rule this script scores: the proof build
+# failing on the mutant is a kill, and mutated artifacts surviving the proof
+# build is a miss. The rest -- an invalid edit, a compiler rejection, an
+# extraction difference, an incomplete run -- say nothing about whether the
+# proof would have caught it.
+RUNNER_VERDICTS = {"proof": "caught", "fidelity": "missed"}
+RUNNER_NON_VERDICTS = {"infrastructure", "invalid", "compiler", "extractor",
+                       "equivalent"}
+
+
+def classify_observation(data: dict, path: Path) -> str | None:
+    """caught / missed, or None when the record carries no verdict.
+
+    Two vocabularies reach this function. The historical `evidence/rounds/<n>/
+    status` files carry `state` plus `build_exit`; `runner.py full` results
+    carry `outcome`. Only the first was ever handled, so every committed runner
+    result with `complete: true` raised -- round 27 (`fidelity`) and round 32
+    (`proof`) among them -- and the whole rule became unscorable.
+    """
     for key in ("prediction", "outcome", "result", "classification"):
         value = str(data.get(key, "")).lower()
         if value in ("caught", "missed"):
             return value
+        if value in RUNNER_VERDICTS:
+            return RUNNER_VERDICTS[value]
+        if value in RUNNER_NON_VERDICTS:
+            return None
     state = str(data.get("state", ""))
     build_exit = str(data.get("build_exit", ""))
     if state == "NO_EXTRACTION_DELTA":
@@ -71,12 +94,39 @@ def classify_observation(data: dict, path: Path) -> str:
 
 
 def observation(round_no: int, round_dir: Path) -> tuple[str, Path]:
-    latest = sorted((EVIDENCE / "results").glob(f"*/round-{round_no}.json"))
-    path = latest[-1] if latest else round_dir / "status"
+    """The latest *complete* observation of a round, else its historical status.
+
+    A suite run that ends `infrastructure` -- a Lean heartbeat timeout, a lost
+    store path, a dirty tree -- is a well-formed record of a run that produced
+    no verdict. Such a result must never be scored as caught or missed, and it
+    must not stop the whole rule from being scored either: a round whose only
+    committed result is incomplete is simply not yet observed on this branch,
+    and falls back to the historical status like a round with no result at all.
+
+    Round 16 is the live example. `results/1a082a75/round-16.json` records a
+    200000-heartbeat timeout at `ZiskFv/AirsClean/Binary/Wiring.lean:213`;
+    `w3-binary-hygiene` carries the completed `proof` observation. Picking the
+    lexicographically last directory regardless of completeness made the tool
+    exit nonzero on every branch that has the first file but not the second.
+    """
+    candidates = sorted((EVIDENCE / "results").glob(f"*/round-{round_no}.json"))
+    for path in reversed(candidates):
+        data = json.loads(path.read_text())
+        if not isinstance(data, dict):
+            raise InputError(f"{path}: expected JSON object")
+        if data.get("complete") is False:
+            continue
+        verdict = classify_observation(data, path)
+        if verdict is not None:
+            return verdict, path
+    path = round_dir / "status"
     data = json.loads(path.read_text())
     if not isinstance(data, dict):
         raise InputError(f"{path}: expected JSON object")
-    return classify_observation(data, path), path
+    verdict = classify_observation(data, path)
+    if verdict is None:
+        raise InputError(f"{path}: historical status carries no verdict")
+    return verdict, path
 
 
 def main() -> int:
@@ -125,5 +175,44 @@ def main() -> int:
         return 2
 
 
+
+def _selftest() -> int:
+    """Guard the two vocabularies and the incomplete-result rule.
+
+    Run with `--selftest`. These are the cases that made the whole rule
+    unscorable on any branch carrying `results/1a082a75/`.
+    """
+    probe = Path("<probe>")
+    cases = [
+        ({"outcome": "proof"}, "caught", "runner kill"),
+        ({"outcome": "fidelity"}, "missed", "runner miss"),
+        ({"outcome": "infrastructure"}, None, "incomplete run carries no verdict"),
+        ({"outcome": "extractor"}, None, "extraction difference is not a proof verdict"),
+        ({"outcome": "equivalent"}, None, "equivalent edit is not a proof verdict"),
+        ({"state": "READY", "build_exit": "1"}, "caught", "historical status kill"),
+        ({"state": "READY", "build_exit": "0"}, "missed", "historical status miss"),
+        ({"state": "NO_EXTRACTION_DELTA"}, "missed", "no extraction delta"),
+        ({"prediction": "caught"}, "caught", "explicit prediction"),
+    ]
+    for data, expected, label in cases:
+        actual = classify_observation(data, probe)
+        if actual != expected:
+            print(f"rule_check selftest: {label}: expected {expected!r}, got {actual!r}",
+                  file=sys.stderr)
+            return 1
+    try:
+        classify_observation({"state": "WAT"}, probe)
+    except InputError:
+        pass
+    else:
+        print("rule_check selftest: unrecognised record was not rejected", file=sys.stderr)
+        return 1
+    print("rule_check selftest OK: runner and historical vocabularies, "
+          "non-verdicts, unrecognised records rejected")
+    return 0
+
+
 if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        raise SystemExit(_selftest())
     raise SystemExit(main())

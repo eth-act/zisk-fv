@@ -225,6 +225,7 @@ LEAN
     run "generated module inventory" tools/check-generated-modules.sh
     run "mutation harness self-tests" python3 tools/adversarial-mutations/selftest.py
     run "exposure ledger" python3 tools/mirror-roundtrip/exposure.py
+    run "rule-check vocabularies" python3 tools/mirror-roundtrip/rule_check.py --selftest
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
     run "7/10 Mem generated artifact wrapper" mem_generated_artifact_wrapper
