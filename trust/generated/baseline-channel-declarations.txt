@@ -1,5 +1,6 @@
 channelsWithGuarantees	channelsWithGuarantees := [] }
 channelsWithGuarantees	channelsWithGuarantees := [] }
+channelsWithRequirements	channelsWithRequirements := [ArithRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [BinaryExtensionTableChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [BinaryTableChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemAlignRangeChannel.toRaw]
@@ -37,6 +38,7 @@ channelsWithRequirements	channelsWithRequirements := [RegisterStepRangeChannel.t
 channelsWithRequirements	channelsWithRequirements := [SpecifiedRangesSliceChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := []
 exposedChannels	exposedChannels _ _ := []
+exposedChannels	exposedChannels message _ := expose ArithRangeChannel [ArithRangeChannel.pushed message]
 exposedChannels	exposedChannels message _ := expose BinaryExtensionTableChannel [BinaryExtensionTableChannel.pushed message]
 exposedChannels	exposedChannels message _ := expose BinaryTableChannel [BinaryTableChannel.pushed message]
 exposedChannels	exposedChannels message _ := expose MemAlignRangeChannel [MemAlignRangeChannel.pushed message]
@@ -69,4 +71,4 @@ exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushe
 exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
 exposedChannels	exposedChannels value _ := expose RegisterStepRangeChannel [RegisterStepRangeChannel.pushed (registerStepMessage value)]
 exposedChannels	exposedChannels value _ := expose SpecifiedRangesSliceChannel [SpecifiedRangesSliceChannel.pushed (memDistanceMessage value)]
-# total declarations: 71
+# total declarations: 73
