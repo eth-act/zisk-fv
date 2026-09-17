@@ -87,9 +87,16 @@ that cannot rebuild ZisK's Rust workspace (crates.io returns 403 there). So:
   around it.
 - A red CI run whose cause is unrelated to the PR (cache miss, crates.io 403, runner offline) is
   fixed by seeding the cache and `gh run rerun <run-id> --failed`, never by a workflow edit.
-- A PR is not ready to **merge** until every check on `gh pr checks <N>` passes. Pending checks
-  never block the next workstream; a failing check is reported and fixed while the next workstream
-  proceeds.
+- **The local full test is the merge gate.** A Phase A self-merge, and review-readiness of any
+  PR, require a green `nix run .#test` run locally from a clean derived state; they do not wait for
+  GitHub checks. GitHub checks are advisory on PRs and must be green only for #377 and for pushes
+  to `main`. A red GitHub check that the local gate did not catch is a finding about the gate
+  (report it and fix the gate), never a reason to idle.
+- **A check builds what it needs.** Any gate that depends on a build product (an executable, an
+  olean set, a generated file) builds or regenerates it itself, as `check-all-semantic.sh` does for
+  `trust-gate`; a gate that passes only because a previous hand-run left the product behind is not
+  a gate. Before the final gate of any PR that adds a build target or a generated artifact,
+  delete the derived products it introduces and run from clean.
 
 ### PR body
 
