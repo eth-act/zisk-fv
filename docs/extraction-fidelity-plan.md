@@ -180,9 +180,14 @@ prompt that starts it is one line: `Resume per docs/extraction-fidelity-plan.md,
 
   ```bash
   git worktree add /home/lee/zisk-fv-<id> -b <branch> <base>
+  git -C /home/lee/zisk-fv-<id> submodule update --init -- zisk
   cp -a --reflink=always /home/lee/zisk-fv/.lake  /home/lee/zisk-fv-<id>/.lake
   cp -a --reflink=always /home/lee/zisk-fv/build  /home/lee/zisk-fv-<id>/build
   ```
+
+  The submodule line is not optional: test steps 2/10 and 5/10 read `zisk/core/src/`, and a
+  worktree without it fails them with a misleading `cd: zisk/core: No such file`. A gate result
+  from a worktree that skipped this line is invalid.
 
   `--reflink=always` fails loudly if sharing is impossible; never fall back to a plain copy. Then in
   the dev shell run `lake exe cache get`, then `lake build --log-level=warning`; if its first lines
