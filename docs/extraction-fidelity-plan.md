@@ -505,6 +505,35 @@ closes when this PR merges.
 
 ---
 
+## W0e · Shrink the coverage manifest before milestone 0 lands — #377 review finding
+
+**Branch** `w0e-manifest-format` from the integration branch. **PR target** the integration branch,
+Phase A self-merge. **Size** about ten hand-written lines plus one `--update`.
+
+`tools/extraction-coverage/manifest.json` is 72,785 lines, 75% of #377, and unreviewable:
+`constraint_indices` is `list(range(len(constraint_kinds)))` (4,095 lines of nothing), and
+one-int-per-line arrays turn a single changed lookup route into a hunk hundreds of lines long.
+The 212 classification lines are the only human content.
+
+1. Drop `constraint_indices`; derive it from `constraint_kinds` at load time.
+2. Change `canonical()` in `check.py` to emit **one JSON record per line** (one line per AIR,
+   per route, per link, per output), so a changed route is one changed line. Optionally add a
+   per-section SHA-256 and count header; keep the per-record lines, because "which route changed"
+   is the information the gate exists to give when the ZisK pin moves.
+3. Run `check.py --update`; classifications must carry over unchanged. Run `selftest.py`.
+4. Expected size: about 1,300 lines. State the before and after in the PR body.
+
+Do it now, on the integration branch, so it lands inside #377. Stacked children that touch the
+manifest (#383, #386, #389, #390, #391, #393, #394) regenerate it when they are rebased after
+merges; do not rebase the stack for this.
+
+**Standing rule from this finding.** A generated file committed to the tree is a review surface
+or it is not committed: one record per line, no fields derivable from other fields, and the PR
+body separates hand-written from generated line counts. Mutation evidence stays committed: it is
+observation, not derivation, and rule 9 makes the result file the definition of CAUGHT.
+`docs/adversarial-mutation-sweep.md` stays committed as the human narrative, gated by
+`report.py --check`.
+
 ## Sequencing after W0
 
 Smallest first. *Independent* workstreams may be opened while another PR awaits review; dependent
@@ -526,6 +555,7 @@ bounds how many are in flight: opening a PR and removing its worktree is what fr
 | 10 | W14, per AIR | W7 or W11 for that AIR | no |
 | 11 | W15 | W0c | **yes** |
 | 12 | W16 | W0c | **yes** |
+| 0 | W0e | W0d | **yes**, do first |
 
 W1, W2, W6 and W9 are done on the baseline; W0d's evidence run is what closes their issues.
 
