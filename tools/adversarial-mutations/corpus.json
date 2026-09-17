@@ -60,6 +60,6 @@
     [50,"MemAlignRom","OPERAND_SWAP","EQUIVALENT","equivalent","zisk/state-machines/mem/pil/mem_align_rom.pil",124,"if (j >= OFFSET[i+1] && j < OFFSET[i+1] + WIDTH[i+1]) {","if (j >= WIDTH[i+1] && j < OFFSET[i+1] + OFFSET[i+1]) {",[]],
     [51,"Arith","OPERAND_SWAP","SYNTACTIC","equivalent","zisk/state-machines/arith/pil/arith.pil",138,"eq[1] = fab * a[1] * b[0]","eq[1] = fab * b[0] * a[1]",["Arith"]],
     [52,"Main","SIGN_FLIP","EQUIVALENT","equivalent","zisk/state-machines/main/pil/main.pil",182,"addr2 === store_offset + store_ind * a[0] + store_use_sp * sp;","addr2 === store_offset + store_ind * a[0] - store_use_sp * sp;",[]],
-    [53,"BinaryTable","OFF_BY_ONE","NEW","fidelity","zisk/state-machines/binary/pil/binary_table.pil",253,"                c = sum & 0xFF;","                c = (sum + 1) & 0xFF;",["ByteTables/BinaryTable.json"]]
+    [53,"BinaryTable","OFF_BY_ONE","NEW","fidelity","zisk/state-machines/binary/pil/binary_table.pil",253,"                c = sum & 0xFF;","                c = (sum + 1) & 0xFF;",["BinaryTable"]]
   ]
 }
