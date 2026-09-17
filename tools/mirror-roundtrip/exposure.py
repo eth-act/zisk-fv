@@ -28,6 +28,12 @@ RESIDUALS = ROOT / "trust" / "exposure-residuals.toml"
 LINKS = ROOT / "build" / "extraction" / "Extraction" / "LookupWiring.lean"
 LINK_RE = re.compile(r"\blink_([A-Za-z0-9]+)_(\d+)\b")
 CONSTRAINT_RE = re.compile(r"^\s*def constraint_(\d+)_every_row\b", re.M)
+COMPONENTS = ROOT / "trust" / "generated-components.toml"
+COMPONENT_DIR = ROOT / "build" / "extraction" / "Extraction" / "Components"
+MANIFEST_LIST_RE = re.compile(
+    r"^def (assertZeroConstraints|busPushConstraints)\s*:\s*List Nat\s*:=\s*\n\s*\[([^\]]*)\]",
+    re.M,
+)
 
 
 @dataclass(frozen=True)
@@ -176,6 +182,54 @@ def residual_entries() -> dict[tuple[str, int], dict[str, object]]:
     return out
 
 
+def generated_component_cover() -> dict[str, set[int]]:
+    """Constraint indices covered by a generated, re-exported component.
+
+    W0c's generated-component rule: an AIR covers a constraint index, in both
+    columns, when three things hold together.
+
+    1. `trust/generated-components.toml` marks the AIR `consumed`.
+    2. The model's `ZiskFv/AirsClean/<Air>/Constraints.lean` re-exports
+       `Extraction.Components.<Air>.Constraints`, so the maintained module is
+       the generated one rather than a copy of it.
+    3. The extractor's `Components/<Air>/Manifest.lean` names the index.
+
+    Credit exactly the mapped indices and nothing more: an AIR marked
+    `consumed` with no manifest, or whose model does not re-export, covers
+    nothing. The manifest's `busPushConstraints` is honoured if the extractor
+    ever fills it, but the push is hint-derived and names no constraint index
+    today, so it is empty and the ExtF constraints stay exposed.
+    """
+    if not COMPONENTS.exists():
+        return {}
+    data = tomllib.loads(COMPONENTS.read_text())
+    cover: dict[str, set[int]] = {}
+    for air, entry in data.get("air", {}).items():
+        if entry.get("expected") != "consumed":
+            continue
+        model = ROOT / "ZiskFv" / "AirsClean" / air / "Constraints.lean"
+        if not model.exists():
+            raise ValueError(f"{air} marked consumed but {model} is missing")
+        if f"import Extraction.Components.{air}.Constraints" not in model.read_text(
+            errors="replace"
+        ):
+            raise ValueError(
+                f"{air} marked consumed but {model} does not re-export "
+                f"Extraction.Components.{air}.Constraints"
+            )
+        manifest = COMPONENT_DIR / air / "Manifest.lean"
+        if not manifest.exists():
+            # No manifest, no credit. Not an error: the extractor may not
+            # emit one for this AIR yet.
+            cover[air] = set()
+            continue
+        indices: set[int] = set()
+        for _, body in MANIFEST_LIST_RE.findall(manifest.read_text(errors="replace")):
+            indices.update(int(x) for x in re.findall(r"\d+", body))
+        cover[air] = indices
+    return cover
+
+
 def inventory() -> tuple[list[Row], int, set[int]]:
     pilout = pilout_wire.load(ROOT / "build" / "zisk.pilout")
     facts = survey.air_facts(pilout)
@@ -210,6 +264,7 @@ def inventory() -> tuple[list[Row], int, set[int]]:
     links = generated_links(LINKS.read_text(errors="replace"))
     providers = provider_buses(reach)
     residuals = residual_entries()
+    component_cover = generated_component_cover()
     rows = []
     consumed_any: set[tuple[str, int]] = set()
     for air, fact in sorted(facts.items()):
@@ -225,8 +280,9 @@ def inventory() -> tuple[list[Row], int, set[int]]:
             root_link = bool(link and re.search(rf"\b{re.escape(link)}\b", root_text))
             if build_link:
                 consumed_any.add((air, index))
-            build_exposed = direct not in build_text and not build_link
-            root_exposed = direct not in root_text and not root_link
+            covered = index in component_cover.get(air, ())
+            build_exposed = not covered and direct not in build_text and not build_link
+            root_exposed = not covered and direct not in root_text and not root_link
             tied = bool((build_link or root_link) and buses and any(bus not in providers for bus in buses))
             rows.append(Row(air, classes[(air, index)], index,
                             build_exposed, root_exposed, tied,

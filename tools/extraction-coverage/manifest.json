@@ -9546,6 +9546,10 @@
     },
     {
       "kind": "lean",
+      "path": "Extraction/Components/BinaryAdd/Manifest.lean"
+    },
+    {
+      "kind": "lean",
       "path": "Extraction/Components/BinaryAdd/Row.lean"
     },
     {

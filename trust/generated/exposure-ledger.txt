@@ -10,7 +10,7 @@ Binary	challenge	6	1	6	5	0
 Binary	pure-base-field	7	0	7	0	0
 BinaryAdd	air-value	1	1	1	0	0
 BinaryAdd	challenge	4	3	4	0	0
-BinaryAdd	pure-base-field	4	0	4	0	0
+BinaryAdd	pure-base-field	4	0	0	0	0
 BinaryExtension	air-value	1	1	1	0	0
 BinaryExtension	challenge	7	1	7	5	0
 Main	air-value	10	1	10	0	0
@@ -112,10 +112,10 @@ Binary.10	challenge	0	1	1	0	link_Binary_10	125,5000
 Binary.11	challenge	0	1	1	0	link_Binary_11	125
 Binary.12	challenge	1	1	0	0	-	-
 Binary.13	air-value	1	1	0	0	-	-
-BinaryAdd.0	pure-base-field	0	1	0	0	-	-
-BinaryAdd.1	pure-base-field	0	1	0	0	-	-
-BinaryAdd.2	pure-base-field	0	1	0	0	-	-
-BinaryAdd.3	pure-base-field	0	1	0	0	-	-
+BinaryAdd.0	pure-base-field	0	0	0	0	-	-
+BinaryAdd.1	pure-base-field	0	0	0	0	-	-
+BinaryAdd.2	pure-base-field	0	0	0	0	-	-
+BinaryAdd.3	pure-base-field	0	0	0	0	-	-
 BinaryAdd.4	challenge	1	1	0	0	link_BinaryAdd_4	103
 BinaryAdd.5	challenge	0	1	0	0	link_BinaryAdd_5	103,5000
 BinaryAdd.6	challenge	1	1	0	0	link_BinaryAdd_6	103
