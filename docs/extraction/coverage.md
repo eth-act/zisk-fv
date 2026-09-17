@@ -80,3 +80,15 @@ It becomes a failing equality gate for an AIR only after that AIR is reviewed.
 after model switchover, `expected = "consumed"` compares against the populated
 `Extraction.Components.<Air>` pair and also requires both maintained modules to
 re-export those generated declarations.
+
+A `consumed` AIR also earns ledger coverage, in both columns, for the
+constraint indices its generated `Components/<Air>/Manifest.lean` names. The
+extractor writes that manifest alongside `Row.lean` and `Constraints.lean`:
+`assertZeroConstraints` lists the F-only pilout indices the component
+reproduces verbatim, and `unclaimedConstraints` lists the ExtF-mixing ones the
+channel `push` stands in for. The push is reconstructed from a
+`gsum_debug_data` hint, which carries no constraint index, so
+`busPushConstraints` is empty and those constraints stay exposed; tying them is
+`Extraction.LookupWiring`'s `ValidatedLink` job. `exposure.py` credits exactly
+the mapped indices — an AIR marked `consumed` without a manifest, or whose
+model does not re-export the generated component, covers nothing.

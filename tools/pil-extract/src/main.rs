@@ -190,6 +190,12 @@ struct CleanComponentCmd {
     #[arg(long)]
     constraints_output: Option<PathBuf>,
 
+    /// Output path for the generated `Manifest.lean` — which pilout
+    /// constraint indices the component realises. The exposure ledger
+    /// credits a `consumed` AIR only for the indices this file names.
+    #[arg(long)]
+    manifest_output: Option<PathBuf>,
+
     /// Operation-bus id whose proves-side `gsum_debug_data` hint supplies
     /// the `OpBusChannel.push` tuple. Defaults to ZisK's
     /// `OPERATION_BUS_ID = 5000` (`zisk/pil/opids.pil:2`).
@@ -343,13 +349,18 @@ fn run_clean_component(args: CleanComponentCmd) -> Result<()> {
     let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
 
     let channel_kind = clean_component::ChannelKind::from_flag(&args.channel)?;
-    let (row, constraints) =
+    let (row, constraints, manifest) =
         clean_component::run(&pilout, &args.air, args.bus_id, channel_kind)?;
 
-    match (args.row_output.as_deref(), args.constraints_output.as_deref()) {
-        (None, None) => {
+    match (
+        args.row_output.as_deref(),
+        args.constraints_output.as_deref(),
+        args.manifest_output.as_deref(),
+    ) {
+        (None, None, None) => {
             print!("-- ===== Row.lean =====\n{}", row);
             print!("\n-- ===== Constraints.lean =====\n{}", constraints);
+            print!("\n-- ===== Manifest.lean =====\n{}", manifest);
         }
         _ => {
             if let Some(path) = args.row_output.as_deref() {
@@ -357,6 +368,9 @@ fn run_clean_component(args: CleanComponentCmd) -> Result<()> {
             }
             if let Some(path) = args.constraints_output.as_deref() {
                 write_output(Some(path), &constraints)?;
+            }
+            if let Some(path) = args.manifest_output.as_deref() {
+                write_output(Some(path), &manifest)?;
             }
         }
     }

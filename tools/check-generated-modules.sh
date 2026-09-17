@@ -16,6 +16,7 @@ expected_modules=(
   Buses
   Circuit
   Components/BinaryAdd/Constraints
+  Components/BinaryAdd/Manifest
   Components/BinaryAdd/Row
   LookupWiring
   Main

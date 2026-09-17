@@ -121,7 +121,8 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --air BinaryAdd \
       --row-output $out/Components/BinaryAdd/Row.lean \
-      --constraints-output $out/Components/BinaryAdd/Constraints.lean
+      --constraints-output $out/Components/BinaryAdd/Constraints.lean \
+      --manifest-output $out/Components/BinaryAdd/Manifest.lean
 
     runHook postBuild
   '';
