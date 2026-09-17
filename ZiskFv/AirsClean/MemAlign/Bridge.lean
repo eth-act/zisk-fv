@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.MemAlign.Circuit
 import ZiskFv.Airs.MemAlign
+import ZiskFv.AirsClean.ExtractionExpr
 import Extraction.LookupWiring
 
 /-!
@@ -22,51 +23,55 @@ manifest's exact rfl identity rather than re-parsing an adjacent rendering. -/
 example : Extraction.LookupWiring.constraint_MemAlign_36 =
     Extraction.LookupWiring.template_MemAlign_36 := by rfl
 
-/-- Interpret the exact h998 slot AST in the two-row source model. The
-fallback is unreachable for `hint_MemAlign_36_1`; it makes this syntax map
-total without assigning any meaning to unrelated manifest terms. In
-particular, witness `(1, 4, 1)` is deliberately the successor PC, not a
-row-local cell. -/
+/-- Interpret the exact h998 slot AST in the two-row source model. Unsupported
+terms are rejected as `none`; in particular, witness `(1, 4, 1)` is
+deliberately the successor PC, not a row-local cell. -/
 @[reducible]
-def h998ExprToField (current successor : MemAlignRow FGL) : Expr → FGL
-  | .constant "0" => 0
-  | .constant "1" => 1
-  | .constant "2" => 2
-  | .constant "4" => 4
-  | .constant "8" => 8
-  | .constant "16" => 16
-  | .constant "32" => 32
-  | .constant "64" => 64
-  | .constant "128" => 128
-  | .constant "256" => 256
-  | .constant "512" => 512
-  | .constant "1024" => 1024
-  | .constant "2048" => 2048
-  | .witness 1 1 0 => current.offset
-  | .witness 1 2 0 => current.width
-  | .witness 1 3 0 => current.wr
-  | .witness 1 4 0 => current.pc
-  | .witness 1 4 1 => successor.pc
-  | .witness 1 5 0 => current.reset
-  | .witness 1 6 0 => current.sel_up_to_down
-  | .witness 1 7 0 => current.sel_down_to_up
-  | .witness 1 16 0 => current.sel_0
-  | .witness 1 17 0 => current.sel_1
-  | .witness 1 18 0 => current.sel_2
-  | .witness 1 19 0 => current.sel_3
-  | .witness 1 20 0 => current.sel_4
-  | .witness 1 21 0 => current.sel_5
-  | .witness 1 22 0 => current.sel_6
-  | .witness 1 23 0 => current.sel_7
-  | .witness 1 25 0 => current.delta_addr
-  | .add (.witness 1 1 0) (.constant "0") => current.offset
-  | .add (.witness 1 2 0) (.constant "0") => current.width
-  | .add (.witness 1 4 0) (.constant "0") => current.pc
-  | .add (.witness 1 25 0) (.constant "0") => current.delta_addr
-  | .add lhs rhs => h998ExprToField current successor lhs + h998ExprToField current successor rhs
-  | .sub lhs rhs => h998ExprToField current successor lhs - h998ExprToField current successor rhs
-  | .mul lhs rhs => h998ExprToField current successor lhs * h998ExprToField current successor rhs
-  | _ => 0
+def h998ExprToFieldCore (current successor : MemAlignRow FGL) : Expr → Option FGL
+  | .constant "0" => some 0
+  | .constant "1" => some 1
+  | .constant "2" => some 2
+  | .constant "4" => some 4
+  | .constant "8" => some 8
+  | .constant "16" => some 16
+  | .constant "32" => some 32
+  | .constant "64" => some 64
+  | .constant "128" => some 128
+  | .constant "256" => some 256
+  | .constant "512" => some 512
+  | .constant "1024" => some 1024
+  | .constant "2048" => some 2048
+  | .witness 1 1 0 => some current.offset
+  | .witness 1 2 0 => some current.width
+  | .witness 1 3 0 => some current.wr
+  | .witness 1 4 0 => some current.pc
+  | .witness 1 4 1 => some successor.pc
+  | .witness 1 5 0 => some current.reset
+  | .witness 1 6 0 => some current.sel_up_to_down
+  | .witness 1 7 0 => some current.sel_down_to_up
+  | .witness 1 16 0 => some current.sel_0
+  | .witness 1 17 0 => some current.sel_1
+  | .witness 1 18 0 => some current.sel_2
+  | .witness 1 19 0 => some current.sel_3
+  | .witness 1 20 0 => some current.sel_4
+  | .witness 1 21 0 => some current.sel_5
+  | .witness 1 22 0 => some current.sel_6
+  | .witness 1 23 0 => some current.sel_7
+  | .witness 1 25 0 => some current.delta_addr
+  | .add lhs rhs => do
+      return (← h998ExprToFieldCore current successor lhs) +
+        (← h998ExprToFieldCore current successor rhs)
+  | .sub lhs rhs => do
+      return (← h998ExprToFieldCore current successor lhs) -
+        (← h998ExprToFieldCore current successor rhs)
+  | .mul lhs rhs => do
+      return (← h998ExprToFieldCore current successor lhs) *
+        (← h998ExprToFieldCore current successor rhs)
+  | _ => none
+
+@[reducible]
+def h998ExprToField (current successor : MemAlignRow FGL) (expr : Expr) : Option FGL :=
+  ZiskFv.AirsClean.translateTrailingAddZero (h998ExprToFieldCore current successor) expr
 
 /-- Project a legacy `Valid_MemAlign` row plus an explicitly preserved
 `delta_pc` cell into the Clean row structure. The legacy record predates h998
@@ -193,8 +198,8 @@ def memAlignRomSuccessorMessage
 /-- The actual generated h998 slots, translated with its rotated PC witness
 read through the successor row. -/
 @[reducible]
-def h998TupleFromLink (current successor : MemAlignRow FGL) : List FGL :=
-  hint_MemAlign_36_1.slots.map (fun slot => h998ExprToField current successor slot.value)
+def h998TupleFromLink (current successor : MemAlignRow FGL) : Option (List FGL) :=
+  hint_MemAlign_36_1.slots.mapM (fun slot => h998ExprToField current successor slot.value)
 
 /-- Field-list view of the live successor-indexed bus-133 model. -/
 @[reducible]
@@ -217,7 +222,7 @@ structure MemAlignRomWiring where
   romIsAssumes : romHint.proves = false
   romMultiplicity : romHint.multiplicity = Expr.constant "1"
   sourceBinding : ∀ current successor,
-    h998TupleFromLink current successor = memAlignRomSuccessorTuple current successor
+    h998TupleFromLink current successor = some (memAlignRomSuccessorTuple current successor)
 
 @[reducible]
 def h998Wiring : MemAlignRomWiring where
@@ -239,7 +244,7 @@ is the live current/successor MemAlign model. D3 subsequently identifies this
 model with the emitted row-local `delta_pc` tuple. -/
 theorem h998_tuple_matches_successor_message
     (current successor : MemAlignRow FGL) :
-    h998TupleFromLink current successor = memAlignRomSuccessorTuple current successor := by
+    h998TupleFromLink current successor = some (memAlignRomSuccessorTuple current successor) := by
   exact h998Wiring.sourceBinding current successor
 
 /-- D3 turns the row-local consumer tuple into the exact successor-indexed
