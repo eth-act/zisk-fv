@@ -88,11 +88,24 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--export-dir", type=Path, required=True,
                         help="directory holding <Air>.json from export-byte-tables.cjs")
-    parser.add_argument("--stream-bin", type=Path,
-                        default=ROOT / ".lake" / "build" / "bin" / "byte-table-stream")
+    parser.add_argument("--stream-bin", type=Path, default=None,
+                        help="path to a prebuilt byte-table-stream; by default the "
+                             "streamer is built with lake, as `lake exe trust-gate` does")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
+    # `lake build` builds `defaultTargets` only, so the streamer is not
+    # present after a plain build. Build it here rather than requiring the
+    # caller to remember, matching how the semantic trust gate reaches
+    # `trust-gate`. Explicit and logged, never a silent rebuild.
+    if args.stream_bin is None:
+        args.stream_bin = ROOT / ".lake" / "build" / "bin" / "byte-table-stream"
+        if not args.quiet:
+            print("building byte-table-stream")
+        build = subprocess.run(["lake", "build", "byte-table-stream"], cwd=ROOT,
+                               stdout=subprocess.DEVNULL)
+        if build.returncode != 0:
+            raise SystemExit("lake build byte-table-stream failed")
     if not args.stream_bin.exists():
         raise SystemExit(f"missing {args.stream_bin}; run `lake build byte-table-stream`")
 
