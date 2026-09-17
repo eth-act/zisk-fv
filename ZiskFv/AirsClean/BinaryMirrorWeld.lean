@@ -17,7 +17,7 @@ The weld does not claim coverage of Binary's challenge-mixing constraints. Its
 seven F-only constraints read stage-1 columns `{0, 32, 33, 34, 35, 36, 37, 38}`;
 the remaining columns are pinned separately by the generated lookup wiring.
 
-No axiom, sorry, `native_decide`, or other trust marker is used.
+No trust escape or other trust marker is used.
 -/
 
 universe u
