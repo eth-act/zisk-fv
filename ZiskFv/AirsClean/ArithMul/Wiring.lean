@@ -1,5 +1,6 @@
 import Extraction.LookupWiring
 import ZiskFv.AirsClean.ArithMul.Circuit
+import ZiskFv.AirsClean.ArithMul.ResultSlotPins
 
 /-!
 # Arith operation-bus wiring
