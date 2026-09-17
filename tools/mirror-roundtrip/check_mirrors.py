@@ -1108,8 +1108,8 @@ def _boolean_bound_atoms(air: str, lane_map_for) -> dict[tuple, tuple[int, str]]
     return out
 
 
-def _boolean_field_atoms(air: str, lane_map, mirror_root: Path
-                         ) -> dict[tuple, str]:
+def _boolean_field_atoms(air: str, lane_map, mirror_root: Path,
+                         extraction: Path) -> dict[tuple, str]:
     """Witness atoms whose row-record field is declared `Bool`, `atom -> site`.
 
     The second typing route: a row field declared `Bool` (coerced with `boolF`)
@@ -1122,7 +1122,7 @@ def _boolean_field_atoms(air: str, lane_map, mirror_root: Path
     for rel, name, record_air in survey.MIRROR_RECORDS:
         if record_air != air:
             continue
-        path = survey.resolve_rel(rel, mirror_root)
+        path = survey.record_source(rel, name, mirror_root, extraction)
         for field_name, type_name in survey.structure_field_types(path, name).items():
             if type_name.strip() != "Bool":
                 continue
@@ -1139,7 +1139,7 @@ def _boolean_field_atoms(air: str, lane_map, mirror_root: Path
 
 def reclassify_covered(air: str, findings: list[Finding], lane_map,
                        lane_map_for, mirror_root: Path,
-                       out_of_root: list[Clause]) -> list[Finding]:
+                       out_of_root: list[Clause], extraction: Path) -> list[Finding]:
     """Rewrite GAP findings a checked fact covers into a non-failing class.
 
     Two facts, both mechanical: a boolean-shaped gap whose column is Bool-typed or
@@ -1149,7 +1149,7 @@ def reclassify_covered(air: str, findings: list[Finding], lane_map,
     out-of-root clause matches, is still reported.
     """
     bound_atoms = _boolean_bound_atoms(air, lane_map_for) if lane_map else {}
-    field_atoms = (_boolean_field_atoms(air, lane_map, mirror_root)
+    field_atoms = (_boolean_field_atoms(air, lane_map, mirror_root, extraction)
                    if lane_map else {})
     by_canon: dict[tuple, list[Clause]] = defaultdict(list)
     for clause in out_of_root:
@@ -1705,7 +1705,7 @@ def near_miss_screen(lane_map_for) -> NearMissScreen:
 
 
 def projection_failures(defs: list[mirror_parse.MirrorDef],
-                        mirror_root: Path) -> list[str]:
+                        mirror_root: Path, extraction: Path) -> list[str]:
     """Every resolved projection must be a field of the row record it claims.
 
     The field-to-lane resolution is the direct analogue of `h998ExprToField`, and
@@ -1716,9 +1716,11 @@ def projection_failures(defs: list[mirror_parse.MirrorDef],
     make -- and it is the half that catches a projection of a field that is not
     there.
     """
-    known = {name: survey.structure_fields(survey.resolve_rel(rel, mirror_root), name)
+    known = {name: survey.structure_fields(
+                 survey.record_source(rel, name, mirror_root, extraction), name)
              for rel, name, _air in survey.MIRROR_RECORDS}
-    flat = {name: set(survey.flatten_record(mirror_root, rel, name, known))
+    flat = {name: set(survey.flatten_record(
+                mirror_root, rel, name, known, extraction))
             for rel, name, _air in survey.MIRROR_RECORDS}
     out: list[str] = []
     for definition in defs:
@@ -2014,7 +2016,7 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
 
     defs = mirror_parse.parse_all(lane_map_for)
     out.definitions = len(defs)
-    out.projections = projection_failures(defs, mirror_root)
+    out.projections = projection_failures(defs, mirror_root, extraction)
     mirrors = load_mirrors(defs, set(unreachable))
     out_of_root, out.out_of_root_failures = load_out_of_root(lane_map_for)
 
@@ -2038,7 +2040,7 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
         air_out_of_root = out_of_root.get(air, [])
         findings = reclassify_covered(
             air, findings, lane_map_for(air), lane_map_for, mirror_root,
-            air_out_of_root)
+            air_out_of_root, extraction)
         # A residual GAP every constraint of which an `Iff.rfl` weld binds is
         # WELD_COVERED. Run last, so a constraint a mirror already carries stays
         # MATCHED / OUT_OF_ROOT / BOOL_TYPED and the weld is reported as redundant

@@ -9542,6 +9542,18 @@
     },
     {
       "kind": "lean",
+      "path": "Extraction/Components/BinaryAdd/Constraints.lean"
+    },
+    {
+      "kind": "lean",
+      "path": "Extraction/Components/BinaryAdd/Manifest.lean"
+    },
+    {
+      "kind": "lean",
+      "path": "Extraction/Components/BinaryAdd/Row.lean"
+    },
+    {
+      "kind": "lean",
       "path": "Extraction/LookupWiring.lean"
     },
     {

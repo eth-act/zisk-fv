@@ -1,4 +1,5 @@
-import ZiskFv.AirsClean.BinaryMirrorWeld
+import Extraction.BinaryAdd
+import ZiskFv.AirsClean.BinaryAdd.Circuit
 
 /-!
 # BinaryAdd extracted row
@@ -23,7 +24,16 @@ variable {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
 projected into the Clean row type. -/
 @[reducible]
 def extractedRow (c : C FGL FGL) (r : ℕ) : BinaryAddRow FGL :=
-  rowAt (BinaryMirrorWeld.BinaryAdd.validOfCircuit c) r
+  { a_0 := Extraction.Circuit.main c 1 0 r 0
+    a_1 := Extraction.Circuit.main c 1 1 r 0
+    b_0 := Extraction.Circuit.main c 1 2 r 0
+    b_1 := Extraction.Circuit.main c 1 3 r 0
+    c_chunks_0 := Extraction.Circuit.main c 1 4 r 0
+    c_chunks_1 := Extraction.Circuit.main c 1 5 r 0
+    c_chunks_2 := Extraction.Circuit.main c 1 6 r 0
+    c_chunks_3 := Extraction.Circuit.main c 1 7 r 0
+    cout_0 := Extraction.Circuit.main c 1 8 r 0
+    cout_1 := Extraction.Circuit.main c 1 9 r 0 }
 
 /-- Every field of `extractedRow` is the corresponding generated stage-1
 witness column.  This pins the whole ten-column source map in one theorem. -/
@@ -51,9 +61,8 @@ theorem extractedRow_localAssertions (c : C FGL FGL) (r : ℕ)
       ∧ BinaryAdd.extraction.constraint_3_every_row c r)
     (hv : eval env v = extractedRow c r) :
     ∀ e ∈ (main v).operations offset |>.constraints, env e = 0 := by
-  have hc := (BinaryMirrorWeld.BinaryAdd.constraints_at_weld c r).mpr h
   have hc' : CoreFacts (extractedRow c r) := by
-    simpa only [CoreFacts, constraints_at, sub_eq_add_neg] using hc
+    simpa only [CoreFacts, extractedRow] using h
   rw [← hv] at hc'
   simp only [main, circuit_norm]
   simp only [CoreFacts, circuit_norm, sub_eq_add_neg] at hc'
