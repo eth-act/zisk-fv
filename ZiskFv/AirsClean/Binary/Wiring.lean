@@ -106,8 +106,7 @@ def lookupMessageTuple (message : BinaryTableMessage (Expression FGL)) :
 def lookupMessage7Tuple (row : Var BinaryRow FGL) : List (Expression FGL) :=
   lookupMessageTuple (lookupMessage7 row)
 
-/-- A common view of a generated hint tuple or a tuple reconstructed from an
-exact mixed constraint. -/
+/-- The generated hint tuple view used by all eight byte-table links. -/
 structure BinaryLookupTuple where
   piop : String
   proves : Bool
@@ -119,18 +118,11 @@ structure BinaryLookupTuple where
 def BinaryLookupTuple.ofHint (tuple : HintTuple) : BinaryLookupTuple :=
   ⟨tuple.piop, tuple.proves, tuple.busId, tuple.multiplicity, tuple.slots⟩
 
-@[reducible]
-def BinaryLookupTuple.ofDerived (tuple : DerivedTuple) : BinaryLookupTuple :=
-  ⟨tuple.piop, tuple.proves, tuple.busId, tuple.multiplicity, tuple.slots⟩
-
-/-- The raw source value expected in an input/output byte slot.  PIL emits
-`x + 0` for bytes 0--6 and a bare witness for the derived terminal tuple. -/
+/-- The raw source value expected in an input/output byte slot. The generated
+hint payload preserves PIL's `x + 0` spelling for every byte. -/
 @[reducible]
 def expectedByteSlotValue (firstColumn : ℕ) (byte : Fin 8) : Expr :=
-  if byte = 7 then
-    .witness 1 (firstColumn + byte.val) 0
-  else
-    .add (.witness 1 (firstColumn + byte.val) 0) (.constant "0")
+  .add (.witness 1 (firstColumn + byte.val) 0) (.constant "0")
 
 @[reducible]
 def lookupMessageTuples : Vector (List (Expression FGL)) 8 := #v[
@@ -160,10 +152,8 @@ structure BinaryByteWiring where
   sourcePrefix : List BinaryLookupTuple
   sourceSuffix : List BinaryLookupTuple
   sourceSplit :
-    List.append
-      (List.map BinaryLookupTuple.ofHint link.hints)
-      (List.map BinaryLookupTuple.ofDerived link.derivedTuples) =
-        List.append sourcePrefix (source :: sourceSuffix)
+    List.map BinaryLookupTuple.ofHint link.hints =
+      List.append sourcePrefix (source :: sourceSuffix)
   lookupPiop : source.piop = "Lookup"
   lookupBus : source.busId = Expr.constant "125"
   lookupIsAssumes : source.proves = false
@@ -227,8 +217,8 @@ def byte6Wiring : BinaryByteWiring :=
 @[reducible]
 def byte7Wiring : BinaryByteWiring :=
   ⟨7, link_Binary_10, ValidatedLink.constraintValidated link_Binary_10,
-    .ofDerived derivedTuple_Binary_10_0, [],
-    [.ofDerived derivedTuple_Binary_10_1], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+    .ofHint hint_Binary_10_0, [],
+    [.ofHint hint_Binary_10_1], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 @[reducible]
 def byteWirings : List BinaryByteWiring :=

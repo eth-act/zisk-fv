@@ -71693,6 +71693,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 51,
+      "hint_indices": [
+        641
+      ],
+      "name": "link_Main_51",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 52,
       "hint_indices": [
         643
@@ -71708,6 +71717,15 @@
       ],
       "name": "link_Main_53",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 54,
+      "hint_indices": [
+        645
+      ],
+      "name": "link_Main_54",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71729,6 +71747,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 57,
+      "hint_indices": [
+        649
+      ],
+      "name": "link_Main_57",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 58,
       "hint_indices": [
         651
@@ -71744,6 +71771,15 @@
       ],
       "name": "link_Main_59",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 60,
+      "hint_indices": [
+        653
+      ],
+      "name": "link_Main_60",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71765,6 +71801,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 63,
+      "hint_indices": [
+        657
+      ],
+      "name": "link_Main_63",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 64,
       "hint_indices": [
         659
@@ -71780,6 +71825,15 @@
       ],
       "name": "link_Main_65",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 66,
+      "hint_indices": [
+        661
+      ],
+      "name": "link_Main_66",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71801,6 +71855,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 69,
+      "hint_indices": [
+        665
+      ],
+      "name": "link_Main_69",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 70,
       "hint_indices": [
         667
@@ -71816,6 +71879,15 @@
       ],
       "name": "link_Main_71",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 72,
+      "hint_indices": [
+        669
+      ],
+      "name": "link_Main_72",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71837,6 +71909,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 75,
+      "hint_indices": [
+        673
+      ],
+      "name": "link_Main_75",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 76,
       "hint_indices": [
         675
@@ -71852,6 +71933,15 @@
       ],
       "name": "link_Main_77",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 78,
+      "hint_indices": [
+        677
+      ],
+      "name": "link_Main_78",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71873,6 +71963,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 81,
+      "hint_indices": [
+        681
+      ],
+      "name": "link_Main_81",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 82,
       "hint_indices": [
         683
@@ -71888,6 +71987,15 @@
       ],
       "name": "link_Main_83",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 84,
+      "hint_indices": [
+        685
+      ],
+      "name": "link_Main_84",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71909,6 +72017,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 87,
+      "hint_indices": [
+        689
+      ],
+      "name": "link_Main_87",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 88,
       "hint_indices": [
         691
@@ -71924,6 +72041,15 @@
       ],
       "name": "link_Main_89",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 90,
+      "hint_indices": [
+        693
+      ],
+      "name": "link_Main_90",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71945,6 +72071,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 93,
+      "hint_indices": [
+        697
+      ],
+      "name": "link_Main_93",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 94,
       "hint_indices": [
         699
@@ -71960,6 +72095,15 @@
       ],
       "name": "link_Main_95",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 96,
+      "hint_indices": [
+        701
+      ],
+      "name": "link_Main_96",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -71981,6 +72125,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 99,
+      "hint_indices": [
+        705
+      ],
+      "name": "link_Main_99",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 100,
       "hint_indices": [
         707
@@ -71996,6 +72149,15 @@
       ],
       "name": "link_Main_101",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 102,
+      "hint_indices": [
+        709
+      ],
+      "name": "link_Main_102",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72017,6 +72179,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 105,
+      "hint_indices": [
+        713
+      ],
+      "name": "link_Main_105",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 106,
       "hint_indices": [
         715
@@ -72032,6 +72203,15 @@
       ],
       "name": "link_Main_107",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 108,
+      "hint_indices": [
+        717
+      ],
+      "name": "link_Main_108",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72053,6 +72233,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 111,
+      "hint_indices": [
+        721
+      ],
+      "name": "link_Main_111",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 112,
       "hint_indices": [
         723
@@ -72068,6 +72257,15 @@
       ],
       "name": "link_Main_113",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 114,
+      "hint_indices": [
+        725
+      ],
+      "name": "link_Main_114",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72089,6 +72287,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 117,
+      "hint_indices": [
+        729
+      ],
+      "name": "link_Main_117",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 118,
       "hint_indices": [
         731
@@ -72104,6 +72311,15 @@
       ],
       "name": "link_Main_119",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 120,
+      "hint_indices": [
+        733
+      ],
+      "name": "link_Main_120",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72125,6 +72341,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 123,
+      "hint_indices": [
+        737
+      ],
+      "name": "link_Main_123",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 124,
       "hint_indices": [
         739
@@ -72140,6 +72365,15 @@
       ],
       "name": "link_Main_125",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 126,
+      "hint_indices": [
+        741
+      ],
+      "name": "link_Main_126",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72161,6 +72395,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 129,
+      "hint_indices": [
+        745
+      ],
+      "name": "link_Main_129",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 130,
       "hint_indices": [
         747
@@ -72176,6 +72419,15 @@
       ],
       "name": "link_Main_131",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 132,
+      "hint_indices": [
+        749
+      ],
+      "name": "link_Main_132",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72197,6 +72449,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 135,
+      "hint_indices": [
+        753
+      ],
+      "name": "link_Main_135",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 136,
       "hint_indices": [
         755
@@ -72215,6 +72476,15 @@
     },
     {
       "air": "Main",
+      "constraint_index": 138,
+      "hint_indices": [
+        757
+      ],
+      "name": "link_Main_138",
+      "shape": "directAssumesNegForm"
+    },
+    {
+      "air": "Main",
       "constraint_index": 139,
       "hint_indices": [
         759
@@ -72230,6 +72500,15 @@
       ],
       "name": "link_Main_140",
       "shape": "direct"
+    },
+    {
+      "air": "Main",
+      "constraint_index": 141,
+      "hint_indices": [
+        761
+      ],
+      "name": "link_Main_141",
+      "shape": "directAssumesNegForm"
     },
     {
       "air": "Main",
@@ -72681,9 +72960,12 @@
     {
       "air": "Binary",
       "constraint_index": 10,
-      "hint_indices": [],
+      "hint_indices": [
+        1177,
+        1178
+      ],
       "name": "link_Binary_10",
-      "shape": "derivedMixed2"
+      "shape": "cluster2ZeroTail"
     },
     {
       "air": "Binary",
@@ -72693,6 +72975,15 @@
       ],
       "name": "link_Binary_11",
       "shape": "direct"
+    },
+    {
+      "air": "Binary",
+      "constraint_index": 12,
+      "hint_indices": [
+        1179
+      ],
+      "name": "link_Binary_12",
+      "shape": "directAssumesNegFormZeroTail"
     },
     {
       "air": "BinaryAdd",
