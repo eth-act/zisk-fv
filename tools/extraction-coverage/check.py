@@ -246,7 +246,12 @@ def generated_outputs(directory: Path) -> list[dict[str, str]]:
     outputs = []
     for path in candidates:
         suffix = path.suffix
-        kind = {".lean": "lean", ".md": "report", ".tsv": "source_table"}.get(suffix)
+        # `.json` is the byte-table block-hash artifact: the two `virtual`
+        # tables never reach pilout, so the extractor records one SHA-256 per
+        # opcode block instead of Lean constraints. The classifier stays closed
+        # -- an unrecognised suffix is still an error.
+        kind = {".lean": "lean", ".md": "report", ".tsv": "source_table",
+                ".json": "table_digest"}.get(suffix)
         if kind is None:
             raise CoverageError(f"unclassified generated output kind: {path}")
         outputs.append({"path": path.relative_to(directory).as_posix(), "kind": kind})
