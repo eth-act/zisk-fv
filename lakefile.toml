@@ -81,6 +81,13 @@ srcDir = "trust/aeneas"
 name = "TrustGate"
 srcDir = "bin"
 
+# Streams the model's byte-table definitions for the W16 fidelity gate.
+[[lean_exe]]
+name = "byte-table-stream"
+srcDir = "bin"
+root = "ByteTableStream.Main"
+supportInterpreter = true
+
 [[lean_exe]]
 name = "trust-gate"
 srcDir = "bin"

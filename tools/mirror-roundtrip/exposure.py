@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import importlib.util
+import json
 import re
 import sys
 import tomllib
@@ -27,6 +28,11 @@ LEDGER = ROOT / "trust" / "generated" / "exposure-ledger.txt"
 RESIDUALS = ROOT / "trust" / "exposure-residuals.toml"
 LINKS = ROOT / "build" / "extraction" / "Extraction" / "LookupWiring.lean"
 LINK_RE = re.compile(r"\blink_([A-Za-z0-9]+)_(\d+)\b")
+BYTE_TABLES = ROOT / "build" / "extraction" / "ByteTables"
+BYTE_TABLE_MODELS = {
+    "BinaryTable": ROOT / "ZiskFv" / "AirsClean" / "BinaryTable.lean",
+    "BinaryExtensionTable": ROOT / "ZiskFv" / "AirsClean" / "BinaryExtensionTable.lean",
+}
 CONSTRAINT_RE = re.compile(r"^\s*def constraint_(\d+)_every_row\b", re.M)
 
 
@@ -237,6 +243,29 @@ def inventory() -> tuple[list[Row], int, set[int]]:
     return rows, len(set(links) - consumed_any), providers
 
 
+def byte_table_rows() -> list[tuple[str, str, int, int, str]]:
+    """The two `virtual` byte tables, which have no pilout constraints at all.
+
+    `BinaryTable` and `BinaryExtensionTable` (`zisk.pil:121`, `:123`) are built
+    by a PIL script at compile time and lowered away, so they never reach
+    pilout and cannot appear in the constraint ledger above. They are still
+    proof surface: both models are inside `ZiskFv.Soundness`'s import closure
+    and carry every byte-level fact about every Binary and BinaryExtension
+    opcode. A table counts as checked when the extractor's per-opcode-block
+    hashes exist for it; `tools/virtual-tables/check-byte-tables.py` is what
+    holds the model to them, and `nix run .#test` runs it.
+    """
+    out = []
+    for air, model in sorted(BYTE_TABLE_MODELS.items()):
+        export = BYTE_TABLES / f"{air}.json"
+        if not export.exists():
+            out.append((air, "virtual-table", 0, 0, "unchecked"))
+            continue
+        data = json.loads(export.read_text())
+        out.append((air, "virtual-table", data["rows"], len(data["blocks"]), "checked"))
+    return out
+
+
 def render(rows: list[Row], wirable: int, providers: set[int]) -> str:
     grouped: dict[tuple[str, str], list[Row]] = defaultdict(list)
     for row in rows:
@@ -257,6 +286,10 @@ def render(rows: list[Row], wirable: int, providers: set[int]) -> str:
         lines.append("\t".join([f"{row.air}.{row.index}", row.cls, str(int(row.build)),
                                  str(int(row.root)), str(int(row.tied)), str(int(row.residual)),
                                  row.link or "-", ",".join(map(str, row.buses)) or "-"]))
+    lines.append("")
+    lines.append("virtual-table\tclass\trows\topcode-blocks\tstatus")
+    for air, cls, rows_count, blocks, status in byte_table_rows():
+        lines.append("\t".join(map(str, [air, cls, rows_count, blocks, status])))
     return "\n".join(lines) + "\n"
 
 

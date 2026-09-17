@@ -613,3 +613,41 @@ Adding a new operand kind is a match arm in `render_operand` (`src/main.rs`).
 Keep the "fail loudly on unhandled cases" stance: raise an `anyhow!` so the
 skip path in `render_air` emits a clearly labeled stub. Do not silently emit
 `sorry` — the goal is visibility, not typecheck happiness.
+
+## Virtual byte tables — artifact decision (W16)
+
+`BinaryTable` and `BinaryExtensionTable` are `virtual` (`zisk.pil:121`, `:123`): a PIL script
+computes their fixed columns at compile time, virtual-table lowering discards the AIR, and
+nothing about them reaches pilout. The model carries both as hand-written indexed functions
+(`ZiskFv/AirsClean/BinaryTable.lean`, `BinaryExtensionTable.lean`), both inside the root
+theorem's import closure.
+
+`tools/virtual-tables/export-byte-tables.cjs` observes them through the same `onAirEnd` hook
+W9 built for `MemAlignRom`, so no row-building rule is duplicated.
+
+**Artifact: one SHA-256 per opcode block, not the rows.** The two tables are 5,505,024 and
+3,151,872 rows; a TSV of either is hundreds of megabytes, and `build/` is copied into every
+worktree. Blocks are consecutive runs of the `OP` fixed column, which is how both PIL tables
+lay themselves out, and the hashed encoding is each table's `lookup_proves` tuple
+(`binary_table.pil:336`, `binary_extension_table.pil:205`) — the tuple the consumer AIRs
+actually look up. The result is 19 + 9 blocks in about 4.8 KB total, with per-block
+localisation of any mismatch.
+
+**Coverage is still total.** `byte-table-stream` (`bin/ByteTableStream/Main.lean`) evaluates
+`rowOfIndex` for every index and streams the rows;
+`tools/virtual-tables/check-byte-tables.py` groups that stream into blocks by the same OP-run
+rule and compares boundaries and hashes. Every row is hashed on both sides; only the
+comparison is compressed.
+
+**Why the stream comes from Lean and not from Python.** The gate must check the model against
+ZisK. A Python reimplementation of `rowOfIndex` would be a second hand transcription, and
+agreement between two transcriptions establishes nothing about the circuit. The only logic in
+the Lean streamer is the canonical encoding.
+
+**One table per process.** The PIL compiler keeps module-global state (the airgroup registry
+and `Context.references`); a second `compile()` in the same process collides on the consumer
+AIR name and observes nothing. The exporter therefore takes one AIR per invocation and the
+nix step calls it twice.
+
+Measured on the pinned inputs: `BinaryTable` 19 blocks / 5,505,024 rows,
+`BinaryExtensionTable` 9 blocks / 3,151,872 rows; the model matches the builder on every row.
