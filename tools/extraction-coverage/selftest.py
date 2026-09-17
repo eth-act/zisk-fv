@@ -92,7 +92,6 @@ def main() -> int:
                 "group_index": 0,
                 "air_index": 0,
                 "name": "Main",
-                "constraint_indices": [0],
                 "constraint_kinds": ["every_row"],
                 "classification": {
                     "extraction": "generated",
@@ -114,7 +113,6 @@ def main() -> int:
             "group_index": 0,
             "air_index": 1,
             "name": "Surprise",
-            "constraint_indices": [],
             "constraint_kinds": [],
             "classification": {"extraction": "unclassified"},
         }
@@ -122,9 +120,8 @@ def main() -> int:
     require_difference("new AIR", baseline, new_air, "Surprise")
 
     new_constraint = copy.deepcopy(baseline)
-    new_constraint["airs"][0]["constraint_indices"].append(1)
     new_constraint["airs"][0]["constraint_kinds"].append("every_row")
-    require_difference("new constraint", baseline, new_constraint, "constraint_indices")
+    require_difference("new constraint", baseline, new_constraint, "constraint_kinds")
 
     removed_route = copy.deepcopy(baseline)
     removed_route["lookup_routes"].clear()

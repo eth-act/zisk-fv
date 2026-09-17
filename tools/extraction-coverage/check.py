@@ -283,7 +283,6 @@ def observe(pilout_path: Path, extraction_dir: Path, prior: dict[str, Any] | Non
                 "periodic_columns": ref.air.num_periodic_cols,
                 "air_value_stages": ref.air.air_value_stages,
                 "custom_commits": ref.air.custom_commit_names,
-                "constraint_indices": list(range(len(ref.air.constraints))),
                 "constraint_kinds": [constraint.kind for constraint in ref.air.constraints],
                 "classification": classifications.get(key, {"extraction": "unclassified"}),
             }
@@ -348,7 +347,7 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             raise CoverageError(f"duplicate validated link {link['name']}")
         link_names.add(link["name"])
         air = airs_by_name.get(link["air"])
-        if air is None or link["constraint_index"] not in air["constraint_indices"]:
+        if air is None or not 0 <= link["constraint_index"] < len(air["constraint_kinds"]):
             raise CoverageError(f"{link['name']}: unknown AIR constraint")
         for hint_index in link["hint_indices"]:
             route = routes_by_hint.get(hint_index)
@@ -356,8 +355,41 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
                 raise CoverageError(f"{link['name']}: lookup hint {hint_index} is missing or belongs to another AIR")
 
 
+# Sections whose elements are one reviewable record each. A changed lookup
+# route must be one changed line, not a hunk hundreds of lines long: the
+# question this gate answers when the ZisK pin moves is *which* route changed.
+RECORD_SECTIONS = ("airs", "lookup_routes", "validated_links", "generated_outputs")
+
+
 def canonical(payload: dict[str, Any]) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    """Valid JSON, one record per line for the reviewable sections.
+
+    `constraint_indices` is deliberately absent from the emitted records: it
+    was `range(len(constraint_kinds))`, 4,095 lines carrying no information.
+    Anything derivable from another field is derived at load, never committed.
+    """
+    lines = ["{"]
+    keys = sorted(payload)
+    for key_pos, key in enumerate(keys):
+        tail = "," if key_pos < len(keys) - 1 else ""
+        value = payload[key]
+        if key in RECORD_SECTIONS and isinstance(value, list):
+            if not value:
+                lines.append(f"  {json.dumps(key)}: []{tail}")
+                continue
+            lines.append(f"  {json.dumps(key)}: [")
+            for pos, record in enumerate(value):
+                sep = "," if pos < len(value) - 1 else ""
+                lines.append("    " + json.dumps(record, sort_keys=True) + sep)
+            lines.append(f"  ]{tail}")
+        else:
+            rendered = json.dumps(value, indent=2, sort_keys=True).splitlines()
+            lines.append(f"  {json.dumps(key)}: {rendered[0]}")
+            for extra in rendered[1:]:
+                lines.append("  " + extra)
+            lines[-1] += tail
+    lines.append("}")
+    return "\n".join(lines) + "\n"
 
 
 def compare(expected: dict[str, Any], actual: dict[str, Any]) -> str:
@@ -425,7 +457,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "extraction coverage OK: "
             f"{len(observed['airs'])} AIRs, "
-            f"{sum(len(air['constraint_indices']) for air in observed['airs'])} constraints, "
+            f"{sum(len(air['constraint_kinds']) for air in observed['airs'])} constraints, "
             f"{len(observed['lookup_routes'])} lookup routes, "
             f"{len(observed['validated_links'])} validated links, "
             f"{len(observed['generated_outputs'])} outputs"
