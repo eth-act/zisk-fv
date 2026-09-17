@@ -452,7 +452,9 @@ Printed separately: **wirable**, generated links consumed by nothing. Never in t
 2. `rule_check.py`: for each `evidence/rounds/<n>/semdiff.json`, predict caught or missed from the
    ledger; print prediction vs last observation (from `evidence/results/*/round-<n>.json`, else the
    historical status); print the **re-run set** (rounds whose prediction changed since their last
-   observation). Exit nonzero only on a malformed input.
+   observation). An `infrastructure` or `invalid` result is recorded but is **not an observation**:
+   the runner still writes it, and `rule_check.py` skips it when choosing a round's last
+   observation. Exit nonzero only on a malformed input.
 3. Calibrate once: in a throwaway worktree at `019eec25`, `nix run .#populate`, run `exposure.py`
    and confirm 168 exposed-to-build and the rule at 31/31 against the historical statuses. Paste
    both outputs in the PR body. Delete the worktree.
@@ -657,8 +659,12 @@ byte-identical. **Cache seeding required.**
 
 1. Add the `clean-component` step to `nix/extracted-lean.nix`, writing
    `build/extraction/Extraction/Components/<Air>/`.
-2. Register the new modules in the `Extraction` globs of `lakefile.toml`, the closed list in
-   `tools/check-generated-modules.sh`, and the coverage manifest via `check.py --update`.
+2. Register the new modules in **every** place that would otherwise reject or ignore them: the
+   `Extraction` globs of `lakefile.toml`, the closed list in `tools/check-generated-modules.sh`,
+   the coverage manifest via `check.py --update` (its inventory must recurse into
+   `Extraction/Components/**`; a non-recursive scan leaves generated files unmonitored), the
+   faithfulness expectations in `trust/generated-components.toml`, and the mutation corpus, whose
+   artifact entries name file stems, not paths.
 3. Re-export the generated module from `ZiskFv/AirsClean/<Air>/{Row,Constraints}.lean`.
 4. Flip the AIR's `expected = "identical"` entry to `expected = "consumed"`.
 5. **Then** delete that AIR's weld clauses; when a weld module empties, delete it and its
@@ -715,8 +721,10 @@ hypothesis.
 ## Present on the baseline, outside this plan
 
 `Main/ExtractedTable.lean`, `*/ExtractedRow.lean` and the row constructions in `MainMirrorWeld.lean`
-build Clean tables from extracted rows. They move no burn-down counter and the ledger must not count
-them. Do not extend them under this plan.
+build Clean tables from extracted rows. They are constructions, not ties or generation. They do
+consume generated constraints, so the ledger's **build** column counts them (a ZisK change breaks
+them); they are outside the root closure, so the root column does not; they never count toward the
+generated share. Do not extend them under this plan without a separate decision.
 
 ## Blocked, tracked elsewhere
 
