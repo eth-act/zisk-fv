@@ -22,7 +22,7 @@ POLICY = ROOT / "trust" / "generated-components.toml"
 SOURCE_ROOT = ROOT / "ZiskFv" / "AirsClean"
 
 MEMORY_BUS_AIRS = frozenset(
-    {"MemAlign", "MemAlignByte", "MemAlignReadByte", "MemAlignWriteByte"}
+    {"Mem", "MemAlign", "MemAlignByte", "MemAlignReadByte", "MemAlignWriteByte"}
 )
 
 
