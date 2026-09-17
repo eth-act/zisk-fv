@@ -1,0 +1,332 @@
+{
+  "artifact_delta": [
+    "Arith.lean",
+    "Buses.lean",
+    "LookupWiring.lean"
+  ],
+  "commands": [
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#zisk-pilout"
+      ],
+      "cwd": "/home/lee/zisk-fv-w12",
+      "exit_code": 0,
+      "log": "logs/baseline-pilout.log",
+      "seconds": 2.467992995167151,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#extracted-lean"
+      ],
+      "cwd": "/home/lee/zisk-fv-w12",
+      "exit_code": 0,
+      "log": "logs/baseline-extraction.log",
+      "seconds": 2.4180735640693456,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "--no-write-lock-file",
+        ".#compile-mutation",
+        "--",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/zisk-source",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/mutant.pilout"
+      ],
+      "cwd": "/home/lee/zisk-fv-w12",
+      "exit_code": 0,
+      "log": "logs/mutant-pilout.log",
+      "seconds": 142.62265244615264,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"path:/home/lee/zisk-fv-w12\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/lee/zisk-fv-w12/nix/extracted-lean.nix {\n      zisk-src = /home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/zisk-source;\n      zisk-pilout = /home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/lee/zisk-fv-w12",
+      "exit_code": 0,
+      "log": "logs/mutant-extraction.log",
+      "seconds": 198.8677001260221,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/lee/zisk-fv-w12/tools/pilout-roundtrip/check.py",
+        "--pilout",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/mutant.pilout",
+        "--extraction",
+        "/nix/store/p4nlcgwvl8zcg3ryhgbgl6slil6h7m3i-zisk-fv-extracted-lean-1.0",
+        "--quiet"
+      ],
+      "cwd": "/home/lee/zisk-fv-w12",
+      "exit_code": 0,
+      "log": "logs/roundtrip.log",
+      "seconds": 1.4158274268265814,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/lee/zisk-fv-w12/tools/pilout-roundtrip/check.py",
+        "--pilout",
+        "/nix/store/8vqspl1f2pvv7bfdqijrs1gq0zhy8vxj-zisk-pilout-git-b632745",
+        "--extraction",
+        "/nix/store/vmn9c95krjijnnn264bgvszsbdr0ga8i-zisk-fv-extracted-lean-1.0",
+        "--quiet"
+      ],
+      "cwd": "/home/lee/zisk-fv-w12",
+      "exit_code": 0,
+      "log": "logs/baseline-roundtrip.log",
+      "seconds": 1.4164358850102872,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/lee/zisk-fv-w12",
+        "-c",
+        "lake",
+        "build",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-84ssvc9e/proof-work",
+      "exit_code": 0,
+      "log": "logs/baseline-proof.log",
+      "seconds": 459.348797012819,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/lee/zisk-fv-w12",
+        "-c",
+        "lake",
+        "build",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-84ssvc9e/proof-work",
+      "exit_code": 1,
+      "log": "logs/mutant-proof.log",
+      "seconds": 458.62811256805435,
+      "timed_out": false
+    }
+  ],
+  "complete": true,
+  "expected_detection_layer": "proof",
+  "historical_artifact_expectation": {
+    "expected": [
+      "Arith",
+      "Buses",
+      "LookupWiring"
+    ],
+    "missing": []
+  },
+  "historical_outcome": "fidelity",
+  "inputs": {
+    "baseline_extraction": {
+      "files": 20,
+      "path": "/nix/store/vmn9c95krjijnnn264bgvszsbdr0ga8i-zisk-fv-extracted-lean-1.0",
+      "sha256": "bd14f463f00ce5621c2a84f04e4581e29e9a8ecf5f29f80c696eef4751db3a5c"
+    },
+    "baseline_pilout": {
+      "bytes": 4417266,
+      "path": "/nix/store/8vqspl1f2pvv7bfdqijrs1gq0zhy8vxj-zisk-pilout-git-b632745",
+      "sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f"
+    },
+    "mutant_extraction": {
+      "files": 20,
+      "path": "/nix/store/p4nlcgwvl8zcg3ryhgbgl6slil6h7m3i-zisk-fv-extracted-lean-1.0",
+      "sha256": "72fa7c57d35f30bd9bba7675fb87bbb154b89116a53b7ad00ee92a9d10494926"
+    },
+    "mutant_pilout": {
+      "bytes": 4417268,
+      "path": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/mutant.pilout",
+      "sha256": "7bbbc5e9d741fc0f7bbd3922d7783f89a70e46367cb8af165208294b1cb9a31a"
+    }
+  },
+  "logs": "logs",
+  "main_fixed_baseline": {
+    "bytes": 100663296,
+    "path": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-38-7g50z2cp/baseline-source/Main.fixed",
+    "sha256": "53ca6265ec12e5e74d778d621567a444b8bd3af3205273406190bb0764a618ea"
+  },
+  "mode": "full",
+  "mutation_compiler_baseline": {
+    "bytes": 4417279,
+    "path": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-84ssvc9e/baseline-compiler.pilout",
+    "sha256": "043ecad2d0cd5f2c47aefa1dccf54bf78c5da456b37daf550e01a188eef8a913"
+  },
+  "outcome": "proof",
+  "proof_diagnostic": "error: ZiskFv/AirsClean/ArithMul/ResultSlotPins.lean:37:2: Tactic `rfl` failed: The left-hand side",
+  "reason": "green baseline and isolated mutant artifacts made the proof build fail",
+  "repository": {
+    "dirty_paths": [],
+    "head": "4deba2d03e94d16834b6b6e1b1cee9a82462612d",
+    "proof_file_count": 1166,
+    "proof_relevant_dirty": [],
+    "proof_source_sha256": "176051042286384ce53ae181f619749b65b663497fe32e9f50ad93ff6cc2086e"
+  },
+  "round": 46,
+  "round_zero_control": {
+    "canonical_pilout_equal": true,
+    "extraction_byte_delta": [],
+    "passed": true
+  },
+  "semantic_diff": {
+    "airs": {
+      "Arith": {
+        "added": [],
+        "changed": [
+          61
+        ],
+        "changed_representable": [
+          61
+        ],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 65,
+        "n_mut": 65
+      },
+      "Binary": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 14,
+        "n_mut": 14
+      },
+      "BinaryAdd": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 9,
+        "n_mut": 9
+      },
+      "BinaryExtension": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 8,
+        "n_mut": 8
+      },
+      "Main": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 144,
+        "n_mut": 144
+      },
+      "Mem": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 34,
+        "n_mut": 34
+      },
+      "MemAlign": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 40,
+        "n_mut": 40
+      },
+      "MemAlignByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 16,
+        "n_mut": 16
+      },
+      "MemAlignReadByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 10,
+        "n_mut": 10
+      },
+      "MemAlignWriteByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 15,
+        "n_mut": 15
+      }
+    },
+    "base_constraint_count": 355,
+    "changed": [
+      {
+        "air": "Arith",
+        "constraint": 61,
+        "kind": "changed"
+      }
+    ],
+    "equal": false,
+    "mutant_constraint_count": 355,
+    "structurally_changed_but_equivalent": []
+  },
+  "source": {
+    "copy": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-46-ooonr1ic/zisk-source",
+    "locked_revision": "b63274507a040bf9e09d22214df43066e8f80cb7",
+    "pinned": {
+      "files": 1838,
+      "path": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+      "sha256": "330b710f89b01b10956999e00fce5295a64b9d5d709e8b12d40bd3aee450ebad"
+    },
+    "recorded_revision": "b632745"
+  },
+  "workspace": null,
+  "workspace_retained": false
+}
