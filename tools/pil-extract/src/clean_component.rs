@@ -6,8 +6,8 @@
 //!   * `Row.lean`         — the witness row as a `ProvableStruct`, plus the
 //!                          `packed32` / `cPacked` reducible helpers.
 //!   * `Constraints.lean` — the `main : Var <Row> FGL → Circuit FGL Unit`
-//!                          do-block: one `assertZero` per F-only pilout
-//!                          constraint, then the operation-bus
+//!                          do-block: zero or more `assertZero`s for F-only
+//!                          pilout constraints, then the operation-bus
 //!                          `OpBusChannel.push` reconstructed from the
 //!                          proves-side `gsum_debug_data` hint; and the
 //!                          interaction declarations.
@@ -800,14 +800,6 @@ fn render_constraints_file(
             debug_line.filter(|s| !s.is_empty()),
         ));
     }
-    if assertions.is_empty() {
-        bail!(
-            "AIR `{}` produced no F-only constraints; the Clean-Component \
-             emitter expects at least one assertZero",
-            air_name
-        );
-    }
-
     let push = resolve_bus_push(pilout, hit, bus_id, channel, &col_to_field)?;
     let message_fields = channel.message_fields();
     if push.slot_values.len() != message_fields.len() {
