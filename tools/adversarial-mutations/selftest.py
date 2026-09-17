@@ -26,10 +26,15 @@ def check(condition: bool, message: str) -> None:
 def test_corpus() -> None:
     identity, rounds = runner.load_corpus()
     check(identity["zisk_revision"] == "b632745", "unexpected pinned identity")
-    check(len(rounds) == 52, "round count")
-    check(sum(r.historical_class == "VALID" for r in rounds) == 35, "valid count")
-    check(sum(r.expected_outcome == "proof" for r in rounds) == 24, "caught count")
-    check(sum(r.expected_outcome == "fidelity" for r in rounds) == 11, "missed count")
+    # Keep the published sweep's historical counts separate from new fixtures.
+    historical = [r for r in rounds if r.historical_class != "NEW"]
+    check(len(historical) == 52, "historical round count")
+    check(sum(r.historical_class == "VALID" for r in historical) == 35, "valid count")
+    check(sum(r.expected_outcome == "proof" for r in historical) == 24, "caught count")
+    check(sum(r.expected_outcome == "fidelity" for r in historical) == 11, "missed count")
+    check(len(rounds) == 53, "round count")
+    check(runner.expected_detection_layer(runner.round_by_number(53)) == "fidelity",
+          "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
           "round 27 is caught after Main c41 is tied")
     check(runner.expected_detection_layer(runner.round_by_number(50)) == "proof",

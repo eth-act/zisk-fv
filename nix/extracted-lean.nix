@@ -74,6 +74,17 @@ stdenv.mkDerivation {
       --rust-source ${zisk-src}/state-machines/arith/src/arith_table_data.rs \
       --output $out/ArithTable.lean
 
+    # BinaryTable and BinaryExtensionTable are virtual too, but far too large
+    # to retain row-by-row (5,505,024 and 3,151,872 rows). Record one SHA-256
+    # per opcode block instead; `tools/virtual-tables/check-byte-tables.py`
+    # reproduces those hashes from the Lean definitions themselves.
+    mkdir -p $out/ByteTables
+    for table in BinaryTable BinaryExtensionTable; do
+      ${nodejs_20}/bin/node ${../tools/virtual-tables/export-byte-tables.cjs} \
+        ${pil2-compiler} ${zisk-src} ${pil2-proofman-src} "$table" \
+        $out/ByteTables/"$table".json
+    done
+
     # MemAlignRom is virtual and therefore absent from pilout. Extract its
     # physical fixed rows by executing the upstream PIL builder itself.
     ${nodejs_20}/bin/node ${../tools/virtual-tables/export-mem-align-rom.cjs} \

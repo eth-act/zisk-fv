@@ -210,6 +210,8 @@ LEAN
     run "exposure ledger" python3 tools/mirror-roundtrip/exposure.py
     run "component manifest credit tests" python3 -m unittest discover -s tools/mirror-roundtrip -p test_exposure.py
     run "rule-check vocabularies" python3 tools/mirror-roundtrip/rule_check.py --selftest
+    run "virtual byte tables" python3 tools/virtual-tables/check-byte-tables.py \
+      --export-dir build/extraction/ByteTables --quiet
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
     run "constant registry" python3 trust/scripts/check-constants.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
