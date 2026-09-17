@@ -56,15 +56,16 @@ def affected_constraints(path: Path, source_air: str) -> tuple[bool, list[tuple[
     return semantic, affected
 
 
-# `runner.py full` reports the layer that detected a mutation. Only two of
-# those layers are observations of the rule this script scores: the proof build
+# `runner.py full` reports the layer that detected a mutation. Two of those
+# layers are observations of the rule this script scores: the proof build
 # failing on the mutant is a kill, and mutated artifacts surviving the proof
-# build is a miss. The rest -- an invalid edit, a compiler rejection, an
-# extraction difference, an incomplete run -- say nothing about whether the
-# proof would have caught it.
+# build is a miss.
 RUNNER_VERDICTS = {"proof": "caught", "fidelity": "missed"}
-RUNNER_NON_VERDICTS = {"infrastructure", "invalid", "compiler", "extractor",
-                       "equivalent"}
+# Recorded, but not observations (W0c step 2): the runner still writes these,
+# and a round whose only result is one of them falls back to its historical
+# status. Any other outcome is left to raise rather than be skipped silently --
+# a new detection layer should be classified deliberately, not absorbed.
+RUNNER_NON_VERDICTS = {"infrastructure", "invalid"}
 
 
 def classify_observation(data: dict, path: Path) -> str | None:
@@ -187,8 +188,7 @@ def _selftest() -> int:
         ({"outcome": "proof"}, "caught", "runner kill"),
         ({"outcome": "fidelity"}, "missed", "runner miss"),
         ({"outcome": "infrastructure"}, None, "incomplete run carries no verdict"),
-        ({"outcome": "extractor"}, None, "extraction difference is not a proof verdict"),
-        ({"outcome": "equivalent"}, None, "equivalent edit is not a proof verdict"),
+        ({"outcome": "invalid"}, None, "invalid edit carries no verdict"),
         ({"state": "READY", "build_exit": "1"}, "caught", "historical status kill"),
         ({"state": "READY", "build_exit": "0"}, "missed", "historical status miss"),
         ({"state": "NO_EXTRACTION_DELTA"}, "missed", "no extraction delta"),
@@ -200,12 +200,13 @@ def _selftest() -> int:
             print(f"rule_check selftest: {label}: expected {expected!r}, got {actual!r}",
                   file=sys.stderr)
             return 1
-    try:
-        classify_observation({"state": "WAT"}, probe)
-    except InputError:
-        pass
-    else:
-        print("rule_check selftest: unrecognised record was not rejected", file=sys.stderr)
+    for record, label in (({"state": "WAT"}, "unrecognised record"),
+                          ({"outcome": "extractor"}, "unclassified detection layer")):
+        try:
+            classify_observation(record, probe)
+        except InputError:
+            continue
+        print(f"rule_check selftest: {label} was not rejected", file=sys.stderr)
         return 1
     print("rule_check selftest OK: runner and historical vocabularies, "
           "non-verdicts, unrecognised records rejected")
