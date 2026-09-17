@@ -39,8 +39,12 @@ Every agent executing any part of this plan follows this section. It is not advi
   reason to stop.
 - **Phase A merges.** W0b, W0c and W0d change tooling and generated files only. Once such a PR's
   checks are green and its nine sections are filled, the agent merges it into the integration
-  branch itself with `gh pr merge <N> --squash --delete-branch`, then retargets and rebases any
-  child PR. The owner's review of milestone 0 covers them. In Phase B the owner merges.
+  branch itself, **in this order**: retarget every child PR to the integration branch first
+  (`gh pr edit <child> --base extraction-fidelity-hardening`), then
+  `gh pr merge <N> --squash` **without** `--delete-branch`, then rebase each child with
+  `--onto` and push it, then delete the merged branch. Deleting a base branch while PRs still
+  target it closes them (this happened to #387's four children). The owner's review of milestone 0
+  covers these merges. In Phase B the owner merges.
 - **The agent never pushes to `main`, never merges to `main`, never force-pushes the integration
   branch or `main`, never deletes a `freeze/*` branch, and never opens a second PR to `main` while
   #377 is open.** `git push --force-with-lease` on a `w*-` branch the agent created is allowed and
@@ -695,8 +699,12 @@ BinaryExtension opcode comes from these two files.
 1. Export both tables through the hook W9 built (`tools/virtual-tables/export-mem-align-rom.cjs`).
    Decide the artifact so `build/` does not grow by hundreds of megabytes: a compact encoding or a
    per-opcode-block hash. Record the decision in `docs/extraction/extractor-notes.md`.
-2. Check the model against the export: a Python gate evaluating `rowOfIndex` over every index, or
-   a Lean statement over the exported rows. State which and why in the PR.
+2. Check the model against the export **by evaluating the Lean definition itself**, never a
+   re-transcription of it: a small Lean executable (or `lake env lean --run`) evaluates
+   `rowOfIndex` over every index and streams the rows; a Python gate hashes that stream per opcode
+   block and compares against the per-block hashes the export carries. A Python copy of
+   `rowOfIndex` would be a second hand transcription, and agreement between two transcriptions
+   checks neither. The artifact stays small (one hash per block); the coverage stays total.
 3. Add both tables to the exposure ledger as their own rows, checked or unchecked.
 4. Add a mutation fixture editing `binary_table.pil:249` and require it to reach the check.
 
