@@ -138,6 +138,27 @@ Not stops, with the required action instead:
 The owner reads PR bodies and PR comments. Never edit GitHub issues before W0c has printed the
 ledger. Never mutate issue relationships.
 
+### Resume procedure
+
+Any session, at any time, in any state, resumes with this procedure and no other input. The
+prompt that starts it is one line: `Resume per docs/extraction-fidelity-plan.md, Resume procedure.`
+
+1. **Observe.** `git fetch --all --prune`; `gh pr list --state open`; `git worktree list`;
+   `df -h /home`; `ps -eo etime,args | grep -E 'runner.py|lake build|nix run'`. Read the
+   sequencing table and the PR list together: a workstream with an open PR is in review; a
+   workstream with a worktree but no PR is in progress; anything else not merged is next.
+2. **Finish what is in progress first.** For each worktree without a PR: if it has uncommitted
+   work, commit it if it passes its focused checks or discard it if it does not; run the one gate;
+   open the PR with the nine sections; remove the worktree. A gate or suite that a previous
+   session started and did not finish is simply run again.
+3. **Repair evidence gaps.** For each open PR whose body cites a rule score, a re-run set, or an
+   infrastructure-classified round, re-run those rounds one suite at a time, commit the evidence
+   on that PR's branch, and update the body.
+4. **Continue** down the sequencing table under the dependency and stacking rules.
+5. Never ask the owner what to do next; this file is the answer. Never restate the state as a
+   question. Report through PR bodies and comments. A turn ends only under *Autonomy, reporting
+   and stopping*.
+
 ### Environment
 
 - Lean and lake are only on `PATH` inside the dev shell:
