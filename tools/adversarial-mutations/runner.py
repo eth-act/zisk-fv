@@ -201,6 +201,15 @@ def extraction_manifest(path: Path) -> dict[str, str]:
         candidate = container / name
         if candidate.is_file():
             result[name] = sha256(candidate)
+    # The two `virtual` byte tables never reach pilout, so they have no
+    # `Extraction/<Air>.lean`; the extractor emits per-opcode-block hashes for
+    # them instead. Without these entries a mutation inside `binary_table.pil`
+    # or `binary_extension_table.pil` changes no monitored artifact and is
+    # classified as a lost artifact rather than an extraction difference.
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        for candidate in sorted(byte_tables.glob("*.json")):
+            result[f"ByteTables/{candidate.name}"] = sha256(candidate)
     return result
 
 
