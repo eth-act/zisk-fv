@@ -448,9 +448,16 @@ re-exported** by the model: `trust/generated-components.toml` marks the AIR `con
 model's `ZiskFv/AirsClean/<Air>/Constraints.lean` is a re-export of
 `Extraction.Components.<Air>.Constraints`, and the extractor's per-component constraint map (a
 generated `Components/<Air>/Manifest` listing which `<Air>.lean` constraint indices the component's
-`assertZero` lines and bus pushes realise) names the constraint. Credit exactly the mapped indices,
-nothing more; an AIR marked `consumed` without a manifest covers nothing. This is the only way
-the root column moves under W14, and it is the ledger's job to show it.
+`assertZero` lines and bus pushes realise) names the constraint **and proves it**: each manifest
+entry carries a kernel equality, `example : <component assertZero k> ↔
+<Air>.extraction.constraint_N_every_row := Iff.rfl` (or the definitional form the emitter can
+state), compiled as part of `Extraction.Components.<Air>.Manifest`. The ledger credits only
+proof-backed entries; an entry without its proof, or an AIR marked `consumed` without a manifest,
+covers nothing. This is the binding rider applied to components: the extractor's claim that its
+component realises constraint N is a search witness, the `rfl` is the check. It also replaces the
+hand-written `<air>_extracted_of_main` theorems that the welds used to prove, so those may be
+deleted only once the manifest proofs compile. This is the only way the root column moves under
+W14, and it is the ledger's job to show it.
 
 Printed separately: **wirable**, generated links consumed by nothing. Never in the numerator.
 
