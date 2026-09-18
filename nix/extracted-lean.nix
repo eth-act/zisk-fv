@@ -1,4 +1,4 @@
-{ stdenv, lib, pil-extract, zisk-pilout, zisk-src }:
+{ stdenv, lib, nodejs_20, pil-extract, pil2-compiler, pil2-proofman-src, zisk-pilout, zisk-src }:
 
 # Run `pil-extract` over `zisk-pilout` (and `zisk-src` for the
 # arith-table data / original PIL source) to produce the generated extraction
@@ -75,11 +75,13 @@ stdenv.mkDerivation {
       --output $out/ArithTable.lean
 
     # MemAlignRom is virtual and therefore absent from pilout. Extract its
-    # 256 physical fixed rows from the upstream PIL fixed columns and verify
-    # the physical table parameters against the state-machine builder.
+    # physical fixed rows by executing the upstream PIL builder itself.
+    ${nodejs_20}/bin/node ${../tools/virtual-tables/export-mem-align-rom.cjs} \
+      ${pil2-compiler} ${zisk-src} ${pil2-proofman-src} $out/MemAlignRom.tsv
     ${pil-extract}/bin/pil-extract mem-align-rom \
       --pil-source ${zisk-src}/state-machines/mem/pil/mem_align_rom.pil \
       --rust-source ${zisk-src}/state-machines/mem/src/mem_align_rom_sm.rs \
+      --compiled-rows $out/MemAlignRom.tsv \
       --output $out/MemAlignRom.lean
 
     # Mem generated AIR facts and sidecar source map. This is not a Lake

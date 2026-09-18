@@ -1,0 +1,34 @@
+{
+  "build_exit": "1",
+  "build_seconds": "536",
+  "changed": [
+    "LookupWiring.lean",
+    "Main.lean"
+  ],
+  "errors": "28:error: ZiskFv/AirsClean/MainMirrorWeld.lean:310:2: Type mismatch\n61:error: ZiskFv/AirsClean/MainMirrorWeld.lean:562:14: Type mismatch\n68:error: ZiskFv/AirsClean/MainMirrorWeld.lean:740:2: Type mismatch\n75:error: Lean exited with code 1\n478:error: build failed\n",
+  "historical_reach": [
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`",
+    "* `Main.lean` \u2014 read by `ZiskFv/AirsClean/MainMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.LookupWiring",
+    "Extraction.Main",
+    "Extraction.MemAlign",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 408,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

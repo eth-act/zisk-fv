@@ -1991,7 +1991,7 @@ def run_check(pilout_path: Path, extraction: Path, mirror_root: Path,
     # `survey.coverage` runs the classification gate and mechanically rescues the
     # weld-internal Prop defs (#296) into `coverage.weld_helpers`, so the 7 they
     # added stop failing while a genuinely new mirror in a weld file still does.
-    out.coverage = survey.coverage(mirror_root)
+    out.coverage = survey.coverage(mirror_root, extraction)
     # The `Iff.rfl` welds (#296), parsed off their own text, for WELD_COVERED.
     out.welds = weld_parse.parse_welds(mirror_root)
     # #310 checked an authoritative per-AIR stage-1 witness column map into
@@ -2125,8 +2125,8 @@ def print_declarations(run: Run, out) -> None:
           f"{coverage.props if coverage else '?'} Prop-valued declaration(s) "
           f"under the mirror root", file=out)
     print(f"                held by survey.coverage (nothing unclassified, no "
-          f"entry naming a vanished declaration) and by the near-miss screen "
-          f"below", file=out)
+          f"entry naming a vanished declaration, source-only classes pass "
+          f"their syntax checks) and by the near-miss screen below", file=out)
     print(f"  generated     lanes.DECLARED_AIRS: {len(lanes.DECLARED_AIRS)} AIR(s), "
           f"{', '.join(lanes.DECLARED_AIRS)}", file=out)
     print("                held by check._check_scope against "
@@ -2623,8 +2623,8 @@ def print_checks(run: Run, out) -> None:
                 coverage.failures if coverage else [],
                 f"survey.coverage over "
                 f"{coverage.props if coverage else 0} Prop-valued "
-                f"declaration(s): any unclassified one, and any entry naming a "
-                f"declaration the root no longer has", out)
+                f"declaration(s): any unclassified one, any stale entry, and "
+                f"any malformed source-only classification", out)
     helpers = coverage.weld_helpers if coverage else ()
     if helpers:
         print(f"    {len(helpers)} unclassified Prop def(s) in *MirrorWeld.lean "

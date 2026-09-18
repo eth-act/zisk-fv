@@ -382,6 +382,16 @@ def cmdCheckExtractionClosure (env : Environment) : IO UInt32 := do
       the extraction-closure gate would pass vacuously. Did the Aeneas extraction \
       modules fail to import into ZiskFv?"
     return 1
+  -- Every individual closure is allowed exactly when their union is allowed.
+  -- Thread Lean's visited set through all roots on the successful path, rather
+  -- than repeatedly traversing the shared extraction/runtime dependency graph.
+  let union := AxiomClosure.rawAxiomUnion env decls
+  let badUnion := union.filter (fun a => !allowed.contains a)
+  if badUnion.isEmpty then
+    IO.println s!"trust-gate (V2): {decls.size} extraction/decode declaration(s) \
+      checked, all RAW closures ⊆ \{propext, Classical.choice, Quot.sound}."
+    return 0
+  -- Preserve per-declaration diagnostics when the union detects a leak.
   let mut offenders : Array (Name × Array Name) := #[]
   for n in decls do
     let raw := AxiomClosure.rawAxiomDepsForTheorem env n
@@ -389,9 +399,8 @@ def cmdCheckExtractionClosure (env : Environment) : IO UInt32 := do
     if !bad.isEmpty then
       offenders := offenders.push (n, bad)
   if offenders.isEmpty then
-    IO.println s!"trust-gate (V2): {decls.size} extraction/decode declaration(s) \
-      checked, all RAW closures ⊆ \{propext, Classical.choice, Quot.sound}."
-    return 0
+    IO.eprintln s!"trust-gate (V2): inconsistent raw closure results: {badUnion}"
+    return 1
   IO.eprintln s!"trust-gate (V2): {offenders.size} of {decls.size} extraction/decode \
     declaration(s) have a RAW axiom closure OUTSIDE \{propext, Classical.choice, Quot.sound} — FAIL."
   IO.eprintln "  A leaked external `sorryAx` / `Lean.ofReduceBool` / `Lean.trustCompiler`,"

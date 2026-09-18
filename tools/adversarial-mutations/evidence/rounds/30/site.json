@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 404, "op": "DROP_CONSTRAINT", "air": "Main", "kind": "pil", "desc": "delete the identity", "old": "    (1 - is_external_op) * op * (flag) === 0;", "new": "//    (1 - is_external_op) * op * (flag) === 0;"}

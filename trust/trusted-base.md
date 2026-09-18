@@ -46,6 +46,42 @@ Lean axiom ledger:
 - Sail-to-Lean extraction for the official `riscv/sail-riscv` semantics.
 - ZisK RV64IM circuit-to-Lean extraction from flake-pinned ZisK/PIL inputs.
 
+The virtual MemAlign ROM is obtained by executing the pinned PIL compiler on
+the upstream `MemAlignRom()` template and observing all six fixed columns before
+virtual-table lowering. `tools/virtual-tables/export-mem-align-rom.cjs` uses the
+compiler's `onAirEnd` hook; it does not reconstruct the row-building algorithm.
+The isolated invocation is checked against the production call shape, and a
+zero-multiplicity consumer lets the standard library finish the isolated compile.
+`pil-extract mem-align-rom --compiled-rows` preserves every observed row and
+checks dimensions, column order, and upstream Rust table parameters. The
+generated `MemAlignRom.tsv` is retained beside the extraction artifacts.
+`nix run .#virtual-table-check` compares all production rows with generated Lean
+and requires the sweep's round-50 builder mutation to reach Lean. It is also
+part of `nix run .#test`. This removes duplicated builder logic from the
+extraction boundary; it does not prove compiler correctness or claim that every
+ROM mutation violates instruction soundness.
+
+The extraction-fidelity checks also compile every generated Lean module and
+freeze the complete structural inventory under `tools/extraction-coverage/`.
+`ValidatedLink` contains kernel proofs tying its actual operands and shape to
+its constraint. Maintained wiring checks cover all eight Binary byte tuples,
+BinaryAdd c5, and Arith c61; the Clean arithmetic table is proved equal to the
+generated Rust-derived rows. Arith's physical operation tuple carries
+`div_by_zero` in its flag slot, including the supported zero-divisor DIV/REM
+cases. The modeled primary/secondary messages preserve that field; MUL's zero
+flag follows from the existing division-scope constraint and MUL mode.
+
+`MainMirrorWeld` constructs model-only addresses and raw Main rows, preserving
+all committed columns and deriving the live local polynomial assertions and
+predecessor-PC equation from generated constraints. These are row-level facts,
+not a replacement of `AcceptedZiskTrace` by physical trace acceptance. Exact
+channel balance, static lookup membership, fixed/public trace schemas, and full
+source-to-model trace construction remain distinct proof obligations. No trust
+allowlist or known-defect exclusion is expanded by these fidelity checks. The
+CI protocol is documented in `docs/extraction/ci-invariant.md`. Mutation rounds
+run manually rather than in the proof job; a CAUGHT claim requires a result file
+from the current checkout.
+
 ## Current Classes
 
 | Class                         | Declarations | In global closure | Removability                                                                                             |

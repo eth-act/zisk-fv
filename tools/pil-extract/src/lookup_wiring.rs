@@ -603,7 +603,7 @@ fn find_links(
             continue;
         }
 
-        if zero_tail_template_scope(air_name) {
+        if zero_tail_template_scope(air_name, *constraint_index) {
             let pair_matches = zero_tail_pair_matches(
                 constraint,
                 hints,
@@ -722,11 +722,18 @@ fn find_links(
     Ok((links, unlinked))
 }
 
-/// The approved zero-tail route is deliberately bounded to the MemAlign
-/// family. Other unlinked shapes, including Arith c61/c62, retain their
-/// recorded disposition until separately approved.
-fn zero_tail_template_scope(air_name: &str) -> bool {
+/// Zero-tail compression is accepted only at audited macro applications. The
+/// MemAlign family uses it throughout. BinaryExtension c4, BinaryAdd c5,
+/// Arith c61, and Main c45 are operation-bus applications whose pilout
+/// constraints omit the source macro's trailing literal-zero slots. Main
+/// c43/c44 use the audited assumes-side negative-multiplicity form recognized
+/// in the same scoped matching pass.
+fn zero_tail_template_scope(air_name: &str, constraint_index: usize) -> bool {
     matches!(air_name, "MemAlign" | "MemAlignByte" | "MemAlignReadByte")
+        || (air_name == "BinaryExtension" && constraint_index == 4)
+        || (air_name == "BinaryAdd" && constraint_index == 5)
+        || (air_name == "Arith" && constraint_index == 61)
+        || (air_name == "Main" && matches!(constraint_index, 43..=45))
 }
 
 /// The Binary c10 final-byte lookup shares its accumulator constraint with
@@ -1554,10 +1561,6 @@ fn write_prelude(out: &mut String) {
     out.push_str("  piop : String\n  proves : Bool\n  busId : Expr\n");
     out.push_str("  multiplicity : Expr\n  slots : List Slot\n\n");
     out.push_str("inductive LinkShape where\n  | direct\n  | cluster2\n  | derivedMixed2\n  | directZeroTail\n  | cluster2ZeroTail\n  | directAssumesNegForm\n  | directAssumesNegFormZeroTail\n  deriving Repr, DecidableEq\n\n");
-    out.push_str("structure ValidatedLink where\n");
-    out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
-    out.push_str("  accumulator : Expr\n  alpha : Expr\n  gamma : Expr\n  constraint : Expr\n  template : Expr\n");
-    out.push_str("  hints : List HintTuple\n  derivedTuples : List DerivedTuple\n\n");
     out.push_str("structure ConstraintOnly where\n");
     out.push_str("  air : String\n  constraintIndex : Nat\n  constraint : Expr\n\n");
     out.push_str("structure AirStatus where\n");
@@ -1630,6 +1633,28 @@ fn write_prelude(out: &mut String) {
     out.push_str("  let rightMix := stdMix alpha gamma right.busId right.slots\n");
     out.push_str("  .sub (.mul accumulator (.mul leftMix rightMix))\n");
     out.push_str("    (.add (.mul (signedDerivedSelector left) rightMix) (.mul (signedDerivedSelector right) leftMix))\n\n");
+    out.push_str("def templateOf (shape : LinkShape) (alpha gamma accumulator : Expr)\n");
+    out.push_str("    (hints : List HintTuple) (derivedTuples : List DerivedTuple) : Option Expr :=\n");
+    out.push_str("  match shape, hints, derivedTuples with\n");
+    out.push_str("  | .direct, [hint], [] => some (normalise (directTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | .cluster2, [left, right], [] => some (normalise (cluster2Template alpha gamma accumulator left right))\n");
+    out.push_str("  | .derivedMixed2, [], [left, right] => some (normalise (derivedMixed2Template alpha gamma accumulator left right))\n");
+    out.push_str("  | .directZeroTail, [hint], [] => some (normalise (directZeroTailTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | .cluster2ZeroTail, [left, right], [] => some (normalise (cluster2ZeroTailTemplate alpha gamma accumulator left right))\n");
+    out.push_str("  | .directAssumesNegForm, [hint], [] => some (normalise (directAssumesNegFormTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | .directAssumesNegFormZeroTail, [hint], [] => some (normalise (directAssumesNegFormZeroTailTemplate alpha gamma accumulator hint))\n");
+    out.push_str("  | _, _, _ => none\n\n");
+    out.push_str("structure ValidatedLink where\n");
+    out.push_str("  air : String\n  constraintIndex : Nat\n  shape : LinkShape\n");
+    out.push_str("  accumulator : Expr\n  alpha : Expr\n  gamma : Expr\n  constraint : Expr\n  template : Expr\n");
+    out.push_str("  hints : List HintTuple\n  derivedTuples : List DerivedTuple\n");
+    out.push_str("  templateFromShape : templateOf shape alpha gamma accumulator hints derivedTuples = some template\n");
+    out.push_str("  constraintEqualsTemplate : constraint = template\n\n");
+    out.push_str("theorem ValidatedLink.constraintValidated (link : ValidatedLink) :\n");
+    out.push_str("    templateOf link.shape link.alpha link.gamma link.accumulator\n");
+    out.push_str("      link.hints link.derivedTuples = some link.constraint := by\n");
+    out.push_str("  rw [link.constraintEqualsTemplate]\n");
+    out.push_str("  exact link.templateFromShape\n\n");
 }
 
 fn write_air_status(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -1744,11 +1769,6 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
             label
         )?,
     }
-    writeln!(
-        out,
-        "example : constraint_{} = template_{} := by rfl",
-        label, label
-    )?;
     writeln!(out, "def link_{} : ValidatedLink := {{", label)?;
     writeln!(out, "  air := \"{}\",", lean_string(&air.air_name))?;
     writeln!(out, "  constraintIndex := {},", link.constraint_index)?;
@@ -1771,7 +1791,9 @@ fn write_link(out: &mut String, air: &AirManifest, link: &LinkedConstraint) -> R
     writeln!(out, "  constraint := constraint_{},", label)?;
     writeln!(out, "  template := template_{},", label)?;
     writeln!(out, "  hints := [{}],", (0..link.hints.len()).map(|index| format!("hint_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
-    writeln!(out, "  derivedTuples := [{}]", (0..link.derived_tuples.len()).map(|index| format!("derivedTuple_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    writeln!(out, "  derivedTuples := [{}],", (0..link.derived_tuples.len()).map(|index| format!("derivedTuple_{}_{}", label, index)).collect::<Vec<_>>().join(", "))?;
+    out.push_str("  templateFromShape := by rfl\n");
+    out.push_str("  constraintEqualsTemplate := by rfl\n");
     out.push_str("}\n\n");
     Ok(())
 }
@@ -1857,6 +1879,37 @@ fn ident(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validated_link_carries_shape_computed_kernel_equalities() {
+        let mut prelude = String::new();
+        write_prelude(&mut prelude);
+
+        assert!(prelude.contains(
+            "templateFromShape : templateOf shape alpha gamma accumulator hints derivedTuples = some template"
+        ));
+        assert!(prelude.contains("constraintEqualsTemplate : constraint = template"));
+        assert!(prelude.contains("theorem ValidatedLink.constraintValidated"));
+        assert!(prelude.contains("| .direct, [hint], [] =>"));
+        assert!(prelude.contains("| .derivedMixed2, [], [left, right] =>"));
+        assert!(prelude.contains("| _, _, _ => none"));
+    }
+
+    #[test]
+    fn operation_zero_tail_scope_is_constraint_specific() {
+        assert!(zero_tail_template_scope("BinaryAdd", 5));
+        assert!(zero_tail_template_scope("BinaryExtension", 4));
+        assert!(zero_tail_template_scope("Arith", 61));
+        assert!(zero_tail_template_scope("Main", 43));
+        assert!(zero_tail_template_scope("Main", 44));
+        assert!(zero_tail_template_scope("Main", 45));
+        assert!(!zero_tail_template_scope("BinaryAdd", 4));
+        assert!(!zero_tail_template_scope("BinaryExtension", 3));
+        assert!(!zero_tail_template_scope("BinaryExtension", 5));
+        assert!(!zero_tail_template_scope("Arith", 62));
+        assert!(!zero_tail_template_scope("Main", 42));
+        assert!(!zero_tail_template_scope("Main", 46));
+    }
 
     fn hint(proves: bool, slots: Vec<Ast>) -> HintData {
         HintData {

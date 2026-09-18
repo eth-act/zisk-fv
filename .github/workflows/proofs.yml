@@ -5,35 +5,20 @@ name: proofs
 # A green proof run is the formal-verification claim that every per-opcode
 # equivalence theorem typechecks against the pinned upstream artifacts.
 #
-# Cost: ~30 min cold (no Nix store cache), ~5 min warm. flake.lock
-# pins every build input (sail/sail-riscv/zisk/pil2-* sources +
+# flake.lock pins every build input (sail/sail-riscv/zisk/pil2-* sources +
 # nixpkgs rev) by content hash, so the same build runs across machines.
 
 on:
   push:
     branches: [main]
-    paths:
-      - '*.lean'
-      - '**/*.lean'
-      - 'tools/pil-extract/**'
-      - 'scripts/aeneas-production-extract.sh'
-      - 'zisk'
-      - 'zisk/**'
-      - 'lake-manifest.json'
-      - 'lakefile.toml'
-      - 'lean-toolchain'
-      - 'flake.nix'
-      - 'flake.lock'
-      - 'nix/**'
-      # Trust gate-policy inputs (allowlists, forbidden-shape lists,
-      # baselines, floors, gate scripts). The trust *.md ledgers are
-      # docs and intentionally excluded.
-      - 'trust/*.txt'
-      - 'trust/scripts/**'
-      - 'trust/generated/**'
-      - 'trust/.shrinkage-floor'
-      - '.github/workflows/proofs.yml'
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: '23 4 * * 1'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: proofs-${{ github.ref }}
@@ -51,57 +36,24 @@ jobs:
         with:
           fetch-depth: 0
           submodules: false
+          persist-credentials: false
 
       - name: Decide whether to run proof jobs
         id: classify
         shell: bash
-        run: |
-          set -euo pipefail
+        run: python3 scripts/ci_proof_inputs.py
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run_proofs=true" >> "$GITHUB_OUTPUT"
-            echo "reason=manual dispatch" >> "$GITHUB_OUTPUT"
-            echo "Manual dispatch: running proof jobs." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          before="${{ github.event.before }}"
-          after="${{ github.sha }}"
-          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            before="$(git rev-list --max-parents=0 "$after")"
-          fi
-
-          git diff --name-only "$before" "$after" > changed-files.txt
-
-          matched=()
-          while IFS= read -r path; do
-            case "$path" in
-              *.lean|lake-manifest.json|lakefile.toml|lean-toolchain|flake.nix|flake.lock|nix/*|scripts/aeneas-production-extract.sh|tools/pil-extract/*|zisk|zisk/*|trust/*.txt|trust/scripts/*|trust/generated/*|trust/.shrinkage-floor)
-                matched+=("$path")
-                ;;
-            esac
-          done < changed-files.txt
-
-          if [ "${#matched[@]}" -eq 0 ]; then
-            echo "run_proofs=false" >> "$GITHUB_OUTPUT"
-            echo "reason=no Lean/proof input paths changed" >> "$GITHUB_OUTPUT"
-            {
-              echo "No Lean/proof input paths changed; skipping Lake/proof jobs."
-              echo ""
-              echo "Changed files:"
-              sed 's/^/- /' changed-files.txt
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          echo "run_proofs=true" >> "$GITHUB_OUTPUT"
-          echo "reason=Lean/proof input paths changed" >> "$GITHUB_OUTPUT"
-          {
-            echo "Lean/proof input paths changed; running proof jobs."
-            echo ""
-            echo "Matched files:"
-            printf -- '- %s\n' "${matched[@]}"
-          } >> "$GITHUB_STEP_SUMMARY"
+  fast-checks:
+    name: fast trust and CI checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
+      - run: trust/scripts/check-all.sh
 
   pick-runner:
     name: probe cachix and select runner
@@ -114,6 +66,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
+          persist-credentials: false
 
       - uses: cachix/install-nix-action@v27
         with:
@@ -169,6 +122,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          persist-credentials: false
 
       - uses: cachix/install-nix-action@v27
         with:
@@ -181,7 +135,7 @@ jobs:
       - uses: cachix/cachix-action@v15
         with:
           name: zisk-fv
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          skipPush: true
 
       - name: Regenerate and diff ProductionM2.lean
         run: nix run .#aeneas-production-extract-check-tracked
@@ -194,7 +148,7 @@ jobs:
     # successful 2026-06-02 main run after the sd proof-memory fix peaked
     # at 10.5 GiB kernel used memory with LEAN_NUM_THREADS=4. Cold pilout
     # cache misses still route to the 32 GiB XL runner.
-    runs-on: ["self-hosted-ghr", "${{ needs.pick-runner.outputs.runner }}"]
+    runs-on: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'merge_group') && '["ubuntu-latest"]' || format('["self-hosted-ghr","{0}"]', needs.pick-runner.outputs.runner)) }}
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
@@ -203,6 +157,7 @@ jobs:
           # as path dependencies. The formal build inputs still come from
           # flake.lock; this checkout is only for the differential pin.
           submodules: true
+          persist-credentials: false
 
       # cachix/install-nix-action (rather than DeterminateSystems') —
       # cachix-action assumes paths set up by this installer; using
@@ -222,7 +177,7 @@ jobs:
       - uses: cachix/cachix-action@v15
         with:
           name: zisk-fv
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          skipPush: true
 
       # ----------------------------------------------------------------
       # Cache .lake (Mathlib + project build). Mathlib oleans come from
@@ -254,7 +209,7 @@ jobs:
           # warm cache, main) measured peak kernel `used` = 10.5 GiB.
           # That fits the 16 GiB L runner with headroom after the sd
           # proof-memory fix, and matches nix/test.nix's default.
-          LEAN_NUM_THREADS: "4"
+          LEAN_NUM_THREADS: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && '2' || '4' }}
           # The independent Aeneas production-extraction completeness check
           # (step 5/10) is the single largest cost (~1.5h) and is unrelated to
           # the Lake proof graph. Run it in the parallel
@@ -302,6 +257,15 @@ jobs:
           dmesg | tail -200 || sudo dmesg | tail -200 || echo "dmesg unavailable"
           echo "::endgroup::"
           exit $EXIT
+
+      - name: Upload extraction coverage inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extraction-coverage-inventory
+          path: build/extraction-coverage-report.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload mem-trace artifact
         if: always()
@@ -356,6 +320,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          persist-credentials: false
 
       - uses: cachix/install-nix-action@v27
         with:
@@ -365,7 +330,7 @@ jobs:
       - uses: cachix/cachix-action@v15
         with:
           name: zisk-fv
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          skipPush: true
 
       - name: Cache Aeneas lean-check dependencies
         uses: actions/cache@v4
@@ -408,3 +373,17 @@ jobs:
           echo "  - scripts/aeneas-production-extract.sh"
           echo "  - trust/aeneas/README.md"
           echo "  - flake.lock  (the audit surface for Aeneas/build-input changes)"
+
+  proof-status:
+    name: required proof checks
+    if: always()
+    needs: [proof-inputs, fast-checks, pick-runner, lake-build, aeneas-extraction-diff, aeneas-production-extraction]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Require every applicable job to succeed
+        env:
+          PROOF_JOB_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/ci_proof_inputs.py --aggregate

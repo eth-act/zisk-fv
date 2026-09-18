@@ -5,6 +5,18 @@ import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.AirsClean.Binary.Wiring
+import ZiskFv.AirsClean.BinaryAdd.Wiring
+import ZiskFv.AirsClean.BinaryAdd.ExtractedRow
+import ZiskFv.AirsClean.Binary.ExtractedRow
+import ZiskFv.AirsClean.ArithMul.Wiring
+import ZiskFv.AirsClean.ArithMul.ExtractedRow
+import ZiskFv.AirsClean.Main.Wiring
+import ZiskFv.AirsClean.Main.RomWiring
+import ZiskFv.AirsClean.Main.MemoryWiring
+import ZiskFv.AirsClean.BinaryExtension.ExtractedWiring
+import ZiskFv.AirsClean.MemAlign.ExtractedWiring
+import ZiskFv.AirsClean.MemAlignByte.ExtractedWiring
+import ZiskFv.AirsClean.MemAlignReadByte.ExtractedWiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
@@ -254,6 +266,7 @@ import ZiskFv.AirsClean.ArithMirrorWeld
 -- constraint definitions `@[simp]`, so importing it from anywhere with ZiskFv
 -- dependents would add them to the default simp set for every downstream module.
 import ZiskFv.AirsClean.MainMirrorWeld
+import ZiskFv.AirsClean.Main.ExtractedTable
 -- `rfl`-level weld of the two MemAlign constraint mirrors (`Valid_MemAlign` and
 -- the Clean component's `Spec`/`transitionRows`/`cyclicSuccessorTransitionRows`)
 -- to the generated `Extraction.MemAlign.constraint_N_every_row` predicates. This

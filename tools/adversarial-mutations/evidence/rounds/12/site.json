@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 473, "op": "DROP_CONSTRAINT", "air": "Main", "kind": "pil", "desc": "delete the identity", "old": "    store_pc * (1 - store_pc) === 0;", "new": "//    store_pc * (1 - store_pc) === 0;"}

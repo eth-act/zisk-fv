@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align_rom.pil", "line": 231, "op": "OPERAND_SWAP", "air": "MemAlignRom", "kind": "direct", "desc": "swap tsize[1] <-> tsize[3]", "old": "        else if (line < 1+tsize[0]+tsize[1]+tsize[2]+tsize[3]) // RWVWR", "new": "        else if (line < 1+tsize[0]+tsize[3]+tsize[2]+tsize[1]) // RWVWR"}

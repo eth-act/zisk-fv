@@ -6,7 +6,7 @@ import ZiskFv.Channels.MemAlignRom
 # MemAlignRom — exact extracted static-table provider
 
 The virtual MemAlign ROM is absent from pilout's AIR list. Its 256 physical
-rows are extracted from the fixed `OFFSET`/`WIDTH` columns and row builder in
+rows are observed from the pinned PIL compiler executing the fixed-column builder in
 `zisk/state-machines/mem/pil/mem_align_rom.pil:6-313`, with table id/size and
 padding-row index checked against
 `zisk/state-machines/mem/src/mem_align_rom_sm.rs::MemAlignRomSM`.

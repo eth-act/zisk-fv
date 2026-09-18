@@ -642,12 +642,8 @@ open ZiskFv.Airs.OperationBus
     `OperationBusEntry`; only which Arith columns flow into `c_lo` /
     `c_hi` differs.
 
-    On DIV rows we also have `flag = div_by_zero`; for our compositional
-    archetype this sits as a free field on the bus entry. We leave
-    `flag = 0` here, matching the semantics that a non-div-by-zero
-    divide emits `flag = 0` and the Sail side never observes the flag
-    directly; div-by-zero is handled by the PIL + arith_table
-    assumption network. -/
+    The `flag` lane is the physical `div_by_zero` column emitted by
+    `arith.pil:247-258`; retaining it is required for zero-divisor rows. -/
 @[simp]
 def opBus_row_ArithDiv {F ExtF : Type} [Field F] [Field ExtF]
     (v : Valid_ArithDiv F ExtF) (row : ℕ) : OperationBusEntry F :=
@@ -661,7 +657,7 @@ def opBus_row_ArithDiv {F ExtF : Type} [Field F] [Field ExtF]
     -- Quotient output lane: `a[0] + a[1] * 2^16` on main_div = 1.
     c_lo := v.a_0 row + v.a_1 row * 65536
     c_hi := v.bus_res1 row
-    flag := 0
+    flag := v.div_by_zero row
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }
@@ -686,7 +682,7 @@ def opBus_row_ArithDivSecondary {F ExtF : Type} [Field F] [Field ExtF]
     -- Remainder output lane: `d[0] + d[1] * 2^16` on secondary = 1.
     c_lo := v.d_0 row + v.d_1 row * 65536
     c_hi := v.bus_res1 row
-    flag := 0
+    flag := v.div_by_zero row
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }

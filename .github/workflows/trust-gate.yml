@@ -3,7 +3,12 @@ name: trust gate
 on:
   push:
     branches: [main]
+  pull_request:
+  merge_group:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 # Cancel in-progress runs on the same branch when a new commit lands.
 concurrency:
@@ -18,6 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          persist-credentials: false
 
       - name: Install trust-gate tools
         run: |

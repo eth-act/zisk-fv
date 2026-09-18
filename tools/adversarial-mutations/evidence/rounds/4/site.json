@@ -1,0 +1,1 @@
+{"file": "state-machines/binary/pil/binary.pil", "line": 156, "op": "CONST_PERTURB", "air": "Binary", "kind": "pil", "desc": "mask 0x10 -> 0xf", "old": "    proves_operation(op: b_op + 0x10 * mode32, a:, b:, c:, flag:cout);", "new": "    proves_operation(op: b_op + 0xf * mode32, a:, b:, c:, flag:cout);"}
