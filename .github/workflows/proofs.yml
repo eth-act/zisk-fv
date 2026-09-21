@@ -34,6 +34,13 @@ on:
       - 'trust/.shrinkage-floor'
       - '.github/workflows/proofs.yml'
   workflow_dispatch:
+    inputs:
+      cold_timing:
+        description: >-
+          Measure the COLD build instead of running the gate: no zisk-fv
+          Cachix, no .lake cache. One-off; skips the normal proof jobs.
+        type: boolean
+        default: false
 
 concurrency:
   group: proofs-${{ github.ref }}
@@ -57,6 +64,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          if [ "${{ inputs.cold_timing }}" = "true" ]; then
+            echo "run_proofs=false" >> "$GITHUB_OUTPUT"
+            echo "reason=cold-timing dispatch; normal proof jobs skipped" >> "$GITHUB_OUTPUT"
+            echo "Cold-timing dispatch: running cold-timing only." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "run_proofs=true" >> "$GITHUB_OUTPUT"
@@ -408,3 +422,103 @@ jobs:
           echo "  - scripts/aeneas-production-extract.sh"
           echo "  - trust/aeneas/README.md"
           echo "  - flake.lock  (the audit surface for Aeneas/build-input changes)"
+
+  # ------------------------------------------------------------------
+  # ONE-OFF cold-build measurement (`workflow_dispatch` with
+  # `cold_timing=true`). Every routine run hits zisk-fv.cachix.org for the
+  # three Nix derivations and restores `.lake` from actions/cache, so the
+  # published "populate" and "lake build" timings are warm-path numbers.
+  # This job deliberately configures neither, to answer "how long does a
+  # fresh clone take to verify?".
+  #
+  # Upstream caches are still used, because a fresh clone uses them too:
+  # cache.nixos.org for nixpkgs, and mathlib's own olean cache via
+  # `lake exe cache get`. What is cold here is everything zisk-fv builds:
+  # sail-lean-tree, zisk-pilout, extracted-lean, and all of ZiskFv/.
+  # ------------------------------------------------------------------
+  cold-timing:
+    name: cold build timing (one-off)
+    if: inputs.cold_timing
+    # 32 GiB: the cold pilout build is what the routine path routes to XL for.
+    runs-on: ["self-hosted-ghr", "size-xl-x64"]
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # NOTE: no cachix/cachix-action and no actions/cache here. That
+      # omission is the entire point of this job — do not "fix" it.
+
+      - name: Record the starting state
+        run: |
+          echo "::group::runner"
+          nproc; free -g; df -h /
+          echo "::endgroup::"
+          echo "::group::substituters (zisk-fv.cachix.org must be absent)"
+          nix show-config | grep -E '^(substituters|extra-substituters)' || true
+          echo "::endgroup::"
+          test ! -d .lake || { echo "::error::.lake present; not a cold tree"; exit 1; }
+
+      - name: Cold timings
+        env:
+          LEAN_NUM_THREADS: "4"
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cold-timing
+          TRACE=/tmp/cold-timing/mem-trace.log
+          : > "$TRACE"
+          (
+            while true; do
+              awk -v ts="$(date -u +%H:%M:%S)" \
+                '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "[mem %s] used=%.1fG\n", ts, (t-a)/1048576}' \
+                /proc/meminfo | tee -a "$TRACE"
+              sleep 10
+            done
+          ) &
+          SIDECAR=$!
+          trap 'kill $SIDECAR 2>/dev/null || true' EXIT
+
+          t() {  # t <label> <command...>
+            local label=$1; shift
+            local start; start=$(date +%s)
+            echo "::group::$label"
+            "$@"
+            echo "::endgroup::"
+            local secs=$(( $(date +%s) - start ))
+            echo "$label=$secs" >> /tmp/cold-timing/timings.txt
+            printf '%s: %dm %ds\n' "$label" $((secs/60)) $((secs%60))
+          }
+
+          t populate nix run .#populate
+          t mathlib-cache nix develop --command bash -c 'lake exe cache get'
+          t lake-build nix develop --command bash -c 'lake build'
+
+          kill $SIDECAR 2>/dev/null || true
+          echo "peak-used-GiB=$(awk -F'used=' '{gsub(/G/,"",$2); if ($2+0>m) m=$2+0} END{print m}' "$TRACE")" \
+            >> /tmp/cold-timing/timings.txt
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Cold build timing (no zisk-fv Cachix, no .lake cache)"
+            echo
+            echo "| phase | seconds |"
+            echo "| --- | ---: |"
+            sed 's/=/ | /; s/^/| /; s/$/ |/' /tmp/cold-timing/timings.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/cold-timing/timings.txt
+
+      - name: Upload timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cold-timing
+          path: /tmp/cold-timing/
+          retention-days: 30
