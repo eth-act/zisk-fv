@@ -41,6 +41,13 @@ on:
           Cachix, no .lake cache. One-off; skips the normal proof jobs.
         type: boolean
         default: false
+      cold_timing_aeneas:
+        description: >-
+          Measure the COLD Aeneas extraction (no zisk-fv Cachix, no
+          lean-check cache). Independent of cold_timing; also skips the
+          normal proof jobs.
+        type: boolean
+        default: false
 
 concurrency:
   group: proofs-${{ github.ref }}
@@ -65,7 +72,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ inputs.cold_timing }}" = "true" ]; then
+          if [ "${{ inputs.cold_timing }}" = "true" ] || [ "${{ inputs.cold_timing_aeneas }}" = "true" ]; then
             echo "run_proofs=false" >> "$GITHUB_OUTPUT"
             echo "reason=cold-timing dispatch; normal proof jobs skipped" >> "$GITHUB_OUTPUT"
             echo "Cold-timing dispatch: running cold-timing only." >> "$GITHUB_STEP_SUMMARY"
@@ -521,4 +528,87 @@ jobs:
         with:
           name: cold-timing
           path: /tmp/cold-timing/
+          retention-days: 30
+
+  # ------------------------------------------------------------------
+  # ONE-OFF cold Aeneas-extraction measurement. The routine
+  # `aeneas-production-extraction` job pulls charon / rust-std / rustc-dev /
+  # OCaml from zisk-fv.cachix.org and restores the lean-check `.lake`, so its
+  # ~12 min is a warm number. This job configures neither, and times the three
+  # phases separately, printing each as it finishes:
+  #
+  #   1. extract-only        AENEAS_CHECK_LEAN=0  — the extraction proper
+  #   2. extract-and-check   + typecheck of generated ProductionM2.lean
+  #   3. rv-completeness     + AENEAS_CHECK_RV_COMPLETENESS=1, the ZisK-side
+  #                            coverage harness; the largest single CI cost
+  #
+  # Self-hosted XL rather than ubuntu-latest: building the charon/OCaml closure
+  # from source is what exhausted the 14 GiB hosted-runner disk (run 27665019733).
+  # ------------------------------------------------------------------
+  cold-timing-aeneas:
+    name: cold Aeneas extraction timing (one-off)
+    if: inputs.cold_timing_aeneas
+    runs-on: ["self-hosted-ghr", "size-xl-x64"]
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # NOTE: no cachix/cachix-action and no actions/cache here, on purpose.
+
+      - name: Record the starting state
+        run: |
+          echo "::group::runner"; nproc; free -g; df -h /; echo "::endgroup::"
+          echo "::group::substituters (zisk-fv.cachix.org must be absent)"
+          nix show-config | grep -E '^(substituters|extra-substituters)' || true
+          echo "::endgroup::"
+
+      - name: Cold Aeneas timings
+        env:
+          LEAN_NUM_THREADS: "4"
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/cold-aeneas
+
+          t() {  # t <label> <env-assignments...> -- always continues on failure
+            local label=$1; shift
+            local start; start=$(date +%s)
+            echo "::group::$label"
+            env "$@" nix run .#aeneas-production-extract
+            local rc=$?
+            echo "::endgroup::"
+            local secs=$(( $(date +%s) - start ))
+            echo "$label=$secs (exit $rc)" | tee -a /tmp/cold-aeneas/timings.txt
+            printf '%s: %dm %ds (exit %d)\n' "$label" $((secs/60)) $((secs%60)) "$rc"
+            df -h / | tail -1
+          }
+
+          t extract-only      AENEAS_CHECK_LEAN=0
+          t extract-and-check AENEAS_CHECK_LEAN=1
+          t rv-completeness   AENEAS_CHECK_RV_COMPLETENESS=1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Cold Aeneas extraction (no zisk-fv Cachix, no lean-check cache)"
+            echo
+            echo "| phase | seconds |"
+            echo "| --- | ---: |"
+            sed 's/=/ | /; s/^/| /; s/$/ |/' /tmp/cold-aeneas/timings.txt 2>/dev/null || echo "| (no timings recorded) | |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/cold-aeneas/timings.txt 2>/dev/null || true
+
+      - name: Upload timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cold-aeneas-timing
+          path: /tmp/cold-aeneas/
           retention-days: 30
