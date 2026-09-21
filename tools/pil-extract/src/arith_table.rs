@@ -106,7 +106,7 @@ fn parse_arith_table(text: &str) -> Result<Vec<RawRow>> {
 fn emit_lean(rows: &[RawRow]) -> String {
     let mut out = String::new();
     writeln!(out, "import Mathlib").unwrap();
-    writeln!(out, "import ZiskFv.Fundamentals.Goldilocks").unwrap();
+    writeln!(out, "import ZiskFv.Field.Goldilocks").unwrap();
     out.push('\n');
     writeln!(out, "/-!").unwrap();
     writeln!(out, "# Extracted arith_table data.").unwrap();
@@ -234,5 +234,18 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].opcode, 176);
         assert_eq!(rows[0].flags, 512);
+    }
+
+    #[test]
+    fn emitted_module_imports_the_live_goldilocks_module() {
+        let row = RawRow {
+            opcode: 176,
+            flags: 0,
+            range_ab: 0,
+            range_cd: 0,
+        };
+        let lean = emit_lean(&[row]);
+        assert!(lean.contains("import ZiskFv.Field.Goldilocks\n"));
+        assert!(!lean.contains("ZiskFv.Fundamentals.Goldilocks"));
     }
 }

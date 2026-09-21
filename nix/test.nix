@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas }:
+, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -96,16 +96,11 @@ writeShellApplication {
       # module, not the extractor, applies the narrow neutral-term normalizer.
       grep -Fq '{ name := "Mem.distance_base[0]", value := Expr.add (Expr.airValue 11) (Expr.constant "0") }' build/extraction/Extraction/LookupWiring.lean
       grep -Fq ':= by rfl' build/extraction/Extraction/LookupWiring.lean
-      # Binary c10 has no gsum hint. Its constraint-derived mixed template
-      # must nevertheless be checked by the generated Lean rfl example.
-      grep -Fq 'example : constraint_Binary_10 = template_Binary_10 := by rfl' build/extraction/Extraction/LookupWiring.lean
-      # MemAlign's zero-tail and assumes-neg forms are separate exact
-      # templates; retain a composed-form kernel-rfl regression gate.
-      grep -Fq 'example : constraint_MemAlignByte_14 = template_MemAlignByte_14 := by rfl' build/extraction/Extraction/LookupWiring.lean
-      # MemAlign h998 is the source-bound bus-133 lookup; preserve its
-      # generated constraint/template rfl gate alongside the Lean-side
-      # current/successor tuple binding.
-      grep -Fq 'example : constraint_MemAlign_36 = template_MemAlign_36 := by rfl' build/extraction/Extraction/LookupWiring.lean
+      # These links now carry template correctness as proof fields. The
+      # concrete source association is also typechecked below, not just grepped.
+      grep -Fq 'def link_Binary_10 : ValidatedLink' build/extraction/Extraction/LookupWiring.lean
+      grep -Fq 'def link_MemAlignByte_14 : ValidatedLink' build/extraction/Extraction/LookupWiring.lean
+      grep -Fq 'def link_MemAlign_36 : ValidatedLink' build/extraction/Extraction/LookupWiring.lean
       # MemAlignRom is virtual and extracted from its source fixed columns;
       # retain the physical table key and nonzero reset-padding row.
       grep -Fq 'def tableId : Nat := 133' build/extraction/Extraction/MemAlignRom.lean
@@ -123,6 +118,18 @@ writeShellApplication {
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/LookupWiring.olean \
         build/extraction/Extraction/LookupWiring.lean
+      LEAN_PATH="$generated_lean_path" lake env lean --stdin <<'LEAN'
+import Extraction.LookupWiring
+open Extraction.LookupWiring
+example : link_Binary_10.constraint = constraint_Binary_10 := rfl
+example : link_MemAlignByte_14.constraint = constraint_MemAlignByte_14 := rfl
+example : link_MemAlign_36.constraint = constraint_MemAlign_36 := rfl
+example (link : ValidatedLink) :
+    templateOf link.shape link.alpha link.gamma link.accumulator
+      link.hints link.derivedTuples = some link.constraint := by
+  rw [link.constraintEqualsTemplate]
+  exact link.templateFromShape
+LEAN
       LEAN_PATH="$generated_lean_path" lake env lean -R build/extraction \
         -o build/extraction/Extraction/MemAlignRom.olean \
         build/extraction/Extraction/MemAlignRom.lean
@@ -158,6 +165,8 @@ writeShellApplication {
       python3 tools/pilout-roundtrip/check.py --quiet
       python3 tools/pilout-roundtrip/selftest.py > /dev/null
     '
+
+    run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
 
     # 4. Mirror round trip (eth-act/zisk-fv#304), the other direction of step 3.
     # Step 3 decides that the extractor moved every pilout constraint into
@@ -209,10 +218,16 @@ writeShellApplication {
     # LEAN_NUM_THREADS=N at call site for a different cap.
     run "6/10 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-4}" lake build
 
-    # 7. The generated extraction files are intentionally outside the main
-    # Lake library, but the Mem constraint source and generated-artifact
-    # wrapper must stay synchronized with the current FV APIs. This runs after
-    # `lake build` so clean CI runners have the imported `ZiskFv` oleans.
+    # 7. Require the closed generated-module inventory as well as compilation.
+    # The generated Mem source must also stay synchronized with the FV APIs.
+    run "extraction coverage inventory" python3 tools/extraction-coverage/check.py --report build/extraction-coverage-report.json
+    run "extraction coverage negative controls" python3 tools/extraction-coverage/selftest.py
+    run "generated module inventory" tools/check-generated-modules.sh
+    run "mutation harness self-tests" python3 tools/adversarial-mutations/selftest.py
+    run "exposure ledger" python3 tools/mirror-roundtrip/exposure.py
+    run "rule-check vocabularies" python3 tools/mirror-roundtrip/rule_check.py --selftest
+    run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
+    run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
     run "7/10 Mem generated artifact wrapper" mem_generated_artifact_wrapper
 
     # 8. Trust gate (locality + baseline + forbidden tier1 params +

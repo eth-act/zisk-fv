@@ -1,0 +1,99 @@
+{
+ "airs": {
+  "Arith": {
+   "n_base": 65,
+   "n_mut": 65,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "Binary": {
+   "n_base": 14,
+   "n_mut": 14,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "BinaryAdd": {
+   "n_base": 9,
+   "n_mut": 9,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "BinaryExtension": {
+   "n_base": 8,
+   "n_mut": 8,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "Main": {
+   "n_base": 144,
+   "n_mut": 144,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "Mem": {
+   "n_base": 34,
+   "n_mut": 34,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "MemAlign": {
+   "n_base": 40,
+   "n_mut": 40,
+   "changed": [
+    25
+   ],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [
+    25
+   ],
+   "changed_unrepresentable": []
+  },
+  "MemAlignByte": {
+   "n_base": 16,
+   "n_mut": 16,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "MemAlignReadByte": {
+   "n_base": 10,
+   "n_mut": 10,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  },
+  "MemAlignWriteByte": {
+   "n_base": 15,
+   "n_mut": 15,
+   "changed": [],
+   "dropped": [],
+   "added": [],
+   "changed_representable": [],
+   "changed_unrepresentable": []
+  }
+ },
+ "semantic_change": true
+}

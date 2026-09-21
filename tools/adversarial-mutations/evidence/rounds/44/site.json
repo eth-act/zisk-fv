@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 64, "op": "DROP_CONSTRAINT", "air": "Arith", "kind": "pil", "desc": "delete the identity", "old": "        div_by_zero * b[i] === 0;               // forces b must be zero when div_by_zero", "new": "//        div_by_zero * b[i] === 0;               // forces b must be zero when div_by_zero"}

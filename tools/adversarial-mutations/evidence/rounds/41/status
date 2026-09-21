@@ -1,0 +1,34 @@
+{
+  "build_exit": "1",
+  "build_seconds": "604",
+  "changed": [
+    "Arith.lean",
+    "LookupWiring.lean"
+  ],
+  "errors": "23:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:177:2: Type mismatch\n29:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:197:2: Type mismatch\n38:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:208:2: Type mismatch\n44:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:212:11: Type mismatch\n50:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:247:2: Type mismatch\n69:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:269:2: Type mismatch\n91:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:279:2: Type mismatch\n102:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:286:2: Type mismatch\n110:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:291:2: Type mismatch\n116:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:328:0: maximum recursion depth has been reached\n119:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:332:8: (kernel) unknown constant 'ZiskFv.AirsClean.ArithMul.gen36_pin'\n120:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:357:0: maximum recursion depth has been reached\n123:error: ZiskFv/AirsClean/ArithMirrorWeld.lean:480:0: maximum recursion depth has been reached\n126:error: Lean exited with code 1\n534:error: build failed\n",
+  "historical_reach": [
+    "* `Arith.lean` \u2014 read by `ZiskFv/AirsClean/ArithMirrorWeld.lean`",
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.Arith",
+    "Extraction.LookupWiring",
+    "Extraction.Main",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 408,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

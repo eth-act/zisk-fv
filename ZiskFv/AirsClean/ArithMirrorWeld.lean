@@ -53,8 +53,8 @@ the one the mirror asserts.
   soundness proof.
 * The five `Iff` welds pin their mirror predicates exactly — the predicate holds
   *iff* the corresponding run of generated constraints does — so for those 37 the
-  mirror asserts neither less nor more than the AIR. `spec_carryChain_weld` is an
-  implication only, so it does not forbid `Spec` asserting more than the AIR does.
+  mirror asserts neither less nor more than the AIR. `spec_carryChain_weld` and
+  `spec_of_generatedCarryChain` prove the carry-chain correspondence in both directions.
 * It does **not** certify the column layout itself: `mainValue` is handwritten.
   That map is pinned separately by `trust/scripts/check-weld-column-maps.py`
   (Arith's entry in `trust/weld-airs.toml`), against the extractor's own
@@ -71,9 +71,9 @@ the one the mirror asserts.
 
 ## Trust note
 
-No axiom, `sorry`, `native_decide`, or other trust marker is added. Every weld
-below is `Iff.rfl` except `constraint_36_of_spec`, which is `linear_combination`
-over a `rfl`-pinned restatement of the generated polynomial (see there).
+No axiom, `sorry`, `native_decide`, or other trust marker is added. The carry-chain
+proofs use polynomial normalization through `linear_combination`; the remaining
+welds use definitional equality.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
@@ -160,11 +160,10 @@ def extractedArithRow (row : ArithMulRow FGL) : ExtractedArithRow FGL FGL := ⟨
 
 /-! ## Welds
 
-Each theorem in this section is `Iff.rfl`: the mirror's polynomial and the
-generated polynomial are the same term after unfolding the column map. Three
-constraints are spelled out longhand first, so the identity is readable as
-source against source; the predicate-level welds that follow cover the whole
-F-only set without restating every polynomial.
+The scalar and Boolean welds use definitional equality after unfolding the
+column map. The carry-chain welds use kernel-checked polynomial equality, so
+commuting summands or factors in the PIL does not break the connection. Three
+constraints are spelled out longhand first, followed by predicate-level welds.
 -/
 
 /-- `arith/pil/arith.pil:212 div*(1-div)` — the plain boolean shape.
@@ -307,10 +306,10 @@ and it is why the weld for this constraint is `linear_combination` rather than
 `rfl`. Do not "fix" it by reordering `Constraints.lean`: that `main` definition is
 consumed by `linear_combination` proofs in `ZiskFv/AirsClean/ArithMul/Circuit.lean`.
 
-`gen36` restates the generated polynomial in the generated order; `gen36_pin`
-checks that restatement against the extraction by `Iff.rfl`, so no algebraic
-normalization is allowed to hide a transcription slip — `linear_combination` is
-then used only to cross the commuted addend pair. -/
+`gen36` restates the generated polynomial; `gen36_pin` checks the corresponding
+equation in both directions by kernel-checked polynomial normalization. This
+permits reassociation and commutation while preserving the generated equation.
+`constraint_36_of_spec` then relates it to the live specification. -/
 
 /-- `constraint_36_every_row`'s polynomial, written in the order the extractor
     emits it. Pinned to the generated definition by `gen36_pin`. -/
@@ -326,8 +325,10 @@ def gen36 (row : ArithMulRow FGL) : Prop :=
     - row.carries.carry_5 * 65536 = 0
 
 theorem gen36_pin (row : ArithMulRow FGL) :
-    gen36 row ↔ Arith.extraction.constraint_36_every_row (extractedArithRow row) 0 :=
-  Iff.rfl
+    gen36 row ↔ Arith.extraction.constraint_36_every_row (extractedArithRow row) 0 := by
+  unfold gen36 Arith.extraction.constraint_36_every_row
+  dsimp [extractedArithRow, extractedArithRowCircuit, mainValue]
+  constructor <;> intro h <;> linear_combination h
 
 theorem constraint_36_of_spec (row : ArithMulRow FGL) :
     Spec row → Arith.extraction.constraint_36_every_row (extractedArithRow row) 0 := by
@@ -350,10 +351,9 @@ theorem constraint_36_of_spec (row : ArithMulRow FGL) :
 
 `Spec` (`ZiskFv/AirsClean/ArithMul/Spec.lean`) is the mirror of the eleven
 constraints the ArithMul component asserts through `main`: the three sign-product
-definitions `6`-`8` and the eight-limb carry chain `31`-`38`. Ten of the eleven
-are `rfl`-level — each conjunct below is a bare projection out of `Spec`, so it
-typechecks only because the mirror conjunct and the generated polynomial are the
-same term. The eleventh is `constraint_36`, handled just above. -/
+definitions `6`-`8` and the eight-limb carry chain `31`-`38`. Each conjunct is
+checked by polynomial equality against the generated predicate. The reverse
+lemma below proves that the generated equations also establish this model slice. -/
 theorem spec_carryChain_weld (row : ArithMulRow FGL) :
     Spec row →
       Arith.extraction.constraint_6_every_row (extractedArithRow row) 0
@@ -366,11 +366,63 @@ theorem spec_carryChain_weld (row : ArithMulRow FGL) :
       ∧ Arith.extraction.constraint_35_every_row (extractedArithRow row) 0
       ∧ Arith.extraction.constraint_36_every_row (extractedArithRow row) 0
       ∧ Arith.extraction.constraint_37_every_row (extractedArithRow row) 0
-      ∧ Arith.extraction.constraint_38_every_row (extractedArithRow row) 0 :=
-  fun h => ⟨
-    h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
-    h.2.2.2.2.2.2.2.1, constraint_36_of_spec row h, h.2.2.2.2.2.2.2.2.2.1,
-    h.2.2.2.2.2.2.2.2.2.2⟩
+      ∧ Arith.extraction.constraint_38_every_row (extractedArithRow row) 0 := by
+  rintro ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩
+  simp only [Arith.extraction.constraint_6_every_row,
+    Arith.extraction.constraint_7_every_row, Arith.extraction.constraint_8_every_row,
+    Arith.extraction.constraint_31_every_row, Arith.extraction.constraint_32_every_row,
+    Arith.extraction.constraint_33_every_row, Arith.extraction.constraint_34_every_row,
+    Arith.extraction.constraint_35_every_row, Arith.extraction.constraint_36_every_row,
+    Arith.extraction.constraint_37_every_row, Arith.extraction.constraint_38_every_row]
+  dsimp [extractedArithRow, extractedArithRowCircuit, mainValue]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h6
+  · linear_combination h7
+  · linear_combination h8
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+
+/-- The generated carry equations imply the live MUL-view specification.
+This is the direction needed when materializing a model from generated rows. -/
+theorem spec_of_generatedCarryChain (row : ArithMulRow FGL)
+    (h : Arith.extraction.constraint_6_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_7_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_8_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_31_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_32_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_33_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_34_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_35_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_36_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_37_every_row (extractedArithRow row) 0
+      ∧ Arith.extraction.constraint_38_every_row (extractedArithRow row) 0) : Spec row := by
+  rcases h with ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩
+  simp only [Arith.extraction.constraint_6_every_row,
+    Arith.extraction.constraint_7_every_row, Arith.extraction.constraint_8_every_row,
+    Arith.extraction.constraint_31_every_row, Arith.extraction.constraint_32_every_row,
+    Arith.extraction.constraint_33_every_row, Arith.extraction.constraint_34_every_row,
+    Arith.extraction.constraint_35_every_row, Arith.extraction.constraint_36_every_row,
+    Arith.extraction.constraint_37_every_row, Arith.extraction.constraint_38_every_row,
+    extractedArithRow, extractedArithRowCircuit, mainValue] at *
+  dsimp at h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h6
+  · linear_combination h7
+  · linear_combination h8
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
 
 /-! ### From the live assertion list
 

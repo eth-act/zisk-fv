@@ -1,0 +1,45 @@
+{
+  "build_exit": "0",
+  "build_seconds": "738",
+  "changed": [
+    "LookupWiring.lean",
+    "Main.lean",
+    "MemAlign.lean",
+    "MemAlignByte.lean",
+    "MemAlignWriteByte.lean"
+  ],
+  "errors": "",
+  "historical_reach": [
+    "* `LookupWiring.lean` \u2014 read by `ZiskFv/AirsClean/Binary/Wiring.lean`, `ZiskFv/AirsClean/Mem/RangeWiring.lean`, `ZiskFv/AirsClean/MemAlign/Bridge.lean`",
+    "* `Main.lean` \u2014 read by `ZiskFv/AirsClean/MainMirrorWeld.lean`",
+    "* `MemAlign.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignMirrorWeld.lean`",
+    "* `MemAlignByte.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean`",
+    "* `MemAlignWriteByte.lean` \u2014 read by `ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean`"
+  ],
+  "invalid": "",
+  "rebuilt": [
+    "Extraction.LookupWiring",
+    "Extraction.Main",
+    "Extraction.MemAlign",
+    "Extraction.MemAlignByte",
+    "Extraction.MemAlignWriteByte",
+    "Extraction.MemGeneratedArtifact",
+    "Extraction.MemGeneratedConstraintBridge",
+    "ZiskFv.AirsClean.Binary.Wiring",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.MemBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.OpBusRowBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RegisterChainBridge",
+    "ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridge",
+    "ZiskFv.AirsClean.MainMirrorWeld",
+    "ZiskFv.AirsClean.Mem.Bridge",
+    "ZiskFv.AirsClean.Mem.RangeWiring",
+    "ZiskFv.AirsClean.MemAlign.Bridge",
+    "ZiskFv.AirsClean.MemAlignByteMirrorWeld",
+    "ZiskFv.AirsClean.MemAlignMirrorWeld",
+    "ZiskFv.AirsClean.MemMirrorWeld"
+  ],
+  "rebuilt_jobs": 414,
+  "roundtrip_exit": "0",
+  "schema": 1,
+  "state": "READY"
+}

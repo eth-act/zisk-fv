@@ -206,7 +206,7 @@ def opBus_row_Arith {F ExtF : Type} [Field F] [Field ExtF]
     b_hi := v.b_2 row + v.b_3 row * 65536
     c_lo := v.c_0 row + v.c_1 row * 65536
     c_hi := v.bus_res1 row
-    flag := 0
+    flag := v.div_by_zero row
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }
@@ -236,7 +236,7 @@ def opBus_row_ArithMulSecondary {F ExtF : Type} [Field F] [Field ExtF]
     -- High-half result lane: `d[0] + d[1] * 2^16` on secondary = 1.
     c_lo := v.d_0 row + v.d_1 row * 65536
     c_hi := v.bus_res1 row
-    flag := 0
+    flag := v.div_by_zero row
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }

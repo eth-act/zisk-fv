@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem.pil", "line": 365, "op": "CONST_PERTURB", "air": "Mem", "kind": "pil", "desc": "witness width bits(40) -> bits(41)", "old": "            col witness bits(40) air.previous_step;", "new": "            col witness bits(41) air.previous_step;"}

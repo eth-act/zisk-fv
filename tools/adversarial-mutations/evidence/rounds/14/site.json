@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align.pil", "line": 142, "op": "DROP_CONSTRAINT", "air": "MemAlign", "kind": "pil", "desc": "delete the identity", "old": "    delta_addr === (addr - 'addr) * (1 - reset);", "new": "//    delta_addr === (addr - 'addr) * (1 - reset);"}

@@ -50,6 +50,7 @@ from check import DECLARED_AIRS  # noqa: E402
 
 DEFAULT_PILOUT = REPO_ROOT / "build" / "zisk.pilout"
 DEFAULT_MIRROR = REPO_ROOT / "ZiskFv" / "AirsClean"
+DEFAULT_EXTRACTION = REPO_ROOT / "build" / "extraction" / "Extraction"
 
 # Reference counting scans these roots, so "unreachable" means unreachable from
 # any checked-in Lean, not just from within `AirsClean`.
@@ -78,6 +79,8 @@ CLASSES = {
     "NEAR_DATA": "prover-data or raw-cell binding, not an AIR constraint",
     "NEAR_SOUNDNESS": "a quantified `ConstraintsHold` surface, not an equation list",
     "NEAR_LITERAL": "a disjunction of literal values",
+    "NEAR_BRANCH_SELECTOR": "source-column literal equalities used only as conditional branch hypotheses",
+    "NEAR_GENERATED_BUNDLE": "a mechanically checked conjunction of generated constraints or checked bundles",
     "NEAR_CHALLENGE": "restates only challenge/stage-2 constraints, the same "
         "machinery `challenge_or_stage2` excludes on the generated side",
 }
@@ -156,6 +159,24 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
     ("ZiskFv/AirsClean/ArithMul/Spec.lean", "ChunkRangeSpec"): _e("NEAR_RANGE", "Arith"),
     ("ZiskFv/AirsClean/ArithMul/Spec.lean", "CarryRangeSpec"): _e("NEAR_RANGE", "Arith"),
     ("ZiskFv/AirsClean/ArithMul/Spec.lean", "IndexedRangeSpec"): _e("NEAR_LOOKUP", "Arith"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedPrimaryMulMode"):
+        _e("NEAR_BRANCH_SELECTOR", "Arith", "source selectors for the conditional MUL/MULW consumer theorem"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedSecondaryMulMode"):
+        _e("NEAR_BRANCH_SELECTOR", "Arith", "source selectors for the conditional MULH-family consumer theorem"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedDivModeAssertions"):
+        _e("NEAR_GENERATED_BUNDLE", "Arith", "direct calls to generated c0-c5,c39-c45"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedDivBoundaryAssertions"):
+        _e("NEAR_GENERATED_BUNDLE", "Arith", "direct calls to generated c9-c24"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedDivScopeAssertions"):
+        _e("NEAR_GENERATED_BUNDLE", "Arith", "direct calls to generated c26-c30"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedCarryAssertions"):
+        _e("NEAR_GENERATED_BUNDLE", "Arith", "direct calls to generated c6-c8,c31-c38"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "GeneratedPolynomialAssertions"):
+        _e("NEAR_GENERATED_BUNDLE", "Arith", "checked bundles plus direct generated c25,c46-c48"),
+    ("ZiskFv/AirsClean/ArithMul/ExtractedRow.lean", "PolynomialSpec"):
+        _e("MIRROR_COMPOSITE", "Arith", "Spec + C46Spec + SharedDivBlockSpec"),
+    ("ZiskFv/AirsClean/ArithMirrorWeld.lean", "gen36"):
+        _e("MIRROR", "Arith", "generated-order spelling of c36", claims="36"),
     ("ZiskFv/AirsClean/ArithDiv/Spec.lean", "Spec"):
         _e("MIRROR", "Arith", "c6-c8 and c31-c38 again, in the ArithDiv row view",
            claims="6-8,31-38"),
@@ -243,6 +264,10 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
            claims="7,8,13,14,15,16,17,22,28"),
     ("ZiskFv/AirsClean/Main/CrossRow.lean", "pc_handshake_at"):
         _e("MIRROR_VALIDATOR", "Main", "c18, over `Valid_Main` with ℕ-saturating row - 1", claims="18"),
+    ("ZiskFv/AirsClean/MainMirrorWeld.lean", "GeneratedLocalConstraintsAt"):
+        _e("NEAR_GENERATED_BUNDLE", "Main", "direct calls to the generated row-local constraint slice"),
+    ("ZiskFv/AirsClean/MainMirrorWeld.lean", "GeneratedLocalConstraints"):
+        _e("NEAR_GENERATED_BUNDLE", "Main", "modeled-row specialization of GeneratedLocalConstraintsAt"),
 
     # ---- Mem
     ("ZiskFv/AirsClean/Mem/Spec.lean", "Spec"):
@@ -969,6 +994,7 @@ class Coverage:
     props: int
     unclassified: tuple[tuple[str, int, str], ...]
     vanished: tuple[tuple[str, str], ...]
+    invalid_classifications: tuple[str, ...] = ()
     weld_helpers: tuple[tuple[str, str, str], ...] = ()
 
     @property
@@ -979,7 +1005,187 @@ class Coverage:
              for path, line, name in self.unclassified]
             + [f"{path} {name}: CLASSIFICATION names a declaration the mirror "
                f"root no longer has" for path, name in self.vanished]
+            + list(self.invalid_classifications)
         )
+
+
+def _top_level_conjunct_texts(decl: Decl) -> list[str]:
+    """Split a Prop body on its outer conjunctions, preserving every clause."""
+    parts = decl.text.split(":=", 1)
+    if len(parts) != 2:
+        return []
+    text = parts[1]
+    # A standalone attribute belongs to the next declaration; the deliberately
+    # small declaration scanner leaves that line on the preceding slice.
+    text = text.split("\n@[", 1)[0]
+    depth = 0
+    start = 0
+    out: list[str] = []
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch in _OPENERS:
+            depth += 1
+        elif ch in _CLOSERS:
+            depth -= 1
+        elif depth == 0 and ch == "∧":
+            out.append(text[start:i].strip())
+            start = i + 1
+        elif depth == 0 and text.startswith("/\\", i):
+            out.append(text[start:i].strip())
+            start = i + 2
+            i += 1
+        i += 1
+    out.append(text[start:].strip())
+    return [part for part in out if part]
+
+
+_GENERATED_CONSTRAINT_NAME = re.compile(
+    r"^constraint_[0-9]+_[A-Za-z0-9_']+$")
+_SOURCE_SELECTOR = re.compile(
+    r"^Extraction\.Circuit\.main\s+source\s+1\s+[0-9]+\s+row\s+0\s*=\s*[01]$")
+
+
+def _generated_constraint_inventory(extraction: Path, air: str) -> set[str]:
+    """Names actually emitted in `Extraction/<AIR>.lean`.
+
+    The namespace is fixed separately to `<AIR>.extraction`; a similarly named
+    declaration in another namespace cannot enter this inventory.
+    """
+    path = extraction / f"{air}.lean"
+    if not path.is_file():
+        return set()
+    return set(re.findall(
+        r"^\s*def\s+(constraint_[0-9]+_[A-Za-z0-9_']+)\b",
+        path.read_text(), re.MULTILINE))
+
+
+def _generated_call_valid(head: str, air: str, inventory: set[str]) -> bool:
+    prefix = f"{air}.extraction."
+    return head.startswith(prefix) and head[len(prefix):] in inventory
+
+
+def _resolved_bundle_target(path: str, head: str,
+                            bundle_keys: set[tuple[str, str]]) -> tuple[str, str] | None:
+    """Resolve an unqualified bundle name in the declaration's own file."""
+    if "." in head:
+        return None
+    target = (path, head)
+    return target if target in bundle_keys else None
+
+
+def _cyclic_bundle_names(graph: dict[tuple[str, str], set[tuple[str, str]]]) -> set[tuple[str, str]]:
+    """Return every checked bundle participating in a delegation cycle."""
+    visiting: set[tuple[str, str]] = set()
+    visited: set[tuple[str, str]] = set()
+    cyclic: set[tuple[str, str]] = set()
+
+    def visit(node: tuple[str, str], stack: list[tuple[str, str]]) -> None:
+        if node in visiting:
+            start = stack.index(node)
+            cyclic.update(stack[start:])
+            return
+        if node in visited:
+            return
+        visiting.add(node)
+        stack.append(node)
+        for target in graph.get(node, set()):
+            visit(target, stack)
+        stack.pop()
+        visiting.remove(node)
+        visited.add(node)
+
+    for node in graph:
+        visit(node, [])
+    return cyclic
+
+
+def _source_validator_self_check() -> list[str]:
+    """Retained negative controls for namespace, inventory, and bundle resolution."""
+    failures: list[str] = []
+    inventory = {"constraint_0_every_row"}
+    if _generated_call_valid(
+            "Attacker.extraction.constraint_0_every_row", "Arith", inventory):
+        failures.append("source classifier accepted a generated-constraint namespace spoof")
+    if _generated_call_valid(
+            "Arith.extraction.constraint_999_every_row", "Arith", inventory):
+        failures.append("source classifier accepted a missing generated constraint")
+    checked = {("A.lean", "Bundle")}
+    if _resolved_bundle_target("A.lean", "Attacker.Bundle", checked) is not None:
+        failures.append("source classifier accepted a qualified bundle spoof")
+    cycle = {("A.lean", "A"): {("A.lean", "B")},
+             ("A.lean", "B"): {("A.lean", "A")}}
+    if _cyclic_bundle_names(cycle) != set(cycle):
+        failures.append("source classifier failed to reject a bundle delegation cycle")
+    return failures
+
+
+def _source_classification_failures(decls: list[Decl], extraction: Path) -> list[str]:
+    """Mechanically validate the two source-only classification forms.
+
+    Generated bundles may contain only direct generated-constraint calls or
+    calls to another explicitly classified generated bundle. Branch selectors
+    may contain only stage-1 source-cell equalities to literal zero or one.
+    Neither rule keys on a filename or silently accepts an unreadable body.
+    """
+    by_key = {(decl.path, decl.name): decl for decl in decls}
+    bundle_keys = {
+        key for key, entry in CLASSIFICATION.items()
+        if entry.cls == "NEAR_GENERATED_BUNDLE"
+    }
+    inventories = {
+        entry.air: _generated_constraint_inventory(extraction, entry.air)
+        for entry in CLASSIFICATION.values()
+        if entry.cls == "NEAR_GENERATED_BUNDLE" and entry.air is not None
+    }
+    failures: list[str] = _source_validator_self_check()
+    graph: dict[tuple[str, str], set[tuple[str, str]]] = {
+        key: set() for key in bundle_keys
+    }
+    for key, entry in CLASSIFICATION.items():
+        if entry.cls not in ("NEAR_GENERATED_BUNDLE", "NEAR_BRANCH_SELECTOR"):
+            continue
+        decl = by_key.get(key)
+        if decl is None:
+            continue
+        clauses = _top_level_conjunct_texts(decl)
+        if not clauses:
+            failures.append(
+                f"{decl.path}:{decl.line} {decl.name}: {entry.cls} body has no readable clause")
+            continue
+        for clause in clauses:
+            flat = " ".join(clause.split())
+            if entry.cls == "NEAR_BRANCH_SELECTOR":
+                valid = _SOURCE_SELECTOR.fullmatch(flat) is not None
+            else:
+                head_match = re.match(r"^([A-Za-z_][A-Za-z0-9_.]*)\s+", flat)
+                head = head_match.group(1) if head_match else ""
+                args = flat[head_match.end():] if head_match else ""
+                inventory = inventories.get(entry.air, set())
+                if entry.air is not None and _generated_call_valid(head, entry.air, inventory):
+                    valid = args in ("source row", "c row")
+                else:
+                    # Bundle delegation is deliberately unqualified and resolves
+                    # only within the same file. This rejects arbitrary namespace
+                    # prefixes and ambiguous short-name lookup across files.
+                    target = _resolved_bundle_target(decl.path, head, bundle_keys)
+                    valid = target is not None and (
+                        args == "source row" or
+                        (head == "GeneratedLocalConstraintsAt"
+                         and args == "(extractedMainRow row) 0"))
+                    if valid and target is not None:
+                        graph[key].add(target)
+            if not valid:
+                failures.append(
+                    f"{decl.path}:{decl.line} {decl.name}: {entry.cls} has "
+                    f"nonconforming clause `{flat[:160]}`")
+    for key in sorted(_cyclic_bundle_names(graph)):
+        decl = by_key.get(key)
+        if decl is not None:
+            failures.append(
+                f"{decl.path}:{decl.line} {decl.name}: "
+                "NEAR_GENERATED_BUNDLE has a cyclic checked-bundle delegation")
+    return failures
 
 
 def _weld_helpers(mirror_root: Path,
@@ -1020,7 +1226,7 @@ def _weld_helpers(mirror_root: Path,
     return out
 
 
-def coverage(mirror_root: Path) -> Coverage:
+def coverage(mirror_root: Path, extraction: Path = DEFAULT_EXTRACTION) -> Coverage:
     """Run the classification gate over one mirror root."""
     props = [
         decl
@@ -1037,6 +1243,7 @@ def coverage(mirror_root: Path) -> Coverage:
             (d.path, d.line, d.name) for d in unclassified
             if (d.path, d.name) not in helpers),
         vanished=tuple(sorted(k for k in CLASSIFICATION if k not in present)),
+        invalid_classifications=tuple(_source_classification_failures(props, extraction)),
         weld_helpers=tuple(
             (rel, name, reason) for (rel, name), reason in sorted(helpers.items())),
     )
@@ -1046,6 +1253,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--pilout", default=str(DEFAULT_PILOUT))
     parser.add_argument("--mirror", default=str(DEFAULT_MIRROR))
+    parser.add_argument("--extraction", type=Path, default=DEFAULT_EXTRACTION)
     parser.add_argument("--section", action="append", choices=SECTIONS,
                         help="restrict output, repeatable")
     parser.add_argument("--quiet", action="store_true",
@@ -1065,7 +1273,7 @@ def main(argv: list[str]) -> int:
 
     # --- classification, and the two ways it can be stale
     props = [d for decls in decls_by_file.values() for d in decls if is_prop_valued(d)]
-    gate = coverage(mirror_root)
+    gate = coverage(mirror_root, args.extraction)
     # A weld-internal Prop def a mechanical rule recognises is excluded from the
     # unclassified failures WITH a cited reason, not left to fail the gate.
     weld_helper_keys = {(rel, name) for rel, name, _ in gate.weld_helpers}
@@ -1273,7 +1481,8 @@ def main(argv: list[str]) -> int:
             print(f"  {rel}  {name}: {reason}")
     print(f"SUMMARY  mirrors {len(mirrors)}  near-misses {len(near)}  "
           f"records {len(MIRROR_RECORDS)}  unclassified {len(unclassified)}  "
-          f"weld-internals {len(gate.weld_helpers)}  stale-entries {len(vanished)}")
+          f"weld-internals {len(gate.weld_helpers)}  stale-entries {len(vanished)}  "
+          f"invalid-classifications {len(gate.invalid_classifications)}")
     if unclassified:
         print("FAIL: Prop-valued declarations missing from CLASSIFICATION:", file=sys.stderr)
         for d in unclassified:
@@ -1283,6 +1492,12 @@ def main(argv: list[str]) -> int:
         print("FAIL: CLASSIFICATION names declarations that no longer exist:", file=sys.stderr)
         for rel, name in vanished:
             print(f"  {rel}  {name}", file=sys.stderr)
+        return 1
+    if gate.invalid_classifications:
+        print("FAIL: mechanically checked source classifications are invalid:",
+              file=sys.stderr)
+        for failure in gate.invalid_classifications:
+            print(f"  {failure}", file=sys.stderr)
         return 1
     return 0
 

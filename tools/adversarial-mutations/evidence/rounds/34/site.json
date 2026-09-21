@@ -1,0 +1,1 @@
+{"file": "state-machines/arith/pil/arith.pil", "line": 168, "op": "OPERAND_SWAP", "air": "Arith", "kind": "pil", "desc": "swap eq[4] <-> b[1]", "old": "    eq[4] = fab * a[3] * b[1]", "new": "    b[1] = fab * a[3] * eq[4]"}

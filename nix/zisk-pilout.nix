@@ -15,6 +15,9 @@
 rustPlatform.buildRustPackage {
   pname = "zisk-pilout";
   version = "git-${builtins.substring 0 7 zisk-src.rev}";
+  # Keep the actual generated external columns for isolated PIL mutation runs.
+  # Reusing them avoids recompiling the Rust/C++ workspace for each PIL edit.
+  outputs = [ "out" "fixed" ];
 
   src = zisk-src;
 
@@ -151,6 +154,13 @@ rustPlatform.buildRustPackage {
   installPhase = ''
     runHook preInstall
     cp "$TMPDIR/zisk.pilout" "$out"
+    for payload in \
+      state-machines/arith/src/arith_frops_fixed.bin \
+      state-machines/binary/src/binary_basic_frops_fixed.bin \
+      state-machines/binary/src/binary_extension_frops_fixed.bin; do
+      mkdir -p "$fixed/$(dirname "$payload")"
+      cp "$payload" "$fixed/$payload"
+    done
     runHook postInstall
   '';
 

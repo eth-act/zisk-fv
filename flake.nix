@@ -104,9 +104,21 @@
         };
 
         packages.extracted-lean = pkgs.callPackage ./nix/extracted-lean.nix {
-          inherit zisk-src;
+          inherit zisk-src pil2-proofman-src;
+          pil2-compiler = self.packages.${system}.pil2-compiler;
           pil-extract = self.packages.${system}.pil-extract;
           zisk-pilout = self.packages.${system}.zisk-pilout;
+        };
+
+        packages.zisk-fixed-data = self.packages.${system}.zisk-pilout.fixed;
+        packages.mutation-compiler = pkgs.callPackage ./nix/mutation-compiler.nix {
+          inherit pil2-proofman-src;
+          pil2-compiler = self.packages.${system}.pil2-compiler;
+          fixed-data = self.packages.${system}.zisk-fixed-data;
+        };
+        apps.compile-mutation = {
+          type = "app";
+          program = "${self.packages.${system}.mutation-compiler}/bin/compile-mutation";
         };
 
         apps.populate = {
@@ -125,10 +137,31 @@
 
         apps.test = {
           type = "app";
-          program = "${pkgs.callPackage ./nix/test.nix { inherit aeneas; }}/bin/test";
+          program = "${pkgs.callPackage ./nix/test.nix {
+            inherit aeneas;
+            virtual-table-check = self.packages.${system}.virtual-table-check;
+          }}/bin/test";
           meta = {
             description = "Run the full FV check: cargo + lake build + trust gate + flake repro.";
           };
+        };
+
+        packages.virtual-table-check = pkgs.writeShellApplication {
+          name = "virtual-table-check";
+          runtimeInputs = [ pkgs.nodejs_20 pkgs.python3 ];
+          text = ''
+            exec python3 ${./tools/virtual-tables}/check.py \
+              --compiler-root ${self.packages.${system}.pil2-compiler} \
+              --zisk-root ${zisk-src} \
+              --proofman-root ${pil2-proofman-src} \
+              --generated-lean ${self.packages.${system}.extracted-lean}/MemAlignRom.lean \
+              --extractor ${self.packages.${system}.pil-extract}/bin/pil-extract
+          '';
+        };
+
+        apps.virtual-table-check = {
+          type = "app";
+          program = "${self.packages.${system}.virtual-table-check}/bin/virtual-table-check";
         };
 
         apps.aeneas-production-extract = {

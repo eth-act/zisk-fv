@@ -1,0 +1,1 @@
+{"file": "state-machines/main/pil/main.pil", "line": 479, "op": "DROP_CONSTRAINT", "air": "Main", "kind": "pil", "desc": "delete the identity", "old": "    a_src_reg * (1 - a_src_reg) === 0;", "new": "//    a_src_reg * (1 - a_src_reg) === 0;"}

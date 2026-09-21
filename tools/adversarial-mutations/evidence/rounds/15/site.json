@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align_byte.pil", "line": 37, "op": "SIGN_FLIP", "air": "MemAlignByte", "kind": "pil", "desc": "'-' -> '+' at col 20", "old": "    sel_high_b * (1 - sel_high_b) === 0;", "new": "    sel_high_b * (1 + sel_high_b) === 0;"}

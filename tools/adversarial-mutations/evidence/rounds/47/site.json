@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align.pil", "line": 127, "op": "SIGN_FLIP", "air": "MemAlign", "kind": "pil", "desc": "'-' -> '+' at col 12", "old": "    wr * (1 - wr) === 0;", "new": "    wr * (1 + wr) === 0;"}

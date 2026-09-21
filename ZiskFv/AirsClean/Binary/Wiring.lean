@@ -4,19 +4,20 @@ import ZiskFv.AirsClean.BinaryTableSlice
 import Clean.Air.Vm
 
 /-!
-# Binary c10 lookup wiring
+# Binary byte lookup wiring
 
-`Binary` constraint c10 has no gsum hint. The generated manifest therefore
-records its bus-125 lookup and bus-5000 operation operands as
-constraint-derived tuples under the checked `derivedMixed2` template. This
-module is the live-model cross-check: its bus-125 tuple is translated to the
-actual `lookupMessage7` expression used by the Binary consumer.
+The generated c7--c11 links carry all eight live bus-125 byte tuples. Bytes
+0--6 come from gsum hints; c10 has no hint, so byte 7 is reconstructed from
+the exact mixed constraint together with its bus-5000 operation tuple. This
+module checks the bus ID, direction, multiplicity, link membership, and exact
+slot interpretation for every byte.
 
 ## Trust note
 
-No axioms. The generated c10 template is checked by `rfl`, and the source
-binding below is another kernel equality. Static BinaryTable membership remains
-provider-owned and reaches the consumer only through finished-channel balance.
+No axioms. Every generated `ValidatedLink` carries its own kernel equality to
+the template computed from its shape and operands. Static BinaryTable
+membership remains provider-owned and reaches the consumer only through
+finished-channel balance.
 -/
 
 namespace ZiskFv.AirsClean.Binary
@@ -24,39 +25,75 @@ namespace ZiskFv.AirsClean.Binary
 open Goldilocks
 open Air.Flat
 open Extraction.LookupWiring
-open ZiskFv.Channels.BinaryTable (BinaryTableChannel)
+open ZiskFv.Channels.BinaryTable (BinaryTableChannel BinaryTableMessage)
 
-/-- The c10 bus-125 AST uses only these Binary row columns. The fallback is
-unreachable for the checked c10 tuple; it keeps this syntax-to-Clean map total
-without granting any interpretation to other manifest terms. -/
+set_option maxRecDepth 4000
+
+/-- Interpret exactly the expression language used by Binary's eight bus-125
+tuples. Unsupported constants, columns, stages, offsets, and constructors are
+rejected as `none`; there is no default field value. -/
 @[reducible]
-def c10LookupExprToClean : Expr → Expression FGL
-  | .constant "1" => 1
-  | .constant "2" => 2
-  | .constant "4" => 4
-  | .constant "8" => 8
-  | .witness 1 8 0 => tableConsumerComponent.rowInputVar.aBytes.free_in_a_7
-  | .witness 1 16 0 => tableConsumerComponent.rowInputVar.bBytes.free_in_b_7
-  | .witness 1 24 0 => tableConsumerComponent.rowInputVar.cBytes.free_in_c_7
-  | .witness 1 31 0 => tableConsumerComponent.rowInputVar.chain.carry_6
-  | .witness 1 32 0 => tableConsumerComponent.rowInputVar.chain.carry_7
-  | .witness 1 33 0 => tableConsumerComponent.rowInputVar.mode.mode32
-  | .witness 1 34 0 => tableConsumerComponent.rowInputVar.mode.result_is_a
-  | .witness 1 35 0 => tableConsumerComponent.rowInputVar.mode.use_first_byte
-  | .witness 1 36 0 => tableConsumerComponent.rowInputVar.mode.c_is_signed
-  | .witness 1 37 0 => tableConsumerComponent.rowInputVar.chain.b_op_or_sext
-  | .add lhs rhs => c10LookupExprToClean lhs + c10LookupExprToClean rhs
-  | .sub lhs rhs => c10LookupExprToClean lhs - c10LookupExprToClean rhs
-  | .mul lhs rhs => c10LookupExprToClean lhs * c10LookupExprToClean rhs
-  | _ => 0
+def lookupExprToClean : Expr → Option (Expression FGL)
+  | .constant "0" => some 0
+  | .constant "1" => some 1
+  | .constant "2" => some 2
+  | .constant "4" => some 4
+  | .constant "8" => some 8
+  | .witness 1 0 0 => some tableConsumerComponent.rowInputVar.chain.b_op
+  | .witness 1 1 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_0
+  | .witness 1 2 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_1
+  | .witness 1 3 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_2
+  | .witness 1 4 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_3
+  | .witness 1 5 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_4
+  | .witness 1 6 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_5
+  | .witness 1 7 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_6
+  | .witness 1 8 0 => some tableConsumerComponent.rowInputVar.aBytes.free_in_a_7
+  | .witness 1 9 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_0
+  | .witness 1 10 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_1
+  | .witness 1 11 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_2
+  | .witness 1 12 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_3
+  | .witness 1 13 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_4
+  | .witness 1 14 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_5
+  | .witness 1 15 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_6
+  | .witness 1 16 0 => some tableConsumerComponent.rowInputVar.bBytes.free_in_b_7
+  | .witness 1 17 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_0
+  | .witness 1 18 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_1
+  | .witness 1 19 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_2
+  | .witness 1 20 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_3
+  | .witness 1 21 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_4
+  | .witness 1 22 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_5
+  | .witness 1 23 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_6
+  | .witness 1 24 0 => some tableConsumerComponent.rowInputVar.cBytes.free_in_c_7
+  | .witness 1 25 0 => some tableConsumerComponent.rowInputVar.chain.carry_0
+  | .witness 1 26 0 => some tableConsumerComponent.rowInputVar.chain.carry_1
+  | .witness 1 27 0 => some tableConsumerComponent.rowInputVar.chain.carry_2
+  | .witness 1 28 0 => some tableConsumerComponent.rowInputVar.chain.carry_3
+  | .witness 1 29 0 => some tableConsumerComponent.rowInputVar.chain.carry_4
+  | .witness 1 30 0 => some tableConsumerComponent.rowInputVar.chain.carry_5
+  | .witness 1 31 0 => some tableConsumerComponent.rowInputVar.chain.carry_6
+  | .witness 1 32 0 => some tableConsumerComponent.rowInputVar.chain.carry_7
+  | .witness 1 33 0 => some tableConsumerComponent.rowInputVar.mode.mode32
+  | .witness 1 34 0 => some tableConsumerComponent.rowInputVar.mode.result_is_a
+  | .witness 1 35 0 => some tableConsumerComponent.rowInputVar.mode.use_first_byte
+  | .witness 1 36 0 => some tableConsumerComponent.rowInputVar.mode.c_is_signed
+  | .witness 1 37 0 => some tableConsumerComponent.rowInputVar.chain.b_op_or_sext
+  | .witness 1 38 0 => some tableConsumerComponent.rowInputVar.mode.mode32_and_c_is_signed
+  | .add lhs (.constant "0") => lookupExprToClean lhs
+  | .add (.constant "0") rhs => lookupExprToClean rhs
+  | .add lhs rhs => do return (← lookupExprToClean lhs) + (← lookupExprToClean rhs)
+  | .sub lhs rhs => do return (← lookupExprToClean lhs) - (← lookupExprToClean rhs)
+  | .mul lhs rhs => do return (← lookupExprToClean lhs) * (← lookupExprToClean rhs)
+  | _ => none
 
 @[reducible]
-def c10LookupTupleFromLink : List (Expression FGL) :=
-  derivedTuple_Binary_10_0.slots.map (fun slot => c10LookupExprToClean slot.value)
+def lookupSlotsToClean : List Slot → Option (List (Expression FGL))
+  | [] => some []
+  | slot :: slots => do
+      return (← lookupExprToClean slot.value) :: (← lookupSlotsToClean slots)
 
 @[reducible]
-def lookupMessage7Tuple (row : Var BinaryRow FGL) : List (Expression FGL) :=
-  let message := lookupMessage7 row
+def lookupMessageTuple (message : BinaryTableMessage (Expression FGL)) :
+    List (Expression FGL) :=
   [ message.pos_ind
   , message.op
   , message.a_byte
@@ -65,38 +102,150 @@ def lookupMessage7Tuple (row : Var BinaryRow FGL) : List (Expression FGL) :=
   , message.c_byte
   , message.flags ]
 
-/-- Proof-carrying source binding for the absent-hint c10 route. -/
-structure BinaryC10Wiring where
-  link : ValidatedLink
-  lookupTuple : DerivedTuple
-  operationTuple : DerivedTuple
-  c10Link : link = link_Binary_10
-  derivedTuples : link.derivedTuples = [lookupTuple, operationTuple]
-  lookupBus : lookupTuple.busId = Expr.constant "125"
-  lookupIsAssumes : lookupTuple.proves = false
-  operationBus : operationTuple.busId = Expr.constant "5000"
-  operationIsProves : operationTuple.proves = true
-  sourceBinding : c10LookupTupleFromLink =
-    lookupMessage7Tuple tableConsumerComponent.rowInputVar
+@[reducible]
+def lookupMessage7Tuple (row : Var BinaryRow FGL) : List (Expression FGL) :=
+  lookupMessageTuple (lookupMessage7 row)
+
+/-- A common view of a generated hint tuple or a tuple reconstructed from an
+exact mixed constraint. -/
+structure BinaryLookupTuple where
+  piop : String
+  proves : Bool
+  busId : Expr
+  multiplicity : Expr
+  slots : List Slot
 
 @[reducible]
-def c10Wiring : BinaryC10Wiring where
-  link := link_Binary_10
-  lookupTuple := derivedTuple_Binary_10_0
-  operationTuple := derivedTuple_Binary_10_1
-  c10Link := rfl
-  derivedTuples := rfl
-  lookupBus := rfl
-  lookupIsAssumes := rfl
-  operationBus := rfl
-  operationIsProves := rfl
-  sourceBinding := rfl
+def BinaryLookupTuple.ofHint (tuple : HintTuple) : BinaryLookupTuple :=
+  ⟨tuple.piop, tuple.proves, tuple.busId, tuple.multiplicity, tuple.slots⟩
 
-/-- Lean-side acceptance cross-check: the manifest's derived bus-125 tuple is
-exactly the live Binary consumer's `lookupMessage7` tuple. -/
-theorem c10_lookup_tuple_matches_lookupMessage7 :
-    c10LookupTupleFromLink = lookupMessage7Tuple tableConsumerComponent.rowInputVar := by
-  exact c10Wiring.sourceBinding
+@[reducible]
+def BinaryLookupTuple.ofDerived (tuple : DerivedTuple) : BinaryLookupTuple :=
+  ⟨tuple.piop, tuple.proves, tuple.busId, tuple.multiplicity, tuple.slots⟩
+
+/-- The raw source value expected in an input/output byte slot.  PIL emits
+`x + 0` for bytes 0--6 and a bare witness for the derived terminal tuple. -/
+@[reducible]
+def expectedByteSlotValue (firstColumn : ℕ) (byte : Fin 8) : Expr :=
+  if byte = 7 then
+    .witness 1 (firstColumn + byte.val) 0
+  else
+    .add (.witness 1 (firstColumn + byte.val) 0) (.constant "0")
+
+@[reducible]
+def lookupMessageTuples : Vector (List (Expression FGL)) 8 := #v[
+  lookupMessageTuple (lookupMessage0 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage1 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage2 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage3 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage4 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage5 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage6 tableConsumerComponent.rowInputVar),
+  lookupMessageTuple (lookupMessage7 tableConsumerComponent.rowInputVar)]
+
+@[reducible]
+def lookupMessageTupleAt (byte : Fin 8) : List (Expression FGL) :=
+  lookupMessageTuples[byte]
+
+/-- Proof-carrying binding of one generated bus-125 tuple to one live Binary
+byte lookup. `sourceSplit` prevents an adjacent or invented tuple from being
+used with the validated constraint. -/
+structure BinaryByteWiring where
+  byte : Fin 8
+  link : ValidatedLink
+  constraintValidated :
+    templateOf link.shape link.alpha link.gamma link.accumulator
+      link.hints link.derivedTuples = some link.constraint
+  source : BinaryLookupTuple
+  sourcePrefix : List BinaryLookupTuple
+  sourceSuffix : List BinaryLookupTuple
+  sourceSplit :
+    List.append
+      (List.map BinaryLookupTuple.ofHint link.hints)
+      (List.map BinaryLookupTuple.ofDerived link.derivedTuples) =
+        List.append sourcePrefix (source :: sourceSuffix)
+  lookupPiop : source.piop = "Lookup"
+  lookupBus : source.busId = Expr.constant "125"
+  lookupIsAssumes : source.proves = false
+  lookupMultiplicity : source.multiplicity = Expr.constant "1"
+  sourceAValue : source.slots[2]?.map (·.value) =
+    some (expectedByteSlotValue 1 byte)
+  sourceBValue : source.slots[3]?.map (·.value) =
+    some (expectedByteSlotValue 9 byte)
+  sourceCValue : source.slots[5]?.map (·.value) =
+    some (expectedByteSlotValue 17 byte)
+  slotInterpretation : lookupSlotsToClean source.slots = some (lookupMessageTupleAt byte)
+
+@[reducible]
+def byte0Wiring : BinaryByteWiring :=
+  by
+    have ha : (BinaryLookupTuple.ofHint hint_Binary_11_0).slots[2]?.map (·.value) =
+        some (expectedByteSlotValue 1 0) := by rfl
+    have hb : (BinaryLookupTuple.ofHint hint_Binary_11_0).slots[3]?.map (·.value) =
+        some (expectedByteSlotValue 9 0) := by rfl
+    have hc : (BinaryLookupTuple.ofHint hint_Binary_11_0).slots[5]?.map (·.value) =
+        some (expectedByteSlotValue 17 0) := by rfl
+    exact ⟨0, link_Binary_11, ValidatedLink.constraintValidated link_Binary_11,
+      .ofHint hint_Binary_11_0, [], [], rfl, rfl, rfl, rfl, rfl, ha, hb, hc, rfl⟩
+
+@[reducible]
+def byte1Wiring : BinaryByteWiring :=
+  ⟨1, link_Binary_7, ValidatedLink.constraintValidated link_Binary_7,
+    .ofHint hint_Binary_7_0, [], [.ofHint hint_Binary_7_1],
+    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byte2Wiring : BinaryByteWiring :=
+  ⟨2, link_Binary_7, ValidatedLink.constraintValidated link_Binary_7,
+    .ofHint hint_Binary_7_1, [.ofHint hint_Binary_7_0], [],
+    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byte3Wiring : BinaryByteWiring :=
+  ⟨3, link_Binary_8, ValidatedLink.constraintValidated link_Binary_8,
+    .ofHint hint_Binary_8_0, [], [.ofHint hint_Binary_8_1],
+    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byte4Wiring : BinaryByteWiring :=
+  ⟨4, link_Binary_8, ValidatedLink.constraintValidated link_Binary_8,
+    .ofHint hint_Binary_8_1, [.ofHint hint_Binary_8_0], [],
+    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byte5Wiring : BinaryByteWiring :=
+  ⟨5, link_Binary_9, ValidatedLink.constraintValidated link_Binary_9,
+    .ofHint hint_Binary_9_0, [], [.ofHint hint_Binary_9_1],
+    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byte6Wiring : BinaryByteWiring :=
+  ⟨6, link_Binary_9, ValidatedLink.constraintValidated link_Binary_9,
+    .ofHint hint_Binary_9_1, [.ofHint hint_Binary_9_0], [],
+    rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byte7Wiring : BinaryByteWiring :=
+  ⟨7, link_Binary_10, ValidatedLink.constraintValidated link_Binary_10,
+    .ofDerived derivedTuple_Binary_10_0, [],
+    [.ofDerived derivedTuple_Binary_10_1], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+@[reducible]
+def byteWirings : List BinaryByteWiring :=
+  [byte0Wiring, byte1Wiring, byte2Wiring, byte3Wiring,
+    byte4Wiring, byte5Wiring, byte6Wiring, byte7Wiring]
+
+/-- The checked packet contains exactly one source binding for every live byte. -/
+theorem byteWirings_indices :
+    byteWirings.map (·.byte) = [0, 1, 2, 3, 4, 5, 6, 7] := by
+  simp [byteWirings]
+
+/-- Unsupported manifest expressions cannot acquire a Clean interpretation. -/
+theorem lookupExprToClean_rejects_unsupported :
+    lookupExprToClean (.airValue 0) = none ∧
+    lookupExprToClean (.witness 1 39 0) = none ∧
+    lookupExprToClean (.witness 2 0 0) = none := by
+  exact ⟨rfl, rfl, rfl⟩
 
 /-- The terminal BinaryTable connection has the actual Binary negative
 consumer component and the exact static-table provider slice before finishing

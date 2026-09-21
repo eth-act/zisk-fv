@@ -74,6 +74,7 @@ EOF
     echo "▶ build/extraction/MemAirFacts.md ← ${extracted-lean}"
     cp --no-preserve=mode "${extracted-lean}/MemAirFacts.md" build/extraction/MemAirFacts.md
     chmod u+w build/extraction/MemAirFacts.md
+    cp --no-preserve=mode "${extracted-lean}/MemAlignRom.tsv" build/extraction/MemAlignRom.tsv
 
     echo "▶ build/clean-lean/ ← ${clean-source}"
     rm -rf build/clean-lean

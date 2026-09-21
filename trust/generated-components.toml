@@ -1,0 +1,4 @@
+# Clean-component sources become enforced here only after a dedicated review
+# has established byte identity. W0d is report-only, so this registry is empty.
+
+[air]

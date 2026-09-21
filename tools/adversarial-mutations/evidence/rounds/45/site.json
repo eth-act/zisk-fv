@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem.pil", "line": 215, "op": "DROP_CONSTRAINT", "air": "Mem", "kind": "pil", "desc": "delete the identity", "old": "        SEGMENT_LAST * (value[i] - segment_last_value[i]) === 0;", "new": "//        SEGMENT_LAST * (value[i] - segment_last_value[i]) === 0;"}

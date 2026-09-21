@@ -1,0 +1,1 @@
+{"file": "state-machines/binary/pil/binary_add.pil", "line": 25, "op": "OPCODE_SWAP", "air": "BinaryAdd", "kind": "pil", "desc": "opcode OP_ADD -> OP_SUB", "old": "    proves_operation(op: OP_ADD, a:, b:, c:);", "new": "    proves_operation(op: OP_SUB, a:, b:, c:);"}

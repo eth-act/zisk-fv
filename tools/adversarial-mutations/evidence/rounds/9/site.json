@@ -1,0 +1,1 @@
+{"file": "state-machines/binary/pil/binary.pil", "line": 111, "op": "OPCODE_SWAP", "air": "Binary", "kind": "pil", "desc": "opcode OP_SEXT_00 -> OP_ADD", "old": "    b_op_or_sext === mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00) + OP_SEXT_00 - b_op) + b_op;", "new": "    b_op_or_sext === mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00) + OP_ADD - b_op) + b_op;"}

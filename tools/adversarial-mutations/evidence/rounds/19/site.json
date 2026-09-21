@@ -1,0 +1,1 @@
+{"file": "state-machines/mem/pil/mem_align.pil", "line": 96, "op": "CONST_PERTURB", "air": "MemAlign", "kind": "pil", "desc": "witness width bits(3) -> bits(4)", "old": "    col witness bits(3) offset;", "new": "    col witness bits(4) offset;"}
