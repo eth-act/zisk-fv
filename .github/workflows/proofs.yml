@@ -569,6 +569,25 @@ jobs:
           nix show-config | grep -E '^(substituters|extra-substituters)' || true
           echo "::endgroup::"
 
+      # `apps.aeneas-production-extract` lists no gmp in runtimeInputs, so the
+      # zisk `lib-c` crate's ffiasm C++ build resolves gmp.h from the HOST. That
+      # is invisible on ubuntu-latest (libgmp-dev is preinstalled) and fatal on a
+      # self-hosted runner. Supply the headers from nixpkgs rather than pretend
+      # the app is hermetic; see the note filed against the extraction harness.
+      - name: Provide the host C deps the app does not declare
+        run: |
+          set -euo pipefail
+          for p in gmp openssl libsodium secp256k1 nlohmann_json libuuid; do
+            out=$(nix build --no-link --print-out-paths "nixpkgs#$p" 2>/dev/null || true)
+            dev=$(nix build --no-link --print-out-paths "nixpkgs#$p.dev" 2>/dev/null || true)
+            for d in $out $dev; do
+              [ -d "$d/include" ] && echo "CPATH=$d/include:${CPATH:-}" >> "$GITHUB_ENV" && CPATH="$d/include:${CPATH:-}"
+              [ -d "$d/lib" ] && echo "LIBRARY_PATH=$d/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV" && LIBRARY_PATH="$d/lib:${LIBRARY_PATH:-}"
+              [ -d "$d/lib/pkgconfig" ] && echo "PKG_CONFIG_PATH=$d/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV" && PKG_CONFIG_PATH="$d/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+            done
+          done
+          echo "CPATH=$CPATH"
+
       - name: Cold Aeneas timings
         env:
           LEAN_NUM_THREADS: "4"
