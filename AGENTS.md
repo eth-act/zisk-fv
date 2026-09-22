@@ -147,6 +147,23 @@ nix run .#test
 semantic trust gate does and should be run after `lake build`. Docs-only changes do not require a
 Lean build unless they affect executable examples, generated artifacts, or commands.
 
+### The local gate is the merge gate
+
+**Do not gate a merge on PR CI checks.** A change is ready to merge when `nix run .#test` passes
+locally, in the worktree it was developed in. Merge on that, with PR checks pending or red. CI
+gates `main`; if something breaks there, repair it afterwards.
+
+PR jobs run on hosted runners that cannot rebuild ZisK's Rust workspace (crates.io returns 403
+there), so a red or pending PR check is usually an artefact of the runner rather than a real
+failure, and waiting on a job that duplicates a local run which already passed only stalls the
+queue.
+
+- Cite the local gate's result in the PR body as the evidence that a change is ready. Do not cite
+  "CI is green" as the reason.
+- Never edit a workflow, an allowlist, or a forbidden-shape file to make a check pass.
+- A genuine failure in the local gate is still a stop. This rule relaxes *where* the gate runs,
+  never *whether* it ran.
+
 The tree carries 138 `#print axioms` commands, so a plain `lake build` prints about 130
 near-identical closures, each dominated by the same Sail floating-point primitives. Silence them
 and read the union once instead:
