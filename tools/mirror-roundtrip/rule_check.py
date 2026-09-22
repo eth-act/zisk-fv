@@ -110,7 +110,7 @@ def observation(round_no: int, round_dir: Path) -> tuple[str, Path]:
     lexicographically last directory regardless of completeness made the tool
     exit nonzero on every branch that has the first file but not the second.
     """
-    candidates = sorted((EVIDENCE / "results").glob(f"*/round-{round_no}.json"))
+    candidates = sorted((EVIDENCE / "results").glob(f"*/round-{round_no:02d}.json"))
     for path in reversed(candidates):
         data = json.loads(path.read_text())
         if not isinstance(data, dict):
@@ -208,8 +208,19 @@ def _selftest() -> int:
             continue
         print(f"rule_check selftest: {label} was not rejected", file=sys.stderr)
         return 1
+    # `runner.py suite --commit-evidence` writes `round-{number:02d}.json`, so a
+    # single-digit round's committed result is only found by a zero-padded glob.
+    # An unpadded one silently found nothing and fell back to the historical
+    # status, scoring round 7 `missed` while two committed results said `proof`.
+    for number in (7, 16):
+        if not sorted((EVIDENCE / "results").glob(f"*/round-{number:02d}.json")):
+            print(f"rule_check selftest: no committed result matches round {number}; "
+                  "the evidence glob must be zero-padded like runner.py writes it",
+                  file=sys.stderr)
+            return 1
+
     print("rule_check selftest OK: runner and historical vocabularies, "
-          "non-verdicts, unrecognised records rejected")
+          "non-verdicts, unrecognised records rejected, evidence glob zero-padded")
     return 0
 
 
