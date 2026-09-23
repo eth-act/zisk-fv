@@ -675,13 +675,13 @@ MUTATIONS: List[Mutation] = [
     ),
     Mutation(
         name="WIRING_AIRVALUE_SWAP",
-        air="LookupWiring", target="constraintOnly_BinaryAdd_8",
+        air="LookupWiring", target="constraint_BinaryAdd_8",
         intent="airGroupValue 0 rendered as airValue 0: the collapse, in the file that "
                "can tell them apart",
         # The per-AIR rendering sends both to `exposed 0`, so P1/P2 cannot see
         # this at all. Requiring exactly {WIRING} asserts that P3 is what catches it.
         expect_exit=EXIT_FAILED, expect=frozenset({WIRING}),
-        apply=wiring_edit("constraintOnly_BinaryAdd_8",
+        apply=wiring_edit("constraint_BinaryAdd_8",
                           "Expr.airGroupValue 0", "Expr.airValue 0"),
     ),
     Mutation(
