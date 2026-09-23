@@ -23,8 +23,21 @@ Every agent executing any part of this plan follows this section. It is not advi
   `w0d-faithfulness`), and one PR **targeting `extraction-fidelity-hardening`**. The owner reviews
   and squash-merges each into the integration branch. #377 stays open as the milestone-0 PR
   (baseline plus W0) and goes to `main` after W0d merges; then the integration branch is deleted.
-- **Phase B, after #377 merges.** Every workstream branch is cut from `main` and its PR targets
-  `main`. There is no integration branch.
+- **Phase B, after #377 merges** (it did, 2026-09-21, `9d3248e0`). Every workstream branch is cut
+  from `main` and its PR targets `main`. The integration branch stops receiving merges the moment
+  #377 lands; anything merged into it afterwards (#390, #383, and the docs commits) reaches `main`
+  through one **transition PR**: a branch cut from `main`, the post-milestone squash commits and
+  docs commits cherry-picked onto it in order, PR to `main`, merged. Then every open PR is rebased
+  with `git rebase --onto origin/main <old-base>` (parents before children), retargeted with
+  `gh pr edit <N> --base main`, and the integration branch is deleted. Do not force-push the
+  integration branch and do not open a second integration-to-main PR: with squash merges its
+  history has diverged from `main`, and any later PR from it would show the whole milestone again.
+- **Roles, now that more than one agent works the repo.** The **worker** cuts branches, implements
+  workstreams, opens PRs, and touches only worktrees it created. The **merging agent** owns
+  rebases, retargets, merges to `main`, and the transition PR; it touches no workstream worktree.
+  Neither edits a branch the other has open in a worktree. The **reviewer** reads and comments and
+  changes nothing. A conflict on a PR branch is the worker's to resolve, on request from the
+  merging agent, in the worker's own worktree.
 - **One workstream, one PR.** The only exceptions are the couplings this file names ("same PR").
   A workstream whose hand-written diff would exceed the size limit is split along its numbered
   steps, one PR per step, opened and merged in order.
@@ -45,9 +58,9 @@ Every agent executing any part of this plan follows this section. It is not advi
   `--onto` and push it, then delete the merged branch. Deleting a base branch while PRs still
   target it closes them (this happened to #387's four children). The owner's review of milestone 0
   covers these merges. In Phase B the owner merges.
-- **The agent never pushes to `main`, never merges to `main`, never force-pushes the integration
-  branch or `main`, never deletes a `freeze/*` branch, and never opens a second PR to `main` while
-  #377 is open.** `git push --force-with-lease` on a `w*-` branch the agent created is allowed and
+- **The worker never pushes to `main`, never merges to `main`, never force-pushes the integration
+  branch or `main`, and never deletes a `freeze/*` branch.** Merges to `main` are the merging
+  agent's, on a green local gate per AGENTS.md. `git push --force-with-lease` on a `w*-` branch the agent created is allowed and
   expected after a rebase.
 
 ### Commits
