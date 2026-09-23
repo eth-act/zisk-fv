@@ -867,6 +867,11 @@ def _parse_weld_column_file(path: Path) -> tuple[str | None, dict[int, str], int
         body = line.strip()
         if not body or body.startswith("#"):
             continue
+        # W10 appends independently checked air-value legend records to the
+        # Main map. This cross-check owns only the numeric stage-1 witness
+        # rows; `check-weld-column-maps.py` validates the `airvalue` records.
+        if body.startswith("airvalue "):
+            continue
         index, name = body.split(None, 1)
         columns[int(index)] = name.strip()
     return air, columns, total

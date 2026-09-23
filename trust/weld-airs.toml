@@ -76,6 +76,7 @@ unpinned-instances = ["mainProbeCircuit"]
 weld = "ZiskFv/AirsClean/MainMirrorWeld.lean"
 column-map = "mainValue"
 instance-main = "traceMainValue"
+airvalue-map = "traceExposedValue"
 wrapper = "MainExposed"
 instance = "extractedMainExposedCircuit"
 pin = "extractedMainExposedCircuit_pinned"

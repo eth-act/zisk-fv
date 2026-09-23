@@ -301,6 +301,8 @@ class AirResult:
     indices_contiguous: bool = False
     witness_columns: int = 0
     witness_names_agree: bool = False
+    air_values: int = 0
+    air_value_names_agree: bool = False
     accounting: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     results: list[ConstraintResult] = field(default_factory=list)
@@ -348,6 +350,7 @@ def check_air(
     extf_indices = pilout_atoms.constraints_reaching(
         ref.air, pilout_atoms.EXTF_OPERAND_KINDS)
     _check_witness_names(pilout, ref, air_lean, out)
+    _check_air_value_names(pilout, ref, air_lean, out)
 
     # P0: the Lean side keys everything by index, so build that map first. A
     # repeated index is reported as an accounting failure; the last definition
@@ -465,6 +468,32 @@ def _check_witness_names(
     out.accounting.append(
         f"{len(differing)} witness column name(s) disagree with PilOut.symbols "
         f"({len(expected)} columns declared, {len(got)} in the Lean header): {shown}"
+        + (" ..." if len(differing) > 5 else "")
+    )
+
+
+def _check_air_value_names(
+    pilout: pilout_wire.PilOut,
+    ref: pilout_wire.AirRef,
+    air_lean: lean_parse.AirLean,
+    out: AirResult,
+) -> None:
+    expected = pilout_atoms.air_value_names(pilout, ref)
+    got = air_lean.air_value_names
+    differing = sorted(key for key in set(expected) | set(got)
+                       if expected.get(key) != got.get(key))
+    out.air_values = len(expected)
+    if not differing:
+        out.air_value_names_agree = True
+        return
+    shown = ", ".join(
+        f"stage {stage} air value {index}: symbols say {expected.get((stage, index))!r}, "
+        f"Lean says {got.get((stage, index))!r}"
+        for stage, index in differing[:5]
+    )
+    out.accounting.append(
+        f"{len(differing)} air value name(s) disagree with PilOut.symbols "
+        f"({len(expected)} values declared, {len(got)} in the Lean header): {shown}"
         + (" ..." if len(differing) > 5 else "")
     )
 
@@ -1454,6 +1483,8 @@ def to_json(run: Run) -> dict:
                 "indices_contiguous": air.indices_contiguous,
                 "witness_columns": air.witness_columns,
                 "witness_names_agree": air.witness_names_agree,
+                "air_values": air.air_values,
+                "air_value_names_agree": air.air_value_names_agree,
                 "accounting_failures": air.accounting,
                 "warnings": air.warnings,
                 "ok": air.ok,

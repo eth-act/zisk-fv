@@ -19,6 +19,8 @@ File-level structure (line grammar; regexes are used only at this level)
     air-header  ::= "-- airgroup:" NAME "(id" INT ")  air:" NAME "(id" INT ")"
     witness-block    ::= "-- witness column names:" { witness-name }
     witness-name     ::= "--   stage" INT "col" INT ":" NAME
+    air-value-block  ::= "-- air value names:" { air-value-name }
+    air-value-name   ::= "--   stage" INT "air value" INT ":" NAME
     note             ::= "--" recognised-annotation-text
     skip-stub        ::= "-- constraint_" INT "_" SUFFIX " skipped:" REASON
     constraint-block ::= def-header [ debug-line ] body-line
@@ -113,6 +115,7 @@ class AirLean:
     airgroup_idx: Optional[int] = None
     air_idx: Optional[int] = None
     witness_names: Dict[Tuple[int, int], str] = field(default_factory=dict)
+    air_value_names: Dict[Tuple[int, int], str] = field(default_factory=dict)
     constraints: List[LeanConstraint] = field(default_factory=list)
     skipped: List[SkippedConstraint] = field(default_factory=list)
 
@@ -126,6 +129,10 @@ _RE_AIR_HEADER = re.compile(
     r"^--\s*airgroup:\s*(\S+)\s+\(id\s+(\d+)\)\s+air:\s*(\S+)\s+\(id\s+(\d+)\)$")
 _RE_WITNESS_HEADER = re.compile(r"^--\s*witness column names:$")
 _RE_WITNESS_NAME = re.compile(r"^--\s+stage\s+(\d+)\s+col\s+(\d+):\s(.*)$")
+_RE_AIR_VALUE_HEADER = re.compile(r"^--\s*air value names:$")
+_RE_AIR_VALUE_NAME = re.compile(
+    r"^--\s+stage\s+(\d+)\s+air value\s+(\d+):\s(.*)$"
+)
 _RE_SKIPPED = re.compile(
     r"^--\s*constraint_(\d+)_([A-Za-z_][A-Za-z_0-9]*)\s+skipped:\s*(.*)$")
 _RE_DEF = re.compile(r"^def\s+constraint_(\d+)_([A-Za-z_][A-Za-z_0-9]*)\s+(.*):=$")
@@ -165,6 +172,7 @@ def parse_air_file(path: str) -> AirLean:
     namespace: Optional[str] = None
     air = AirLean(air_name="")
     saw_witness_header = False
+    saw_air_value_header = False
 
     i = 0
     while i < len(lines):
@@ -196,6 +204,19 @@ def parse_air_file(path: str) -> AirLean:
             if key in air.witness_names:
                 raise LeanParseError(f"{path}: duplicate witness column {key}")
             air.witness_names[key] = match.group(3)
+            i += 1
+        elif _RE_AIR_VALUE_HEADER.match(line):
+            saw_air_value_header = True
+            i += 1
+        elif match := _RE_AIR_VALUE_NAME.match(line):
+            if not saw_air_value_header:
+                raise LeanParseError(
+                    f"{path}: air value name outside an air-value block: {line!r}"
+                )
+            key = (int(match.group(1)), int(match.group(2)))
+            if key in air.air_value_names:
+                raise LeanParseError(f"{path}: duplicate air value {key}")
+            air.air_value_names[key] = match.group(3)
             i += 1
         elif match := _RE_SKIPPED.match(line):
             air.skipped.append(SkippedConstraint(
@@ -471,6 +492,7 @@ def main(argv: List[str]) -> int:
                                           | {s.suffix for s in air.skipped}))),
             ("single-field defs", sum(1 for c in air.constraints if c.single_field)),
             ("witness names", len(air.witness_names)),
+            ("air value names", len(air.air_value_names)),
         ]:
             print(f"  {label + ':':<19} {value}")
         for stub in air.skipped:
