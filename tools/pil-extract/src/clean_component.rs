@@ -10,7 +10,7 @@
 //!                          constraint, then the operation-bus
 //!                          `OpBusChannel.push` reconstructed from the
 //!                          proves-side `gsum_debug_data` hint; and the
-//!                          `<air>Elaborated : ElaboratedCircuit` value.
+//!                          interaction declarations.
 //!
 //! Faithfulness contract (D-EXT): the generated output must match the
 //! hand-written reference (`ZiskFv/AirsClean/BinaryAdd/{Row,Constraints}.lean`)
@@ -250,6 +250,34 @@ fn strip_outer_parens(s: &str) -> &str {
     &s[1..s.len() - 1]
 }
 
+/// Match the compact expression style used by the committed named message
+/// builders: remove a redundant whole-expression group and a redundant
+/// group around the left operand of a top-level addition/subtraction.
+fn message_value_style(s: &str) -> String {
+    let stripped = strip_outer_parens(s);
+    if !stripped.starts_with('(') {
+        return stripped.to_string();
+    }
+    let mut depth = 0usize;
+    for (index, byte) in stripped.bytes().enumerate() {
+        match byte {
+            b'(' => depth += 1,
+            b')' => {
+                depth -= 1;
+                if depth == 0 {
+                    let remainder = &stripped[index + 1..];
+                    if remainder.starts_with(" + ") || remainder.starts_with(" - ") {
+                        return format!("{}{}", &stripped[1..index], remainder);
+                    }
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    stripped.to_string()
+}
+
 /// One operation-bus emission resolved from a proves-side `gsum_debug_data`
 /// hint, with its slot values rendered against the Clean row.
 struct CleanBusEmission {
@@ -260,6 +288,24 @@ struct CleanBusEmission {
     /// names are discarded — the slot *position* fixes the `OpBusMessage`
     /// field, mirroring `OpBusMessage`'s declared field order.
     slot_values: Vec<String>,
+}
+
+const PROVABLE_STRUCT_FIELD_LIMIT: usize = 16;
+const NESTED_ROW_CHUNK_SIZE: usize = 12;
+
+fn row_accessors(fields: &[RowField]) -> HashMap<u32, String> {
+    fields
+        .iter()
+        .enumerate()
+        .map(|(index, field)| {
+            let accessor = if fields.len() <= PROVABLE_STRUCT_FIELD_LIMIT {
+                field.lean_name.clone()
+            } else {
+                format!("cols_{}.{}", index / NESTED_ROW_CHUNK_SIZE, field.lean_name)
+            };
+            (field.col_idx, accessor)
+        })
+        .collect()
 }
 
 /// The 11 `OpBusMessage` fields, in declared order
@@ -342,11 +388,25 @@ impl ChannelKind {
         }
     }
 
+    fn message_type(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "OpBusMessage",
+            ChannelKind::MemoryBus => "MemBusMessage",
+        }
+    }
+
     /// Human label for the bus, used in generated comments.
     fn bus_label(self) -> &'static str {
         match self {
             ChannelKind::OpBus => "operation bus",
             ChannelKind::MemoryBus => "memory bus",
+        }
+    }
+
+    fn heading_bus_label(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "operation bus",
+            ChannelKind::MemoryBus => "unified memory bus",
         }
     }
 
@@ -429,6 +489,65 @@ fn resolve_bus_push(
             bus_id
         )
     })
+}
+
+/// Resolve every matching hint in source order. This is used for consumer
+/// pulls and table lookups, where an AIR can legitimately carry several
+/// independent emissions of the same PIOP kind.
+fn resolve_bus_emissions(
+    pilout: &PilOut,
+    hit: &AirHit<'_>,
+    bus_id: u64,
+    is_proves: bool,
+    piop: &str,
+    col_to_field: &HashMap<u32, String>,
+) -> Result<Vec<CleanBusEmission>> {
+    let renderer = CleanExprRenderer {
+        pilout,
+        air: hit.air,
+        col_to_field,
+    };
+    let mut emissions = Vec::new();
+    for (hi, hint) in pilout.hints.iter().enumerate() {
+        if hint.name != "gsum_debug_data"
+            || hint.air_group_id != Some(hit.airgroup_idx as u32)
+            || hint.air_id != Some(hit.air_idx as u32)
+        {
+            continue;
+        }
+        let (hint_bus, hint_proves, hint_piop, slots) = parse_op_bus_hint(&renderer, hint)
+            .with_context(|| format!("gsum_debug_data hint #{}", hi))?;
+        if hint_bus == bus_id && hint_proves == is_proves && hint_piop == piop {
+            emissions.push(CleanBusEmission {
+                busid: hint_bus,
+                slot_values: slots,
+            });
+        }
+    }
+    Ok(emissions)
+}
+
+fn write_message_definition(
+    out: &mut String,
+    name: &str,
+    row_ty: &str,
+    message_ty: &str,
+    fields: &[&str],
+    values: &[String],
+) {
+    out.push_str("@[reducible]\n");
+    out.push_str(&format!("def {} (row : Var {} FGL)", name, row_ty));
+    if message_ty == "MemBusMessage" {
+        out.push_str(" :\n    MemBusMessage (Expression FGL) :=\n");
+    } else {
+        out.push_str(" : OpBusMessage (Expression FGL) :=\n");
+    }
+    for (index, (field, value)) in fields.iter().zip(values).enumerate() {
+        let open = if index == 0 { "  { " } else { "    " };
+        let close = if index + 1 == fields.len() { " }" } else { "" };
+        out.push_str(&format!("{}{} := {}{}\n", open, field, value, close));
+    }
+    out.push('\n');
 }
 
 /// Decode a `gsum_debug_data` hint into
@@ -565,11 +684,35 @@ fn render_row_file(air_name: &str, fields: &[RowField], omitted: &[String]) -> S
         fields.len(),
         air_name
     ));
-    out.push_str(&format!("structure {} (F : Type) where\n", row_ty));
-    for f in fields {
-        out.push_str(&format!("  {} : F\n", f.lean_name));
+    if fields.len() <= PROVABLE_STRUCT_FIELD_LIMIT {
+        out.push_str(&format!("structure {} (F : Type) where\n", row_ty));
+        for f in fields {
+            out.push_str(&format!("  {} : F\n", f.lean_name));
+        }
+        out.push_str("deriving ProvableStruct\n\n");
+    } else {
+        // `ProvableStruct`'s deriving macro has a bounded direct-field arity.
+        // Preserve pilout order while introducing mechanically named chunks;
+        // the expression renderer uses the same chunk/accessor calculation.
+        for (chunk_index, chunk) in fields.chunks(NESTED_ROW_CHUNK_SIZE).enumerate() {
+            out.push_str(&format!(
+                "structure {}Cols{} (F : Type) where\n",
+                air_name, chunk_index
+            ));
+            for f in chunk {
+                out.push_str(&format!("  {} : F\n", f.lean_name));
+            }
+            out.push_str("deriving ProvableStruct\n\n");
+        }
+        out.push_str(&format!("structure {} (F : Type) where\n", row_ty));
+        for chunk_index in 0..fields.len().div_ceil(NESTED_ROW_CHUNK_SIZE) {
+            out.push_str(&format!(
+                "  cols_{} : {}Cols{} F\n",
+                chunk_index, air_name, chunk_index
+            ));
+        }
+        out.push_str("deriving ProvableStruct\n\n");
     }
-    out.push_str("deriving ProvableStruct\n\n");
 
     // The two reducible packing helpers. Their shape is fixed for the
     // BinaryAdd-style row (two 32-bit operands, four 16-bit result
@@ -599,9 +742,8 @@ fn render_row_file(air_name: &str, fields: &[RowField], omitted: &[String]) -> S
     out
 }
 
-/// Render the `Constraints.lean` content for the AIR: the `main` do-block
-/// (`assertZero` per F-only constraint, then the op-bus `OpBusChannel.push`)
-/// and the `<air>Elaborated : ElaboratedCircuit` value.
+/// Render the `Constraints.lean` content for the AIR: named channel-message
+/// builders and the `main` do-block (`lookup`, `assertZero`, pull, push).
 ///
 /// C0g target: `ZiskFv/AirsClean/BinaryAdd/Constraints.lean`.
 fn render_constraints_file(
@@ -617,10 +759,7 @@ fn render_constraints_file(
         .clone()
         .ok_or_else(|| anyhow!("air has no name"))?;
     let row_ty = format!("{}Row", air_name);
-    let col_to_field: HashMap<u32, String> = fields
-        .iter()
-        .map(|f| (f.col_idx, f.lean_name.clone()))
-        .collect();
+    let col_to_field = row_accessors(fields);
     let renderer = CleanExprRenderer {
         pilout,
         air,
@@ -682,12 +821,26 @@ fn render_constraints_file(
         );
     }
     let channel_value = channel.channel_value();
+    let message_type = channel.message_type();
+    let read_pull = if channel == ChannelKind::MemoryBus
+        && matches!(air_name.as_str(), "MemAlignByte" | "MemAlignReadByte")
+    {
+        resolve_bus_emissions(pilout, hit, bus_id, false, "Permutation", &col_to_field)?
+            .into_iter()
+            .next()
+    } else {
+        None
+    };
+
+    let range16 = resolve_bus_emissions(pilout, hit, 103, false, "Range Check", &col_to_field)?;
+    let dual_byte = resolve_bus_emissions(pilout, hit, 88, false, "Lookup", &col_to_field)?;
 
     let mut out = String::new();
     out.push_str(&format!(
         "import ZiskFv.AirsClean.{}.Spec\n",
         air_name
     ));
+    out.push_str("import ZiskFv.AirsClean.RangeTables\n");
     out.push_str("import Clean.Circuit.Basic\n");
     out.push_str(channel.channel_import());
     out.push_str("\n\n");
@@ -705,7 +858,7 @@ fn render_constraints_file(
          do not hand-edit. The bus push is reconstructed from the\n\
          proves-side `gsum_debug_data` hint and is slot-for-slot faithful to\n\
          the hand-written reference.\n\n",
-        air_name, channel.bus_label(), channel_value
+        air_name, channel.heading_bus_label(), channel_value
     ));
     out.push_str("## Trust note\n\n");
     out.push_str("No axioms. Pure operational declaration.\n");
@@ -713,9 +866,60 @@ fn render_constraints_file(
 
     out.push_str(&format!("namespace ZiskFv.AirsClean.{}\n\n", air_name));
     out.push_str("open Goldilocks\n");
-    out.push_str("open Circuit (assertZero)\n");
-    out.push_str(channel.channel_open());
+    out.push_str("open Circuit (assertZero lookup)\n");
+    out.push_str("open ZiskFv.AirsClean.RangeTables\n");
+    out.push_str(&format!(
+        "{} {})",
+        channel.channel_open().trim_end_matches(')'),
+        message_type
+    ));
     out.push_str("\n\n");
+
+    let push_name = match channel {
+        ChannelKind::OpBus => "opBusMessageExpr",
+        ChannelKind::MemoryBus => "memBusMessageExpr",
+    };
+    write_message_definition(
+        &mut out,
+        push_name,
+        &row_ty,
+        message_type,
+        message_fields,
+        &push.slot_values,
+    );
+
+    if let Some(pull) = &read_pull {
+        if pull.slot_values.len() != message_fields.len() {
+            bail!(
+                "AIR `{}` memory-bus pull has {} slots; expected {}",
+                air_name,
+                pull.slot_values.len(),
+                message_fields.len()
+            );
+        }
+        match air_name.as_str() {
+            "MemAlignByte" => out.push_str(
+                "/-- The source-faithful aligned read consumed by MemAlignByte before it\n    proves the selected byte to Main.  This is the exact h1022\n    `permutation_assumes` tuple from `mem_align_byte.pil:61-66`; its two\n    reconstructed lanes are expressions, not detached row fields. -/\n",
+            ),
+            "MemAlignReadByte" => out.push_str(
+                "/-- The source-faithful aligned read consumed by MemAlignReadByte before it\n    proves the selected byte to Main.  This is the exact h1049\n    `permutation_assumes` tuple from the MemAlignByte template's read-only\n    specialization; its two reconstructed lanes are expressions, not\n    detached row fields. -/\n",
+            ),
+            _ => unreachable!(),
+        }
+        let pull_values = pull
+            .slot_values
+            .iter()
+            .map(|value| message_value_style(value))
+            .collect::<Vec<_>>();
+        write_message_definition(
+            &mut out,
+            "memReadMessageExpr",
+            &row_ty,
+            message_type,
+            message_fields,
+            &pull_values,
+        );
+    }
 
     out.push_str(&format!(
         "/-- The {} F-constraints and {} push, taking the row's slot\n    \
@@ -730,6 +934,64 @@ fn render_constraints_file(
         "def main (row : Var {} FGL) : Circuit FGL Unit := do\n",
         row_ty
     ));
+    match air_name.as_str() {
+        "BinaryAdd" => {
+            for field in ["a_0", "a_1", "b_0", "b_1", "c_chunks_0", "c_chunks_1", "c_chunks_2", "c_chunks_3"] {
+                if !fields.iter().any(|candidate| candidate.lean_name == field) {
+                    bail!("AIR `BinaryAdd` is missing expected range field `{}`", field);
+                }
+            }
+            if range16.len() != 4
+                || range16.iter().any(|emission| emission.slot_values.len() != 1)
+            {
+                bail!("AIR `BinaryAdd` expected four one-slot range-check hints");
+            }
+            out.push_str("  -- range lookups (binary/pil/binary_add.pil: a/b are 32-bit limbs,\n");
+            out.push_str("  -- c_chunks are 16-bit limbs)\n");
+            for field in ["a_0", "a_1", "b_0", "b_1"] {
+                out.push_str(&format!("  lookup (Table.fromStatic rangeTable32) row.{}\n", field));
+            }
+            for emission in &range16 {
+                out.push_str(&format!(
+                    "  lookup (Table.fromStatic rangeTable16) {}\n",
+                    emission.slot_values[0]
+                ));
+            }
+        }
+        "MemAlignByte" => {
+            if range16.len() != 1 || range16[0].slot_values != ["row.value_16b"]
+                || dual_byte.len() != 1 || dual_byte[0].slot_values != ["row.byte_value", "row.value_8b"]
+            {
+                bail!("AIR `MemAlignByte` range/byte hints differ from the expected source tuples");
+            }
+            out.push_str("  -- range lookups for bits declarations used by the algebraic Spec\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable8) row.bus_byte\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable8) row.byte_value\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable1) row.is_write\n");
+            out.push_str("  -- h1029: `range_check(value_16b)` on source virtual bus 103\n");
+            out.push_str("  -- (`mem_align_byte.pil:103`) through the local static S1a route.\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable16) row.value_16b\n");
+            out.push_str("  -- h1030: exact `DualByte` membership in source tuple order\n");
+            out.push_str("  -- `[byte_value, value_8b]` (`zisk.pil:62-76`, `mem_align_byte.pil:104`).\n");
+            out.push_str("  lookup (Table.fromStatic dualByteTable) #v[row.byte_value, row.value_8b]\n");
+        }
+        "MemAlignReadByte" => {
+            if range16.len() != 1 || range16[0].slot_values != ["row.value_16b"]
+                || dual_byte.len() != 1 || dual_byte[0].slot_values != ["row.byte_value", "row.value_8b"]
+            {
+                bail!("AIR `MemAlignReadByte` range/byte hints differ from the expected source tuples");
+            }
+            out.push_str("  -- range lookup for the byte value bits declaration\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable8) row.byte_value\n");
+            out.push_str("  -- h1052: `range_check(value_16b)` on virtual bus 103\n");
+            out.push_str("  -- (`mem_align_byte.pil:103`) through the local static S1a route.\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable16) row.value_16b\n");
+            out.push_str("  -- h1053: exact `DualByte` membership in source tuple order\n");
+            out.push_str("  -- `[byte_value, value_8b]` (`zisk.pil:62-76`, `mem_align_byte.pil:104`).\n");
+            out.push_str("  lookup (Table.fromStatic dualByteTable) #v[row.byte_value, row.value_8b]\n");
+        }
+        _ => {}
+    }
     for (idx, body, debug) in &assertions {
         // The pilout `debug_line` is `<file>:<line> <raw-PIL-expr>`; keep
         // only the source location — the `assertZero` line below already
@@ -740,44 +1002,26 @@ fn render_constraints_file(
         }
         out.push_str(&format!("  assertZero ({})\n", body));
     }
+    if read_pull.is_some() {
+        match air_name.as_str() {
+            "MemAlignByte" => out.push_str(
+                "  -- Bus consumer: the aligned 8-byte load consumed by this byte assembly\n  -- (`permutation_assumes`, mem/pil/mem_align_byte.pil:66; h1022).\n",
+            ),
+            "MemAlignReadByte" => out.push_str(
+                "  -- Bus consumer: the aligned 8-byte load consumed by this read-only byte\n  -- assembly (`permutation_assumes`, h1049).\n",
+            ),
+            _ => unreachable!(),
+        }
+        out.push_str("  MemBusChannel.pull (memReadMessageExpr row)\n");
+    }
     out.push_str(&format!(
         "  -- Bus emission: {} pushes its proves-side tuple onto {} {}.\n  \
          -- Reconstructed from the proves-side `gsum_debug_data` hint;\n  \
          -- slot-for-slot faithful to the hand-written reference.\n",
         air_name, channel.bus_label(), push.busid
     ));
-    out.push_str(&format!("  {}.push\n", channel_value));
-    let n_fields = message_fields.len();
-    for (i, field) in message_fields.iter().enumerate() {
-        let value = &push.slot_values[i];
-        let open = if i == 0 { "    { " } else { "      " };
-        let close = if i + 1 == n_fields { " }" } else { "" };
-        out.push_str(&format!("{}{} := {}{}\n", open, field, value, close));
-    }
+    out.push_str(&format!("  {}.push ({} row)\n", channel_value, push_name));
     out.push('\n');
-
-    out.push_str(&format!(
-        "/-- The elaborated circuit for {}'s `main` — {} `assertZero`\n    \
-         constraints + the bus push, no fresh witnesses (`localLength = 0`,\n    \
-         `unit` output). Lives here (next to `main`) so the `Circuit.lean`\n    \
-         wrapper can reuse it without an import cycle. -/\n",
-        air_name,
-        assertions.len()
-    ));
-    out.push_str("@[reducible] def ");
-    out.push_str(&format!(
-        "{}Elaborated : ElaboratedCircuit FGL {} unit where\n",
-        lower_first(&air_name),
-        row_ty
-    ));
-    out.push_str(&format!("  name := \"{}\"\n", air_name));
-    out.push_str("  main := main\n");
-    out.push_str("  localLength _ := 0\n");
-    out.push_str("  output _ _ := ()\n");
-    out.push_str(&format!(
-        "  channelsWithRequirements := [{}.toRaw]\n\n",
-        channel_value
-    ));
 
     out.push_str(&format!("end ZiskFv.AirsClean.{}\n", air_name));
     Ok(out)
@@ -792,16 +1036,6 @@ fn pil_source_location(debug_line: &str) -> &str {
         .split_once(' ')
         .map(|(loc, _)| loc)
         .unwrap_or(debug_line)
-}
-
-/// Lowercase the first character — `BinaryAdd` → `binaryAdd`, for the
-/// `<air>Elaborated` value name.
-fn lower_first(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(c) => c.to_lowercase().chain(chars).collect(),
-        None => String::new(),
-    }
 }
 
 /// Entry point: emit the Clean `Air.Flat.Component` source for one AIR.
@@ -861,10 +1095,28 @@ mod tests {
     }
 
     #[test]
-    fn lower_first_lowercases_initial() {
-        assert_eq!(lower_first("BinaryAdd"), "binaryAdd");
-        assert_eq!(lower_first("Mem"), "mem");
-        assert_eq!(lower_first(""), "");
+    fn message_value_style_removes_only_redundant_groups() {
+        assert_eq!(message_value_style("(row.addr * 8)"), "row.addr * 8");
+        assert_eq!(
+            message_value_style("((row.sel * (row.a - row.b)) + row.b)"),
+            "row.sel * (row.a - row.b) + row.b"
+        );
+    }
+
+    #[test]
+    fn wide_rows_use_nested_accessors() {
+        let fields = (0..17)
+            .map(|index| RowField {
+                col_idx: index,
+                lean_name: format!("field_{}", index),
+                pilout_name: format!("field[{}]", index),
+            })
+            .collect::<Vec<_>>();
+        let accessors = row_accessors(&fields);
+        assert_eq!(accessors[&0], "cols_0.field_0");
+        assert_eq!(accessors[&11], "cols_0.field_11");
+        assert_eq!(accessors[&12], "cols_1.field_12");
+        assert_eq!(accessors[&16], "cols_1.field_16");
     }
 
     #[test]
