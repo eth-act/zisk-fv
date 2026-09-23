@@ -535,6 +535,14 @@ the rule score against current observations, which issues closed.
 **Exit**: report step in the test recipe; evidence for all 15 regression rounds committed; #369
 closes when this PR merges.
 
+**Defect found 2026-09-22 (fix as a W0d follow-up, worker):** `faithfulness.py` prefers
+`tools/pil-extract/target/debug/pil-extract` whenever it exists, with no staleness check, so a
+binary left by an earlier `cargo test` validates the wrong emitter and can report "identical"
+for code nobody ships. Per "a check builds what it needs", the script must use the extractor the
+Nix build produced (the same one `populate` installs) or build the cargo binary itself before
+every run, and must print which binary and source revision it used. Until this lands, the three
+`expected = "identical"` entries are guarded by a check that can lie.
+
 ---
 
 ## W0e · Shrink the coverage manifest before milestone 0 lands — #377 review finding
