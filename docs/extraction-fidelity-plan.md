@@ -289,9 +289,12 @@ accumulator-update constraint. ZisK has no message column.
 all Main's, all cross-segment** (the 31 `main.pil:452` currents, c47/c48 on bus 1000, c142 on bus
 106). **133 were in scope.**
 
-**Round 27 is in scope.** It mutates `main.pil:334`, the per-row register ordering check. It is
-blocked on a provider that does not exist (#19, #330, #348) and closes through those issues. The
-honest tally is 11 of 11 misses that should close.
+**Round 27 is in scope.** It mutates `main.pil:334`, the per-row register ordering check. W5's
+c41 tie detects it: observed CAUGHT on 2026-09-22 (`evidence/results/993113ad/round-27.json`, a
+type mismatch in `Main/Wiring.lean`), because the tie pins the range id the check uses. That closes
+the *detection*. It does not model register ordering: the claim still closes through #19, #330
+and #348, and no PR may say otherwise. The tally is 11 of 11 misses with a closure path; 8
+observed CAUGHT, 26/33/36 pending clean reruns.
 
 **21 of the 24 catches came from modules only `ZiskFv.lean` imports.** Those defend the
 repository's build, not the root theorem's statement. The ledger therefore carries two columns.
@@ -499,6 +502,18 @@ Printed separately: **wirable**, generated links consumed by nothing. Never in t
 
 **Exit**: 168 reproduced at `019eec25`; the branch's ledger committed; the umbrella issue's table
 can be replaced by the ledger's output (do that in W0d's bookkeeping).
+
+**Follow-ups found in review (worker, small PRs to `main`):**
+- The monotone floor is not enforced: no `trust/.exposure-floor` (or equivalent) is committed, so
+  "exposure must not grow" cannot fire. Commit the floor the way `check-shrinkage.sh` does and make
+  `exposure.py` fail when either column exceeds it.
+- Coverage is decided by textual mention in reachable modules, and #386's alias rule lets one
+  mention of a `links_<family>` list credit 31 constraints. Accepted for now because that tie is
+  proof-carrying (total over `Fin 31`, every field `rfl`), but the metric's weakest point is that
+  a mention is not a use. The intended replacement is a trust-gate command that reports which
+  generated constants each `ZiskFv` declaration references (kernel-level, the way the closure
+  checks already walk declarations), consumed by `exposure.py` instead of text. This is a scope
+  decision for the owner; until taken, every alias-rule credit is called out in the PR body.
 
 ---
 
