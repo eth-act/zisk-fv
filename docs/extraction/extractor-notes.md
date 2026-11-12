@@ -672,5 +672,14 @@ and `Context.references`); a second `compile()` in the same process collides on 
 AIR name and observes nothing. The exporter therefore takes one AIR per invocation and the
 nix step calls it twice.
 
+**Gate invocation and mutation evidence.** Run
+`python3 tools/virtual-tables/check-byte-tables.py --export-dir build/extraction/ByteTables`;
+the gate builds the Lean streamer itself, including from a missing binary.
+Fixture 53 runs this same gate against both baseline and changed exports after
+the proof controls. Its `fidelity_gate` result requires a green baseline and an
+explicit table mismatch; it is not a proof rejection. The historical
+`2b30c9f6/round-53.json` recorded only a proof pass (`fidelity`, a miss) and
+does not establish that detection.
+
 Measured on the pinned inputs: `BinaryTable` 19 blocks / 5,505,024 rows,
 `BinaryExtensionTable` 9 blocks / 3,151,872 rows; the model matches the builder on every row.
