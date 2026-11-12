@@ -844,10 +844,10 @@ fn render_row_file(air_name: &str, fields: &[RowField], omitted: &[String]) -> S
 /// C0g target: `ZiskFv/AirsClean/BinaryAdd/Constraints.lean`.
 /// Emit the per-component constraint manifest.
 ///
-/// The ledger (`tools/mirror-roundtrip/exposure.py`) credits a `consumed`
-/// AIR only for the `<Air>.lean` constraint indices this file names, so the
-/// lists here must record exactly what the component realises and nothing
-/// more.
+/// The ledger credits only mapped assertions with a compiled correspondence
+/// theorem. Each theorem selects an assertion from the actual generated `main`
+/// and compares its evaluation on the exact source cells with the raw pilout
+/// predicate; the lists alone confer no coverage.
 ///
 /// * `assertZeroConstraints` — one index per `assertZero` line in
 ///   `Constraints.lean`, in emission order. These are the F-only pilout
@@ -859,10 +859,13 @@ fn render_row_file(air_name: &str, fields: &[RowField], omitted: &[String]) -> S
 ///   `Extraction.LookupWiring`'s `ValidatedLink` job, not this manifest's.
 fn render_manifest_file(
     air_name: &str,
+    fields: &[RowField],
     assertions: &[(usize, String, Option<String>)],
     skipped_extf: &[usize],
 ) -> String {
     let mut out = String::new();
+    out.push_str(&format!("import Extraction.{}\n", air_name));
+    out.push_str(&format!("import Extraction.Components.{}.Constraints\n\n", air_name));
     out.push_str("/-!\n");
     out.push_str(&format!("# {} component constraint manifest\n\n", air_name));
     out.push_str(&format!(
@@ -872,20 +875,69 @@ fn render_manifest_file(
         air_name
     ));
     out.push_str(
-        "`tools/mirror-roundtrip/exposure.py` credits exactly these indices to an\n\
-         AIR marked `consumed` in `trust/generated-components.toml` whose model\n\
-         `Constraints.lean` re-exports this component. An AIR with no manifest\n\
-         covers nothing.\n\n",
+        "Each mapped assertion has a compiled correspondence theorem selecting\n\
+         it from the generated `main` on exact source cells. The ledger credits\n\
+         only proof-backed entries imported by the consumed model.\n\n",
     );
     out.push_str(&format!(
-        "The remaining {} constraint(s) mix in ExtF operands: they are the bus\n\
-         interaction's algebraic shadow, replaced by the channel `push`. The push\n\
-         comes from a `gsum_debug_data` hint, which carries no constraint index,\n\
-         so this manifest does not claim them.\n",
+        "The remaining {} constraint(s) mix in ExtF operands. No correspondence\n\
+         with component assertions or channel interactions is established here.\n\
+         The push comes from a `gsum_debug_data` hint with no constraint index,\n\
+         so this manifest does not claim those constraints.\n",
         skipped_extf.len()
     ));
     out.push_str("-/\n\n");
     out.push_str(&format!("namespace Extraction.Components.{}.Manifest\n\n", air_name));
+    out.push_str(&format!("open Goldilocks ZiskFv.AirsClean.{}\n\n", air_name));
+    out.push_str("variable {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]\n\n");
+    out.push_str("/-- Exact stage-1 source cells, embedded as constant expressions. -/\n");
+    out.push_str(&format!(
+        "def sourceRow (c : C FGL FGL) (r : ℕ) : Var {}Row FGL :=\n  {{ ",
+        air_name
+    ));
+    if fields.len() <= PROVABLE_STRUCT_FIELD_LIMIT {
+        for (i, field) in fields.iter().enumerate() {
+            if i > 0 {
+                out.push_str("\n    ");
+            }
+            out.push_str(&format!(
+                "{} := Expression.const (Extraction.Circuit.main c 1 {} r 0)",
+                field.lean_name, field.col_idx
+            ));
+        }
+    } else {
+        for (i, chunk) in fields.chunks(NESTED_ROW_CHUNK_SIZE).enumerate() {
+            if i > 0 {
+                out.push_str("\n    ");
+            }
+            out.push_str(&format!("cols_{} := {{ ", i));
+            for (j, field) in chunk.iter().enumerate() {
+                if j > 0 {
+                    out.push_str("\n      ");
+                }
+                out.push_str(&format!(
+                    "{} := Expression.const (Extraction.Circuit.main c 1 {} r 0)",
+                    field.lean_name, field.col_idx
+                ));
+            }
+            out.push_str(" }");
+        }
+    }
+    out.push_str(" }\n\n");
+
+    // Select assertions from the actual generated main, not a second rendering
+    // of their polynomials. A missing/reordered/changed operation breaks the
+    // compiled correspondence instead of leaving an index-only credit alive.
+    for (position, (index, _, _)) in assertions.iter().enumerate() {
+        out.push_str(&format!(
+            "theorem constraint_{index}_correspondence (c : C FGL FGL) (r offset : ℕ)\n\
+             \x20   (env : Environment FGL) :\n\
+             \x20   env (((main (sourceRow c r)).operations offset).constraints[{position}]!) = 0 ↔\n\
+             \x20     {air_name}.extraction.constraint_{index}_every_row c r := by\n\
+             \x20 simp [main, sourceRow, circuit_norm,\n\
+             \x20   {air_name}.extraction.constraint_{index}_every_row, sub_eq_add_neg]\n\n"
+        ));
+    }
 
     out.push_str("/-- Pilout constraint indices reproduced verbatim as `assertZero` lines. -/\n");
     out.push_str("def assertZeroConstraints : List Nat :=\n  [");
@@ -937,11 +989,9 @@ fn render_constraints_file(
         col_to_field: &col_to_field,
     };
 
-    // Render every F-only constraint as an `assertZero`. Constraints that
-    // mix in ExtF operands (the permutation running-product updates) are
-    // the bus interaction's algebraic shadow — they are *replaced* by the
-    // channel `push` below, so they are skipped here, exactly as the
-    // hand-written `Constraints.lean` does.
+    // Render every F-only constraint as an `assertZero`. ExtF-mixing
+    // permutation/lookup constraints are excluded. The hint-derived channel
+    // operations below do not themselves prove correspondence to those indices.
     let mut assertions: Vec<(usize, String, Option<String>)> = Vec::new();
     let mut cross_row_constraints: Vec<(usize, Option<String>)> = Vec::new();
     let mut skipped_extf: Vec<usize> = Vec::new();
@@ -962,8 +1012,7 @@ fn render_constraints_file(
             .ok_or_else(|| anyhow!("constraint #{} has no expression_idx", idx))?
             .idx as usize;
         if expr_uses_extf(pilout, air, expr_idx)? {
-            // Permutation/lookup running-product constraint — represented
-            // by the channel `push`, not an `assertZero`.
+            // No component assertion or manifest credit for this constraint.
             skipped_extf.push(idx);
             continue;
         }
@@ -1326,13 +1375,30 @@ pub fn run(
     let row = render_row_file(&air_name, &fields, &omitted);
     let (constraints, assertions, skipped_extf) =
         render_constraints_file(pilout, &hit, &fields, bus_id, channel)?;
-    let manifest = render_manifest_file(&air_name, &assertions, &skipped_extf);
+    let manifest = render_manifest_file(&air_name, &fields, &assertions, &skipped_extf);
     Ok((row, constraints, manifest))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn manifest_selects_actual_assertions_and_leaves_extf_unclaimed() {
+        let fields = vec![RowField {
+            col_idx: 8,
+            lean_name: "cout_0".to_string(),
+            pilout_name: "cout[0]".to_string(),
+        }];
+        let assertions = vec![(2, "row.cout_0".to_string(), None)];
+        let source = render_manifest_file("BinaryAdd", &fields, &assertions, &[4, 5, 6, 7, 8]);
+        assert!(source.contains("Expression.const (Extraction.Circuit.main c 1 8 r 0)"));
+        assert!(source.contains("theorem constraint_2_correspondence"));
+        assert!(source.contains(".constraints[0]!) = 0 ↔"));
+        assert!(source.contains("BinaryAdd.extraction.constraint_2_every_row c r := by"));
+        assert!(source.contains("def unclaimedConstraints : List Nat :=\n  [4, 5, 6, 7, 8]"));
+        assert!(source.contains("def busPushConstraints : List Nat :=\n  []"));
+    }
 
     #[test]
     fn lean_field_name_indexes_become_underscores() {

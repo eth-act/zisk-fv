@@ -190,9 +190,9 @@ struct CleanComponentCmd {
     #[arg(long)]
     constraints_output: Option<PathBuf>,
 
-    /// Output path for the generated `Manifest.lean` — which pilout
-    /// constraint indices the component realises. The exposure ledger
-    /// credits a `consumed` AIR only for the indices this file names.
+    /// Output path for the generated `Manifest.lean` — kernel-checked
+    /// correspondence between actual component assertions and raw constraints.
+    /// The exposure ledger credits only proof-backed entries.
     #[arg(long)]
     manifest_output: Option<PathBuf>,
 

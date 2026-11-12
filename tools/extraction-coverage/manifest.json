@@ -45,6 +45,9 @@
     {"kind": "lean", "path": "Extraction/BinaryExtension.lean"},
     {"kind": "lean", "path": "Extraction/Buses.lean"},
     {"kind": "lean", "path": "Extraction/Circuit.lean"},
+    {"kind": "lean", "path": "Extraction/Components/BinaryAdd/Constraints.lean"},
+    {"kind": "lean", "path": "Extraction/Components/BinaryAdd/Manifest.lean"},
+    {"kind": "lean", "path": "Extraction/Components/BinaryAdd/Row.lean"},
     {"kind": "lean", "path": "Extraction/LookupWiring.lean"},
     {"kind": "lean", "path": "Extraction/Main.lean"},
     {"kind": "lean", "path": "Extraction/Mem.lean"},
@@ -56,8 +59,7 @@
     {"kind": "lean", "path": "Extraction/MemGeneratedArtifact.lean"},
     {"kind": "lean", "path": "Extraction/MemGeneratedConstraintBridge.lean"},
     {"kind": "lean", "path": "Extraction/MemoryBuses.lean"},
-    {"kind": "report", "path": "MemAirFacts.md"},
-    {"kind": "source_table", "path": "MemAlignRom.tsv"}
+    {"kind": "report", "path": "MemAirFacts.md"}
   ],
   "lookup_routes": [
     {"air": "Dma", "air_index": 0, "bus_id": {"kind": "constant", "value": 102}, "group": "Zisk", "group_index": 0, "hint_index": 10, "metadata_fields": ["deg_expr", "deg_sel", "len_expressions", "opids"], "multiplicity": {"index": 450, "kind": "expression"}, "piop": "Range Check", "proves": false, "slots": [{"name": "h_count", "source": {"index": 451, "kind": "expression"}}], "type_piop": 0},

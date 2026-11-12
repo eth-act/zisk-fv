@@ -81,14 +81,16 @@ after model switchover, `expected = "consumed"` compares against the populated
 `Extraction.Components.<Air>` pair and also requires both maintained modules to
 re-export those generated declarations.
 
-A `consumed` AIR also earns ledger coverage, in both columns, for the
-constraint indices its generated `Components/<Air>/Manifest.lean` names. The
-extractor writes that manifest alongside `Row.lean` and `Constraints.lean`:
-`assertZeroConstraints` lists the F-only pilout indices the component
-reproduces verbatim, and `unclaimedConstraints` lists the ExtF-mixing ones the
-channel `push` stands in for. The push is reconstructed from a
-`gsum_debug_data` hint, which carries no constraint index, so
-`busPushConstraints` is empty and those constraints stay exposed; tying them is
-`Extraction.LookupWiring`'s `ValidatedLink` job. `exposure.py` credits exactly
-the mapped indices — an AIR marked `consumed` without a manifest, or whose
-model does not re-export the generated component, covers nothing.
+A `consumed` AIR earns ledger coverage only for proof-backed entries in its
+generated `Components/<Air>/Manifest.lean`, imported by the live model in the
+corresponding build/root closure. For each `assertZeroConstraints` entry the
+manifest proves `constraint_N_correspondence`: evaluation of that assertion,
+selected from the generated `main` on the exact stage-1 source row, is equivalent
+to `Air.extraction.constraint_N_every_row`. These equalities compile in the
+normal Lake graph, including the root's imports. Listed indices without their
+correspondence theorem earn no credit.
+
+`unclaimedConstraints` records the ExtF-mixing constraints. The channel push is
+reconstructed from a `gsum_debug_data` hint with no constraint index, so
+`busPushConstraints` is empty and hints earn no manifest credit. In BinaryAdd,
+only constraints 0–3 are mapped; 4–8 remain unclaimed by this manifest.
