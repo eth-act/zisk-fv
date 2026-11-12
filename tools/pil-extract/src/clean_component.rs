@@ -1568,7 +1568,8 @@ mod tests {
             ..Default::default()
         };
         let hit = AirHit { airgroup_idx: 0, air_idx: 0, airgroup_name: "Zisk".into(), air: &air };
-        let source = render_constraints_file(&pilout, &hit, &[], 42, ChannelKind::OpBus).unwrap();
+        let (source, assertions) = render_constraints_file(&pilout, &hit, &[], 42, ChannelKind::OpBus).unwrap();
+        assert!(assertions.is_empty());
         assert!(!source.contains("  assertZero ("));
         assert!(source.contains("  OpBusChannel.push (opBusMessageExpr row)"));
     }
@@ -1604,7 +1605,8 @@ mod tests {
                 pilout_name: name.to_string(),
             }).collect::<Vec<_>>();
         let hit = AirHit { airgroup_idx: 0, air_idx: 0, airgroup_name: "Zisk".into(), air: &air };
-        let source = render_constraints_file(&pilout, &hit, &fields, 10, ChannelKind::MemoryBus).unwrap();
+        let (source, assertions) = render_constraints_file(&pilout, &hit, &fields, 10, ChannelKind::MemoryBus).unwrap();
+        assert!(assertions.is_empty());
         assert!(source.contains("MemBusChannel.emit row.sel (memBusMessageExpr row)"));
         assert!(source.contains("MemBusChannel.emit row.sel_dual (memBusDualMessageExpr row)"));
         assert!(source.contains("value_1 := 6 }"));
