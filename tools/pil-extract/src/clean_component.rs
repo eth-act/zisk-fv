@@ -890,20 +890,26 @@ fn render_manifest_file(
     out.push_str(&format!("namespace Extraction.Components.{}.Manifest\n\n", air_name));
     out.push_str(&format!("open Goldilocks ZiskFv.AirsClean.{}\n\n", air_name));
     out.push_str("variable {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]\n\n");
-    out.push_str("/-- Exact stage-1 source cells, embedded as constant expressions. -/\n");
+    out.push_str("/-- Exact source cells, embedded as constant expressions. -/\n");
     out.push_str(&format!(
         "def sourceRow (c : C FGL FGL) (r : ℕ) : Var {}Row FGL :=\n  {{ ",
         air_name
     ));
+    // MemAlign's component-owned preL1 selector is a fixed source cell,
+    // not a stage-1 witness column. Its synthetic column key is u32::MAX.
+    let source_field = |field: &RowField| {
+        if field.col_idx == u32::MAX && field.lean_name == "preL1" {
+            format!("{} := Expression.const (Extraction.Circuit.preprocessed c 0 r 0)", field.lean_name)
+        } else {
+            format!("{} := Expression.const (Extraction.Circuit.main c 1 {} r 0)", field.lean_name, field.col_idx)
+        }
+    };
     if fields.len() <= PROVABLE_STRUCT_FIELD_LIMIT {
         for (i, field) in fields.iter().enumerate() {
             if i > 0 {
                 out.push_str("\n    ");
             }
-            out.push_str(&format!(
-                "{} := Expression.const (Extraction.Circuit.main c 1 {} r 0)",
-                field.lean_name, field.col_idx
-            ));
+            out.push_str(&source_field(field));
         }
     } else {
         for (i, chunk) in fields.chunks(NESTED_ROW_CHUNK_SIZE).enumerate() {
@@ -915,10 +921,7 @@ fn render_manifest_file(
                 if j > 0 {
                     out.push_str("\n      ");
                 }
-                out.push_str(&format!(
-                    "{} := Expression.const (Extraction.Circuit.main c 1 {} r 0)",
-                    field.lean_name, field.col_idx
-                ));
+                out.push_str(&source_field(field));
             }
             out.push_str(" }");
         }
@@ -1398,6 +1401,18 @@ mod tests {
         assert!(source.contains("BinaryAdd.extraction.constraint_2_every_row c r := by"));
         assert!(source.contains("def unclaimedConstraints : List Nat :=\n  [4, 5, 6, 7, 8]"));
         assert!(source.contains("def busPushConstraints : List Nat :=\n  []"));
+    }
+
+    #[test]
+    fn manifest_maps_fixed_l1_to_preprocessed_source() {
+        let fields = vec![RowField {
+            col_idx: u32::MAX,
+            lean_name: "preL1".to_string(),
+            pilout_name: "L1".to_string(),
+        }];
+        let source = render_manifest_file("MemAlign", &fields, &[], &[]);
+        assert!(source.contains("preL1 := Expression.const (Extraction.Circuit.preprocessed c 0 r 0)"));
+        assert!(!source.contains("Extraction.Circuit.main c 1 4294967295"));
     }
 
     #[test]
