@@ -318,17 +318,47 @@ def classify(item: Round, semantic: dict[str, Any] | None, changed: list[str],
 
 
 def classify_fidelity_gate(baseline: CommandResult, mutant: CommandResult) -> tuple[str, str]:
-    """A proof pass is a miss unless the actual fidelity gate rejects the mutant."""
+    """Recognize actual table-gate rejection independently of full proof builds."""
     if baseline.timed_out or baseline.exit_code != 0:
         return "infrastructure", "baseline byte-table fidelity gate was not green"
     if mutant.timed_out or mutant.exit_code not in (0, 1):
         return "infrastructure", "mutant byte-table fidelity gate did not complete normally"
     if mutant.exit_code == 0:
-        return "fidelity", "mutated artifacts passed both proof and byte-table fidelity gate"
+        return "fidelity", "mutated artifacts passed the byte-table fidelity gate"
     diagnostic = Path(mutant.log).read_text(encoding="utf-8", errors="replace")
     if "byte-table mismatch:" not in diagnostic:
         return "infrastructure", "byte-table gate failed without an explicit table mismatch"
-    return "fidelity_gate", "proof passed; actual byte-table fidelity gate rejected mutated rows"
+    return "fidelity_gate", "actual byte-table fidelity gate rejected mutated rows"
+
+
+def byte_table_controls(repo: Path, baseline: Path, mutant: Path, timeout: int,
+                        logs: Path, result: dict[str, Any]) -> tuple[str, str]:
+    """Run the clean gate before the mutant, without installing mutant inputs."""
+    repo = repo.resolve()
+    result["proof_status"] = "not_run"
+    argv = nix("develop", "--no-write-lock-file", str(repo),
+               "-c", "python3", str(repo / "tools/virtual-tables/check-byte-tables.py"),
+               "--export-dir")
+    clean = run_command(
+        [*argv, str(extraction_container(baseline) / "ByteTables")],
+        repo, timeout, logs / "baseline-byte-tables.log")
+    result["commands"].append(dataclasses.asdict(clean))
+    if clean.timed_out or clean.exit_code != 0:
+        return "infrastructure", "baseline byte-table fidelity gate was not green"
+    changed = run_command(
+        [*argv, str(extraction_container(mutant) / "ByteTables")],
+        repo, timeout, logs / "mutant-byte-tables.log")
+    result["commands"].append(dataclasses.asdict(changed))
+    outcome, reason = classify_fidelity_gate(clean, changed)
+    result["fidelity_gate"] = {
+        "baseline_green": True,
+        "mutant_rejected": outcome == "fidelity_gate",
+        "diagnostic": next(
+            (line for line in Path(changed.log).read_text(
+                encoding="utf-8", errors="replace").splitlines()
+             if line.startswith("byte-table mismatch:")), None),
+    }
+    return outcome, reason
 
 
 def classify_equivalent_control(mutant_proof: CommandResult, outcome: str,
@@ -825,6 +855,13 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             outcome, reason = classify(item, semantic, changed, roundtrip, None, None)
             result.update(outcome=outcome, reason=reason, complete=True)
             return result
+        if item.air in {"BinaryTable", "BinaryExtensionTable"}:
+            outcome, reason = byte_table_controls(
+                args.repo, Path(base_extract), mutant_extract, args.check_timeout, logs, result)
+            if outcome != "fidelity":
+                result.update(outcome=outcome, reason=reason,
+                              complete=outcome != "infrastructure")
+                return result
         if args.skip_proof:
             result.update(outcome="fidelity",
                           reason="artifact delta reached the proof boundary; proof explicitly skipped",
@@ -842,6 +879,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                          "-c", "lake", "build", "--log-level=warning")
         require_frozen_repository(args.repo, frozen_repository)
         install_proof_artifacts(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
+        result["proof_status"] = "baseline_started"
         baseline_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
                                      logs / "baseline-proof.log")
         if baseline_proof.timed_out or baseline_proof.exit_code != 0:
@@ -849,19 +887,6 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             result.update(outcome="infrastructure", reason="baseline proof control was not green",
                           complete=False)
             return result
-        baseline_fidelity = None
-        gate_argv = nix("develop", "--no-write-lock-file", str(args.repo.resolve()),
-                        "-c", "python3", "tools/virtual-tables/check-byte-tables.py",
-                        "--export-dir", "build/extraction/ByteTables")
-        if item.air in {"BinaryTable", "BinaryExtensionTable"}:
-            baseline_fidelity = run_command(
-                gate_argv, proof_tree, args.check_timeout, logs / "baseline-byte-tables.log")
-            result["commands"].append(dataclasses.asdict(baseline_fidelity))
-            if baseline_fidelity.timed_out or baseline_fidelity.exit_code != 0:
-                result.update(outcome="infrastructure",
-                              reason="baseline byte-table fidelity gate was not green",
-                              complete=False)
-                return result
         install_proof_artifacts(args.repo, proof_tree, mutant_pilout, mutant_extract)
         require_frozen_repository(args.repo, frozen_repository)
         mutant_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
@@ -870,22 +895,9 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                                dataclasses.asdict(mutant_proof)]
         outcome, reason = classify(item, semantic, changed, roundtrip,
                                    baseline_proof, mutant_proof, compile_result)
-        if outcome == "fidelity" and baseline_fidelity is not None:
-            mutant_fidelity = run_command(
-                gate_argv, proof_tree, args.check_timeout, logs / "mutant-byte-tables.log")
-            result["commands"].append(dataclasses.asdict(mutant_fidelity))
-            outcome, reason = classify_fidelity_gate(baseline_fidelity, mutant_fidelity)
-            result["fidelity_gate"] = {
-                "baseline_green": baseline_fidelity.exit_code == 0,
-                "mutant_rejected": outcome == "fidelity_gate",
-                "proof_passed": mutant_proof.exit_code == 0,
-                "diagnostic": next(
-                    (line for line in Path(mutant_fidelity.log).read_text(
-                        encoding="utf-8", errors="replace").splitlines()
-                     if line.startswith("byte-table mismatch:")), None),
-            }
         diagnostic = first_diagnostic(Path(mutant_proof.log)) if mutant_proof.exit_code else None
         result["proof_diagnostic"] = diagnostic
+        result["proof_status"] = "completed" if not mutant_proof.timed_out else "timed_out"
         if semantic["equal"] and item.historical_class == "SYNTACTIC":
             outcome, reason, result["control"] = classify_equivalent_control(
                 mutant_proof, outcome, reason)

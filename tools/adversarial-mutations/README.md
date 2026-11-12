@@ -60,18 +60,20 @@ identifiers, and `SELECTOR_ARG` covers every named `sel:` argument.
 
 `full` is the evidence-producing mode. It copies the pinned source, applies one
 fixture, builds the pilout and extracted Lean through the repository's pinned
-production tools, runs the independent round-trip
-gate, and builds both an isolated unmutated proof tree and an isolated mutant
-proof tree. The baseline must pass before a mutant failure can be called a proof
-detection. Nix input revisions remain those in `flake.lock`.
+production tools and runs the independent round-trip gate. It then checks the
+named byte-table fidelity gate where applicable, or builds both an isolated
+unmutated proof tree and an isolated mutant proof tree. A green baseline is
+required at the detection layer; Nix input revisions remain those in `flake.lock`.
 
 Round 53 is a new byte-table negative control, outside the historical 52-round
-sweep. Both proof builds must pass, then the runner invokes the actual
-`check-byte-tables.py` gate on baseline and mutant artifacts. Only a green
-baseline and an explicit byte-table mismatch produce `fidelity_gate` (CAUGHT
-by the executable fidelity gate, **not** by a Lean proof). A green proof alone
-remains `fidelity`, a miss; gate timeouts, missing artifacts, and unrelated
-failures are infrastructure failures.
+sweep. The runner invokes the actual `check-byte-tables.py` gate on clean
+artifacts before mutant artifacts, without installing either into the model.
+Only a green gate baseline and an explicit byte-table mismatch produce
+`fidelity_gate`, with `proof_status=not_run`: CAUGHT by the executable fidelity
+gate, **not** by a Lean proof. If the mutant gate passes, the normal isolated
+proof path still starts from clean baseline artifacts. A green proof alone
+remains `fidelity`, a miss; timeouts, missing inputs, and unrelated gate errors
+are infrastructure. Full merge-baseline proof/trust gates remain required.
 
 For PIL mutations the runner uses `.#compile-mutation`, which installs the three
 actual fixed-column payloads produced by the pinned ZisK generators and invokes

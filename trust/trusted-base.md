@@ -68,9 +68,10 @@ SHA-256 digests, with a Lean-interpreted stream evaluating the actual maintained
 `rowOfIndex` definitions. This is an executable extraction-fidelity gate, not
 a kernel proof of table equality; its compiler/runtime and digest assumptions
 remain part of the extraction boundary. `nix run .#test` runs it. Mutation
-fixture 53 must pass the proof build and fail this actual gate after a green
-baseline; the runner records that as `fidelity_gate`, distinct from both
-`proof` detection and a `fidelity` miss.
+fixture 53 must fail this actual gate after a green gate baseline; the runner
+records `fidelity_gate` with `proof_status=not_run`, distinct from `proof`
+detection and a `fidelity` miss. Full merge-baseline proof/trust gates are
+required separately; no mutant proof claim follows from this fidelity check.
 
 The extraction-fidelity checks also compile every generated Lean module and
 freeze the complete structural inventory under `tools/extraction-coverage/`.

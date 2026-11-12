@@ -675,9 +675,9 @@ nix step calls it twice.
 **Gate invocation and mutation evidence.** Run
 `python3 tools/virtual-tables/check-byte-tables.py --export-dir build/extraction/ByteTables`;
 the gate builds current model modules and invokes the producer with `lake env lean --run`.
-Fixture 53 runs this same gate against both baseline and changed exports after
-the proof controls. Its `fidelity_gate` result requires a green baseline and an
-explicit table mismatch; it is not a proof rejection. The historical
+Fixture 53 runs this same gate against clean and changed exports before full
+proof builds. Its `fidelity_gate` result requires a green gate baseline and an
+explicit table mismatch, with `proof_status=not_run`; it is not a proof rejection. The historical
 `2b30c9f6/round-53.json` recorded only a proof pass (`fidelity`, a miss) and
 does not establish that detection.
 

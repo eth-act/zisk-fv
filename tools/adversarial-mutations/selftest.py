@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import shutil
 import sys
 import tempfile
@@ -286,11 +287,54 @@ def test_readonly_artifact_restore() -> None:
               "flat Nix byte-table mutation was not monitored")
 
 
+def test_byte_table_gate_order() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        calls = []
+
+        def gate(argv, cwd, timeout, log):
+            calls.append(argv[-1])
+            log.write_text("byte-table mismatch: BinaryTable: block op=10 differs\n"
+                           if len(calls) == 2 else "byte tables match\n")
+            value = command(1 if len(calls) == 2 else 0)
+            value.log = str(log)
+            return value
+
+        result = {"commands": []}
+        with mock.patch.object(runner, "run_command", side_effect=gate):
+            outcome, _ = runner.byte_table_controls(
+                root, root / "clean", root / "mutant", 900, root, result)
+        check(calls == [str(root / "clean/ByteTables"), str(root / "mutant/ByteTables")],
+              "mutant fidelity gate ran before its clean control")
+        check(outcome == "fidelity_gate" and result["proof_status"] == "not_run"
+              and "proof_skipped" not in result,
+              "actual fidelity detection misrepresented a proof result")
+        with mock.patch.object(runner, "run_command", return_value=command(1)):
+            result = {"commands": []}
+            outcome, _ = runner.byte_table_controls(
+                root, root / "clean", root / "mutant", 900, root, result)
+        check(outcome == "infrastructure" and len(result["commands"]) == 1,
+              "failed clean gate admitted a mutant detection")
+    # Freeze the early gate's ordering relative to the existing full-proof path.
+    tree = ast.parse((HERE / "runner.py").read_text())
+    full = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                and node.name == "full")
+    gate_line = next(node.lineno for node in ast.walk(full)
+                     if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                     and node.func.id == "byte_table_controls")
+    proof_line = next(node.lineno for node in ast.walk(full)
+                      if isinstance(node, ast.Assign)
+                      and any(isinstance(target, ast.Name) and target.id == "baseline_proof"
+                              for target in node.targets))
+    check(gate_line < proof_line, "fidelity gate regressed behind the full proof build")
+
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
              test_artifact_and_semantic_baselines, test_site_operators,
              test_round_zero_control, test_log_archive,
-             test_private_dependency_copy, test_readonly_artifact_restore]
+             test_private_dependency_copy, test_readonly_artifact_restore,
+             test_byte_table_gate_order]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")
