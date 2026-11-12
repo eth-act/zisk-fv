@@ -219,10 +219,13 @@ pil-extract clean-component --pilout <path> --air <needle>
   `Direct`-mode range-check emissions on the same bus
   (`multiplicity = 0`) are filtered out.
 
-Resolution rule: among the AIR's `gsum_debug_data` hints, the
-emitter keeps the single one with `type_piop = proves`, matching
-`bus_id`, and `name_piop` equal to the channel's PIOP kind
-(`Lookup` for `op-bus`, `Permutation` for `mem-align-bus`).
+Resolution rule: among the AIR's `gsum_debug_data` hints, the emitter first
+filters `type_piop = proves`, `bus_id`, and the channel's `name_piop`
+(`Lookup` for `op-bus`, `Permutation` for `mem-align-bus`) before rendering
+operands. Normally exactly one hint must match. Mem instead requires exactly
+two memory-bus provider hints in source order, preserving both six-slot tuples
+and their `num_reps` multiplicities (`sel` and `sel_dual`) as channel `emit`s.
+An empty F-only constraint set remains valid, as required by BinaryExtension.
 
 It produces two files:
 
