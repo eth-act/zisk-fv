@@ -1,4 +1,4 @@
-{ stdenv, lib, rustPlatform, nodejs_20,
+{ stdenv, lib, rustPlatform, runCommand, nodejs_20,
   zisk-src, pil2-compiler, pil2-proofman-src,
   # Native build tools
   pkg-config, clang, libclang, nasm,
@@ -21,10 +21,19 @@ rustPlatform.buildRustPackage {
 
   src = zisk-src;
 
-  # The workspace Cargo.lock has 11 git-sourced crates from pil2-proofman.
-  # allowBuiltinFetchGit lets importCargoLock handle them without per-crate
-  # hashes — it fetches them from the store path already in the flake inputs.
-  cargoLock = {
+  # Keep the lock's exact revisions, but make git-crate vendoring fail closed.
+  # nixpkgs tolerates a failed `cp` here; a failed FICLONE once left
+  # proofman-util/src/proof.rs empty in a successful vendor derivation.
+  # Use ordinary copies and compare every file before Cargo.toml rewriting.
+  cargoDeps = (rustPlatform.importCargoLock.override {
+    runCommand = name: attrs: command: runCommand name attrs (lib.replaceStrings
+      [ ''cp -prvL "$tree" "$out" || echo "Warning: certain files couldn't be copied!" >&2'' ]
+      [ ''
+        cp --reflink=never -prvL "$tree" "$out"
+        diff -r "$tree" "$out"
+      '' ]
+      command);
+  }) {
     lockFile = "${zisk-src}/Cargo.lock";
     allowBuiltinFetchGit = true;
   };
