@@ -192,23 +192,20 @@ def lean_artifact_dir(path: Path) -> Path:
     return path / "Extraction" if (path / "Extraction").is_dir() else path
 
 
+def extraction_container(path: Path) -> Path:
+    """Locate sidecars for both populate's layout and the flat Nix output."""
+    return path.parent if path.name == "Extraction" else path
+
+
 def extraction_manifest(path: Path) -> dict[str, str]:
     lean = lean_artifact_dir(path)
-    container = path if lean != path else (path.parent if path.name == "Extraction" else path)
-    # Recurse: the generated Clean components live under
-    # `Extraction/Components/<Air>/`. A non-recursive scan left them
-    # unmonitored, so a mutation that changed only a component's `Row.lean` or
-    # `Constraints.lean` produced an empty artifact delta and was misread as a
-    # lost artifact. Top-level files keep their bare name so the corpus's
-    # existing stem entries (`Main`, `Binary`, ...) still match; nested files
-    # are keyed by their path under `Extraction/`.
+    container = extraction_container(path)
+    # Include nested generated components as well as top-level AIRs.
     result = {}
     for candidate in sorted(lean.rglob("*.lean")):
         if not candidate.is_file():
             continue
-        relative = candidate.relative_to(lean)
-        key = candidate.name if relative.parent == Path(".") else relative.as_posix()
-        result[key] = sha256(candidate)
+        result[candidate.relative_to(lean).as_posix()] = sha256(candidate)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         candidate = container / name
         if candidate.is_file():
@@ -426,7 +423,7 @@ def nix_output_path(repo: Path, attr: str, override: Path | None, timeout: int,
 
 
 def resolve_pinned_zisk(repo: Path, timeout: int, log: Path) -> tuple[Path | None, CommandResult]:
-    expression = f'(builtins.getFlake "path:{repo.resolve()}").inputs.zisk-src.outPath'
+    expression = f'(builtins.getFlake "git+{repo.resolve().as_uri()}").inputs.zisk-src.outPath'
     result = run_command(nix("eval", "--no-write-lock-file", "--impure", "--raw",
                              "--expr", expression),
                          repo, timeout, log)
@@ -446,7 +443,7 @@ def nix_direct_extraction(repo: Path, source: Path, pilout: Path, timeout: int,
     while avoiding a causally unrelated ZisK workspace rebuild.
     """
     expression = f'''let
-      fv = builtins.getFlake "path:{repo.resolve()}";
+      fv = builtins.getFlake "git+{repo.resolve().as_uri()}";
       system = builtins.currentSystem;
       pkgs = import fv.inputs.nixpkgs {{ inherit system; }};
     in pkgs.callPackage {repo.resolve() / "nix/extracted-lean.nix"} {{
@@ -541,7 +538,7 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
     target_extraction = destination / "build" / "extraction" / "Extraction"
     shutil.copytree(lean_artifact_dir(extraction), target_extraction)
     make_tree_writable(target_extraction)
-    container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
+    container = extraction_container(extraction)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         sidecar = container / name
         if sidecar.is_file():
@@ -584,7 +581,7 @@ def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
     copied_extraction = target_extraction / "Extraction"
     shutil.copytree(lean_artifact_dir(extraction), copied_extraction)
     make_tree_writable(copied_extraction)
-    container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
+    container = extraction_container(extraction)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         sidecar = container / name
         if sidecar.is_file():
@@ -882,6 +879,10 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                 "baseline_green": baseline_fidelity.exit_code == 0,
                 "mutant_rejected": outcome == "fidelity_gate",
                 "proof_passed": mutant_proof.exit_code == 0,
+                "diagnostic": next(
+                    (line for line in Path(mutant_fidelity.log).read_text(
+                        encoding="utf-8", errors="replace").splitlines()
+                     if line.startswith("byte-table mismatch:")), None),
             }
         diagnostic = first_diagnostic(Path(mutant_proof.log)) if mutant_proof.exit_code else None
         result["proof_diagnostic"] = diagnostic

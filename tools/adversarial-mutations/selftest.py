@@ -274,6 +274,16 @@ def test_readonly_artifact_restore() -> None:
               "read-only pilout was not replaced")
         check((proof / "build/extraction/ByteTables/BinaryTable.json").read_text() == "digest",
               "byte-table fidelity input was not installed")
+        flat = root / "flat-output"
+        flat.mkdir()
+        (flat / "New.lean").write_text("new")
+        shutil.copytree(extraction / "ByteTables", flat / "ByteTables")
+        runner.install_proof_artifacts(repo, proof, pilout, flat)
+        check((proof / "build/extraction/ByteTables/BinaryTable.json").read_text() == "digest",
+              "flat Nix byte-table input was not installed")
+        (flat / "ByteTables/BinaryTable.json").write_text("mutated")
+        check("ByteTables/BinaryTable.json" in runner.extraction_delta(extraction, flat),
+              "flat Nix byte-table mutation was not monitored")
 
 
 def main() -> int:
