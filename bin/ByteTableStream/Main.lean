@@ -52,5 +52,5 @@ def main (args : List String) : IO UInt32 := do
       stream BinaryExtensionTable.tableSize binaryExtensionRowLine
       return 0
   | _ =>
-      (← IO.getStderr).putStrLn "usage: byte-table-stream (BinaryTable|BinaryExtensionTable)"
+      (← IO.getStderr).putStrLn "usage: lake env lean --run bin/ByteTableStream/Main.lean (BinaryTable|BinaryExtensionTable)"
       return 2

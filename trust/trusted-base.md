@@ -64,7 +64,7 @@ ROM mutation violates instruction soundness.
 The virtual BinaryTable and BinaryExtensionTable are likewise observed through
 the pinned compiler's `onAirEnd` hook, before virtual lowering discards them.
 `tools/virtual-tables/check-byte-tables.py` compares every row, via per-opcode
-SHA-256 digests, with a compiled Lean stream evaluating the actual maintained
+SHA-256 digests, with a Lean-interpreted stream evaluating the actual maintained
 `rowOfIndex` definitions. This is an executable extraction-fidelity gate, not
 a kernel proof of table equality; its compiler/runtime and digest assumptions
 remain part of the extraction boundary. `nix run .#test` runs it. Mutation

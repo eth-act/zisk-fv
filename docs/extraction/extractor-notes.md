@@ -656,7 +656,7 @@ lay themselves out, and the hashed encoding is each table's `lookup_proves` tupl
 actually look up. The result is 19 + 9 blocks in about 4.8 KB total, with per-block
 localisation of any mismatch.
 
-**Coverage is still total.** `byte-table-stream` (`bin/ByteTableStream/Main.lean`) evaluates
+**Coverage is still total.** The Lean producer (`bin/ByteTableStream/Main.lean`) evaluates
 `rowOfIndex` for every index and streams the rows;
 `tools/virtual-tables/check-byte-tables.py` groups that stream into blocks by the same OP-run
 rule and compares boundaries and hashes. Every row is hashed on both sides; only the
@@ -674,7 +674,7 @@ nix step calls it twice.
 
 **Gate invocation and mutation evidence.** Run
 `python3 tools/virtual-tables/check-byte-tables.py --export-dir build/extraction/ByteTables`;
-the gate builds the Lean streamer itself, including from a missing binary.
+the gate builds current model modules and invokes the producer with `lake env lean --run`.
 Fixture 53 runs this same gate against both baseline and changed exports after
 the proof controls. Its `fidelity_gate` result requires a green baseline and an
 explicit table mismatch; it is not a proof rejection. The historical

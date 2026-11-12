@@ -11,8 +11,8 @@ This gate closes that gap without writing a third copy of the rules:
 
 * `tools/virtual-tables/export-byte-tables.cjs` observes the pinned compiler's
   fixed columns and records one SHA-256 per opcode block;
-* `byte-table-stream` evaluates the Lean definitions themselves and streams the
-  rows;
+* `lake env lean --run bin/ByteTableStream/Main.lean` evaluates the Lean
+  definitions themselves and streams the rows;
 * this script groups that stream into opcode blocks by the same rule the
   exporter uses -- consecutive runs of the OP column -- and compares block
   boundaries and hashes.
@@ -88,26 +88,18 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--export-dir", type=Path, required=True,
                         help="directory holding <Air>.json from export-byte-tables.cjs")
-    parser.add_argument("--stream-bin", type=Path, default=None,
-                        help="path to a prebuilt byte-table-stream; by default the "
-                             "streamer is built with lake, as `lake exe trust-gate` does")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
-    # `lake build` builds `defaultTargets` only, so the streamer is not
-    # present after a plain build. Build it here rather than requiring the
-    # caller to remember, matching how the semantic trust gate reaches
-    # `trust-gate`. Explicit and logged, never a silent rebuild.
-    if args.stream_bin is None:
-        args.stream_bin = ROOT / ".lake" / "build" / "bin" / "byte-table-stream"
-        if not args.quiet:
-            print("building byte-table-stream")
-        build = subprocess.run(["lake", "build", "byte-table-stream"], cwd=ROOT,
-                               stdout=subprocess.DEVNULL)
-        if build.returncode != 0:
-            raise SystemExit("lake build byte-table-stream failed")
-    if not args.stream_bin.exists():
-        raise SystemExit(f"missing {args.stream_bin}; run `lake build byte-table-stream`")
+    # Build current model oleans, not a native executable for Mathlib's entire
+    # import closure. The interpreter evaluates the same maintained rowOfIndex.
+    if not args.quiet:
+        print("building byte-table model modules")
+    build = subprocess.run(
+        ["lake", "build", *(f"ZiskFv.AirsClean.{air}" for air in TABLES)],
+        cwd=ROOT, stdout=subprocess.DEVNULL)
+    if build.returncode != 0:
+        raise SystemExit("lake build byte-table model modules failed")
 
     problems: list[str] = []
     for air in TABLES:
@@ -116,10 +108,12 @@ def main() -> None:
             raise SystemExit(f"missing export {path}")
         expected = json.loads(path.read_text())
         op_column = expected["columns"].index("OP")
-        proc = subprocess.Popen([str(args.stream_bin), air], stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            ["lake", "env", "lean", "--run", "bin/ByteTableStream/Main.lean", air],
+            cwd=ROOT, stdout=subprocess.PIPE)
         actual = blocks_from_stream(proc, op_column)
         if proc.wait() != 0:
-            raise SystemExit(f"{air}: byte-table-stream exited {proc.returncode}")
+            raise SystemExit(f"{air}: Lean byte-table producer exited {proc.returncode}")
         problems.extend(compare(air, expected, actual))
         if not args.quiet:
             print(f"{air}: {len(actual)} opcode blocks, {sum(b['rows'] for b in actual)} rows")
