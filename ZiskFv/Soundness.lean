@@ -5,8 +5,6 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
 import ZiskFv.AirsClean.ArithTableProjections
-import ZiskFv.AirsClean.ArithMul.ExtractedRow
-import ZiskFv.AirsClean.ArithMul.RangeWiring
 
 /-!
 # Root soundness

@@ -20,8 +20,11 @@ interactions, so doing so here would overstate composition.
 audited range packet, the existing c61 operation link, c62's direct generated
 recurrence, and c64's final-row link.  c52 is deliberately mixed: its bus-330
 range tuple uses the surrogate provider, while its bus-331 tuple is the
-existing local `ArithTable` lookup.  The generated ledger therefore reports
-Arith at 0 exposed-to-build and 0 exposed-to-root, while recording all 13
-range-linked constraints as tied-not-composed.  The tie count is intentional:
-it distinguishes kernel-checked extraction wiring from a future live consumer
-composition.
+existing local `ArithTable` lookup.  All 13 range-linked constraints are
+tied-not-composed: the kernel-checked extraction wiring is built from
+`ZiskFv.lean`, but no `Soundness.lean` proof consumes this packet and bus 330 has
+no live provider in `fullRv64imSoundEnsemble`.  Arith therefore retains its 65
+root-exposed constraints; this work does not claim root-exposure reduction or
+provider completion.  In particular, importing these modules into
+`Soundness.lean` without consuming their proofs would give only false textual
+root-reachability credit.
