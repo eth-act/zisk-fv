@@ -61,6 +61,17 @@ part of `nix run .#test`. This removes duplicated builder logic from the
 extraction boundary; it does not prove compiler correctness or claim that every
 ROM mutation violates instruction soundness.
 
+The virtual BinaryTable and BinaryExtensionTable are likewise observed through
+the pinned compiler's `onAirEnd` hook, before virtual lowering discards them.
+`tools/virtual-tables/check-byte-tables.py` compares every row, via per-opcode
+SHA-256 digests, with a compiled Lean stream evaluating the actual maintained
+`rowOfIndex` definitions. This is an executable extraction-fidelity gate, not
+a kernel proof of table equality; its compiler/runtime and digest assumptions
+remain part of the extraction boundary. `nix run .#test` runs it. Mutation
+fixture 53 must pass the proof build and fail this actual gate after a green
+baseline; the runner records that as `fidelity_gate`, distinct from both
+`proof` detection and a `fidelity` miss.
+
 The extraction-fidelity checks also compile every generated Lean module and
 freeze the complete structural inventory under `tools/extraction-coverage/`.
 `ValidatedLink` contains kernel proofs tying its actual operands and shape to

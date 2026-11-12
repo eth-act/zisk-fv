@@ -70,7 +70,7 @@ def load_corpus() -> tuple[dict[str, Any], list[Round]]:
         raise CorpusError(
             f"corpus must contain rounds 1..{len(rounds)} once; got {numbers}")
     valid_outcomes = {"invalid", "equivalent", "compiler", "extractor",
-                      "fidelity", "proof", "infrastructure"}
+                      "fidelity", "fidelity_gate", "proof", "infrastructure"}
     for item in rounds:
         if item.expected_outcome not in valid_outcomes:
             raise CorpusError(f"round {item.number}: invalid expected outcome")
@@ -109,7 +109,8 @@ def expected_detection_layer(item: Round) -> str:
 
 def meets_expected(value: dict[str, Any]) -> bool:
     if value.get("proof_skipped"):
-        return value.get("outcome") == "fidelity"
+        return (value.get("outcome") == "fidelity"
+                and value.get("expected_detection_layer") != "fidelity_gate")
     expected = value.get("expected_detection_layer")
     if expected == "equivalent":
         return (value.get("outcome") == "equivalent"
@@ -317,6 +318,20 @@ def classify(item: Round, semantic: dict[str, Any] | None, changed: list[str],
                 "fixture's expected proof boundary")
         return "proof", "green baseline and isolated mutant artifacts made the proof build fail"
     return "infrastructure", "mutant proof ended with an infrastructure exit"
+
+
+def classify_fidelity_gate(baseline: CommandResult, mutant: CommandResult) -> tuple[str, str]:
+    """A proof pass is a miss unless the actual fidelity gate rejects the mutant."""
+    if baseline.timed_out or baseline.exit_code != 0:
+        return "infrastructure", "baseline byte-table fidelity gate was not green"
+    if mutant.timed_out or mutant.exit_code not in (0, 1):
+        return "infrastructure", "mutant byte-table fidelity gate did not complete normally"
+    if mutant.exit_code == 0:
+        return "fidelity", "mutated artifacts passed both proof and byte-table fidelity gate"
+    diagnostic = Path(mutant.log).read_text(encoding="utf-8", errors="replace")
+    if "byte-table mismatch:" not in diagnostic:
+        return "infrastructure", "byte-table gate failed without an explicit table mismatch"
+    return "fidelity_gate", "proof passed; actual byte-table fidelity gate rejected mutated rows"
 
 
 def classify_equivalent_control(mutant_proof: CommandResult, outcome: str,
@@ -531,6 +546,9 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, destination / "build" / "extraction" / name)
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        shutil.copytree(byte_tables, destination / "build" / "extraction" / "ByteTables")
     # Lake needs the generated library declaration, which belongs to populate
     # rather than the extraction derivation.
     src_lakefile = original_build / "extraction" / "lakefile.toml"
@@ -571,6 +589,9 @@ def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, target_extraction / name)
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        shutil.copytree(byte_tables, target_extraction / "ByteTables")
     original = repo / "build" / "extraction"
     for name in ("lakefile.toml", "Extraction.lean"):
         scaffold = original / name
@@ -831,6 +852,19 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             result.update(outcome="infrastructure", reason="baseline proof control was not green",
                           complete=False)
             return result
+        baseline_fidelity = None
+        gate_argv = nix("develop", "--no-write-lock-file", str(args.repo.resolve()),
+                        "-c", "python3", "tools/virtual-tables/check-byte-tables.py",
+                        "--export-dir", "build/extraction/ByteTables")
+        if item.air in {"BinaryTable", "BinaryExtensionTable"}:
+            baseline_fidelity = run_command(
+                gate_argv, proof_tree, args.check_timeout, logs / "baseline-byte-tables.log")
+            result["commands"].append(dataclasses.asdict(baseline_fidelity))
+            if baseline_fidelity.timed_out or baseline_fidelity.exit_code != 0:
+                result.update(outcome="infrastructure",
+                              reason="baseline byte-table fidelity gate was not green",
+                              complete=False)
+                return result
         install_proof_artifacts(args.repo, proof_tree, mutant_pilout, mutant_extract)
         require_frozen_repository(args.repo, frozen_repository)
         mutant_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
@@ -839,6 +873,16 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                                dataclasses.asdict(mutant_proof)]
         outcome, reason = classify(item, semantic, changed, roundtrip,
                                    baseline_proof, mutant_proof, compile_result)
+        if outcome == "fidelity" and baseline_fidelity is not None:
+            mutant_fidelity = run_command(
+                gate_argv, proof_tree, args.check_timeout, logs / "mutant-byte-tables.log")
+            result["commands"].append(dataclasses.asdict(mutant_fidelity))
+            outcome, reason = classify_fidelity_gate(baseline_fidelity, mutant_fidelity)
+            result["fidelity_gate"] = {
+                "baseline_green": baseline_fidelity.exit_code == 0,
+                "mutant_rejected": outcome == "fidelity_gate",
+                "proof_passed": mutant_proof.exit_code == 0,
+            }
         diagnostic = first_diagnostic(Path(mutant_proof.log)) if mutant_proof.exit_code else None
         result["proof_diagnostic"] = diagnostic
         if semantic["equal"] and item.historical_class == "SYNTACTIC":
@@ -1020,7 +1064,7 @@ def main(argv: list[str]) -> int:
             "setup_failure": setup_failure,
             "counts": {name: sum(r.get("outcome") == name for r in results)
                        for name in ("invalid", "equivalent", "compiler", "extractor",
-                                    "fidelity", "proof", "infrastructure")},
+                                    "fidelity", "fidelity_gate", "proof", "infrastructure")},
             "complete": all(r.get("complete") for r in results),
             "infrastructure_rounds": [r.get("round") for r in results
                                       if r.get("outcome") == "infrastructure"],

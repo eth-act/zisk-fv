@@ -65,6 +65,14 @@ gate, and builds both an isolated unmutated proof tree and an isolated mutant
 proof tree. The baseline must pass before a mutant failure can be called a proof
 detection. Nix input revisions remain those in `flake.lock`.
 
+Round 53 is a new byte-table negative control, outside the historical 52-round
+sweep. Both proof builds must pass, then the runner invokes the actual
+`check-byte-tables.py` gate on baseline and mutant artifacts. Only a green
+baseline and an explicit byte-table mismatch produce `fidelity_gate` (CAUGHT
+by the executable fidelity gate, **not** by a Lean proof). A green proof alone
+remains `fidelity`, a miss; gate timeouts, missing artifacts, and unrelated
+failures are infrastructure failures.
+
 For PIL mutations the runner uses `.#compile-mutation`, which installs the three
 actual fixed-column payloads produced by the pinned ZisK generators and invokes
 the pinned compiler directly on the private source copy. Its unmutated output
@@ -162,7 +170,8 @@ the workspace after a complete run.
 | `equivalent` | edit is semantically equivalent to the baseline |
 | `compiler` | the pinned compiler rejected the edited source |
 | `extractor` | a canonical circuit change was lost or the round-trip gate failed |
-| `fidelity` | changed generated artifacts still passed the proof build |
+| `fidelity` | changed artifacts passed the proof build without a rejecting fidelity gate (miss) |
+| `fidelity_gate` | green baseline and actual byte-table gate rejected the mutant (not a proof detection) |
 | `proof` | a green baseline plus the isolated mutant made the proof build fail |
 | `infrastructure` | missing input, precondition drift, timeout, baseline failure, or abnormal tool exit |
 

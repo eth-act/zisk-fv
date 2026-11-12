@@ -33,7 +33,7 @@ def test_corpus() -> None:
     check(sum(r.expected_outcome == "proof" for r in historical) == 24, "caught count")
     check(sum(r.expected_outcome == "fidelity" for r in historical) == 11, "missed count")
     check(len(rounds) == 53, "round count")
-    check(runner.expected_detection_layer(runner.round_by_number(53)) == "fidelity",
+    check(runner.expected_detection_layer(runner.round_by_number(53)) == "fidelity_gate",
           "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
           "round 27 is caught after Main c41 is tied")
@@ -116,6 +116,26 @@ def test_classification() -> None:
                           command(None, True))[0] == "infrastructure", "timeout classification")
     check(runner.classify(valid, different, ["Main.lean"], command(), command(1),
                           command(1))[0] == "infrastructure", "baseline control classification")
+    with tempfile.TemporaryDirectory() as tmp:
+        log = Path(tmp) / "gate.log"
+        rejected = command(1)
+        rejected.log = str(log)
+        log.write_text("byte-table mismatch: BinaryTable: block op=10 differs\n")
+        check(runner.classify_fidelity_gate(command(), rejected)[0] == "fidelity_gate",
+              "actual byte-table rejection not detected")
+        check(runner.classify_fidelity_gate(command(), command())[0] == "fidelity",
+              "successful proof/gate mislabeled as a caught mutation")
+        for baseline, mutant in ((command(1), rejected),
+                                 (command(), command(None, True)),
+                                 (command(), command(2))):
+            check(runner.classify_fidelity_gate(baseline, mutant)[0] == "infrastructure",
+                  "failed baseline or timeout counted as fidelity detection")
+        log.write_text("missing export\n")
+        check(runner.classify_fidelity_gate(command(), rejected)[0] == "infrastructure",
+              "unrelated gate error counted as fidelity detection")
+    check(not runner.meets_expected({"proof_skipped": True, "outcome": "fidelity",
+                                     "expected_detection_layer": "fidelity_gate"}),
+          "skipped proof/gate claimed the byte-table detection requirement")
 
     outcome, _, control = runner.classify_equivalent_control(
         command(), "fidelity", "mutant proof passed")
@@ -238,6 +258,8 @@ def test_readonly_artifact_restore() -> None:
         (proof / "build/zisk.pilout").write_text("old")
         (extraction / "Extraction/nested").mkdir(parents=True)
         (extraction / "Extraction/nested/New.lean").write_text("new")
+        (extraction / "ByteTables").mkdir()
+        (extraction / "ByteTables/BinaryTable.json").write_text("digest")
         pilout = root / "new.pilout"
         pilout.write_text("new")
         for tree in (proof / "build/extraction", extraction, extraction / "Extraction",
@@ -250,6 +272,8 @@ def test_readonly_artifact_restore() -> None:
               "read-only extraction was not restored")
         check((proof / "build/zisk.pilout").read_text() == "new",
               "read-only pilout was not replaced")
+        check((proof / "build/extraction/ByteTables/BinaryTable.json").read_text() == "digest",
+              "byte-table fidelity input was not installed")
 
 
 def main() -> int:
