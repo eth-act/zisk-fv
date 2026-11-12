@@ -90,7 +90,8 @@ to `Air.extraction.constraint_N_every_row`. These equalities compile in the
 normal Lake graph, including the root's imports. Listed indices without their
 correspondence theorem earn no credit.
 
-`unclaimedConstraints` records the ExtF-mixing constraints. The channel push is
+`unclaimedConstraints` is the complement of the mapped indices, retaining both
+ExtF-mixing and excluded cross-row constraints. The channel push is
 reconstructed from a `gsum_debug_data` hint with no constraint index, so
 `busPushConstraints` is empty and hints earn no manifest credit. In BinaryAdd,
 only constraints 0–3 are mapped; 4–8 remain unclaimed by this manifest.

@@ -861,8 +861,14 @@ fn render_manifest_file(
     air_name: &str,
     fields: &[RowField],
     assertions: &[(usize, String, Option<String>)],
-    skipped_extf: &[usize],
+    constraint_count: usize,
 ) -> String {
+    // Assertions are emitted in source-index order. Take the complement of
+    // their proved indices so every exclusion, including rotated constraints,
+    // remains explicit without depending on a particular skip reason.
+    let unclaimed = (0..constraint_count)
+        .filter(|index| assertions.binary_search_by_key(index, |(i, _, _)| *i).is_err())
+        .collect::<Vec<_>>();
     let mut out = String::new();
     out.push_str(&format!("import Extraction.{}\n", air_name));
     out.push_str(&format!("import Extraction.Components.{}.Constraints\n\n", air_name));
@@ -880,11 +886,11 @@ fn render_manifest_file(
          only proof-backed entries imported by the consumed model.\n\n",
     );
     out.push_str(&format!(
-        "The remaining {} constraint(s) mix in ExtF operands. No correspondence\n\
-         with component assertions or channel interactions is established here.\n\
+        "The remaining {} constraint(s) have no component correspondence proof\n\
+         here. This includes ExtF-mixing and unsupported cross-row constraints.\n\
          The push comes from a `gsum_debug_data` hint with no constraint index,\n\
-         so this manifest does not claim those constraints.\n",
-        skipped_extf.len()
+         so it confers no credit for these unclaimed constraints.\n",
+        unclaimed.len()
     ));
     out.push_str("-/\n\n");
     out.push_str(&format!("namespace Extraction.Components.{}.Manifest\n\n", air_name));
@@ -898,7 +904,7 @@ fn render_manifest_file(
     // MemAlign's component-owned preL1 selector is a fixed source cell,
     // not a stage-1 witness column. Its synthetic column key is u32::MAX.
     let source_field = |field: &RowField| {
-        if field.col_idx == u32::MAX && field.lean_name == "preL1" {
+        if field.col_idx == PREPROCESSED_L1_FIELD_KEY && field.lean_name == "preL1" {
             format!("{} := Expression.const (Extraction.Circuit.preprocessed c 0 r 0)", field.lean_name)
         } else {
             format!("{} := Expression.const (Extraction.Circuit.main c 1 {} r 0)", field.lean_name, field.col_idx)
@@ -957,10 +963,10 @@ fn render_manifest_file(
     out.push_str("    push is hint-derived and names no constraint index. -/\n");
     out.push_str("def busPushConstraints : List Nat :=\n  []\n\n");
 
-    out.push_str("/-- ExtF-mixing constraint indices this component does not claim. -/\n");
+    out.push_str("/-- All pilout constraint indices with no component correspondence proof. -/\n");
     out.push_str("def unclaimedConstraints : List Nat :=\n  [");
     out.push_str(
-        &skipped_extf
+        &unclaimed
             .iter()
             .map(|idx| idx.to_string())
             .collect::<Vec<_>>()
@@ -978,7 +984,7 @@ fn render_constraints_file(
     fields: &[RowField],
     bus_id: u64,
     channel: ChannelKind,
-) -> Result<(String, Vec<(usize, String, Option<String>)>, Vec<usize>)> {
+) -> Result<(String, Vec<(usize, String, Option<String>)>)> {
     let air = hit.air;
     let air_name = air
         .name
@@ -997,7 +1003,6 @@ fn render_constraints_file(
     // operations below do not themselves prove correspondence to those indices.
     let mut assertions: Vec<(usize, String, Option<String>)> = Vec::new();
     let mut cross_row_constraints: Vec<(usize, Option<String>)> = Vec::new();
-    let mut skipped_extf: Vec<usize> = Vec::new();
     for (idx, c) in air.constraints.iter().enumerate() {
         let kind = c
             .constraint
@@ -1016,7 +1021,6 @@ fn render_constraints_file(
             .idx as usize;
         if expr_uses_extf(pilout, air, expr_idx)? {
             // No component assertion or manifest credit for this constraint.
-            skipped_extf.push(idx);
             continue;
         }
         if air_name == "MemAlign" && expr_uses_rotated_witness(air, expr_idx)? {
@@ -1328,7 +1332,7 @@ fn render_constraints_file(
     out.push('\n');
 
     out.push_str(&format!("end ZiskFv.AirsClean.{}\n", air_name));
-    Ok((out, assertions, skipped_extf))
+    Ok((out, assertions))
 }
 
 /// Extract the `<file>:<line>` prefix of a pilout `debug_line`. The pilout
@@ -1376,9 +1380,9 @@ pub fn run(
     }
     let omitted = omitted_stage2_columns(pilout, &hit);
     let row = render_row_file(&air_name, &fields, &omitted);
-    let (constraints, assertions, skipped_extf) =
+    let (constraints, assertions) =
         render_constraints_file(pilout, &hit, &fields, bus_id, channel)?;
-    let manifest = render_manifest_file(&air_name, &fields, &assertions, &skipped_extf);
+    let manifest = render_manifest_file(&air_name, &fields, &assertions, hit.air.constraints.len());
     Ok((row, constraints, manifest))
 }
 
@@ -1387,19 +1391,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn manifest_selects_actual_assertions_and_leaves_extf_unclaimed() {
+    fn manifest_selects_actual_assertions_and_records_every_exclusion() {
         let fields = vec![RowField {
             col_idx: 8,
             lean_name: "cout_0".to_string(),
             pilout_name: "cout[0]".to_string(),
         }];
         let assertions = vec![(2, "row.cout_0".to_string(), None)];
-        let source = render_manifest_file("BinaryAdd", &fields, &assertions, &[4, 5, 6, 7, 8]);
+        let source = render_manifest_file("BinaryAdd", &fields, &assertions, 9);
         assert!(source.contains("Expression.const (Extraction.Circuit.main c 1 8 r 0)"));
         assert!(source.contains("theorem constraint_2_correspondence"));
         assert!(source.contains(".constraints[0]!) = 0 ↔"));
         assert!(source.contains("BinaryAdd.extraction.constraint_2_every_row c r := by"));
-        assert!(source.contains("def unclaimedConstraints : List Nat :=\n  [4, 5, 6, 7, 8]"));
+        assert!(source.contains("def unclaimedConstraints : List Nat :=\n  [0, 1, 3, 4, 5, 6, 7, 8]"));
         assert!(source.contains("def busPushConstraints : List Nat :=\n  []"));
     }
 
@@ -1410,7 +1414,7 @@ mod tests {
             lean_name: "preL1".to_string(),
             pilout_name: "L1".to_string(),
         }];
-        let source = render_manifest_file("MemAlign", &fields, &[], &[]);
+        let source = render_manifest_file("MemAlign", &fields, &[], 0);
         assert!(source.contains("preL1 := Expression.const (Extraction.Circuit.preprocessed c 0 r 0)"));
         assert!(!source.contains("Extraction.Circuit.main c 1 4294967295"));
     }
