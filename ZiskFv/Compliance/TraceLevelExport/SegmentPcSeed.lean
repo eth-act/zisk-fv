@@ -334,11 +334,11 @@ def inputsAgree_of_pcBridge {numInstructions : ℕ}
   | .sraw _, core =>
       { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_input_pc }
   | .slliw _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_input_pc }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .srliw _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_input_pc }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .sraiw _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_input_pc }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .mul _, core =>
       { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.promises.input_pc_eq }
   | .mulh _, core =>
@@ -455,9 +455,9 @@ theorem pcNamed_of_inputsAgree {numInstructions : ℕ}
   | .sllw _, ia => ⟨_, ia.h_input_pc⟩
   | .srlw _, ia => ⟨_, ia.h_input_pc⟩
   | .sraw _, ia => ⟨_, ia.h_input_pc⟩
-  | .slliw _, ia => ⟨_, ia.h_input_pc⟩
-  | .srliw _, ia => ⟨_, ia.h_input_pc⟩
-  | .sraiw _, ia => ⟨_, ia.h_input_pc⟩
+  | .slliw _, ia => ⟨_, ia.toInputsCore_slliw.input_pc_read⟩
+  | .srliw _, ia => ⟨_, ia.toInputsCore_srliw.input_pc_read⟩
+  | .sraiw _, ia => ⟨_, ia.toInputsCore_sraiw.input_pc_read⟩
   | .mul _, ia => ⟨_, ia.promises.input_pc_eq⟩
   | .mulh _, ia => ⟨_, ia.promises.input_pc_eq⟩
   | .mulhsu _, ia => ⟨_, ia.promises.input_pc_eq⟩
@@ -530,9 +530,15 @@ theorem pcAgreement_of_inputsAgree {numInstructions : ℕ}
   | .sllw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
   | .srlw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
   | .sraw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
-  | .slliw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
-  | .srliw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
-  | .sraiw _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
+  | .slliw _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .srliw _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .sraiw _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
   | .mul _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
   | .mulh _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge
   | .mulhsu _, ia => by simpa only [ia.promises.input_pc_eq, Option.elim] using ia.h_pc_bridge

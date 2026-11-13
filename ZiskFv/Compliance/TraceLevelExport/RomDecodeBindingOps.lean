@@ -2485,7 +2485,7 @@ def Decode_slliw_of_program
     (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
     (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
     (bShiftFacts : BShiftProgramFacts trace i bits
-      (BitVec.setWidth 6 c.slliw_input.shamt))
+      (BitVec.setWidth 6 c.shamt))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2541,9 +2541,9 @@ def Decode_slliw_of_program
       h_a_imm1 := (aRegisterColumns_of_programFacts trace i h_lt bits
         (regidx_to_fin c.r1) aFacts).2.2.2
       h_b_src_imm := (bShiftColumns_of_programFacts trace i h_lt bits
-        (BitVec.setWidth 6 c.slliw_input.shamt) bShiftFacts).1
+        (BitVec.setWidth 6 c.shamt) bShiftFacts).1
       h_b_offset_imm0 := (bShiftColumns_of_programFacts trace i h_lt bits
-        (BitVec.setWidth 6 c.slliw_input.shamt) bShiftFacts).2 }
+        (BitVec.setWidth 6 c.shamt) bShiftFacts).2 }
 
 /-- `Decode_srliw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2563,7 +2563,7 @@ def Decode_srliw_of_program
     (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
     (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
     (bShiftFacts : BShiftProgramFacts trace i bits
-      (BitVec.setWidth 6 c.srliw_input.shamt))
+      (BitVec.setWidth 6 c.shamt))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2619,9 +2619,9 @@ def Decode_srliw_of_program
       h_a_imm1 := (aRegisterColumns_of_programFacts trace i h_lt bits
         (regidx_to_fin c.r1) aFacts).2.2.2
       h_b_src_imm := (bShiftColumns_of_programFacts trace i h_lt bits
-        (BitVec.setWidth 6 c.srliw_input.shamt) bShiftFacts).1
+        (BitVec.setWidth 6 c.shamt) bShiftFacts).1
       h_b_offset_imm0 := (bShiftColumns_of_programFacts trace i h_lt bits
-        (BitVec.setWidth 6 c.srliw_input.shamt) bShiftFacts).2 }
+        (BitVec.setWidth 6 c.shamt) bShiftFacts).2 }
 
 /-- `Decode_sraiw` rebuilt from the committed program via the ROM lookup
     (issue #159 block 1).  ROM-message-backed decode columns are DERIVED
@@ -2641,7 +2641,7 @@ def Decode_sraiw_of_program
     (h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0))
     (aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1))
     (bShiftFacts : BShiftProgramFacts trace i bits
-      (BitVec.setWidth 6 c.sraiw_input.shamt))
+      (BitVec.setWidth 6 c.shamt))
     (h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -2697,9 +2697,9 @@ def Decode_sraiw_of_program
       h_a_imm1 := (aRegisterColumns_of_programFacts trace i h_lt bits
         (regidx_to_fin c.r1) aFacts).2.2.2
       h_b_src_imm := (bShiftColumns_of_programFacts trace i h_lt bits
-        (BitVec.setWidth 6 c.sraiw_input.shamt) bShiftFacts).1
+        (BitVec.setWidth 6 c.shamt) bShiftFacts).1
       h_b_offset_imm0 := (bShiftColumns_of_programFacts trace i h_lt bits
-        (BitVec.setWidth 6 c.sraiw_input.shamt) bShiftFacts).2 }
+        (BitVec.setWidth 6 c.shamt) bShiftFacts).2 }
 
 
 /-! ## Family: M-ext -/
