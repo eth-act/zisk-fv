@@ -1,3 +1,4 @@
+import ZiskFv.AirsClean.GsumBoundary.Model
 import Extraction.Main
 import Extraction.Binary
 import Extraction.BinaryAdd
@@ -28,22 +29,6 @@ namespace ZiskFv.AirsClean.GsumBoundary
 open Extraction.LookupWiring
 
 set_option maxRecDepth 4000
-
-/-- The final-row invariant, including the source's selector guard. -/
-def Closed {F : Type} [Field F] (selector contribution running direct : F) : Prop :=
-  selector * (contribution - running - direct) = 0
-
-/-- A closure has a witness for every running sum and direct contribution;
-this is only constructibility of the local boundary, not logUp soundness. -/
-theorem closed_constructible {F : Type} [Field F] (selector running direct : F) :
-    Closed selector (running + direct) running direct := by
-  simp [Closed]
-
-/-- With the actual final-row selector enabled, the contribution is exactly
-running sum plus direct terms, not merely an unconstrained exposed value. -/
-theorem closed_at_final_row {F : Type} [Field F] (contribution running direct : F) :
-    Closed 1 contribution running direct ↔ contribution = running + direct := by
-  simp only [Closed, one_mul, sub_sub, sub_eq_zero]
 
 section Source
 
@@ -132,31 +117,6 @@ theorem memAlignWriteByte_finalizer_source_iff :
 
 end Source
 
-/-- Independent typed source cells. AIR values and AIR-group values are
-different functions, so group result 0 can never alias padding-size value 0.
-Offsets are signed source offsets relative to the current physical row. -/
-structure Source (F : Type) where
-  witness : Nat → Nat → Int → F
-  fixed : Nat → Int → F
-  airValue : Nat → F
-  airGroupValue : Nat → F
-
-/-- Closed interpretation for finalizer syntax only. Unsupported constructors
-and literals return `none`, never an invented field value. -/
-def Source.eval {F : Type} [Field F] (source : Source F) : Expr → Option F
-  | .constant "0" => some 0
-  | .witness stage column offset => some (source.witness stage column offset)
-  | .fixed column offset => some (source.fixed column offset)
-  | .airValue index => some (source.airValue index)
-  | .airGroupValue index => some (source.airGroupValue index)
-  | .add lhs rhs => do return (← source.eval lhs) + (← source.eval rhs)
-  | .sub lhs rhs => do return (← source.eval lhs) - (← source.eval rhs)
-  | .mul lhs rhs => do return (← source.eval lhs) * (← source.eval rhs)
-  | _ => none
-
-def Source.Holds {F : Type} [Field F] (source : Source F) (constraint : Expr) : Prop :=
-  source.eval constraint = some 0
-
 def mainTypedDirectSum {F : Type} [Field F] (source : Source F) : F :=
   ((List.range 95).map (fun index => source.airValue (102 + index))).foldl
     (· + ·) (source.airValue 101)
@@ -233,11 +193,6 @@ theorem memAlignWriteByte_finalizer_typed_source_iff :
     (source.airGroupValue 0 - source.witness 2 0 0 -
       ((source.airValue 1 + source.airValue 2) + source.airValue 3))) = some 0 ↔ _
   exact Option.some.injEq
-
-theorem typedSource_rejects_unsupported :
-    source.eval (.challenge 2 0) = none ∧
-    source.eval (.opaque "unsupported" "payload") = none := by
-  exact ⟨rfl, rfl⟩
 
 end TypedSource
 
