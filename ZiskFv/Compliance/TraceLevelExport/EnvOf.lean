@@ -46,6 +46,36 @@ seal mulwArow mulhuArow divArow divuArow divuwArow remuArow remuwArow
 
 set_option maxHeartbeats 8000000
 
+/-- The nine bus-shape facts in a signed-M promise are determined by the
+constructed bus, not by the caller. Only the four Sail input equalities remain
+arguments here; the public input records are left unchanged pending #360. -/
+private noncomputable def busSubPromises
+    (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions)
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {r1_val r2_val pc : BitVec 64} {dest : Fin 32} {r1 r2 rd : regidx}
+    (h_r1 : read_xreg (regidx_to_fin r1) state = .ok r1_val state)
+    (h_r2 : read_xreg (regidx_to_fin r2) state = .ok r2_val state)
+    (h_rd : dest = regidx_to_fin rd)
+    (h_pc : state.regs.get? Register.PC = some pc) :
+    RTypePromisesNoNextPC state r1_val r2_val dest pc r1 r2 rd
+      (busSub trace i (Pilot.execRowOf trace i)).exec_row
+      (busSub trace i (Pilot.execRowOf trace i)).e0
+      (busSub trace i (Pilot.execRowOf trace i)).e1
+      (busSub trace i (Pilot.execRowOf trace i)).e2 where
+  input_r1_eq := h_r1
+  input_r2_eq := h_r2
+  input_rd_eq := h_rd
+  input_pc_eq := h_pc
+  exec_len := rfl
+  e0_mult := rfl
+  e1_mult := rfl
+  m0_mult := rfl
+  m0_as := rfl
+  m1_mult := rfl
+  m1_as := rfl
+  m2_mult := rfl
+  m2_as := rfl
+
 theorem busSub_rd_idx_of_decode
     {numInstructions : Nat}
     {trace : AcceptedZiskTrace numInstructions}
@@ -104,10 +134,11 @@ noncomputable def mulEnvOf
   OpEnvelope.mul d.toInputs.mul_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd d.toClaim.srs1 d.toClaim.srs2 bus d.toInputs.v d.toInputs.r_a
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     d.toInputs.h_match_primary
-    -- #100: DERIVE the bundled `nextPC_matches` from the in-circuit transition
-    -- certificate (kernel-only `sequential_nextPC_discharged`) and re-attach it to
-    -- the 14 caller-supplied value/data promises. MUL's Sail nextPC = PC + 4#64.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mul_pure d.toInputs.mul_input).nextPC
+    -- Derive bus shape from the constructed bus and nextPC from the accepted
+    -- transition; only the four Sail input equalities are read from promises.
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_MULH_mul_pure d.toInputs.mul_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mul_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
@@ -167,7 +198,9 @@ noncomputable def mulhEnvOf
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (MULH Sail nextPC = PC + 4#64); see `mulEnvOf`.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mulh_pure d.toInputs.mulh_input).nextPC
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_MULH_mulh_pure d.toInputs.mulh_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulh_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
@@ -189,7 +222,9 @@ noncomputable def mulhsuEnvOf
     ⟨d.toDecode.h_main_active, d.toDecode.h_main_op⟩
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (MULHSU Sail nextPC = PC + 4#64); see `mulEnvOf`.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_MULH_mulhsu_pure d.toInputs.mulhsu_input).nextPC
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_MULH_mulhsu_pure d.toInputs.mulhsu_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.mulhsu_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
@@ -383,7 +418,9 @@ private theorem exists_divEnvOf_of_arow
     facts.matchPrimary
     -- #100: DERIVE the bundled `nextPC_matches` (DIV Sail nextPC = PC + 4#64); see `mulEnvOf`.
     -- The DivRemForge value-defect gate is untouched.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_div_pure d.toInputs.div_input).nextPC
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_DIVREM_div_pure d.toInputs.div_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.div_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
@@ -476,7 +513,9 @@ noncomputable def remEnvOf
   OpEnvelope.rem d.toInputs.rem_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (REM Sail nextPC = PC + 4#64); see `mulEnvOf`.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_rem_pure d.toInputs.rem_input).nextPC
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_DIVREM_rem_pure d.toInputs.rem_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.rem_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
@@ -499,7 +538,9 @@ noncomputable def divwEnvOf
   OpEnvelope.divw d.toInputs.divw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_primary
     -- #100: DERIVE the bundled `nextPC_matches` (DIVW Sail nextPC = PC + 4#64); see `mulEnvOf`.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_divw_pure d.toInputs.divw_input).nextPC
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_DIVREM_divw_pure d.toInputs.divw_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.divw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
@@ -523,7 +564,9 @@ noncomputable def remwEnvOf
   OpEnvelope.remw d.toInputs.remw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd bus d.toInputs.v d.toInputs.r_a d.toDecode.pins
     d.toInputs.h_match_secondary
     -- #100: DERIVE the bundled `nextPC_matches` (REMW Sail nextPC = PC + 4#64); see `mulEnvOf`.
-    (d.toInputs.promises.withNextPC (PureSpec.execute_DIVREM_remw_pure d.toInputs.remw_input).nextPC
+    ((busSubPromises trace i d.toInputs.promises.input_r1_eq
+      d.toInputs.promises.input_r2_eq d.toInputs.promises.input_rd_eq
+      d.toInputs.promises.input_pc_eq).withNextPC (PureSpec.execute_DIVREM_remw_pure d.toInputs.remw_input).nextPC
       (by
         exact Pilot.sequential_nextPC_discharged trace i d.toInputs.remw_input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp_offset1 d.toDecode.h_jmp_offset2
