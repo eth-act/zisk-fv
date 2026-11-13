@@ -10,6 +10,7 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 from unittest import mock
+from contextlib import ExitStack
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -38,7 +39,7 @@ def test_corpus() -> None:
           "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
           "round 27 is caught after Main c41 is tied")
-    check(runner.expected_detection_layer(runner.round_by_number(50)) == "proof",
+    check(runner.expected_detection_layer(runner.round_by_number(50)) == "fidelity_gate",
           "production ROM target")
 
 
@@ -134,6 +135,15 @@ def test_classification() -> None:
         log.write_text("missing export\n")
         check(runner.classify_fidelity_gate(command(), rejected)[0] == "infrastructure",
               "unrelated gate error counted as fidelity detection")
+        check(runner.classify_fidelity_gate(
+            command(), rejected, "MemAlignRom mismatch:")[0] == "infrastructure",
+              "unrelated ROM gate error counted as fidelity detection")
+        log.write_text("MemAlignRom mismatch: physical row 3 differs\n")
+        check(runner.classify_fidelity_gate(
+            command(), rejected, "MemAlignRom mismatch:")[0] == "fidelity_gate",
+              "actual ROM mismatch not detected")
+        check(runner.classify_fidelity_gate(command(), rejected)[0] == "infrastructure",
+              "wrong named gate counted as byte-table detection")
     check(not runner.meets_expected({"proof_skipped": True, "outcome": "fidelity",
                                      "expected_detection_layer": "fidelity_gate"}),
           "skipped proof/gate claimed the byte-table detection requirement")
@@ -323,7 +333,7 @@ def test_byte_table_gate_order() -> None:
 
         result = {"commands": []}
         with mock.patch.object(runner, "run_command", side_effect=gate):
-            outcome, _ = runner.byte_table_controls(
+            outcome, _ = runner.table_fidelity_controls(
                 root, root / "clean", root / "mutant", 900, root, result)
         check(calls == [str(root / "clean/ByteTables"), str(root / "mutant/ByteTables")],
               "mutant fidelity gate ran before its clean control")
@@ -332,17 +342,36 @@ def test_byte_table_gate_order() -> None:
               "actual fidelity detection misrepresented a proof result")
         with mock.patch.object(runner, "run_command", return_value=command(1)):
             result = {"commands": []}
-            outcome, _ = runner.byte_table_controls(
+            outcome, _ = runner.table_fidelity_controls(
                 root, root / "clean", root / "mutant", 900, root, result)
         check(outcome == "infrastructure" and len(result["commands"]) == 1,
               "failed clean gate admitted a mutant detection")
+        calls.clear()
+        def rom_gate(argv, cwd, timeout, log):
+            calls.append(argv)
+            log.write_text("MemAlignRom mismatch: physical row 3 differs\n"
+                           if len(calls) == 2 else "MemAlignRom matches\n")
+            value = command(1 if len(calls) == 2 else 0)
+            value.log = str(log)
+            return value
+        result = {"commands": []}
+        with mock.patch.object(runner, "run_command", side_effect=rom_gate):
+            outcome, _ = runner.table_fidelity_controls(
+                root, root / "clean", root / "mutant", 900, root, result, "MemAlignRom")
+        check([argv[-1] for argv in calls] ==
+              [str(root / "clean/MemAlignRom.tsv"), str(root / "mutant/MemAlignRom.tsv")],
+              "ROM controls did not use clean then mutant production rows")
+        check(all(argv[-2] == "--export-tsv" for argv in calls)
+              and outcome == "fidelity_gate" and result["proof_status"] == "not_run"
+              and result["fidelity_gate"]["name"] == "MemAlignRom",
+              "ROM fidelity detection did not run the named gate")
     # Freeze the early gate's ordering relative to the existing full-proof path.
     tree = ast.parse((HERE / "runner.py").read_text())
     full = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
                 and node.name == "full")
     gate_line = next(node.lineno for node in ast.walk(full)
                      if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
-                     and node.func.id == "byte_table_controls")
+                     and node.func.id == "table_fidelity_controls")
     proof_line = next(node.lineno for node in ast.walk(full)
                       if isinstance(node, ast.Assign)
                       and any(isinstance(target, ast.Name) and target.id == "baseline_proof"
@@ -381,13 +410,39 @@ def test_arith_table_diagnostics() -> None:
                   f"round {number}: baseline timeout counted as a kill")
 
 
+def test_relative_repo_evidence_archive() -> None:
+    corpus = runner.load_corpus()
+    for repo_path in (".", str(runner.REPO)):
+        with tempfile.TemporaryDirectory(dir=runner.REPO) as tmp:
+            root = Path(tmp)
+            def completed(args):
+                check(args.repo == runner.REPO, "command boundary did not normalize --repo")
+                args._archive_dir.mkdir(parents=True)
+                return {"round": 50, "outcome": "fidelity_gate", "complete": True,
+                        "expected_detection_layer": "fidelity_gate", "proof_status": "not_run"}
+            with ExitStack() as patches:
+                patches.enter_context(mock.patch.object(runner, "HERE", root))
+                patches.enter_context(mock.patch.object(runner, "load_corpus", return_value=corpus))
+                patches.enter_context(mock.patch.object(runner, "full", side_effect=completed))
+                patches.enter_context(mock.patch.object(runner, "repository_identity", return_value={}))
+                patches.enter_context(mock.patch.object(
+                    runner.subprocess, "run", return_value=mock.Mock(stdout="a" * 40)))
+                status = runner.main([
+                    "suite", "--repo", repo_path, "--zisk-source", str(root),
+                    "--profile", "regression", "--round", "50",
+                    "--work-root", str(root / "work"), "--results-dir", str(root / "results"),
+                    "--commit-evidence", "aaaaaaaa"])
+            check(status == 0 and (root / "results/summary.json").is_file(),
+                  "repository path broke completed evidence archival")
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
              test_arith_table_diagnostics,
              test_artifact_and_semantic_baselines, test_site_operators,
              test_round_zero_control, test_log_archive,
              test_private_dependency_copy, test_readonly_artifact_restore,
-             test_byte_table_gate_order, test_component_and_byte_table_manifest]
+             test_byte_table_gate_order, test_component_and_byte_table_manifest,
+             test_relative_repo_evidence_archive]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")

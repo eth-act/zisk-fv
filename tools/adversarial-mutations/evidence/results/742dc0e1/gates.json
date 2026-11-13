@@ -1,0 +1,51 @@
+{
+  "aeneas_skip_environment": "ZISK_FV_TEST_SKIP_AENEAS unset",
+  "formal": "Build completed successfully (9164 jobs).",
+  "full_unskipped_nix_test_exit": 0,
+  "initial_combined_wrapper": {
+    "completed_before_timeout": [
+      "lake build",
+      "trust/scripts/check-all.sh"
+    ],
+    "followup": "Standalone semantic gate completed with no command deadline.",
+    "interrupted": "trust/scripts/check-all-semantic.sh",
+    "timed_out": true,
+    "timeout_seconds": 3600
+  },
+  "limits": {
+    "cargo_jobs": 2,
+    "lean_threads": 2,
+    "nix_cores": 2,
+    "nix_max_jobs": 1
+  },
+  "logs": {
+    "build/pr376-archive-replay.log": {
+      "bytes": 579,
+      "sha256": "dee623e0eab685014af95b6393763a7047c10df55c7353033068aac55bbfe248"
+    },
+    "build/pr376-formal.log": {
+      "bytes": 23822,
+      "sha256": "7fbfeb79dbcb0ab46720ce2330c0127bde900f91a4638f3b89d3695e00f273e9"
+    },
+    "build/pr376-full-gate.log": {
+      "bytes": 1807585,
+      "sha256": "e21f07dc93c5c35eaf1cdaa238df1c6bdb261ef26fe9b65d2afe2f9f749cd766"
+    },
+    "build/pr376-mutation-selftest.log": {
+      "bytes": 1240,
+      "sha256": "eb5a6aba857fe4c636d7888fc51fe48aa3f7122f20d3054fb7ddb09d247966bf"
+    },
+    "build/pr376-trust-v1.log": {
+      "bytes": 9791,
+      "sha256": "8ede6731603cf85ef14bfbda084513c8f9b6006ff16e38e1bb9c474b59cccb11"
+    },
+    "build/pr376-trust-v2-complete.log": {
+      "bytes": 32971,
+      "sha256": "e24104cc9e2910e9803147e7252dbf89d3edf8592c8a6b5231ba23f81b5bf6bf"
+    }
+  },
+  "mutation_source_commit": "742dc0e1",
+  "trust_v1": "ALL CHECKS PASSED",
+  "trust_v2_exit": 0,
+  "verified_code_commit": "fe97bfc8"
+}

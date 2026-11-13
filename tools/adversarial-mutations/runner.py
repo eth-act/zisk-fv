@@ -92,6 +92,8 @@ def diagnostic_patterns(item: Round) -> tuple[str, ...]:
 
 def expected_detection_layer(item: Round) -> str:
     """Post-hardening expectation, separate from the historical verdict."""
+    if item.number == 50:
+        return "fidelity_gate"
     if item.historical_class == "NEW":
         # Fixtures added after the sweep have no historical verdict to derive
         # from; they state the layer they are meant to reach.
@@ -317,46 +319,53 @@ def classify(item: Round, semantic: dict[str, Any] | None, changed: list[str],
     return "infrastructure", "mutant proof ended with an infrastructure exit"
 
 
-def classify_fidelity_gate(baseline: CommandResult, mutant: CommandResult) -> tuple[str, str]:
-    """Recognize actual table-gate rejection independently of full proof builds."""
+def classify_fidelity_gate(baseline: CommandResult, mutant: CommandResult,
+                          marker: str = "byte-table mismatch:") -> tuple[str, str]:
+    """Recognize a named table-gate rejection independently of proof builds."""
     if baseline.timed_out or baseline.exit_code != 0:
-        return "infrastructure", "baseline byte-table fidelity gate was not green"
+        return "infrastructure", "baseline table fidelity gate was not green"
     if mutant.timed_out or mutant.exit_code not in (0, 1):
-        return "infrastructure", "mutant byte-table fidelity gate did not complete normally"
+        return "infrastructure", "mutant table fidelity gate did not complete normally"
     if mutant.exit_code == 0:
-        return "fidelity", "mutated artifacts passed the byte-table fidelity gate"
+        return "fidelity", "mutated artifacts passed the table fidelity gate"
     diagnostic = Path(mutant.log).read_text(encoding="utf-8", errors="replace")
-    if "byte-table mismatch:" not in diagnostic:
-        return "infrastructure", "byte-table gate failed without an explicit table mismatch"
-    return "fidelity_gate", "actual byte-table fidelity gate rejected mutated rows"
+    if marker not in diagnostic:
+        return "infrastructure", "table gate failed without its named table mismatch"
+    return "fidelity_gate", "actual table fidelity gate rejected mutated rows"
 
 
-def byte_table_controls(repo: Path, baseline: Path, mutant: Path, timeout: int,
-                        logs: Path, result: dict[str, Any]) -> tuple[str, str]:
+def table_fidelity_controls(repo: Path, baseline: Path, mutant: Path, timeout: int,
+                        logs: Path, result: dict[str, Any],
+                        air: str = "BinaryTable") -> tuple[str, str]:
     """Run the clean gate before the mutant, without installing mutant inputs."""
     repo = repo.resolve()
     result["proof_status"] = "not_run"
+    rom = air == "MemAlignRom"
+    script = "check.py" if rom else "check-byte-tables.py"
+    flag = "--export-tsv" if rom else "--export-dir"
+    relative = "MemAlignRom.tsv" if rom else "ByteTables"
+    marker = "MemAlignRom mismatch:" if rom else "byte-table mismatch:"
     argv = nix("develop", "--no-write-lock-file", str(repo),
-               "-c", "python3", str(repo / "tools/virtual-tables/check-byte-tables.py"),
-               "--export-dir")
+               "-c", "python3", str(repo / "tools/virtual-tables" / script), flag)
     clean = run_command(
-        [*argv, str(extraction_container(baseline) / "ByteTables")],
-        repo, timeout, logs / "baseline-byte-tables.log")
+        [*argv, str(extraction_container(baseline) / relative)],
+        repo, timeout, logs / "baseline-table-fidelity.log")
     result["commands"].append(dataclasses.asdict(clean))
     if clean.timed_out or clean.exit_code != 0:
-        return "infrastructure", "baseline byte-table fidelity gate was not green"
+        return "infrastructure", "baseline table fidelity gate was not green"
     changed = run_command(
-        [*argv, str(extraction_container(mutant) / "ByteTables")],
-        repo, timeout, logs / "mutant-byte-tables.log")
+        [*argv, str(extraction_container(mutant) / relative)],
+        repo, timeout, logs / "mutant-table-fidelity.log")
     result["commands"].append(dataclasses.asdict(changed))
-    outcome, reason = classify_fidelity_gate(clean, changed)
+    outcome, reason = classify_fidelity_gate(clean, changed, marker)
     result["fidelity_gate"] = {
+        "name": air,
         "baseline_green": True,
         "mutant_rejected": outcome == "fidelity_gate",
         "diagnostic": next(
             (line for line in Path(changed.log).read_text(
                 encoding="utf-8", errors="replace").splitlines()
-             if line.startswith("byte-table mismatch:")), None),
+             if line.startswith(marker)), None),
     }
     return outcome, reason
 
@@ -855,9 +864,10 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             outcome, reason = classify(item, semantic, changed, roundtrip, None, None)
             result.update(outcome=outcome, reason=reason, complete=True)
             return result
-        if item.air in {"BinaryTable", "BinaryExtensionTable"}:
-            outcome, reason = byte_table_controls(
-                args.repo, Path(base_extract), mutant_extract, args.check_timeout, logs, result)
+        if item.air in {"BinaryTable", "BinaryExtensionTable", "MemAlignRom"}:
+            outcome, reason = table_fidelity_controls(
+                args.repo, Path(base_extract), mutant_extract, args.check_timeout, logs, result,
+                item.air)
             if outcome != "fidelity":
                 result.update(outcome=outcome, reason=reason,
                               complete=outcome != "infrastructure")
@@ -986,6 +996,8 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str]) -> int:
     args = parser().parse_args(argv)
+    if args.command in {"boundary", "full", "suite"}:
+        args.repo = args.repo.resolve()
     if args.command == "list":
         if args.sites:
             source = args.zisk_source
