@@ -171,6 +171,7 @@ const ROUTE_SCOPES: &[RouteScope] = &[
     RouteScope { route: MatchRoute::ClusterZeroTail, air: "BinaryAdd", constraints: &[5] },
     RouteScope { route: MatchRoute::ClusterZeroTail, air: "Arith", constraints: &[61] },
     RouteScope { route: MatchRoute::ClusterZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "MemAlignWriteByte", constraints: &[7] },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlign", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
@@ -179,6 +180,7 @@ const ROUTE_SCOPES: &[RouteScope] = &[
     RouteScope { route: MatchRoute::DirectZeroTail, air: "BinaryAdd", constraints: &[5] },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "Arith", constraints: &[61] },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignWriteByte", constraints: &[11, 13] },
     RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlign", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
@@ -191,10 +193,11 @@ const ROUTE_SCOPES: &[RouteScope] = &[
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Binary", constraints: ALL_CONSTRAINTS },
-    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryExtension", constraints: &[4] },
-    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryAdd", constraints: &[5] },
-    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Arith", constraints: &[61] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryExtension", constraints: &[4, 6] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryAdd", constraints: &[5, 7] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Arith", constraints: &[61, 62] },
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignWriteByte", constraints: &[12] },
 ];
 
 fn route_scope(route: MatchRoute, air_name: &str, constraint_index: usize) -> bool {
@@ -558,10 +561,19 @@ fn build_air_manifest(
         mixed_constraints
             .into_iter()
             .filter(|constraint| !linked_constraints.contains(&constraint.index))
-            .map(|constraint| UnlinkedConstraint {
-                index: constraint.index,
-                expression: constraint.expression,
-                reason: "no remaining gsum hint matched an audited link route".to_string(),
+            .map(|constraint| {
+                let (_, source) = crate::constraint_domain_and_debug(&air.constraints[constraint.index]);
+                let source = source.as_deref().unwrap_or("<no source debug line>");
+                let reason = if source.starts_with("std_sum.pil:") {
+                    format!("unrecognized standard-sum shape; no remaining hint matches an audited route; source: {source}")
+                } else {
+                    format!("AIR-value relation is not a standard-sum lookup template; separate model correspondence required; source: {source}")
+                };
+                UnlinkedConstraint {
+                    index: constraint.index,
+                    expression: constraint.expression,
+                    reason,
+                }
             })
             .collect()
     } else {
@@ -1968,6 +1980,51 @@ mod tests {
     }
 
     #[test]
+    fn reload_range_index_rejects_missing_or_shifted_source_links() {
+        let mut links = Vec::new();
+        for index in 0..31 {
+            for (constraint_index, name) in [
+                (49 + 3 * index, format!("(last_segment_reg_mem_step - Main.last_reg_mem_step[{index}]) - 1")),
+                (50 + 3 * index, format!("Main.last_reg_mem_step[{index}]")),
+            ] {
+                let mut source = hint(false, vec![Ast::AirValue(index as u32)]);
+                source.slots[0].name = name;
+                links.push(LinkedConstraint {
+                    constraint_index,
+                    constraint: Ast::constant("0"),
+                    accumulator: Ast::constant("0"),
+                    alpha: Ast::constant("0"),
+                    gamma: Ast::constant("0"),
+                    hints: vec![source],
+                    direct_terms: Vec::new(),
+                    shape: LinkShape::Direct,
+                });
+            }
+        }
+        let mut air = AirManifest {
+            group_index: 0,
+            air_index: 0,
+            group_name: "Zisk".to_string(),
+            air_name: "Main".to_string(),
+            emitted_constraint_file: true,
+            mixed_constraint_count: links.len(),
+            unlinked_mixed_constraint_count: 0,
+            unlinked_constraints: Vec::new(),
+            gsum_hint_count: links.len(),
+            links,
+        };
+        let mut output = String::new();
+        write_link_index_lists(&mut output, &air).unwrap();
+        assert!(output.contains("def link_Main_reloadRange (index : Fin 31)"));
+        assert!(output.contains("  link_Main_49,"));
+        assert!(output.contains("  link_Main_139,"));
+        air.links[0].constraint_index = 48;
+        assert!(write_link_index_lists(&mut String::new(), &air).is_err());
+        air.links.remove(0);
+        assert!(write_link_index_lists(&mut String::new(), &air).is_err());
+    }
+
+    #[test]
     fn recognizer_scope_is_per_route_and_air() {
         assert!(route_scope(MatchRoute::DirectZeroTail, "BinaryAdd", 5));
         assert!(route_scope(MatchRoute::DirectZeroTail, "BinaryExtension", 4));
@@ -1980,6 +2037,13 @@ mod tests {
             43,
         ));
         assert!(route_scope(MatchRoute::ClusterZeroTail, "BinaryAdd", 5));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "Arith", 62));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "BinaryAdd", 7));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "BinaryExtension", 6));
+        assert!(route_scope(MatchRoute::ClusterZeroTail, "MemAlignWriteByte", 7));
+        assert!(route_scope(MatchRoute::DirectZeroTail, "MemAlignWriteByte", 11));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "MemAlignWriteByte", 12));
+        assert!(route_scope(MatchRoute::DirectZeroTail, "MemAlignWriteByte", 13));
         assert!(!route_scope(MatchRoute::DirectZeroTail, "BinaryAdd", 4));
         assert!(!route_scope(MatchRoute::DirectZeroTail, "Arith", 62));
         assert!(!route_scope(

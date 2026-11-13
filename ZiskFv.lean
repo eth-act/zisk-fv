@@ -291,3 +291,4 @@ import ZiskFv.AirsClean.MemAlignByteMirrorWeld
 -- other module's import closure keeps that simp set out of the proofs.
 import ZiskFv.AirsClean.MemMirrorWeld
 import ZiskFv.AirsClean.GsumBoundary
+import ZiskFv.AirsClean.OperationPadding

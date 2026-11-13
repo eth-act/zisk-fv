@@ -21,6 +21,11 @@ open ZiskFv.Channels.OperationBus (OpBusMessage)
 def operationExprToClean : Expr → Option (Expression FGL)
   | .constant "0" => some 0
   | .constant "1" => some 1
+  | .constant "6" => some 6
+  | .constant "8" => some 8
+  | .constant "80" => some 80
+  | .constant "81" => some 81
+  | .constant "4294967295" => some 4294967295
   | .constant "65536" => some 65536
   | .witness 1 7 0 => some componentComplete.rowInputVar.chunks.a_0
   | .witness 1 8 0 => some componentComplete.rowInputVar.chunks.a_1
@@ -36,6 +41,11 @@ def operationExprToClean : Expr → Option (Expression FGL)
   | .witness 1 18 0 => some componentComplete.rowInputVar.chunks.c_3
   | .witness 1 19 0 => some componentComplete.rowInputVar.chunks.d_0
   | .witness 1 20 0 => some componentComplete.rowInputVar.chunks.d_1
+  | .witness 1 21 0 => some componentComplete.rowInputVar.chunks.d_2
+  | .witness 1 22 0 => some componentComplete.rowInputVar.chunks.d_3
+  | .witness 1 24 0 => some componentComplete.rowInputVar.flags.nb
+  | .witness 1 25 0 => some componentComplete.rowInputVar.flags.nr
+  | .witness 1 28 0 => some componentComplete.rowInputVar.flags.m32
   | .witness 1 29 0 => some componentComplete.rowInputVar.flags.div
   | .witness 1 33 0 => some componentComplete.rowInputVar.flags.main_div
   | .witness 1 34 0 => some componentComplete.rowInputVar.flags.main_mul
@@ -47,6 +57,7 @@ def operationExprToClean : Expr → Option (Expression FGL)
   | .add (.constant "0") rhs => operationExprToClean rhs
   | .add lhs rhs => do return (← operationExprToClean lhs) + (← operationExprToClean rhs)
   | .sub lhs rhs => do return (← operationExprToClean lhs) - (← operationExprToClean rhs)
+  | .mul (.constant "65536") rhs => do return (← operationExprToClean rhs) * 65536
   | .mul lhs rhs => do return (← operationExprToClean lhs) * (← operationExprToClean rhs)
   | _ => none
 

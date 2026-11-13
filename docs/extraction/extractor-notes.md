@@ -172,11 +172,20 @@ defs.
 `lookup-wiring` is intentionally separate from `bus-emissions`. The latter
 targets the older `F`-valued `BusEmissionSpec` interface and still replaces a
 hint operand containing `Challenge`, `AirValue`, or `AirGroupValue` with `0`.
-The link shapes are not a fixed pair. `LinkShape` (`src/lookup_wiring.rs:1556`)
-currently has seven constructors — `direct`, `cluster2`, `derivedMixed2`,
-`directZeroTail`, `cluster2ZeroTail`, `directAssumesNegForm`,
-`directAssumesNegFormZeroTail` — so read that enum rather than this note for the
-current set.
+The live link shapes are `direct`, `cluster2`, `gsumFinalRow`,
+`directZeroTail`, `cluster2ZeroTail`, `directAssumesNegForm`, and
+`directAssumesNegFormZeroTail`. Route scopes are independent by template and
+AIR. In particular, Arith c62 and the BinaryAdd/BinaryExtension/WriteByte
+Direct padding adjustments use the composed assumes-neg/zero-tail route;
+WriteByte's clustered STORE tuple uses the zero-tail cluster route.
+
+Recognition is not model adoption. `ArithMul.RangeWiring` binds c62's full
+comparison tuple and multiplicity to the completed component's real
+remainder-bound interaction. `OperationPadding` independently welds
+BinaryAdd c7 and BinaryExtension c6's local Direct equations and tuple
+metadata. Their physical `padding_size = num_rows - total_inputs` provenance
+and actual segment emissions remain required; a free exposed count is not a
+replacement. The WriteByte live model owns its four newly recognized links.
 
 The lookup-wiring manifest has a closed `Expr` syntax with distinct typed
 constructors for witness, fixed, challenge, AIR value, AIR-group value, and
@@ -187,10 +196,10 @@ whether the current Nix extraction emits its constraint file and how many
 mixed constraints and gsum hints it has. PR 1 publishes links only for those
 currently emitted constraint files; all other AIRs are explicit absence
 reports. For an emitted AIR, an unlinked mixed constraint is retained as a
-`ConstraintOnly` typed AST without any hint payload; this preserves, for
-example, the global-sum constraint for later wiring extraction. An unlinked
-hint contributes only to counts: its bus id, multiplicity, and tuple AST are
-not published, so no caller can treat a search witness as a channel emission.
+`ConstraintOnly` typed AST without any hint payload, with an explicit reason
+and the source debug citation. Unrecognized standard-sum syntax is distinguished
+from non-lookup AIR-value relations; neither is silently counted as a link.
+An unlinked hint contributes only to counts, not a usable channel emission.
 
 For each published `ValidatedLink`, the generator retains the raw named tuple
 AST, multiplicity, PIOP side, accumulator expression, and the exact alpha and
@@ -219,6 +228,7 @@ the legacy `Extraction.Circuit.exposed` kind conflation.
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
+
 
 ## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
 
