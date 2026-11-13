@@ -112,6 +112,41 @@ These are conservative declaration-dependency measurements, not a guarantee
 that every mutation to a reached declaration is rejected. Mutation rejection
 still requires its own observed proof or fidelity-gate evidence.
 
+The #405 rebaseline, regenerated after a full build of frozen code
+`6808cfcf` (base `8e25bc30`), measures the same 355 extracted constraints:
+
+| Measurement | Textual schema 1 | Elaborated schema 2 |
+|---|---:|---:|
+| Exposed to build | 96 | 97 |
+| Exposed to root | 313 | 347 |
+| Tied, not composed | 24 | 24 |
+| Declared residuals | 34 | 34 |
+| Wirable links | 96 | 96 |
+
+The new independent columns record 254 build-only checks, four theorem-consumed
+ties (`Mem.29`–`Mem.32`), and four generated-model assertions
+(`BinaryAdd.0`–`BinaryAdd.3`). All four BinaryAdd correspondence proofs remain
+build-only even though their generated `main` is consumed. Constraints 4–8
+remain unclaimed by that manifest; the separate c5 wiring check retains its
+build-only credit.
+
+The root increase withdraws 33 Main and one MemAlign import/mention credits;
+the build increase withdraws the unconsumed `Arith.62` predicate alias.
+Standalone welds and genuine proof-carrying families retain their checked
+dependencies. These are accounting corrections, not changed proof statements,
+newly discharged obligations, or root-proof improvements.
+
+Verification of immutable code `6808cfcf` with this regenerated ledger passed:
+`lake build --log-level=warning`, both trust suites, and the full unskipped
+`nix --option cores 2 --option max-jobs 1 run .#test`, using
+`LEAN_NUM_THREADS=2` and `CARGO_BUILD_JOBS=2`. The full gate rechecked all 14
+compiled accounting regressions and the clean ledger (`97` build / `347` root /
+`96` wirable). Its semantic suite checked 3,406 extraction/decode declarations'
+unfiltered axiom closures against the three ordinary postulates. These
+independent, potentially overlapping accounting columns must not be summed as
+distinct discharged proof obligations.
+
+
 `tools/clean-components/faithfulness.py` runs `pil-extract clean-component` for
 the same ten registered AIRs and compares each emitted `Row.lean` and
 `Constraints.lean` with its committed `ZiskFv/AirsClean/<Air>/` counterpart.
