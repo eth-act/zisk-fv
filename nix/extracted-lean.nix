@@ -131,6 +131,11 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --output $out/LookupWiring.lean
 
+    # Physical row capacities come from the same compiled AIR metadata.
+    ${pil-extract}/bin/pil-extract source-dimensions \
+      --pilout ${zisk-pilout} \
+      --output $out/SourceDimensions.lean
+
     # Reviewed byte-identical Clean component source.  Maintained modules
     # re-export these generated declarations instead of carrying a weld copy.
     mkdir -p $out/Components/BinaryAdd

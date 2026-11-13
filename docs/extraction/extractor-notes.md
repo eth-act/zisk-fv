@@ -22,6 +22,8 @@ pil-extract arith-table --rust-source <path> [--output <path>]
 
 pil-extract arith-range-table --rust-source <path> [--output <path>]
 
+pil-extract source-dimensions --pilout <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -56,6 +58,9 @@ the flags themselves.
   `state-machines/arith/src/arith_range_table_helpers.rs`. This supplies source
   data to the maintained range model; it does not establish honest row-builder
   constructibility or close that separate part of #108.
+- `source-dimensions`: emit each physical AIR's group/AIR indices,
+  `logNumRows` and `rowCount` from pilout metadata. Missing metadata fails,
+  rather than inventing a default capacity.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
