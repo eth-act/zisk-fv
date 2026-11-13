@@ -36,6 +36,7 @@ globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifac
   "Extraction.MemAlignByte", "Extraction.MemAlignReadByte", "Extraction.MemAlignWriteByte",
   "Extraction.Binary", "Extraction.BinaryAdd", "Extraction.BinaryExtension",
   "Extraction.Buses", "Extraction.MemoryBuses",
+  "Extraction.ArithRangeTable", "Extraction.SourceDimensions",
   "Extraction.Components.BinaryAdd.Row", "Extraction.Components.BinaryAdd.Constraints",
   "Extraction.Components.BinaryAdd.Manifest"]
 
