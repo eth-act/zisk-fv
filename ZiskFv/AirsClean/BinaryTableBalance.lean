@@ -3,6 +3,7 @@ import ZiskFv.AirsClean.BinaryExtension.ExtractedWiring
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
+import ZiskFv.AirsClean.PackedVirtualTableSources
 import Clean.Air.FlatEnsemble
 
 /-!
@@ -343,5 +344,71 @@ theorem extension_spec_facts_of_balance (w : EnsembleWitness ensemble)
     simpa only [Component.rowInput, Component.rowInputVar,
       eval_varFromOffset_valueFromOffset] using he
   exact ⟨h 0, h 1, h 2, h 3, h 4, h 5, h 6, h 7⟩
+
+/-- Assemble the actual consumer tables with the canonical full-domain
+    projections of one physical packed witness. The hypotheses are only table
+    identity/data coherence, never table membership or semantic guarantees. -/
+def withPackedProviders
+    (raw : PackedVirtualTableSources.Witness FGL) (data : ProverData FGL)
+    (binary extension : Table FGL)
+    (h_binary : binary.component = Binary.tableConsumerComponent)
+    (h_extension : extension.component = BinaryExtension.shiftTableConsumerComponent)
+    (h_binary_data : binary.data = data) (h_extension_data : extension.data = data) :
+    EnsembleWitness ensemble where
+  tables := [binary, extension,
+    PackedVirtualTableSources.binaryProviderTable raw data,
+    PackedVirtualTableSources.extensionProviderTable raw data]
+  data := data
+  publicInput := ()
+  same_length := rfl
+  same_circuits := by
+    intro index hi
+    change index < 4 at hi
+    interval_cases index <;>
+      simp [ensemble, h_binary, h_extension,
+        PackedVirtualTableSources.binaryProviderTable,
+        PackedVirtualTableSources.extensionProviderTable]
+  same_data := by
+    intro table ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
+    rcases ht with rfl | rfl | rfl | rfl
+    · exact h_binary_data
+    · exact h_extension_data
+    · rfl
+    · rfl
+
+/-- The bus-125 bundle through the actual packed raw witness projection.
+    All source multiplicities come from the intrinsic production map. -/
+theorem binary_spec_facts_from_packed
+    (raw : PackedVirtualTableSources.Witness FGL) (data : ProverData FGL)
+    (binary extension : Table FGL)
+    (h_binary : binary.component = Binary.tableConsumerComponent)
+    (h_extension : extension.component = BinaryExtension.shiftTableConsumerComponent)
+    (h_binary_data : binary.data = data) (h_extension_data : extension.data = data)
+    (hc : (withPackedProviders raw data binary extension h_binary h_extension
+      h_binary_data h_extension_data).Constraints)
+    (hb : (withPackedProviders raw data binary extension h_binary h_extension
+      h_binary_data h_extension_data).BalancedChannels)
+    {row : Array FGL} (hr : row ∈ binary.table) :
+    Binary.StaticBinaryTableSpecFacts
+      (Binary.tableConsumerComponent.rowInput (binary.environment row)) := by
+  exact binary_spec_facts_of_balance _ hc hb
+    (by simp [withPackedProviders, EnsembleWitness.allTables]) h_binary hr
+
+theorem extension_spec_facts_from_packed
+    (raw : PackedVirtualTableSources.Witness FGL) (data : ProverData FGL)
+    (binary extension : Table FGL)
+    (h_binary : binary.component = Binary.tableConsumerComponent)
+    (h_extension : extension.component = BinaryExtension.shiftTableConsumerComponent)
+    (h_binary_data : binary.data = data) (h_extension_data : extension.data = data)
+    (hc : (withPackedProviders raw data binary extension h_binary h_extension
+      h_binary_data h_extension_data).Constraints)
+    (hb : (withPackedProviders raw data binary extension h_binary h_extension
+      h_binary_data h_extension_data).BalancedChannels)
+    {row : Array FGL} (hr : row ∈ extension.table) :
+    BinaryExtension.StaticBinaryExtensionTableSpecFacts
+      (BinaryExtension.shiftTableConsumerComponent.rowInput (extension.environment row)) := by
+  exact extension_spec_facts_of_balance _ hc hb
+    (by simp [withPackedProviders, EnsembleWitness.allTables]) h_extension hr
 
 end ZiskFv.AirsClean.BinaryTableBalance
