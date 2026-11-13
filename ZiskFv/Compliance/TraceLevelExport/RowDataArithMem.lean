@@ -2363,6 +2363,73 @@ theorem InputsCore_sb.input_pc_read
     (binding i).regs.get? Register.PC = some inputs.input.PC :=
   Classical.choose_spec inputs.h_input_pc
 
+/-- The complete pre-cutover store surface constructs the canonical record.
+The three read-existence fields impose no additional caller condition: they
+follow from the first three conjuncts of the unchanged opcode assumptions.
+The resulting canonical input is exactly the original input, not a new value. -/
+def InputsCore_sb.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.SbInput) (regs : ModeRegsFull)
+    (h_opcode : PureSpec.sb_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_a1 : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r1_val)
+    (h_b0 : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r2_val)
+    (h_b1 : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r2_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg) :
+    { core : InputsCore_sb trace binding i
+      { r1 := regidx.Regidx input.r1, r2 := regidx.Regidx input.r2, imm := input.imm } //
+      core.input = input } := by
+  have h_read1 : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  have h_read2 : read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+      EStateM.Result.ok input.r2_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r2)
+      (regidx_to_fin (regidx.Regidx input.r2)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read1⟩
+  let h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r2_val, h_read2⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value1 : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read1)).1
+  have h_value2 : Classical.choose h_r2 = input.r2_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r2).symm.trans h_read2)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  have h_input : storeInput_sb (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.r2) input.imm h_r1 h_r2 h_pc = input := by
+    cases input
+    simp only [storeInput_sb, storeRegBits, h_value1, h_value2, h_pc_value]
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_r2 := h_r2
+    h_input_pc := h_pc
+    regs := regs
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_a1_value := ?_
+    h_b0_value := ?_
+    h_b1_value := ?_
+    h_risc_v_assumptions := h_platform }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value1] using h_a0
+  · simpa only [h_value1] using h_a1
+  · simpa only [h_value2] using h_b0
+  · simpa only [h_value2] using h_b1
+  · exact h_input
+
 /-- The PC agreement `Inputs_sb` carries on top of `InputsCore_sb`.
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
@@ -2487,6 +2554,73 @@ theorem InputsCore_sh.input_pc_read
     (inputs : InputsCore_sh trace binding i c) :
     (binding i).regs.get? Register.PC = some inputs.input.PC :=
   Classical.choose_spec inputs.h_input_pc
+
+/-- The complete pre-cutover store surface constructs the canonical record.
+The three read-existence fields impose no additional caller condition: they
+follow from the first three conjuncts of the unchanged opcode assumptions.
+The resulting canonical input is exactly the original input, not a new value. -/
+def InputsCore_sh.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.ShInput) (regs : ModeRegsFull)
+    (h_opcode : PureSpec.sh_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_a1 : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r1_val)
+    (h_b0 : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r2_val)
+    (h_b1 : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r2_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg) :
+    { core : InputsCore_sh trace binding i
+      { r1 := regidx.Regidx input.r1, r2 := regidx.Regidx input.r2, imm := input.imm } //
+      core.input = input } := by
+  have h_read1 : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  have h_read2 : read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+      EStateM.Result.ok input.r2_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r2)
+      (regidx_to_fin (regidx.Regidx input.r2)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read1⟩
+  let h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r2_val, h_read2⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value1 : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read1)).1
+  have h_value2 : Classical.choose h_r2 = input.r2_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r2).symm.trans h_read2)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  have h_input : storeInput_sh (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.r2) input.imm h_r1 h_r2 h_pc = input := by
+    cases input
+    simp only [storeInput_sh, storeRegBits, h_value1, h_value2, h_pc_value]
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_r2 := h_r2
+    h_input_pc := h_pc
+    regs := regs
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_a1_value := ?_
+    h_b0_value := ?_
+    h_b1_value := ?_
+    h_risc_v_assumptions := h_platform }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value1] using h_a0
+  · simpa only [h_value1] using h_a1
+  · simpa only [h_value2] using h_b0
+  · simpa only [h_value2] using h_b1
+  · exact h_input
 
 /-- The PC agreement `Inputs_sh` carries on top of `InputsCore_sh`.
 
@@ -2613,6 +2747,73 @@ theorem InputsCore_sw.input_pc_read
     (binding i).regs.get? Register.PC = some inputs.input.PC :=
   Classical.choose_spec inputs.h_input_pc
 
+/-- The complete pre-cutover store surface constructs the canonical record.
+The three read-existence fields impose no additional caller condition: they
+follow from the first three conjuncts of the unchanged opcode assumptions.
+The resulting canonical input is exactly the original input, not a new value. -/
+def InputsCore_sw.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.SwInput) (regs : ModeRegsFull)
+    (h_opcode : PureSpec.sw_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_a1 : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r1_val)
+    (h_b0 : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r2_val)
+    (h_b1 : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r2_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg) :
+    { core : InputsCore_sw trace binding i
+      { r1 := regidx.Regidx input.r1, r2 := regidx.Regidx input.r2, imm := input.imm } //
+      core.input = input } := by
+  have h_read1 : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  have h_read2 : read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+      EStateM.Result.ok input.r2_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r2)
+      (regidx_to_fin (regidx.Regidx input.r2)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read1⟩
+  let h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r2_val, h_read2⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value1 : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read1)).1
+  have h_value2 : Classical.choose h_r2 = input.r2_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r2).symm.trans h_read2)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  have h_input : storeInput_sw (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.r2) input.imm h_r1 h_r2 h_pc = input := by
+    cases input
+    simp only [storeInput_sw, storeRegBits, h_value1, h_value2, h_pc_value]
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_r2 := h_r2
+    h_input_pc := h_pc
+    regs := regs
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_a1_value := ?_
+    h_b0_value := ?_
+    h_b1_value := ?_
+    h_risc_v_assumptions := h_platform }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value1] using h_a0
+  · simpa only [h_value1] using h_a1
+  · simpa only [h_value2] using h_b0
+  · simpa only [h_value2] using h_b1
+  · exact h_input
+
 /-- The PC agreement `Inputs_sw` carries on top of `InputsCore_sw`.
 
     No longer assumed at the root: `root_soundness` takes `InputsCore_<op>` and the
@@ -2734,6 +2935,73 @@ theorem InputsCore_sd.input_pc_read
     (inputs : InputsCore_sd trace binding i c) :
     (binding i).regs.get? Register.PC = some inputs.input.PC :=
   Classical.choose_spec inputs.h_input_pc
+
+/-- The complete pre-cutover store surface constructs the canonical record.
+The three read-existence fields impose no additional caller condition: they
+follow from the first three conjuncts of the unchanged opcode assumptions.
+The resulting canonical input is exactly the original input, not a new value. -/
+def InputsCore_sd.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.SdInput) (regs : ModeRegsFull)
+    (h_opcode : PureSpec.sd_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_a1 : (mainOfTable trace.program trace.mainTable).a_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r1_val)
+    (h_b0 : (mainOfTable trace.program trace.mainTable).b_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r2_val)
+    (h_b1 : (mainOfTable trace.program trace.mainTable).b_1 i.val =
+      ZiskFv.Trusted.lane_hi input.r2_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg) :
+    { core : InputsCore_sd trace binding i
+      { r1 := regidx.Regidx input.r1, r2 := regidx.Regidx input.r2, imm := input.imm } //
+      core.input = input } := by
+  have h_read1 : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  have h_read2 : read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+      EStateM.Result.ok input.r2_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r2)
+      (regidx_to_fin (regidx.Regidx input.r2)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read1⟩
+  let h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r2)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r2_val, h_read2⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value1 : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read1)).1
+  have h_value2 : Classical.choose h_r2 = input.r2_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r2).symm.trans h_read2)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  have h_input : storeInput_sd (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.r2) input.imm h_r1 h_r2 h_pc = input := by
+    cases input
+    simp only [storeInput_sd, storeRegBits, h_value1, h_value2, h_pc_value]
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_r2 := h_r2
+    h_input_pc := h_pc
+    regs := regs
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_a1_value := ?_
+    h_b0_value := ?_
+    h_b1_value := ?_
+    h_risc_v_assumptions := h_platform }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value1] using h_a0
+  · simpa only [h_value1] using h_a1
+  · simpa only [h_value2] using h_b0
+  · simpa only [h_value2] using h_b1
+  · exact h_input
 
 /-- The PC agreement `Inputs_sd` carries on top of `InputsCore_sd`.
 
