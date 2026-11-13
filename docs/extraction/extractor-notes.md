@@ -26,6 +26,8 @@ pil-extract source-dimensions --pilout <path> [--output <path>]
 
 pil-extract rom-source --pilout <path> [--output <path>]
 
+pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
+
 pil-extract public-io --pilout <path> [--output <path>]
 
 pil-extract clean-component --pilout <path> --air <needle>
@@ -72,6 +74,12 @@ the flags themselves.
   commitment ID, stage, column, signed row/rotation, constraint polynomials
   and lookup-hint payload. It preserves separate AIR and AIR-group values;
   unsupported operands fail. The legacy `Extraction.Circuit` is unchanged.
+- `packed-virtual-tables`: emit indexed placements for buses 88/124/125/330/331
+  observed in the actual production VirtualTable0/1 fixed columns. The compiler
+  observer checks every target payload/UID/padding cell and converse ownership
+  using the real Rust-generated external fixed columns. The generated placement
+  theorems do not themselves establish logical payload fidelity or provider
+  composition; those remain checked at the concrete model consumers.
 - `public-io`: emit the compiled GLOBAL expression graph and kernel-check
   the actual signed public-IO terms against its cleared numerator/denominator
   constraint. This does not by itself authenticate the external verifier's

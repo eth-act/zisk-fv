@@ -208,7 +208,7 @@ def extraction_manifest(path: Path) -> dict[str, str]:
         if not candidate.is_file():
             continue
         result[candidate.relative_to(lean).as_posix()] = sha256(candidate)
-    for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json"):
         candidate = container / name
         if candidate.is_file():
             result[name] = sha256(candidate)
@@ -488,6 +488,7 @@ def nix_direct_extraction(repo: Path, source: Path, pilout: Path, timeout: int,
     in pkgs.callPackage {repo.resolve() / "nix/extracted-lean.nix"} {{
       zisk-src = {source.resolve()};
       zisk-pilout = {pilout.resolve()};
+      fixed-data = fv.packages.${{system}}.zisk-fixed-data;
       pil-extract = fv.packages.${{system}}.pil-extract;
       pil2-compiler = fv.packages.${{system}}.pil2-compiler;
       pil2-proofman-src = fv.inputs.pil2-proofman-src;
@@ -578,7 +579,7 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
     shutil.copytree(lean_artifact_dir(extraction), target_extraction)
     make_tree_writable(target_extraction)
     container = extraction_container(extraction)
-    for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json"):
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, destination / "build" / "extraction" / name)
@@ -621,7 +622,7 @@ def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
     shutil.copytree(lean_artifact_dir(extraction), copied_extraction)
     make_tree_writable(copied_extraction)
     container = extraction_container(extraction)
-    for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json"):
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, target_extraction / name)

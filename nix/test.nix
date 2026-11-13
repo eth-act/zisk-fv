@@ -210,6 +210,8 @@ LEAN
     run "rule-check vocabularies" python3 tools/mirror-roundtrip/rule_check.py --selftest
     run "virtual byte tables" python3 tools/virtual-tables/check-byte-tables.py \
       --export-dir build/extraction/ByteTables --quiet
+    run "virtual arithmetic tables" python3 tools/virtual-tables/check-arith-tables.py \
+      --packed-json build/extraction/PackedVirtualTables.json --quiet
     run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
     run "MemAlignRom fidelity controls" python3 -m unittest discover -s tools/virtual-tables -p test_mem_align_rom.py
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
