@@ -45,6 +45,23 @@ function exportTable(compilerRoot, ziskRoot, proofmanRoot, air) {
     const { F1Field } = require(path.join(compilerRoot, 'node_modules/ffjavascript'));
     const Context = require(path.join(compilerRoot, 'src/context.js'));
     const prime = 0xffffffff00000001n;
+    const Expression = require(path.join(compilerRoot, 'src/expression.js'));
+    const FixedCol = require(path.join(compilerRoot, 'src/expression_items/fixed_col.js'));
+    const WitnessCol = require(path.join(compilerRoot, 'src/expression_items/witness_col.js'));
+    const bus = air === 'BinaryTable' ? 125n : 124n;
+    let producer;
+    // Read compiled operands, not their source spelling. Nontrivial expressions
+    // fail closed: the source producer must use an unchanged witness and fixeds.
+    function alone(expression, cls) {
+        if (!(expression instanceof Expression)) {
+            throw new Error(`${air} producer operand is not a compiled expression`);
+        }
+        const value = expression.eval().getAlone();
+        if (!(value instanceof cls) || value.rowOffset) {
+            throw new Error(`${air} producer operand is not an unshifted ${cls.name}`);
+        }
+        return value;
+    }
 
     let blocks;
     let rowCount;
@@ -57,7 +74,10 @@ require "${spec.pil}"
 airtemplate TableConsumer(const int N = 256) {
     lookup_assumes(${busId}, [${zeros}], sel: 0);
 }
-airgroup Zisk { virtual ${air}(${spec.size}); TableConsumer(); }
+airgroup Zisk {
+    set_max_num_rows_virtual(1 << 21);
+    virtual ${air}(${spec.size}); TableConsumer();
+}
 `;
     const result = compile(new F1Field(prime), source, null, {
         compileFromString: true,
@@ -68,6 +88,57 @@ airgroup Zisk { virtual ${air}(${spec.size}); TableConsumer(); }
         ],
         test: {
             onAirEnd(processor) {
+                if (processor.currentAir.name === 'VirtualTable0') {
+                    const routes = [...processor.hints].filter(hint =>
+                        hint.name === 'gsum_debug_data' &&
+                        hint.data.name_piop.asString() === 'Lookup' &&
+                        hint.data.type_piop.asInt() === 1n);
+                    if (routes.length === 0) throw new Error(`${air} has no packed producer`);
+                    const packedBlocks = [];
+                    let current = null;
+                    let index = 0;
+                    for (const [group, hint] of routes.entries()) {
+                        const data = hint.data;
+                        if (data.opids.length !== 1 || data.opids[0].asInt() !== bus ||
+                            data.expressions.length !== spec.columns.length) {
+                            throw new Error(`${air} packed producer route/schema changed`);
+                        }
+                        const multiplicity = alone(data.num_reps, WitnessCol);
+                        const expectedMultiplicity = Context.references.getItem(
+                            `VirtualTable0.multiplicity`, [group]);
+                        if (multiplicity.id !== expectedMultiplicity.id) {
+                            throw new Error(`${air} packed producer multiplicity changed`);
+                        }
+                        const uid = alone(data.busid, FixedCol);
+                        const columns = data.expressions.map(expr => alone(expr, FixedCol));
+                        for (let row = 0; row < processor.currentAir.rows; row++) {
+                            if (uid.getValue(row) !== bus) continue; // Other bus / unused packing tail.
+                            const cells = columns.map(column => {
+                                const reduced = ((column.getValue(row) % prime) + prime) % prime;
+                                return (reduced > prime / 2n ? reduced - prime : reduced).toString();
+                            });
+                            const op = cells[spec.columns.indexOf('OP')];
+                            if (current === null || current.op !== op) {
+                                if (current !== null) {
+                                    current.sha256 = current.hash.digest('hex');
+                                    delete current.hash;
+                                }
+                                current = { op, start: index, rows: 0, hash: crypto.createHash('sha256') };
+                                packedBlocks.push(current);
+                            }
+                            current.hash.update(cells.join('\t') + '\n');
+                            current.rows++;
+                            index++;
+                        }
+                    }
+                    if (current !== null) {
+                        current.sha256 = current.hash.digest('hex');
+                        delete current.hash;
+                    }
+                    producer = { rows: index, blocks: packedBlocks, multiplicity: 'raw-witness',
+                        physicalRows: Number(processor.currentAir.rows), groups: routes.length };
+                    return;
+                }
                 if (processor.currentAir.name !== air) return;
                 if (blocks !== undefined) throw new Error(`duplicate ${air} AIR`);
                 if (!processor.currentAir.virtual) throw new Error(`${air} is not virtual`);
@@ -105,10 +176,10 @@ airgroup Zisk { virtual ${air}(${spec.size}); TableConsumer(); }
             },
         },
     });
-    if (result !== true || blocks === undefined || blocks.length === 0) {
+    if (result !== true || blocks === undefined || blocks.length === 0 || producer === undefined) {
         throw new Error(`compiler did not successfully produce ${air} fixed rows`);
     }
-    return { air, columns: spec.columns, rows: rowCount, blocks };
+    return { air, columns: spec.columns, rows: rowCount, blocks, producer };
 }
 
 // One table per process. The PIL compiler keeps module-global state (the
