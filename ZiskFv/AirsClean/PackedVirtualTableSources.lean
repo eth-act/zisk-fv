@@ -110,14 +110,15 @@ def extensionRow (raw : Witness FGL) (index : Fin BinaryExtensionTable.tableSize
     multiplicity := project raw source124 (extensionIndex index) }
 
 theorem binaryRow_constructible (raw : Witness FGL) (index : Fin BinaryTable.tableSize)
-    (data : ProverData FGL) :
-    BinaryTableSlice.sourceCircuit.ProverAssumptions (binaryRow raw index) () data := by
-  exact BinaryTableSlice.sourceRow_constructible index _ data
+    (data : ProverData FGL) (hint : ProverHint FGL) :
+    BinaryTableSlice.sourceCircuit.ProverAssumptions (binaryRow raw index) data hint := by
+  exact BinaryTableSlice.sourceRow_constructible index _ data hint
 
 theorem extensionRow_constructible (raw : Witness FGL)
-    (index : Fin BinaryExtensionTable.tableSize) (data : ProverData FGL) :
-    BinaryExtensionTableSlice.sourceCircuit.ProverAssumptions (extensionRow raw index) () data := by
-  exact BinaryExtensionTableSlice.sourceRow_constructible index _ data
+    (index : Fin BinaryExtensionTable.tableSize) (data : ProverData FGL)
+    (hint : ProverHint FGL) :
+    BinaryExtensionTableSlice.sourceCircuit.ProverAssumptions (extensionRow raw index) data hint := by
+  exact BinaryExtensionTableSlice.sourceRow_constructible index _ data hint
 
 /-- Canonical full-domain raw rows for the projected provider table. The only
 witness cell comes from the actual packed multiplicity lane, without a copy of

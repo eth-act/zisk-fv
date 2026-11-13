@@ -40,7 +40,7 @@ theorem rawRow_singleton (table : Table FGL) (hwidth : table.component.rawWidth 
   have hw := table.raw_uniform_width _ (List.getElem_mem index.isLt)
   rw [hwidth] at hw
   simp only [rawMultiplicity, dif_pos index.isLt]
-  apply Array.ext_getElem
+  apply Array.ext
   · simp [hw]
   · intro cell hcell hcell'
     have hzero : cell = 0 := by omega

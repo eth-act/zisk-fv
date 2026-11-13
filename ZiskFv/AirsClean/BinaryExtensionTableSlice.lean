@@ -78,7 +78,7 @@ theorem eval_source_message (env : Environment FGL) (row : SourceRow (Expression
   rfl
 
 theorem eval_source_multiplicity (env : Environment FGL) (row : SourceRow (Expression FGL)) :
-    (eval env row : SourceRow FGL).multiplicity = Expression.eval env row.multiplicity := by
+    (eval env row : SourceRow FGL).multiplicity = eval env row.multiplicity := by
   rw [ProvableStruct.eval_eq_eval (α := SourceRow)]
   rfl
 
@@ -126,7 +126,7 @@ theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : F
     sourceFixedColumns.materialize index.val #[multiplicity] =
       (toElements ({ message := rowOfIndex index.val, multiplicity } :
         SourceRow FGL)).toArray := by
-  apply Array.ext_getElem
+  apply Array.ext
   · rfl
   · intro i hi hi'
     have h_i : i < 8 := by simpa only [IndexedFixedColumns.materialize_size] using hi
@@ -156,21 +156,41 @@ theorem sourceComponent_interactionsWith :
   simp only [sourceComponent, sourceCircuit, Component.exposedChannels, expose,
     List.mem_singleton, List.map_cons, List.map_nil]
 
+theorem sourceComponent_constraints :
+    sourceComponent.operations.constraints = [] := by
+  rw [Component.constraints_eq]
+  rfl
+
+theorem sourceComponent_lookups :
+    sourceComponent.operations.lookups =
+      [{ table := (Table.fromStatic binaryExtensionTable).toRaw
+         entry := toElements sourceComponent.rowInputVar.message }] := by
+  rw [Component.lookups_eq]
+  rfl
+
 /-- Every production source row, with any source multiplicity, supplies
     its own completeness index. This is not a soundness-side premise. -/
 theorem sourceRow_constructible (index : Fin tableSize) (multiplicity : FGL)
-    (data : ProverData FGL) :
+    (data : ProverData FGL) (hint : ProverHint FGL) :
     sourceCircuit.ProverAssumptions
-      { message := rowOfIndex index.val, multiplicity } () data := by
+      { message := rowOfIndex index.val, multiplicity } data hint := by
   exact ⟨index, rfl⟩
 
 theorem sourceComponent_spec_of_constraints (env : Environment FGL)
     (h : sourceComponent.operations.ConstraintsHold env) :
     binaryExtensionTable.Spec (eval env sourceComponent.rowInputVar.message) := by
-  rw [Component.constraintsHold_iff] at h
-  simpa [sourceComponent, Component.rowOperations, sourceCircuit, sourceMain,
-    circuit_norm, Table.fromStatic, StaticTable.toTable, Table.toRaw,
-    ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.eval.go] using h
+  let query : Lookup FGL :=
+    { table := (Table.fromStatic binaryExtensionTable).toRaw
+      entry := toElements sourceComponent.rowInputVar.message }
+  have hquery : query.Contains env :=
+    h.2 query (by
+      rw [sourceComponent_lookups]
+      exact List.mem_singleton_self _)
+  change ∃ index : Fin tableSize,
+    fromElements ((toElements sourceComponent.rowInputVar.message).map env) =
+      rowOfIndex index.val at hquery
+  rw [ProvableType.fromElements_eval_toElements] at hquery
+  exact hquery
 
 theorem sourceInteraction_mem_spec
     {table : Table FGL} (h_component : table.component = sourceComponent)
@@ -200,7 +220,7 @@ theorem source_input_message (row : SourceRow FGL) (data : ProverData FGL) :
   exact congrArg SourceRow.message (ProvableType.eval_fromInput_varFromOffset_zero row data)
 
 theorem source_input_multiplicity (row : SourceRow FGL) (data : ProverData FGL) :
-    Expression.eval (Environment.fromInput row data)
+    eval (Environment.fromInput row data)
       sourceComponent.rowInputVar.multiplicity = row.multiplicity := by
   rw [← eval_source_multiplicity]
   exact congrArg SourceRow.multiplicity (ProvableType.eval_fromInput_varFromOffset_zero row data)
@@ -208,10 +228,18 @@ theorem source_input_multiplicity (row : SourceRow FGL) (data : ProverData FGL) 
 theorem source_constraints_fromInput (row : SourceRow FGL) (data : ProverData FGL)
     (h : binaryExtensionTable.Spec row.message) :
     sourceComponent.operations.ConstraintsHold (Environment.fromInput row data) := by
-  rw [Component.constraintsHold_iff]
-  simpa only [Component.rowOperations, sourceComponent, sourceCircuit, sourceMain,
-    circuit_norm, Lookup.Contains, Table.fromStatic, StaticTable.toTable, Table.toRaw,
-    ProvableType.fromElements_eval_toElements, source_input_message] using h
+  refine ⟨?_, ?_⟩
+  · intro expression hmem
+    rw [sourceComponent_constraints] at hmem
+    exact False.elim (List.not_mem_nil _ hmem)
+  · intro query hmem
+    rw [sourceComponent_lookups] at hmem
+    obtain rfl := List.mem_singleton.mp hmem
+    change ∃ index : Fin tableSize,
+      fromElements ((toElements sourceComponent.rowInputVar.message).map
+        (Environment.fromInput row data)) = rowOfIndex index.val
+    rw [ProvableType.fromElements_eval_toElements, source_input_message]
+    exact h
 
 theorem source_interaction_fromInput (row : SourceRow FGL) (data : ProverData FGL) :
     ((BinaryExtensionTableChannel.emitted sourceComponent.rowInputVar.multiplicity
