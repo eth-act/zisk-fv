@@ -710,7 +710,7 @@ structure ProgramDecode_slliw {numInstructions : Nat}
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0)
   aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1)
-  bShiftFacts : BShiftProgramFacts trace i bits (BitVec.setWidth 6 c.slliw_input.shamt)
+  bShiftFacts : BShiftProgramFacts trace i bits (BitVec.setWidth 6 c.shamt)
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -735,7 +735,7 @@ structure ProgramDecode_srliw {numInstructions : Nat}
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0)
   aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1)
-  bShiftFacts : BShiftProgramFacts trace i bits (BitVec.setWidth 6 c.srliw_input.shamt)
+  bShiftFacts : BShiftProgramFacts trace i bits (BitVec.setWidth 6 c.shamt)
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →
@@ -760,7 +760,7 @@ structure ProgramDecode_sraiw {numInstructions : Nat}
   h_bits_store_ind : bits.store_ind = false
   h_bits_store_reg : bits.store_reg = decide (regidx_to_fin c.rd ≠ 0)
   aFacts : ARegisterProgramFacts trace i bits (regidx_to_fin c.r1)
-  bShiftFacts : BShiftProgramFacts trace i bits (BitVec.setWidth 6 c.sraiw_input.shamt)
+  bShiftFacts : BShiftProgramFacts trace i bits (BitVec.setWidth 6 c.shamt)
   h_prog : ∀ j : Fin trace.programLength,
         (trace.program j).line
             = (mainOfTable trace.program trace.mainTable).pc i.val →

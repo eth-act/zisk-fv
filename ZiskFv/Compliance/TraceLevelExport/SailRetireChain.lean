@@ -207,9 +207,9 @@ noncomputable def sailInstructionOf
   | .sllw c => instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SLLW)
   | .srlw c => instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SRLW)
   | .sraw c => instruction.RTYPEW (c.r2, c.r1, c.rd, ropw.SRAW)
-  | .slliw c => instruction.SHIFTIWOP (c.slliw_input.shamt, c.r1, c.rd, sopw.SLLIW)
-  | .srliw c => instruction.SHIFTIWOP (c.srliw_input.shamt, c.r1, c.rd, sopw.SRLIW)
-  | .sraiw c => instruction.SHIFTIWOP (c.sraiw_input.shamt, c.r1, c.rd, sopw.SRAIW)
+  | .slliw c => instruction.SHIFTIWOP (c.shamt, c.r1, c.rd, sopw.SLLIW)
+  | .srliw c => instruction.SHIFTIWOP (c.shamt, c.r1, c.rd, sopw.SRLIW)
+  | .sraiw c => instruction.SHIFTIWOP (c.shamt, c.r1, c.rd, sopw.SRAIW)
   | .mul c => instruction.MUL
       (c.r2, c.r1, c.rd,
        { result_part := VectorHalf.Low
