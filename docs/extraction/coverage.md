@@ -84,7 +84,9 @@ The independent columns distinguish:
   fidelity credit even when the root never calls them.
 - `exposed-to-root`: no root declaration dependency on the raw generated
   predicate, checked link, or proof-backed generated component assertion.
-- `build-only-check`: checked at build time but not consumed by the root.
+- `build-only-check`: a build check without a theorem-consumed tie. This can
+  coexist with generated-model consumption: consuming `main` does not consume
+  the separately checked manifest equality.
 - `theorem-consumed-tie`: the root reaches a checked link, manifest equality,
   or an equality/iff theorem whose dependencies include the raw predicate.
 - `generated-model-root`: the root reaches the generated component `main`,
@@ -100,6 +102,9 @@ links not reached by maintained theorem checks. Virtual byte-table exports are
 reported as fidelity inputs present, never as proof that their executable
 fidelity gate has run. Rebaselining these measurements is an accounting change,
 not a stronger root theorem or a discharged extraction/channel obligation.
+These are conservative declaration-dependency measurements, not a guarantee
+that every mutation to a reached declaration is rejected. Mutation rejection
+still requires its own observed proof or fidelity-gate evidence.
 
 `tools/clean-components/faithfulness.py` runs `pil-extract clean-component` for
 the same ten registered AIRs and compares each emitted `Row.lean` and

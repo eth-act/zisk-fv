@@ -327,7 +327,7 @@ def inventory(deps: Dependencies) -> tuple[list[Row], int, set[int]]:
             rows.append(Row(air, classes[(air, index)], index,
                             not build_checked, not root_consumed, tied,
                             (air, index) in residuals, link, buses,
-                            build_checked and not root_consumed, correspondence, model))
+                            build_checked and not correspondence, correspondence, model))
     unknown = sorted(set(residuals) - {(r.air, r.index) for r in rows})
     if unknown:
         raise ValueError(f"residuals name unknown constraints: {unknown}")
@@ -391,7 +391,7 @@ def exposure_totals(text: str) -> tuple[int, int]:
     build = root = 0
     for line in text.splitlines():
         fields = line.split("\t")
-        if len(fields) in (7, 10) and fields[0] not in ("air", "constraint") and fields[2].isdigit():
+        if len(fields) == 10 and fields[0] not in ("air", "constraint") and fields[2].isdigit():
             build += int(fields[3])
             root += int(fields[4])
     return build, root
