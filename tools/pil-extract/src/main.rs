@@ -477,13 +477,13 @@ fn list_airs(pilout: &PilOut) {
         let gname = group.name.as_deref().unwrap_or("<unnamed>");
         for (ai, air) in group.airs.iter().enumerate() {
             let aname = air.name.as_deref().unwrap_or("<unnamed>");
+            print!("[{}][{}] {}::{} (rows=", gi, ai, gname, aname);
+            match air.num_rows {
+                Some(rows) => print!("{rows}"),
+                None => print!("<missing>"),
+            }
             println!(
-                "[{}][{}] {}::{} (rows=2^{}, exprs={}, constraints={})",
-                gi,
-                ai,
-                gname,
-                aname,
-                air.num_rows.unwrap_or(0),
+                ", exprs={}, constraints={})",
                 air.expressions.len(),
                 air.constraints.len(),
             );
