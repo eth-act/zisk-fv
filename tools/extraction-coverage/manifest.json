@@ -41,6 +41,7 @@
     {"kind": "table_digest", "path": "ByteTables/BinaryTable.json"},
     {"kind": "lean", "path": "Extraction.lean"},
     {"kind": "lean", "path": "Extraction/Arith.lean"},
+    {"kind": "lean", "path": "Extraction/ArithRangeTable.lean"},
     {"kind": "lean", "path": "Extraction/ArithTable.lean"},
     {"kind": "lean", "path": "Extraction/Binary.lean"},
     {"kind": "lean", "path": "Extraction/BinaryAdd.lean"},
