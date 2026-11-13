@@ -35,6 +35,13 @@ def memorySourceExprToClean (row : Var MemAlignRow FGL) :
   | .witness 1 3 0 => some row.wr
   | .witness 1 6 0 => some row.sel_up_to_down
   | .witness 1 7 0 => some row.sel_down_to_up
+  | .witness 1 8 0 => some row.reg_0
+  | .witness 1 9 0 => some row.reg_1
+  | .witness 1 10 0 => some row.reg_2
+  | .witness 1 11 0 => some row.reg_3
+  | .witness 1 12 0 => some row.reg_4
+  | .witness 1 13 0 => some row.reg_5
+  | .witness 1 14 0 => some row.reg_6
   | .witness 1 24 0 => some row.step
   | .witness 1 26 0 => some row.sel_prove
   | .witness 1 27 0 => some row.value_0
@@ -113,5 +120,90 @@ theorem memoryInteraction_roster_complete :
           (component.rowInputVar.sel_prove - selAssumeExpr component.rowInputVar)
           (memBusMessageExpr component.rowInputVar)).toRaw)] :=
   component_interactionsWith_memBus
+
+/-! ## Register range tuples
+
+`mem/pil/mem_align.pil:113–118` range-checks each register as one byte.
+The c33–c35 clusters account for registers 1–6; c38 accounts for register 0.
+Register 7 remains in the already-linked c36 ROM/range cluster.
+-/
+
+open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
+
+/-- A source range hint, its exact row expression, and its compiled negative
+interaction. Membership of a static provider is a separate channel fact. -/
+structure RegisterRangeWiring where
+  link : ValidatedLink
+  hint : HintTuple
+  sourceMember : hint ∈ link.hints
+  constraintValidated :
+    templateOf link.shape link.alpha link.gamma link.accumulator
+      link.hints link.derivedTuples = some link.constraint
+  rangePiop : hint.piop = "Range Check"
+  rangeBus : hint.busId = .constant "107"
+  rangeIsAssumes : hint.proves = false
+  rangeMultiplicity : hint.multiplicity = .constant "1"
+  source : Expression FGL
+  slotInterpretation : decodeMemorySourceSlots component.rowInputVar hint.slots = some [source]
+  registerIndex : Nat
+  compiledInteraction :
+    (component.operations.interactionsWith MemAlignRangeChannel.toRaw)[registerIndex]? =
+      some ((MemAlignRangeChannel.emitted (-1) (memAlignRangeMessageExpr source)).toRaw)
+
+@[reducible]
+def reg1RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_33, hint_MemAlign_33_0,
+    by simp [link_MemAlign_33], link_MemAlign_33.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_1, rfl, 1,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+@[reducible]
+def reg2RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_33, hint_MemAlign_33_1,
+    by simp [link_MemAlign_33], link_MemAlign_33.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_2, rfl, 2,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+@[reducible]
+def reg3RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_34, hint_MemAlign_34_0,
+    by simp [link_MemAlign_34], link_MemAlign_34.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_3, rfl, 3,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+@[reducible]
+def reg4RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_34, hint_MemAlign_34_1,
+    by simp [link_MemAlign_34], link_MemAlign_34.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_4, rfl, 4,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+@[reducible]
+def reg5RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_35, hint_MemAlign_35_0,
+    by simp [link_MemAlign_35], link_MemAlign_35.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_5, rfl, 5,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+@[reducible]
+def reg6RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_35, hint_MemAlign_35_1,
+    by simp [link_MemAlign_35], link_MemAlign_35.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_6, rfl, 6,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+@[reducible]
+def reg0RangeWiring : RegisterRangeWiring :=
+  ⟨link_MemAlign_38, hint_MemAlign_38_0,
+    by simp [link_MemAlign_38], link_MemAlign_38.constraintValidated,
+    rfl, rfl, rfl, rfl, component.rowInputVar.reg_0, rfl, 0,
+    by rw [component_interactionsWith_memAlignRangeChannel]; rfl⟩
+
+/-- Every hint of the four newly bound constraints is accounted for. -/
+theorem registerRange_source_roster :
+    link_MemAlign_33.hints = [reg1RangeWiring.hint, reg2RangeWiring.hint] ∧
+    link_MemAlign_34.hints = [reg3RangeWiring.hint, reg4RangeWiring.hint] ∧
+    link_MemAlign_35.hints = [reg5RangeWiring.hint, reg6RangeWiring.hint] ∧
+    link_MemAlign_38.hints = [reg0RangeWiring.hint] := ⟨rfl, rfl, rfl, rfl⟩
 
 end ZiskFv.AirsClean.MemAlign
