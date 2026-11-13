@@ -87,7 +87,7 @@ variable {F : Type} [Field F]
         };
         let expression = expression.ok_or_else(|| anyhow!("ROM constraint {index} has no expression"))?;
         writeln!(out, "def polynomial_{index} (source : CommittedSource F) (row : Int) : F :=\n  {}\n", renderer.expression(expression.idx as usize)?)?;
-        writeln!(out, "def constraint_{index}_{suffix} (source : CommittedSource F) (row : Int) : Prop :=\n  polynomial_{index} source row = 0\n")?;
+        writeln!(out, "def sourceConstraint_{index}_{suffix} (source : CommittedSource F) (row : Int) : Prop :=\n  polynomial_{index} source row = 0\n")?;
     }
     writeln!(out, "def numRowsLog2 : Nat := {}\n",
         air.num_rows.ok_or_else(|| anyhow!("ROM AIR has no physical row count"))?)?;
