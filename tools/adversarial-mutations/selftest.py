@@ -350,8 +350,40 @@ def test_byte_table_gate_order() -> None:
     check(gate_line < proof_line, "fidelity gate regressed behind the full proof build")
 
 
+def test_arith_table_diagnostics() -> None:
+    """Only the recorded table correspondence rejection counts as a proof kill."""
+    with tempfile.TemporaryDirectory() as tmp:
+        log = Path(tmp) / "proof.log"
+        failed = command(1)
+        failed.log = str(log)
+        rejection = ("error: ZiskFv/AirsClean/ArithTable.lean:197:2: "
+                     "Tactic `rfl` failed: The left-hand side\n")
+        for number in (5, 26, 33, 36):
+            item = runner.round_by_number(number)
+            def outcome(text: str, baseline: runner.CommandResult) -> str:
+                log.write_text(text)
+                return runner.classify(item, {"equal": True}, ["ArithTable.lean"],
+                                       command(), baseline, failed)[0]
+            check(outcome(rejection, command()) == "proof",
+                  f"round {number}: expected ArithTable equality rejection missed")
+            for unrelated in (
+                "error: build/extraction/Extraction/ArithTable.lean:1: unknown module\n",
+                "error: ZiskFv/AirsClean/ArithTable.lean:197:2: unknown identifier\n",
+                "error: ZiskFv/AirsClean/ArithTable.lean:197:2: "
+                "(deterministic) timeout at whnf, maximum number of heartbeats reached\n",
+                "error: Other.lean:1: unrelated failure\n" + rejection,
+            ):
+                check(outcome(unrelated, command()) == "infrastructure",
+                      f"round {number}: unrelated/timeout failure counted as a kill")
+            check(outcome(rejection, command(1)) == "infrastructure",
+                  f"round {number}: non-green baseline counted as a kill")
+            check(outcome(rejection, command(None, True)) == "infrastructure",
+                  f"round {number}: baseline timeout counted as a kill")
+
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
+             test_arith_table_diagnostics,
              test_artifact_and_semantic_baselines, test_site_operators,
              test_round_zero_control, test_log_archive,
              test_private_dependency_copy, test_readonly_artifact_restore,

@@ -92,6 +92,15 @@ This avoids rebuilding the Rust/C++ fixed generators 47 times without replacing
 their data with stubs. ArithTable and MemAlignRom mutations reuse the baseline
 pilout because those production extraction paths read ZisK source directly.
 
+ArithTable rounds 5, 26, 33, and 36 must fail the kernel-checked
+`rows_toList_eq_extracted` equality in `ZiskFv/AirsClean/ArithTable.lean`.
+Their diagnostic entries name that exact `rfl` rejection, not merely an
+ArithTable filename: missing imports, unrelated errors, and Lean resource
+timeouts are not detections. The historical rounds 26/33/36 produced that
+equality rejection but were classified as infrastructure because their diagnostic
+entries were absent. New evidence must rerun the actual controls and mutations;
+historical results are never relabeled.
+
 ```bash
 python3 tools/adversarial-mutations/runner.py full --round 32 \
   --baseline-pilout build/zisk.pilout \
