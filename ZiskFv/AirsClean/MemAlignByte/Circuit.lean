@@ -238,6 +238,6 @@ theorem spec_of_main_constraints (offset : Nat) (env : Environment FGL)
   simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
   have h_constraints := h_holds
   simp only [main, circuit_norm] at h_constraints
-  exact (hsound env row (eval env row) rfl h_constraints).1
+  exact (hsound env row (eval env row) (by simp only [circuit_norm]) h_constraints).1
 
 end ZiskFv.AirsClean.MemAlignByte
