@@ -336,6 +336,7 @@ dependencies = [
  "prost",
  "prost-build",
  "regex",
+ "serde_json",
  "tracing",
  "tracing-subscriber",
 ]

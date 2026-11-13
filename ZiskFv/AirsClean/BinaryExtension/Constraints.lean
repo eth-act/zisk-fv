@@ -230,6 +230,15 @@ def mainWithStaticBinaryExtensionTableAndShiftRange
   lookup (Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable24)
     row.flags.b_0
 
+/-- The same shift-range lookup, with the actual eight bus-124 pulls instead
+    of direct static-table lookups. Source membership is supplied by balance. -/
+@[circuit_norm]
+def mainWithBinaryExtensionTableAndShiftRange
+    (row : Var BinaryExtensionRow FGL) : Circuit FGL Unit := do
+  mainWithBinaryExtensionTable row
+  lookup (Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable24)
+    row.flags.b_0
+
 
 
 end ZiskFv.AirsClean.BinaryExtension

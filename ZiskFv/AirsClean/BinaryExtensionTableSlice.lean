@@ -64,4 +64,124 @@ theorem component_interactionsWith_binaryExtensionTableChannel :
   simp only [component, circuit, Component.exposedChannels, expose,
     List.mem_singleton, List.map_cons, List.map_nil]
 
+/-- The table tuple is collected by virtual `lookup_proves`; the actual
+    packed producer uses `VirtualTable.multiplicity[lane]` unchanged
+    (`std_virtual_table.pil:435,530`). This is its target-bus projection. -/
+structure SourceRow (F : Type) where
+  message : BinaryExtensionTableMessage F
+  multiplicity : F
+deriving ProvableStruct
+
+@[circuit_norm]
+def sourceMain (row : SourceRow (Expression FGL)) : Circuit FGL Unit := do
+  lookup (Table.fromStatic binaryExtensionTable) row.message
+  BinaryExtensionTableChannel.emit row.multiplicity row.message
+
+def sourceCircuit : GeneralFormalCircuit FGL SourceRow unit where
+  name := "BinaryExtensionTableSource124"
+  main := sourceMain
+  channelsWithRequirements := [BinaryExtensionTableChannel.toRaw]
+  exposedChannels row _ :=
+    expose BinaryExtensionTableChannel
+      [BinaryExtensionTableChannel.emitted row.multiplicity row.message]
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => binaryExtensionTable.Spec row.message
+  ProverAssumptions := fun row _ _ => binaryExtensionTable.Spec row.message
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · simpa only [Table.fromStatic, StaticTable.toTable] using h_holds
+    · intro _
+      simp [BinaryExtensionTableChannel]
+  completeness := by
+    circuit_proof_start [Lookup.completeness_def, BinaryExtensionTableChannel]
+    simpa only [Table.fromStatic, StaticTable.toTable] using h_assumptions
+
+/-- Production uses `virtual BinaryExtensionTable(BINARY_EXTENSION_TABLE_SIZE)`
+    (`zisk/pil/zisk.pil:123`), not the template's default `2^22`. -/
+def sourceFixedColumns : IndexedFixedColumns FGL 1 where
+  capacity := tableSize
+  capacity_pos := by norm_num [tableSize, shiftBlockSize, sextBlockSize]
+  effectiveWidth := 8
+  fixedWidth := 7
+  layout slot :=
+    if h : slot.val < 7 then .inr ⟨slot.val, h⟩ else .inl 0
+  values slot index := (toElements (rowOfIndex index.val))[slot.val]
+
+def sourceComponent : Component FGL :=
+  { circuit := sourceCircuit, rawWidth := 1, fixedColumns := some sourceFixedColumns }
+
+theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : FGL) :
+    sourceFixedColumns.materialize index.val #[multiplicity] =
+      (toElements ({ message := rowOfIndex index.val, multiplicity } :
+        SourceRow FGL)).toArray := by
+  apply Array.ext_getElem
+  · rfl
+  · intro i hi hi'
+    have h_i : i < 8 := by simpa only [IndexedFixedColumns.materialize_size] using hi
+    interval_cases i <;>
+      simp [IndexedFixedColumns.materialize, IndexedFixedColumns.fixedAt,
+        sourceFixedColumns, Nat.mod_eq_of_lt index.isLt, toElements,
+        ProvableType.fromStruct, ProvableStruct.componentsToElements,
+        ProvableStruct.toComponents, ProvableStruct.components]
+
+theorem eval_sourceFixedColumns (index : Fin tableSize) (multiplicity : FGL)
+    (data : ProverData FGL) :
+    eval (Environment.fromArray
+      (sourceFixedColumns.materialize index.val #[multiplicity]) data)
+      sourceComponent.rowInputVar =
+        ({ message := rowOfIndex index.val, multiplicity } : SourceRow FGL) := by
+  rw [sourceFixedColumns_materialize]
+  exact ProvableType.eval_fromInput_varFromOffset_zero _ _
+
+theorem sourceComponent_interactionsWith :
+    sourceComponent.operations.interactionsWith BinaryExtensionTableChannel.toRaw =
+      [((BinaryExtensionTableChannel.emitted sourceComponent.rowInputVar.multiplicity
+          sourceComponent.rowInputVar.message).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨BinaryExtensionTableChannel.toRaw,
+      [((BinaryExtensionTableChannel.emitted sourceComponent.rowInputVar.multiplicity
+          sourceComponent.rowInputVar.message).toRaw)]⟩ ∈ sourceComponent.exposedChannels
+  simp only [sourceComponent, sourceCircuit, Component.exposedChannels, expose,
+    List.mem_singleton, List.map_cons, List.map_nil]
+
+/-- Every production source row, with any source multiplicity, supplies
+    its own completeness index. This is not a soundness-side premise. -/
+theorem sourceRow_constructible (index : Fin tableSize) (multiplicity : FGL)
+    (data : ProverData FGL) :
+    sourceCircuit.ProverAssumptions
+      { message := rowOfIndex index.val, multiplicity } () data := by
+  exact ⟨index, rfl⟩
+
+theorem sourceComponent_spec_of_constraints (env : Environment FGL)
+    (h : sourceComponent.operations.ConstraintsHold env) :
+    binaryExtensionTable.Spec (eval env sourceComponent.rowInputVar.message) := by
+  rw [Component.constraintsHold_iff] at h
+  simpa [sourceComponent, Component.rowOperations, sourceCircuit, sourceMain,
+    circuit_norm, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.eval.go] using h
+
+theorem sourceInteraction_mem_spec
+    {table : Table FGL} (h_component : table.component = sourceComponent)
+    (h_constraints : table.Constraints) {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith BinaryExtensionTableChannel.toRaw) :
+    ∃ message : BinaryExtensionTableMessage FGL,
+      binaryExtensionTable.Spec message ∧
+        interaction.msg = (toElements message).toArray := by
+  have h_ops :
+      table.component.operations.interactionsWith BinaryExtensionTableChannel.toRaw =
+        [((BinaryExtensionTableChannel.emitted sourceComponent.rowInputVar.multiplicity
+          sourceComponent.rowInputVar.message).toRaw)] := by
+    simpa only [h_component] using sourceComponent_interactionsWith
+  simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_ops, List.map_singleton, List.flatMap_singleton, List.mem_map] at h_mem
+  obtain ⟨row, h_row, rfl⟩ := h_mem
+  refine ⟨eval (table.environment row) sourceComponent.rowInputVar.message,
+    sourceComponent_spec_of_constraints _ (by
+      simpa only [h_component] using h_constraints row h_row), ?_⟩
+  change ((toElements sourceComponent.rowInputVar.message).map
+    (table.environment row)).toArray = _
+  rw [← ProvableType.toElements_eval]
+
 end ZiskFv.AirsClean.BinaryExtensionTableSlice

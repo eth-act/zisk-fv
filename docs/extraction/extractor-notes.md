@@ -687,3 +687,56 @@ does not establish that detection.
 
 Measured on the pinned inputs: `BinaryTable` 19 blocks / 5,505,024 rows,
 `BinaryExtensionTable` 9 blocks / 3,151,872 rows; the model matches the builder on every row.
+
+### Packed production providers (local #415 / #418 work)
+
+Production invokes `virtual BinaryTable(BINARY_TABLE_SIZE)` and
+`virtual BinaryExtensionTable(BINARY_EXTENSION_TABLE_SIZE)`, not their template
+defaults. Virtual `lookup_proves` collects the fixed tuple and ignores the
+template's unused multiplicity argument (`std_lookup.pil:66-69`).
+The actual producer is `VirtualTable0/1`: each physical AIR has `2^21` rows,
+eight raw multiplicity lanes, fixed `UID` lanes, and packed fixed payloads;
+`std_virtual_table.pil:530` emits the corresponding witness lane unchanged.
+
+`export-packed-tables.cjs` observes the actual full production compilation.
+For buses 88, 124, 125, 330 and 331 it compares every packed UID/payload/padding
+cell to the retained compiled source columns, then scans every physical UID
+cell to reject missing ownership or collisions. It records actual source
+offsets, domains and complete tuple hashes in `PackedVirtualTables.json`.
+It also checks the compiled producer's unshifted raw witness multiplicity
+operand. It does not model unrelated packed payload values.
+
+`packed_virtual_tables.rs` emits the intrinsic location map, its source-index
+inverse, and exhaustive duplicate-free target-location lists.
+`PackedVirtualTableSources.lean` projects raw physical witnesses through that
+map and embeds arbitrary target-source multiplicities while preserving
+unrelated raw cells. The two Binary slice source components own seven fixed
+tuple slots and one unrestricted raw multiplicity; their canonical provider
+tables read the actual mapped physical lane. The byte streamer now reads
+these materialized provider tuples, retaining the complete original builder
+comparison and adding the actual packed-producer comparison.
+
+`BinaryTableBalance.lean` proves both channels' all-eight consumer membership
+and the existing static-membership bundles from actual emissions, source
+provider constraints and finished balance. Its local ensemble does not finish
+the operation bus. `shiftTableConsumerComponent` retains the former static
+shift consumer's `b_0` range lookup. These local declarations do not by
+themselves replace the accepted full ensemble or close #415.
+
+Mutation recipes for the integration owner (not execution evidence):
+
+* Swap `A,B` in BinaryTable's actual `lookup_proves` tuple, or `C0,C1` in
+  BinaryExtensionTable's tuple. Regenerate actual compiler exports and run
+  `check-byte-tables.py`. The original fixed columns can remain unchanged;
+  the compiled collected/packed tuple must now mismatch the materialized
+  provider stream. This crosses the actual compiled producer boundary,
+  unlike checking the source spelling of the tuple.
+* In a private mutation source copy, multiply
+  `std_virtual_table.pil`'s `multiplicity[i]` producer operand by two.
+  The packed observer must reject the compiled non-identity witness operand.
+* Retain the prior output/carry builder mutants: the original complete-domain
+  opcode-block comparison remains required.
+
+No gates or mutation runs were executed for these local additions; acceptance
+requires the integration owner's regenerated source artifacts, Lean build,
+trust gates, mutation rejection evidence and complete `nix run .#test`.

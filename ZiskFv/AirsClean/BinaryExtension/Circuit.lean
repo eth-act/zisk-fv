@@ -142,6 +142,52 @@ def tableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit  whe
 
 def tableConsumerComponent : Air.Flat.Component FGL := { circuit := tableConsumerCircuit }
 
+/-- Channel consumer retaining exactly the shift-range lookup of
+    `shiftStaticLookupCircuit`. Replacing that static component must not drop
+    its `b_0` range constraint. No table-membership assumption is added. -/
+def shiftTableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit where
+  name := "BinaryExtensionWithTableAndShiftRange"
+  main := mainWithBinaryExtensionTableAndShiftRange
+  elaborated :=
+    { localLength _ := 0
+      output _ _ := () }
+  channelsWithRequirements := [OpBusChannel.toRaw, BinaryExtensionTableChannel.toRaw]
+  exposedChannels := tableConsumerCircuit.exposedChannels
+  exposedChannels_eq := by
+    intro input offset exposed h_mem
+    have he := tableConsumerCircuit.exposedChannels_eq input offset exposed h_mem
+    simpa only [tableConsumerCircuit, mainWithBinaryExtensionTableAndShiftRange,
+      circuit_norm] using he
+  Assumptions := fun _ _ => True
+  Spec := fun row _ _ => Spec row ∧
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec row.flags.b_0
+  ProverAssumptions := fun row _ _ =>
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec row.flags.b_0
+  ProverSpec := fun _ _ _ => True
+  soundness := by
+    circuit_proof_start
+    refine ⟨?_, ?_⟩
+    · refine ⟨trivial, ?_⟩
+      simpa only [Table.fromStatic, StaticTable.toTable] using h_holds
+    · intro _
+      simp [OpBusChannel, BinaryExtensionTableChannel]
+  completeness := by
+    circuit_proof_start [OpBusChannel, BinaryExtensionTableChannel, Lookup.completeness_def]
+    simpa only [Table.fromStatic, StaticTable.toTable] using h_assumptions
+
+def shiftTableConsumerComponent : Air.Flat.Component FGL :=
+  { circuit := shiftTableConsumerCircuit }
+
+/-- Adding the range lookup changes no channel interaction. -/
+theorem shiftTableConsumerComponent_interactionsWith
+    (channel : RawChannel FGL) :
+    shiftTableConsumerComponent.operations.interactionsWith channel =
+      tableConsumerComponent.operations.interactionsWith channel := by
+  rw [Component.interactionsWith_eq, Component.interactionsWith_eq]
+  simp only [shiftTableConsumerComponent, tableConsumerComponent,
+    Component.rowOperations, shiftTableConsumerCircuit, tableConsumerCircuit,
+    mainWithBinaryExtensionTableAndShiftRange, circuit_norm]
+
 theorem component_interactionsWith_opBus :
     component.operations.interactionsWith OpBusChannel.toRaw =
       [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)] := by
