@@ -1,5 +1,7 @@
 import Extraction.LookupWiring
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
+import Extraction.MemAlignReadByte
+import ZiskFv.AirsClean.DirectPadding
 
 /-!
 # Source-linked MemAlignReadByte memory interactions
@@ -169,5 +171,52 @@ theorem rangeAndDualByte_compiledLookups :
       some { table := (Table.fromStatic RangeTables.dualByteTable).toRaw, entry := #v[component.rowInputVar.byte_value, component.rowInputVar.value_8b] } := by
   rw [Component.lookups_eq]
   exact ⟨rfl, rfl⟩
+
+/-! ## Segment Direct padding equations (build-only source fidelity)
+
+`mem_align_byte.pil:106–118`, specialized with read=1/write=0, uses the
+same positive aligned-load and negative byte-load updates. The producer's
+count is `num_rows - padding_row` (`mem_align_byte_sm.rs:212–219`).
+The exact source equations below do not identify arbitrary AIR values with
+that physical count or add segment contributions to the Clean ensemble.
+-/
+
+theorem paddingDirect_source_roster :
+    link_MemAlignReadByte_7.hints = [hint_MemAlignReadByte_7_0] ∧
+    link_MemAlignReadByte_8.hints = [hint_MemAlignReadByte_8_0] := ⟨rfl, rfl⟩
+
+theorem paddingDirect_source_metadata :
+    (hint_MemAlignReadByte_7_0.piop, hint_MemAlignReadByte_7_0.busId,
+      hint_MemAlignReadByte_7_0.proves, hint_MemAlignReadByte_7_0.multiplicity) =
+        ("Direct", Expr.constant "10", true, Expr.add (.airValue 0) (.constant "0")) ∧
+    (hint_MemAlignReadByte_8_0.piop, hint_MemAlignReadByte_8_0.busId,
+      hint_MemAlignReadByte_8_0.proves, hint_MemAlignReadByte_8_0.multiplicity) =
+        ("Direct", Expr.constant "10", false, Expr.add (.airValue 0) (.constant "0")) :=
+  ⟨rfl, rfl⟩
+
+theorem paddingDirect_tuple_decode (row : Var MemAlignReadByteRow FGL) :
+    decodeMemorySourceSlots row hint_MemAlignReadByte_7_0.slots = some [1, 0, 0, 8, 0, 0] ∧
+    decodeMemorySourceSlots row hint_MemAlignReadByte_8_0.slots = some [1, 0, 0, 1, 0, 0] :=
+  ⟨rfl, rfl⟩
+
+theorem alignedPaddingDirect_source_iff
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : Nat) :
+    MemAlignReadByte.extraction.constraint_7_every_row c row ↔
+      alignedLoadPaddingEquation
+        (Extraction.Circuit.exposed c (index := 0))
+        (Extraction.Circuit.exposed c (index := 1))
+        (Extraction.Circuit.challenge c (index := 0))
+        (Extraction.Circuit.challenge c (index := 1)) := Iff.rfl
+
+theorem bytePaddingDirect_source_iff
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : Nat) :
+    MemAlignReadByte.extraction.constraint_8_every_row c row ↔
+      byteLoadPaddingEquation
+        (Extraction.Circuit.exposed c (index := 0))
+        (Extraction.Circuit.exposed c (index := 2))
+        (Extraction.Circuit.challenge c (index := 0))
+        (Extraction.Circuit.challenge c (index := 1)) := Iff.rfl
 
 end ZiskFv.AirsClean.MemAlignReadByte
