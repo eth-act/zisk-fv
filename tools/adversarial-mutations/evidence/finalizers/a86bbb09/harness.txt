@@ -1,0 +1,180 @@
+import hashlib, importlib.util, json, os, pathlib, re, shutil, subprocess, sys, time
+
+repo = pathlib.Path(sys.argv[1]).resolve()
+work = pathlib.Path(sys.argv[2]).resolve()
+zisk = pathlib.Path('/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source')
+proofman = pathlib.Path('/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source')
+wrapper = pathlib.Path('/nix/store/rxq573nc5scy774b0fx1ckgz8vz8pvd7-compile-mutation/bin/compile-mutation')
+stdlib_rel = pathlib.Path('pil2-components/lib/std/pil/std_sum.pil')
+airs = ['Main','Binary','BinaryAdd','BinaryExtension','MemAlign','MemAlignByte','MemAlignReadByte','MemAlignWriteByte']
+prefixes = ['main','binary','binaryAdd','binaryExtension','memAlign','memAlignByte','memAlignReadByte','memAlignWriteByte']
+line = "    L1' * ((result - gsum - direct_sum_ims) * direct_vals_den - direct_vals_num) === 0;"
+recipes = {
+ 'group-slot': [('        airgroupval aggregate(sum) default(0) gsum_result;', '        airgroupval aggregate(sum) default(0) gsum_result;\n        airgroupval aggregate(sum) default(0) gsum_result_mutant;'), ('        result = gsum_result;', '        result = gsum_result_mutant;')],
+ 'direct-sign': [(line, line.replace('- direct_sum_ims', '+ direct_sum_ims'))],
+ 'selector': [(line, line.replace("L1' *", 'L1 *'))],
+}
+work.mkdir(parents=True, exist_ok=False)
+report = {'proof_target':'ZiskFv.AirsClean.GsumBoundary','work':str(work),'source_recipes':recipes,'cases':{},'commands':[],'complete':False}
+
+def digest(path):
+ h=hashlib.sha256()
+ with open(path,'rb') as f:
+  for block in iter(lambda:f.read(1048576), b''): h.update(block)
+ return h.hexdigest()
+
+def save():
+ (work/'results.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+
+def run(argv,cwd,log):
+ log=pathlib.Path(log); log.parent.mkdir(parents=True,exist_ok=True)
+ start=time.monotonic()
+ with log.open('w') as f:
+  result=subprocess.run([str(x) for x in argv],cwd=cwd,stdout=f,stderr=subprocess.STDOUT,env={**os.environ,'LEAN_NUM_THREADS':'2','CARGO_BUILD_JOBS':'2','NIX_BUILD_CORES':'2'})
+ record={'argv':[str(x) for x in argv],'cwd':str(cwd),'log':str(log),'exit_code':result.returncode,'seconds':round(time.monotonic()-start,3)}
+ report['commands'].append(record); save()
+ return result.returncode
+
+def need(argv,cwd,log):
+ code=run(argv,cwd,log)
+ if code: raise RuntimeError(f'command failed ({code}): {argv}; log {log}')
+
+def copy_dir(source,target):
+ need(['cp','-a','--reflink=never',str(source),str(target)],repo,work/'logs'/('copy-'+target.name+'.log'))
+
+try:
+ proof=work/'proof'
+ proof.mkdir()
+ # Freeze the human proof source, not generated inputs or mutable build caches.
+ files=subprocess.check_output(['git','ls-files','-z'],cwd=repo).split(b'\0')
+ for raw in files:
+  if not raw: continue
+  relative=os.fsdecode(raw); source=repo/relative; target=proof/relative
+  if source.is_file():
+   target.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(source,target)
+  elif source.is_dir():
+   target.mkdir(parents=True,exist_ok=True)
+ need(['git','init','-q'],proof,work/'logs/git-init.log')
+ need(['git','add','-A'],proof,work/'logs/git-add.log')
+ need(['git','-c','user.name=Finalizer source control','-c','user.email=source-control@localhost','commit','-qm','Freeze finalizer proof source'],proof,work/'logs/git-commit.log')
+ report['source_commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
+ report['snapshot_commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=proof,text=True).strip()
+ human={str(p.relative_to(proof)):digest(p) for p in sorted((proof/'ZiskFv').rglob('*.lean'))}
+ report['proof_source_sha256']=hashlib.sha256(json.dumps(human,sort_keys=True).encode()).hexdigest()
+ (work/'frozen-proof-sources.json').write_text(json.dumps(human,indent=2,sort_keys=True)+'\n')
+ for relative in human: (proof/relative).chmod(0o444)
+ def frozen():
+  changed=[relative for relative,h in human.items() if digest(proof/relative)!=h]
+  if changed: raise RuntimeError('frozen proof source changed: '+repr(changed))
+ copy_dir(repo/'.lake',proof/'.lake')
+ (proof/'build').mkdir()
+ for name in ['extraction','clean-lean','sail-lean','aeneas-lean']:
+  copy_dir(repo/'build'/name,proof/'build'/name)
+ tool_log=work/'logs/production-extractor.log'
+ need(['nix','build','--no-write-lock-file','--no-link','--print-out-paths',
+       '--cores','2','--max-jobs','1','git+file://'+str(proof)+'#pil-extract'],
+      proof,tool_log)
+ tool_paths=[pathlib.Path(line) for line in tool_log.read_text().splitlines()
+             if re.fullmatch(r'/nix/store/\S+',line)]
+ if not tool_paths or not (tool_paths[-1]/'bin/pil-extract').is_file():
+  raise RuntimeError('production extractor output path missing')
+ report['production_extractor']=str(tool_paths[-1])
+ extractor=work/'pil-extract'
+ shutil.copy2(tool_paths[-1]/'bin/pil-extract',extractor)
+ extractor.chmod(0o555)
+ report['extractor_sha256']=digest(extractor)
+ report['pinned_pilout_sha256']=digest(repo/'build/zisk.pilout')
+ report['stdlib_sha256']=digest(proofman/stdlib_rel)
+ report['compiler_wrapper_sha256']=digest(wrapper)
+ spec=importlib.util.spec_from_file_location('finalizer_semdiff',repo/'tools/adversarial-mutations/semdiff.py')
+ semdiff=importlib.util.module_from_spec(spec); sys.modules[spec.name]=semdiff; spec.loader.exec_module(semdiff)
+
+ def compile_case(name,replacements):
+  case=work/name; case.mkdir()
+  src=case/'zisk'; std=case/'proofman'
+  need(['cp','-r','--reflink=never','--no-preserve=mode',str(zisk),str(src)],repo,case/'copy-zisk.log')
+  need(['cp','-r','--reflink=never','--no-preserve=mode',str(proofman),str(std)],repo,case/'copy-proofman.log')
+  original=(std/stdlib_rel).read_text(); text=original
+  for before,after in replacements:
+   if text.count(before)!=1: raise RuntimeError(f'{name}: source anchor count {text.count(before)} for {before!r}')
+   text=text.replace(before,after)
+  (std/stdlib_rel).write_text(text)
+  wrapper_text=wrapper.read_text()
+  old=str(proofman/'pil2-components/lib/std/pil')
+  if wrapper_text.count(old)!=1: raise RuntimeError('production stdlib include anchor differs')
+  wrapper_text=wrapper_text.replace(old,str(std/'pil2-components/lib/std/pil'))
+  # Only the stdlib include and the cache-safe copy mode differ from production.
+  wrapper_text=wrapper_text.replace('cp --no-preserve=mode','cp --reflink=never --no-preserve=mode')
+  private_wrapper=case/'compile-source'; private_wrapper.write_text(wrapper_text); private_wrapper.chmod(0o755)
+  pilout=case/'zisk.pilout'
+  need([private_wrapper,src,pilout],repo,case/'compile.log')
+  return case,pilout,{'stdlib_before_sha256':hashlib.sha256(original.encode()).hexdigest(),'stdlib_after_sha256':digest(std/stdlib_rel),'pilout_sha256':digest(pilout)}
+
+ selected=[air+'.lean' for air in airs]+['Circuit.lean','LookupWiring.lean']
+ normal={name:digest(repo/'build/extraction/Extraction'/name) for name in selected}
+ def extract(pilout,case):
+  root=proof/'build/extraction/Extraction'
+  need([extractor,'circuit-shim','--output',root/'Circuit.lean'],proof,case/'extract-Circuit.log')
+  for air in airs:
+   need([extractor,'air','--pilout',pilout,'--air',air,'--skip-unsupported','--output',root/(air+'.lean')],proof,case/('extract-'+air+'.log'))
+  need([extractor,'lookup-wiring','--pilout',pilout,'--output',root/'LookupWiring.lean'],proof,case/'extract-LookupWiring.log')
+  return {name:digest(root/name) for name in selected}
+ def prove(case):
+  frozen()
+  code=run(['lake','build','ZiskFv.AirsClean.GsumBoundary'],proof,case/'proof.log')
+  frozen()
+  return code
+
+ print('FROZEN_FINALIZER_SOURCE_READY',flush=True)
+ if not sys.stdin.readline():
+  raise RuntimeError('source-compiler phase was not released')
+ case,baseline,info=compile_case('baseline',[])
+ comparison=semdiff.compare(repo/'build/zisk.pilout',baseline)
+ info['canonical_equal_pinned']=comparison['equal']
+ if not comparison['equal']: raise RuntimeError('fresh baseline compiler is not canonically equal to pinned pilout')
+ artifacts=extract(baseline,case)
+ info['generated_sha256']=artifacts
+ info['normal_artifact_deltas']=[name for name in selected if artifacts[name]!=normal[name]]
+ if info['normal_artifact_deltas']: raise RuntimeError('fresh baseline extraction differs from normal selected inputs: '+repr(info['normal_artifact_deltas']))
+ info['proof_exit_code']=prove(case)
+ report['cases']['baseline']=info; save()
+ if info['proof_exit_code']!=0: raise RuntimeError('fresh unmutated baseline proof is not green')
+
+ theorem_lines=[]
+ for number,text in enumerate((proof/'ZiskFv/AirsClean/GsumBoundary.lean').read_text().splitlines(),1):
+  match=re.match(r'theorem ([A-Za-z_][A-Za-z0-9_]*)',text)
+  if match: theorem_lines.append((number,match.group(1)))
+ for name,replacements in recipes.items():
+  case,pilout,info=compile_case(name,replacements)
+  comparison=semdiff.compare(baseline,pilout)
+  info['canonical_equal_baseline']=comparison['equal']
+  if comparison['equal']: raise RuntimeError(f'{name}: source mutation has no canonical pilout delta')
+  changed=extract(pilout,case)
+  info['generated_sha256']=changed
+  info['artifact_deltas']=[key for key in selected if changed[key]!=artifacts[key]]
+  info['proof_exit_code']=prove(case)
+  text=(case/'proof.log').read_text(errors='replace')
+  diagnostics=[]
+  for line_text in text.splitlines():
+   match=re.search(r'error: ZiskFv/AirsClean/GsumBoundary\.lean:(\d+):\d+: (.*)',line_text)
+   if not match: continue
+   number=int(match.group(1))
+   preceding=[(n,decl) for n,decl in theorem_lines if n<=number]
+   if not preceding: continue
+   declaration=preceding[-1][1]
+   if '_finalizer_' in declaration:
+    diagnostics.append({'declaration':declaration,'line':number,'diagnostic':match.group(2)})
+  expected=[p for p in prefixes if not (name=='direct-sign' and p=='memAlign')]
+  found={p for p in expected if any(d['declaration'].startswith(p+'_finalizer_') for d in diagnostics)}
+  info['named_source_rejections']=diagnostics
+  info['expected_air_prefixes']=expected
+  info['missing_named_rejections']=sorted(set(expected)-found)
+  info['detected']=info['proof_exit_code']!=0 and not info['missing_named_rejections']
+  report['cases'][name]=info; save()
+  if not info['detected']: raise RuntimeError(f'{name}: no complete named source rejection; not a kill')
+ frozen()
+ report['complete']=True
+ report['result']='green fresh baseline and three genuine source mutations rejected by named finalizer proofs'
+ save(); print(json.dumps({'result':report['result'],'report':str(work/'results.json')},indent=2))
+except Exception as error:
+ report['error']=repr(error); save(); print(json.dumps({'error':repr(error),'report':str(work/'results.json')},indent=2)); raise
