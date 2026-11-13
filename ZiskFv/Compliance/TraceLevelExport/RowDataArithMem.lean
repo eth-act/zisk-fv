@@ -2258,8 +2258,18 @@ def toRowData_remuw {trace : AcceptedZiskTrace numInstructions} {binding : SailT
   toDecode := dec
   toInputs := ia
 
+/-- The exact decoded five register bits, without an encoder guard or default. -/
+def storeRegBits (r : regidx) : BitVec 5 :=
+  match r with
+  | .Regidx bits => bits
+
+@[simp] theorem storeRegBits_roundtrip (r : regidx) :
+    regidx.Regidx (storeRegBits r) = r := by
+  cases r <;> rfl
 structure Claim_sb (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  sb_input : PureSpec.SbInput
+  r1 : regidx
+  r2 : regidx
+  imm : BitVec 12
 
 structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type where
@@ -2281,7 +2291,7 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2297,24 +2307,61 @@ structure Decode_sb (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
+/-- Construct runtime operands only from successful reads of this Sail state. -/
+noncomputable def storeInput_sb
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 r2 : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r2) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc) :
+    PureSpec.SbInput where
+  r1 := storeRegBits r1
+  r2 := storeRegBits r2
+  imm := imm
+  r1_val := Classical.choose h_r1
+  r2_val := Classical.choose h_r2
+  PC := Classical.choose h_pc
 structure InputsCore_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_r2 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r2) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
   regs : ZiskFv.Compliance.ModeRegsFull
-  h_opcode_assumptions : PureSpec.sb_state_assumptions c.sb_input (binding i)
+  h_opcode_assumptions : PureSpec.sb_state_assumptions
+    (storeInput_sb (binding i) c.r1 c.r2 c.imm h_input_r1 h_input_r2 h_input_pc) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sb_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_a1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sb_input.r1_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r1)
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sb_input.r2_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r2)
   h_b1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sb_input.r2_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r2)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- Canonical pure input: the claim contributes decoded fields only. -/
+noncomputable def InputsCore_sb.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sb trace i}
+    (inputs : InputsCore_sb trace binding i c) : PureSpec.SbInput :=
+  storeInput_sb (binding i) c.r1 c.r2 c.imm
+    inputs.h_input_r1 inputs.h_input_r2 inputs.h_input_pc
+
+theorem InputsCore_sb.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sb trace i}
+    (inputs : InputsCore_sb trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_sb` carries on top of `InputsCore_sb`.
 
@@ -2326,7 +2373,7 @@ structure Inputs_sb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sb trace i) : Type extends InputsCore_sb trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.sb_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `sb` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sb` bundles them. -/
@@ -2345,7 +2392,9 @@ def toRowData_sb {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_sh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  sh_input : PureSpec.ShInput
+  r1 : regidx
+  r2 : regidx
+  imm : BitVec 12
 
 structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type where
@@ -2367,7 +2416,7 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2383,24 +2432,61 @@ structure Decode_sh (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
+/-- Construct runtime operands only from successful reads of this Sail state. -/
+noncomputable def storeInput_sh
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 r2 : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r2) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc) :
+    PureSpec.ShInput where
+  r1 := storeRegBits r1
+  r2 := storeRegBits r2
+  imm := imm
+  r1_val := Classical.choose h_r1
+  r2_val := Classical.choose h_r2
+  PC := Classical.choose h_pc
 structure InputsCore_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_r2 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r2) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
   regs : ZiskFv.Compliance.ModeRegsFull
-  h_opcode_assumptions : PureSpec.sh_state_assumptions c.sh_input (binding i)
+  h_opcode_assumptions : PureSpec.sh_state_assumptions
+    (storeInput_sh (binding i) c.r1 c.r2 c.imm h_input_r1 h_input_r2 h_input_pc) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sh_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_a1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sh_input.r1_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r1)
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sh_input.r2_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r2)
   h_b1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sh_input.r2_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r2)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- Canonical pure input: the claim contributes decoded fields only. -/
+noncomputable def InputsCore_sh.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sh trace i}
+    (inputs : InputsCore_sh trace binding i c) : PureSpec.ShInput :=
+  storeInput_sh (binding i) c.r1 c.r2 c.imm
+    inputs.h_input_r1 inputs.h_input_r2 inputs.h_input_pc
+
+theorem InputsCore_sh.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sh trace i}
+    (inputs : InputsCore_sh trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_sh` carries on top of `InputsCore_sh`.
 
@@ -2412,7 +2498,7 @@ structure Inputs_sh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sh trace i) : Type extends InputsCore_sh trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.sh_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `sh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sh` bundles them. -/
@@ -2431,7 +2517,9 @@ def toRowData_sh {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_sw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  sw_input : PureSpec.SwInput
+  r1 : regidx
+  r2 : regidx
+  imm : BitVec 12
 
 structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type where
@@ -2453,7 +2541,7 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2469,24 +2557,61 @@ structure Decode_sw (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
+/-- Construct runtime operands only from successful reads of this Sail state. -/
+noncomputable def storeInput_sw
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 r2 : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r2) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc) :
+    PureSpec.SwInput where
+  r1 := storeRegBits r1
+  r2 := storeRegBits r2
+  imm := imm
+  r1_val := Classical.choose h_r1
+  r2_val := Classical.choose h_r2
+  PC := Classical.choose h_pc
 structure InputsCore_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_r2 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r2) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
   regs : ZiskFv.Compliance.ModeRegsFull
-  h_opcode_assumptions : PureSpec.sw_state_assumptions c.sw_input (binding i)
+  h_opcode_assumptions : PureSpec.sw_state_assumptions
+    (storeInput_sw (binding i) c.r1 c.r2 c.imm h_input_r1 h_input_r2 h_input_pc) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sw_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_a1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sw_input.r1_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r1)
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sw_input.r2_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r2)
   h_b1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sw_input.r2_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r2)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- Canonical pure input: the claim contributes decoded fields only. -/
+noncomputable def InputsCore_sw.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sw trace i}
+    (inputs : InputsCore_sw trace binding i c) : PureSpec.SwInput :=
+  storeInput_sw (binding i) c.r1 c.r2 c.imm
+    inputs.h_input_r1 inputs.h_input_r2 inputs.h_input_pc
+
+theorem InputsCore_sw.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sw trace i}
+    (inputs : InputsCore_sw trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_sw` carries on top of `InputsCore_sw`.
 
@@ -2498,7 +2623,7 @@ structure Inputs_sw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sw trace i) : Type extends InputsCore_sw trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.sw_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `sw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sw` bundles them. -/
@@ -2517,7 +2642,9 @@ def toRowData_sw {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_sd (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  sd_input : PureSpec.SdInput
+  r1 : regidx
+  r2 : regidx
+  imm : BitVec 12
 
 structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type where
@@ -2536,7 +2663,7 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSt trace i).rom.store_reg = 0
   h_store_offset_imm :
     (mainRowWithRomSt trace i).rom.store_offset =
-      ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
   -- #100 next-PC transition inputs (replace the exec artifacts): the next row
   -- exists, plus the COPYB store-row decode pins `set_pc = 0`,
   -- `jmp_offset1 = jmp_offset2 = 4` (Rust lowerer `zib.j(4, 4)`, no `set_pc()`;
@@ -2552,24 +2679,61 @@ structure Decode_sd (trace : AcceptedZiskTrace numInstructions)
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).jmp_offset2
       i.val = 4
 
+/-- Construct runtime operands only from successful reads of this Sail state. -/
+noncomputable def storeInput_sd
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 r2 : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_r2 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r2) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc) :
+    PureSpec.SdInput where
+  r1 := storeRegBits r1
+  r2 := storeRegBits r2
+  imm := imm
+  r1_val := Classical.choose h_r1
+  r2_val := Classical.choose h_r2
+  PC := Classical.choose h_pc
 structure InputsCore_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_r2 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r2) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
   regs : ZiskFv.Compliance.ModeRegsFull
-  h_opcode_assumptions : PureSpec.sd_state_assumptions c.sd_input (binding i)
+  h_opcode_assumptions : PureSpec.sd_state_assumptions
+    (storeInput_sd (binding i) c.r1 c.r2 c.imm h_input_r1 h_input_r2 h_input_pc) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sd_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_a1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sd_input.r1_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r1)
   h_b0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_0 i.val =
-      ZiskFv.Trusted.lane_lo c.sd_input.r2_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r2)
   h_b1_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).b_1 i.val =
-      ZiskFv.Trusted.lane_hi c.sd_input.r2_val
+      ZiskFv.Trusted.lane_hi (Classical.choose h_input_r2)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+
+/-- Canonical pure input: the claim contributes decoded fields only. -/
+noncomputable def InputsCore_sd.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sd trace i}
+    (inputs : InputsCore_sd trace binding i c) : PureSpec.SdInput :=
+  storeInput_sd (binding i) c.r1 c.r2 c.imm
+    inputs.h_input_r1 inputs.h_input_r2 inputs.h_input_pc
+
+theorem InputsCore_sd.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sd trace i}
+    (inputs : InputsCore_sd trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_sd` carries on top of `InputsCore_sd`.
 
@@ -2581,7 +2745,7 @@ structure Inputs_sd (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_sd trace i) : Type extends InputsCore_sd trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.sd_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `sd` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sd` bundles them. -/

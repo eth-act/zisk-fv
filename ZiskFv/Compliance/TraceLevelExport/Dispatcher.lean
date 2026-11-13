@@ -625,10 +625,10 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
   | .jal c => MainJalRangeDomain ziskTrace i c.imm
   | .jalr _ => MainJalrRangeDomain ziskTrace i
   | .lui _ => MainSequentialPcDomain ziskTrace i
-  | .sb c => SequentialPcDomain c.sb_input.PC
-  | .sh c => SequentialPcDomain c.sh_input.PC
-  | .sw c => SequentialPcDomain c.sw_input.PC
-  | .sd c => SequentialPcDomain c.sd_input.PC
+  | .sb _ => MainSequentialPcDomain ziskTrace i
+  | .sh _ => MainSequentialPcDomain ziskTrace i
+  | .sw _ => MainSequentialPcDomain ziskTrace i
+  | .sd _ => MainSequentialPcDomain ziskTrace i
   | .ld c => SequentialPcDomain c.ld_input.PC
   | .lbu c =>
       SequentialPcDomain c.lbu_input.PC ∧
@@ -1205,7 +1205,7 @@ private def StepSoundWithoutDecode
               [eRdAt ziskTrace decode.rows.finish]⟩ (sailTrace i)
   | .sb c =>
       execute_instruction (instruction.STORE
-          (c.sb_input.imm, regidx.Regidx c.sb_input.r2, regidx.Regidx c.sb_input.r1, 1))
+          (c.imm, c.r2, c.r1, 1))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
@@ -1213,7 +1213,7 @@ private def StepSoundWithoutDecode
             (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .sh c =>
       execute_instruction (instruction.STORE
-          (c.sh_input.imm, regidx.Regidx c.sh_input.r2, regidx.Regidx c.sh_input.r1, 2))
+          (c.imm, c.r2, c.r1, 2))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
@@ -1221,7 +1221,7 @@ private def StepSoundWithoutDecode
             (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .sw c =>
       execute_instruction (instruction.STORE
-          (c.sw_input.imm, regidx.Regidx c.sw_input.r2, regidx.Regidx c.sw_input.r1, 4))
+          (c.imm, c.r2, c.r1, 4))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
@@ -1229,7 +1229,7 @@ private def StepSoundWithoutDecode
             (busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).e2]⟩ (sailTrace i)
   | .sd c =>
       execute_instruction (instruction.STORE
-          (c.sd_input.imm, regidx.Regidx c.sd_input.r2, regidx.Regidx c.sd_input.r1, 8))
+          (c.imm, c.r2, c.r1, 8))
           (sailTrace i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt ziskTrace i (Pilot.execRowOf ziskTrace i)).exec_row,
@@ -2204,10 +2204,18 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
           ia.h_cur_privilege ia.h_mseccfg h_link_bridge
           h_domain.h_pc_bound h_domain.h_pc_offset_lt_2_32
 
-  | sb c => exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) memEv hAvoidKnownBugs
-  | sh c => exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) memEv hAvoidKnownBugs
-  | sw c => exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) memEv hAvoidKnownBugs
-  | sd c => exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia) hAvoidKnownBugs
+  | sb c =>
+      exact stepStrong_sb ziskTrace sailTrace i (toRowData_sb c rd ia) memEv
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sh c =>
+      exact stepStrong_sh ziskTrace sailTrace i (toRowData_sh c rd ia) memEv
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sw c =>
+      exact stepStrong_sw ziskTrace sailTrace i (toRowData_sw c rd ia) memEv
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
+  | sd c =>
+      exact stepStrong_sd ziskTrace sailTrace i (toRowData_sd c rd ia)
+        (sequentialPcDomain_of_main ia.h_pc_bridge hAvoidKnownBugs)
   | ld c => exact stepStrong_ld ziskTrace sailTrace i (toRowData_ld c rd ia) memEv hAvoidKnownBugs
   | lbu c => exact stepStrong_lbu ziskTrace sailTrace i (toRowData_lbu c rd ia) memEv hAvoidKnownBugs.1
   | lhu c => exact stepStrong_lhu ziskTrace sailTrace i (toRowData_lhu c rd ia) memEv hAvoidKnownBugs.1
