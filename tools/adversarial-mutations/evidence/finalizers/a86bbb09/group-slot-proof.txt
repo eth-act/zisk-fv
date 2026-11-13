@@ -1,0 +1,249 @@
+✔ [8027/8037] Built Extraction.Main (9.8s)
+✔ [8028/8037] Built Extraction.LookupWiring (10s)
+✔ [8029/8037] Built Extraction.BinaryAdd (3.6s)
+✔ [8030/8037] Built Extraction.Binary (4.5s)
+✔ [8031/8037] Built Extraction.BinaryExtension (4.0s)
+✔ [8032/8037] Built Extraction.MemAlign (4.3s)
+✔ [8033/8037] Built Extraction.MemAlignByte (3.9s)
+✔ [8034/8037] Built Extraction.MemAlignReadByte (3.6s)
+✔ [8035/8037] Built Extraction.MemAlignWriteByte (4.2s)
+✔ [8036/8037] Built ZiskFv.AirsClean.GsumBoundary.Model (3.9s)
+✖ [8037/8037] Building ZiskFv.AirsClean.GsumBoundary (3.6s)
+trace: .> LEAN_PATH=/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/Cli/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/batteries/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/Qq/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/aesop/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/importGraph/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/plausible/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/mathlib/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/sail-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/clean-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/aeneas-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/repl/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/lib/lean /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean --tstack=400000 /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/ZiskFv/AirsClean/GsumBoundary.lean -o /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/lib/lean/ZiskFv/AirsClean/GsumBoundary.olean -i /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/lib/lean/ZiskFv/AirsClean/GsumBoundary.ilean -c /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/ir/ZiskFv/AirsClean/GsumBoundary.c --setup /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/ir/ZiskFv/AirsClean/GsumBoundary.setup.json --json
+error: ZiskFv/AirsClean/GsumBoundary.lean:52:2: Tactic `rfl` failed: The left-hand side
+  Main.extraction.constraint_143_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 2 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (mainDirectSum c)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ Main.extraction.constraint_143_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 2 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (mainDirectSum c)
+error: ZiskFv/AirsClean/GsumBoundary.lean:61:2: Tactic `rfl` failed: The left-hand side
+  Binary.extraction.constraint_13_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ Binary.extraction.constraint_13_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:70:2: Tactic `rfl` failed: The left-hand side
+  BinaryAdd.extraction.constraint_8_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ BinaryAdd.extraction.constraint_8_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:79:2: Tactic `rfl` failed: The left-hand side
+  BinaryExtension.extraction.constraint_7_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ BinaryExtension.extraction.constraint_7_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:86:94: unsolved goals
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ Extraction.Circuit.preprocessed c 1 (row + 1) 0 *
+        (Extraction.Circuit.exposed c 1 - Extraction.Circuit.main c 2 0 row 0) =
+      0 ↔
+    Extraction.Circuit.preprocessed c 1 (row + 1) 0 *
+        (Extraction.Circuit.exposed c 0 - Extraction.Circuit.main c 2 0 row 0) =
+      0
+error: ZiskFv/AirsClean/GsumBoundary.lean:96:2: Tactic `rfl` failed: The left-hand side
+  MemAlignByte.extraction.constraint_15_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ MemAlignByte.extraction.constraint_15_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+error: ZiskFv/AirsClean/GsumBoundary.lean:105:2: Tactic `rfl` failed: The left-hand side
+  MemAlignReadByte.extraction.constraint_9_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ MemAlignReadByte.extraction.constraint_9_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+error: ZiskFv/AirsClean/GsumBoundary.lean:116:2: Tactic `rfl` failed: The left-hand side
+  MemAlignWriteByte.extraction.constraint_14_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0)
+    (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2 + Extraction.Circuit.exposed c 3)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ MemAlignWriteByte.extraction.constraint_14_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0)
+      (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2 + Extraction.Circuit.exposed c 3)
+error: ZiskFv/AirsClean/GsumBoundary.lean:135:2: 'change' tactic failed, pattern
+  some (source.fixed 2 1 * (source.airGroupValue 0 - source.witness 2 0 0 - mainTypedDirectSum source)) = some 0 ↔ ?m.57
+is not definitionally equal to target
+  source.Holds link_Main_143.constraint ↔
+    Closed (source.fixed 2 1) (source.airGroupValue 0) (source.witness 2 0 0) (mainTypedDirectSum source)
+error: ZiskFv/AirsClean/GsumBoundary.lean:143:2: 'change' tactic failed, pattern
+  some (source.fixed 0 1 * (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ ?m.59
+is not definitionally equal to target
+  source.Holds link_Binary_13.constraint ↔
+    Closed (source.fixed 0 1) (source.airGroupValue 0) (source.witness 2 0 0) (source.airValue 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:151:2: 'change' tactic failed, pattern
+  some (source.fixed 0 1 * (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ ?m.59
+is not definitionally equal to target
+  source.Holds link_BinaryAdd_8.constraint ↔
+    Closed (source.fixed 0 1) (source.airGroupValue 0) (source.witness 2 0 0) (source.airValue 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:159:2: 'change' tactic failed, pattern
+  some (source.fixed 0 1 * (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ ?m.59
+is not definitionally equal to target
+  source.Holds link_BinaryExtension_7.constraint ↔
+    Closed (source.fixed 0 1) (source.airGroupValue 0) (source.witness 2 0 0) (source.airValue 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:166:2: 'change' tactic failed, pattern
+  some (source.fixed 1 1 * (source.airGroupValue 0 - source.witness 2 0 0)) = some 0 ↔ ?m.51
+is not definitionally equal to target
+  source.Holds link_MemAlign_39.constraint ↔ Closed (source.fixed 1 1) (source.airGroupValue 0) (source.witness 2 0 0) 0
+error: ZiskFv/AirsClean/GsumBoundary.lean:174:2: 'change' tactic failed, pattern
+  some (source.fixed 0 1 * (source.airGroupValue 0 - source.witness 2 0 0 - (source.airValue 1 + source.airValue 2))) =
+      some 0 ↔
+    ?m.73
+is not definitionally equal to target
+  source.Holds link_MemAlignByte_15.constraint ↔
+    Closed (source.fixed 0 1) (source.airGroupValue 0) (source.witness 2 0 0) (source.airValue 1 + source.airValue 2)
+error: ZiskFv/AirsClean/GsumBoundary.lean:183:2: 'change' tactic failed, pattern
+  some (source.fixed 0 1 * (source.airGroupValue 0 - source.witness 2 0 0 - (source.airValue 1 + source.airValue 2))) =
+      some 0 ↔
+    ?m.73
+is not definitionally equal to target
+  source.Holds link_MemAlignReadByte_9.constraint ↔
+    Closed (source.fixed 0 1) (source.airGroupValue 0) (source.witness 2 0 0) (source.airValue 1 + source.airValue 2)
+error: ZiskFv/AirsClean/GsumBoundary.lean:192:2: 'change' tactic failed, pattern
+  some
+        (source.fixed 0 1 *
+          (source.airGroupValue 0 - source.witness 2 0 0 -
+            (source.airValue 1 + source.airValue 2 + source.airValue 3))) =
+      some 0 ↔
+    ?m.87
+is not definitionally equal to target
+  source.Holds link_MemAlignWriteByte_14.constraint ↔
+    Closed (source.fixed 0 1) (source.airGroupValue 0) (source.witness 2 0 0)
+      (source.airValue 1 + source.airValue 2 + source.airValue 3)
+error: ZiskFv/AirsClean/GsumBoundary.lean:207:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.36 = ?m.36
+but is expected to have type
+  link_Binary_13.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:214:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.43 = ?m.43
+but is expected to have type
+  link_Main_143.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:221:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.36 = ?m.36
+but is expected to have type
+  link_BinaryAdd_8.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:228:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.36 = ?m.36
+but is expected to have type
+  link_BinaryExtension_7.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:235:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.32 = ?m.32
+but is expected to have type
+  link_MemAlign_39.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:242:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.40 = ?m.40
+but is expected to have type
+  link_MemAlignByte_15.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:249:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.40 = ?m.40
+but is expected to have type
+  link_MemAlignReadByte_9.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: ZiskFv/AirsClean/GsumBoundary.lean:256:14: Application type mismatch: The argument
+  rfl
+has type
+  ?m.44 = ?m.44
+but is expected to have type
+  link_MemAlignWriteByte_14.groupValue = Expr.airGroupValue 0
+in the application
+  And.intro rfl
+error: Lean exited with code 1
+Some required targets logged failures:
+- ZiskFv.AirsClean.GsumBoundary
+error: build failed

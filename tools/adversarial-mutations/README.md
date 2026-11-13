@@ -236,3 +236,25 @@ python3 tools/adversarial-mutations/selftest.py
 They check all 52 fixture records, the published scoreboard totals, mutation
 isolation, source-precondition rejection, baseline artifact identity, canonical
 pilout self-comparison when `build/zisk.pilout` exists, and every result class.
+
+## Finalizer source controls (#371)
+
+[`evidence/finalizers/a86bbb09/source-controls.json`](evidence/finalizers/a86bbb09/source-controls.json)
+records a fresh private-copy production-compiler baseline, byte-identical
+selected extraction outputs, and a green
+`lake build ZiskFv.AirsClean.GsumBoundary` over frozen read-only human proof
+sources. Its archived harness, exact source edits, compiler logs and proof logs
+retain the actual run, not a generated-expression mutation.
+
+Three private `std_sum.pil` mutations change the AIR-group result slot, the
+Direct-term sign, and the final-row selector. The source-slot and selector
+controls reject all eight maintained finalizers; the sign control rejects the
+seven with Direct terms (MemAlign has none). Each rejection names the actual
+source-iff, typed-source-iff and cell-pin declarations. The baseline pilout is
+byte-identical to the pinned input. Source identities and the unchanged frozen
+proof-source hash are recorded; there was no timeout or setup-error kill.
+
+These are local stage-2 source-fidelity checks under the existing assumed
+channel-balance boundary, not a new logUp theorem, a live Mem-finalizer repair,
+or proof of provider composition. They do not relabel the historical corpus or
+replace the accepted rounds 32/38/46 evidence.

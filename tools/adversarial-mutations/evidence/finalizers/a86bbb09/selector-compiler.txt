@@ -1,0 +1,820 @@
+> set pilout name [38;5;208mzisk[0m
+> set prime field [38;5;208m0xffffffff00000001[0m
+  > include file [38;5;208mstd_direct.pil[0m
+  > include file [38;5;208mstd_constants.pil[0m
+  > include file [38;5;208mgoldilocks.pil[0m
+  > include file [38;5;208mstd_sum.pil[0m
+  > include file [38;5;208mstd_tools.pil[0m
+  > include file [38;5;208mstd_prod.pil[0m
+  > include file [38;5;208moperations.pil[0m
+  > include file [38;5;208mopids.pil[0m
+  > include file [38;5;208mconfig.pil[0m
+  > include file [38;5;208mdma/pil/dual_range.pil[0m
+  > include file [38;5;208mstd_lookup.pil[0m
+  > include file [38;5;208mstd_virtual_table.pil[0m
+  > include file [38;5;208mrom/pil/rom.pil[0m
+  > include file [38;5;208mmain/pil/main.pil[0m
+  > include file [38;5;208mstd_permutation.pil[0m
+  > include file [38;5;208mregisters.pil[0m
+  > include file [38;5;208mmem/pil/mem.pil[0m
+  > include file [38;5;208mstd_range_check.pil[0m
+  > include file [38;5;208mmem/pil/mem_align.pil[0m
+  > include file [38;5;208mmem_align_rom.pil[0m
+  > include file [38;5;208mmem/pil/mem_align_byte.pil[0m
+  > include file [38;5;208mfrequent-ops/pil/frequent_ops.pil[0m
+  > include file [38;5;208mbinary/pil/binary.pil[0m
+  > include file [38;5;208mbinary_table.pil[0m
+  > include file [38;5;208mbinary/pil/binary_extension.pil[0m
+  > include file [38;5;208mbinary_extension_table.pil[0m
+  > include file [38;5;208mbinary/pil/binary_add.pil[0m
+  > include file [38;5;208marith/pil/arith.pil[0m
+  > include file [38;5;208marith_table.pil[0m
+  > include file [38;5;208marith_range_table.pil[0m
+  > include file [38;5;208mbig_int/pil/big_int_add.pil[0m
+  > include file [38;5;208marith_eq/pil/arith_eq.pil[0m
+  > include file [38;5;208marith_eq_lt_table.pil[0m
+  > include file [38;5;208marith_eq_384/pil/arith_eq_384.pil[0m
+  > include file [38;5;208mkeccakf/pil/keccakf.pil[0m
+  > include file [38;5;208mkeccakf_table.pil[0m
+  > include file [38;5;208msha256f/pil/sha256f.pil[0m
+  > include file [38;5;208mstd_connection.pil[0m
+  > include file [38;5;208mdma/pil/dma.pil[0m
+  > include file [38;5;208mdma/pil/dma_rom.pil[0m
+  > include file [38;5;208mdma/pil/dma_pre_post.pil[0m
+  > include file [38;5;208mdma/pil/dma_pre_post_table.pil[0m
+  > include file [38;5;208mdma/pil/dma_byte_cmp_table.pil[0m
+  > include file [38;5;208mdma/pil/dma_64_aligned.pil[0m
+  > include file [38;5;208mdma/pil/dma_unaligned.pil[0m
+  > include file [38;5;208mposeidon2/pil/poseidon2.pil[0m
+  > include file [38;5;208mposeidon2_constants.pil[0m
+  > include file [38;5;208mblake2/pil/blake2br.pil[0m
+
+AIR virtual instance [38;5;208mDualRange7Bits(Zisk)[0m in airgroup [38;5;208mZisk[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 2
+  > Constraints: 0
+  > Execution time: 9.18ms
+  > Closing time: 0.62ms
+  > Total time: 10.03ms
+
+AIR virtual instance [38;5;208mDualByte(Zisk)[0m in airgroup [38;5;208mZisk[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 2
+  > Constraints: 0
+  > Execution time: 6.74ms
+  > Closing time: 0.39ms
+  > Total time: 7.2ms
+
+AIR instance [38;5;208mDma[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) (new)[0m
+  > Witness cols: 41 from stage 1 (34,7)
+  > Fixed cols: 1
+  > Constraints: 49
+  > Execution time: 185.54ms
+  > Saving fixed file Dma.fixed ...
+  > Fixed File time: 12.81ms (Dma.fixed)
+  > Proto intermediates: 45
+  > Proto expressions: 536
+  > Proto time: 27.15ms
+  > Closing time: 0.48ms
+  > Total time: 213.38ms
+
+AIR instance [38;5;208mDmaMemCpy(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 28 from stage 1 (22,6)
+  > Fixed cols: 1
+  > Constraints: 22
+  > Execution time: 78.53ms
+  > Saving fixed file DmaMemCpy.fixed ...
+  > Fixed File time: 19.06ms (DmaMemCpy.fixed)
+  > Proto intermediates: 34
+  > Proto expressions: 357
+  > Proto time: 25.91ms
+  > Closing time: 0.33ms
+  > Total time: 104.92ms
+
+AIR instance [38;5;208mDmaInputCpy(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 22 from stage 1 (16,6)
+  > Fixed cols: 1
+  > Constraints: 20
+  > Execution time: 122.27ms
+  > Saving fixed file DmaInputCpy.fixed ...
+  > Fixed File time: 10.32ms (DmaInputCpy.fixed)
+  > Proto intermediates: 30
+  > Proto expressions: 296
+  > Proto time: 36.04ms
+  > Closing time: 0.76ms
+  > Total time: 159.47ms
+
+AIR instance [38;5;208mDma64Aligned[0m in airgroup [38;5;208mZisk[0m
+[36m  > bus_count: 22[0m
+[36m  > max_bus_op_degree: 2[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 47 from stage 1 (35,12)
+  > Fixed cols: 1
+  > Constraints: 88
+  > Execution time: 426.39ms
+  > Saving fixed file Dma64Aligned.fixed ...
+  > Fixed File time: 8.81ms (Dma64Aligned.fixed)
+  > Proto intermediates: 72
+  > Proto expressions: 980
+  > Proto time: 21.01ms
+  > Closing time: 0.43ms
+  > Total time: 448.02ms
+
+AIR instance [38;5;208mDma64AlignedInputCpy(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > bus_count: 17[0m
+[36m  > max_bus_op_degree: 1[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 34 from stage 1 (25,9)
+  > Fixed cols: 1
+  > Constraints: 52
+  > Execution time: 149.9ms
+  > Saving fixed file Dma64AlignedInputCpy.fixed ...
+  > Fixed File time: 10.45ms (Dma64AlignedInputCpy.fixed)
+  > Proto intermediates: 50
+  > Proto expressions: 610
+  > Proto time: 18.31ms
+  > Closing time: 0.56ms
+  > Total time: 169.01ms
+
+AIR instance [38;5;208mDma64AlignedMemSet(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > bus_count: 9[0m
+[36m  > max_bus_op_degree: 1[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 19 from stage 1 (14,5)
+  > Fixed cols: 1
+  > Constraints: 62
+  > Execution time: 118.07ms
+  > Saving fixed file Dma64AlignedMemSet.fixed ...
+  > Fixed File time: 11.21ms (Dma64AlignedMemSet.fixed)
+  > Proto intermediates: 39
+  > Proto expressions: 595
+  > Proto time: 18.17ms
+  > Closing time: 0.43ms
+  > Total time: 136.92ms
+
+AIR instance [38;5;208mDma64AlignedMem(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > bus_count: 10[0m
+[36m  > max_bus_op_degree: 2[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 32 from stage 1 (26,6)
+  > Fixed cols: 1
+  > Constraints: 81
+  > Execution time: 267.16ms
+  > Saving fixed file Dma64AlignedMem.fixed ...
+  > Fixed File time: 14.91ms (Dma64AlignedMem.fixed)
+  > Proto intermediates: 40
+  > Proto expressions: 696
+  > Proto time: 20.47ms
+  > Closing time: 0.43ms
+  > Total time: 288.26ms
+
+AIR instance [38;5;208mDma64AlignedMemCpy(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > bus_count: 18[0m
+[36m  > max_bus_op_degree: 2[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 41 from stage 1 (31,10)
+  > Fixed cols: 1
+  > Constraints: 69
+  > Execution time: 152.01ms
+  > Saving fixed file Dma64AlignedMemCpy.fixed ...
+  > Fixed File time: 9.39ms (Dma64AlignedMemCpy.fixed)
+  > Proto intermediates: 55
+  > Proto expressions: 916
+  > Proto time: 18.6ms
+  > Closing time: 0.39ms
+  > Total time: 171.16ms
+
+AIR instance [38;5;208mDmaUnaligned[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 28 from stage 1 (24,4)
+  > Fixed cols: 1
+  > Constraints: 75
+  > Execution time: 83.44ms
+  > Saving fixed file DmaUnaligned.fixed ...
+  > Fixed File time: 8.35ms (DmaUnaligned.fixed)
+  > Proto intermediates: 34
+  > Proto expressions: 833
+  > Proto time: 13.61ms
+  > Closing time: 0.31ms
+  > Total time: 97.51ms
+
+AIR instance [38;5;208mDmaPrePost[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 76 from stage 1 (66,10)
+  > Fixed cols: 1
+  > Constraints: 67
+  > Execution time: 206.64ms
+  > Saving fixed file DmaPrePost.fixed ...
+  > Fixed File time: 8.67ms (DmaPrePost.fixed)
+  > Proto intermediates: 53
+  > Proto expressions: 1500
+  > Proto time: 39.64ms
+  > Closing time: 0.47ms
+  > Total time: 246.89ms
+
+AIR instance [38;5;208mDmaPrePostMemCpy(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 65 from stage 1 (55,10)
+  > Fixed cols: 1
+  > Constraints: 38
+  > Execution time: 173.43ms
+  > Saving fixed file DmaPrePostMemCpy.fixed ...
+  > Fixed File time: 7.99ms (DmaPrePostMemCpy.fixed)
+  > Proto intermediates: 43
+  > Proto expressions: 1279
+  > Proto time: 14.06ms
+  > Closing time: 0.3ms
+  > Total time: 187.93ms
+
+AIR instance [38;5;208mDmaPrePostInputCpy(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 39 from stage 1 (32,7)
+  > Fixed cols: 1
+  > Constraints: 20
+  > Execution time: 61.39ms
+  > Saving fixed file DmaPrePostInputCpy.fixed ...
+  > Fixed File time: 7.71ms (DmaPrePostInputCpy.fixed)
+  > Proto intermediates: 24
+  > Proto expressions: 419
+  > Proto time: 12.44ms
+  > Closing time: 0.29ms
+  > Total time: 74.25ms
+
+AIR virtual instance [38;5;208mDmaByteCmpTable[0m in airgroup [38;5;208mZisk[0m
+  > Transpiled code pil/dma_byte_cmp_table.pil:24:4:
+  > Traspilation execution time: 45.33ms
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 3
+  > Constraints: 0
+  > Execution time: 54.7ms
+  > Closing time: 0.26ms
+  > Total time: 55.01ms
+
+AIR virtual instance [38;5;208mDmaRom[0m in airgroup [38;5;208mZisk[0m
+[36m  > 98304 rows[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 7
+  > Constraints: 0
+  > Execution time: 34s 885ms
+  > Closing time: 0.23ms
+  > Total time: 34s 885ms
+
+AIR virtual instance [38;5;208mDmaPrePostTable[0m in airgroup [38;5;208mZisk[0m
+[36m  > TABLE_OFFSETS[64] = [ 0,32,64,96,128,160,192,224,256,284,312,340,368,396,424,452,480,504,528,552,576,600,624,648,672,692,712,732,752,772,792,812,832,848,864,880,896,912,928,944,960,972,984,996,1008,1020,1032,1044,1056,1064,1072,1080,1088,1096,1104,1112,1120,1124,1128,1132,1136,1140,1144,1148 ][0m
+[36m  > DMA_PRE_POST_TABLE_SIZE=1152[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 6
+  > Constraints: 0
+  > Execution time: 204.23ms
+  > Closing time: 0.25ms
+  > Total time: 204.54ms
+
+AIR instance [38;5;208mMain[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 46 from stage 1 (38,8)
+  > Fixed cols: 3
+  > Constraints: 144
+  > Execution time: 5s 922ms
+  > Saving fixed file Main.fixed ...
+  > Fixed File time: 58.89ms (Main.fixed)
+  > Proto intermediates: 160
+  > Proto expressions: 2469
+  > Proto time: 132.79ms
+  > Closing time: 0.54ms
+  > Total time: 6s 55ms
+
+AIR instance [38;5;208mRom[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 2 from stage 1 (1,1)
+  > Fixed cols: 1
+  > Custom cols (rom): 11
+  > Constraints: 2
+  > Execution time: 40.63ms
+  > Saving fixed file Rom.fixed ...
+  > Fixed File time: 30.96ms (Rom.fixed)
+  > Proto intermediates: 1
+  > Proto expressions: 46
+  > Proto time: 44.31ms
+  > Closing time: 0.32ms
+  > Total time: 85.46ms
+
+AIR instance [38;5;208mMem[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 16 from stage 1 (13,3)
+  > Fixed cols: 2
+  > Constraints: 34
+  > Execution time: 141.97ms
+  > Saving fixed file Mem.fixed ...
+  > Fixed File time: 70.8ms (Mem.fixed)
+  > Proto intermediates: 20
+  > Proto expressions: 281
+  > Proto time: 92.53ms
+  > Closing time: 0.44ms
+  > Total time: 235.07ms
+
+AIR instance [38;5;208mRomData(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 9 from stage 1 (6,3)
+  > Fixed cols: 2
+  > Constraints: 23
+  > Execution time: 130.59ms
+  > Saving fixed file RomData.fixed ...
+  > Fixed File time: 27.84ms (RomData.fixed)
+  > Proto intermediates: 14
+  > Proto expressions: 168
+  > Proto time: 49.62ms
+  > Closing time: 0.46ms
+  > Total time: 180.85ms
+
+AIR instance [38;5;208mInputData(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 13 from stage 1 (9,4)
+  > Fixed cols: 2
+  > Constraints: 28
+  > Execution time: 132.22ms
+  > Saving fixed file InputData.fixed ...
+  > Fixed File time: 15.4ms (InputData.fixed)
+  > Proto intermediates: 22
+  > Proto expressions: 259
+  > Proto time: 24.39ms
+  > Closing time: 0.3ms
+  > Total time: 157.08ms
+
+AIR instance [38;5;208mMemAlign[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 35 from stage 1 (29,6)
+  > Fixed cols: 2
+  > Constraints: 40
+  > Execution time: 121.12ms
+  > Saving fixed file MemAlign.fixed ...
+  > Fixed File time: 15.53ms (MemAlign.fixed)
+  > Proto intermediates: 12
+  > Proto expressions: 440
+  > Proto time: 36.51ms
+  > Closing time: 0.34ms
+  > Total time: 158.11ms
+
+AIR instance [38;5;208mMemAlignByte[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 20 from stage 1 (16,4)
+  > Fixed cols: 1
+  > Constraints: 16
+  > Execution time: 108.49ms
+  > Saving fixed file MemAlignByte.fixed ...
+  > Fixed File time: 21.73ms (MemAlignByte.fixed)
+  > Proto intermediates: 17
+  > Proto expressions: 231
+  > Proto time: 45.13ms
+  > Closing time: 0.47ms
+  > Total time: 154.37ms
+
+AIR instance [38;5;208mMemAlignReadByte(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 13 from stage 1 (10,3)
+  > Fixed cols: 1
+  > Constraints: 10
+  > Execution time: 104.18ms
+  > Saving fixed file MemAlignReadByte.fixed ...
+  > Fixed File time: 16.23ms (MemAlignReadByte.fixed)
+  > Proto intermediates: 13
+  > Proto expressions: 168
+  > Proto time: 22.02ms
+  > Closing time: 0.35ms
+  > Total time: 126.71ms
+
+AIR instance [38;5;208mMemAlignWriteByte(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 18 from stage 1 (14,4)
+  > Fixed cols: 1
+  > Constraints: 15
+  > Execution time: 91.17ms
+  > Saving fixed file MemAlignWriteByte.fixed ...
+  > Fixed File time: 32.76ms (MemAlignWriteByte.fixed)
+  > Proto intermediates: 16
+  > Proto expressions: 237
+  > Proto time: 55.95ms
+  > Closing time: 0.51ms
+  > Total time: 147.81ms
+
+AIR virtual instance [38;5;208mMemAlignRom[0m in airgroup [38;5;208mZisk[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 6
+  > Constraints: 0
+  > Execution time: 479.94ms
+  > Closing time: 0.26ms
+  > Total time: 480.32ms
+
+AIR instance [38;5;208mArith[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 59 from stage 1 (44,15)
+  > Fixed cols: 1
+  > Constraints: 65
+  > Execution time: 158.12ms
+  > Saving fixed file Arith.fixed ...
+  > Fixed File time: 8.07ms (Arith.fixed)
+  > Proto intermediates: 48
+  > Proto expressions: 892
+  > Proto time: 17.99ms
+  > Closing time: 0.31ms
+  > Total time: 176.58ms
+
+AIR virtual instance [38;5;208mArithTable[0m in airgroup [38;5;208mZisk[0m
+[36m  > ARITH_TABLE SIZE:  74[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 4
+  > Constraints: 0
+  > Execution time: 423.19ms
+  > Closing time: 0.29ms
+  > Total time: 423.63ms
+
+AIR virtual instance [38;5;208mArithRangeTable[0m in airgroup [38;5;208mZisk[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 2
+  > Constraints: 0
+  > Execution time: 2s 784ms
+  > Closing time: 0.31ms
+  > Total time: 2s 785ms
+
+AIR virtual instance [38;5;208mArithFrops(Zisk)[0m in airgroup [38;5;208mZisk[0m
+  > Loading extern fixed file state-machines/arith/src/arith_frops_fixed.bin ...
+  > Fixed ArithFrops.OP loaded from file
+  > Fixed ArithFrops.A[0] loaded from file
+  > Fixed ArithFrops.A[1] loaded from file
+  > Fixed ArithFrops.B[0] loaded from file
+  > Fixed ArithFrops.B[1] loaded from file
+  > Fixed ArithFrops.C[0] loaded from file
+  > Fixed ArithFrops.C[1] loaded from file
+  > Fixed ArithFrops.FLAG loaded from file
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 8
+  > Constraints: 0
+  > Execution time: 46.95ms
+  > Closing time: 0.48ms
+  > Total time: 47.56ms
+
+AIR instance [38;5;208mBinary[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 44 from stage 1 (39,5)
+  > Fixed cols: 1
+  > Constraints: 14
+  > Execution time: 232.35ms
+  > Saving fixed file Binary.fixed ...
+  > Fixed File time: 25.14ms (Binary.fixed)
+  > Proto intermediates: 12
+  > Proto expressions: 453
+  > Proto time: 59.89ms
+  > Closing time: 0.49ms
+  > Total time: 292.9ms
+
+AIR instance [38;5;208mBinaryAdd[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 13 from stage 1 (10,3)
+  > Fixed cols: 1
+  > Constraints: 9
+  > Execution time: 61.92ms
+  > Saving fixed file BinaryAdd.fixed ...
+  > Fixed File time: 39.6ms (BinaryAdd.fixed)
+  > Proto intermediates: 7
+  > Proto expressions: 120
+  > Proto time: 49.17ms
+  > Closing time: 0.45ms
+  > Total time: 111.69ms
+
+AIR virtual instance [38;5;208mBinaryTable[0m in airgroup [38;5;208mZisk[0m
+  > Transpiled code binary_table.pil:333:4:
+  > Traspilation execution time: 13s 261ms
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 7
+  > Constraints: 0
+  > Execution time: 13s 415ms
+  > Closing time: 0.29ms
+  > Total time: 13s 416ms
+
+AIR instance [38;5;208mBinaryExtension[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 35 from stage 1 (29,6)
+  > Fixed cols: 1
+  > Constraints: 8
+  > Execution time: 81.92ms
+  > Saving fixed file BinaryExtension.fixed ...
+  > Fixed File time: 20.14ms (BinaryExtension.fixed)
+  > Proto intermediates: 13
+  > Proto expressions: 423
+  > Proto time: 32.6ms
+  > Closing time: 0.42ms
+  > Total time: 115.08ms
+
+AIR virtual instance [38;5;208mBinaryExtensionTable[0m in airgroup [38;5;208mZisk[0m
+  > Transpiled code binary_extension_table.pil:202:4:
+  > Traspilation execution time: 6s 413ms
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 7
+  > Constraints: 0
+  > Execution time: 6s 458ms
+  > Closing time: 0.29ms
+  > Total time: 6s 458ms
+
+AIR virtual instance [38;5;208mBinaryBasicFrops(Zisk)[0m in airgroup [38;5;208mZisk[0m
+  > Loading extern fixed file state-machines/binary/src/binary_basic_frops_fixed.bin ...
+  > Fixed BinaryBasicFrops.OP loaded from file
+  > Fixed BinaryBasicFrops.A[0] loaded from file
+  > Fixed BinaryBasicFrops.A[1] loaded from file
+  > Fixed BinaryBasicFrops.B[0] loaded from file
+  > Fixed BinaryBasicFrops.B[1] loaded from file
+  > Fixed BinaryBasicFrops.C[0] loaded from file
+  > Fixed BinaryBasicFrops.C[1] loaded from file
+  > Fixed BinaryBasicFrops.FLAG loaded from file
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 8
+  > Constraints: 0
+  > Execution time: 289.58ms
+  > Closing time: 0.37ms
+  > Total time: 290.05ms
+
+AIR virtual instance [38;5;208mBinaryExtensionFrops(Zisk)[0m in airgroup [38;5;208mZisk[0m
+  > Loading extern fixed file state-machines/binary/src/binary_extension_frops_fixed.bin ...
+  > Fixed BinaryExtensionFrops.OP loaded from file
+  > Fixed BinaryExtensionFrops.A[0] loaded from file
+  > Fixed BinaryExtensionFrops.A[1] loaded from file
+  > Fixed BinaryExtensionFrops.B[0] loaded from file
+  > Fixed BinaryExtensionFrops.B[1] loaded from file
+  > Fixed BinaryExtensionFrops.C[0] loaded from file
+  > Fixed BinaryExtensionFrops.C[1] loaded from file
+  > Fixed BinaryExtensionFrops.FLAG loaded from file
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 8
+  > Constraints: 0
+  > Execution time: 55.64ms
+  > Closing time: 0.29ms
+  > Total time: 55.99ms
+
+AIR instance [38;5;208mAdd256(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 64 from stage 1 (47,17)
+  > Fixed cols: 1
+  > Constraints: 36
+  > Execution time: 388.27ms
+  > Saving fixed file Add256.fixed ...
+  > Fixed File time: 3.86ms (Add256.fixed)
+  > Proto intermediates: 65
+  > Proto expressions: 922
+  > Proto time: 9.05ms
+  > Closing time: 0.26ms
+  > Total time: 397.71ms
+
+AIR instance [38;5;208mArithEq[0m in airgroup [38;5;208mZisk[0m
+  > include file [38;5;208mequations/arith256.pil[0m
+  > include file [38;5;208mequations/arith256_mod.pil[0m
+  > include file [38;5;208mequations/secp256k1_add.pil[0m
+  > include file [38;5;208mequations/secp256k1_dbl.pil[0m
+  > include file [38;5;208mequations/secp256k1_x3.pil[0m
+  > include file [38;5;208mequations/secp256k1_y3.pil[0m
+  > include file [38;5;208mequations/bn254_curve_add.pil[0m
+  > include file [38;5;208mequations/bn254_curve_dbl.pil[0m
+  > include file [38;5;208mequations/bn254_curve_x3.pil[0m
+  > include file [38;5;208mequations/bn254_curve_y3.pil[0m
+  > include file [38;5;208mequations/bn254_complex_add_x3.pil[0m
+  > include file [38;5;208mequations/bn254_complex_add_y3.pil[0m
+  > include file [38;5;208mequations/bn254_complex_sub_x3.pil[0m
+  > include file [38;5;208mequations/bn254_complex_sub_y3.pil[0m
+  > include file [38;5;208mequations/bn254_complex_mul_x3.pil[0m
+  > include file [38;5;208mequations/bn254_complex_mul_y3.pil[0m
+  > include file [38;5;208mequations/secp256r1_add.pil[0m
+  > include file [38;5;208mequations/secp256r1_dbl.pil[0m
+  > include file [38;5;208mequations/secp256r1_x3.pil[0m
+  > include file [38;5;208mequations/secp256r1_y3.pil[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 56 from stage 1 (43,13)
+  > Fixed cols: 2
+  > Constraints: 102
+  > Execution time: 2s 899ms
+  > Saving fixed file ArithEq.fixed ...
+  > Fixed File time: 8.68ms (ArithEq.fixed)
+  > Proto intermediates: 108
+  > Proto expressions: 27715
+  > Proto time: 126.69ms
+  > Closing time: 0.45ms
+  > Total time: 3s 26ms
+
+AIR instance [38;5;208mArithEq384[0m in airgroup [38;5;208mZisk[0m
+  > include file [38;5;208mequations/arith384_mod.pil[0m
+  > include file [38;5;208mequations/bls12_381_curve_add.pil[0m
+  > include file [38;5;208mequations/bls12_381_curve_dbl.pil[0m
+  > include file [38;5;208mequations/bls12_381_curve_x3.pil[0m
+  > include file [38;5;208mequations/bls12_381_curve_y3.pil[0m
+  > include file [38;5;208mequations/bls12_381_complex_add_x3.pil[0m
+  > include file [38;5;208mequations/bls12_381_complex_add_y3.pil[0m
+  > include file [38;5;208mequations/bls12_381_complex_sub_x3.pil[0m
+  > include file [38;5;208mequations/bls12_381_complex_sub_y3.pil[0m
+  > include file [38;5;208mequations/bls12_381_complex_mul_x3.pil[0m
+  > include file [38;5;208mequations/bls12_381_complex_mul_y3.pil[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 46 from stage 1 (33,13)
+  > Fixed cols: 2
+  > Constraints: 75
+  > Execution time: 5s 145ms
+  > Saving fixed file ArithEq384.fixed ...
+  > Fixed File time: 8.4ms (ArithEq384.fixed)
+  > Proto intermediates: 80
+  > Proto expressions: 31896
+  > Proto time: 153.38ms
+  > Closing time: 0.38ms
+  > Total time: 5s 299ms
+
+AIR virtual instance [38;5;208mArithEqLtTable[0m in airgroup [38;5;208mZisk[0m
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 2
+  > Constraints: 0
+  > Execution time: 336.8ms
+  > Closing time: 0.25ms
+  > Total time: 337.17ms
+
+AIR instance [38;5;208mKeccakf[0m in airgroup [38;5;208mZisk[0m
+[36m  > The total number of Keccak-f's with N = 131072 is 5241[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 2430 from stage 1 (2137,293)
+  > Fixed cols: 2
+  > Constraints: 2431
+  > Execution time: 30s 645ms
+  > Saving fixed file Keccakf.fixed ...
+  > Fixed File time: 1.07ms (Keccakf.fixed)
+  > Proto intermediates: 3413
+  > Proto expressions: 37977
+  > Proto time: 264.63ms
+  > Closing time: 0.38ms
+  > Total time: 30s 910ms
+
+AIR virtual instance [38;5;208mKeccakfTable[0m in airgroup [38;5;208mZisk[0m
+[36m  > The Keccak-f's Table size is 3048625[0m
+  > Transpiled code keccakf_table.pil:48:4:
+  > Traspilation execution time: 4s 847ms
+  > Witness cols: 1 from stage 1 (1)
+  > Fixed cols: 4
+  > Constraints: 0
+  > Execution time: 8s 621ms
+  > Closing time: 0.26ms
+  > Total time: 8s 621ms
+
+AIR instance [38;5;208mSha256f[0m in airgroup [38;5;208mZisk[0m
+[36m  > The total number of Sha256-f's is 3639[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 105 from stage 1 (102,3)
+  > Fixed cols: 2
+  > Constraints: 111
+  > Execution time: 1s 217ms
+  > Saving fixed file Sha256f.fixed ...
+  > Fixed File time: 2.48ms (Sha256f.fixed)
+  > Proto intermediates: 49
+  > Proto expressions: 6098
+  > Proto time: 117.9ms
+  > Closing time: 0.37ms
+  > Total time: 1s 335ms
+
+AIR instance [38;5;208mPoseidon2[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 40 from stage 1 (35,5)
+  > Fixed cols: 2
+  > Constraints: 69
+  > Execution time: 143.51ms
+  > Saving fixed file Poseidon2.fixed ...
+  > Fixed File time: 0.97ms (Poseidon2.fixed)
+  > Proto intermediates: 518
+  > Proto expressions: 2438
+  > Proto time: 21.77ms
+  > Closing time: 0.29ms
+  > Total time: 165.67ms
+
+AIR instance [38;5;208mBlake2br[0m in airgroup [38;5;208mZisk[0m
+[36m  > Blake2br capacity: 10921 rounds (N=262144)[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 171 from stage 1 (159,12)
+  > Fixed cols: 3
+  > Constraints: 192
+  > Execution time: 997.86ms
+  > Saving fixed file Blake2br.fixed ...
+  > Fixed File time: 2.83ms (Blake2br.fixed)
+  > Proto intermediates: 78
+  > Proto expressions: 6123
+  > Proto time: 36.23ms
+  > Closing time: 0.35ms
+  > Total time: 1s 34ms
+
+AIR instance [38;5;208mSpecifiedRanges[0m in airgroup [38;5;208mZisk[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 44 from stage 1 (29,15)
+  > Fixed cols: 67
+  > Constraints: 16
+  > Execution time: 38s 255ms
+  > Saving fixed file SpecifiedRanges.fixed ...
+  > Fixed File time: 1s 828ms (SpecifiedRanges.fixed)
+  > Proto intermediates: 29
+  > Proto expressions: 452
+  > Proto time: 1s 832ms
+  > Closing time: 0.3ms
+  > Total time: 40s 88ms
+
+AIR instance [38;5;208mVirtualTable0(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > VirtualTable0 instantiated with: N=2^21, #Fixed=51, #Witness=8[0m
+[36m  > Table composition (total height of 16409009):[0m
+[36m  >    - Table 330 with height=4194304 and width=2[0m
+[36m  >    - Table 5002 with height=262144 and width=2[0m
+[36m  >    - Table 88 with height=65536 and width=2[0m
+[36m  >    - Table 77 with height=16384 and width=2[0m
+[36m  >    - Table 8003 with height=65280 and width=3[0m
+[36m  >    - Table 126 with height=3048625 and width=4[0m
+[36m  >    - Table 331 with height=128 and width=4[0m
+[36m  >    - Table 8002 with height=1152 and width=6[0m
+[36m  >    - Table 133 with height=256 and width=6[0m
+[36m  >    - Table 125 with height=5505024 and width=7[0m
+[36m  >    - Table 124 with height=3151872 and width=7[0m
+[36m  >    - Table 8001 with height=98304 and width=7[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 13 from stage 1 (8,5)
+  > Fixed cols: 52
+  > Constraints: 6
+  > Execution time: 684.61ms
+  > Saving fixed file VirtualTable0.fixed ...
+  > Fixed File time: 1s 995ms (VirtualTable0.fixed)
+  > Proto intermediates: 8
+  > Proto expressions: 229
+  > Proto time: 1s 997ms
+  > Closing time: 0.34ms
+  > Total time: 2s 682ms
+
+AIR instance [38;5;208mVirtualTable1(Zisk)[0m in airgroup [38;5;208mZisk[0m
+[36m  > VirtualTable1 instantiated with: N=2^21, #Fixed=72, #Witness=8[0m
+[36m  > Table composition (total height of 16777216):[0m
+[36m  >    - Table 5010 with height=2085944 and width=8[0m
+[36m  >    - Table 5011 with height=13084068 and width=8[0m
+[36m  >    - Table 5012 with height=1607204 and width=8[0m
+[36m  > Declare airgroupval gsum_result (Zisk.gsum_result) [0m
+  > Witness cols: 13 from stage 1 (8,5)
+  > Fixed cols: 73
+  > Constraints: 6
+  > Execution time: 842.53ms
+  > Saving fixed file VirtualTable1.fixed ...
+  > Fixed File time: 2s 649ms (VirtualTable1.fixed)
+  > Proto intermediates: 8
+  > Proto expressions: 292
+  > Proto time: 2s 651ms
+  > Closing time: 0.36ms
+  > Total time: 3s 495ms
+
+AIRGROUP [38;5;208mZisk[0m summary
+  > AirGroupValues:
+    · [38;5;208mZisk.gsum_result[0m aggregate:[38;5;208msum [0m stage:[38;5;208m2[0m default:[38;5;208m0[0m
+  > Airs:
+    · [38;5;208mDma                 [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma                 [0m witness: [38;5;208m34,7       fixed:[38;5;208m   1[0m constraints:[38;5;208m   49
+    · [38;5;208mDmaMemCpy           [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma                 [0m witness: [38;5;208m22,6       fixed:[38;5;208m   1[0m constraints:[38;5;208m   22
+    · [38;5;208mDmaInputCpy         [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma                 [0m witness: [38;5;208m16,6       fixed:[38;5;208m   1[0m constraints:[38;5;208m   20
+    · [38;5;208mDma64Aligned        [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma64Aligned        [0m witness: [38;5;208m35,12      fixed:[38;5;208m   1[0m constraints:[38;5;208m   88
+    · [38;5;208mDma64AlignedInputCpy[0m rows:[38;5;208m2^21[0m template:[38;5;208mDma64Aligned        [0m witness: [38;5;208m25,9       fixed:[38;5;208m   1[0m constraints:[38;5;208m   52
+    · [38;5;208mDma64AlignedMemSet  [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma64Aligned        [0m witness: [38;5;208m14,5       fixed:[38;5;208m   1[0m constraints:[38;5;208m   62
+    · [38;5;208mDma64AlignedMem     [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma64Aligned        [0m witness: [38;5;208m26,6       fixed:[38;5;208m   1[0m constraints:[38;5;208m   81
+    · [38;5;208mDma64AlignedMemCpy  [0m rows:[38;5;208m2^21[0m template:[38;5;208mDma64Aligned        [0m witness: [38;5;208m31,10      fixed:[38;5;208m   1[0m constraints:[38;5;208m   69
+    · [38;5;208mDmaUnaligned        [0m rows:[38;5;208m2^21[0m template:[38;5;208mDmaUnaligned        [0m witness: [38;5;208m24,4       fixed:[38;5;208m   1[0m constraints:[38;5;208m   75
+    · [38;5;208mDmaPrePost          [0m rows:[38;5;208m2^21[0m template:[38;5;208mDmaPrePost          [0m witness: [38;5;208m66,10      fixed:[38;5;208m   1[0m constraints:[38;5;208m   67
+    · [38;5;208mDmaPrePostMemCpy    [0m rows:[38;5;208m2^21[0m template:[38;5;208mDmaPrePost          [0m witness: [38;5;208m55,10      fixed:[38;5;208m   1[0m constraints:[38;5;208m   38
+    · [38;5;208mDmaPrePostInputCpy  [0m rows:[38;5;208m2^21[0m template:[38;5;208mDmaPrePost          [0m witness: [38;5;208m32,7       fixed:[38;5;208m   1[0m constraints:[38;5;208m   20
+    · [38;5;208mMain                [0m rows:[38;5;208m2^22[0m template:[38;5;208mMain                [0m witness: [38;5;208m38,8       fixed:[38;5;208m   3[0m constraints:[38;5;208m  144
+    · [38;5;208mRom                 [0m rows:[38;5;208m2^22[0m template:[38;5;208mRom                 [0m witness: [38;5;208m1,1        fixed:[38;5;208m   1[0m constraints:[38;5;208m    2
+    · [38;5;208mMem                 [0m rows:[38;5;208m2^22[0m template:[38;5;208mMem                 [0m witness: [38;5;208m13,3       fixed:[38;5;208m   2[0m constraints:[38;5;208m   34
+    · [38;5;208mRomData             [0m rows:[38;5;208m2^21[0m template:[38;5;208mMem                 [0m witness: [38;5;208m6,3        fixed:[38;5;208m   2[0m constraints:[38;5;208m   23
+    · [38;5;208mInputData           [0m rows:[38;5;208m2^21[0m template:[38;5;208mMem                 [0m witness: [38;5;208m9,4        fixed:[38;5;208m   2[0m constraints:[38;5;208m   28
+    · [38;5;208mMemAlign            [0m rows:[38;5;208m2^21[0m template:[38;5;208mMemAlign            [0m witness: [38;5;208m29,6       fixed:[38;5;208m   2[0m constraints:[38;5;208m   40
+    · [38;5;208mMemAlignByte        [0m rows:[38;5;208m2^22[0m template:[38;5;208mMemAlignByte        [0m witness: [38;5;208m16,4       fixed:[38;5;208m   1[0m constraints:[38;5;208m   16
+    · [38;5;208mMemAlignReadByte    [0m rows:[38;5;208m2^22[0m template:[38;5;208mMemAlignByte        [0m witness: [38;5;208m10,3       fixed:[38;5;208m   1[0m constraints:[38;5;208m   10
+    · [38;5;208mMemAlignWriteByte   [0m rows:[38;5;208m2^22[0m template:[38;5;208mMemAlignByte        [0m witness: [38;5;208m14,4       fixed:[38;5;208m   1[0m constraints:[38;5;208m   15
+    · [38;5;208mArith               [0m rows:[38;5;208m2^21[0m template:[38;5;208mArith               [0m witness: [38;5;208m44,15      fixed:[38;5;208m   1[0m constraints:[38;5;208m   65
+    · [38;5;208mBinary              [0m rows:[38;5;208m2^22[0m template:[38;5;208mBinary              [0m witness: [38;5;208m39,5       fixed:[38;5;208m   1[0m constraints:[38;5;208m   14
+    · [38;5;208mBinaryAdd           [0m rows:[38;5;208m2^22[0m template:[38;5;208mBinaryAdd           [0m witness: [38;5;208m10,3       fixed:[38;5;208m   1[0m constraints:[38;5;208m    9
+    · [38;5;208mBinaryExtension     [0m rows:[38;5;208m2^22[0m template:[38;5;208mBinaryExtension     [0m witness: [38;5;208m29,6       fixed:[38;5;208m   1[0m constraints:[38;5;208m    8
+    · [38;5;208mAdd256              [0m rows:[38;5;208m2^20[0m template:[38;5;208mBigIntAdd           [0m witness: [38;5;208m47,17      fixed:[38;5;208m   1[0m constraints:[38;5;208m   36
+    · [38;5;208mArithEq             [0m rows:[38;5;208m2^20[0m template:[38;5;208mArithEq             [0m witness: [38;5;208m43,13      fixed:[38;5;208m   2[0m constraints:[38;5;208m  102
+    · [38;5;208mArithEq384          [0m rows:[38;5;208m2^20[0m template:[38;5;208mArithEq384          [0m witness: [38;5;208m33,13      fixed:[38;5;208m   2[0m constraints:[38;5;208m   75
+    · [38;5;208mKeccakf             [0m rows:[38;5;208m2^17[0m template:[38;5;208mKeccakf             [0m witness: [38;5;208m2137,293   fixed:[38;5;208m   2[0m constraints:[38;5;208m 2431
+    · [38;5;208mSha256f             [0m rows:[38;5;208m2^18[0m template:[38;5;208mSha256f             [0m witness: [38;5;208m102,3      fixed:[38;5;208m   2[0m constraints:[38;5;208m  111
+    · [38;5;208mPoseidon2           [0m rows:[38;5;208m2^17[0m template:[38;5;208mPoseidon2           [0m witness: [38;5;208m35,5       fixed:[38;5;208m   2[0m constraints:[38;5;208m   69
+    · [38;5;208mBlake2br            [0m rows:[38;5;208m2^18[0m template:[38;5;208mBlake2br            [0m witness: [38;5;208m159,12     fixed:[38;5;208m   3[0m constraints:[38;5;208m  192
+[36m> Range check stats:[0m
+[36m>  - [0, 16777215]: 59 times[0m
+[36m>  - [0, 65535]: 82 times[0m
+[36m>  - [0, 4194303]: 12 times[0m
+[36m>  - [0, 127]: 1 time[0m
+[36m>  - [0, 16383]: 1 time[0m
+[36m>  - [0, 255]: 10 times[0m
+[36m>  - [-4194303, 4194304]: 12 times[0m
+[36m>  - [0, 7]: 2 times[0m
+
+Generating pilout (protobuf) /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout .....
+  > Proto intermediates: 74
+  > Proto expressions: 11814
+  > Saving fixed to file /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout ...
+  > Proto size: 4.21 MB
+  > Proto time: 886.78ms
+  > Total proto time (5.1%): 9s 27ms
+  > Memory: 7.16 GB
+  > Total compilation: 2m 57s

@@ -1,0 +1,1515 @@
+{
+  "cases": {
+    "baseline": {
+      "canonical_equal_pinned": true,
+      "compiler_log": "baseline-compiler.txt",
+      "generated_sha256": {
+        "Binary.lean": "4d62c46816e0c962e62f0cf7b04322c77e5cc467c0e955728abc86662804bf68",
+        "BinaryAdd.lean": "5bdeab97da50d8570a56a3008f55b5a2da0b9219dc4d39a39d226c37cbd5b212",
+        "BinaryExtension.lean": "6ad5c7a940e746436b2d04f46c2ace9645da1de1f98235a644458023d4b5e9c9",
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "f7d22290d5e9573ae37b80c0f637e843189002ffb352daae1462487d099e74b8",
+        "Main.lean": "6ebaaf1025c7d318ab4fecad13760427d098ca5b2a10318c07ed2a74885539f4",
+        "MemAlign.lean": "08c4ac6b522fd3c7a13ceb66f23de644535c6d2067b2afd543cacd6da3ccc90f",
+        "MemAlignByte.lean": "a9c3ab8cc64c9f55a04a982967626bb281b9bf498a7005ff93a46256637ad959",
+        "MemAlignReadByte.lean": "4488bfc1c7b1f08183e6ab064f7df65ebf542ef377c8521f1aa49ceb893273dc",
+        "MemAlignWriteByte.lean": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f"
+      },
+      "named_source_rejections": [],
+      "normal_artifact_deltas": [],
+      "pilout_sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+      "proof_exit_code": 0,
+      "proof_log": "baseline-proof.txt",
+      "stdlib_after_sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1",
+      "stdlib_before_sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1"
+    },
+    "direct-sign": {
+      "artifact_deltas": [
+        "Main.lean",
+        "Binary.lean",
+        "BinaryAdd.lean",
+        "BinaryExtension.lean",
+        "MemAlignByte.lean",
+        "MemAlignReadByte.lean",
+        "MemAlignWriteByte.lean",
+        "LookupWiring.lean"
+      ],
+      "canonical_equal_baseline": false,
+      "compiler_log": "direct-sign-compiler.txt",
+      "detected": true,
+      "expected_air_prefixes": [
+        "main",
+        "binary",
+        "binaryAdd",
+        "binaryExtension",
+        "memAlignByte",
+        "memAlignReadByte",
+        "memAlignWriteByte"
+      ],
+      "generated_sha256": {
+        "Binary.lean": "7b8f04784ad046c5fd5da2f2d1f3cc0cb430791e289c71c0d56bf7b7d341e0dc",
+        "BinaryAdd.lean": "3da355af85abe6551c26788a93abffe02f16a4d96fba6a49fbf12538b068241b",
+        "BinaryExtension.lean": "787aaa2fdead9dfaee75bcea585aab30e4d0f102ce0db11801503ac13eb5015e",
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "02a8b2e880a326f8b993b89db0b76c867ae1255e91b391bd8acce9fed708cb10",
+        "Main.lean": "65802284d0fdd7b8e81fee8aa13cda5ecc725b6fa1b4f375b82bcae54e807151",
+        "MemAlign.lean": "08c4ac6b522fd3c7a13ceb66f23de644535c6d2067b2afd543cacd6da3ccc90f",
+        "MemAlignByte.lean": "e8156d3a266a1e8852fa01893263bc298cb3aba45f0dd116f21b42ba783817e6",
+        "MemAlignReadByte.lean": "e6cf1afdc6010dbba179e4873238438438cb75286008762f2ef94b6caba5e2f4",
+        "MemAlignWriteByte.lean": "6bd3376f58db27c78264526d67046f9cf943502a93861533edb91a135fd92b05"
+      },
+      "missing_named_rejections": [],
+      "named_source_rejections": [
+        {
+          "declaration": "main_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 52
+        },
+        {
+          "declaration": "binary_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 61
+        },
+        {
+          "declaration": "binaryAdd_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 70
+        },
+        {
+          "declaration": "binaryExtension_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 79
+        },
+        {
+          "declaration": "memAlignByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 96
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 105
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 116
+        },
+        {
+          "declaration": "main_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_Main_143.constraint`",
+          "line": 132
+        },
+        {
+          "declaration": "binary_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_Binary_13.constraint`",
+          "line": 140
+        },
+        {
+          "declaration": "binaryAdd_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_BinaryAdd_8.constraint`",
+          "line": 148
+        },
+        {
+          "declaration": "binaryExtension_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_BinaryExtension_7.constraint`",
+          "line": 156
+        },
+        {
+          "declaration": "memAlignByte_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlignByte_15.constraint`",
+          "line": 171
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlignReadByte_9.constraint`",
+          "line": 180
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlignWriteByte_14.constraint`",
+          "line": 189
+        },
+        {
+          "declaration": "binary_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_Binary_13.selector`",
+          "line": 203
+        },
+        {
+          "declaration": "main_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_Main_143.selector`",
+          "line": 210
+        },
+        {
+          "declaration": "binaryAdd_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_BinaryAdd_8.selector`",
+          "line": 217
+        },
+        {
+          "declaration": "binaryExtension_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_BinaryExtension_7.selector`",
+          "line": 224
+        },
+        {
+          "declaration": "memAlignByte_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlignByte_15.selector`",
+          "line": 238
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlignReadByte_9.selector`",
+          "line": 245
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlignWriteByte_14.selector`",
+          "line": 252
+        }
+      ],
+      "pilout_sha256": "7ac5f0b07f4341269ae02fd7f6c66f7911c0d4d3e3b9537c0e92859885c48352",
+      "proof_exit_code": 1,
+      "proof_log": "direct-sign-proof.txt",
+      "stdlib_after_sha256": "9a463b529140f37832ca4a677ee692e76bd309a75200ec3dbe8f4a4c07e304a9",
+      "stdlib_before_sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1"
+    },
+    "group-slot": {
+      "artifact_deltas": [
+        "Main.lean",
+        "Binary.lean",
+        "BinaryAdd.lean",
+        "BinaryExtension.lean",
+        "MemAlign.lean",
+        "MemAlignByte.lean",
+        "MemAlignReadByte.lean",
+        "MemAlignWriteByte.lean",
+        "LookupWiring.lean"
+      ],
+      "canonical_equal_baseline": false,
+      "compiler_log": "group-slot-compiler.txt",
+      "detected": true,
+      "expected_air_prefixes": [
+        "main",
+        "binary",
+        "binaryAdd",
+        "binaryExtension",
+        "memAlign",
+        "memAlignByte",
+        "memAlignReadByte",
+        "memAlignWriteByte"
+      ],
+      "generated_sha256": {
+        "Binary.lean": "378c0923d25a8e3b4c9bad29bd36fa2095bcac73ee6f112ab724b1f128b7edaa",
+        "BinaryAdd.lean": "81b44305eba936935f95fc7ce6a2cc953a658b990637293b68bd169aa4bac5c6",
+        "BinaryExtension.lean": "a5b682b3649423dcd6c6fd5d023fa19b842e87c3a1dba2617b71fc1a6d7678b7",
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "178e4bfe1915982b58f3e5c1e5cc5d0478b849f6a00f13951295642abceefc69",
+        "Main.lean": "7acc90586e91a7122f2aba6dfff56e8f33379d257854d6e9e90b0a8f66f40eaa",
+        "MemAlign.lean": "cf18a6ed3e044ae17566c0c215ee201fcbf96c701304a111e9dc978c461296a7",
+        "MemAlignByte.lean": "7135bb953030ed274f031143e228c1daa32e3c631fc14b1aabf76df61b2a2ab1",
+        "MemAlignReadByte.lean": "6ba139926ef4c7ae4bd2337128262776231484ed83b2700cf470c5dbfefa75cc",
+        "MemAlignWriteByte.lean": "2041bb5c71f80b897f3367a6251163709d961fbfd047d37da1475b9c7eca9cda"
+      },
+      "missing_named_rejections": [],
+      "named_source_rejections": [
+        {
+          "declaration": "main_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 52
+        },
+        {
+          "declaration": "binary_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 61
+        },
+        {
+          "declaration": "binaryAdd_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 70
+        },
+        {
+          "declaration": "binaryExtension_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 79
+        },
+        {
+          "declaration": "memAlign_finalizer_source_iff",
+          "diagnostic": "unsolved goals",
+          "line": 86
+        },
+        {
+          "declaration": "memAlignByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 96
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 105
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 116
+        },
+        {
+          "declaration": "main_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 135
+        },
+        {
+          "declaration": "binary_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 143
+        },
+        {
+          "declaration": "binaryAdd_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 151
+        },
+        {
+          "declaration": "binaryExtension_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 159
+        },
+        {
+          "declaration": "memAlign_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 166
+        },
+        {
+          "declaration": "memAlignByte_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 174
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 183
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_typed_source_iff",
+          "diagnostic": "'change' tactic failed, pattern",
+          "line": 192
+        },
+        {
+          "declaration": "binary_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 207
+        },
+        {
+          "declaration": "main_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 214
+        },
+        {
+          "declaration": "binaryAdd_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 221
+        },
+        {
+          "declaration": "binaryExtension_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 228
+        },
+        {
+          "declaration": "memAlign_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 235
+        },
+        {
+          "declaration": "memAlignByte_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 242
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 249
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_cells",
+          "diagnostic": "Application type mismatch: The argument",
+          "line": 256
+        }
+      ],
+      "pilout_sha256": "f4fa4874e678a1bdc720d2428c14d644ba85f6094915d738e0d2cc8a00249b32",
+      "proof_exit_code": 1,
+      "proof_log": "group-slot-proof.txt",
+      "stdlib_after_sha256": "3ffd43b767f94aaa51a2789b62e42237cd40185b32e736ed5e4419235c9bdb77",
+      "stdlib_before_sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1"
+    },
+    "selector": {
+      "artifact_deltas": [
+        "Main.lean",
+        "Binary.lean",
+        "BinaryAdd.lean",
+        "BinaryExtension.lean",
+        "MemAlign.lean",
+        "MemAlignByte.lean",
+        "MemAlignReadByte.lean",
+        "MemAlignWriteByte.lean",
+        "LookupWiring.lean"
+      ],
+      "canonical_equal_baseline": false,
+      "compiler_log": "selector-compiler.txt",
+      "detected": true,
+      "expected_air_prefixes": [
+        "main",
+        "binary",
+        "binaryAdd",
+        "binaryExtension",
+        "memAlign",
+        "memAlignByte",
+        "memAlignReadByte",
+        "memAlignWriteByte"
+      ],
+      "generated_sha256": {
+        "Binary.lean": "72ae6dae4146f1cc3a9cdb043c1296acd34495674dc1e2bdeccb8ae9c1e22456",
+        "BinaryAdd.lean": "296f46bba90a301a48b143b3b765180c9e4a1504d2f64ca31c29a7196a572651",
+        "BinaryExtension.lean": "73d1594f7c5a64264ad11b16bf135464f162eec506c12190deb436f5025fe499",
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "b9415f96acf6c8debf85cfd7656e486cd7200553356aa2d0d7c6fde6b2cd80da",
+        "Main.lean": "7357d8808d1bddc23d4799a034d025229ce9ccb3ae6673ec292cc919c15fe071",
+        "MemAlign.lean": "068dee72e77387ebc86a5d2531de1acd35eb970109d15ef5bc9ce1bf870952a2",
+        "MemAlignByte.lean": "89415a2a5e6acafdb9c1a977c0cc6248a1315f080f03ccbfab31f99144e6678e",
+        "MemAlignReadByte.lean": "a458ab142874d13e124399d0eafebbcc9fae8d67ce19316a257d39b6b2059261",
+        "MemAlignWriteByte.lean": "2aabc5dfe0548664bb90ff1c0e9c80b8a1a2c0572c9f13a23d3e420449961403"
+      },
+      "missing_named_rejections": [],
+      "named_source_rejections": [
+        {
+          "declaration": "main_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 52
+        },
+        {
+          "declaration": "binary_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 61
+        },
+        {
+          "declaration": "binaryAdd_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 70
+        },
+        {
+          "declaration": "binaryExtension_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 79
+        },
+        {
+          "declaration": "memAlign_finalizer_source_iff",
+          "diagnostic": "unsolved goals",
+          "line": 86
+        },
+        {
+          "declaration": "memAlignByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 96
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 105
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_source_iff",
+          "diagnostic": "Tactic `rfl` failed: The left-hand side",
+          "line": 116
+        },
+        {
+          "declaration": "main_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_Main_143.constraint`",
+          "line": 132
+        },
+        {
+          "declaration": "binary_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_Binary_13.constraint`",
+          "line": 140
+        },
+        {
+          "declaration": "binaryAdd_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_BinaryAdd_8.constraint`",
+          "line": 148
+        },
+        {
+          "declaration": "binaryExtension_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_BinaryExtension_7.constraint`",
+          "line": 156
+        },
+        {
+          "declaration": "memAlign_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlign_39.constraint`",
+          "line": 164
+        },
+        {
+          "declaration": "memAlignByte_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlignByte_15.constraint`",
+          "line": 171
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlignReadByte_9.constraint`",
+          "line": 180
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_typed_source_iff",
+          "diagnostic": "Unknown identifier `link_MemAlignWriteByte_14.constraint`",
+          "line": 189
+        },
+        {
+          "declaration": "binary_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_Binary_13.selector`",
+          "line": 203
+        },
+        {
+          "declaration": "main_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_Main_143.selector`",
+          "line": 210
+        },
+        {
+          "declaration": "binaryAdd_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_BinaryAdd_8.selector`",
+          "line": 217
+        },
+        {
+          "declaration": "binaryExtension_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_BinaryExtension_7.selector`",
+          "line": 224
+        },
+        {
+          "declaration": "memAlign_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlign_39.selector`",
+          "line": 231
+        },
+        {
+          "declaration": "memAlignByte_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlignByte_15.selector`",
+          "line": 238
+        },
+        {
+          "declaration": "memAlignReadByte_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlignReadByte_9.selector`",
+          "line": 245
+        },
+        {
+          "declaration": "memAlignWriteByte_finalizer_cells",
+          "diagnostic": "Unknown identifier `link_MemAlignWriteByte_14.selector`",
+          "line": 252
+        }
+      ],
+      "pilout_sha256": "222ae511e3e3565f6de9b15e70cac2f15d352f6b33aa3bcab6e53d9b257aac79",
+      "proof_exit_code": 1,
+      "proof_log": "selector-proof.txt",
+      "stdlib_after_sha256": "26b685cf7e93fe08b12d489a72b913a8fd5a2c1b6f41ab2c07a9f61979bb69c6",
+      "stdlib_before_sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1"
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "init",
+        "-q"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/git-init.log",
+      "seconds": 0.004
+    },
+    {
+      "argv": [
+        "git",
+        "add",
+        "-A"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/git-add.log",
+      "seconds": 0.324
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "user.name=Finalizer source control",
+        "-c",
+        "user.email=source-control@localhost",
+        "commit",
+        "-qm",
+        "Freeze finalizer proof source"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/git-commit.log",
+      "seconds": 0.021
+    },
+    {
+      "argv": [
+        "cp",
+        "-a",
+        "--reflink=never",
+        "/home/cody/zisk-fv-closure-extractor/.lake",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/copy-.lake.log",
+      "seconds": 24.171
+    },
+    {
+      "argv": [
+        "cp",
+        "-a",
+        "--reflink=never",
+        "/home/cody/zisk-fv-closure-extractor/build/extraction",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/copy-extraction.log",
+      "seconds": 0.015
+    },
+    {
+      "argv": [
+        "cp",
+        "-a",
+        "--reflink=never",
+        "/home/cody/zisk-fv-closure-extractor/build/clean-lean",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/clean-lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/copy-clean-lean.log",
+      "seconds": 0.149
+    },
+    {
+      "argv": [
+        "cp",
+        "-a",
+        "--reflink=never",
+        "/home/cody/zisk-fv-closure-extractor/build/sail-lean",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/sail-lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/copy-sail-lean.log",
+      "seconds": 0.281
+    },
+    {
+      "argv": [
+        "cp",
+        "-a",
+        "--reflink=never",
+        "/home/cody/zisk-fv-closure-extractor/build/aeneas-lean",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/aeneas-lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/copy-aeneas-lean.log",
+      "seconds": 0.503
+    },
+    {
+      "argv": [
+        "nix",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        "--cores",
+        "2",
+        "--max-jobs",
+        "1",
+        "git+file:///home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof#pil-extract"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/logs/production-extractor.log",
+      "seconds": 119.579
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/copy-zisk.log",
+      "seconds": 0.275
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/proofman"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/copy-proofman.log",
+      "seconds": 0.094
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/compile-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/compile.log",
+      "seconds": 172.064
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "circuit-shim",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Circuit.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-Circuit.log",
+      "seconds": 0.002
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "Main",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Main.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-Main.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "Binary",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Binary.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-Binary.log",
+      "seconds": 0.023
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "BinaryAdd",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryAdd.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-BinaryAdd.log",
+      "seconds": 0.023
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "BinaryExtension",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryExtension.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-BinaryExtension.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "MemAlign",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlign.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-MemAlign.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "MemAlignByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-MemAlignByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "MemAlignReadByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignReadByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-MemAlignReadByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--air",
+        "MemAlignWriteByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignWriteByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-MemAlignWriteByte.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "lookup-wiring",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/zisk.pilout",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/LookupWiring.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/extract-LookupWiring.log",
+      "seconds": 0.101
+    },
+    {
+      "argv": [
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.GsumBoundary"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/baseline/proof.log",
+      "seconds": 2.988
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/copy-zisk.log",
+      "seconds": 0.095
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/proofman"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/copy-proofman.log",
+      "seconds": 0.034
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/compile-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/compile.log",
+      "seconds": 171.371
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "circuit-shim",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Circuit.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-Circuit.log",
+      "seconds": 0.002
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "Main",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Main.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-Main.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "Binary",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Binary.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-Binary.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "BinaryAdd",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryAdd.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-BinaryAdd.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "BinaryExtension",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryExtension.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-BinaryExtension.log",
+      "seconds": 0.026
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "MemAlign",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlign.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-MemAlign.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "MemAlignByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-MemAlignByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "MemAlignReadByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignReadByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-MemAlignReadByte.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--air",
+        "MemAlignWriteByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignWriteByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-MemAlignWriteByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "lookup-wiring",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/zisk.pilout",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/LookupWiring.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/extract-LookupWiring.log",
+      "seconds": 0.095
+    },
+    {
+      "argv": [
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.GsumBoundary"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 1,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/group-slot/proof.log",
+      "seconds": 31.918
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/copy-zisk.log",
+      "seconds": 0.109
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/proofman"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/copy-proofman.log",
+      "seconds": 0.09
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/compile-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/compile.log",
+      "seconds": 179.679
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "circuit-shim",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Circuit.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-Circuit.log",
+      "seconds": 0.002
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "Main",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Main.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-Main.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "Binary",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Binary.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-Binary.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "BinaryAdd",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryAdd.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-BinaryAdd.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "BinaryExtension",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryExtension.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-BinaryExtension.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "MemAlign",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlign.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-MemAlign.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "MemAlignByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-MemAlignByte.log",
+      "seconds": 0.026
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "MemAlignReadByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignReadByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-MemAlignReadByte.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--air",
+        "MemAlignWriteByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignWriteByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-MemAlignWriteByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "lookup-wiring",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/zisk.pilout",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/LookupWiring.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/extract-LookupWiring.log",
+      "seconds": 0.102
+    },
+    {
+      "argv": [
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.GsumBoundary"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 1,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/direct-sign/proof.log",
+      "seconds": 44.687
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/copy-zisk.log",
+      "seconds": 0.104
+    },
+    {
+      "argv": [
+        "cp",
+        "-r",
+        "--reflink=never",
+        "--no-preserve=mode",
+        "/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/proofman"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/copy-proofman.log",
+      "seconds": 0.037
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/compile-source",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/compile.log",
+      "seconds": 178.256
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "circuit-shim",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Circuit.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-Circuit.log",
+      "seconds": 0.002
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "Main",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Main.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-Main.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "Binary",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/Binary.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-Binary.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "BinaryAdd",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryAdd.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-BinaryAdd.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "BinaryExtension",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/BinaryExtension.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-BinaryExtension.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "MemAlign",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlign.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-MemAlign.log",
+      "seconds": 0.026
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "MemAlignByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-MemAlignByte.log",
+      "seconds": 0.025
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "MemAlignReadByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignReadByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-MemAlignReadByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "air",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--air",
+        "MemAlignWriteByte",
+        "--skip-unsupported",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/MemAlignWriteByte.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-MemAlignWriteByte.log",
+      "seconds": 0.024
+    },
+    {
+      "argv": [
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/pil-extract",
+        "lookup-wiring",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/zisk.pilout",
+        "--output",
+        "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/extraction/Extraction/LookupWiring.lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/extract-LookupWiring.log",
+      "seconds": 0.096
+    },
+    {
+      "argv": [
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.GsumBoundary"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof",
+      "exit_code": 1,
+      "log": "/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/selector/proof.log",
+      "seconds": 43.187
+    }
+  ],
+  "compiler_wrapper_sha256": "4ad4a34aa2461dd9f8a4f1beb47af526e6bb01a6bbe1b49507d3baedb6d1e58c",
+  "complete": true,
+  "extractor_sha256": "a8a097273dcbd751b1d00b04762d4a4231a8d04f721268d8ee150acd2d13bc66",
+  "harness_sha256": "0ed8966bb129f8e2c1e660bf5fb9bd18a470e8e1ec684c58df497aad304007b1",
+  "pinned_pilout_sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+  "production_extractor": "/nix/store/nin5yswsclr9bm75iicanwh5fwgw7iq0-pil-extract-0.1.0",
+  "proof_source_sha256": "4eb2b3457600ae90fe2426282376dec9c719a876e9fd9c3a15f113aca6f56c04",
+  "proof_target": "ZiskFv.AirsClean.GsumBoundary",
+  "result": "green fresh baseline and three genuine source mutations rejected by named finalizer proofs",
+  "snapshot_commit": "851d0ea9e6015312f475149470876ac9e6d1c401",
+  "source_commit": "a86bbb09277c3ba55a47ce23789b8b97c979e7a2",
+  "source_recipes": {
+    "direct-sign": [
+      [
+        "    L1' * ((result - gsum - direct_sum_ims) * direct_vals_den - direct_vals_num) === 0;",
+        "    L1' * ((result - gsum + direct_sum_ims) * direct_vals_den - direct_vals_num) === 0;"
+      ]
+    ],
+    "group-slot": [
+      [
+        "        airgroupval aggregate(sum) default(0) gsum_result;",
+        "        airgroupval aggregate(sum) default(0) gsum_result;\n        airgroupval aggregate(sum) default(0) gsum_result_mutant;"
+      ],
+      [
+        "        result = gsum_result;",
+        "        result = gsum_result_mutant;"
+      ]
+    ],
+    "selector": [
+      [
+        "    L1' * ((result - gsum - direct_sum_ims) * direct_vals_den - direct_vals_num) === 0;",
+        "    L1 * ((result - gsum - direct_sum_ims) * direct_vals_den - direct_vals_num) === 0;"
+      ]
+    ]
+  },
+  "stdlib_sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1"
+}
