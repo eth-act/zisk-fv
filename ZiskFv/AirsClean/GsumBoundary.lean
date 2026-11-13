@@ -132,6 +132,115 @@ theorem memAlignWriteByte_finalizer_source_iff :
 
 end Source
 
+/-- Independent typed source cells. AIR values and AIR-group values are
+different functions, so group result 0 can never alias padding-size value 0.
+Offsets are signed source offsets relative to the current physical row. -/
+structure Source (F : Type) where
+  witness : Nat → Nat → Int → F
+  fixed : Nat → Int → F
+  airValue : Nat → F
+  airGroupValue : Nat → F
+
+/-- Closed interpretation for finalizer syntax only. Unsupported constructors
+and literals return `none`, never an invented field value. -/
+def Source.eval {F : Type} [Field F] (source : Source F) : Expr → Option F
+  | .constant "0" => some 0
+  | .witness stage column offset => some (source.witness stage column offset)
+  | .fixed column offset => some (source.fixed column offset)
+  | .airValue index => some (source.airValue index)
+  | .airGroupValue index => some (source.airGroupValue index)
+  | .add lhs rhs => do return (← source.eval lhs) + (← source.eval rhs)
+  | .sub lhs rhs => do return (← source.eval lhs) - (← source.eval rhs)
+  | .mul lhs rhs => do return (← source.eval lhs) * (← source.eval rhs)
+  | _ => none
+
+def Source.Holds {F : Type} [Field F] (source : Source F) (constraint : Expr) : Prop :=
+  source.eval constraint = some 0
+
+def mainTypedDirectSum {F : Type} [Field F] (source : Source F) : F :=
+  ((List.range 95).map (fun index => source.airValue (102 + index))).foldl
+    (· + ·) (source.airValue 101)
+
+section TypedSource
+
+variable {F : Type} [Field F] (source : Source F)
+
+/-- These welds interpret the actual lossless constraint, not `link.template`
+or its unconstrained direct-term list. Every expected source cell is fixed in
+the conclusion independently of generation. -/
+theorem main_finalizer_typed_source_iff :
+    source.Holds link_Main_143.constraint ↔
+      Closed (source.fixed 2 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) (mainTypedDirectSum source) := by
+  change some (source.fixed 2 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 - mainTypedDirectSum source)) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem binary_finalizer_typed_source_iff :
+    source.Holds link_Binary_13.constraint ↔
+      Closed (source.fixed 0 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) (source.airValue 1) := by
+  change some (source.fixed 0 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem binaryAdd_finalizer_typed_source_iff :
+    source.Holds link_BinaryAdd_8.constraint ↔
+      Closed (source.fixed 0 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) (source.airValue 1) := by
+  change some (source.fixed 0 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem binaryExtension_finalizer_typed_source_iff :
+    source.Holds link_BinaryExtension_7.constraint ↔
+      Closed (source.fixed 0 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) (source.airValue 1) := by
+  change some (source.fixed 0 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem memAlign_finalizer_typed_source_iff :
+    source.Holds link_MemAlign_39.constraint ↔
+      Closed (source.fixed 1 1) (source.airGroupValue 0) (source.witness 2 0 0) 0 := by
+  change some (source.fixed 1 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0)) = some 0 ↔ _
+  simp only [Option.some.injEq, Closed, sub_zero]
+
+theorem memAlignByte_finalizer_typed_source_iff :
+    source.Holds link_MemAlignByte_15.constraint ↔
+      Closed (source.fixed 0 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) (source.airValue 1 + source.airValue 2) := by
+  change some (source.fixed 0 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 -
+      (source.airValue 1 + source.airValue 2))) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem memAlignReadByte_finalizer_typed_source_iff :
+    source.Holds link_MemAlignReadByte_9.constraint ↔
+      Closed (source.fixed 0 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) (source.airValue 1 + source.airValue 2) := by
+  change some (source.fixed 0 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 -
+      (source.airValue 1 + source.airValue 2))) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem memAlignWriteByte_finalizer_typed_source_iff :
+    source.Holds link_MemAlignWriteByte_14.constraint ↔
+      Closed (source.fixed 0 1) (source.airGroupValue 0)
+        (source.witness 2 0 0) ((source.airValue 1 + source.airValue 2) + source.airValue 3) := by
+  change some (source.fixed 0 1 *
+    (source.airGroupValue 0 - source.witness 2 0 0 -
+      ((source.airValue 1 + source.airValue 2) + source.airValue 3))) = some 0 ↔ _
+  exact Option.some.injEq
+
+theorem typedSource_rejects_unsupported :
+    source.eval (.challenge 2 0) = none ∧
+    source.eval (.opaque "unsupported" "payload") = none := by
+  exact ⟨rfl, rfl⟩
+
+end TypedSource
+
 /-- Independent AST cell pins distinguish AIR-group contribution 0 from AIR
 value 0 even though the legacy single-field Circuit shim projects both through
 `exposed`. The source correspondence above is not allowed to erase this pin. -/
