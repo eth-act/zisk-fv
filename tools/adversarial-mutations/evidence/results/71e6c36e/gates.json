@@ -1,0 +1,59 @@
+{
+  "issue": 375,
+  "mutation_source_commit": "71e6c36e1007c8e5ab3aaa69089b47fa742404ce",
+  "gate_candidate_commit": "764c21abb12b5cbf96b6c5ce28cc6c91b2af725b",
+  "limits": {
+    "LEAN_NUM_THREADS": 2,
+    "CARGO_BUILD_JOBS": 2,
+    "nix_cores": 2,
+    "nix_max_jobs": 1
+  },
+  "mutation_results": {
+    "rounds": [5, 26, 33, 36],
+    "proof": 4,
+    "infrastructure": 0,
+    "expected_rejection": "ZiskFv/AirsClean/ArithTable.lean:197:2: Tactic `rfl` failed: The left-hand side",
+    "baseline_proof_exit_codes": [0, 0, 0, 0],
+    "mutant_proof_exit_codes": [1, 1, 1, 1],
+    "any_proof_timeout": false,
+    "round_zero_control_passed": true
+  },
+  "initial_setup_failure": {
+    "reason": "The fresh worktree's zisk directory was populated with the flake-pinned b632745 mutation source instead of the distinct checked-in 9ca88b5 git submodule. That source lacks core/src/aeneas_extract.rs and the aeneas_extract Cargo feature. No pins or source were changed to conflate these inputs.",
+    "trust_v1_exit_code": 1,
+    "full_test_exit_code": 1,
+    "full_test_failed_steps": ["2/10 zisk-core aeneas_extract tests", "5/10 Aeneas production extraction harness", "8/10 trust gate (V1 syntactic)"],
+    "trust_v1_log_sha256": "001e85a321be0e48587f3cc352477eacb307b190182d117a7ff9373d48169cf4",
+    "full_test_log_sha256": "2749c60929ad231dd270b240c64c66e69d8609f86be6e16cd7675b35b9940a6a",
+    "counted_as_mutation_detection": false
+  },
+  "final_gates": [
+    {
+      "command": "lake build --log-level=warning",
+      "exit_code": 0,
+      "log": "mutation-results/375/gates-final/lake-build.log",
+      "log_sha256": "a9e6b1a81ab3dbd3424b3b280086527d093e9dc6e1f77376818c31eab4cb32bd"
+    },
+    {
+      "command": "trust/scripts/check-all-semantic.sh",
+      "exit_code": 0,
+      "log": "mutation-results/375/gates-final/trust-v2.log",
+      "log_sha256": "e24104cc9e2910e9803147e7252dbf89d3edf8592c8a6b5231ba23f81b5bf6bf"
+    },
+    {
+      "command": "trust/scripts/check-all.sh",
+      "exit_code": 0,
+      "log": "mutation-results/375/gates-corrected/trust-v1.log",
+      "log_sha256": "b3b0a36bbfae33d8c931709dfd0bebad3a9ff043765a39245f1bd3c470166ac1"
+    },
+    {
+      "command": "nix --extra-experimental-features 'nix-command flakes' run .#test",
+      "exit_code": 0,
+      "no_skipped_steps": true,
+      "zisk_submodule_revision": "9ca88b5b182fd7d534343181354f5319528c82d2",
+      "log": "mutation-results/375/gates-corrected/full-test.log",
+      "log_sha256": "330bc2d6888b65ff59aad9e3ac423bcd8f44aa09322bcf4bfe6bc2806ebfe925"
+    }
+  ],
+  "log_retention": "Full command logs are retained locally under mutation-results/375; compact round JSON records are committed alongside this file. Log hashes identify observed local logs, not a claim that logs are published."
+}

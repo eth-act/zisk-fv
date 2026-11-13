@@ -100,6 +100,11 @@ timeouts are not detections. The historical rounds 26/33/36 produced that
 equality rejection but were classified as infrastructure because their diagnostic
 entries were absent. New evidence must rerun the actual controls and mutations;
 historical results are never relabeled.
+The fresh four-round run in [`evidence/results/71e6c36e/`](evidence/results/71e6c36e/)
+records four green baselines and four actual equality rejections, with no proof
+timeouts. Its `gates.json` records final formal/trust/full-gate success and the
+earlier setup failure: the worktree's checked-in ZisK submodule and the
+flake-pinned mutation input are distinct revisions and must not be conflated.
 
 ```bash
 python3 tools/adversarial-mutations/runner.py full --round 32 \
