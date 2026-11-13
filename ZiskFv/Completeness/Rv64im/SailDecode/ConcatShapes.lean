@@ -14,6 +14,22 @@ namespace ZiskFv.Completeness.SailDecode
 
 open ZiskFv.Completeness
 
+/-- The R-type layout is a bitwise identity, independent of an opcode or a
+register enumeration. Keeping it symbolic avoids compiler-trusted evaluation. -/
+private theorem rtype_concat_eq_rawRType
+    (funct7 : BitVec 7) (rs2 rs1 : BitVec 5) (funct3 : BitVec 3)
+    (rd : BitVec 5) (opcode : BitVec 7) :
+    ((funct7 ++ (rs2 ++ (rs1 ++ (funct3 ++ (rd ++ opcode))))) : RawInstruction) =
+      Rv64imShapes.rawRType funct7.toNat rs2.toNat rs1.toNat
+        funct3.toNat rd.toNat opcode.toNat := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [Rv64imShapes.rawRType, Rv64imShapes.rawOfNat32,
+      BitVec.getLsbD_append, BitVec.getLsbD_ofNat,
+      Nat.testBit_or, Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
+
 theorem sail_add_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
       (LeanRV64D.Functions.encdec_reg_forwards rs2 ++
@@ -30,7 +46,9 @@ theorem sail_add_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 0#3 rd 0x33#7
 
 theorem sail_sub_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0100000#7 ++
@@ -48,7 +66,10 @@ theorem sail_sub_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 32#7 rs2 rs1 0#3 rd 0x33#7
 
 theorem sail_sll_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -66,7 +87,10 @@ theorem sail_sll_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 1#3 rd 0x33#7
 
 theorem sail_slt_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -84,7 +108,10 @@ theorem sail_slt_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 2#3 rd 0x33#7
 
 theorem sail_sltu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -102,7 +129,10 @@ theorem sail_sltu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 3#3 rd 0x33#7
 
 theorem sail_xor_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -120,7 +150,10 @@ theorem sail_xor_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 4#3 rd 0x33#7
 
 theorem sail_srl_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -138,7 +171,10 @@ theorem sail_srl_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 5#3 rd 0x33#7
 
 theorem sail_sra_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0100000#7 ++
@@ -156,7 +192,10 @@ theorem sail_sra_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 32#7 rs2 rs1 5#3 rd 0x33#7
 
 theorem sail_or_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -174,7 +213,10 @@ theorem sail_or_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 6#3 rd 0x33#7
 
 theorem sail_and_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -192,7 +234,10 @@ theorem sail_and_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 7#3 rd 0x33#7
 
 theorem sail_addw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -210,7 +255,10 @@ theorem sail_addw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 0#3 rd 0x3b#7
 
 theorem sail_subw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0100000#7 ++
@@ -228,7 +276,10 @@ theorem sail_subw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 32#7 rs2 rs1 0#3 rd 0x3b#7
 
 theorem sail_sllw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -246,7 +297,10 @@ theorem sail_sllw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 1#3 rd 0x3b#7
 
 theorem sail_srlw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000000#7 ++
@@ -264,7 +318,10 @@ theorem sail_srlw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 0#7 rs2 rs1 5#3 rd 0x3b#7
 
 theorem sail_sraw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0100000#7 ++
@@ -282,7 +339,10 @@ theorem sail_sraw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 32#7 rs2 rs1 5#3 rd 0x3b#7
 
 theorem sail_mul_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -300,7 +360,10 @@ theorem sail_mul_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 0#3 rd 0x33#7
 
 theorem sail_mulh_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -318,7 +381,10 @@ theorem sail_mulh_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 1#3 rd 0x33#7
 
 theorem sail_mulhsu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -336,7 +402,10 @@ theorem sail_mulhsu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 2#3 rd 0x33#7
 
 theorem sail_mulhu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -354,7 +423,10 @@ theorem sail_mulhu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 3#3 rd 0x33#7
 
 theorem sail_mulw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -372,7 +444,10 @@ theorem sail_mulw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 0#3 rd 0x3b#7
 
 theorem sail_div_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -391,7 +466,10 @@ theorem sail_div_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 4#3 rd 0x33#7
 
 theorem sail_divu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -410,7 +488,10 @@ theorem sail_divu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 5#3 rd 0x33#7
 
 theorem sail_divw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -429,7 +510,10 @@ theorem sail_divw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 4#3 rd 0x3b#7
 
 theorem sail_divuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -448,7 +532,10 @@ theorem sail_divuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 5#3 rd 0x3b#7
 
 theorem sail_rem_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -467,7 +554,10 @@ theorem sail_rem_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 6#3 rd 0x33#7
 
 theorem sail_remu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -486,7 +576,10 @@ theorem sail_remu_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 7#3 rd 0x33#7
 
 theorem sail_remw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -505,7 +598,10 @@ theorem sail_remw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 6#3 rd 0x3b#7
 
 theorem sail_remuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
     ((0b0000001#7 ++
@@ -524,7 +620,10 @@ theorem sail_remuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
   cases rs2 with | Regidx rs2 =>
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, LeanRV64D.Functions.bool_bits_forwards,
+    BitVec.append_assoc' (w₁ := 2) (w₂ := 1) (w₃ := 12)] using
+    rtype_concat_eq_rawRType 1#7 rs2 rs1 7#3 rd 0x3b#7
 
 theorem sail_itype_imm_component_eq (imm : BitVec 12) :
     BitVec.ofNat 32 ((imm.toNat % 4096) <<< 20) =
