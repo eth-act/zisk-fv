@@ -748,3 +748,24 @@ Mutation recipes for the integration owner (not execution evidence):
 No gates or mutation runs were executed for these local additions; acceptance
 requires the integration owner's regenerated source artifacts, Lean build,
 trust gates, mutation rejection evidence and complete `nix run .#test`.
+
+`binaryProviderTable_materialized` / `extensionProviderTable_materialized`,
+the corresponding `_constraints` and `_interactionsWith` lemmas expose
+canonical full-domain source tables without caller-supplied membership.
+`BinaryTablePrefix.lean` handles arbitrary accepted source prefixes: the
+component's intrinsic fixed-domain/width invariants justify every raw-cell
+read; absent rows receive zero multiplicity; both prefixes are reified into
+the same disjoint physical witness while preserving unrelated cells.
+The materialized/interactions prefix lemmas and `_balanceOf` lemmas prove
+exact per-message balance-sum preservation. They do not claim that adding
+zero interactions preserves Clean's separate interaction-count guard.
+No new `AcceptedTrace` field or caller source-map certificate is required.
+
+`BinaryTableRequests.lean` builds both packed multiplicity projections from
+exact source-index request lists. It counts repeated indices rather than
+deduplicating equal payloads, proves the complete counted-source/negative-
+request balance, and discharges the interaction-count bound for exactly eight
+requests on either Binary channel. The same physical raw witness carries both
+sources. Concrete consumer-row construction must still weld those indices to
+its actual eight emitted tuples; no aggregate row-honesty premise replaces
+that integration obligation.

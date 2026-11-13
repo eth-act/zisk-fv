@@ -4,6 +4,8 @@ import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
 import ZiskFv.AirsClean.PackedVirtualTableSources
+import ZiskFv.AirsClean.BinaryTablePrefix
+import ZiskFv.AirsClean.BinaryTableRequests
 import Clean.Air.FlatEnsemble
 
 /-!
