@@ -72,6 +72,16 @@ structure SourceRow (F : Type) where
   multiplicity : F
 deriving ProvableStruct
 
+theorem eval_source_message (env : Environment FGL) (row : SourceRow (Expression FGL)) :
+    (eval env row : SourceRow FGL).message = eval env row.message := by
+  rw [ProvableStruct.eval_eq_eval (α := SourceRow)]
+  rfl
+
+theorem eval_source_multiplicity (env : Environment FGL) (row : SourceRow (Expression FGL)) :
+    (eval env row : SourceRow FGL).multiplicity = Expression.eval env row.multiplicity := by
+  rw [ProvableStruct.eval_eq_eval (α := SourceRow)]
+  rfl
+
 @[circuit_norm]
 def sourceMain (row : SourceRow (Expression FGL)) : Circuit FGL Unit := do
   lookup (Table.fromStatic binaryExtensionTable) row.message
@@ -175,7 +185,7 @@ theorem sourceInteraction_mem_spec
           sourceComponent.rowInputVar.message).toRaw)] := by
     simpa only [h_component] using sourceComponent_interactionsWith
   simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
-    h_ops, List.map_singleton, List.flatMap_singleton, List.mem_map] at h_mem
+    h_ops, List.map_singleton, List.mem_flatMap, List.mem_singleton] at h_mem
   obtain ⟨row, h_row, rfl⟩ := h_mem
   refine ⟨eval (table.environment row) sourceComponent.rowInputVar.message,
     sourceComponent_spec_of_constraints _ (by
@@ -183,5 +193,32 @@ theorem sourceInteraction_mem_spec
   change ((toElements sourceComponent.rowInputVar.message).map
     (table.environment row)).toArray = _
   rw [← ProvableType.toElements_eval]
+
+theorem source_input_message (row : SourceRow FGL) (data : ProverData FGL) :
+    eval (Environment.fromInput row data) sourceComponent.rowInputVar.message = row.message := by
+  rw [← eval_source_message]
+  exact congrArg SourceRow.message (ProvableType.eval_fromInput_varFromOffset_zero row data)
+
+theorem source_input_multiplicity (row : SourceRow FGL) (data : ProverData FGL) :
+    Expression.eval (Environment.fromInput row data)
+      sourceComponent.rowInputVar.multiplicity = row.multiplicity := by
+  rw [← eval_source_multiplicity]
+  exact congrArg SourceRow.multiplicity (ProvableType.eval_fromInput_varFromOffset_zero row data)
+
+theorem source_constraints_fromInput (row : SourceRow FGL) (data : ProverData FGL)
+    (h : binaryExtensionTable.Spec row.message) :
+    sourceComponent.operations.ConstraintsHold (Environment.fromInput row data) := by
+  rw [Component.constraintsHold_iff]
+  simpa only [Component.rowOperations, sourceComponent, sourceCircuit, sourceMain,
+    circuit_norm, Lookup.Contains, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+    ProvableType.fromElements_eval_toElements, source_input_message] using h
+
+theorem source_interaction_fromInput (row : SourceRow FGL) (data : ProverData FGL) :
+    ((BinaryExtensionTableChannel.emitted sourceComponent.rowInputVar.multiplicity
+      sourceComponent.rowInputVar.message).toRaw).eval (Environment.fromInput row data) =
+        BinaryExtensionTableChannel.pushedIfValue row.multiplicity row.message := by
+  change ((BinaryExtensionTableChannel.pushedIf sourceComponent.rowInputVar.multiplicity
+    sourceComponent.rowInputVar.message).toRaw).eval _ = _
+  rw [Channel.eval_pushedIf, source_input_message, source_input_multiplicity]
 
 end ZiskFv.AirsClean.BinaryExtensionTableSlice

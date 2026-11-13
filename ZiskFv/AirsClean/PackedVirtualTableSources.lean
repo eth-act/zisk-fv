@@ -152,4 +152,92 @@ def extensionProviderTable (raw : Witness FGL) (data : ProverData FGL) : Table F
     subst columns
     simp [BinaryExtensionTableSlice.sourceFixedColumns]
 
+open ZiskFv.Channels.BinaryTable (BinaryTableChannel)
+open ZiskFv.Channels.BinaryExtensionTable (BinaryExtensionTableChannel)
+
+theorem binaryProviderTable_materialized (raw : Witness FGL) (data : ProverData FGL) :
+    (binaryProviderTable raw data).table =
+      List.ofFn (fun index : Fin BinaryTable.tableSize =>
+        (toElements (binaryRow raw index)).toArray) := by
+  change (List.ofFn (fun index : Fin BinaryTable.tableSize =>
+      #[(binaryRow raw index).multiplicity])).mapIdx
+      (fun index row => BinaryTableSlice.sourceFixedColumns.materialize index row) = _
+  apply List.ext_getElem
+  · simp
+  · intro index hi hi'
+    have hindex : index < BinaryTable.tableSize := by
+      simpa only [List.length_mapIdx, List.length_ofFn] using hi
+    simp only [List.getElem_mapIdx, List.getElem_ofFn]
+    simpa only [binaryRow] using BinaryTableSlice.sourceFixedColumns_materialize
+      ⟨index, hindex⟩ (binaryRow raw ⟨index, hindex⟩).multiplicity
+
+theorem extensionProviderTable_materialized (raw : Witness FGL) (data : ProverData FGL) :
+    (extensionProviderTable raw data).table =
+      List.ofFn (fun index : Fin BinaryExtensionTable.tableSize =>
+        (toElements (extensionRow raw index)).toArray) := by
+  change (List.ofFn (fun index : Fin BinaryExtensionTable.tableSize =>
+      #[(extensionRow raw index).multiplicity])).mapIdx
+      (fun index row => BinaryExtensionTableSlice.sourceFixedColumns.materialize index row) = _
+  apply List.ext_getElem
+  · simp
+  · intro index hi hi'
+    have hindex : index < BinaryExtensionTable.tableSize := by
+      simpa only [List.length_mapIdx, List.length_ofFn] using hi
+    simp only [List.getElem_mapIdx, List.getElem_ofFn]
+    simpa only [extensionRow] using BinaryExtensionTableSlice.sourceFixedColumns_materialize
+      ⟨index, hindex⟩ (extensionRow raw ⟨index, hindex⟩).multiplicity
+
+/-- All provider constraints hold for every physical raw witness. Membership
+    is constructed from the source index, not added to the caller's premises. -/
+theorem binaryProviderTable_constraints (raw : Witness FGL) (data : ProverData FGL) :
+    (binaryProviderTable raw data).Constraints := by
+  intro row hr
+  rw [binaryProviderTable_materialized] at hr
+  obtain ⟨index, rfl⟩ := List.mem_ofFn.mp hr
+  exact BinaryTableSlice.source_constraints_fromInput (binaryRow raw index) data ⟨index, rfl⟩
+
+theorem extensionProviderTable_constraints (raw : Witness FGL) (data : ProverData FGL) :
+    (extensionProviderTable raw data).Constraints := by
+  intro row hr
+  rw [extensionProviderTable_materialized] at hr
+  obtain ⟨index, rfl⟩ := List.mem_ofFn.mp hr
+  exact BinaryExtensionTableSlice.source_constraints_fromInput
+    (extensionRow raw index) data ⟨index, rfl⟩
+
+def binaryInteractions (raw : Witness FGL) : List (Interaction FGL) :=
+  List.ofFn fun index : Fin BinaryTable.tableSize =>
+    BinaryTableChannel.pushedIfValue (binaryRow raw index).multiplicity
+      (binaryRow raw index).message
+
+def extensionInteractions (raw : Witness FGL) : List (Interaction FGL) :=
+  List.ofFn fun index : Fin BinaryExtensionTable.tableSize =>
+    BinaryExtensionTableChannel.pushedIfValue (extensionRow raw index).multiplicity
+      (extensionRow raw index).message
+
+theorem binaryProviderTable_interactionsWith (raw : Witness FGL) (data : ProverData FGL) :
+    (binaryProviderTable raw data).interactionsWith BinaryTableChannel.toRaw =
+      binaryInteractions raw := by
+  have hops := BinaryTableSlice.sourceComponent_interactionsWith
+  change (binaryProviderTable raw data).component.operations.interactionsWith
+    BinaryTableChannel.toRaw = _ at hops
+  simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    hops, List.map_singleton, ← List.map_eq_flatMap]
+  rw [binaryProviderTable_materialized, List.map_ofFn]
+  apply congrArg (fun f : Fin BinaryTable.tableSize → Interaction FGL => List.ofFn f)
+  funext index
+  exact BinaryTableSlice.source_interaction_fromInput (binaryRow raw index) data
+
+theorem extensionProviderTable_interactionsWith (raw : Witness FGL) (data : ProverData FGL) :
+    (extensionProviderTable raw data).interactionsWith BinaryExtensionTableChannel.toRaw =
+      extensionInteractions raw := by
+  have hops := BinaryExtensionTableSlice.sourceComponent_interactionsWith
+  change (extensionProviderTable raw data).component.operations.interactionsWith
+    BinaryExtensionTableChannel.toRaw = _ at hops
+  simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    hops, List.map_singleton, ← List.map_eq_flatMap]
+  rw [extensionProviderTable_materialized, List.map_ofFn]
+  apply congrArg (fun f : Fin BinaryExtensionTable.tableSize → Interaction FGL => List.ofFn f)
+  funext index
+  exact BinaryExtensionTableSlice.source_interaction_fromInput (extensionRow raw index) data
+
 end ZiskFv.AirsClean.PackedVirtualTableSources
