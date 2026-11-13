@@ -74,6 +74,12 @@ stdenv.mkDerivation {
       --rust-source ${zisk-src}/state-machines/arith/src/arith_table_data.rs \
       --output $out/ArithTable.lean
 
+    # Source-derived Arith range helper arrays and row mapping. The maintained
+    # range model consumes this data instead of a hand-transcribed copy.
+    ${pil-extract}/bin/pil-extract arith-range-table \
+      --rust-source ${zisk-src}/state-machines/arith/src/arith_range_table_helpers.rs \
+      --output $out/ArithRangeTable.lean
+
     # BinaryTable and BinaryExtensionTable are virtual too, but far too large
     # to retain row-by-row (5,505,024 and 3,151,872 rows). Record one SHA-256
     # per opcode block instead; `tools/virtual-tables/check-byte-tables.py`
