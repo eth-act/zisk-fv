@@ -1340,9 +1340,13 @@
     {"air": "MemAlignReadByte", "constraint_index": 6, "hint_indices": [1050], "name": "link_MemAlignReadByte_6", "shape": "directZeroTail"},
     {"air": "MemAlignReadByte", "constraint_index": 7, "hint_indices": [1054], "name": "link_MemAlignReadByte_7", "shape": "directZeroTail"},
     {"air": "MemAlignReadByte", "constraint_index": 8, "hint_indices": [1055], "name": "link_MemAlignReadByte_8", "shape": "directAssumesNegFormZeroTail"},
+    {"air": "MemAlignWriteByte", "constraint_index": 7, "hint_indices": [1077, 1078], "name": "link_MemAlignWriteByte_7", "shape": "cluster2ZeroTail"},
     {"air": "MemAlignWriteByte", "constraint_index": 8, "hint_indices": [1080, 1081], "name": "link_MemAlignWriteByte_8", "shape": "cluster2"},
     {"air": "MemAlignWriteByte", "constraint_index": 9, "hint_indices": [1075], "name": "link_MemAlignWriteByte_9", "shape": "direct"},
     {"air": "MemAlignWriteByte", "constraint_index": 10, "hint_indices": [1069], "name": "link_MemAlignWriteByte_10", "shape": "direct"},
+    {"air": "MemAlignWriteByte", "constraint_index": 11, "hint_indices": [1082], "name": "link_MemAlignWriteByte_11", "shape": "directZeroTail"},
+    {"air": "MemAlignWriteByte", "constraint_index": 12, "hint_indices": [1083], "name": "link_MemAlignWriteByte_12", "shape": "directAssumesNegFormZeroTail"},
+    {"air": "MemAlignWriteByte", "constraint_index": 13, "hint_indices": [1084], "name": "link_MemAlignWriteByte_13", "shape": "directZeroTail"},
     {"air": "Arith", "constraint_index": 49, "hint_indices": [1119, 1120], "name": "link_Arith_49", "shape": "cluster2"},
     {"air": "Arith", "constraint_index": 50, "hint_indices": [1121, 1122], "name": "link_Arith_50", "shape": "cluster2"},
     {"air": "Arith", "constraint_index": 51, "hint_indices": [1123, 1124], "name": "link_Arith_51", "shape": "cluster2"},
@@ -1356,6 +1360,7 @@
     {"air": "Arith", "constraint_index": 59, "hint_indices": [1141, 1142], "name": "link_Arith_59", "shape": "cluster2"},
     {"air": "Arith", "constraint_index": 60, "hint_indices": [1143], "name": "link_Arith_60", "shape": "direct"},
     {"air": "Arith", "constraint_index": 61, "hint_indices": [1116], "name": "link_Arith_61", "shape": "directZeroTail"},
+    {"air": "Arith", "constraint_index": 62, "hint_indices": [1117], "name": "link_Arith_62", "shape": "directAssumesNegFormZeroTail"},
     {"air": "Arith", "constraint_index": 63, "hint_indices": [1118], "name": "link_Arith_63", "shape": "direct"},
     {"air": "Binary", "constraint_index": 7, "hint_indices": [1171, 1172], "name": "link_Binary_7", "shape": "cluster2"},
     {"air": "Binary", "constraint_index": 8, "hint_indices": [1173, 1174], "name": "link_Binary_8", "shape": "cluster2"},
@@ -1366,11 +1371,13 @@
     {"air": "BinaryAdd", "constraint_index": 4, "hint_indices": [1193, 1195], "name": "link_BinaryAdd_4", "shape": "cluster2"},
     {"air": "BinaryAdd", "constraint_index": 5, "hint_indices": [1197, 1198], "name": "link_BinaryAdd_5", "shape": "cluster2ZeroTail"},
     {"air": "BinaryAdd", "constraint_index": 6, "hint_indices": [1191], "name": "link_BinaryAdd_6", "shape": "direct"},
+    {"air": "BinaryAdd", "constraint_index": 7, "hint_indices": [1199], "name": "link_BinaryAdd_7", "shape": "directAssumesNegFormZeroTail"},
     {"air": "BinaryExtension", "constraint_index": 0, "hint_indices": [1210, 1211], "name": "link_BinaryExtension_0", "shape": "cluster2"},
     {"air": "BinaryExtension", "constraint_index": 1, "hint_indices": [1212, 1213], "name": "link_BinaryExtension_1", "shape": "cluster2"},
     {"air": "BinaryExtension", "constraint_index": 2, "hint_indices": [1214, 1215], "name": "link_BinaryExtension_2", "shape": "cluster2"},
     {"air": "BinaryExtension", "constraint_index": 3, "hint_indices": [1216, 1219], "name": "link_BinaryExtension_3", "shape": "cluster2"},
     {"air": "BinaryExtension", "constraint_index": 4, "hint_indices": [1220], "name": "link_BinaryExtension_4", "shape": "directZeroTail"},
-    {"air": "BinaryExtension", "constraint_index": 5, "hint_indices": [1209], "name": "link_BinaryExtension_5", "shape": "direct"}
+    {"air": "BinaryExtension", "constraint_index": 5, "hint_indices": [1209], "name": "link_BinaryExtension_5", "shape": "direct"},
+    {"air": "BinaryExtension", "constraint_index": 6, "hint_indices": [1221], "name": "link_BinaryExtension_6", "shape": "directAssumesNegFormZeroTail"}
   ]
 }
