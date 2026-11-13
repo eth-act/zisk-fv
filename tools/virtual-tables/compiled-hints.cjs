@@ -42,13 +42,30 @@ function compiledHints(compilerRoot) {
         const witnesses = [...processor.witness.keyValues()]
             .filter(([, definition]) => definition.stage === 1)
             .map(([id]) => id);
-        const fixed = [...processor.fixeds.keyValues()]
-            .filter(([, definition]) => !definition.temporal)
-            .map(([id]) => id);
+        const fixedDefinitions = [...processor.fixeds.keyValues()]
+            .filter(([, definition]) => !definition.temporal);
+        const fixed = fixedDefinitions.map(([id]) => id);
         const lanes = widths.length;
-        if (witnesses.length !== lanes ||
-            fixed.length !== lanes + widths.reduce((sum, width) => sum + width, 0)) {
-            throw new Error('packed active witness/fixed allocation schema changed');
+        const sourceFixedCount = lanes + widths.reduce((sum, width) => sum + width, 0);
+        const diagnostic = JSON.stringify({
+            lanes, widths, stage1Witnesses: witnesses,
+            fixed: fixedDefinitions.map(([id, definition]) => ({ id, label: definition.label })),
+        });
+        // std_sum.pil::piop_gsum_air calls std_tools.pil::get_L1 after the
+        // source UID/payload allocation. It creates precisely one additional
+        // fixed column [1,0,...]; do not silently ignore arbitrary extra fixeds.
+        if (witnesses.length !== lanes || fixed.length !== sourceFixedCount + 1) {
+            throw new Error(`packed active witness/fixed allocation schema changed: ${diagnostic}`);
+        }
+        const boundary = fixedDefinitions[sourceFixedCount][1];
+        const rows = Number(processor.currentAir.rows);
+        if (Number(boundary.getRowCount()) !== rows) {
+            throw new Error(`packed finalizer L1 domain differs: ${diagnostic}`);
+        }
+        for (let row = 0; row < rows; row++) {
+            if (boundary.getValue(row) !== (row === 0 ? 1n : 0n)) {
+                throw new Error(`packed finalizer L1 differs at row ${row}: ${diagnostic}`);
+            }
         }
         let offset = lanes;
         const columns = widths.map(width => {
