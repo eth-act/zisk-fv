@@ -596,9 +596,9 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
 
 
 def copy_tree_cow(source: Path, destination: Path) -> None:
-    """Private copy, using reflinks where the filesystem supports them."""
+    """Private copy without reflinks (unsupported on some worktree filesystems)."""
     proc = subprocess.run(
-        ["cp", "-a", "--reflink=auto", str(source), str(destination)],
+        ["cp", "-a", "--reflink=never", str(source), str(destination)],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if proc.returncode != 0:
         raise CorpusError(f"failed to copy mutable build input {source}: {proc.stdout.strip()}")
