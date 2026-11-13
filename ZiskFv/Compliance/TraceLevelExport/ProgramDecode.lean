@@ -1512,7 +1512,7 @@ structure ProgramDecode_sb {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 1
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sb_input.imm).toInt : FGL)
+            ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sh`: exactly the inputs
@@ -1536,7 +1536,7 @@ structure ProgramDecode_sh {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 2
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sh_input.imm).toInt : FGL)
+            ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sw`: exactly the inputs
@@ -1560,7 +1560,7 @@ structure ProgramDecode_sw {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).ind_width = 4
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sw_input.imm).toInt : FGL)
+            ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `sd`: exactly the inputs
@@ -1583,7 +1583,7 @@ structure ProgramDecode_sd {numInstructions : Nat}
         ∧ (trace.program j).jmp_offset1 = 4
         ∧ (trace.program j).jmp_offset2 = 4
         ∧ (trace.program j).store_offset =
-            ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)
+            ((BitVec.signExtend 64 c.imm).toInt : FGL)
         ∧ (trace.program j).flags = packFlags bits
 
 /-- Per-row committed-program decode bundle for `ld`: exactly the inputs
