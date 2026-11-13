@@ -1169,7 +1169,7 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
           addr k = (trace.program j).line ∧
             rawProgram k =
               ZiskFv.Completeness.Rv64imShapes.rawIType
-                ($upper ||| ($shget c).shamt.toNat) (regidx_to_fin c.r1).val $f3
+                ($upper ||| ($shget c).toNat) (regidx_to_fin c.r1).val $f3
                 (regidx_to_fin c.rd).val 0x1b)
   let t2 ← `(noncomputable def $ctorName {n rawLength : Nat}
       (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
@@ -1182,8 +1182,8 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
       $programName trace i c := by
     let rd := (regidx_to_fin c.rd).val
     let rs1 := (regidx_to_fin c.r1).val
-    let shamt := ($shget c).shamt.toNat
-    have hsh : shamt < 32 := by simp only [shamt]; exact ($shget c).shamt.isLt
+    let shamt := ($shget c).toNat
+    have hsh : shamt < 32 := by simp only [shamt]; exact ($shget c).isLt
     let ext := ($transpileName rd rs1 shamt (regidx_to_fin c.rd).isLt
       (regidx_to_fin c.r1).isLt hsh).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hj1, hj2,
@@ -1192,7 +1192,7 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
         (regidx_to_fin c.r1).isLt hsh).choose_spec
     have hserialized := serialized_of_raw_program_binding trace i start addr rawProgram
       (ZiskFv.Completeness.Rv64imShapes.rawIType
-        ($upper ||| ($shget c).shamt.toNat) (regidx_to_fin c.r1).val $f3
+        ($upper ||| ($shget c).toNat) (regidx_to_fin c.r1).val $f3
         (regidx_to_fin c.rd).val 0x1b) ext hbind rawDecode.hLine
       (by simpa only [rd, rs1, shamt, ext] using hok)
       (by
@@ -1216,7 +1216,7 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
         bShiftFacts := by
           obtain ⟨d, hdecode, hbSrc, _hbHi, hbLo⟩ := hb
           apply bShiftProgramFacts_of_serialized trace i
-            (BitVec.setWidth 6 ($shget c).shamt) ext.row hbSrc
+            (BitVec.setWidth 6 ($shget c)) ext.row hbSrc
           · rw [hbLo, decode_i_shift_rawIType_imm_val $upper shamt rs1 $f3 rd 0x1b
               (by omega) (by interval_cases shamt <;> decide)
               (regidx_to_fin c.r1).isLt (by norm_num) (regidx_to_fin c.rd).isLt
@@ -1235,13 +1235,13 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
             have hok' : aeneas_extract.extract_transpile_rv64im_raw
                 (ZiskFv.Compliance.Decode.toU32
                   (ZiskFv.Completeness.Rv64imShapes.rawIType
-                    ($upper ||| ($shget c).shamt.toNat) (regidx_to_fin c.r1).val $f3
+                    ($upper ||| ($shget c).toNat) (regidx_to_fin c.r1).val $f3
                     (regidx_to_fin c.rd).val 0x1b)) = .ok ext := by
               simpa only [rd, rs1, shamt, ext] using hok
             have hnon :
                 (ZiskFv.Compliance.Decode.toU32
                     (ZiskFv.Completeness.Rv64imShapes.rawIType
-                      ($upper ||| ($shget c).shamt.toNat) (regidx_to_fin c.r1).val $f3
+                      ($upper ||| ($shget c).toNat) (regidx_to_fin c.r1).val $f3
                       (regidx_to_fin c.rd).val 0x1b) &&& 127#u32) ≠ 103#u32 := by
               rw [ZiskFv.Compliance.Decode.toU32_and127,
                 ZiskFv.Compliance.Decode.rawIType_opcode]
@@ -1264,11 +1264,11 @@ local macro "shiftw_program_decode" nm:ident "," upper:term "," f3:term ","
           exact Nat.mod_eq_of_lt (lt_trans (regidx_to_fin c.rd).isLt (by norm_num)) })
   return ⟨Lean.mkNullNode #[t1, t2]⟩
 
-shiftw_program_decode slliw, 0, 1, ZiskFv.Compliance.Claim_slliw.slliw_input,
+shiftw_program_decode slliw, 0, 1, ZiskFv.Compliance.Claim_slliw.shamt,
   RiscvOpcode.Slliw
-shiftw_program_decode srliw, 0, 5, ZiskFv.Compliance.Claim_srliw.srliw_input,
+shiftw_program_decode srliw, 0, 5, ZiskFv.Compliance.Claim_srliw.shamt,
   RiscvOpcode.Srliw
-shiftw_program_decode sraiw, 0x400, 5, ZiskFv.Compliance.Claim_sraiw.sraiw_input,
+shiftw_program_decode sraiw, 0x400, 5, ZiskFv.Compliance.Claim_sraiw.shamt,
   RiscvOpcode.Sraiw
 
 /-! ## Current `ProgramDecode` retarget: plain immediate families. -/
