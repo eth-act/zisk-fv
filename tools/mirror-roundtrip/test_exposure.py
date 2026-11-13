@@ -141,7 +141,7 @@ namespace ZiskFv.ExposureRegression
 theorem root (a b : Nat) : a + b = b + a := Nat.add_comm a b
 end ZiskFv.ExposureRegression
 """
-        cls.compile("Baseline", "import Base\n" + root)
+        cls.compile("Baseline", root)
         cls.compile("Mention", """
 import Extra
 -- link0, link1, family_correspondence and constraint_0_correspondence.
