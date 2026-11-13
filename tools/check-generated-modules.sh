@@ -30,6 +30,7 @@ expected_modules=(
   MemGeneratedArtifact
   MemGeneratedConstraintBridge
   MemoryBuses
+  SourceDimensions
 )
 
 if [[ ! -d "$generated_dir" ]]; then
