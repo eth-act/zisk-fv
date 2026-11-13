@@ -142,22 +142,31 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     let mut arity = None;
     for hint in &pilout.hints {
         if hint.name != "gsum_debug_data_global" && hint.name != "gsum_debug_data" { continue; }
+        // Physical hints supply only Main's operation-bus arity. Other AIRs
+        // have their own expression namespace and may use dynamic bus IDs;
+        // do not interpret those operands as GLOBAL constants.
+        let physical_main = hint.name == "gsum_debug_data"
+            && hint.air_group_id == Some(0)
+            && hint.air_id.and_then(|id| pilout.air_groups.first()?.airs.get(id as usize))
+                .and_then(|a| a.name.as_deref()) == Some("Main");
+        if hint.name == "gsum_debug_data" && !physical_main { continue; }
         let Some(outer) = hint.hint_fields.first() else { continue; };
         let fields = array(outer)?;
         let Ok(bus_field) = field(fields,"busid") else { continue; };
-        if natural(&operand_field(bus_field)?)? != 5000 { continue; }
+        let bus = operand_field(bus_field)?;
+        let bus = if hint.name == "gsum_debug_data_global" {
+            normalize(&bus, &expressions)?
+        } else { bus };
+        if natural(&bus)? != 5000 { continue; }
         let slot_fields = array(field(fields,"expressions")?)?;
-        if hint.name == "gsum_debug_data" {
-            if hint.air_group_id == Some(0) && hint.air_id.and_then(|id| pilout.air_groups.first()?.airs.get(id as usize)).and_then(|a| a.name.as_deref()) == Some("Main") {
-                arity = Some(slot_fields.len());
-            }
+        if physical_main {
+            arity = Some(slot_fields.len());
             continue;
         }
         if hint.air_id.is_some() { bail!("GLOBAL hint unexpectedly attached to an AIR"); }
         let slots = slot_fields.iter().map(operand_field).collect::<Result<Vec<_>>>()?;
         let proves = natural(&operand_field(field(fields,"type_piop")?)?)?;
         let multiplicity = normalize(&operand_field(field(fields,"num_reps")?)?, &expressions)?;
-        let bus = normalize(&operand_field(bus_field)?, &expressions)?;
         let slots = slots.iter().map(|e| normalize(e,&expressions)).collect::<Result<Vec<_>>>()?;
         tuples.push((bus, slots, proves, multiplicity));
     }
