@@ -279,10 +279,8 @@ theorem registerChain_nodup_of_descent
     h_mono.pairwise
   exact h_pairwise.imp (fun {a b} h h_eq => absurd (congrArg Fin.val h_eq) (Nat.ne_of_lt h))
 
-/-- **Balance turns a bus-102 pull into a provider push.** Every component other than the
-`RegisterStepRangeSlice` provider is silent on bus 102 except Main, and Main only ever emits at
-multiplicity `-a_src_reg` and friends, which `exists_push_of_pull` excludes by returning a
-counterpart with `mult ≠ -1` and `mult ≠ 0` -- so the counterpart is the provider. -/
+/-- Balance turns a bus-102 pull into a provider push. Main and RegisterBoundary are
+consumers only; the latter's unconditional source447 multiplicity is `-1`. -/
 theorem exists_registerStepRange_provider_of_pull
     {length : Nat} {program : Program length}
     {witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble}
@@ -317,8 +315,8 @@ theorem exists_registerStepRange_provider_of_pull
       change RegisterStepRangeChannel.toRaw ∉ []
       simp
     simp [h_nil] at h_providerInteraction
-  · exact absurd (registerBoundary_table_interactionsWith_registerStepRange_nil h)
-      (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · exact False.elim (h_nonpull
+      (registerBoundary_registerStepRange_mult h h_providerInteraction))
   · exact absurd (memAlignReadByte_table_interactionsWith_registerStepRange_nil h)
       (by intro h_nil; simp [h_nil] at h_providerInteraction)
   · exact absurd (memAlignByte_table_interactionsWith_registerStepRange_nil h)

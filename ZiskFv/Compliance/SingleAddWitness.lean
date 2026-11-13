@@ -164,6 +164,16 @@ theorem singleAddBoundaryRows_enumerated :
   have h_lt : i < 31 := by simpa [singleAddBoundaryRows] using h_i
   interval_cases i <;> rfl
 
+set_option maxRecDepth 10000 in
+/-- All 31 source447 distances in this existing witness have actual 24-bit provider rows. -/
+theorem singleAddBoundaryRangeValues_spec :
+    ∀ v ∈ registerBoundaryRangeValues singleAddBoundaryRows,
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v := by
+  change ∀ v ∈ registerBoundaryRangeValues singleAddBoundaryRows, v.val < 2 ^ 24
+  letI := List.decidableBAll (fun v : FGL => v.val < 2 ^ 24)
+    (registerBoundaryRangeValues singleAddBoundaryRows)
+  decide
+
 def registerBoundaryRowsTable : Table FGL :=
   registerBoundaryRowsTableOf singleAddBoundaryRows singleAddBoundaryRows_length
 
@@ -183,7 +193,7 @@ def singleAddTables : List (Table FGL) :=
   -- bus-102: the ADD row has all three register slots active, so it emits three consumer
   -- interactions. Each distance is `<slot>_mem_step - <slot>_reg_prev_mem_step - 1` = 0,
   -- because the boot state has timestamp 0 and the a/b/store chain runs 1, 2, 3.
-  , registerStepRangeRowsTable [0, 0, 0]
+  , registerStepRangeRowsTable ([0, 0, 0] ++ registerBoundaryRangeValues singleAddBoundaryRows)
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
@@ -239,9 +249,13 @@ theorem singleAddWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
   · refine registerStepRangeRowsTable_constraints _ ?_
     intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl <;>
-      simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+    rcases (List.mem_append (s := ([0, 0, 0] : List FGL))
+      (t := registerBoundaryRangeValues singleAddBoundaryRows)).mp hv with hv | hv
+    ·
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+      rcases hv with rfl | rfl | rfl <;>
+        simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+    · exact singleAddBoundaryRangeValues_spec v hv
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentComplete
@@ -580,10 +594,8 @@ theorem singleAddWitness_memBus_balanced :
 
 private theorem registerBoundaryRowsTable_interactionsWith_rangeChannel_nil :
     registerBoundaryRowsTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact rangeChannel_ne_memBus
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    rfl _ (by decide) (by decide)
 
 private theorem binaryAddRowsTable_interactionsWith_rangeChannel_nil :
     (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith
@@ -630,10 +642,8 @@ theorem singleAddWitness_rangeChannel_balanced :
 
 private theorem registerBoundaryRowsTable_interactionsWith_memAlignRangeChannel_nil :
     registerBoundaryRowsTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  change MemAlignRangeChannel.toRaw ∉ [MemBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact memAlignRangeChannel_ne_memBus
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    rfl _ (by decide) (by decide)
 
 private theorem binaryAddRowsTable_interactionsWith_memAlignRangeChannel_nil :
     (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemAlignRangeChannel.toRaw = [] := by
@@ -678,14 +688,8 @@ theorem singleAddWitness_memAlignRangeChannel_balanced :
 
 private theorem registerBoundaryRowsTable_interactionsWith_memAlignRomChannel_nil :
     registerBoundaryRowsTable.interactionsWith MemAlignRomChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  change MemAlignRomChannel.toRaw ∉ [MemBusChannel.toRaw]
-  intro h
-  have h' : MemAlignRomChannel.toRaw = MemBusChannel.toRaw := by
-    simpa only [List.mem_cons, List.not_mem_nil, or_false] using h
-  have h_name := congrArg (fun channel : RawChannel FGL => channel.name) h'
-  change "MemAlignRom133" = "MemoryBus" at h_name
-  simp at h_name
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    rfl _ (by decide) (by decide)
 
 private theorem binaryAddRowsTable_interactionsWith_memAlignRomChannel_nil :
     (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemAlignRomChannel.toRaw = [] := by
@@ -737,19 +741,25 @@ theorem singleAddWitness_memAlignRomChannel_balanced :
   · intro msg
     simp [balanceOf]
 
-/-- The witness's bus-102 interaction list: the provider table's three pushes, then Main's three
-    pulls. Every other table is silent on this channel. -/
+/-- The actual bus-102 list: 31 boundary pulls, the provider's three Main distances and
+    31 matching reload distances, then Main's three pulls. Other tables are silent here. -/
 theorem singleAddWitness_registerStepRange_interactions :
     singleAddWitness.tables.flatMap
         (·.interactionsWith
           ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
-      [registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+      singleAddBoundaryRows.map registerBoundaryRangeInteraction ++
+      ([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
         registerStepRangeInteraction (0 : FGL)] ++
+        (registerBoundaryRangeValues singleAddBoundaryRows).map registerStepRangeInteraction ++
         [mainARegStepInteraction addX1Row, mainBRegStepInteraction addX1Row,
-          mainCRegStepInteraction addX1Row] := by
-  have h_boundary :=
-    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
-      (table := registerBoundaryRowsTable) rfl
+          mainCRegStepInteraction addX1Row]) := by
+  have h_boundary :
+      registerBoundaryRowsTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        singleAddBoundaryRows.map registerBoundaryRangeInteraction := by
+    simpa [registerBoundaryRowsTable] using
+      registerBoundaryRowsTableOf_interactionsWith_registerStepRange singleAddBoundaryRows
+        singleAddBoundaryRows_length singleAddBoundaryRows_enumerated emptyData
   have h_binaryAdd :=
     ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
       (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
@@ -758,7 +768,7 @@ theorem singleAddWitness_registerStepRange_interactions :
       (by rfl) (by rfl)
   rw [show singleAddWitness.tables = singleAddTables from rfl]
   simp [singleAddTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd,
-    registerStepRangeRowsTable_interactionsWith, h_main]
+    registerStepRangeRowsTable_interactionsWith, h_main, List.map_append, List.append_assoc]
 
 set_option maxRecDepth 8000 in
 /-- Bus-102 balance for the single-ADD witness.
@@ -767,12 +777,11 @@ set_option maxRecDepth 8000 in
     multiplicity `-1`, each carrying `registerStepMessage 0` (the boot state has timestamp 0 and the
     a/b/store chain runs 1, 2, 3, so every distance is `n - (n-1) - 1 = 0`). The provider table
     supplies the three matching pushes. -/
-theorem singleAddWitness_registerStepRangeChannel_balanced :
-    BalancedInteractions
-      (singleAddWitness.tables.flatMap
-        (·.interactionsWith
-          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
-  rw [singleAddWitness_registerStepRange_interactions]
+theorem singleAddMainRegisterStepRange_balanced :
+    BalancedInteractions ([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+        registerStepRangeInteraction (0 : FGL)] ++
+        [mainARegStepInteraction addX1Row, mainBRegStepInteraction addX1Row,
+          mainCRegStepInteraction addX1Row]) := by
   refine Air.Flat.balancedInteractions_of_present ?_
     ([(registerStepRangeInteraction (0 : FGL)).msg] : List (Array FGL)) ?_ ?_
   · left
@@ -787,6 +796,18 @@ theorem singleAddWitness_registerStepRangeChannel_balanced :
     simp only [List.mem_singleton] at h_msg
     subst msg
     decide
+
+theorem singleAddWitness_registerStepRangeChannel_balanced :
+    BalancedInteractions
+      (singleAddWitness.tables.flatMap
+        (·.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+
+  rw [singleAddWitness_registerStepRange_interactions]
+  simpa only [List.append_assoc] using
+    (registerBoundaryRange_balanced singleAddBoundaryRows ([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+        registerStepRangeInteraction (0 : FGL)]) _
+      (by decide) singleAddMainRegisterStepRange_balanced)
 
 theorem singleAddWitness_balancedChannels : singleAddWitness.BalancedChannels := by
   refine singleAddWitness.balancedChannels_of_tables singleAddEnsemble_verifier ?_

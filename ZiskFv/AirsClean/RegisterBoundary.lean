@@ -4,6 +4,7 @@ import Clean.Utils.Tactics
 import Clean.Utils.Tactics.ProvableStructDeriving
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Channels.MemoryBus
+import ZiskFv.Channels.SpecifiedRanges
 
 /-!
 # RegisterBoundary Clean component (issue #225) — register-file boot / reload MemBus emissions
@@ -29,15 +30,13 @@ Scope: this is the single-segment global boot + last-access reload only.  The cr
 continuation terms (the `MAIN_CONTINUATION_ID` block and `main.pil:454`'s
 `sel:(1-main_last_segment)` continuation pull) are out of scope (#103/#76).
 
-## Trust note
+## Source range boundary
 
-`Assumptions := True` makes the ensemble `AssumptionsConsistency` obligation trivial (the added
-`rw [h]; trivial` disjunct in `fullRv64imSoundEnsemble_assumptionsConsistency`).  The component has
-no algebraic constraints: it is a deliberately under-constrained *provider* of boundary MemBus
-messages.  That is sound in the soundness direction — an under-constrained provider never makes
-`root_soundness` vacuous (the anti-laundering hazard, an overstrong validator, runs the other way).
-The bus emissions carry `MemBusChannel.Guarantees = True`, so no caller assumption is needed.  No
-axioms.
+`main.pil:439,447` also pulls the last-access distance on bus 102. The current single-segment
+schema fixes `main_segment = 0` and `N = 2^22`, so its special-memory end timestamp is `2^24`.
+This admits an idle register's timestamp zero (distance `2^24 - 1`); it is not a new prerequisite
+for the already-proved boot anchor. The existing bounded provider supplies its range guarantee.
+The boundary itself retains `Assumptions := True`, `Spec := True`, and bare emissions.
 -/
 
 namespace ZiskFv.AirsClean.RegisterBoundary
@@ -46,6 +45,8 @@ open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
 
+open ZiskFv.Channels.SpecifiedRanges
+  (SpecifiedRangeMessage RegisterStepRangeChannel registerStepMessage)
 /-- One register's boundary data: its MemBus pointer, and the reload (last-access) timestamp and
     value.  The boot message is always `(mem_op=3, ptr=reg, timestamp=0, value=0)`. -/
 structure RegisterBoundaryRow (F : Type) where
@@ -117,25 +118,76 @@ theorem eval_reloadMessageExpr
     ProvableStruct.toComponents, ProvableStruct.eval.go,
     ProvableType.eval_field, Expression.eval]
   repeat constructor
+/-- `main.pil:439`: `1 + 4 * ((main_segment + 1) * N - 1) + 3`, specialized to the
+    existing segment-zero schema (`Main.mainFixedCapacity = 2^22`). -/
+def reloadEndTimestamp : FGL := 16777216
 
-/-- The two boundary emissions: boot pull (`-1`) then reload push (`+1`).  Bare `emit`s
-    (`assumeGuarantees = false`), exactly like Main's mem emits. -/
+/-- The source's unconditional reload range check (`main.pil:447`). -/
+@[reducible]
+def reloadDistanceExpr (row : Var RegisterBoundaryRow FGL) : Expression FGL :=
+  Expression.const reloadEndTimestamp - row.reloadTimestamp - 1
+
+@[reducible]
+def reloadDistance (row : RegisterBoundaryRow FGL) : FGL :=
+  reloadEndTimestamp - row.reloadTimestamp - 1
+
+set_option maxRecDepth 10000 in
+theorem eval_reloadDistanceExpr (env : Environment FGL) (row : Var RegisterBoundaryRow FGL) :
+    Expression.eval env (reloadDistanceExpr row) = reloadDistance (eval env row) := by
+  simp [reloadDistanceExpr, reloadDistance, circuit_norm, sub_eq_add_neg,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go]
+
+/-- In segment zero the exact source range is the timestamp upper bound, including zero.
+    No external timestamp range is needed to rule out field wraparound here. -/
+theorem reloadDistance_range_iff (row : RegisterBoundaryRow FGL) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec (reloadDistance row) ↔
+      row.reloadTimestamp.val < 16777216 := by
+  have h_distance :
+      reloadDistance row = (16777215 : FGL) - row.reloadTimestamp := by
+    dsimp [reloadDistance, reloadEndTimestamp]
+    ring
+  rw [h_distance]
+  change ((16777215 : FGL) - row.reloadTimestamp).val < 16777216 ↔
+    row.reloadTimestamp.val < 16777216
+  have h_sub := Fin.intCast_val_sub_eq_sub_add_ite (16777215 : FGL) row.reloadTimestamp
+  have h_const : (16777215 : FGL).val = 16777215 := rfl
+  rw [h_const] at h_sub
+  have h_modulus : GL_prime = 18446744069414584321 := rfl
+  have h_timestamp := row.reloadTimestamp.isLt
+  split_ifs at h_sub with h_le
+  · change row.reloadTimestamp.val ≤ 16777215 at h_le
+    omega
+  · change ¬row.reloadTimestamp.val ≤ 16777215 at h_le
+    omega
+
+
+/-- Boot pull, reload push, and the unconditional bus-102 reload-distance pull.
+    Bare emissions preserve the existing provider-derived shared-channel guarantees. -/
 @[circuit_norm]
 def main (row : Var RegisterBoundaryRow FGL) : Circuit FGL Unit := do
   MemBusChannel.emit (-1) (bootMessageExpr row)
   MemBusChannel.emit 1 (reloadMessageExpr row)
+  RegisterStepRangeChannel.emit (-1) (registerStepMessage (reloadDistanceExpr row))
 
-/-- RegisterBoundary as a Clean `GeneralFormalCircuit`.  `Assumptions := True` and `Spec := True`:
-    the component asserts no algebraic relation; its only obligations are the two bus emissions'
-    `MemBusChannel.Guarantees = True` requirements. -/
+/-- No row-local algebraic constraint is added: range membership is obtained from the finished
+    shared channel's actual bounded provider, not assumed by the boundary or its caller. -/
 def circuit : GeneralFormalCircuit FGL RegisterBoundaryRow unit  where
   name := "RegisterBoundary"
   main := main
-  channelsWithRequirements := [MemBusChannel.toRaw]
+  channelsWithRequirements := [MemBusChannel.toRaw, RegisterStepRangeChannel.toRaw]
   exposedChannels row _ :=
     expose MemBusChannel
       [ MemBusChannel.emitted (-1) (bootMessageExpr row)
-      , MemBusChannel.emitted 1 (reloadMessageExpr row) ]
+      , MemBusChannel.emitted 1 (reloadMessageExpr row) ] ++
+    expose RegisterStepRangeChannel
+      [RegisterStepRangeChannel.emitted (-1) (registerStepMessage (reloadDistanceExpr row))]
+  exposedChannels_eq := by
+    intro input offset exposed h_mem
+    simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at h_mem
+    rcases h_mem with rfl | rfl <;>
+      simp [circuit_norm, main, MemBusChannel, RegisterStepRangeChannel]
   Assumptions := fun _ _ => True
   Spec := fun _ _ _ => True
   ProverAssumptions := fun _ _ _ => True
@@ -310,6 +362,38 @@ theorem component_interactionsWith_memBus :
       [ ((MemBusChannel.emitted (-1) (bootMessageExpr component.rowInputVar)).toRaw)
       , ((MemBusChannel.emitted 1 (reloadMessageExpr component.rowInputVar)).toRaw) ]⟩ ∈
     component.exposedChannels
-  simp only [component, circuit, Component.exposedChannels, expose, List.mem_singleton, List.map_cons, List.map_nil]
+  simp only [component, circuit, Component.exposedChannels, expose,
+    List.mem_cons, List.mem_singleton, List.map_cons, List.map_nil, List.cons_append,
+    List.nil_append]
+  exact Or.inl trivial
+
+/-- The boundary is an unconditional consumer, never an alternative bus-102 provider. -/
+theorem component_interactionsWith_registerStepRange :
+    component.operations.interactionsWith RegisterStepRangeChannel.toRaw =
+      [((RegisterStepRangeChannel.emitted (-1)
+        (registerStepMessage (reloadDistanceExpr component.rowInputVar))).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨RegisterStepRangeChannel.toRaw,
+      [((RegisterStepRangeChannel.emitted (-1)
+        (registerStepMessage (reloadDistanceExpr component.rowInputVar))).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, Component.exposedChannels, expose,
+    List.mem_cons, List.mem_singleton, List.map_cons, List.map_nil, List.cons_append,
+    List.nil_append]
+  exact Or.inr (Or.inl trivial)
+
+theorem table_interactionsWith_nil_of_names
+    {table : Table FGL} (h_component : table.component = component)
+    (channel : RawChannel FGL)
+    (h_mem : channel.name ≠ "MemoryBus")
+    (h_range : channel.name ≠ "SpecifiedRangesSlice102") :
+    table.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  change channel ∉ [MemBusChannel.toRaw, RegisterStepRangeChannel.toRaw]
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro (h | h)
+  · exact h_mem (congrArg RawChannel.name h)
+  · exact h_range (congrArg RawChannel.name h)
 
 end ZiskFv.AirsClean.RegisterBoundary
