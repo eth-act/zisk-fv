@@ -15,43 +15,70 @@ def included (n : Name) : Bool :=
 def namesJson (names : NameSet) : Json :=
   toJson ((names.toList.filter included).map Name.toString |>.mergeSort (· < ·))
 
-/-- The assertion side of a component correspondence must be equality to zero. -/
-def isZero (e : Expr) : Bool :=
-  let literalZero (v : Expr) := match v with
-    | .lit (.natVal 0) => true
-    | _ => false
-  literalZero e ||
-    (e.isAppOfArity `OfNat.ofNat 3 && literalZero e.getAppArgs[1]!)
+/-- Read a literal assertion position, never an unchecked manifest index list. -/
+def numeral? (e : Expr) : Option Nat :=
+  let literal? (v : Expr) := match v with
+    | .lit (.natVal n) => some n
+    | _ => none
+  if e.isAppOfArity `OfNat.ofNat 3 then literal? e.getAppArgs[1]! else literal? e
 
-/-- Validate the compiled manifest theorem's elaborated boundary, not its source spelling
-or its unchecked index list. Both sides remain visible even for an `Iff.rfl` proof. -/
-def correspondence (env : Environment) (ci : ConstantInfo) : Option Json := do
-  let .thmInfo _ := ci | none
-  let parts := ci.name.toString.splitOn "."
-  let ["Extraction", "Components", air, "Manifest", leaf] := parts | none
-  if !leaf.startsWith "constraint_" || !leaf.endsWith "_correspondence" then none else do
-    let index := ((leaf.drop 11).toString.dropEnd 15).toString
-    let some _ := index.toNat? | none
-    let mut body := ci.type
-    while body matches .forallE .. do
-      body := body.bindingBody!
-    let args := body.getAppArgs
-    if !body.isAppOfArity `Iff 2 then none else do
-      let raw := s!"{air}.extraction.constraint_{index}_every_row".toName
-      if args[1]!.getAppFn.constName? != some raw then none else do
-        let model := s!"ZiskFv.AirsClean.{air}.main".toName
-        let source := s!"Extraction.Components.{air}.Manifest.sourceRow".toName
-        let refs := ConstantClosure.gatherConsts args[0]! {}
-        if !args[0]!.isAppOfArity `Eq 3 || !isZero args[0]!.getAppArgs[2]! ||
-            !refs.contains model || !refs.contains source then none
-        else some <| Json.mkObj [
-          ("theorem", toJson ci.name.toString), ("constraint", toJson raw.toString),
-          ("model", toJson model.toString),
-          ("axioms", toJson ((AxiomClosure.rawAxiomDepsForTheorem env ci.name).map Name.toString))]
+/-- Reconstruct the complete generated assertion/constraint boundary in the
+elaborated local context. Extra hypotheses, unrelated mentions of `main`, and
+the default value of an out-of-range list access cannot stand in for a proof. -/
+def correspondence (ci : ConstantInfo) : Meta.MetaM (Option Json) := do
+  let .thmInfo _ := ci | return none
+  if ci.name.getRoot != `Extraction then return none
+  let ["Extraction", "Components", air, "Manifest", leaf] := ci.name.toString.splitOn "."
+    | return none
+  if !leaf.startsWith "constraint_" || !leaf.endsWith "_correspondence" then return none
+  let index := ((leaf.drop 11).toString.dropEnd 15).toString
+  let some _ := index.toNat? | return none
+  let raw := s!"{air}.extraction.constraint_{index}_every_row".toName
+  let model := s!"ZiskFv.AirsClean.{air}.main".toName
+  let source := s!"Extraction.Components.{air}.Manifest.sourceRow".toName
+  Meta.forallTelescope ci.type fun params body => do
+    -- Exactly C, its Circuit instance, c, r, offset, env; no proof promises.
+    if params.size != 6 || !body.isAppOfArity `Iff 2 then return none
+    let sides := body.getAppArgs
+    if sides[1]!.getAppFn.constName? != some raw || !sides[0]!.isAppOfArity `Eq 3 then
+      return none
+    let evaluated := sides[0]!.getAppArgs[1]!
+    if !evaluated.isApp then return none
+    let selected := evaluated.appArg!
+    if !selected.isAppOfArity `GetElem?.getElem! 8 then return none
+    let some position := numeral? selected.getAppArgs[7]! | return none
+    let row ← Meta.mkAppOptM source
+      #[some params[0]!, some params[1]!, some params[2]!, some params[3]!]
+    let main ← Meta.mkAppM model #[row]
+    let operations ← Meta.mkAppM `Circuit.operations #[main, params[4]!]
+    let constraints ← Meta.mkAppM `Operations.constraints #[operations]
+    let length ← Meta.reduce (← Meta.mkAppM `List.length #[constraints])
+    let some length := numeral? length | return none
+    if position >= length then return none
+    let assertion ← Meta.mkAppM `GetElem?.getElem! #[constraints, mkNatLit position]
+    let value ← Meta.mkAppM `Expression.eval #[params[5]!, assertion]
+    let zero ← Meta.mkAppOptM `OfNat.ofNat #[some (← Meta.inferType value), some (mkNatLit 0), none]
+    let lhs ← Meta.mkEq value zero
+    let arity := sides[1]!.getAppNumArgs
+    if arity < 4 then return none
+    let rawArgs := (Array.replicate arity none)
+      |>.set! 0 (some params[0]!)
+      |>.set! (arity - 3) (some params[1]!)
+      |>.set! (arity - 2) (some params[2]!)
+      |>.set! (arity - 1) (some params[3]!)
+    let rhs ← Meta.mkAppOptM raw rawArgs
+    let expected ← instantiateMVars (mkApp2 (mkConst `Iff) lhs rhs)
+    if expected.hasMVar || !(← Meta.isDefEq body expected) then return none
+    let env ← getEnv
+    return some <| Json.mkObj [
+      ("theorem", toJson ci.name.toString), ("constraint", toJson raw.toString),
+      ("model", toJson model.toString), ("position", toJson position),
+      ("axioms", toJson ((AxiomClosure.rawAxiomDepsForTheorem env ci.name).map Name.toString))]
 
 /-- Stable, lossless-for-accounting declaration graph over the loaded environment.
 Only library leaves that cannot depend on project/generated declarations are pruned. -/
-def report (env : Environment) : Json := Id.run do
+def report : Meta.MetaM Json := do
+  let env ← getEnv
   let nodes := env.constants.fold (init := #[]) fun acc n ci =>
     if included n then acc.push (n, ci) else acc
   let nodes := nodes.qsort (fun a b => a.1.toString < b.1.toString)
@@ -72,7 +99,7 @@ def report (env : Environment) : Json := Id.run do
       ("relation", toJson (body.isAppOfArity `Iff 2 || body.isAppOfArity `Eq 3)),
       ("type", namesJson (ConstantClosure.gatherConsts ci.type {})),
       ("value", namesJson (ci.value?.map (ConstantClosure.gatherConsts · {}) |>.getD {}))]
-    if let some proof := correspondence env ci then
+    if let some proof ← correspondence ci then
       correspondences := correspondences.push proof
   return Json.mkObj [("schema_version", toJson (1 : Nat)),
     ("declarations", toJson declarations), ("correspondences", toJson correspondences)]

@@ -537,7 +537,7 @@ def usage : IO Unit := do
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   match args with
   | ["report-dependencies"] =>
-    IO.println (Dependencies.report env).compress
+    IO.println (← runMeta env Dependencies.report).compress
     return 0
   | ["regenerate-deps"] =>
     IO.print (renderDepsBaseline env)
@@ -598,5 +598,12 @@ unsafe def main (args : List String) : IO UInt32 := do
   let (module, args) := match args with
     | ["report-dependencies", module] => (module.toName, ["report-dependencies"])
     | _ => (`ZiskFv, args)
-  Lean.withImportModules #[{ module := module }] {}
-      (fun env => TrustGate.dispatch env args)
+  if args == ["report-dependencies"] then
+    -- Exact Meta reconstruction needs normal class/instance extensions. This
+    -- one-shot import retains its regions; no other command changes import mode.
+    Lean.enableInitializersExecution
+    let env ← Lean.importModules #[{ module := module }] {} (loadExts := true)
+    TrustGate.dispatch env args
+  else
+    Lean.withImportModules #[{ module := module }] {}
+        (fun env => TrustGate.dispatch env args)

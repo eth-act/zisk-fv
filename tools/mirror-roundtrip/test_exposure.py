@@ -25,8 +25,21 @@ class DeclarationCreditTests(unittest.TestCase):
             ["lake", "env", "which", "lean"], cwd=exposure.ROOT, text=True).strip()
         cls.reporter = exposure.ROOT / ".lake/build/bin/trust-gate"
         cls.compile("Extraction.Components.BinaryAdd.Constraints", """
+structure Operations where
+  constraints : List Nat
+structure Circuit (Output : Type) where
+  operations : Nat → Operations
+  result : Output
+namespace Expression
+def eval (_env : Unit) (value : Nat) := value
+end Expression
+namespace Extraction
+class Circuit (F ExtF : Type) (C : Type → Type → Type) where
+  main : C F ExtF → Nat → Nat
+end Extraction
 namespace ZiskFv.AirsClean.BinaryAdd
-def main (n : Nat) := n + 0
+def main (n : Nat) : Circuit Unit :=
+  { operations := fun _ => ⟨[n + 0]⟩, result := () }
 end ZiskFv.AirsClean.BinaryAdd
 """)
         cls.compile("Base", """
@@ -46,14 +59,25 @@ theorem family_correspondence (i : Fin 2) :
   exact (family[i.val]!).correspondence
 end ZiskFv.ExposureRegression
 namespace BinaryAdd.extraction
-def constraint_0_every_row (n : Nat) := n = 0
-def constraint_1_every_row (n : Nat) := n = 0
-def constraint_2_every_row (n : Nat) := n = 1
+variable {C : Type → Type → Type} [Extraction.Circuit Nat Nat C]
+def constraint_0_every_row (c : C Nat Nat) (r : Nat) :=
+  Extraction.Circuit.main c r = 0
+def constraint_1_every_row (c : C Nat Nat) (r : Nat) :=
+  Extraction.Circuit.main c r = 0
+def constraint_2_every_row (c : C Nat Nat) (r : Nat) :=
+  Extraction.Circuit.main c r = 1
+def constraint_3_every_row (c : C Nat Nat) (r : Nat) :=
+  Extraction.Circuit.main c r - 1 = 0
+def constraint_4_every_row (c : C Nat Nat) (r : Nat) :=
+  Extraction.Circuit.main c r + 0 = Extraction.Circuit.main c r
+def constraint_5_every_row (c : C Nat Nat) (r : Nat) :=
+  Extraction.Circuit.main c r = 1
 end BinaryAdd.extraction
 namespace Extraction.Components.BinaryAdd.Manifest
-def sourceRow (n : Nat) := n
+variable {C : Type → Type → Type} [Extraction.Circuit Nat Nat C]
+def sourceRow (c : C Nat Nat) (r : Nat) := Extraction.Circuit.main c r
 -- An unchecked list cannot map a generated main to these indices.
-def assertZeroConstraints : List Nat := [0, 1, 2, 3]
+def assertZeroConstraints : List Nat := [0, 1, 2, 3, 4, 5]
 end Extraction.Components.BinaryAdd.Manifest
 """)
         cls.compile("Extra", """
@@ -65,23 +89,52 @@ end ZiskFv.ExposureRegression
         cls.compile("Checked", """
 import Base
 namespace Extraction.Components.BinaryAdd.Manifest
-theorem constraint_0_correspondence (n : Nat) :
-    ZiskFv.AirsClean.BinaryAdd.main (sourceRow n) = 0 ↔
-      BinaryAdd.extraction.constraint_0_every_row n := by
-  simp [ZiskFv.AirsClean.BinaryAdd.main, sourceRow,
-    BinaryAdd.extraction.constraint_0_every_row]
+open ZiskFv.AirsClean.BinaryAdd
+variable {C : Type → Type → Type} [Extraction.Circuit Nat Nat C]
+theorem constraint_0_correspondence (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) = 0 ↔
+      BinaryAdd.extraction.constraint_0_every_row c r := by
+  simp [Expression.eval, main, sourceRow, BinaryAdd.extraction.constraint_0_every_row]
 -- Even a proved equality cannot claim the wrong raw index.
-theorem constraint_1_correspondence (n : Nat) :
-    ZiskFv.AirsClean.BinaryAdd.main (sourceRow n) = 0 ↔
-      BinaryAdd.extraction.constraint_0_every_row n := by
-  exact constraint_0_correspondence n
+theorem constraint_1_correspondence (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) = 0 ↔
+      BinaryAdd.extraction.constraint_0_every_row c r :=
+  constraint_0_correspondence c r offset env
 -- A nonzero equality is not a generated assertZero correspondence.
-theorem constraint_2_correspondence (n : Nat) :
-    ZiskFv.AirsClean.BinaryAdd.main (sourceRow n) = 1 ↔
-      BinaryAdd.extraction.constraint_2_every_row n := by
-  simp [ZiskFv.AirsClean.BinaryAdd.main, sourceRow,
-    BinaryAdd.extraction.constraint_2_every_row]
+theorem constraint_2_correspondence (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) = 1 ↔
+      BinaryAdd.extraction.constraint_2_every_row c r := by
+  simp [Expression.eval, main, sourceRow, BinaryAdd.extraction.constraint_2_every_row]
+-- A dead mention of main is unrelated to the assertion selected by the model.
+theorem constraint_3_correspondence (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    (let _unused := (main (sourceRow c r)).operations offset
+     Expression.eval env (sourceRow c r - 1)) = 0 ↔
+      BinaryAdd.extraction.constraint_3_every_row c r := by
+  rfl
+-- The fallback value of getElem! is not an assertion, even for a provable identity.
+theorem constraint_4_correspondence (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[9]!) = 0 ↔
+      BinaryAdd.extraction.constraint_4_every_row c r := by
+  simp [Expression.eval, main, BinaryAdd.extraction.constraint_4_every_row]
+-- A caller-supplied correspondence promise is not a checked correspondence.
+theorem constraint_5_correspondence (c : C Nat Nat) (r offset : Nat) (env : Unit)
+    (h : Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) = 0 ↔
+      BinaryAdd.extraction.constraint_5_every_row c r) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) = 0 ↔
+      BinaryAdd.extraction.constraint_5_every_row c r := h
 end Extraction.Components.BinaryAdd.Manifest
+namespace ZiskFv.ExposureRegression
+open ZiskFv.AirsClean.BinaryAdd Extraction.Components.BinaryAdd.Manifest
+abbrev DemoSource (_ _ : Type) := Nat
+instance : Extraction.Circuit Nat Nat DemoSource where
+  main c _ := c
+-- The bad correspondence really admits a row that the generated assertion rejects.
+theorem unrelated_lhs_accepts_rejected_assertion :
+    BinaryAdd.extraction.constraint_3_every_row (C := DemoSource) 1 0 ∧
+    Expression.eval () (((main (sourceRow (C := DemoSource) 1 0)).operations 0).constraints[0]!) ≠ 0 := by
+  change (1 - 1 = 0) ∧ (1 + 0 ≠ 0)
+  decide
+end ZiskFv.ExposureRegression
 """)
         root = """
 namespace ZiskFv.ExposureRegression
@@ -106,8 +159,12 @@ end ZiskFv.ExposureRegression
 """)
         model_root = """
 namespace ZiskFv.ExposureRegression
-theorem root (n : Nat) : ZiskFv.AirsClean.BinaryAdd.main n = n := by
-  simp [ZiskFv.AirsClean.BinaryAdd.main]
+open ZiskFv.AirsClean.BinaryAdd Extraction.Components.BinaryAdd.Manifest
+variable {C : Type → Type → Type} [Extraction.Circuit Nat Nat C]
+theorem root (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) =
+      Extraction.Circuit.main c r := by
+  simp [Expression.eval, main, sourceRow]
 end ZiskFv.ExposureRegression
 """
         cls.compile("UncheckedModel", "import Base\n" + model_root)
@@ -115,11 +172,12 @@ end ZiskFv.ExposureRegression
         cls.compile("ConsumedProof", """
 import Checked
 namespace ZiskFv.ExposureRegression
-theorem root (n : Nat) :
-    ZiskFv.AirsClean.BinaryAdd.main
-      (Extraction.Components.BinaryAdd.Manifest.sourceRow n) = 0 ↔
-      BinaryAdd.extraction.constraint_0_every_row n :=
-  Extraction.Components.BinaryAdd.Manifest.constraint_0_correspondence n
+open ZiskFv.AirsClean.BinaryAdd Extraction.Components.BinaryAdd.Manifest
+variable {C : Type → Type → Type} [Extraction.Circuit Nat Nat C]
+theorem root (c : C Nat Nat) (r offset : Nat) (env : Unit) :
+    Expression.eval env (((main (sourceRow c r)).operations offset).constraints[0]!) = 0 ↔
+      BinaryAdd.extraction.constraint_0_every_row c r :=
+  constraint_0_correspondence c r offset env
 end ZiskFv.ExposureRegression
 """)
         cls.reports = {name: cls.report(name) for name in (
@@ -174,6 +232,34 @@ end ZiskFv.ExposureRegression
     def test_consumed_checked_equality_credits_only_its_actual_index(self):
         self.assertEqual(self.cover("ConsumedProof"), {0})
         self.assertEqual(self.cover("ConsumedProof", model=True), {0})
+
+    def test_unrelated_lhs_mentions_do_not_replace_an_assertion_correspondence(self):
+        deps = self.reports["CheckedModel"]
+        name = "Extraction.Components.BinaryAdd.Manifest.constraint_3_correspondence"
+        self.assertEqual(
+            deps.nodes["ZiskFv.ExposureRegression.unrelated_lhs_accepts_rejected_assertion"]["kind"],
+            "theorem")
+        # The old names-plus-Eq-zero matcher would credit this *compiled*
+        # theorem: all its requested references are present in the type.
+        self.assertEqual(deps.nodes[name]["kind"], "theorem")
+        self.assertTrue({
+            "ZiskFv.AirsClean.BinaryAdd.main",
+            "Extraction.Components.BinaryAdd.Manifest.sourceRow",
+            "BinaryAdd.extraction.constraint_3_every_row",
+        } <= set(deps.nodes[name]["type"]))
+        self.assertNotIn(3, exposure.generated_component_cover(deps, set(deps.nodes))["BinaryAdd"])
+
+    def test_out_of_range_default_is_not_a_generated_assertion(self):
+        deps = self.reports["CheckedModel"]
+        self.assertIn("Extraction.Components.BinaryAdd.Manifest.constraint_4_correspondence",
+                      deps.nodes)
+        self.assertNotIn(4, exposure.generated_component_cover(deps, set(deps.nodes))["BinaryAdd"])
+
+    def test_extra_correspondence_hypothesis_cannot_grant_credit(self):
+        deps = self.reports["CheckedModel"]
+        self.assertIn("Extraction.Components.BinaryAdd.Manifest.constraint_5_correspondence",
+                      deps.nodes)
+        self.assertNotIn(5, exposure.generated_component_cover(deps, set(deps.nodes))["BinaryAdd"])
 
     def test_production_binary_add_retains_only_four_checked_equalities(self):
         deps = self.report("Extraction.Components.BinaryAdd.Manifest", production=True)

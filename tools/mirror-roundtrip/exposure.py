@@ -99,7 +99,9 @@ def load_dependencies(root: Path = ROOT) -> Dependencies:
                    stdout=sys.stderr, check=True)
     result = subprocess.run(["lake", "env", ".lake/build/bin/trust-gate",
                              "report-dependencies"], cwd=root,
-                            text=True, capture_output=True, check=True)
+                            text=True, capture_output=True)
+    if result.returncode:
+        raise RuntimeError(f"elaborated dependency report failed:\n{result.stderr or result.stdout}")
     return Dependencies(json.loads(result.stdout))
 
 

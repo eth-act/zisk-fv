@@ -71,6 +71,12 @@ compiler-generated helpers and generated extraction declarations. Missing
 modules, failed builds and missing root declarations fail the accounting;
 there is no saved-report or source-text success fallback. The report API also
 accepts an explicit imported module for deterministic compiled regression tests.
+Only this report mode loads normal elaborator extensions/initializers so Meta
+can resolve the imported classes and instances when reconstructing assertion
+types. This is tooling runtime initialization, not a new proof assumption or
+trust discharge; the other TrustGate commands retain their frozen import mode.
+Import, initialization and typechecking failures are fatal, never a reason to
+fall back to declaration-name matching.
 
 The root is the **declaration** `ZiskFv.Compliance.root_soundness`, not its
 module's import closure. Comments, unused imports and unconsumed aliases cannot
@@ -117,9 +123,12 @@ after model switchover, `expected = "consumed"` compares against the populated
 re-export those generated declarations.
 
 A `consumed` AIR earns per-index generated-model credit only through compiled
-`constraint_N_correspondence` theorems. TrustGate checks the elaborated `Iff`
-boundary: the generated `main` evaluated on `Manifest.sourceRow` is equated to
-zero on the left, and the matching raw `constraint_N_every_row` is on the right.
+`constraint_N_correspondence` theorems. TrustGate reconstructs the elaborated
+`Iff`: evaluation of an actual in-bounds generated `main` assertion on
+`Manifest.sourceRow`, at the same source cells, offset and environment, is zero
+iff the matching raw `constraint_N_every_row` holds. The whole type must match
+without extra hypotheses. Merely mentioning `main`, an unrelated equality, or
+the fallback value of an out-of-bounds selector cannot supply that boundary.
 The kernel checks the proof, including the selected assertion; accounting also
 requires its unfiltered axiom closure to stay within Lean's three ordinary
 postulates. Generated-model credit verifies that `main` was declared in the
