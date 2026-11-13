@@ -6,7 +6,8 @@ import ZiskFv.Completeness.Rv64im.SailDecode.ConcatShapes
 
 This part holds the `sail_encode_*_eq_raw*` theorems: each unfolds Sail's
 generated `encdec_forwards` for a constructor and rewrites it to the matching
-`Rv64imShapes.raw*` shape via the concat bridges.  It is part of the split
+`Rv64imShapes.raw*` shape via the symbolic concat proofs. Concrete load-validity
+conditions reduce in the kernel. It is part of the split
 `ZiskFv.Completeness.Rv64im.SailDecode` module.
 -/
 
@@ -1057,7 +1058,7 @@ theorem sail_encode_lb_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (1 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lh_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1072,7 +1073,7 @@ theorem sail_encode_lh_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (2 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lw_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1087,7 +1088,7 @@ theorem sail_encode_lw_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (4 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_ld_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1102,7 +1103,7 @@ theorem sail_encode_ld_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (8 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lbu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1117,7 +1118,7 @@ theorem sail_encode_lbu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd true (1 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lhu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1132,7 +1133,7 @@ theorem sail_encode_lhu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd true (2 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lwu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1147,7 +1148,7 @@ theorem sail_encode_lwu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd true (4 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_store_eq_rawSType
     (imm : BitVec 12) (rs2 rs1 : regidx) (width : Int) :
