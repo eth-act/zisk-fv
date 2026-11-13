@@ -160,6 +160,24 @@ fn emit_lean(rows: &[RawRow]) -> String {
     writeln!(out, "  range_cd : Nat").unwrap();
     writeln!(out, "  deriving DecidableEq").unwrap();
     out.push('\n');
+    writeln!(out, "/-- Exact source bus-331 rows: opcode, packed flags, range_ab, range_cd. -/").unwrap();
+    writeln!(out, "def packed_table : List (Vector Nat 4) := [").unwrap();
+    for (index, row) in rows.iter().enumerate() {
+        let comma = if index + 1 == rows.len() { "" } else { "," };
+        writeln!(
+            out,
+            "  #v[{}, {}, {}, {}]{}",
+            row.opcode, row.flags, row.range_ab, row.range_cd, comma
+        ).unwrap();
+    }
+    writeln!(out, "]\n").unwrap();
+    writeln!(out, "/-- Decode exactly the twelve source flag bits; no packed information is discarded. -/").unwrap();
+    writeln!(out, "def decodePackedRow (row : Vector Nat 4) : ArithTableRow := {{").unwrap();
+    writeln!(out, "  op := (row[0] : FGL)").unwrap();
+    for (index, name) in FIELD_NAMES.iter().enumerate() {
+        writeln!(out, "  {name} := row[1] / {} % 2", 1u16 << index).unwrap();
+    }
+    writeln!(out, "  range_ab := row[2]\n  range_cd := row[3]\n}}\n").unwrap();
     writeln!(
         out,
         "/-- The {}-row arith_table extracted from",
@@ -192,6 +210,8 @@ fn emit_lean(rows: &[RawRow]) -> String {
     }
     writeln!(out, "]").unwrap();
     out.push('\n');
+    writeln!(out, "theorem packed_table_decodes : packed_table.map decodePackedRow = arith_table := by decide\n").unwrap();
+    writeln!(out, "theorem packed_table_length : packed_table.length = {} := by rfl\n", rows.len()).unwrap();
     writeln!(out, "end Extraction.ArithTable").unwrap();
     out
 }
@@ -247,5 +267,14 @@ mod tests {
         let lean = emit_lean(&[row]);
         assert!(lean.contains("import ZiskFv.Field.Goldilocks\n"));
         assert!(!lean.contains("ZiskFv.Fundamentals.Goldilocks"));
+    }
+
+    #[test]
+    fn packed_source_rows_retain_flags_and_kernel_decoding() {
+        let row = RawRow { opcode: 180, flags: 2564, range_ab: 7, range_cd: 1 };
+        let lean = emit_lean(&[row]);
+        assert!(lean.contains("#v[180, 2564, 7, 1]"));
+        assert!(lean.contains("packed_table.map decodePackedRow = arith_table := by decide"));
+        assert!(lean.contains("main_mul := row[1] / 512 % 2"));
     }
 }

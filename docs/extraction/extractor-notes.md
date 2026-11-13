@@ -53,6 +53,8 @@ the flags themselves.
   a standard direct or two-hint-cluster accumulator template.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
+  `packed_table : List (Vector Nat 4)` retains the exact opcode/packed-flags/
+  range-code bus-331 payload, with kernel-checked `packed_table_decodes`.
 - `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
   functions and kernel-checked inverse certificates from
   `state-machines/arith/src/arith_range_table_helpers.rs`. This supplies source
