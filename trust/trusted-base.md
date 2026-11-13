@@ -55,11 +55,20 @@ zero-multiplicity consumer lets the standard library finish the isolated compile
 `pil-extract mem-align-rom --compiled-rows` preserves every observed row and
 checks dimensions, column order, and upstream Rust table parameters. The
 generated `MemAlignRom.tsv` is retained beside the extraction artifacts.
-`nix run .#virtual-table-check` compares all production rows with generated Lean
-and requires the sweep's round-50 builder mutation to reach Lean. It is also
-part of `nix run .#test`. This removes duplicated builder logic from the
-extraction boundary; it does not prove compiler correctness or claim that every
-ROM mutation violates instruction soundness.
+`nix run .#virtual-table-check` evaluates the actual accepted-model
+`memAlignRomTable.row`, through `bin/MemAlignRomStream/Main.lean`, and compares
+all six fields at every physical index with the retained production TSV.
+It checks row count, row order, negative field representatives modulo Goldilocks,
+and padding rows without a second builder transcription. `nix run .#test` runs
+this fidelity gate after the model build. Round 50 must produce a named
+`MemAlignRom mismatch:` after a green production baseline; the runner records
+`fidelity_gate` with `proof_status=not_run`, not a proof rejection.
+The earlier checker only verified extraction against the same builder and
+required the mutant to reach generated Lean. It never compared that mutant
+with the accepted model. The static provider's membership proof is parametric
+in the extracted rows, so changing those rows need not break that proof.
+This executable comparison does not prove compiler correctness or establish
+that every ROM mutation violates instruction soundness.
 
 The virtual BinaryTable and BinaryExtensionTable are likewise observed through
 the pinned compiler's `onAirEnd` hook, before virtual lowering discards them.

@@ -38,7 +38,7 @@ def test_corpus() -> None:
           "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
           "round 27 is caught after Main c41 is tied")
-    check(runner.expected_detection_layer(runner.round_by_number(50)) == "proof",
+    check(runner.expected_detection_layer(runner.round_by_number(50)) == "fidelity_gate",
           "production ROM target")
 
 
@@ -134,6 +134,15 @@ def test_classification() -> None:
         log.write_text("missing export\n")
         check(runner.classify_fidelity_gate(command(), rejected)[0] == "infrastructure",
               "unrelated gate error counted as fidelity detection")
+        check(runner.classify_fidelity_gate(
+            command(), rejected, "MemAlignRom mismatch:")[0] == "infrastructure",
+              "unrelated ROM gate error counted as fidelity detection")
+        log.write_text("MemAlignRom mismatch: physical row 3 differs\n")
+        check(runner.classify_fidelity_gate(
+            command(), rejected, "MemAlignRom mismatch:")[0] == "fidelity_gate",
+              "actual ROM mismatch not detected")
+        check(runner.classify_fidelity_gate(command(), rejected)[0] == "infrastructure",
+              "wrong named gate counted as byte-table detection")
     check(not runner.meets_expected({"proof_skipped": True, "outcome": "fidelity",
                                      "expected_detection_layer": "fidelity_gate"}),
           "skipped proof/gate claimed the byte-table detection requirement")
@@ -323,7 +332,7 @@ def test_byte_table_gate_order() -> None:
 
         result = {"commands": []}
         with mock.patch.object(runner, "run_command", side_effect=gate):
-            outcome, _ = runner.byte_table_controls(
+            outcome, _ = runner.table_fidelity_controls(
                 root, root / "clean", root / "mutant", 900, root, result)
         check(calls == [str(root / "clean/ByteTables"), str(root / "mutant/ByteTables")],
               "mutant fidelity gate ran before its clean control")
@@ -332,17 +341,36 @@ def test_byte_table_gate_order() -> None:
               "actual fidelity detection misrepresented a proof result")
         with mock.patch.object(runner, "run_command", return_value=command(1)):
             result = {"commands": []}
-            outcome, _ = runner.byte_table_controls(
+            outcome, _ = runner.table_fidelity_controls(
                 root, root / "clean", root / "mutant", 900, root, result)
         check(outcome == "infrastructure" and len(result["commands"]) == 1,
               "failed clean gate admitted a mutant detection")
+        calls.clear()
+        def rom_gate(argv, cwd, timeout, log):
+            calls.append(argv)
+            log.write_text("MemAlignRom mismatch: physical row 3 differs\n"
+                           if len(calls) == 2 else "MemAlignRom matches\n")
+            value = command(1 if len(calls) == 2 else 0)
+            value.log = str(log)
+            return value
+        result = {"commands": []}
+        with mock.patch.object(runner, "run_command", side_effect=rom_gate):
+            outcome, _ = runner.table_fidelity_controls(
+                root, root / "clean", root / "mutant", 900, root, result, "MemAlignRom")
+        check([argv[-1] for argv in calls] ==
+              [str(root / "clean/MemAlignRom.tsv"), str(root / "mutant/MemAlignRom.tsv")],
+              "ROM controls did not use clean then mutant production rows")
+        check(all(argv[-2] == "--export-tsv" for argv in calls)
+              and outcome == "fidelity_gate" and result["proof_status"] == "not_run"
+              and result["fidelity_gate"]["name"] == "MemAlignRom",
+              "ROM fidelity detection did not run the named gate")
     # Freeze the early gate's ordering relative to the existing full-proof path.
     tree = ast.parse((HERE / "runner.py").read_text())
     full = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
                 and node.name == "full")
     gate_line = next(node.lineno for node in ast.walk(full)
                      if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
-                     and node.func.id == "byte_table_controls")
+                     and node.func.id == "table_fidelity_controls")
     proof_line = next(node.lineno for node in ast.walk(full)
                       if isinstance(node, ast.Assign)
                       and any(isinstance(target, ast.Name) and target.id == "baseline_proof"

@@ -148,14 +148,10 @@
 
         packages.virtual-table-check = pkgs.writeShellApplication {
           name = "virtual-table-check";
-          runtimeInputs = [ pkgs.nodejs_20 pkgs.python3 ];
+          runtimeInputs = [ pkgs.python3 ];
           text = ''
-            exec python3 ${./tools/virtual-tables}/check.py \
-              --compiler-root ${self.packages.${system}.pil2-compiler} \
-              --zisk-root ${zisk-src} \
-              --proofman-root ${pil2-proofman-src} \
-              --generated-lean ${self.packages.${system}.extracted-lean}/MemAlignRom.lean \
-              --extractor ${self.packages.${system}.pil-extract}/bin/pil-extract
+            exec python3 tools/virtual-tables/check.py \
+              --export-tsv ${self.packages.${system}.extracted-lean}/MemAlignRom.tsv
           '';
         };
 
