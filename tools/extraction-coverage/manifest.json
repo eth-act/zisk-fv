@@ -37,6 +37,8 @@
     {"air_index": 34, "air_value_stages": [], "classification": {"citation": "docs/extraction/air-inventory.md", "extraction": "unsupported", "model_status": "partial_support", "theorem_scope": "support_only"}, "constraint_kinds": ["every_row", "every_row", "every_row", "every_row", "every_row", "every_row"], "custom_commits": [], "fixed_columns": 73, "group": "Zisk", "group_index": 0, "name": "VirtualTable1", "periodic_columns": 0, "row_count": 2097152, "stage_widths": [8, 5]}
   ],
   "generated_outputs": [
+    {"kind": "table_digest", "path": "ByteTables/BinaryExtensionTable.json"},
+    {"kind": "table_digest", "path": "ByteTables/BinaryTable.json"},
     {"kind": "lean", "path": "Extraction.lean"},
     {"kind": "lean", "path": "Extraction/Arith.lean"},
     {"kind": "lean", "path": "Extraction/ArithTable.lean"},

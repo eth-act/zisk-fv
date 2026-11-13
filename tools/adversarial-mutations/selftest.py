@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import shutil
 import sys
 import tempfile
@@ -26,10 +27,15 @@ def check(condition: bool, message: str) -> None:
 def test_corpus() -> None:
     identity, rounds = runner.load_corpus()
     check(identity["zisk_revision"] == "b632745", "unexpected pinned identity")
-    check(len(rounds) == 52, "round count")
-    check(sum(r.historical_class == "VALID" for r in rounds) == 35, "valid count")
-    check(sum(r.expected_outcome == "proof" for r in rounds) == 24, "caught count")
-    check(sum(r.expected_outcome == "fidelity" for r in rounds) == 11, "missed count")
+    # Keep the published sweep's historical counts separate from new fixtures.
+    historical = [r for r in rounds if r.historical_class != "NEW"]
+    check(len(historical) == 52, "historical round count")
+    check(sum(r.historical_class == "VALID" for r in historical) == 35, "valid count")
+    check(sum(r.expected_outcome == "proof" for r in historical) == 24, "caught count")
+    check(sum(r.expected_outcome == "fidelity" for r in historical) == 11, "missed count")
+    check(len(rounds) == 53, "round count")
+    check(runner.expected_detection_layer(runner.round_by_number(53)) == "fidelity_gate",
+          "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
           "round 27 is caught after Main c41 is tied")
     check(runner.expected_detection_layer(runner.round_by_number(50)) == "proof",
@@ -111,6 +117,26 @@ def test_classification() -> None:
                           command(None, True))[0] == "infrastructure", "timeout classification")
     check(runner.classify(valid, different, ["Main.lean"], command(), command(1),
                           command(1))[0] == "infrastructure", "baseline control classification")
+    with tempfile.TemporaryDirectory() as tmp:
+        log = Path(tmp) / "gate.log"
+        rejected = command(1)
+        rejected.log = str(log)
+        log.write_text("byte-table mismatch: BinaryTable: block op=10 differs\n")
+        check(runner.classify_fidelity_gate(command(), rejected)[0] == "fidelity_gate",
+              "actual byte-table rejection not detected")
+        check(runner.classify_fidelity_gate(command(), command())[0] == "fidelity",
+              "successful proof/gate mislabeled as a caught mutation")
+        for baseline, mutant in ((command(1), rejected),
+                                 (command(), command(None, True)),
+                                 (command(), command(2))):
+            check(runner.classify_fidelity_gate(baseline, mutant)[0] == "infrastructure",
+                  "failed baseline or timeout counted as fidelity detection")
+        log.write_text("missing export\n")
+        check(runner.classify_fidelity_gate(command(), rejected)[0] == "infrastructure",
+              "unrelated gate error counted as fidelity detection")
+    check(not runner.meets_expected({"proof_skipped": True, "outcome": "fidelity",
+                                     "expected_detection_layer": "fidelity_gate"}),
+          "skipped proof/gate claimed the byte-table detection requirement")
 
     outcome, _, control = runner.classify_equivalent_control(
         command(), "fidelity", "mutant proof passed")
@@ -233,6 +259,8 @@ def test_readonly_artifact_restore() -> None:
         (proof / "build/zisk.pilout").write_text("old")
         (extraction / "Extraction/nested").mkdir(parents=True)
         (extraction / "Extraction/nested/New.lean").write_text("new")
+        (extraction / "ByteTables").mkdir()
+        (extraction / "ByteTables/BinaryTable.json").write_text("digest")
         pilout = root / "new.pilout"
         pilout.write_text("new")
         for tree in (proof / "build/extraction", extraction, extraction / "Extraction",
@@ -245,13 +273,89 @@ def test_readonly_artifact_restore() -> None:
               "read-only extraction was not restored")
         check((proof / "build/zisk.pilout").read_text() == "new",
               "read-only pilout was not replaced")
+        check((proof / "build/extraction/ByteTables/BinaryTable.json").read_text() == "digest",
+              "byte-table fidelity input was not installed")
+        flat = root / "flat-output"
+        flat.mkdir()
+        (flat / "New.lean").write_text("new")
+        shutil.copytree(extraction / "ByteTables", flat / "ByteTables")
+        runner.install_proof_artifacts(repo, proof, pilout, flat)
+        check((proof / "build/extraction/ByteTables/BinaryTable.json").read_text() == "digest",
+              "flat Nix byte-table input was not installed")
+        (flat / "ByteTables/BinaryTable.json").write_text("mutated")
+        check("ByteTables/BinaryTable.json" in runner.extraction_delta(extraction, flat),
+              "flat Nix byte-table mutation was not monitored")
+
+
+def test_component_and_byte_table_manifest() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        baseline, mutant = root / "baseline", root / "mutant"
+        component = Path("Components/BinaryAdd/Constraints.lean")
+        table = Path("ByteTables/BinaryTable.json")
+        for tree in (baseline, mutant):
+            for relative in (component, table):
+                target = tree / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("same")
+        check(set(runner.extraction_manifest(baseline)) == {str(component), str(table)},
+              "integrated manifest dropped a nested component or byte table")
+        (mutant / component).write_text("changed")
+        check(runner.extraction_delta(baseline, mutant) == [str(component)],
+              "component-only mutation disappeared from recursive accounting")
+        (mutant / table).write_text("changed")
+        check(runner.extraction_delta(baseline, mutant) == [str(table), str(component)],
+              "component and byte-table deltas did not coexist")
+
+
+def test_byte_table_gate_order() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        calls = []
+
+        def gate(argv, cwd, timeout, log):
+            calls.append(argv[-1])
+            log.write_text("byte-table mismatch: BinaryTable: block op=10 differs\n"
+                           if len(calls) == 2 else "byte tables match\n")
+            value = command(1 if len(calls) == 2 else 0)
+            value.log = str(log)
+            return value
+
+        result = {"commands": []}
+        with mock.patch.object(runner, "run_command", side_effect=gate):
+            outcome, _ = runner.byte_table_controls(
+                root, root / "clean", root / "mutant", 900, root, result)
+        check(calls == [str(root / "clean/ByteTables"), str(root / "mutant/ByteTables")],
+              "mutant fidelity gate ran before its clean control")
+        check(outcome == "fidelity_gate" and result["proof_status"] == "not_run"
+              and "proof_skipped" not in result,
+              "actual fidelity detection misrepresented a proof result")
+        with mock.patch.object(runner, "run_command", return_value=command(1)):
+            result = {"commands": []}
+            outcome, _ = runner.byte_table_controls(
+                root, root / "clean", root / "mutant", 900, root, result)
+        check(outcome == "infrastructure" and len(result["commands"]) == 1,
+              "failed clean gate admitted a mutant detection")
+    # Freeze the early gate's ordering relative to the existing full-proof path.
+    tree = ast.parse((HERE / "runner.py").read_text())
+    full = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                and node.name == "full")
+    gate_line = next(node.lineno for node in ast.walk(full)
+                     if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                     and node.func.id == "byte_table_controls")
+    proof_line = next(node.lineno for node in ast.walk(full)
+                      if isinstance(node, ast.Assign)
+                      and any(isinstance(target, ast.Name) and target.id == "baseline_proof"
+                              for target in node.targets))
+    check(gate_line < proof_line, "fidelity gate regressed behind the full proof build")
 
 
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
              test_artifact_and_semantic_baselines, test_site_operators,
              test_round_zero_control, test_log_archive,
-             test_private_dependency_copy, test_readonly_artifact_restore]
+             test_private_dependency_copy, test_readonly_artifact_restore,
+             test_byte_table_gate_order, test_component_and_byte_table_manifest]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")

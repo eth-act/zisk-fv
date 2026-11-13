@@ -33,7 +33,13 @@ sys.path.insert(0, str(HERE))
 import semdiff  # noqa: E402
 import sites  # noqa: E402
 
-REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50]
+def _round_choices() -> range:
+    """Valid --round values, read from the corpus rather than hardcoded."""
+    _, rounds = load_corpus()
+    return range(1, len(rounds) + 1)
+
+
+REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50, 53]
 
 
 class CorpusError(Exception):
@@ -60,10 +66,11 @@ def load_corpus() -> tuple[dict[str, Any], list[Round]]:
         raise CorpusError(f"unsupported corpus schema {raw.get('schema')!r}")
     rounds = [Round(*row[:-1], tuple(row[-1])) for row in raw["rounds"]]
     numbers = [item.number for item in rounds]
-    if numbers != list(range(1, 53)):
-        raise CorpusError(f"corpus must contain rounds 1..52 once; got {numbers}")
+    if numbers != list(range(1, len(rounds) + 1)):
+        raise CorpusError(
+            f"corpus must contain rounds 1..{len(rounds)} once; got {numbers}")
     valid_outcomes = {"invalid", "equivalent", "compiler", "extractor",
-                      "fidelity", "proof", "infrastructure"}
+                      "fidelity", "fidelity_gate", "proof", "infrastructure"}
     for item in rounds:
         if item.expected_outcome not in valid_outcomes:
             raise CorpusError(f"round {item.number}: invalid expected outcome")
@@ -85,6 +92,10 @@ def diagnostic_patterns(item: Round) -> tuple[str, ...]:
 
 def expected_detection_layer(item: Round) -> str:
     """Post-hardening expectation, separate from the historical verdict."""
+    if item.historical_class == "NEW":
+        # Fixtures added after the sweep have no historical verdict to derive
+        # from; they state the layer they are meant to reach.
+        return item.expected_outcome
     if item.historical_class == "INVALID":
         return "invalid"
     if item.historical_class == "REJECTED":
@@ -98,7 +109,8 @@ def expected_detection_layer(item: Round) -> str:
 
 def meets_expected(value: dict[str, Any]) -> bool:
     if value.get("proof_skipped"):
-        return value.get("outcome") == "fidelity"
+        return (value.get("outcome") == "fidelity"
+                and value.get("expected_detection_layer") != "fidelity_gate")
     expected = value.get("expected_detection_layer")
     if expected == "equivalent":
         return (value.get("outcome") == "equivalent"
@@ -180,27 +192,33 @@ def lean_artifact_dir(path: Path) -> Path:
     return path / "Extraction" if (path / "Extraction").is_dir() else path
 
 
+def extraction_container(path: Path) -> Path:
+    """Locate sidecars for both populate's layout and the flat Nix output."""
+    return path.parent if path.name == "Extraction" else path
+
+
 def extraction_manifest(path: Path) -> dict[str, str]:
     lean = lean_artifact_dir(path)
-    container = path if lean != path else (path.parent if path.name == "Extraction" else path)
-    # Recurse: the generated Clean components live under
-    # `Extraction/Components/<Air>/`. A non-recursive scan left them
-    # unmonitored, so a mutation that changed only a component's `Row.lean` or
-    # `Constraints.lean` produced an empty artifact delta and was misread as a
-    # lost artifact. Top-level files keep their bare name so the corpus's
-    # existing stem entries (`Main`, `Binary`, ...) still match; nested files
-    # are keyed by their path under `Extraction/`.
+    container = extraction_container(path)
+    # Include nested generated components as well as top-level AIRs.
     result = {}
     for candidate in sorted(lean.rglob("*.lean")):
         if not candidate.is_file():
             continue
-        relative = candidate.relative_to(lean)
-        key = candidate.name if relative.parent == Path(".") else relative.as_posix()
-        result[key] = sha256(candidate)
+        result[candidate.relative_to(lean).as_posix()] = sha256(candidate)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         candidate = container / name
         if candidate.is_file():
             result[name] = sha256(candidate)
+    # The two `virtual` byte tables never reach pilout, so they have no
+    # `Extraction/<Air>.lean`; the extractor emits per-opcode-block hashes for
+    # them instead. Without these entries a mutation inside `binary_table.pil`
+    # or `binary_extension_table.pil` changes no monitored artifact and is
+    # classified as a lost artifact rather than an extraction difference.
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        for candidate in sorted(byte_tables.glob("*.json")):
+            result[f"ByteTables/{candidate.name}"] = sha256(candidate)
     return result
 
 
@@ -299,6 +317,50 @@ def classify(item: Round, semantic: dict[str, Any] | None, changed: list[str],
     return "infrastructure", "mutant proof ended with an infrastructure exit"
 
 
+def classify_fidelity_gate(baseline: CommandResult, mutant: CommandResult) -> tuple[str, str]:
+    """Recognize actual table-gate rejection independently of full proof builds."""
+    if baseline.timed_out or baseline.exit_code != 0:
+        return "infrastructure", "baseline byte-table fidelity gate was not green"
+    if mutant.timed_out or mutant.exit_code not in (0, 1):
+        return "infrastructure", "mutant byte-table fidelity gate did not complete normally"
+    if mutant.exit_code == 0:
+        return "fidelity", "mutated artifacts passed the byte-table fidelity gate"
+    diagnostic = Path(mutant.log).read_text(encoding="utf-8", errors="replace")
+    if "byte-table mismatch:" not in diagnostic:
+        return "infrastructure", "byte-table gate failed without an explicit table mismatch"
+    return "fidelity_gate", "actual byte-table fidelity gate rejected mutated rows"
+
+
+def byte_table_controls(repo: Path, baseline: Path, mutant: Path, timeout: int,
+                        logs: Path, result: dict[str, Any]) -> tuple[str, str]:
+    """Run the clean gate before the mutant, without installing mutant inputs."""
+    repo = repo.resolve()
+    result["proof_status"] = "not_run"
+    argv = nix("develop", "--no-write-lock-file", str(repo),
+               "-c", "python3", str(repo / "tools/virtual-tables/check-byte-tables.py"),
+               "--export-dir")
+    clean = run_command(
+        [*argv, str(extraction_container(baseline) / "ByteTables")],
+        repo, timeout, logs / "baseline-byte-tables.log")
+    result["commands"].append(dataclasses.asdict(clean))
+    if clean.timed_out or clean.exit_code != 0:
+        return "infrastructure", "baseline byte-table fidelity gate was not green"
+    changed = run_command(
+        [*argv, str(extraction_container(mutant) / "ByteTables")],
+        repo, timeout, logs / "mutant-byte-tables.log")
+    result["commands"].append(dataclasses.asdict(changed))
+    outcome, reason = classify_fidelity_gate(clean, changed)
+    result["fidelity_gate"] = {
+        "baseline_green": True,
+        "mutant_rejected": outcome == "fidelity_gate",
+        "diagnostic": next(
+            (line for line in Path(changed.log).read_text(
+                encoding="utf-8", errors="replace").splitlines()
+             if line.startswith("byte-table mismatch:")), None),
+    }
+    return outcome, reason
+
+
 def classify_equivalent_control(mutant_proof: CommandResult, outcome: str,
                                 reason: str) -> tuple[str, str, dict[str, bool]]:
     """Apply the SYNTACTIC-control policy without hiding command failures."""
@@ -391,7 +453,7 @@ def nix_output_path(repo: Path, attr: str, override: Path | None, timeout: int,
 
 
 def resolve_pinned_zisk(repo: Path, timeout: int, log: Path) -> tuple[Path | None, CommandResult]:
-    expression = f'(builtins.getFlake "path:{repo.resolve()}").inputs.zisk-src.outPath'
+    expression = f'(builtins.getFlake "git+{repo.resolve().as_uri()}").inputs.zisk-src.outPath'
     result = run_command(nix("eval", "--no-write-lock-file", "--impure", "--raw",
                              "--expr", expression),
                          repo, timeout, log)
@@ -411,7 +473,7 @@ def nix_direct_extraction(repo: Path, source: Path, pilout: Path, timeout: int,
     while avoiding a causally unrelated ZisK workspace rebuild.
     """
     expression = f'''let
-      fv = builtins.getFlake "path:{repo.resolve()}";
+      fv = builtins.getFlake "git+{repo.resolve().as_uri()}";
       system = builtins.currentSystem;
       pkgs = import fv.inputs.nixpkgs {{ inherit system; }};
     in pkgs.callPackage {repo.resolve() / "nix/extracted-lean.nix"} {{
@@ -506,11 +568,14 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
     target_extraction = destination / "build" / "extraction" / "Extraction"
     shutil.copytree(lean_artifact_dir(extraction), target_extraction)
     make_tree_writable(target_extraction)
-    container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
+    container = extraction_container(extraction)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, destination / "build" / "extraction" / name)
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        shutil.copytree(byte_tables, destination / "build" / "extraction" / "ByteTables")
     # Lake needs the generated library declaration, which belongs to populate
     # rather than the extraction derivation.
     src_lakefile = original_build / "extraction" / "lakefile.toml"
@@ -546,11 +611,14 @@ def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
     copied_extraction = target_extraction / "Extraction"
     shutil.copytree(lean_artifact_dir(extraction), copied_extraction)
     make_tree_writable(copied_extraction)
-    container = extraction if (extraction / "Extraction").is_dir() else extraction.parent
+    container = extraction_container(extraction)
     for name in ("MemAirFacts.md", "MemAlignRom.tsv"):
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, target_extraction / name)
+    byte_tables = container / "ByteTables"
+    if byte_tables.is_dir():
+        shutil.copytree(byte_tables, target_extraction / "ByteTables")
     original = repo / "build" / "extraction"
     for name in ("lakefile.toml", "Extraction.lean"):
         scaffold = original / name
@@ -787,6 +855,13 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
             outcome, reason = classify(item, semantic, changed, roundtrip, None, None)
             result.update(outcome=outcome, reason=reason, complete=True)
             return result
+        if item.air in {"BinaryTable", "BinaryExtensionTable"}:
+            outcome, reason = byte_table_controls(
+                args.repo, Path(base_extract), mutant_extract, args.check_timeout, logs, result)
+            if outcome != "fidelity":
+                result.update(outcome=outcome, reason=reason,
+                              complete=outcome != "infrastructure")
+                return result
         if args.skip_proof:
             result.update(outcome="fidelity",
                           reason="artifact delta reached the proof boundary; proof explicitly skipped",
@@ -804,6 +879,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                          "-c", "lake", "build", "--log-level=warning")
         require_frozen_repository(args.repo, frozen_repository)
         install_proof_artifacts(args.repo, proof_tree, Path(base_pilout), Path(base_extract))
+        result["proof_status"] = "baseline_started"
         baseline_proof = run_command(proof_argv, proof_tree, args.proof_timeout,
                                      logs / "baseline-proof.log")
         if baseline_proof.timed_out or baseline_proof.exit_code != 0:
@@ -821,6 +897,7 @@ def full(args: argparse.Namespace) -> dict[str, Any]:
                                    baseline_proof, mutant_proof, compile_result)
         diagnostic = first_diagnostic(Path(mutant_proof.log)) if mutant_proof.exit_code else None
         result["proof_diagnostic"] = diagnostic
+        result["proof_status"] = "completed" if not mutant_proof.timed_out else "timed_out"
         if semantic["equal"] and item.historical_class == "SYNTACTIC":
             outcome, reason, result["control"] = classify_equivalent_control(
                 mutant_proof, outcome, reason)
@@ -865,10 +942,10 @@ def parser() -> argparse.ArgumentParser:
     listing.add_argument("--zisk-source", type=Path)
     listing.add_argument("--compile-timeout", type=int, default=3600)
     apply = sub.add_parser("apply")
-    apply.add_argument("--round", type=int, required=True, choices=range(1, 53))
+    apply.add_argument("--round", type=int, required=True, choices=_round_choices())
     apply.add_argument("--source", type=Path, required=True)
     b = sub.add_parser("boundary")
-    b.add_argument("--round", type=int, required=True, choices=range(1, 53))
+    b.add_argument("--round", type=int, required=True, choices=_round_choices())
     b.add_argument("--baseline-pilout", type=Path, required=True)
     b.add_argument("--mutant-pilout", type=Path, required=True)
     b.add_argument("--baseline-extraction", type=Path, required=True)
@@ -878,7 +955,7 @@ def parser() -> argparse.ArgumentParser:
     b.add_argument("--output", type=Path)
     def full_options(f: argparse.ArgumentParser, include_round: bool = True) -> None:
         if include_round:
-            f.add_argument("--round", type=int, required=True, choices=range(1, 53))
+            f.add_argument("--round", type=int, required=True, choices=_round_choices())
         f.add_argument("--repo", type=Path, default=REPO)
         f.add_argument("--zisk-source", type=Path,
                    help="pinned source tree; defaults to the flake input store path")
@@ -899,7 +976,7 @@ def parser() -> argparse.ArgumentParser:
     suite = sub.add_parser("suite")
     full_options(suite, include_round=False)
     suite.add_argument("--profile", choices=("boundary", "regression", "full"), required=True)
-    suite.add_argument("--round", action="append", type=int, choices=range(1, 53),
+    suite.add_argument("--round", action="append", type=int, choices=_round_choices(),
                        help="override the profile's round set; repeatable")
     suite.add_argument("--results-dir", type=Path, required=True)
     suite.add_argument("--commit-evidence", metavar="SHORT_SHA",
@@ -945,7 +1022,7 @@ def main(argv: list[str]) -> int:
     if args.command == "suite":
         defaults = {"boundary": [5, 7, 32, 38, 50],
                     "regression": REGRESSION_ROUNDS,
-                    "full": list(range(1, 53))}
+                    "full": list(_round_choices())}
         rounds = args.round if args.round else defaults[args.profile]
         evidence_destination = None
         if args.commit_evidence:
@@ -1000,7 +1077,7 @@ def main(argv: list[str]) -> int:
             "setup_failure": setup_failure,
             "counts": {name: sum(r.get("outcome") == name for r in results)
                        for name in ("invalid", "equivalent", "compiler", "extractor",
-                                    "fidelity", "proof", "infrastructure")},
+                                    "fidelity", "fidelity_gate", "proof", "infrastructure")},
             "complete": all(r.get("complete") for r in results),
             "infrastructure_rounds": [r.get("round") for r in results
                                       if r.get("outcome") == "infrastructure"],

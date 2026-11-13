@@ -74,13 +74,22 @@ def production_decoder_controls() -> None:
             assert check.compare(baseline, observed), name
         output_dir = directory / "outputs"
         output_dir.mkdir()
-        (output_dir / "new-data.json").write_text("{}")
+        # The classifier must stay closed: an unrecognised suffix is an error.
+        # `.json` is no longer a valid probe for that -- it classifies as the
+        # byte-table block-hash artifact -- so probe with a suffix the
+        # extractor does not emit, and assert the `.json` classification
+        # positively rather than dropping the control.
+        (output_dir / "new-data.bin").write_bytes(b"\x00")
         try:
             check.generated_outputs(output_dir)
         except check.CoverageError:
             pass
         else:
-            raise AssertionError("unknown JSON output silently disappeared")
+            raise AssertionError("unknown output kind silently disappeared")
+        (output_dir / "new-data.bin").unlink()
+        (output_dir / "BinaryTable.json").write_text("{}")
+        classified = check.generated_outputs(output_dir)
+        assert classified == [{"path": "BinaryTable.json", "kind": "table_digest"}], classified
 
 
 def main() -> int:
