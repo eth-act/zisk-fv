@@ -1,4 +1,4 @@
-{ stdenv, lib, nodejs_20, pil-extract, pil2-compiler, pil2-proofman-src, zisk-pilout, zisk-src }:
+{ stdenv, lib, nodejs_20, pil-extract, pil2-compiler, pil2-proofman-src, zisk-pilout, zisk-src, fixed-data }:
 
 # Run `pil-extract` over `zisk-pilout` (and `zisk-src` for the
 # arith-table data / original PIL source) to produce the generated extraction
@@ -80,7 +80,7 @@ stdenv.mkDerivation {
     # reproduces those hashes from the Lean definitions themselves.
     mkdir -p $out/ByteTables
     for table in BinaryTable BinaryExtensionTable; do
-      ${nodejs_20}/bin/node ${../tools/virtual-tables/export-byte-tables.cjs} \
+      ${nodejs_20}/bin/node ${../tools/virtual-tables}/export-byte-tables.cjs \
         ${pil2-compiler} ${zisk-src} ${pil2-proofman-src} "$table" \
         $out/ByteTables/"$table".json
     done
@@ -124,6 +124,25 @@ stdenv.mkDerivation {
     ${pil-extract}/bin/pil-extract lookup-wiring \
       --pilout ${zisk-pilout} \
       --output $out/LookupWiring.lean
+
+    # Observe the actual production VirtualTable0/1 packing with the exact
+    # Rust-generated external fixed columns. All compiler writes stay private.
+    packed_source="$TMPDIR/packed-zisk"
+    mkdir -p "$packed_source"
+    cp -r --reflink=never --no-preserve=mode "${zisk-src}/." "$packed_source/"
+    for payload in \
+      state-machines/arith/src/arith_frops_fixed.bin \
+      state-machines/binary/src/binary_basic_frops_fixed.bin \
+      state-machines/binary/src/binary_extension_frops_fixed.bin; do
+      mkdir -p "$packed_source/$(dirname "$payload")"
+      cp --reflink=never --no-preserve=mode "${fixed-data}/$payload" "$packed_source/$payload"
+    done
+    ${nodejs_20}/bin/node --max-old-space-size=16384 \
+      ${../tools/virtual-tables}/export-packed-tables.cjs \
+      ${pil2-compiler} "$packed_source" ${pil2-proofman-src} $out/PackedVirtualTables.json
+    ${pil-extract}/bin/pil-extract packed-virtual-tables \
+      --compiled-json $out/PackedVirtualTables.json \
+      --output $out/PackedVirtualTables.lean
 
     # Reviewed byte-identical Clean component source.  Maintained modules
     # re-export these generated declarations instead of carrying a weld copy.

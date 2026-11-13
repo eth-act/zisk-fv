@@ -29,6 +29,7 @@ expected_modules=(
   MemGeneratedArtifact
   MemGeneratedConstraintBridge
   MemoryBuses
+  PackedVirtualTables
 )
 
 if [[ ! -d "$generated_dir" ]]; then

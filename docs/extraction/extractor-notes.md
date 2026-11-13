@@ -20,6 +20,8 @@ pil-extract lookup-wiring --pilout <path> [--output <path>]
 
 pil-extract arith-table --rust-source <path> [--output <path>]
 
+pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -49,6 +51,12 @@ the flags themselves.
   a standard direct or two-hint-cluster accumulator template.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
+- `packed-virtual-tables`: emit indexed placements for buses 88/124/125/330/331
+  observed in the actual production VirtualTable0/1 fixed columns. The compiler
+  observer checks every target payload/UID/padding cell and converse ownership
+  using the real Rust-generated external fixed columns. The generated placement
+  theorems do not themselves establish logical payload fidelity or provider
+  composition; those remain checked at the concrete model consumers.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR

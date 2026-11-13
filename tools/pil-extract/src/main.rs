@@ -11,6 +11,7 @@ mod arith_table;
 mod clean_component;
 mod lookup_wiring;
 mod mem_align_rom;
+mod packed_virtual_tables;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -45,6 +46,8 @@ enum Cmd {
     LookupWiring(LookupWiringCmd),
     /// Parse `arith_table_data.rs` and emit `Extraction.ArithTable`.
     ArithTable(ArithTableCmd),
+    /// Emit checked physical placement metadata from production packed tables.
+    PackedVirtualTables(PackedVirtualTablesCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -147,6 +150,17 @@ struct ArithTableCmd {
     rust_source: PathBuf,
 
     /// Output path for the generated .lean file. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+struct PackedVirtualTablesCmd {
+    /// JSON emitted by the actual production packed-table compiler observer.
+    #[arg(long)]
+    compiled_json: PathBuf,
+
+    /// Output path for the generated Lean module. If omitted, prints to stdout.
     #[arg(long)]
     output: Option<PathBuf>,
 }
@@ -272,6 +286,11 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.cmd {
+        Cmd::PackedVirtualTables(args) => {
+            let source = fs::read_to_string(&args.compiled_json)
+                .with_context(|| format!("failed to read {}", args.compiled_json.display()))?;
+            write_output(args.output.as_deref(), &packed_virtual_tables::render(&source)?)
+        }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;
             if args.output.is_none() {
