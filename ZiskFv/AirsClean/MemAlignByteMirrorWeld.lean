@@ -573,7 +573,7 @@ theorem memAlignByte_extracted_of_main
       ∧ MemAlignByte.extraction.constraint_8_every_row
         (extMAB (validOfCleanRow (eval env row))) r := by
   simp only [ZiskFv.AirsClean.MemAlignByte.main, circuit_norm] at h
-  obtain ⟨_l0, _l1, _l2, _l3, _l4, h0, h1, h2, h3, h4, h5, h6, h7, h8, _hpull⟩ := h
+  obtain ⟨_l0, _l1, _l2, _l3, _l4, _l5, h0, h1, h2, h3, h4, h5, h6, h7, h8, _hpull⟩ := h
   -- `circuit_norm` leaves each asserted polynomial in `a + -b` form while the
   -- mirror writes `a - b`; `linear_combination` crosses exactly that gap. The two
   -- recombination constraints additionally need the mirror's shared `*_factor`

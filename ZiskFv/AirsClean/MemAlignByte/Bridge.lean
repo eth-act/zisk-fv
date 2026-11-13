@@ -159,7 +159,7 @@ theorem ranges_of_lookup_aware_const_soundness
   simp only [main, circuit_norm] at h_holds
   rcases h_holds with
     ⟨h_bus_range, h_byte_range, h_is_write_range, h_value16_range,
-      h_dual_byte_range,
+      h_dual_byte_range, _h_written_byte_range,
       _h0, _h1, _h2, _h_composed, _h4, _h_written, _h_m0, _h_m1, _h_bus⟩
   have h_dual :
       (v.byte_value r).val < 2 ^ 8 ∧ (v.value_8b r).val < 2 ^ 8 := by
@@ -195,34 +195,27 @@ caller-supplied promise hypothesis.
 
 `Spec` carries the `bits(8)` `bus_byte` bound as its 6th conjunct;
 that conjunct is supplied from the Clean `lookup rangeTable*` operations
-exposed by `RangeLookupWitness`. Routing through
-`MemAlignByte.spec_via_component` makes the Clean Component genuinely
-load-bearing for the load opcodes without adding a completeness declaration.
+exposed by `RangeLookupWitness`. Routing those actual operations through
+`MemAlignByte.spec_of_main_constraints` keeps the Clean Component genuinely
+load-bearing without introducing another caller-supplied range premise.
 -/
 
 /-- **C1 re-root entry point.** From the MemAlignByte AIR's
     `core_every_row` PIL constraints plus lookup-aware Clean range
     evidence at row `r`, derive `bus_byte`'s `< 256` range bound
-    **through the Clean Component** (its proven `Spec`, via
-    `spec_via_component`). This is what the LBU / LHU / LWU narrow
-    loads consume — making `memAlignByteComponent` load-bearing for
-    those opcodes. -/
+    **through the Clean Component** (its proven `Spec` from the actual
+    operations). This is what the LBU / LHU / LWU narrow loads consume —
+    making `memAlignByteComponent` load-bearing for those opcodes. -/
 theorem bus_byte_in_range_via_component
     (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ)
     (h_core : ZiskFv.Airs.MemAlignByte.core_every_row v r)
     (h_lookup : RangeLookupWitness v r) :
     (v.bus_byte r).val < 2 ^ 8 := by
-  obtain ⟨h_b0, h_b1, h_b2, h_composed, h_b4, h_written, h_m0, h_m1, h_bus⟩ := h_core
-  obtain ⟨h_bus_byte_range, h_byte_value_range, h_is_write_range,
-    h_value16_range, h_value8_range⟩ :=
-    ranges_of_lookup_aware_const_soundness h_lookup
-  -- `rowAt v r` projects the AIR row into the Clean Component row;
-  -- each `rowAt` field is `@[reducible]`-defeq to `v.<col> r`.
-  have h_spec :
-      Spec (rowAt v r) :=
-    spec_via_component (rowAt v r) h_composed h_written h_m0 h_m1 h_bus
-      h_b0 h_b1 h_b2 h_b4
-      h_bus_byte_range h_byte_value_range h_is_write_range h_value16_range h_value8_range
+  have h_spec := spec_of_main_constraints h_lookup.offset h_lookup.env
+    (constVar (rowAt v r)) h_lookup.holds
+  have h_eval : eval h_lookup.env (constVar (rowAt v r)) = rowAt v r := by
+    simp only [constVar, circuit_norm]
+  rw [h_eval] at h_spec
   exact h_spec.2.2.2.2.2.1
 
 end ZiskFv.AirsClean.MemAlignByte

@@ -149,7 +149,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit  where
       -- range lookups prepended to `main`. The 4 boolean constraints
       -- (0, 1, 2, 4) are unused.
       obtain ⟨h_bus_range, h_byte_range, h_is_write_range,
-        _h_value16_range, _h_dual_byte_range,
+        _h_value16_range, _h_dual_byte_range, _h_written_byte_range,
         _h0, _h1, _h2, h_composed, _h4, h_written, h_m0, h_m1,
         h_bus, _h_aligned_read⟩ := h_holds
       simp only [byte_value_factor, value_8b_factor, value_16b_factor]
@@ -180,7 +180,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit  where
     simp [memAlignByteComposedValueOf, memAlignByteMemWriteValues0Of,
       memAlignByteMemWriteValues1Of, byte_value_factor, value_8b_factor,
       value_16b_factor] at h_input ⊢
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
       rw [memAlignByteBusByteOf_eq]
       cases isWrite
@@ -196,6 +196,8 @@ def circuit : GeneralFormalCircuit FGL MemAlignByteRow unit  where
         RangeTables.dualByteTable, h_input] using
         (show ((byteVal : FGL).val < 2 ^ 8 ∧ value_8b.val < 2 ^ 8) from
           ⟨fgl_natCast_val_lt_of_lt (by decide) h_byte, h_value8⟩)
+    · simp only [RangeTables.rangeTable8, RangeTables.rangeStaticTable]
+      exact fgl_natCast_val_lt_of_lt (by decide) h_written
     · ring
     · ring
     · ring
@@ -225,77 +227,17 @@ theorem component_interactionsWith_memBus :
     List.map_nil]
 
 set_option maxHeartbeats 1000000 in
-/-- The MemAlignByte `Spec` for a row, derived **through the Clean Component
-    `circuit`** — its proven `soundness` field — rather than through
-    `MemAlignByte.soundness` directly. Any consumer genuinely depends on
-    `circuit`; this is the C1 re-root entry point that makes
-    `AirsClean/MemAlignByte/` load-bearing.
-
-    `circuit.soundness` cannot be applied in raw term mode (the `operations`
-    `whnf` explodes — plan finding F-3); the working idiom is to normalize
-    its type with the `circuit_norm` simp set first, then feed it a
-    constant-expression row. Mirrors `BinaryAdd.spec_via_component`. -/
-theorem spec_via_component (row : MemAlignByteRow FGL)
-    (h_composed :
-      row.composed_value
-        - (row.byte_value * byte_value_factor row.sel_high_2b row.sel_high_b
-            + row.value_8b * value_8b_factor row.sel_high_2b row.sel_high_b
-            + row.value_16b * value_16b_factor row.sel_high_2b) = 0)
-    (h_written :
-      row.written_composed_value
-        - (row.written_byte_value * byte_value_factor row.sel_high_2b row.sel_high_b
-            + row.value_8b * value_8b_factor row.sel_high_2b row.sel_high_b
-            + row.value_16b * value_16b_factor row.sel_high_2b) = 0)
-    (h_m0 :
-      row.mem_write_values_0
-        - (row.sel_high_4b * (row.direct_value - row.written_composed_value)
-            + row.written_composed_value) = 0)
-    (h_m1 :
-      row.mem_write_values_1
-        - (row.sel_high_4b * (row.written_composed_value - row.direct_value)
-            + row.direct_value) = 0)
-    (h_bus :
-      row.bus_byte
-        - (row.is_write * (row.written_byte_value - row.byte_value)
-            + row.byte_value) = 0)
-    (h_b0 : row.sel_high_4b * (1 - row.sel_high_4b) = 0)
-    (h_b1 : row.sel_high_2b * (1 - row.sel_high_2b) = 0)
-    (h_b2 : row.sel_high_b * (1 - row.sel_high_b) = 0)
-    (h_b4 : row.is_write * (1 - row.is_write) = 0)
-    (h_bus_byte_range : row.bus_byte.val < 2 ^ 8)
-    (h_byte_value_range : row.byte_value.val < 2 ^ 8)
-    (h_is_write_range : row.is_write.val < 2 ^ 1)
-    (h_value16_range : row.value_16b.val < 2 ^ 16)
-    (h_value8_range : row.value_8b.val < 2 ^ 8) :
-    Spec row := by
+/-- Derive the component's actual semantic specification from its compiled
+main constraints, including the unconditional source written-byte lookup.
+Consumers provide existing checked operations, not a new range promise. -/
+theorem spec_of_main_constraints (offset : Nat) (env : Environment FGL)
+    (row : Var MemAlignByteRow FGL)
+    (h_holds : ConstraintsHold.Soundness env ((main row).operations offset)) :
+    Spec (eval env row) := by
   have hsound := circuit.soundness
   simp only [GeneralFormalCircuit.Soundness, circuit, circuit_norm] at hsound
-  -- The `circuit_norm`-normalized constraint goals are in `a + -b`
-  -- form; re-express the caller's `a - b` hypotheses to match.
-  simp only [byte_value_factor, value_8b_factor, value_16b_factor,
-    sub_eq_add_neg] at h_composed h_written h_m0 h_m1 h_bus h_b0 h_b1 h_b2 h_b4
-  refine (hsound (Environment.fromInput row (fun _ n => (#[] : Array (Vector FGL n))))
-    { sel_high_4b := .const row.sel_high_4b, sel_high_2b := .const row.sel_high_2b,
-      sel_high_b := .const row.sel_high_b, direct_value := .const row.direct_value,
-      composed_value := .const row.composed_value,
-      written_composed_value := .const row.written_composed_value,
-      written_byte_value := .const row.written_byte_value,
-      value_16b := .const row.value_16b, value_8b := .const row.value_8b,
-      byte_value := .const row.byte_value, addr_w := .const row.addr_w,
-      step := .const row.step, is_write := .const row.is_write,
-      mem_write_values_0 := .const row.mem_write_values_0,
-      mem_write_values_1 := .const row.mem_write_values_1,
-      bus_byte := .const row.bus_byte }
-    row ?_ ?_).1
-  · simp [circuit_norm]
-  · simp only [circuit_norm]
-    exact ⟨h_bus_byte_range, h_byte_value_range, h_is_write_range,
-      h_value16_range, by
-        simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
-          RangeTables.dualByteTable] using
-          (show (row.byte_value.val < 2 ^ 8 ∧ row.value_8b.val < 2 ^ 8) from
-            ⟨h_byte_value_range, h_value8_range⟩),
-      h_b0, h_b1, h_b2, h_composed, h_b4, h_written, h_m0, h_m1,
-      ⟨h_bus, trivial⟩⟩
+  have h_constraints := h_holds
+  simp only [main, circuit_norm] at h_constraints
+  exact (hsound env row (eval env row) rfl h_constraints).1
 
 end ZiskFv.AirsClean.MemAlignByte
