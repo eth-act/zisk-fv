@@ -246,10 +246,9 @@ def generated_outputs(directory: Path) -> list[dict[str, str]]:
     outputs = []
     for path in candidates:
         suffix = path.suffix
-        # `.json` is the byte-table block-hash artifact: the two `virtual`
-        # tables never reach pilout, so the extractor records one SHA-256 per
-        # opcode block instead of Lean constraints. The classifier stays closed
-        # -- an unrecognised suffix is still an error.
+        # Virtual sources are recorded by per-block hashes or by production
+        # packed-placement metadata with full-source digests. Keep the suffix
+        # classifier closed: an unknown output kind is still an error.
         kind = {".lean": "lean", ".md": "report", ".tsv": "source_table",
                 ".json": "table_digest"}.get(suffix)
         if kind is None:
