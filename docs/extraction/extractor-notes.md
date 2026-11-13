@@ -59,8 +59,11 @@ the flags themselves.
   data to the maintained range model; it does not establish honest row-builder
   constructibility or close that separate part of #108.
 - `source-dimensions`: emit each physical AIR's group/AIR indices,
-  `logNumRows` and `rowCount` from pilout metadata. Missing metadata fails,
-  rather than inventing a default capacity.
+  `rowCount` directly from pilout metadata. The pinned compiler's
+  `src/proto_out.js::pushAir` serializes `numRows: Number(rows)`; the upstream
+  protobuf comment calling it `log2(n)` is stale. Missing metadata fails rather
+  than inventing a default capacity. Normal-build kernel identities pin Main,
+  Mem and MemAlign's live fixed-column capacities to these actual counts.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR

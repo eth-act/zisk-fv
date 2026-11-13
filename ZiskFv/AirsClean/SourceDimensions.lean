@@ -6,9 +6,9 @@ import ZiskFv.AirsClean.MemAlign.Circuit
 /-!
 # Physical model capacities match compiled source dimensions
 
-Pilout's `numRows` stores an exponent, not a capacity. These kernel-checked
-identities bind the live fixed-column schemas to the generated physical row
-counts. A compiler dimension change therefore fails the normal Lake build,
+The pinned compiler serializes physical row counts in `numRows`. These
+kernel-checked identities bind the live fixed-column schemas to those exact
+capacities. A compiler dimension change therefore fails the normal Lake build,
 even when every row polynomial is unchanged.
 
 Virtual lookup tables have their own source-defined domains and are not

@@ -140,16 +140,14 @@ def main() -> int:
                 fail(f"{name}: missing compiled source-dimension equality")
             if generated_available:
                 dimension_text = read(generated)
-                exponent = re.search(
+                capacity = re.search(
                     rf"namespace «{re.escape(air)}»\n"
                     rf"def airGroupIndex : Nat := \d+\n"
                     rf"def airIndex : Nat := \d+\n"
-                    rf"def logNumRows : Nat := (\d+)\n"
-                    rf"def rowCount : Nat := 2 \^ logNumRows\n",
+                    rf"def rowCount : Nat := (\d+)\n",
                     dimension_text,
                 )
-                if (exponent is None or value <= 0 or value & (value - 1)
-                        or int(exponent[1]) != value.bit_length() - 1):
+                if capacity is None or int(capacity[1]) != value:
                     fail(f"{name}: generated physical dimension mismatch")
             continue
 
