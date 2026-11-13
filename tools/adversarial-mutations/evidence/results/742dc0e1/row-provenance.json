@@ -1,0 +1,52 @@
+{
+  "archival_only_replay": {
+    "code_commit": "fe97bfc8",
+    "exit_code": 0,
+    "reran_production_commands": false
+  },
+  "baseline": {
+    "extraction_path": "/nix/store/ppx6iy6i991w3pfhawqsyk66kn07zkj6-zisk-fv-extracted-lean-1.0",
+    "lean_sha256": "083ff34c282a8f2f51110db1a37d422733727b98aefbc33d3328288203737b69",
+    "rows": 256,
+    "tsv_sha256": "d5c40a0aea47ee2283f99619500883a68b4de57d0e7f785d4cef98590758602c"
+  },
+  "baseline_matches_green_pr394_artifacts": true,
+  "changed_physical_indices": [
+    1,
+    3,
+    5,
+    9,
+    11,
+    13,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    31,
+    33,
+    35,
+    37,
+    39
+  ],
+  "columns": [
+    "PC",
+    "DELTA_PC",
+    "DELTA_ADDR",
+    "OFFSET",
+    "WIDTH",
+    "FLAGS"
+  ],
+  "mutant": {
+    "extraction_path": "/nix/store/pmxkwap29flnis941s923xj2wnvclp1d-zisk-fv-extracted-lean-1.0",
+    "lean_sha256": "392a7cc805f2278617548020bb088376892a4c3a62d2aad81afd013badaba9ec",
+    "rows": 256,
+    "tsv_sha256": "0257d6f827bc9b6b75b58b8e10f15838b68e2cd7e77685d4fd03fa6343349aac"
+  },
+  "production_invocation_exit": 1,
+  "production_invocation_failure": "Post-detection summary archival failed because --repo . was relative; actual baseline and mutant gates completed normally.",
+  "proof_status": "not_run",
+  "source_commit": "742dc0e1",
+  "source_revision": "b63274507a040bf9e09d22214df43066e8f80cb7"
+}

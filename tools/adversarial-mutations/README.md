@@ -61,7 +61,7 @@ identifiers, and `SELECTOR_ARG` covers every named `sel:` argument.
 `full` is the evidence-producing mode. It copies the pinned source, applies one
 fixture, builds the pilout and extracted Lean through the repository's pinned
 production tools and runs the independent round-trip gate. It then checks the
-named byte-table fidelity gate where applicable, or builds both an isolated
+named table fidelity gate where applicable, or builds both an isolated
 unmutated proof tree and an isolated mutant proof tree. A green baseline is
 required at the detection layer; Nix input revisions remain those in `flake.lock`.
 
@@ -74,6 +74,13 @@ gate, **not** by a Lean proof. If the mutant gate passes, the normal isolated
 proof path still starts from clean baseline artifacts. A green proof alone
 remains `fidelity`, a miss; timeouts, missing inputs, and unrelated gate errors
 are infrastructure. Full merge-baseline proof/trust gates remain required.
+
+Round 50 uses `tools/virtual-tables/check.py` on the clean and mutant
+`MemAlignRom.tsv` exports. The gate evaluates the actual accepted-model static
+provider, including all six columns, physical indices, and reset-padding rows.
+Only a named `MemAlignRom mismatch:` after a green baseline counts as
+`fidelity_gate`; the runner records `proof_status=not_run`.
+The source-row baseline and historical verdict remain unchanged.
 
 For PIL mutations the runner uses `.#compile-mutation`, which installs the three
 actual fixed-column payloads produced by the pinned ZisK generators and invokes
@@ -187,7 +194,7 @@ the workspace after a complete run.
 | `compiler` | the pinned compiler rejected the edited source |
 | `extractor` | a canonical circuit change was lost or the round-trip gate failed |
 | `fidelity` | changed artifacts passed the proof build without a rejecting fidelity gate (miss) |
-| `fidelity_gate` | green baseline and actual byte-table gate rejected the mutant (not a proof detection) |
+| `fidelity_gate` | green baseline and actual named table gate rejected the mutant (not a proof detection) |
 | `proof` | a green baseline plus the isolated mutant made the proof build fail |
 | `infrastructure` | missing input, precondition drift, timeout, baseline failure, or abnormal tool exit |
 

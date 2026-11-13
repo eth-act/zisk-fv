@@ -149,8 +149,6 @@ LEAN
       python3 tools/pilout-roundtrip/selftest.py > /dev/null
     '
 
-    run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
-
     # 4. Mirror round trip (eth-act/zisk-fv#304), the other direction of step 3.
     # Step 3 decides that the extractor moved every pilout constraint into
     # build/extraction/ unaltered; nothing in that argument touches ZiskFv/. This
@@ -212,6 +210,8 @@ LEAN
     run "rule-check vocabularies" python3 tools/mirror-roundtrip/rule_check.py --selftest
     run "virtual byte tables" python3 tools/virtual-tables/check-byte-tables.py \
       --export-dir build/extraction/ByteTables --quiet
+    run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
+    run "MemAlignRom fidelity controls" python3 -m unittest discover -s tools/virtual-tables -p test_mem_align_rom.py
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
     run "constant registry" python3 trust/scripts/check-constants.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
