@@ -212,6 +212,9 @@ and ReadByte have 1,2; WriteByte has 1,2,3. This is source-local stage-2
 fidelity under the existing assumed channel-balance boundary, not a theorem
 that numeric `gsum` implements Clean balance. The boundary equation has a
 constructibility proof, but constructibility alone is not fidelity evidence.
+The independent typed source interpretation keeps AIR-group values separate
+from AIR values and rejects unsupported syntax as `none`; it does not inherit
+the legacy `Extraction.Circuit.exposed` kind conflation.
 
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
