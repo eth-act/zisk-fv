@@ -24,13 +24,25 @@ private theorem read_pureInputRegValue {trace : AcceptedZiskTrace n}
   · simpa [pureInputRegValue, hk, chainedSailTrace] using
       read_xreg_of_regAgree steps rowDecodes init i.val k hk h_reg
 
-/-- Reconstruct the 30 pure ALU inputs from decoded operands and the current
-register agreement, not from the caller's operand values or operand proofs.
+private theorem store_rX_from_read
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r : regidx)
+    (h_read : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r) state = EStateM.Result.ok value state) :
+    LeanRV64D.Functions.rX_bits (regidx.Regidx (storeRegBits r)) state =
+      EStateM.Result.ok (Classical.choose h_read) state := by
+  rw [storeRegBits_roundtrip,
+    rX_read_xreg_equiv state r (regidx_to_fin r)
+      (by cases r <;> simp [regidx_to_fin])]
+  exact Classical.choose_spec h_read
 
-The PC and its presence equality are provided by the current induction
-invariant. None of these arms reads the old input record. No public input field
-is removed here. The other 33 families pass through unchanged and are not discharged. This
-constructor uses the current induction invariant, not all-step soundness. -/
+/-- Reconstruct30 pure ALU inputs from decoded operands and current register/PC
+agreement, not caller operand values or operand proofs. Four store families also
+reconstruct their successful-read witnesses from this same induction invariant;
+only their existing range/alignment, lane and platform facts are retained.
+
+No public aggregate premise is removed here. The other29 families pass through
+unchanged. The construction uses current, never all-step, soundness. -/
 noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
     (steps : ∀ i, ZiskStep trace i)
     (rowDecodes : ∀ i, RowDecode trace i (steps i))
@@ -337,10 +349,106 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       h_input_pc := hpc }
   | .jal _, ia => ia
   | .jalr _, ia => ia
-  | .sb _, ia => ia
-  | .sh _, ia => ia
-  | .sw _, ia => ia
-  | .sd _, ia => ia
+  | .sb c, ia => by
+      let h_r1 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_r2 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r2) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_pc : ∃ pc : BitVec 64,
+          (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
+        ⟨pc, hpc⟩
+      exact {
+        h_input_r1 := h_r1
+        h_input_r2 := h_r2
+        h_input_pc := h_pc
+        regs := ia.regs
+        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
+          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
+          ia.h_opcode_assumptions.2.2.2⟩
+        h_a0_value := ia.h_a0_value
+        h_a1_value := ia.h_a1_value
+        h_b0_value := ia.h_b0_value
+        h_b1_value := ia.h_b1_value
+        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+  | .sh c, ia => by
+      let h_r1 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_r2 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r2) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_pc : ∃ pc : BitVec 64,
+          (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
+        ⟨pc, hpc⟩
+      exact {
+        h_input_r1 := h_r1
+        h_input_r2 := h_r2
+        h_input_pc := h_pc
+        regs := ia.regs
+        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
+          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
+          ia.h_opcode_assumptions.2.2.2⟩
+        h_a0_value := ia.h_a0_value
+        h_a1_value := ia.h_a1_value
+        h_b0_value := ia.h_b0_value
+        h_b1_value := ia.h_b1_value
+        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+  | .sw c, ia => by
+      let h_r1 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_r2 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r2) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_pc : ∃ pc : BitVec 64,
+          (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
+        ⟨pc, hpc⟩
+      exact {
+        h_input_r1 := h_r1
+        h_input_r2 := h_r2
+        h_input_pc := h_pc
+        regs := ia.regs
+        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
+          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
+          ia.h_opcode_assumptions.2.2.2⟩
+        h_a0_value := ia.h_a0_value
+        h_a1_value := ia.h_a1_value
+        h_b0_value := ia.h_b0_value
+        h_b1_value := ia.h_b1_value
+        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+  | .sd c, ia => by
+      let h_r1 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_r2 : ∃ value : BitVec 64,
+          read_xreg (regidx_to_fin c.r2) (chainedSailTrace steps init i) =
+            EStateM.Result.ok value (chainedSailTrace steps init i) :=
+        ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+      let h_pc : ∃ pc : BitVec 64,
+          (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
+        ⟨pc, hpc⟩
+      exact {
+        h_input_r1 := h_r1
+        h_input_r2 := h_r2
+        h_input_pc := h_pc
+        regs := ia.regs
+        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
+          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
+          ia.h_opcode_assumptions.2.2.2⟩
+        h_a0_value := ia.h_a0_value
+        h_a1_value := ia.h_a1_value
+        h_b0_value := ia.h_b0_value
+        h_b1_value := ia.h_b1_value
+        h_risc_v_assumptions := ia.h_risc_v_assumptions }
   | .ld _, ia => ia
   | .lbu _, ia => ia
   | .lhu _, ia => ia

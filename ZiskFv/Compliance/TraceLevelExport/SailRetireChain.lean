@@ -250,13 +250,13 @@ noncomputable def sailInstructionOf
   | .jal c => instruction.JAL (c.imm, c.rd)
   | .jalr c => instruction.JALR (c.imm, c.rs1, c.rd)
   | .sb c => instruction.STORE
-      (c.sb_input.imm, regidx.Regidx c.sb_input.r2, regidx.Regidx c.sb_input.r1, 1)
+      (c.imm, c.r2, c.r1, 1)
   | .sh c => instruction.STORE
-      (c.sh_input.imm, regidx.Regidx c.sh_input.r2, regidx.Regidx c.sh_input.r1, 2)
+      (c.imm, c.r2, c.r1, 2)
   | .sw c => instruction.STORE
-      (c.sw_input.imm, regidx.Regidx c.sw_input.r2, regidx.Regidx c.sw_input.r1, 4)
+      (c.imm, c.r2, c.r1, 4)
   | .sd c => instruction.STORE
-      (c.sd_input.imm, regidx.Regidx c.sd_input.r2, regidx.Regidx c.sd_input.r1, 8)
+      (c.imm, c.r2, c.r1, 8)
   | .ld c => instruction.LOAD
       (c.ld_input.imm, regidx.Regidx c.ld_input.r1, regidx.Regidx c.ld_input.rd, false, 8)
   | .lbu c => instruction.LOAD
