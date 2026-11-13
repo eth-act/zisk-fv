@@ -39,9 +39,9 @@ single-segment, so the conclusion above holds where it is used — but the PIL-l
 segment-dependent and must not be quoted unqualified.
 
 The exclusion comes from the multiplicity ledger instead — the same place operand-source exclusivity
-came from. `447` is still a real unmodelled constraint, and it still buys something (an upper bound
-on the reload timestamp, which the backward walk to `bootMessage` will want), but it is not the
-anchor.
+came from. `RegisterBoundary` now models `447` as an unconditional bus-102 pull, and Main's
+`reloadRangeWiring` ties all 31 generated checks to that live emission. Its upper-range fidelity
+obligation is separate from the already-completed register simulation and boot anchor.
 -/
 
 namespace ZiskFv.Compliance

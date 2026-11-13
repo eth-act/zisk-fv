@@ -300,21 +300,13 @@ theorem mem_table_interactionsWith_opBus_nil
   rw [h_component]
   exact h_not
 
-/-- A table whose component is RegisterBoundary has no operation-bus interactions
-    (it emits only on the memory bus). -/
+/-- RegisterBoundary exposes MemBus and bus102, but no operation-bus interaction. -/
 theorem registerBoundary_table_interactionsWith_opBus_nil
     {table : Table FGL}
     (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component) :
     table.interactionsWith OpBusChannel.toRaw = [] := by
-  have h_not :
-      OpBusChannel.toRaw ∉
-        ZiskFv.AirsClean.RegisterBoundary.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
-      ZiskFv.AirsClean.RegisterBoundary.circuit,
-      OpBusChannel, MemBusChannel]
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  rw [h_component]
-  exact h_not
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    h_component _ (by decide) (by decide)
 
 /-- A table whose component is the current ArithDiv carry-chain component has
     no operation-bus interactions. DIV/REM op-bus surfaces are still bridged
@@ -551,11 +543,8 @@ theorem registerBoundary_table_interactionsWith_memAlignRom_nil
     {table : Table FGL}
     (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component) :
     table.interactionsWith MemAlignRomChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  rw [h_component]
-  change MemAlignRomChannel.toRaw ∉ [MemBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact memAlignRomChannel_ne_memBus
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    h_component _ (by decide) (by decide)
 
 theorem memAlignReadByte_table_interactionsWith_memAlignRom_nil
     {table : Table FGL}
@@ -730,21 +719,27 @@ theorem registerStepRangeSlice_table_interactionsWith_memAlignRom_nil
   simp [MemAlignRomChannel, ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
     Channel.toRaw] at h_name
 
-/-- `RegisterBoundary` carries no bus-102 interactions. -/
-theorem registerBoundary_table_interactionsWith_registerStepRange_nil
+/-- Source `main.pil:447` makes every boundary bus-102 interaction a pull. -/
+theorem registerBoundary_registerStepRange_mult
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component) :
-    table.interactionsWith
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
-  have h_not :
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉
-        ZiskFv.AirsClean.RegisterBoundary.component.circuit.channels := by
-    simp [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
-      ZiskFv.AirsClean.RegisterBoundary.circuit,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, MemBusChannel]
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  rw [h_component]
-  exact h_not
+    (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component)
+    {interaction : Interaction FGL}
+    (h_interaction : interaction ∈ table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    interaction.mult = -1 := by
+  have h_singleton :
+      table.component.operations.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        [((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted (-1)
+          (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+            (ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr
+              ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar))).toRaw)] := by
+    simpa [h_component] using
+      ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_registerStepRange
+  simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_singleton, List.mem_flatMap, List.mem_map, List.mem_singleton] at h_interaction
+  obtain ⟨row, _, _, rfl, rfl⟩ := h_interaction
+  rfl
 
 /-- The static `Binary` lookup table carries no bus-102 interactions: it exposes only the
     operation bus. -/

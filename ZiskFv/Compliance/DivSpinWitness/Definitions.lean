@@ -362,6 +362,16 @@ theorem divSpinBoundaryRows_enumerated :
   interval_cases i <;> rfl
 
 
+set_option maxRecDepth 10000 in
+/-- All 31 source447 distances in this existing witness have actual 24-bit provider rows. -/
+theorem divSpinBoundaryRangeValues_spec :
+    ∀ v ∈ registerBoundaryRangeValues divSpinBoundaryRows,
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v := by
+  change ∀ v ∈ registerBoundaryRangeValues divSpinBoundaryRows, v.val < 2 ^ 24
+  letI := List.decidableBAll (fun v : FGL => v.val < 2 ^ 24)
+    (registerBoundaryRangeValues divSpinBoundaryRows)
+  decide
+
 def divSpinBoundaryTable : Table FGL :=
   ZiskFv.Compliance.Instantiation.registerBoundaryRowsTableOf
     divSpinBoundaryRows divSpinBoundaryRows_length
