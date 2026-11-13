@@ -28,6 +28,12 @@ RESIDUALS = ROOT / "trust" / "exposure-residuals.toml"
 LINKS = ROOT / "build" / "extraction" / "Extraction" / "LookupWiring.lean"
 LINK_RE = re.compile(r"\blink_([A-Za-z0-9]+)_(\d+)\b")
 CONSTRAINT_RE = re.compile(r"^\s*def constraint_(\d+)_every_row\b", re.M)
+COMPONENTS = ROOT / "trust" / "generated-components.toml"
+COMPONENT_DIR = ROOT / "build" / "extraction" / "Extraction" / "Components"
+MANIFEST_LIST_RE = re.compile(
+    r"^def (assertZeroConstraints|busPushConstraints)\s*:\s*List Nat\s*:=\s*\n\s*\[([^\]]*)\]",
+    re.M,
+)
 
 
 @dataclass(frozen=True)
@@ -192,6 +198,66 @@ def residual_entries() -> dict[tuple[str, int], dict[str, object]]:
     return out
 
 
+def generated_component_cover(reach, start: str) -> dict[str, set[int]]:
+    """Credit only proof-backed entries in a consumed component's manifest.
+
+    The manifest is imported by the live model, hence compiled in that column's
+    build closure. Each accepted theorem selects the corresponding assertion
+    from the actual generated main and proves its raw extracted predicate.
+    Lists alone, comments, unimported manifests and bus hints earn no credit.
+    """
+    if not COMPONENTS.exists():
+        return {}
+    data = tomllib.loads(COMPONENTS.read_text())
+    cover: dict[str, set[int]] = {}
+    reachable = reach.reachable_from(str(ROOT), start)
+    for air, entry in data.get("air", {}).items():
+        if entry.get("expected") != "consumed":
+            continue
+        model = ROOT / "ZiskFv" / "AirsClean" / air / "Constraints.lean"
+        if not model.exists():
+            raise ValueError(f"{air} marked consumed but {model} is missing")
+        component = f"Extraction.Components.{air}.Constraints"
+        manifest_module = f"Extraction.Components.{air}.Manifest"
+        imports = reach.imports_of(str(model))
+        if component not in imports:
+            raise ValueError(
+                f"{air} marked consumed but {model} does not re-export "
+                f"Extraction.Components.{air}.Constraints"
+            )
+        manifest = COMPONENT_DIR / air / "Manifest.lean"
+        if not manifest.exists():
+            # No manifest, no credit. Not an error: the extractor may not
+            # emit one for this AIR yet.
+            cover[air] = set()
+            continue
+        if (f"ZiskFv.AirsClean.{air}.Constraints" not in reachable
+                or manifest_module not in imports):
+            cover[air] = set()
+            continue
+        if component not in reach.imports_of(str(manifest)):
+            cover[air] = set()
+            continue
+        source = reach.strip_comments(manifest.read_text(errors="replace"))
+        lists = dict(MANIFEST_LIST_RE.findall(source))
+        indices = [int(x) for x in re.findall(r"\d+", lists.get("assertZeroConstraints", ""))]
+        compact = " ".join(source.split())
+        proved: set[int] = set()
+        for position, index in enumerate(indices):
+            # Match the whole generated statement, not merely a theorem name or
+            # an index mentioned inside an unrelated proof. Lean checks its body.
+            statement = (
+                f"theorem constraint_{index}_correspondence "
+                "(c : C FGL FGL) (r offset : ℕ) (env : Environment FGL) : "
+                f"env (((main (sourceRow c r)).operations offset).constraints[{position}]!) = 0 ↔ "
+                f"{air}.extraction.constraint_{index}_every_row c r := by"
+            )
+            if statement in compact:
+                proved.add(index)
+        cover[air] = proved
+    return cover
+
+
 def inventory() -> tuple[list[Row], int, set[int]]:
     pilout = pilout_wire.load(ROOT / "build" / "zisk.pilout")
     facts = survey.air_facts(pilout)
@@ -228,6 +294,8 @@ def inventory() -> tuple[list[Row], int, set[int]]:
     link_aliases = generated_link_aliases(links_text)
     providers = provider_buses(reach)
     residuals = residual_entries()
+    build_cover = generated_component_cover(reach, "ZiskFv")
+    root_cover = generated_component_cover(reach, "ZiskFv.Soundness")
     rows = []
     consumed_any: set[tuple[str, int]] = set()
     for air, fact in sorted(facts.items()):
@@ -248,8 +316,10 @@ def inventory() -> tuple[list[Row], int, set[int]]:
             )
             if build_link:
                 consumed_any.add((air, index))
-            build_exposed = direct not in build_text and not build_link
-            root_exposed = direct not in root_text and not root_link
+            build_exposed = (index not in build_cover.get(air, ())
+                             and direct not in build_text and not build_link)
+            root_exposed = (index not in root_cover.get(air, ())
+                            and direct not in root_text and not root_link)
             tied = bool((build_link or root_link) and buses and any(bus not in providers for bus in buses))
             rows.append(Row(air, classes[(air, index)], index,
                             build_exposed, root_exposed, tied,

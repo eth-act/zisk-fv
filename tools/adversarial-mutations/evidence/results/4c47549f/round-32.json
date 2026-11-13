@@ -1,0 +1,385 @@
+{
+  "artifact_delta": [
+    "BinaryAdd.lean",
+    "Buses.lean",
+    "LookupWiring.lean"
+  ],
+  "commands": [
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#zisk-pilout"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/baseline-pilout.log",
+      "seconds": 2.618514870060608,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#extracted-lean"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/baseline-extraction.log",
+      "seconds": 72.93904817616567,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "--no-write-lock-file",
+        ".#compile-mutation",
+        "--",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/baseline-source",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-utv7w57x/baseline-compiler.pilout"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/baseline-compiler-control.log",
+      "seconds": 146.68058865494095,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"path:/home/lee/zisk-fv-w14-binaryadd\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/lee/zisk-fv-w14-binaryadd/nix/extracted-lean.nix {\n      zisk-src = /home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/baseline-source;\n      zisk-pilout = /home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-utv7w57x/baseline-compiler.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/baseline-extraction-control.log",
+      "seconds": 259.122752990108,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/lee/zisk-fv-w14-binaryadd/tools/extraction-coverage/main_fixed.py",
+        "--pilout",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-utv7w57x/baseline-compiler.pilout",
+        "--fixed",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/baseline-source/Main.fixed",
+        "--selftest"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/baseline-main-fixed.log",
+      "seconds": 3.7705782188568264,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "--no-write-lock-file",
+        ".#compile-mutation",
+        "--",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/zisk-source",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/mutant.pilout"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/mutant-pilout.log",
+      "seconds": 149.78511289111339,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"path:/home/lee/zisk-fv-w14-binaryadd\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/lee/zisk-fv-w14-binaryadd/nix/extracted-lean.nix {\n      zisk-src = /home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/zisk-source;\n      zisk-pilout = /home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/mutant-extraction.log",
+      "seconds": 290.4803477919195,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/lee/zisk-fv-w14-binaryadd/tools/pilout-roundtrip/check.py",
+        "--pilout",
+        "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/mutant.pilout",
+        "--extraction",
+        "/nix/store/dhda6l0xzvpdwdy6hkzgnh1xwgmdmk0h-zisk-fv-extracted-lean-1.0",
+        "--quiet"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/roundtrip.log",
+      "seconds": 1.4663636081386358,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/lee/zisk-fv-w14-binaryadd/tools/pilout-roundtrip/check.py",
+        "--pilout",
+        "/nix/store/8vqspl1f2pvv7bfdqijrs1gq0zhy8vxj-zisk-pilout-git-b632745",
+        "--extraction",
+        "/nix/store/n2m8ylwv6ak3vyh3v3qzj7dib5imicq1-zisk-fv-extracted-lean-1.0",
+        "--quiet"
+      ],
+      "cwd": "/home/lee/zisk-fv-w14-binaryadd",
+      "exit_code": 0,
+      "log": "logs/baseline-roundtrip.log",
+      "seconds": 1.4162124870344996,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/lee/zisk-fv-w14-binaryadd",
+        "-c",
+        "lake",
+        "build",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-utv7w57x/proof-work",
+      "exit_code": 0,
+      "log": "logs/baseline-proof.log",
+      "seconds": 466.3664435041137,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/lee/zisk-fv-w14-binaryadd",
+        "-c",
+        "lake",
+        "build",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-utv7w57x/proof-work",
+      "exit_code": 1,
+      "log": "logs/mutant-proof.log",
+      "seconds": 172.10386635782197,
+      "timed_out": false
+    }
+  ],
+  "complete": true,
+  "expected_detection_layer": "proof",
+  "historical_artifact_expectation": {
+    "expected": [
+      "BinaryAdd",
+      "Buses",
+      "LookupWiring"
+    ],
+    "missing": []
+  },
+  "historical_outcome": "fidelity",
+  "inputs": {
+    "baseline_extraction": {
+      "files": 22,
+      "path": "/nix/store/n2m8ylwv6ak3vyh3v3qzj7dib5imicq1-zisk-fv-extracted-lean-1.0",
+      "sha256": "181a75765bc3d494564a7915a4a58b96d724f9eee19a274b8fdc2f50b8e07b0c"
+    },
+    "baseline_pilout": {
+      "bytes": 4417266,
+      "path": "/nix/store/8vqspl1f2pvv7bfdqijrs1gq0zhy8vxj-zisk-pilout-git-b632745",
+      "sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f"
+    },
+    "mutant_extraction": {
+      "files": 22,
+      "path": "/nix/store/dhda6l0xzvpdwdy6hkzgnh1xwgmdmk0h-zisk-fv-extracted-lean-1.0",
+      "sha256": "a2481ff4b11263e91428b0f5afa472300ebe92f8ea8027315686a866d0f64b1a"
+    },
+    "mutant_pilout": {
+      "bytes": 4417268,
+      "path": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/mutant.pilout",
+      "sha256": "f041b8d708466b15d26ff3db38102e89c4a51fe74273892cc17dea541b5a3d64"
+    }
+  },
+  "logs": "logs",
+  "main_fixed_baseline": {
+    "bytes": 100663296,
+    "path": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/baseline-source/Main.fixed",
+    "sha256": "53ca6265ec12e5e74d778d621567a444b8bd3af3205273406190bb0764a618ea"
+  },
+  "mode": "full",
+  "mutation_compiler_baseline": {
+    "bytes": 4417279,
+    "path": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-suite-utv7w57x/baseline-compiler.pilout",
+    "sha256": "043ecad2d0cd5f2c47aefa1dccf54bf78c5da456b37daf550e01a188eef8a913"
+  },
+  "outcome": "proof",
+  "proof_diagnostic": "error: ZiskFv/AirsClean/BinaryAdd/Wiring.lean:79:24: Type mismatch",
+  "reason": "green baseline and isolated mutant artifacts made the proof build fail",
+  "repository": {
+    "dirty_paths": [],
+    "head": "4c47549f2eaac1f9861350c3f18bf365fffba62d",
+    "proof_file_count": 1162,
+    "proof_relevant_dirty": [],
+    "proof_source_sha256": "f120b5be7a749735b6c6138d47d3d68c7cb70d661f020f0034771a07d5e9d1c3"
+  },
+  "round": 32,
+  "round_zero_control": {
+    "canonical_pilout_equal": true,
+    "extraction_byte_delta": [],
+    "passed": true
+  },
+  "semantic_diff": {
+    "airs": {
+      "Arith": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 65,
+        "n_mut": 65
+      },
+      "Binary": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 14,
+        "n_mut": 14
+      },
+      "BinaryAdd": {
+        "added": [],
+        "changed": [
+          5
+        ],
+        "changed_representable": [
+          5
+        ],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 9,
+        "n_mut": 9
+      },
+      "BinaryExtension": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 8,
+        "n_mut": 8
+      },
+      "Main": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 144,
+        "n_mut": 144
+      },
+      "Mem": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 34,
+        "n_mut": 34
+      },
+      "MemAlign": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 40,
+        "n_mut": 40
+      },
+      "MemAlignByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 16,
+        "n_mut": 16
+      },
+      "MemAlignReadByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 10,
+        "n_mut": 10
+      },
+      "MemAlignWriteByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 15,
+        "n_mut": 15
+      }
+    },
+    "base_constraint_count": 355,
+    "changed": [
+      {
+        "air": "BinaryAdd",
+        "constraint": 5,
+        "kind": "changed"
+      }
+    ],
+    "equal": false,
+    "mutant_constraint_count": 355,
+    "structurally_changed_but_equivalent": []
+  },
+  "source": {
+    "copy": "/home/lee/.zisk-fv-mutation-work/zisk-mutation-32-lkpvvk0z/zisk-source",
+    "locked_revision": "b63274507a040bf9e09d22214df43066e8f80cb7",
+    "pinned": {
+      "files": 1838,
+      "path": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+      "sha256": "330b710f89b01b10956999e00fce5295a64b9d5d709e8b12d40bd3aee450ebad"
+    },
+    "recorded_revision": "b632745"
+  },
+  "workspace": null,
+  "workspace_retained": false
+}

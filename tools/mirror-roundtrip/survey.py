@@ -636,6 +636,38 @@ def resolve_rel(rel: str, mirror_root: Path) -> Path:
 
 # ------------------------------------------------------------------- structures
 
+def record_source(rel: str, name: str, mirror_root: Path,
+                  extraction: Path = DEFAULT_EXTRACTION) -> Path:
+    """File that owns ``structure name`` for an inventoried row record.
+
+    A consumed component's maintained ``Row.lean`` is an exact re-export of the
+    generated row rather than a second handwritten declaration.  Follow only
+    that explicit component-row import; an arbitrary import must not be able to
+    move the record inventory outside the file the survey names.
+    """
+    maintained = resolve_rel(rel, mirror_root)
+    src = strip_comments(maintained.read_text(errors="replace").split("\n"))
+    if any(re.match(rf"structure\s+{re.escape(name)}\b", line) for line in src):
+        return maintained
+
+    component = Path(rel).parent.name
+    expected = f"Extraction.Components.{component}.Row"
+    imports = {
+        match.group(1)
+        for line in src
+        if (match := re.match(r"\s*import\s+(\S+)\s*$", line))
+    }
+    generated = extraction / "Components" / component / "Row.lean"
+    if expected in imports and generated.is_file():
+        generated_src = strip_comments(
+            generated.read_text(errors="replace").split("\n"))
+        if any(re.match(rf"structure\s+{re.escape(name)}\b", line)
+               for line in generated_src):
+            return generated
+    raise SystemExit(
+        f"survey.py: no structure {name} in {maintained} or its exact "
+        f"generated row re-export {generated}")
+
 def structure_fields(path: Path, name: str) -> list[str]:
     """Field names of `structure <name> ... where`, in declaration order."""
     raw = path.read_text(errors="replace").split("\n")
@@ -685,9 +717,10 @@ def structure_field_types(path: Path, name: str) -> dict[str, str]:
 
 
 def flatten_record(mirror_root: Path, rel: str, name: str,
-                   known: dict[str, list[str]]) -> list[str]:
+                   known: dict[str, list[str]],
+                   extraction: Path = DEFAULT_EXTRACTION) -> list[str]:
     """Field list, expanding a field whose type is another known record."""
-    path = resolve_rel(rel, mirror_root)
+    path = record_source(rel, name, mirror_root, extraction)
     out: list[str] = []
     raw = strip_comments(path.read_text(errors="replace").split("\n"))
     start = next(i for i, l in enumerate(raw)
@@ -1285,9 +1318,10 @@ def main(argv: list[str]) -> int:
     record_names = {name for _, name, _ in MIRROR_RECORDS}
     known_fields: dict[str, list[str]] = {}
     for rel, name, _air in MIRROR_RECORDS:
-        known_fields[name] = structure_fields(resolve_rel(rel, mirror_root), name)
+        path = record_source(rel, name, mirror_root, args.extraction)
+        known_fields[name] = structure_fields(path, name)
     flattened = {
-        name: flatten_record(mirror_root, rel, name, known_fields)
+        name: flatten_record(mirror_root, rel, name, known_fields, args.extraction)
         for rel, name, _air in MIRROR_RECORDS
     }
 
