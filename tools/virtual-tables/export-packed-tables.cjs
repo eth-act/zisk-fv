@@ -12,7 +12,8 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
     const compile = require(path.join(compilerRoot, 'src/compiler.js'));
     const { F1Field } = require(path.join(compilerRoot, 'node_modules/ffjavascript'));
     const Context = require(path.join(compilerRoot, 'src/context.js'));
-    const { array, alone } = require('./compiled-hints.cjs').compiledHints(compilerRoot);
+    const { array, alone, packedSchema, checkPackedLane } =
+        require('./compiled-hints.cjs').compiledHints(compilerRoot);
     const FixedCol = require(path.join(compilerRoot, 'src/expression_items/fixed_col.js'));
     const WitnessCol = require(path.join(compilerRoot, 'src/expression_items/witness_col.js'));
     const prime = 0xffffffff00000001n;
@@ -65,16 +66,15 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
             processor.witness.countByStage(1)[0] !== routes.length) {
             throw new Error('packed producer route/multiplicity count differs');
         }
+        const expressions = routes.map(hint => array(hint.data.expressions));
+        const schema = packedSchema(processor, expressions.map(columns => columns.length));
         const lanes = routes.map((hint, lane) => {
             const data = hint.data;
             const witness = alone(data.num_reps, WitnessCol);
-            const expectedWitness = ref(`${processor.currentAir.name}.multiplicity`, [lane]);
-            if (witness.id !== expectedWitness.id) throw new Error('packed multiplicity is not its raw witness lane');
             const uid = alone(data.busid, FixedCol);
-            const expectedUid = ref(`${processor.currentAir.name}.UID`, [lane]);
-            if (uid.id !== expectedUid.id) throw new Error('packed producer UID changed');
-            return { uid, opids: array(data.opids).map(integer),
-                columns: array(data.expressions).map(expr => alone(expr, FixedCol)) };
+            const columns = expressions[lane].map(expr => alone(expr, FixedCol));
+            checkPackedLane(schema, lane, witness, uid, columns);
+            return { uid, opids: array(data.opids).map(integer), columns };
         });
         const seen = new Map();
         for (let index = 0; index < tableIds.length; index++) {

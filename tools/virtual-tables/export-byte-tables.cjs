@@ -45,7 +45,8 @@ function exportTable(compilerRoot, ziskRoot, proofmanRoot, air) {
     const { F1Field } = require(path.join(compilerRoot, 'node_modules/ffjavascript'));
     const Context = require(path.join(compilerRoot, 'src/context.js'));
     const prime = 0xffffffff00000001n;
-    const { array, alone } = require('./compiled-hints.cjs').compiledHints(compilerRoot);
+    const { array, alone, packedSchema, checkPackedLane } =
+        require('./compiled-hints.cjs').compiledHints(compilerRoot);
     const FixedCol = require(path.join(compilerRoot, 'src/expression_items/fixed_col.js'));
     const WitnessCol = require(path.join(compilerRoot, 'src/expression_items/witness_col.js'));
     const bus = air === 'BinaryTable' ? 125n : 124n;
@@ -82,25 +83,23 @@ airgroup Zisk {
                         hint.data.name_piop.asString() === 'Lookup' &&
                         hint.data.type_piop.asInt() === 1n);
                     if (routes.length === 0) throw new Error(`${air} has no packed producer`);
+                    const routeExpressions = routes.map(hint => array(hint.data.expressions));
+                    const schema = packedSchema(processor, routeExpressions.map(columns => columns.length));
                     const packedBlocks = [];
                     let current = null;
                     let index = 0;
                     for (const [group, hint] of routes.entries()) {
                         const data = hint.data;
                         const opids = array(data.opids);
-                        const expressions = array(data.expressions);
+                        const expressions = routeExpressions[group];
                         if (opids.length !== 1 || opids[0].asInt() !== bus ||
                             expressions.length !== spec.columns.length) {
                             throw new Error(`${air} packed producer route/schema changed`);
                         }
                         const multiplicity = alone(data.num_reps, WitnessCol);
-                        const expectedMultiplicity = Context.references.getItem(
-                            `VirtualTable0.multiplicity`, [group]);
-                        if (multiplicity.id !== expectedMultiplicity.id) {
-                            throw new Error(`${air} packed producer multiplicity changed`);
-                        }
                         const uid = alone(data.busid, FixedCol);
                         const columns = expressions.map(expr => alone(expr, FixedCol));
+                        checkPackedLane(schema, group, multiplicity, uid, columns);
                         for (let row = 0; row < processor.currentAir.rows; row++) {
                             if (uid.getValue(row) !== bus) continue; // Other bus / unused packing tail.
                             const cells = columns.map(column => {
