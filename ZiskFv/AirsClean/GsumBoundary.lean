@@ -134,7 +134,7 @@ theorem main_finalizer_typed_source_iff :
         (source.witness 2 0 0) (mainTypedDirectSum source) := by
   change some (source.fixed 2 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 - mainTypedDirectSum source)) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 theorem binary_finalizer_typed_source_iff :
     source.Holds link_Binary_13.constraint ↔
@@ -142,7 +142,7 @@ theorem binary_finalizer_typed_source_iff :
         (source.witness 2 0 0) (source.airValue 1) := by
   change some (source.fixed 0 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 theorem binaryAdd_finalizer_typed_source_iff :
     source.Holds link_BinaryAdd_8.constraint ↔
@@ -150,7 +150,7 @@ theorem binaryAdd_finalizer_typed_source_iff :
         (source.witness 2 0 0) (source.airValue 1) := by
   change some (source.fixed 0 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 theorem binaryExtension_finalizer_typed_source_iff :
     source.Holds link_BinaryExtension_7.constraint ↔
@@ -158,7 +158,7 @@ theorem binaryExtension_finalizer_typed_source_iff :
         (source.witness 2 0 0) (source.airValue 1) := by
   change some (source.fixed 0 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 - source.airValue 1)) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 theorem memAlign_finalizer_typed_source_iff :
     source.Holds link_MemAlign_39.constraint ↔
@@ -174,7 +174,7 @@ theorem memAlignByte_finalizer_typed_source_iff :
   change some (source.fixed 0 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 -
       (source.airValue 1 + source.airValue 2))) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 theorem memAlignReadByte_finalizer_typed_source_iff :
     source.Holds link_MemAlignReadByte_9.constraint ↔
@@ -183,7 +183,7 @@ theorem memAlignReadByte_finalizer_typed_source_iff :
   change some (source.fixed 0 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 -
       (source.airValue 1 + source.airValue 2))) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 theorem memAlignWriteByte_finalizer_typed_source_iff :
     source.Holds link_MemAlignWriteByte_14.constraint ↔
@@ -192,7 +192,7 @@ theorem memAlignWriteByte_finalizer_typed_source_iff :
   change some (source.fixed 0 1 *
     (source.airGroupValue 0 - source.witness 2 0 0 -
       ((source.airValue 1 + source.airValue 2) + source.airValue 3))) = some 0 ↔ _
-  exact Option.some.injEq
+  simp only [Option.some.injEq, Closed]
 
 end TypedSource
 
