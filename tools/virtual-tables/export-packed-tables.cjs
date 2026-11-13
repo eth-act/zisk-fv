@@ -12,8 +12,7 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
     const compile = require(path.join(compilerRoot, 'src/compiler.js'));
     const { F1Field } = require(path.join(compilerRoot, 'node_modules/ffjavascript'));
     const Context = require(path.join(compilerRoot, 'src/context.js'));
-    const Expression = require(path.join(compilerRoot, 'src/expression.js'));
-    const ExpressionReference = require(path.join(compilerRoot, 'src/expression_items/expression_reference.js'));
+    const { array, alone } = require('./compiled-hints.cjs').compiledHints(compilerRoot);
     const FixedCol = require(path.join(compilerRoot, 'src/expression_items/fixed_col.js'));
     const WitnessCol = require(path.join(compilerRoot, 'src/expression_items/witness_col.js'));
     const prime = 0xffffffff00000001n;
@@ -22,17 +21,6 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
     const placements = [];
     const ref = (name, indexes = []) => Context.references.getItem(name, indexes);
     const integer = expression => Number(expression.asInt());
-    function alone(expression, cls) {
-        if (expression instanceof ExpressionReference) {
-            expression = expression.instance.get(expression.id).getValue();
-        }
-        if (!(expression instanceof Expression)) throw new Error('unsupported compiled operand');
-        const item = expression.eval().getAlone();
-        if (!(item instanceof cls) || item.rowOffset) {
-            throw new Error(`expected unshifted compiled ${cls.name}`);
-        }
-        return item;
-    }
     function canonical(value) {
         const reduced = ((value % prime) + prime) % prime;
         return (reduced > prime / 2n ? reduced - prime : reduced).toString();
@@ -68,8 +56,8 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
         const hints = [...processor.hints];
         const metadata = hints.filter(hint => hint.name === 'virtual_table_data');
         if (metadata.length !== 1) throw new Error('missing/duplicate packed table metadata');
-        const tableIds = metadata[0].data.table_ids.map(integer);
-        const starts = metadata[0].data.acc_heights.map(integer);
+        const tableIds = array(metadata[0].data.table_ids).map(integer);
+        const starts = array(metadata[0].data.acc_heights).map(integer);
         if (tableIds.length !== starts.length) throw new Error('packed metadata lengths differ');
         const routes = hints.filter(hint => hint.name === 'gsum_debug_data' &&
             hint.data.name_piop.asString() === 'Lookup' && hint.data.type_piop.asInt() === 1n);
@@ -85,8 +73,8 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
             const uid = alone(data.busid, FixedCol);
             const expectedUid = ref(`${processor.currentAir.name}.UID`, [lane]);
             if (uid.id !== expectedUid.id) throw new Error('packed producer UID changed');
-            return { uid, opids: data.opids.map(integer),
-                columns: data.expressions.map(expr => alone(expr, FixedCol)) };
+            return { uid, opids: array(data.opids).map(integer),
+                columns: array(data.expressions).map(expr => alone(expr, FixedCol)) };
         });
         const seen = new Map();
         for (let index = 0; index < tableIds.length; index++) {
