@@ -1103,7 +1103,7 @@ def main(argv: list[str]) -> int:
                 shutil.copy2(args.results_dir / f"round-{number:02d}" / "result.json",
                              evidence_destination / f"round-{number:02d}.json")
             aggregate["committed_evidence"] = str(
-                evidence_destination.relative_to(args.repo))
+                evidence_destination.relative_to(args.repo.resolve()))
         (args.results_dir / "summary.json").write_text(
             json.dumps(aggregate, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(json.dumps(aggregate, indent=2, sort_keys=True))

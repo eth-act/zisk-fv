@@ -10,6 +10,7 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 from unittest import mock
+from contextlib import ExitStack
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -378,12 +379,37 @@ def test_byte_table_gate_order() -> None:
     check(gate_line < proof_line, "fidelity gate regressed behind the full proof build")
 
 
+def test_relative_repo_evidence_archive() -> None:
+    corpus = runner.load_corpus()
+    with tempfile.TemporaryDirectory(dir=runner.REPO) as tmp:
+        root = Path(tmp)
+        def completed(args):
+            args._archive_dir.mkdir(parents=True)
+            return {"round": 50, "outcome": "fidelity_gate", "complete": True,
+                    "expected_detection_layer": "fidelity_gate", "proof_status": "not_run"}
+        with ExitStack() as patches:
+            patches.enter_context(mock.patch.object(runner, "HERE", root))
+            patches.enter_context(mock.patch.object(runner, "load_corpus", return_value=corpus))
+            patches.enter_context(mock.patch.object(runner, "full", side_effect=completed))
+            patches.enter_context(mock.patch.object(runner, "repository_identity", return_value={}))
+            patches.enter_context(mock.patch.object(
+                runner.subprocess, "run", return_value=mock.Mock(stdout="a" * 40)))
+            status = runner.main([
+                "suite", "--repo", ".", "--zisk-source", str(root),
+                "--profile", "regression", "--round", "50",
+                "--work-root", str(root / "work"), "--results-dir", str(root / "results"),
+                "--commit-evidence", "aaaaaaaa"])
+        check(status == 0 and (root / "results/summary.json").is_file(),
+              "relative repository path broke completed evidence archival")
+
+
 def main() -> int:
     tests = [test_corpus, test_isolation_and_precondition, test_classification,
              test_artifact_and_semantic_baselines, test_site_operators,
              test_round_zero_control, test_log_archive,
              test_private_dependency_copy, test_readonly_artifact_restore,
-             test_byte_table_gate_order, test_component_and_byte_table_manifest]
+             test_byte_table_gate_order, test_component_and_byte_table_manifest,
+             test_relative_repo_evidence_archive]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")
