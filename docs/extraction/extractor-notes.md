@@ -204,6 +204,15 @@ solver. `nix/test.nix` regenerates and Lean-compiles the module, checks the
 kernel examples are present, and asserts the Mem `AirValue(11)` raw padding
 survives.
 
+`ZiskFv.AirsClean.GsumBoundary` independently fixes the eight remaining
+finalizer equations and their selector/group/accumulator/direct-term cells,
+then welds them to the generated per-AIR constraints. Main has direct AIR
+values 101--196; Binary/Add/Extension have value 1; MemAlign has none; Byte
+and ReadByte have 1,2; WriteByte has 1,2,3. This is source-local stage-2
+fidelity under the existing assumed channel-balance boundary, not a theorem
+that numeric `gsum` implements Clean balance. The boundary equation has a
+constructibility proof, but constructibility alone is not fidelity evidence.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
