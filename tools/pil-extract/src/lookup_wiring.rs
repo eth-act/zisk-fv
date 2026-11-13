@@ -474,6 +474,33 @@ fn write_link_index_lists(out: &mut String, air: &AirManifest) -> Result<()> {
         "def link_Main_reload (index : Fin 31) : ValidatedLink :=\n  \
          links_Main_reload.get (Fin.cast (by rfl) index)\n\n",
     );
+    let reload_ranges = air
+        .links
+        .iter()
+        .filter(|link| {
+            link.hints.len() == 1
+                && link.hints[0].piop == "Range Check"
+                && link.hints[0].slots.iter().any(|slot| {
+                    slot.name.starts_with("(last_segment_reg_mem_step - Main.last_reg_mem_step[")
+                })
+        })
+        .collect::<Vec<_>>();
+    if reload_ranges.len() != 31
+        || reload_ranges.iter().enumerate().any(|(index, link)| {
+            link.constraint_index != 49 + 3 * index || link.shape == LinkShape::GsumFinalRow
+        })
+    {
+        bail!("Main reload range index expected 31 links at c49 + 3k");
+    }
+    out.push_str("def links_Main_reloadRange : List ValidatedLink := [\n");
+    for link in reload_ranges {
+        writeln!(out, "  link_Main_{},", link.constraint_index)?;
+    }
+    out.push_str("]\n\n");
+    out.push_str(
+        "def link_Main_reloadRange (index : Fin 31) : ValidatedLink :=\n  \
+         links_Main_reloadRange.get (Fin.cast (by rfl) index)\n\n",
+    );
     Ok(())
 }
 
