@@ -178,5 +178,13 @@ It replaces reading the ~130 per-declaration `#print axioms` closures a plain
 suppresses those info lines. It reports and never fails — the gates above are
 what fail a build.
 
+`python3 tools/mirror-roundtrip/exposure.py` refreshes the runtime-imported
+`ZiskFv` environment and consumes `trust-gate report-dependencies`, not source
+module reachability. The generated exposure ledger distinguishes standalone
+build fidelity checks, theorem-consumed correspondences, proof-backed generated
+model use, and links to uncomposed provider channels. Its schema/semantics and
+compiled false-credit regressions are documented in
+[`docs/extraction/coverage.md`](../docs/extraction/coverage.md).
+
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.

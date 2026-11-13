@@ -27,6 +27,7 @@ import TrustGate.CanonicalTheorems
 import TrustGate.AxiomClosure
 import TrustGate.TypeWalk
 import TrustGate.ConstantClosure
+import TrustGate.Dependencies
 
 open Lean
 
@@ -531,9 +532,13 @@ def usage : IO Unit := do
   IO.println "  check-extraction-closure       assert every ZiskFv.Compliance.{Extraction,Decode}.* RAW axiom closure ⊆ {propext, Classical.choice, Quot.sound}"
   IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
   IO.println "  print-axiom-union              print the union of every axiom the ZiskFv.* declarations reach, grouped by trust scope"
+  IO.println "  report-dependencies [MODULE]   emit elaborated declaration graph (default ZiskFv)"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   match args with
+  | ["report-dependencies"] =>
+    IO.println (← runMeta env Dependencies.report).compress
+    return 0
   | ["regenerate-deps"] =>
     IO.print (renderDepsBaseline env)
     return 0
@@ -590,5 +595,15 @@ end TrustGate
 
 unsafe def main (args : List String) : IO UInt32 := do
   Lean.initSearchPath (← Lean.findSysroot)
-  Lean.withImportModules #[{ module := `ZiskFv }] {}
-      (fun env => TrustGate.dispatch env args)
+  let (module, args) := match args with
+    | ["report-dependencies", module] => (module.toName, ["report-dependencies"])
+    | _ => (`ZiskFv, args)
+  if args == ["report-dependencies"] then
+    -- Exact Meta reconstruction needs normal class/instance extensions. This
+    -- one-shot import retains its regions; no other command changes import mode.
+    Lean.enableInitializersExecution
+    let env ← Lean.importModules #[{ module := module }] {} (loadExts := true)
+    TrustGate.dispatch env args
+  else
+    Lean.withImportModules #[{ module := module }] {}
+        (fun env => TrustGate.dispatch env args)

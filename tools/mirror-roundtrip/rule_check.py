@@ -24,7 +24,7 @@ def exposed_constraints() -> dict[tuple[str, int], bool]:
         match = re.fullmatch(r"([A-Za-z0-9]+)\.(\d+)", fields[0]) if fields else None
         if not match:
             continue
-        if len(fields) != 8 or fields[2] not in ("0", "1"):
+        if len(fields) != 11 or fields[2] not in ("0", "1"):
             raise InputError(f"{LEDGER}:{number}: malformed constraint row")
         out[(match.group(1), int(match.group(2)))] = fields[2] == "1"
     if not out:
