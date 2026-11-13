@@ -78,6 +78,86 @@ def operationWiring : OperationWiring where
   operationMultiplicity := rfl
   slotInterpretation := rfl
 
+/-! ## Result-chunk range lookups
+
+`binary/pil/binary_add.pil:21–22` checks both chunks of each limb.
+The c4 cluster carries chunks 1 and 2; c6 carries chunk 0. The c5
+operation link above retains chunk 3. These are static range lookups in
+the compiled component, not a claim that bus 103 has been composed.
+-/
+
+/-- One checked source range tuple and its actual compiled static lookup. -/
+structure ChunkRangeWiring where
+  link : ValidatedLink
+  hint : HintTuple
+  sourceMember : hint ∈ link.hints
+  constraintValidated :
+    templateOf link.shape link.alpha link.gamma link.accumulator
+      link.hints link.derivedTuples = some link.constraint
+  rangePiop : hint.piop = "Range Check"
+  rangeBus : hint.busId = .constant "103"
+  rangeIsAssumes : hint.proves = false
+  rangeMultiplicity : hint.multiplicity = .constant "1"
+  source : Expression FGL
+  slotInterpretation : operationSlotsToClean hint.slots = some [source]
+  lookupIndex : Nat
+  compiledLookup : component.operations.lookups[lookupIndex]? =
+    some { table := (Table.fromStatic RangeTables.rangeTable16).toRaw, entry := #v[source] }
+
+@[reducible]
+def chunk1RangeWiring : ChunkRangeWiring where
+  link := link_BinaryAdd_4
+  hint := hint_BinaryAdd_4_0
+  sourceMember := by simp [link_BinaryAdd_4]
+  constraintValidated := link_BinaryAdd_4.constraintValidated
+  rangePiop := rfl
+  rangeBus := rfl
+  rangeIsAssumes := rfl
+  rangeMultiplicity := rfl
+  source := component.rowInputVar.c_chunks_1
+  slotInterpretation := rfl
+  lookupIndex := 5
+  compiledLookup := by rw [Component.lookups_eq]; rfl
+
+@[reducible]
+def chunk2RangeWiring : ChunkRangeWiring where
+  link := link_BinaryAdd_4
+  hint := hint_BinaryAdd_4_1
+  sourceMember := by simp [link_BinaryAdd_4]
+  constraintValidated := link_BinaryAdd_4.constraintValidated
+  rangePiop := rfl
+  rangeBus := rfl
+  rangeIsAssumes := rfl
+  rangeMultiplicity := rfl
+  source := component.rowInputVar.c_chunks_2
+  slotInterpretation := rfl
+  lookupIndex := 6
+  compiledLookup := by rw [Component.lookups_eq]; rfl
+
+@[reducible]
+def chunk0RangeWiring : ChunkRangeWiring where
+  link := link_BinaryAdd_6
+  hint := hint_BinaryAdd_6_0
+  sourceMember := by simp [link_BinaryAdd_6]
+  constraintValidated := link_BinaryAdd_6.constraintValidated
+  rangePiop := rfl
+  rangeBus := rfl
+  rangeIsAssumes := rfl
+  rangeMultiplicity := rfl
+  source := component.rowInputVar.c_chunks_0
+  slotInterpretation := rfl
+  lookupIndex := 4
+  compiledLookup := by rw [Component.lookups_eq]; rfl
+
+/-- Both hints in c4 are accounted for, in their source order. -/
+theorem chunkRange_c4_roster :
+    link_BinaryAdd_4.hints =
+      [chunk1RangeWiring.hint, chunk2RangeWiring.hint] := rfl
+
+/-- The c6 hint is exactly the component's first result-chunk lookup. -/
+theorem chunkRange_c6_roster :
+    link_BinaryAdd_6.hints = [chunk0RangeWiring.hint] := rfl
+
 /-- The historical opcode mutation cannot be interpreted as BinaryAdd's live
 operation tuple. -/
 theorem operationExprToClean_rejects_wrong_opcode :
