@@ -381,26 +381,28 @@ def test_byte_table_gate_order() -> None:
 
 def test_relative_repo_evidence_archive() -> None:
     corpus = runner.load_corpus()
-    with tempfile.TemporaryDirectory(dir=runner.REPO) as tmp:
-        root = Path(tmp)
-        def completed(args):
-            args._archive_dir.mkdir(parents=True)
-            return {"round": 50, "outcome": "fidelity_gate", "complete": True,
-                    "expected_detection_layer": "fidelity_gate", "proof_status": "not_run"}
-        with ExitStack() as patches:
-            patches.enter_context(mock.patch.object(runner, "HERE", root))
-            patches.enter_context(mock.patch.object(runner, "load_corpus", return_value=corpus))
-            patches.enter_context(mock.patch.object(runner, "full", side_effect=completed))
-            patches.enter_context(mock.patch.object(runner, "repository_identity", return_value={}))
-            patches.enter_context(mock.patch.object(
-                runner.subprocess, "run", return_value=mock.Mock(stdout="a" * 40)))
-            status = runner.main([
-                "suite", "--repo", ".", "--zisk-source", str(root),
-                "--profile", "regression", "--round", "50",
-                "--work-root", str(root / "work"), "--results-dir", str(root / "results"),
-                "--commit-evidence", "aaaaaaaa"])
-        check(status == 0 and (root / "results/summary.json").is_file(),
-              "relative repository path broke completed evidence archival")
+    for repo_path in (".", str(runner.REPO)):
+        with tempfile.TemporaryDirectory(dir=runner.REPO) as tmp:
+            root = Path(tmp)
+            def completed(args):
+                check(args.repo == runner.REPO, "command boundary did not normalize --repo")
+                args._archive_dir.mkdir(parents=True)
+                return {"round": 50, "outcome": "fidelity_gate", "complete": True,
+                        "expected_detection_layer": "fidelity_gate", "proof_status": "not_run"}
+            with ExitStack() as patches:
+                patches.enter_context(mock.patch.object(runner, "HERE", root))
+                patches.enter_context(mock.patch.object(runner, "load_corpus", return_value=corpus))
+                patches.enter_context(mock.patch.object(runner, "full", side_effect=completed))
+                patches.enter_context(mock.patch.object(runner, "repository_identity", return_value={}))
+                patches.enter_context(mock.patch.object(
+                    runner.subprocess, "run", return_value=mock.Mock(stdout="a" * 40)))
+                status = runner.main([
+                    "suite", "--repo", repo_path, "--zisk-source", str(root),
+                    "--profile", "regression", "--round", "50",
+                    "--work-root", str(root / "work"), "--results-dir", str(root / "results"),
+                    "--commit-evidence", "aaaaaaaa"])
+            check(status == 0 and (root / "results/summary.json").is_file(),
+                  "repository path broke completed evidence archival")
 
 
 def main() -> int:
