@@ -20,6 +20,8 @@ pil-extract lookup-wiring --pilout <path> [--output <path>]
 
 pil-extract arith-table --rust-source <path> [--output <path>]
 
+pil-extract arith-range-table --rust-source <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -49,6 +51,11 @@ the flags themselves.
   a standard direct or two-hint-cluster accumulator template.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
+- `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
+  functions and kernel-checked inverse certificates from
+  `state-machines/arith/src/arith_range_table_helpers.rs`. This supplies source
+  data to the maintained range model; it does not establish honest row-builder
+  constructibility or close that separate part of #108.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR

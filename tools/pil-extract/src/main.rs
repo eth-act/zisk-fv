@@ -8,6 +8,7 @@ use clap::{Args, Parser, Subcommand};
 use prost::Message;
 
 mod arith_table;
+mod arith_range_table;
 mod clean_component;
 mod lookup_wiring;
 mod mem_align_rom;
@@ -45,6 +46,8 @@ enum Cmd {
     LookupWiring(LookupWiringCmd),
     /// Parse `arith_table_data.rs` and emit `Extraction.ArithTable`.
     ArithTable(ArithTableCmd),
+    /// Parse arithmetic range helper data and emit its checked source mapping.
+    ArithRangeTable(ArithTableCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -272,6 +275,11 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.cmd {
+        Cmd::ArithRangeTable(args) => {
+            let source = fs::read_to_string(&args.rust_source)
+                .with_context(|| format!("failed to read {}", args.rust_source.display()))?;
+            write_output(args.output.as_deref(), &arith_range_table::render(&source)?)
+        }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;
             if args.output.is_none() {
