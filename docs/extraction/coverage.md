@@ -64,12 +64,42 @@ The CI artifact includes a compact report of added, removed, and changed AIRs,
 routes, links, and outputs. The full manifest remains the reviewed baseline.
 
 `tools/mirror-roundtrip/exposure.py` complements this structural denominator
-with the generated `trust/generated/exposure-ledger.txt`: for each extracted AIR
-and constraint class it records what is exposed to the normal Lake build and to
-the root-soundness import closure, which consumed generated links are tied to a
-bus that `fullRv64imSoundEnsemble` does not compose, and which findings have a
-source-cited residual declaration. It also reports generated links that are
-currently wirable but unconsumed; those are never counted as proof exposure.
+with `trust/generated/exposure-ledger.txt` (schema 2). It first runs
+`lake build ZiskFv trust-gate`, then reads `trust-gate report-dependencies`:
+sorted elaborated declarations with separate type/value edges, including
+compiler-generated helpers and generated extraction declarations. Missing
+modules, failed builds and missing root declarations fail the accounting;
+there is no saved-report or source-text success fallback. The report API also
+accepts an explicit imported module for deterministic compiled regression tests.
+
+The root is the **declaration** `ZiskFv.Compliance.root_soundness`, not its
+module's import closure. Comments, unused imports and unconsumed aliases cannot
+add reachable declarations. A consumed proof-carrying family is traversed
+through its actual elaborated list/accessor and retains all its members.
+
+The independent columns distinguish:
+
+- `exposed-to-build`: no maintained theorem dependency or compiled component
+  correspondence checks that constraint. Standalone welds still earn build
+  fidelity credit even when the root never calls them.
+- `exposed-to-root`: no root declaration dependency on the raw generated
+  predicate, checked link, or proof-backed generated component assertion.
+- `build-only-check`: checked at build time but not consumed by the root.
+- `theorem-consumed-tie`: the root reaches a checked link, manifest equality,
+  or an equality/iff theorem whose dependencies include the raw predicate.
+- `generated-model-root`: the root reaches the generated component `main`,
+  and a compiled manifest equality maps that assertion to the raw constraint.
+  This does **not** mean the root consumes the equality theorem.
+- `tied-not-composed`: a maintained proof reaches a generated link whose bus
+  is not among the finished provider buses inventoried from
+  `fullRv64imSoundEnsemble`. This is independent of local predicate/model use;
+  it does not discharge provider/channel composition.
+
+Residuals remain source-cited scope declarations. Wirable links are generated
+links not reached by maintained theorem checks. Virtual byte-table exports are
+reported as fidelity inputs present, never as proof that their executable
+fidelity gate has run. Rebaselining these measurements is an accounting change,
+not a stronger root theorem or a discharged extraction/channel obligation.
 
 `tools/clean-components/faithfulness.py` runs `pil-extract clean-component` for
 the same ten registered AIRs and compares each emitted `Row.lean` and
@@ -81,14 +111,17 @@ after model switchover, `expected = "consumed"` compares against the populated
 `Extraction.Components.<Air>` pair and also requires both maintained modules to
 re-export those generated declarations.
 
-A `consumed` AIR earns ledger coverage only for proof-backed entries in its
-generated `Components/<Air>/Manifest.lean`, imported by the live model in the
-corresponding build/root closure. For each `assertZeroConstraints` entry the
-manifest proves `constraint_N_correspondence`: evaluation of that assertion,
-selected from the generated `main` on the exact stage-1 source row, is equivalent
-to `Air.extraction.constraint_N_every_row`. These equalities compile in the
-normal Lake graph, including the root's imports. Listed indices without their
-correspondence theorem earn no credit.
+A `consumed` AIR earns per-index generated-model credit only through compiled
+`constraint_N_correspondence` theorems. TrustGate checks the elaborated `Iff`
+boundary: the generated `main` evaluated on `Manifest.sourceRow` is equated to
+zero on the left, and the matching raw `constraint_N_every_row` is on the right.
+The kernel checks the proof, including the selected assertion; accounting also
+requires its unfiltered axiom closure to stay within Lean's three ordinary
+postulates. Generated-model credit verifies that `main` was declared in the
+generated component module. The unchecked `assertZeroConstraints` list does
+not grant credit. Importing such a theorem
+only makes it a build fidelity check; root consumption of the theorem and
+consumption of the generated `main` are measured separately.
 
 `unclaimedConstraints` is the complement of the mapped indices, retaining both
 ExtF-mixing and excluded cross-row constraints. The channel push is

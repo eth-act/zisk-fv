@@ -8,6 +8,7 @@ import difflib
 import importlib.util
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from collections import defaultdict
@@ -27,7 +28,6 @@ import survey  # noqa: E402
 LEDGER = ROOT / "trust" / "generated" / "exposure-ledger.txt"
 RESIDUALS = ROOT / "trust" / "exposure-residuals.toml"
 LINKS = ROOT / "build" / "extraction" / "Extraction" / "LookupWiring.lean"
-LINK_RE = re.compile(r"\blink_([A-Za-z0-9]+)_(\d+)\b")
 BYTE_TABLES = ROOT / "build" / "extraction" / "ByteTables"
 BYTE_TABLE_MODELS = {
     "BinaryTable": ROOT / "ZiskFv" / "AirsClean" / "BinaryTable.lean",
@@ -35,11 +35,6 @@ BYTE_TABLE_MODELS = {
 }
 CONSTRAINT_RE = re.compile(r"^\s*def constraint_(\d+)_every_row\b", re.M)
 COMPONENTS = ROOT / "trust" / "generated-components.toml"
-COMPONENT_DIR = ROOT / "build" / "extraction" / "Extraction" / "Components"
-MANIFEST_LIST_RE = re.compile(
-    r"^def (assertZeroConstraints|busPushConstraints)\s*:\s*List Nat\s*:=\s*\n\s*\[([^\]]*)\]",
-    re.M,
-)
 
 
 @dataclass(frozen=True)
@@ -53,9 +48,63 @@ class Row:
     residual: bool
     link: str
     buses: tuple[int, ...]
+    build_only: bool
+    correspondence: bool
+    model: bool
+
+
+class Dependencies:
+    """Checked declaration data, obtained only after Lake refreshes its inputs."""
+
+    def __init__(self, data: dict):
+        if data.get("schema_version") != 1:
+            raise ValueError("missing or unsupported elaborated dependency report")
+        self.nodes = {node["name"]: node for node in data["declarations"]}
+        if len(self.nodes) != len(data["declarations"]):
+            raise ValueError("duplicate declarations in dependency report")
+        self.correspondences = data["correspondences"]
+        self.edges = {
+            name: set(node["type"]) | set(node["value"])
+            for name, node in self.nodes.items()
+        }
+
+    def closure(self, seeds) -> set[str]:
+        reached = set(seeds)
+        todo = list(reached)
+        while todo:
+            for child in self.edges.get(todo.pop(), ()):
+                if child not in reached:
+                    reached.add(child)
+                    todo.append(child)
+        return reached
+
+    def root(self, name: str) -> set[str]:
+        if name not in self.nodes:
+            raise ValueError(f"missing elaborated root declaration: {name}")
+        return self.closure([name])
+
+    def build_checks(self) -> set[str]:
+        # Generated proofs alone do not establish a maintained-model tie.
+        return self.closure(
+            name for name, node in self.nodes.items()
+            if name.startswith("ZiskFv.") and node["kind"] == "theorem"
+        )
+
+
+def load_dependencies(root: Path = ROOT) -> Dependencies:
+    # TrustGate imports the project at runtime. Refresh that import explicitly;
+    # `lake exe` alone builds the reporter, not its runtime-imported environment.
+    # There is deliberately no saved-report or textual fallback.
+    subprocess.run(["lake", "build", "ZiskFv", "trust-gate"], cwd=root,
+                   stdout=sys.stderr, check=True)
+    result = subprocess.run(["lake", "env", ".lake/build/bin/trust-gate",
+                             "report-dependencies"], cwd=root,
+                            text=True, capture_output=True, check=True)
+    return Dependencies(json.loads(result.stdout))
 
 
 def load_reachability():
+    # Retained only for the channel-ID inventory; never grants exposure credit.
     path = ROOT / "trust" / "scripts" / "check-module-reachability.py"
     spec = importlib.util.spec_from_file_location("module_reachability", path)
     if spec is None or spec.loader is None:
@@ -63,15 +112,6 @@ def load_reachability():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-def closure_text(reach, start: str) -> str:
-    chunks = []
-    for module in sorted(reach.reachable_from(str(ROOT), start)):
-        path = Path(reach.module_path(str(ROOT), module))
-        if path.exists():
-            chunks.append(reach.strip_comments(path.read_text(errors="replace")))
-    return "\n".join(chunks)
 
 
 def definition_blocks(source: str) -> dict[str, str]:
@@ -100,20 +140,6 @@ def generated_links(source: str) -> dict[tuple[str, int], tuple[str, tuple[int, 
     return links
 
 
-def generated_link_aliases(source: str) -> dict[str, set[str]]:
-    """Generated per-family list/accessor names that consume individual links."""
-    blocks = definition_blocks(source)
-    aliases: dict[str, set[str]] = defaultdict(set)
-    for name, block in blocks.items():
-        if not name.startswith("links_"):
-            continue
-        members = {match.group(0) for match in LINK_RE.finditer(block)}
-        for member in members:
-            aliases[member].add(name)
-            singular = name.replace("links_", "link_", 1)
-            if re.search(rf"\b{re.escape(name)}\b", blocks.get(singular, "")):
-                aliases[member].add(singular)
-    return aliases
 
 
 def imported_paths(path: Path, reach) -> list[Path]:
@@ -204,67 +230,35 @@ def residual_entries() -> dict[tuple[str, int], dict[str, object]]:
     return out
 
 
-def generated_component_cover(reach, start: str) -> dict[str, set[int]]:
-    """Credit only proof-backed entries in a consumed component's manifest.
+def generated_component_cover(deps: Dependencies, reached: set[str],
+                              *, model: bool = False) -> dict[str, set[int]]:
+    """Only checked manifest equalities can map model consumption to indices.
 
-    The manifest is imported by the live model, hence compiled in that column's
-    build closure. Each accepted theorem selects the corresponding assertion
-    from the actual generated main and proves its raw extracted predicate.
-    Lists alone, comments, unimported manifests and bus hints earn no credit.
+    A consumed generated main is distinct from a consumed correspondence proof.
+    An unchecked assertZeroConstraints list supplies neither kind of credit.
     """
-    if not COMPONENTS.exists():
-        return {}
     data = tomllib.loads(COMPONENTS.read_text())
-    cover: dict[str, set[int]] = {}
-    reachable = reach.reachable_from(str(ROOT), start)
-    for air, entry in data.get("air", {}).items():
-        if entry.get("expected") != "consumed":
+    consumed = {air for air, entry in data.get("air", {}).items()
+                if entry.get("expected") == "consumed"}
+    cover: dict[str, set[int]] = {air: set() for air in consumed}
+    for proof in deps.correspondences:
+        match = re.fullmatch(r"([A-Za-z0-9]+)\.extraction\.constraint_(\d+)_every_row",
+                             proof["constraint"])
+        if match is None or match[1] not in consumed:
             continue
-        model = ROOT / "ZiskFv" / "AirsClean" / air / "Constraints.lean"
-        if not model.exists():
-            raise ValueError(f"{air} marked consumed but {model} is missing")
-        component = f"Extraction.Components.{air}.Constraints"
-        manifest_module = f"Extraction.Components.{air}.Manifest"
-        imports = reach.imports_of(str(model))
-        if component not in imports:
-            raise ValueError(
-                f"{air} marked consumed but {model} does not re-export "
-                f"Extraction.Components.{air}.Constraints"
-            )
-        manifest = COMPONENT_DIR / air / "Manifest.lean"
-        if not manifest.exists():
-            # No manifest, no credit. Not an error: the extractor may not
-            # emit one for this AIR yet.
-            cover[air] = set()
-            continue
-        if (f"ZiskFv.AirsClean.{air}.Constraints" not in reachable
-                or manifest_module not in imports):
-            cover[air] = set()
-            continue
-        if component not in reach.imports_of(str(manifest)):
-            cover[air] = set()
-            continue
-        source = reach.strip_comments(manifest.read_text(errors="replace"))
-        lists = dict(MANIFEST_LIST_RE.findall(source))
-        indices = [int(x) for x in re.findall(r"\d+", lists.get("assertZeroConstraints", ""))]
-        compact = " ".join(source.split())
-        proved: set[int] = set()
-        for position, index in enumerate(indices):
-            # Match the whole generated statement, not merely a theorem name or
-            # an index mentioned inside an unrelated proof. Lean checks its body.
-            statement = (
-                f"theorem constraint_{index}_correspondence "
-                "(c : C FGL FGL) (r offset : ℕ) (env : Environment FGL) : "
-                f"env (((main (sourceRow c r)).operations offset).constraints[{position}]!) = 0 ↔ "
-                f"{air}.extraction.constraint_{index}_every_row c r := by"
-            )
-            if statement in compact:
-                proved.add(index)
-        cover[air] = proved
+        if proof["theorem"] not in deps.nodes or proof["model"] not in deps.nodes:
+            raise ValueError(f"missing compiled manifest boundary: {proof}")
+        if not set(proof["axioms"]) <= {"propext", "Classical.choice", "Quot.sound"}:
+            raise ValueError(f"unchecked manifest correspondence: {proof['theorem']}")
+        if model and deps.nodes[proof["model"]]["module"] != (
+                f"Extraction.Components.{match[1]}.Constraints"):
+            raise ValueError(f"{match[1]} main is not from its compiled generated component")
+        if (proof["model"] if model else proof["theorem"]) in reached:
+            cover[match[1]].add(int(match[2]))
     return cover
 
 
-def inventory() -> tuple[list[Row], int, set[int]]:
+def inventory(deps: Dependencies) -> tuple[list[Row], int, set[int]]:
     pilout = pilout_wire.load(ROOT / "build" / "zisk.pilout")
     facts = survey.air_facts(pilout)
     classes = {}
@@ -293,15 +287,20 @@ def inventory() -> tuple[list[Row], int, set[int]]:
     # Exercise the same closed mirror inventory used by the round-trip gate.
     mirror_parse.parse_all(lane_map_for)
     reach = load_reachability()
-    build_text = closure_text(reach, "ZiskFv")
-    root_text = closure_text(reach, "ZiskFv.Soundness")
+    build_reached = deps.build_checks()
+    root_reached = deps.root("ZiskFv.Compliance.root_soundness")
+    root_checks = deps.closure(
+        name for name in root_reached
+        if name in deps.nodes and deps.nodes[name]["kind"] == "theorem"
+        and deps.nodes[name]["relation"]
+    )
     links_text = LINKS.read_text(errors="replace")
     links = generated_links(links_text)
-    link_aliases = generated_link_aliases(links_text)
     providers = provider_buses(reach)
     residuals = residual_entries()
-    build_cover = generated_component_cover(reach, "ZiskFv")
-    root_cover = generated_component_cover(reach, "ZiskFv.Soundness")
+    build_cover = generated_component_cover(deps, set(deps.nodes))
+    root_cover = generated_component_cover(deps, root_reached)
+    model_cover = generated_component_cover(deps, root_reached, model=True)
     rows = []
     consumed_any: set[tuple[str, int]] = set()
     for air, fact in sorted(facts.items()):
@@ -313,23 +312,22 @@ def inventory() -> tuple[list[Row], int, set[int]]:
         for index in sorted(declared):
             direct = f"{air}.extraction.constraint_{index}_every_row"
             link, buses = links.get((air, index), ("", ()))
-            link_names = {link} | link_aliases.get(link, set()) if link else set()
-            build_link = any(
-                re.search(rf"\b{re.escape(name)}\b", build_text) for name in link_names
-            )
-            root_link = any(
-                re.search(rf"\b{re.escape(name)}\b", root_text) for name in link_names
-            )
+            qualified_link = f"Extraction.LookupWiring.{link}" if link else ""
+            build_link = qualified_link in build_reached
+            root_link = qualified_link in root_reached
             if build_link:
                 consumed_any.add((air, index))
-            build_exposed = (index not in build_cover.get(air, ())
-                             and direct not in build_text and not build_link)
-            root_exposed = (index not in root_cover.get(air, ())
-                            and direct not in root_text and not root_link)
+            build_checked = (index in build_cover.get(air, ())
+                             or direct in build_reached or build_link)
+            correspondence = (index in root_cover.get(air, ()) or root_link
+                              or direct in root_checks)
+            model = index in model_cover.get(air, ())
+            root_consumed = correspondence or model or direct in root_reached
             tied = bool((build_link or root_link) and buses and any(bus not in providers for bus in buses))
             rows.append(Row(air, classes[(air, index)], index,
-                            build_exposed, root_exposed, tied,
-                            (air, index) in residuals, link, buses))
+                            not build_checked, not root_consumed, tied,
+                            (air, index) in residuals, link, buses,
+                            build_checked and not root_consumed, correspondence, model))
     unknown = sorted(set(residuals) - {(r.air, r.index) for r in rows})
     if unknown:
         raise ValueError(f"residuals name unknown constraints: {unknown}")
@@ -342,11 +340,10 @@ def byte_table_rows() -> list[tuple[str, str, int, int, str]]:
     `BinaryTable` and `BinaryExtensionTable` (`zisk.pil:121`, `:123`) are built
     by a PIL script at compile time and lowered away, so they never reach
     pilout and cannot appear in the constraint ledger above. They are still
-    proof surface: both models are inside `ZiskFv.Soundness`'s import closure
-    and carry every byte-level fact about every Binary and BinaryExtension
-    opcode. A table counts as checked when the extractor's per-opcode-block
-    hashes exist for it; `tools/virtual-tables/check-byte-tables.py` is what
-    holds the model to them, and `nix run .#test` runs it.
+    proof surface, but the existence of an export is only an available fidelity
+    input. It does not establish that the executable gate has run successfully.
+    `tools/virtual-tables/check-byte-tables.py` checks the maintained models;
+    `nix run .#test` runs it.
     """
     out = []
     for air, model in sorted(BYTE_TABLE_MODELS.items()):
@@ -355,7 +352,7 @@ def byte_table_rows() -> list[tuple[str, str, int, int, str]]:
             out.append((air, "virtual-table", 0, 0, "unchecked"))
             continue
         data = json.loads(export.read_text())
-        out.append((air, "virtual-table", data["rows"], len(data["blocks"]), "checked"))
+        out.append((air, "virtual-table", data["rows"], len(data["blocks"]), "fidelity-input-present"))
     return out
 
 
@@ -367,18 +364,22 @@ def render(rows: list[Row], wirable: int, providers: set[int]) -> str:
         "# Generated by tools/mirror-roundtrip/exposure.py --write; do not edit.",
         f"# provider buses from fullRv64imSoundEnsemble: {','.join(map(str, sorted(providers)))}",
         f"# wirable: {wirable}",
-        "air\tclass\ttotal\texposed-to-build\texposed-to-root\ttied-not-composed\tdeclared-residual",
+        "# schema-version: 2; credit uses elaborated types and proof/definition values, not imports",
+        "# build-only checks preserve standalone fidelity detection; no root-proof improvement is claimed",
+        "air\tclass\ttotal\texposed-to-build\texposed-to-root\ttied-not-composed\tdeclared-residual\tbuild-only-check\ttheorem-consumed-tie\tgenerated-model-root",
     ]
     for (air, cls), part in sorted(grouped.items()):
         lines.append("\t".join(map(str, [air, cls, len(part), sum(r.build for r in part),
                                            sum(r.root for r in part), sum(r.tied for r in part),
-                                           sum(r.residual for r in part)])))
+                                           sum(r.residual for r in part), sum(r.build_only for r in part),
+                                           sum(r.correspondence for r in part), sum(r.model for r in part)])))
     lines.append("")
-    lines.append("constraint\tclass\texposed-to-build\texposed-to-root\ttied-not-composed\tdeclared-residual\tlink\tbuses")
+    lines.append("constraint\tclass\texposed-to-build\texposed-to-root\ttied-not-composed\tdeclared-residual\tlink\tbuses\tbuild-only-check\ttheorem-consumed-tie\tgenerated-model-root")
     for row in rows:
         lines.append("\t".join([f"{row.air}.{row.index}", row.cls, str(int(row.build)),
                                  str(int(row.root)), str(int(row.tied)), str(int(row.residual)),
-                                 row.link or "-", ",".join(map(str, row.buses)) or "-"]))
+                                 row.link or "-", ",".join(map(str, row.buses)) or "-",
+                                 str(int(row.build_only)), str(int(row.correspondence)), str(int(row.model))]))
     lines.append("")
     lines.append("virtual-table\tclass\trows\topcode-blocks\tstatus")
     for air, cls, rows_count, blocks, status in byte_table_rows():
@@ -390,7 +391,7 @@ def exposure_totals(text: str) -> tuple[int, int]:
     build = root = 0
     for line in text.splitlines():
         fields = line.split("\t")
-        if len(fields) == 7 and fields[0] not in ("air", "constraint") and fields[2].isdigit():
+        if len(fields) in (7, 10) and fields[0] not in ("air", "constraint") and fields[2].isdigit():
             build += int(fields[3])
             root += int(fields[4])
     return build, root
@@ -401,9 +402,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--write", action="store_true")
     args = parser.parse_args(argv)
     try:
-        rows, wirable, providers = inventory()
+        rows, wirable, providers = inventory(load_dependencies())
         current = render(rows, wirable, providers)
-    except (OSError, ValueError, RuntimeError, tomllib.TOMLDecodeError) as error:
+    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError,
+            tomllib.TOMLDecodeError) as error:
         print(f"exposure.py: {error}", file=sys.stderr)
         return 2
     if args.write:
