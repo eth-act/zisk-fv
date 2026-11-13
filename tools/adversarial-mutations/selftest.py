@@ -287,6 +287,27 @@ def test_readonly_artifact_restore() -> None:
               "flat Nix byte-table mutation was not monitored")
 
 
+def test_component_and_byte_table_manifest() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        baseline, mutant = root / "baseline", root / "mutant"
+        component = Path("Components/BinaryAdd/Constraints.lean")
+        table = Path("ByteTables/BinaryTable.json")
+        for tree in (baseline, mutant):
+            for relative in (component, table):
+                target = tree / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("same")
+        check(set(runner.extraction_manifest(baseline)) == {str(component), str(table)},
+              "integrated manifest dropped a nested component or byte table")
+        (mutant / component).write_text("changed")
+        check(runner.extraction_delta(baseline, mutant) == [str(component)],
+              "component-only mutation disappeared from recursive accounting")
+        (mutant / table).write_text("changed")
+        check(runner.extraction_delta(baseline, mutant) == [str(table), str(component)],
+              "component and byte-table deltas did not coexist")
+
+
 def test_byte_table_gate_order() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -334,7 +355,7 @@ def main() -> int:
              test_artifact_and_semantic_baselines, test_site_operators,
              test_round_zero_control, test_log_archive,
              test_private_dependency_copy, test_readonly_artifact_restore,
-             test_byte_table_gate_order]
+             test_byte_table_gate_order, test_component_and_byte_table_manifest]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")
