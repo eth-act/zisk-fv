@@ -30,6 +30,7 @@ expected_modules=(
   MemGeneratedArtifact
   MemGeneratedConstraintBridge
   MemoryBuses
+  PublicIo
   RomSource
   SourceDimensions
 )

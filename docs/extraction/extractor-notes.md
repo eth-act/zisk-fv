@@ -26,6 +26,8 @@ pil-extract source-dimensions --pilout <path> [--output <path>]
 
 pil-extract rom-source --pilout <path> [--output <path>]
 
+pil-extract public-io --pilout <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -70,6 +72,10 @@ the flags themselves.
   commitment ID, stage, column, signed row/rotation, constraint polynomials
   and lookup-hint payload. It preserves separate AIR and AIR-group values;
   unsupported operands fail. The legacy `Extraction.Circuit` is unchanged.
+- `public-io`: emit the compiled GLOBAL expression graph and kernel-check
+  the actual signed public-IO terms against its cleared numerator/denominator
+  constraint. This does not by itself authenticate the external verifier's
+  public vector or connect it to an accepted trace.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR

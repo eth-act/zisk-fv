@@ -141,6 +141,11 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --output $out/RomSource.lean
 
+    # Link compiled GLOBAL public-IO terms to their actual cleared constraint.
+    ${pil-extract}/bin/pil-extract public-io \
+      --pilout ${zisk-pilout} \
+      --output $out/PublicIo.lean
+
     # Reviewed byte-identical Clean component source.  Maintained modules
     # re-export these generated declarations instead of carrying a weld copy.
     mkdir -p $out/Components/BinaryAdd
