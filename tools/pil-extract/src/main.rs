@@ -13,6 +13,7 @@ mod clean_component;
 mod lookup_wiring;
 mod mem_align_rom;
 mod source_dimensions;
+mod rom_source;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -51,6 +52,8 @@ enum Cmd {
     ArithRangeTable(ArithTableCmd),
     /// Emit physical AIR row capacities from the pinned pilout metadata.
     SourceDimensions(LookupWiringCmd),
+    /// Emit a dedicated typed source view for committed ROM columns.
+    RomSource(LookupWiringCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -288,6 +291,12 @@ fn main() -> Result<()> {
                 .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
             let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
             write_output(args.output.as_deref(), &source_dimensions::render(&pilout)?)
+        }
+        Cmd::RomSource(args) => {
+            let bytes = fs::read(&args.pilout)
+                .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
+            let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
+            write_output(args.output.as_deref(), &rom_source::render(&pilout)?)
         }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;

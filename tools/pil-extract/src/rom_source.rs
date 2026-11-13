@@ -89,7 +89,7 @@ variable {F : Type} [Field F]
         writeln!(out, "def polynomial_{index} (source : CommittedSource F) (row : Int) : F :=\n  {}\n", renderer.expression(expression.idx as usize)?)?;
         writeln!(out, "def sourceConstraint_{index}_{suffix} (source : CommittedSource F) (row : Int) : Prop :=\n  polynomial_{index} source row = 0\n")?;
     }
-    writeln!(out, "def numRowsLog2 : Nat := {}\n",
+    writeln!(out, "def numRows : Nat := {}\n",
         air.num_rows.ok_or_else(|| anyhow!("ROM AIR has no physical row count"))?)?;
     let mut commits = Vec::with_capacity(air.custom_commits.len());
     for (id, commit) in air.custom_commits.iter().enumerate() {
