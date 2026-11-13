@@ -1,7 +1,7 @@
 //! Physical AIR dimensions from compiled PIL metadata.
 //!
-//! `Air.num_rows` is log2 of the physical row count, not the row count.
-//! Missing metadata is an error: it must not turn into a one-row AIR.
+//! The pinned compiler serializes the physical row count in `Air.num_rows`.
+//! Missing metadata is an error: it must not acquire a default capacity.
 
 use std::collections::BTreeSet;
 use std::fmt::Write;
@@ -14,7 +14,7 @@ use crate::pilout::PilOut;
 pub fn render(pilout: &PilOut) -> Result<String> {
     let mut out = String::from(
         "/-! Physical AIR dimensions extracted from `Air.numRows` in the pinned pilout.\n\
-         `logNumRows` is the protobuf exponent; `rowCount` is the physical capacity.\n\
+         `rowCount` is the physical capacity serialized by the pinned compiler.\n\
          These are compiler metadata, not the number of populated witness rows. -/\n\n\
          namespace Extraction.SourceDimensions\n\n",
     );
@@ -30,14 +30,13 @@ pub fn render(pilout: &PilOut) -> Result<String> {
             if !names.insert(name) {
                 bail!("duplicate AIR dimension name: {name}");
             }
-            let log_rows = air
+            let rows = air
                 .num_rows
                 .with_context(|| format!("AIR {name} has no numRows metadata"))?;
             writeln!(out, "namespace «{name}»").unwrap();
             writeln!(out, "def airGroupIndex : Nat := {group_index}").unwrap();
             writeln!(out, "def airIndex : Nat := {air_index}").unwrap();
-            writeln!(out, "def logNumRows : Nat := {log_rows}").unwrap();
-            writeln!(out, "def rowCount : Nat := 2 ^ logNumRows").unwrap();
+            writeln!(out, "def rowCount : Nat := {rows}").unwrap();
             writeln!(out, "end «{name}»\n").unwrap();
         }
     }
@@ -53,12 +52,12 @@ mod tests {
     use super::*;
     use crate::pilout::{Air, AirGroup};
 
-    fn dimensions(name: &str, exponent: Option<u32>) -> PilOut {
+    fn dimensions(name: &str, rows: Option<u32>) -> PilOut {
         PilOut {
             air_groups: vec![AirGroup {
                 airs: vec![Air {
                     name: Some(name.into()),
-                    num_rows: exponent,
+                    num_rows: rows,
                     ..Default::default()
                 }],
                 ..Default::default()
@@ -68,24 +67,24 @@ mod tests {
     }
 
     #[test]
-    fn preserves_exponent_and_physical_count_definition() {
-        let lean = render(&dimensions("MemAlign", Some(21))).unwrap();
-        assert!(lean.contains("namespace «MemAlign»\ndef airGroupIndex : Nat := 0\ndef airIndex : Nat := 0\ndef logNumRows : Nat := 21\ndef rowCount : Nat := 2 ^ logNumRows"));
+    fn preserves_actual_physical_row_count() {
+        let lean = render(&dimensions("MemAlign", Some(2097152))).unwrap();
+        assert!(lean.contains("namespace «MemAlign»\ndef airGroupIndex : Nat := 0\ndef airIndex : Nat := 0\ndef rowCount : Nat := 2097152"));
     }
 
     #[test]
     fn changing_compiled_dimension_changes_consumed_definition() {
-        let original = render(&dimensions("MemAlign", Some(21))).unwrap();
-        let mutated = render(&dimensions("MemAlign", Some(20))).unwrap();
+        let original = render(&dimensions("MemAlign", Some(2097152))).unwrap();
+        let mutated = render(&dimensions("MemAlign", Some(1048576))).unwrap();
         assert_ne!(original, mutated);
-        assert!(mutated.contains("def logNumRows : Nat := 20"));
+        assert!(mutated.contains("def rowCount : Nat := 1048576"));
     }
 
     #[test]
-    fn zero_exponent_is_present_metadata() {
-        assert!(render(&dimensions("Singleton", Some(0)))
+    fn zero_is_not_reinterpreted_as_a_one_row_exponent() {
+        assert!(render(&dimensions("Empty", Some(0)))
             .unwrap()
-            .contains("def logNumRows : Nat := 0"));
+            .contains("def rowCount : Nat := 0"));
     }
 
     #[test]
@@ -98,7 +97,7 @@ mod tests {
 
     #[test]
     fn missing_or_duplicate_air_names_are_rejected() {
-        let mut pilout = dimensions("MemAlign", Some(21));
+        let mut pilout = dimensions("MemAlign", Some(2097152));
         let duplicate = pilout.air_groups[0].airs[0].clone();
         pilout.air_groups[0].airs.push(duplicate);
         assert!(render(&pilout).unwrap_err().to_string().contains("duplicate"));
@@ -109,11 +108,11 @@ mod tests {
 
     #[test]
     fn all_groups_and_air_indices_are_retained() {
-        let mut pilout = dimensions("Main", Some(22));
+        let mut pilout = dimensions("Main", Some(4194304));
         pilout.air_groups.push(AirGroup {
             airs: vec![Air {
                 name: Some("MemAlign".into()),
-                num_rows: Some(21),
+                num_rows: Some(2097152),
                 ..Default::default()
             }],
             ..Default::default()
@@ -126,6 +125,6 @@ mod tests {
     #[test]
     fn empty_inventory_and_lean_delimiters_are_rejected() {
         assert!(render(&PilOut::default()).is_err());
-        assert!(render(&dimensions("Mem»", Some(21))).is_err());
+        assert!(render(&dimensions("Mem»", Some(2097152))).is_err());
     }
 }
