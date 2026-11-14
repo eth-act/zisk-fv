@@ -1,4 +1,4 @@
-import ZiskFv.Completeness.Rv64im.SailDecode.Domain
+import ZiskFv.Completeness.Rv64im.SailDecode.IsaState
 import ZiskFv.Completeness.Rv64im.SailDecode.ConcatShapes
 
 /-!
@@ -6,7 +6,8 @@ import ZiskFv.Completeness.Rv64im.SailDecode.ConcatShapes
 
 This part holds the `sail_encode_*_eq_raw*` theorems: each unfolds Sail's
 generated `encdec_forwards` for a constructor and rewrites it to the matching
-`Rv64imShapes.raw*` shape via the concat bridges.  It is part of the split
+`Rv64imShapes.raw*` shape via the symbolic concat proofs. Concrete load-validity
+conditions reduce in the kernel. It is part of the split
 `ZiskFv.Completeness.Rv64im.SailDecode` module.
 -/
 
@@ -449,8 +450,8 @@ theorem sail_encode_mul_eq_rawRType_in
           0
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, h_zmmul⟩
+  have h_zmmul := zmmul_enabled_of_isaExtensionsEnabled state h_state
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -477,7 +478,7 @@ theorem sail_encode_mul_eq_rawRType_in
         0
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   apply sailM_bind_ok h_zmmul
   simp [LeanRV64D.Functions.encdec_mul_op_forwards]
   simpa using sail_mul_concat_eq_rawRType rs2 rs1 rd
@@ -496,8 +497,8 @@ theorem sail_encode_mulh_eq_rawRType_in
           1
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, h_zmmul⟩
+  have h_zmmul := zmmul_enabled_of_isaExtensionsEnabled state h_state
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -524,7 +525,7 @@ theorem sail_encode_mulh_eq_rawRType_in
         1
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   apply sailM_bind_ok h_zmmul
   simp [LeanRV64D.Functions.encdec_mul_op_forwards]
   simpa using sail_mulh_concat_eq_rawRType rs2 rs1 rd
@@ -543,8 +544,8 @@ theorem sail_encode_mulhsu_eq_rawRType_in
           2
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, h_zmmul⟩
+  have h_zmmul := zmmul_enabled_of_isaExtensionsEnabled state h_state
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -571,7 +572,7 @@ theorem sail_encode_mulhsu_eq_rawRType_in
         2
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   apply sailM_bind_ok h_zmmul
   simp [LeanRV64D.Functions.encdec_mul_op_forwards]
   simpa using sail_mulhsu_concat_eq_rawRType rs2 rs1 rd
@@ -590,8 +591,8 @@ theorem sail_encode_mulhu_eq_rawRType_in
           3
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, h_zmmul⟩
+  have h_zmmul := zmmul_enabled_of_isaExtensionsEnabled state h_state
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -618,7 +619,7 @@ theorem sail_encode_mulhu_eq_rawRType_in
         3
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   apply sailM_bind_ok h_zmmul
   simp [LeanRV64D.Functions.encdec_mul_op_forwards]
   simpa using sail_mulhu_concat_eq_rawRType rs2 rs1 rd
@@ -634,8 +635,8 @@ theorem sail_encode_mulw_eq_rawRType_in
           0
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, h_zmmul⟩
+  have h_zmmul := zmmul_enabled_of_isaExtensionsEnabled state h_state
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -658,7 +659,7 @@ theorem sail_encode_mulw_eq_rawRType_in
         0
         (regidx_to_fin rd).val
         0x3b) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   apply sailM_bind_ok h_zmmul
   simp
   simpa using sail_mulw_concat_eq_rawRType rs2 rs1 rd
@@ -674,8 +675,7 @@ theorem sail_encode_div_eq_rawRType_in
           4
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -698,7 +698,7 @@ theorem sail_encode_div_eq_rawRType_in
         4
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_div_concat_eq_rawRType rs2 rs1 rd
 
@@ -713,8 +713,7 @@ theorem sail_encode_divu_eq_rawRType_in
           5
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -737,7 +736,7 @@ theorem sail_encode_divu_eq_rawRType_in
         5
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_divu_concat_eq_rawRType rs2 rs1 rd
 
@@ -752,8 +751,7 @@ theorem sail_encode_divw_eq_rawRType_in
           4
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -776,7 +774,7 @@ theorem sail_encode_divw_eq_rawRType_in
         4
         (regidx_to_fin rd).val
         0x3b) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_divw_concat_eq_rawRType rs2 rs1 rd
 
@@ -791,8 +789,7 @@ theorem sail_encode_divuw_eq_rawRType_in
           5
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -815,7 +812,7 @@ theorem sail_encode_divuw_eq_rawRType_in
         5
         (regidx_to_fin rd).val
         0x3b) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_divuw_concat_eq_rawRType rs2 rs1 rd
 
@@ -830,8 +827,7 @@ theorem sail_encode_rem_eq_rawRType_in
           6
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -854,7 +850,7 @@ theorem sail_encode_rem_eq_rawRType_in
         6
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_rem_concat_eq_rawRType rs2 rs1 rd
 
@@ -869,8 +865,7 @@ theorem sail_encode_remu_eq_rawRType_in
           7
           (regidx_to_fin rd).val
           0x33) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -893,7 +888,7 @@ theorem sail_encode_remu_eq_rawRType_in
         7
         (regidx_to_fin rd).val
         0x33) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_remu_concat_eq_rawRType rs2 rs1 rd
 
@@ -908,8 +903,7 @@ theorem sail_encode_remw_eq_rawRType_in
           6
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -932,7 +926,7 @@ theorem sail_encode_remw_eq_rawRType_in
         6
         (regidx_to_fin rd).val
         0x3b) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_remw_concat_eq_rawRType rs2 rs1 rd
 
@@ -947,8 +941,7 @@ theorem sail_encode_remuw_eq_rawRType_in
           7
           (regidx_to_fin rd).val
           0x3b) := by
-  dsimp [SailEncodesToIn, SailReturns, IsaExtensionsEnabled] at *
-  rcases h_state with ⟨h_m, _h_zmmul⟩
+  dsimp [SailEncodesToIn, SailReturns]
   unfold LeanRV64D.Functions.encdec_forwards
   change
     ((LeanRV64D.Functions.currentlyEnabled extension.Ext_M) >>= fun __do_lift =>
@@ -971,7 +964,7 @@ theorem sail_encode_remuw_eq_rawRType_in
         7
         (regidx_to_fin rd).val
         0x3b) state
-  apply sailM_bind_ok h_m
+  apply sailM_bind_ok h_state
   simp
   simpa using sail_remuw_concat_eq_rawRType rs2 rs1 rd
 
@@ -1057,7 +1050,7 @@ theorem sail_encode_lb_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (1 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lh_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1072,7 +1065,7 @@ theorem sail_encode_lh_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (2 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lw_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1087,7 +1080,7 @@ theorem sail_encode_lw_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (4 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_ld_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1102,7 +1095,7 @@ theorem sail_encode_ld_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd false (8 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lbu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1117,7 +1110,7 @@ theorem sail_encode_lbu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd true (1 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lhu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1132,7 +1125,7 @@ theorem sail_encode_lhu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd true (2 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_lwu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.encdec_forwards
@@ -1147,7 +1140,7 @@ theorem sail_encode_lwu_eq_rawIType (imm : BitVec 12) (rs1 rd : regidx) :
     LeanRV64D.Functions.bool_bits_forwards,
     LeanRV64D.Functions.width_enc_forwards
   ] using sail_encode_load_eq_rawIType imm rs1 rd true (4 : Int)
-    (by native_decide)
+    (by decide)
 
 theorem sail_encode_store_eq_rawSType
     (imm : BitVec 12) (rs2 rs1 : regidx) (width : Int) :
