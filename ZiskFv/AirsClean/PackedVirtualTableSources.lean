@@ -55,40 +55,62 @@ def physicalOfLogical (base : Witness F) (logical : LogicalWitness F) : Witness 
         if hi : index < source331.rows then logical.bus331 ⟨index, hi⟩ else base location
       else base location
 
+private theorem source88_tableId : source88.tableId = 88 := rfl
+private theorem source124_tableId : source124.tableId = 124 := rfl
+private theorem source125_tableId : source125.tableId = 125 := rfl
+private theorem source330_tableId : source330.tableId = 330 := rfl
+private theorem source331_tableId : source331.tableId = 331 := rfl
+
 theorem project88_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source88 = logical.bus88 := by
   funext index
   dsimp only [project, physicalOfLogical]
   rewrite [source88_at]
-  simp [source88, index.isLt]
+  simp only [source88_tableId, if_pos (rfl : (88 : Nat) = 88),
+    dif_pos index.isLt]
 
 theorem project124_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source124 = logical.bus124 := by
   funext index
   dsimp only [project, physicalOfLogical]
   rewrite [source124_at]
-  simp [source88, source124, index.isLt]
+  simp only [source88_tableId, source124_tableId,
+    if_neg (by decide : (124 : Nat) ≠ 88), if_pos (rfl : (124 : Nat) = 124),
+    dif_pos index.isLt]
 
 theorem project125_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source125 = logical.bus125 := by
   funext index
   dsimp only [project, physicalOfLogical]
   rewrite [source125_at]
-  simp [source88, source124, source125, index.isLt]
+  simp only [source88_tableId, source124_tableId, source125_tableId,
+    if_neg (by decide : (125 : Nat) ≠ 88),
+    if_neg (by decide : (125 : Nat) ≠ 124), if_pos (rfl : (125 : Nat) = 125),
+    dif_pos index.isLt]
 
 theorem project330_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source330 = logical.bus330 := by
   funext index
   dsimp only [project, physicalOfLogical]
   rewrite [source330_at]
-  simp [source88, source124, source125, source330, index.isLt]
+  simp only [source88_tableId, source124_tableId, source125_tableId, source330_tableId,
+    if_neg (by decide : (330 : Nat) ≠ 88),
+    if_neg (by decide : (330 : Nat) ≠ 124),
+    if_neg (by decide : (330 : Nat) ≠ 125), if_pos (rfl : (330 : Nat) = 330),
+    dif_pos index.isLt]
 
 theorem project331_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source331 = logical.bus331 := by
   funext index
   dsimp only [project, physicalOfLogical]
   rewrite [source331_at]
-  simp [source88, source124, source125, source330, source331, index.isLt]
+  simp only [source88_tableId, source124_tableId, source125_tableId,
+    source330_tableId, source331_tableId,
+    if_neg (by decide : (331 : Nat) ≠ 88),
+    if_neg (by decide : (331 : Nat) ≠ 124),
+    if_neg (by decide : (331 : Nat) ≠ 125),
+    if_neg (by decide : (331 : Nat) ≠ 330), if_pos (rfl : (331 : Nat) = 331),
+    dif_pos index.isLt]
 
 /-- Source indices cannot alias a different table's physical multiplicity cell. -/
 theorem binary_source_locations_disjoint

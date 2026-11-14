@@ -786,3 +786,6 @@ Canonical provider projection proofs use a generic fixed-schema rewrite and
 symbolic `List.ofFn` length/index laws, rather than reducing full source lists.
 Logical-witness projection rewrites the generated `sourceBUS_at` identity
 before simplifying source metadata; the packed `sourceAt` map stays opaque.
+Only separately sealed table-ID projections are rewritten. Source records
+and row counts stay opaque, and dependent guards use the exact `Fin.isLt`
+proof rather than reconstructing a large-domain bound.
