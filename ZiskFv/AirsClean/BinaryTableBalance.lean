@@ -268,6 +268,12 @@ def binaryMessageRow (row : Binary.BinaryRow FGL) : Fin 8 → BinaryTableMessage
   | ⟨6, _⟩ => Binary.lookupMessage6Row row
   | ⟨7, _⟩ => Binary.lookupMessage7Row row
 
+private theorem eval_scalar_instance (env : Environment FGL) (expression : Expression FGL) :
+    (CircuitType.instVerifierEvalExpression :
+      VerifierEval FGL (Expression FGL) FGL).1 env expression =
+        Expression.eval env expression := by
+  with_unfolding_all rfl
+
 /-- Evaluation preserves every slot of every actual Binary byte message,
     including all three flag encodings and the first/last-byte position. -/
 theorem eval_binaryMessage (env : Environment FGL) (row : Var Binary.BinaryRow FGL)
@@ -287,7 +293,7 @@ theorem eval_binaryMessage (env : Environment FGL) (row : Var Binary.BinaryRow F
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
       sub_eq_add_neg] <;>
     unfold Eval.eval <;>
-    rfl
+    simp [eval_scalar_instance, Expression.eval, sub_eq_add_neg]
 
 /-- Integration contract: the same eight memberships previously obtained by
     a detached static-lookup consumer now follow from the actual finished
@@ -337,7 +343,7 @@ theorem eval_extensionMessage (env : Environment FGL)
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go] <;>
     unfold Eval.eval <;>
-    rfl
+    simp [eval_scalar_instance, Expression.eval]
 
 theorem extension_spec_facts_of_balance (w : EnsembleWitness ensemble)
     (hc : w.Constraints) (hb : w.BalancedChannels)
