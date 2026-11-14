@@ -9,6 +9,7 @@ open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.Compliance.Instantiation
+open ZiskFv.Compliance.SingleAddWitness (emptyComponentTable emptyComponentTable_interactionsWith)
 
 namespace ZiskFv.Compliance.DivSpinWitness
 
@@ -181,8 +182,8 @@ theorem divSpinWitness_registerStepRange_interactions :
     simpa using h_ne_op
   have h_remainder :
       divSpinRemainderBoundTable.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [OpBusChannel.toRaw, ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinRemainderBoundTable) ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
     decide
   have h_binaryAdd :
       divSpinBinaryAddTable.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
