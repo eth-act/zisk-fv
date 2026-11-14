@@ -799,7 +799,7 @@ Prefix bounds rewrite the full dependent fixed-domain invariant before
 specialization. Materialization destructs the table carrier and substitutes
 its component equality before reducing the dependent fixed-schema match;
 no schema is coerced across an unexplained raw-width equality.
-Consumer message evaluation uses Clean's canonical scalar `CircuitType.eval_expr`
-law after decomposing the row and tuple structures; this covers every
+Consumer message evaluation isolates the generic scalar `Eval.eval` projection
+after decomposing the row and tuple structures; this covers every
 arithmetic flag and all eight extension byte-index constants. Ensemble
 assembly checks component projections without unfolding source-domain lists.
