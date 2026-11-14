@@ -292,3 +292,5 @@ import ZiskFv.AirsClean.MemAlignByteMirrorWeld
 import ZiskFv.AirsClean.MemMirrorWeld
 import ZiskFv.AirsClean.GsumBoundary
 import ZiskFv.AirsClean.OperationPadding
+import ZiskFv.AirsClean.MemAlignWriteByte.ExtractedWiring
+import ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring
