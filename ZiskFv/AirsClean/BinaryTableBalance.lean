@@ -269,7 +269,7 @@ def binaryMessageRow (row : Binary.BinaryRow FGL) : Fin 8 → BinaryTableMessage
   | ⟨7, _⟩ => Binary.lookupMessage7Row row
 
 private theorem eval_scalar_instance (env : Environment FGL) (expression : Expression FGL) :
-    (CircuitType.instVerifierEvalExpression :
+    (CircuitType.instVerifierEvalExpression (F := FGL) (M := field) :
       VerifierEval FGL (Expression FGL) FGL).1 env expression =
         Expression.eval env expression := by
   with_unfolding_all rfl
