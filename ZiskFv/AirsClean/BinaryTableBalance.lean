@@ -286,7 +286,8 @@ theorem eval_binaryMessage (env : Environment FGL) (row : Var Binary.BinaryRow F
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
       sub_eq_add_neg] <;>
-    simp [Eval.eval, CircuitType.verifierEval, CircuitType.evalVerifier,
+    unfold Eval.eval <;>
+    simp [CircuitType.verifierEval, CircuitType.evalVerifier,
       ProvableType.toCircuitType, ProvableType.eval, toElements, fromElements,
       Expression.eval, sub_eq_add_neg]
 
@@ -337,7 +338,8 @@ theorem eval_extensionMessage (env : Environment FGL)
     simp [BinaryExtension.byteMessage, extensionMessageRow,
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go] <;>
-    simp [Eval.eval, CircuitType.verifierEval, CircuitType.evalVerifier,
+    unfold Eval.eval <;>
+    simp [CircuitType.verifierEval, CircuitType.evalVerifier,
       ProvableType.toCircuitType, ProvableType.eval, toElements, fromElements,
       Expression.eval]
 
