@@ -335,6 +335,13 @@ struct CleanBusEmission {
     slot_values: Vec<String>,
 }
 
+fn written_byte_range_matches_source(emissions: &[CleanBusEmission]) -> bool {
+    matches!(emissions, [emission]
+        if emission.busid == 107
+            && emission.multiplicity == "1"
+            && emission.slot_values == ["row.written_byte_value"])
+}
+
 const PROVABLE_STRUCT_FIELD_LIMIT: usize = 16;
 const NESTED_ROW_CHUNK_SIZE: usize = 12;
 const PREPROCESSED_L1_FIELD_KEY: u32 = u32::MAX;
@@ -1092,6 +1099,11 @@ fn render_constraints_file(
     } else {
         Vec::new()
     };
+    let written_byte_range = if air_name == "MemAlignByte" {
+        resolve_bus_emissions(pilout, hit, 107, false, "Range Check", &col_to_field)?
+    } else {
+        Vec::new()
+    };
 
     let mut out = String::new();
     // Nested generated rows do not share the handwritten Spec's flat row
@@ -1243,6 +1255,7 @@ fn render_constraints_file(
         "MemAlignByte" => {
             if range16.len() != 1 || range16[0].slot_values != ["row.value_16b"]
                 || dual_byte.len() != 1 || dual_byte[0].slot_values != ["row.byte_value", "row.value_8b"]
+                || !written_byte_range_matches_source(&written_byte_range)
             {
                 bail!("AIR `MemAlignByte` range/byte hints differ from the expected source tuples");
             }
@@ -1256,6 +1269,9 @@ fn render_constraints_file(
             out.push_str("  -- h1030: exact `DualByte` membership in source tuple order\n");
             out.push_str("  -- `[byte_value, value_8b]` (`zisk.pil:62-76`, `mem_align_byte.pil:104`).\n");
             out.push_str("  lookup (Table.fromStatic dualByteTable) #v[row.byte_value, row.value_8b]\n");
+            out.push_str("  -- h1016: the unconditional written-byte range check, including read rows\n");
+            out.push_str("  -- (`mem_align_byte.pil:25`). The bus-byte mux alone does not enforce it.\n");
+            out.push_str("  lookup (Table.fromStatic rangeTable8) row.written_byte_value\n");
         }
         "MemAlignReadByte" => {
             if range16.len() != 1 || range16[0].slot_values != ["row.value_16b"]
@@ -1552,6 +1568,33 @@ mod tests {
                 }),
             )],
         }
+    }
+
+    #[test]
+    fn written_byte_range_requires_the_exact_unconditional_source_hint() {
+        let emission = |multiplicity: &str, slot: &str| CleanBusEmission {
+            busid: 107,
+            multiplicity: multiplicity.to_string(),
+            slot_values: vec![slot.to_string()],
+        };
+        let valid = emission("1", "row.written_byte_value");
+        assert!(written_byte_range_matches_source(std::slice::from_ref(&valid)));
+        assert!(!written_byte_range_matches_source(&[]));
+        assert!(!written_byte_range_matches_source(&[
+            emission("1", "row.written_byte_value"),
+            emission("1", "row.written_byte_value"),
+        ]));
+        for multiplicity in ["0", "2", "row.is_write"] {
+            assert!(!written_byte_range_matches_source(&[
+                emission(multiplicity, "row.written_byte_value"),
+            ]));
+        }
+        for slot in ["row.bus_byte", "0", "row.written_byte_value + 1"] {
+            assert!(!written_byte_range_matches_source(&[emission("1", slot)]));
+        }
+        let mut wrong_bus = emission("1", "row.written_byte_value");
+        wrong_bus.busid = 106;
+        assert!(!written_byte_range_matches_source(&[wrong_bus]));
     }
 
     #[test]

@@ -205,6 +205,18 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
         _e("NEAR_SOUNDNESS", "Binary"),
     ("ZiskFv/AirsClean/Binary/Circuit.lean", "StaticBinaryTableSpecFacts"):
         _e("NEAR_LOOKUP", "Binary"),
+    # Source-only Direct accumulator equations: each is checked by the named
+    # generated stage-2 weld, not a new comparable row-local field equation.
+    ("ZiskFv/AirsClean/Binary/Wiring.lean", "paddingDirectSourceEquation"):
+        _e("NEAR_CHALLENGE", "Binary",
+           "Binary c12, checked by paddingDirect_source_iff; arbitrary source AIR scalar, not a row-count premise",
+           claims="12"),
+    ("ZiskFv/AirsClean/DirectPadding.lean", "alignedLoadPaddingEquation"):
+        _e("NEAR_CHALLENGE", note=
+           "positive Direct source equation checked against MemAlignByte c13 and MemAlignReadByte c7 in their ExtractedWiring modules"),
+    ("ZiskFv/AirsClean/DirectPadding.lean", "byteLoadPaddingEquation"):
+        _e("NEAR_CHALLENGE", note=
+           "negative Direct source equation checked against MemAlignByte c14 and MemAlignReadByte c8 in their ExtractedWiring modules"),
 
     # ---- BinaryAdd
     ("ZiskFv/AirsClean/BinaryAdd/Circuit.lean", "CoreFacts"):

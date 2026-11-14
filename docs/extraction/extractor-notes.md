@@ -300,6 +300,15 @@ axiom closures are unchanged. Like every other extractor shape,
 later phases add range-lookup / ROM-lookup / cross-row emission, each
 validated on one AIR before reuse.
 
+MemAlignByte also consumes the actual unconditional bus-107 written-byte
+range hint (`mem_align_byte.pil:25`, h1016). Emission requires exactly one
+assumes-side `Range Check` tuple `[written_byte_value]` with multiplicity1;
+missing, duplicated, changed-slot or gated-multiplicity hints fail closed.
+The sixth local lookup is not inferred from a `bits` annotation or from the
+bus-byte mux. Source-only Direct accumulator equations are separately recorded
+as challenge/stage-2 predicates, with their generated-constraint welds; this
+does not claim row-count correlation or finished provider composition.
+
 Regenerate the Clean Component source with:
 
 ```
