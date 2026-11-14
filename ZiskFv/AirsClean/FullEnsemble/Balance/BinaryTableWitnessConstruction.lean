@@ -96,7 +96,7 @@ theorem flatMap_seventeen_active0_13_16
       t14, t15, t16].flatMap f = f t0 ++ f t13 ++ f t16 := by
   simp only [List.flatMap_cons, List.flatMap_nil, h1, h2, h3, h4,
     h5, h6, h7, h8, h9, h10, h11, h12, h14, h15,
-    List.nil_append, List.append_nil]
+    List.nil_append, List.append_nil, List.append_assoc]
 
 /-- Retain the actual operation-bus emission while adding table requests. -/
 theorem binary_consumer_interactionsWith_opBus :
