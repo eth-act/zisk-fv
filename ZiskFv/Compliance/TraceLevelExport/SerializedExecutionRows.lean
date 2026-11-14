@@ -63,8 +63,20 @@ theorem expanded_pc_successor {n rawLength : Nat} (trace : AcceptedZiskTrace n)
   obtain ⟨hrd, hrs1⟩ := expanded_source_register_bounds lowering widthTwo
   obtain ⟨setpc, _, jump⟩ := expanded_main_first_core trace start addr rawProgram
     binding k lowering widthTwo hrd hrs1 row atPc
+  obtain ⟨_, _, _, _, pins⟩ :=
+    lowering.jalr_first_pins_of_width_two widthTwo hrd hrs1
+  have sourceJump := pins.2.1
+  have mainJump := congrArg ZiskFv.Channels.ZiskRomBus.ZiskRomMessage.jmp_offset1
+    (main_first_rom trace start addr rawProgram binding k lowering row atPc)
+  have jump1 : (mainOfTable trace.program trace.mainTable).jmp_offset1 row.val = 1 := by
+    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_jmp_offset1]
+    change (mainTableRowAtOrZero trace.program trace.mainTable row.val).core.jmp_offset1 =
+      (lowering.rows.first_row.jmp_offset1.val : FGL) at mainJump
+    rw [sourceJump] at mainJump
+    exact mainJump.trans (by decide)
   rw [mainOfTable_pc_succ_eq_nextPcMux row.val successor]
-  simp only [nextPcMux, setpc, zero_mul, sub_zero, one_mul, zero_add, jump, atPc]
+  simp only [nextPcMux, setpc, zero_mul, sub_zero, one_mul, zero_add, jump, jump1,
+    sub_self, mul_zero, add_zero, atPc]
 
 /-- Every actual physical member of a width-one/two span equals the complete
 source row. Arbitrary physical starts are allowed, including nonfinal width2.
@@ -88,7 +100,8 @@ theorem main_full_serialized_span {n rawLength : Nat} (trace : AcceptedZiskTrace
       main_first_rom trace start addr rawProgram binding k lowering row atPc
   · have widthTwo : lowering.width = 2 := by
       rcases lowering.count with one | two
-      · have bound := offset.isLt
+      · change lowering.width = 1 at one
+        have bound := offset.isLt
         omega
       · exact two
     have one : offset.val = 1 := by
@@ -124,10 +137,11 @@ theorem old_raw_full_serialized_span {n rawLength : Nat} (trace : AcceptedZiskTr
   refine ⟨k, lowering, atPc, width, ?_⟩
   apply main_full_serialized_span trace start addr rawProgram binding k lowering
     ⟨i.val, trace.mainTable_index i⟩
-  · have covered := old_decode_span_room trace i step (rowDecode_of_programDecode trace i
+  · change i.val + lowering.width ≤ trace.mainTable.table.length
+    have covered := old_decode_span_room trace i step (rowDecode_of_programDecode trace i
       (programDecode_of_rawProgramDecode trace i step start addr rawProgram binding rawDecode))
     rw [width]
-    omega
+    exact Nat.le_of_lt covered
   · exact atPc.symm
 
 section CanonicalCoverage
@@ -151,7 +165,8 @@ theorem canonical_span_room (i : Fin m) :
     by_cases empty : sourceEnd L = 0
     · omega
     · have index := trace.mainTable_index
-        ⟨sourceEnd L - 1, by omega⟩
+        ⟨sourceEnd L - 1, by change sourceEnd L - 1 < sourceEnd L; omega⟩
+      change sourceEnd L - 1 < trace.mainTable.table.length at index
       omega
   change rowPrefix (sourceWidth L) (i.val + 1) =
     sourceStart L i + (L i).width at stop
@@ -159,6 +174,7 @@ theorem canonical_span_room (i : Fin m) :
   change sourceStart L i + (L i).width ≤ trace.mainTable.table.length
   omega
 
+include start binding in
 /-- Whole-prefix source consumption at the actual interval-derived owner.
 The PC selections are ordinary selected-word facts, not an independent row map.
 There is no old starts=i/StepRowsAligned restriction in this new coverage. -/
@@ -172,14 +188,16 @@ theorem canonical_main_serialized_prefix
       romRowOf (addr (selected i) + (offset : FGL))
         (if offset = 0 then (L i).rows.first_row else (L i).rows.last_row) := by
   let i := physicalOwner L row
-  have owner := physicalOwner_spec L row
+  have owner : sourceStart L i ≤ row.val ∧ row.val < sourceStart L i + (L i).width :=
+    physicalOwner_spec L row
   have deltaBound : row.val - sourceStart L i < (L i).width := by omega
   let delta : Fin (L i).width := ⟨row.val - sourceStart L i, deltaBound⟩
   have span := main_full_serialized_span trace start addr rawProgram binding
     (selected i) (L i)
     ⟨(physicalStart L i).val, trace.mainTable_index (physicalStart L i)⟩
     (canonical_span_room rawProgram selected L trace i) (atPc i) delta
-  simpa only [physicalStart_val, delta, Nat.add_sub_of_le owner.1] using span
+  have arithmetic : sourceStart L i + (row.val - sourceStart L i) = row.val := by omega
+  simpa only [physicalStart_val, delta, arithmetic] using span
 
 /-- Width agreement and producer/next-source placement are DERIVED from the
 existing raw-decode facts at each source-selected physical start. -/

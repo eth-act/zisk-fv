@@ -44,6 +44,8 @@ private theorem mainAMemorySelectorColumn_of_packFlags_at {n : Nat}
     RomDecodeBinding.mainRow_flags_boolean trace row
   obtain ⟨am, eam⟩ := bool_of_booleanity hb_am
   obtain ⟨pre, epre⟩ := bool_of_booleanity hb_pre
+  change r.rom.a_src_mem = ZiskFv.AirsClean.boolF am at eam
+  change r.rom.is_precompiled = ZiskFv.AirsClean.boolF pre at epre
   obtain ⟨ieo, m32, setpc, storepc⟩ :=
     RomDecodeBinding.romFlagColumns_of_romFlags_eq_packFlags r bits
       (RomDecodeBinding.mainRow_flags_boolean trace row) h
@@ -86,7 +88,12 @@ theorem expanded_main_first_core {n rawLength : Nat} (trace : AcceptedZiskTrace 
   refine ⟨?_, ?_, ?_⟩
   · simpa [romFlagBitsOfExtract, setpc] using mainSet
   · simpa [romFlagBitsOfExtract, storepc] using mainStore
-  · simpa [romMessage, romRowOf, mainOfTable_jmp_offset2, jump, IScalar.val] using mainJump
+  · rw [mainOfTable_jmp_offset2]
+    change (mainTableRowAtOrZero trace.program trace.mainTable row.val).core.jmp_offset2 =
+      (lowering.rows.first_row.jmp_offset2.val : FGL) at mainJump
+    rw [jump] at mainJump
+    have one : ((1#i64).val : FGL) = 1 := by decide
+    exact mainJump.trans one
 
 /-- No actual architectural-register or mutable-memory store selector is active.
 Unlike the source `store = 0` fact alone, these are accepted Main columns. -/
@@ -149,17 +156,43 @@ theorem expanded_main_first_source_selectors {n rawLength : Nat}
   · simpa [romFlagBitsOfExtract, asrc, zisk_inst.SRC_IMM, zisk_inst.SRC_REG] using areg
   · simpa [romFlagBitsOfExtract, asrc, zisk_inst.SRC_IMM, zisk_inst.SRC_MEM] using amem
   · rcases bsrc with ⟨_, bsrc, _⟩ | ⟨_, bsrc, _⟩
-    · exact ⟨by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_IMM,
+    · change lowering.rows.first_row.b_src = zisk_inst.SRC_IMM at bsrc
+      exact ⟨by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_IMM,
           zisk_inst.SRC_MEM] using bmem,
         by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_IMM,
           zisk_inst.SRC_IND] using bind,
         Or.inl (by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_IMM,
           zisk_inst.SRC_REG] using breg)⟩
-    · exact ⟨by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_REG,
+    · change lowering.rows.first_row.b_src = zisk_inst.SRC_REG at bsrc
+      exact ⟨by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_REG,
           zisk_inst.SRC_MEM] using bmem,
         by simpa [romFlagBitsOfExtract, bsrc, zisk_inst.SRC_REG,
           zisk_inst.SRC_IND] using bind,
         Or.inr (by simpa [romFlagBitsOfExtract, bsrc] using breg)⟩
+
+private theorem cMemInteraction_eval_mult
+    (env : Environment FGL) (v : Var MainRowWithRom FGL) :
+    (((MemBusChannel.emitted
+      (-(v.rom.store_mem + v.rom.store_ind + v.rom.store_reg))
+      (cMemMessageExpr v)).toRaw).eval env).mult =
+      -((eval env v).rom.store_mem + (eval env v).rom.store_ind +
+        (eval env v).rom.store_reg) := by
+  change Expression.eval env
+    (-(v.rom.store_mem + v.rom.store_ind + v.rom.store_reg)) = _
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  ring
+
+private theorem cRegPreInteraction_eval_mult
+    (env : Environment FGL) (v : Var MainRowWithRom FGL) :
+    (((MemBusChannel.emitted v.rom.store_reg
+      (cRegPreMessageExpr v)).toRaw).eval env).mult = (eval env v).rom.store_reg := by
+  change Expression.eval env v.rom.store_reg = (eval env v).rom.store_reg
+  simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field]
 
 /-- Actual physical C pull, including the component's real multiplicity and
 Main-table evaluation environment. -/
@@ -197,15 +230,13 @@ theorem expanded_main_first_cMemInteraction_mult_zero {n rawLength : Nat}
     (mainCMemInteractionAt trace row).mult = 0 := by
   obtain ⟨reg, mem, ind⟩ := expanded_main_first_no_write_selectors
     trace start addr rawProgram binding k lowering widthTwo hrd hrs1 row atPc
-  change (-1 : FGL) * Expression.eval
-    (trace.mainTable.environment (trace.mainTable.table.get row))
-    ((componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_mem +
-      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_ind +
-      (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_reg) = 0
-  rw [eval_cSourceSumExpr, ← mainTableRowAtOrZero_get trace.program trace.mainTable row]
-  simp only [mainRowWithRomAt] at reg mem ind
+  rw [mainCMemInteractionAt, cMemInteraction_eval_mult,
+    ← mainTableRowAtOrZero_get trace.program trace.mainTable row]
+  change -((mainRowWithRomAt trace row).rom.store_mem +
+    (mainRowWithRomAt trace row).rom.store_ind +
+    (mainRowWithRomAt trace row).rom.store_reg) = 0
   rw [mem, ind, reg]
-  simp
+  simp only [add_zero, neg_zero]
 
 /-- All three actual typed Main messages exclude mutable memory: A and C have
 opcode zero, while B can only be inactive or a register access (`mem_op = 3`).
@@ -318,14 +349,8 @@ theorem expanded_main_first_cRegPreInteraction_mult_zero {n rawLength : Nat}
       (cRegPreMessageExpr
         (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar)).toRaw).eval
       (trace.mainTable.environment (trace.mainTable.table.get row))).mult = 0 := by
-  have bridge (env : Environment FGL) (v : Var MainRowWithRom FGL) :
-      Expression.eval env v.rom.store_reg = (eval env v).rom.store_reg := by
-    simp only [ProvableStruct.eval_eq_eval, ProvableStruct.eval,
-      ProvableStruct.fromComponents, ProvableStruct.components,
-      ProvableStruct.toComponents, ProvableStruct.eval.go, ProvableType.eval_field]
-  change Expression.eval (trace.mainTable.environment (trace.mainTable.table.get row))
-    (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar.rom.store_reg = 0
-  rw [bridge, ← mainTableRowAtOrZero_get trace.program trace.mainTable row]
+  rw [cRegPreInteraction_eval_mult,
+    ← mainTableRowAtOrZero_get trace.program trace.mainTable row]
   exact (expanded_main_first_no_write_selectors
     trace start addr rawProgram binding k lowering widthTwo hrd hrs1 row atPc).1
 

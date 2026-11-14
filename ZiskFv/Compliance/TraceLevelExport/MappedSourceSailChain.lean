@@ -24,12 +24,14 @@ positive. This also handles the empty source without choosing a dummy word. -/
 theorem sourceStart_lt_sourceEnd
     (L : ∀ i, SuccessfulRowLowering (words i)) (i : Fin m) :
     sourceStart L i < sourceEnd L := by
-  have hs := prefix_succ (sourceWidth L) i
-  have hm := prefix_mono (sourceWidth L) (Nat.succ_le_of_lt i.isLt)
-  have hp := (L i).width_pos
   change rowPrefix (sourceWidth L) i.val < rowPrefix (sourceWidth L) m
-  change 0 < sourceWidth L i at hp
-  omega
+  calc
+    rowPrefix (sourceWidth L) i.val <
+        rowPrefix (sourceWidth L) i.val + sourceWidth L i :=
+      Nat.lt_add_of_pos_right (L i).width_pos
+    _ = rowPrefix (sourceWidth L) (i.val + 1) := (prefix_succ (sourceWidth L) i).symm
+    _ ≤ rowPrefix (sourceWidth L) m :=
+      prefix_mono (sourceWidth L) (show i.val + 1 ≤ m by omega)
 
 /-- The physical start is computed from all preceding actual source widths. -/
 def physicalStart (L : ∀ i, SuccessfulRowLowering (words i)) (i : Fin m) :
@@ -68,7 +70,8 @@ theorem physicalOwner_eq_iff
       sourceStart L i ≤ r.val ∧ r.val < sourceStart L i + (L i).width := by
   constructor
   · intro h
-    simpa only [h] using physicalOwner_spec L r
+    cases h
+    exact physicalOwner_spec L r
   · intro hi
     exact (physicalOwner_unique L r i hi).symm
 
