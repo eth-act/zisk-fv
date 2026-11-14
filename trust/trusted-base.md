@@ -1505,3 +1505,28 @@ recipe: `nix/sail-lean-tree.nix` inherits nixpkgs's Sail compiler. The recorded
 derivation uses Sail0.20.1. These proofs are against the actual imported Lean
 declarations, not a newly asserted compiler-provenance or byte-for-byte
 regeneration result. No compiler/native proof trust is added by this repair.
+
+## Four-store canonical runtime inputs
+
+The explicitly approved SB/SH/SW/SD cutover adds exactly three proof fields per
+family: existence of successful same-state reads of decoded r1/r2 and presence
+of the current Sail PC. Claims retain only decoded r1/r2/imm. These twelve
+structural fields are not independent execution-domain conditions: each complete
+old opcode predicate already provides PC presence and both exact register reads.
+
+For every store, `InputsCore_<op>.of_state_assumptions` accepts the WHOLE old
+surface: original input, unchanged opcode predicate, mode registers, all four
+lane equalities and the old platform predicate. It constructs the complete new
+Core plus equality of its WHOLE canonical input to that original input; no read,
+PC, parse, mappedness or equality hypothesis is added to the constructor.
+Successful-read uniqueness justifies the equality and transports all original
+input-dependent obligations, not merely selected residual conjuncts.
+
+All four live `pureInputsOfRegAgree` store arms consume those constructors AND
+their equality certificates to retain the whole old predicate. Their read
+witnesses still come from current `RegAgree`; PC presence comes from the
+generated-state invariant. The concrete SD root consumer also uses its complete
+certificate. This is runtime-data canonicalization/domain preservation, not
+removal of the aggregate `InputsAgreeCore` premise or a proof of memory induction.
+Existing PureSpec/per-op/root/validator interfaces and load predicates are
+unchanged; no load-read field or source-word witness is introduced.

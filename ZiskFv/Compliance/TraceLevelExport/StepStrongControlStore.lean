@@ -1527,15 +1527,17 @@ theorem stepStrong_sb
     (d : RowData_sb trace binding i)
     (h_store_rmw_ev : StoreRmwMemoryCoherenceEvidence (binding i)
       (busSt trace i (Pilot.execRowOf trace i)).e2 1)
-    (h_domain : SequentialPcDomain d.toClaim.sb_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_sb.input.PC) :
     execute_instruction (instruction.STORE
-        (d.toClaim.sb_input.imm, regidx.Regidx d.toClaim.sb_input.r2, regidx.Regidx d.toClaim.sb_input.r1, 1))
+        (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, 1))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSt trace i (Pilot.execRowOf trace i)).e0
            , (busSt trace i (Pilot.execRowOf trace i)).e1
            , (busSt trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.r2]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busSt trace i (Pilot.execRowOf trace i)
@@ -1553,12 +1555,12 @@ theorem stepStrong_sb
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
-  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sb_input.r2_val := d.toInputs.h_b0_value
-  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sb_input.r2_val := d.toInputs.h_b1_value
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toInputs.toInputsCore_sb.input.r2_val := d.toInputs.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toInputs.toInputsCore_sb.input.r2_val := d.toInputs.h_b1_value
   let promises : ZiskFv.EquivCore.Promises.StorePromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.sb_state_assumptions d.toClaim.sb_input state)
-      (PureSpec.execute_STOREB_pure d.toClaim.sb_input).nextPC
+      (PureSpec.sb_state_assumptions d.toInputs.toInputsCore_sb.input state)
+      (PureSpec.execute_STOREB_pure d.toInputs.toInputsCore_sb.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -1576,7 +1578,7 @@ theorem stepStrong_sb
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sb d.toClaim.sb_input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
+    OpEnvelope.sb d.toInputs.toInputsCore_sb.input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
       (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
@@ -1584,15 +1586,15 @@ theorem stepStrong_sb
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sb_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_sb.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_a1_value :
-            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toClaim.sb_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toInputs.toInputsCore_sb.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a1_value
         have h_addr_bound :
-            (d.toClaim.sb_input.r1_val + BitVec.signExtend 64 d.toClaim.sb_input.imm).toNat
+            (d.toInputs.toInputsCore_sb.input.r1_val + BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize :=
           d.toInputs.h_opcode_assumptions.2.2.2.1
         simpa only [eval_mainConstVar] using
@@ -1610,15 +1612,17 @@ theorem stepStrong_sh
     (d : RowData_sh trace binding i)
     (h_store_rmw_ev : StoreRmwMemoryCoherenceEvidence (binding i)
       (busSt trace i (Pilot.execRowOf trace i)).e2 2)
-    (h_domain : SequentialPcDomain d.toClaim.sh_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_sh.input.PC) :
     execute_instruction (instruction.STORE
-        (d.toClaim.sh_input.imm, regidx.Regidx d.toClaim.sh_input.r2, regidx.Regidx d.toClaim.sh_input.r1, 2))
+        (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, 2))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSt trace i (Pilot.execRowOf trace i)).e0
            , (busSt trace i (Pilot.execRowOf trace i)).e1
            , (busSt trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.r2]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busSt trace i (Pilot.execRowOf trace i)
@@ -1636,12 +1640,12 @@ theorem stepStrong_sh
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
-  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sh_input.r2_val := d.toInputs.h_b0_value
-  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sh_input.r2_val := d.toInputs.h_b1_value
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toInputs.toInputsCore_sh.input.r2_val := d.toInputs.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toInputs.toInputsCore_sh.input.r2_val := d.toInputs.h_b1_value
   let promises : ZiskFv.EquivCore.Promises.StorePromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.sh_state_assumptions d.toClaim.sh_input state)
-      (PureSpec.execute_STOREH_pure d.toClaim.sh_input).nextPC
+      (PureSpec.sh_state_assumptions d.toInputs.toInputsCore_sh.input state)
+      (PureSpec.execute_STOREH_pure d.toInputs.toInputsCore_sh.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -1659,7 +1663,7 @@ theorem stepStrong_sh
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sh d.toClaim.sh_input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
+    OpEnvelope.sh d.toInputs.toInputsCore_sh.input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
       (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
@@ -1667,15 +1671,15 @@ theorem stepStrong_sh
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sh_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_sh.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_a1_value :
-            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toClaim.sh_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toInputs.toInputsCore_sh.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a1_value
         have h_addr_bound :
-            (d.toClaim.sh_input.r1_val + BitVec.signExtend 64 d.toClaim.sh_input.imm).toNat
+            (d.toInputs.toInputsCore_sh.input.r1_val + BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize :=
           d.toInputs.h_opcode_assumptions.2.2.2.1
         simpa only [eval_mainConstVar] using
@@ -1693,15 +1697,17 @@ theorem stepStrong_sw
     (d : RowData_sw trace binding i)
     (h_store_rmw_ev : StoreRmwMemoryCoherenceEvidence (binding i)
       (busSt trace i (Pilot.execRowOf trace i)).e2 4)
-    (h_domain : SequentialPcDomain d.toClaim.sw_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_sw.input.PC) :
     execute_instruction (instruction.STORE
-        (d.toClaim.sw_input.imm, regidx.Regidx d.toClaim.sw_input.r2, regidx.Regidx d.toClaim.sw_input.r1, 4))
+        (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, 4))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSt trace i (Pilot.execRowOf trace i)).e0
            , (busSt trace i (Pilot.execRowOf trace i)).e1
            , (busSt trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.r2]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busSt trace i (Pilot.execRowOf trace i)
@@ -1719,12 +1725,12 @@ theorem stepStrong_sw
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
-  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sw_input.r2_val := d.toInputs.h_b0_value
-  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sw_input.r2_val := d.toInputs.h_b1_value
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toInputs.toInputsCore_sw.input.r2_val := d.toInputs.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toInputs.toInputsCore_sw.input.r2_val := d.toInputs.h_b1_value
   let promises : ZiskFv.EquivCore.Promises.StorePromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.sw_state_assumptions d.toClaim.sw_input state)
-      (PureSpec.execute_STOREW_pure d.toClaim.sw_input).nextPC
+      (PureSpec.sw_state_assumptions d.toInputs.toInputsCore_sw.input state)
+      (PureSpec.execute_STOREW_pure d.toInputs.toInputsCore_sw.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -1742,7 +1748,7 @@ theorem stepStrong_sw
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sw d.toClaim.sw_input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
+    OpEnvelope.sw d.toInputs.toInputsCore_sw.input d.toInputs.regs bus pins d.toDecode.h_main_ind_width d.toInputs.h_opcode_assumptions promises
       (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
@@ -1750,15 +1756,15 @@ theorem stepStrong_sw
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sw_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_sw.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_a1_value :
-            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toClaim.sw_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toInputs.toInputsCore_sw.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a1_value
         have h_addr_bound :
-            (d.toClaim.sw_input.r1_val + BitVec.signExtend 64 d.toClaim.sw_input.imm).toNat
+            (d.toInputs.toInputsCore_sw.input.r1_val + BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize :=
           d.toInputs.h_opcode_assumptions.2.2.2.1
         simpa only [eval_mainConstVar] using
@@ -1774,15 +1780,17 @@ theorem stepStrong_sw
 theorem stepStrong_sd
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sd trace binding i)
-    (h_domain : SequentialPcDomain d.toClaim.sd_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_sd.input.PC) :
     execute_instruction (instruction.STORE
-        (d.toClaim.sd_input.imm, regidx.Regidx d.toClaim.sd_input.r2, regidx.Regidx d.toClaim.sd_input.r1, 8))
+        (d.toClaim.imm, d.toClaim.r2, d.toClaim.r1, 8))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSt trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSt trace i (Pilot.execRowOf trace i)).e0
            , (busSt trace i (Pilot.execRowOf trace i)).e1
            , (busSt trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.r2]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busSt trace i (Pilot.execRowOf trace i)
@@ -1800,12 +1808,12 @@ theorem stepStrong_sd
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (ZiskFv.AirsClean.Main.cMemMessage (mainRowWithRomSt trace i)) 1 2) :=
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
-  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toClaim.sd_input.r2_val := d.toInputs.h_b0_value
-  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toClaim.sd_input.r2_val := d.toInputs.h_b1_value
+  have h_b0' : m.b_0 i.val = ZiskFv.Trusted.lane_lo d.toInputs.toInputsCore_sd.input.r2_val := d.toInputs.h_b0_value
+  have h_b1' : m.b_1 i.val = ZiskFv.Trusted.lane_hi d.toInputs.toInputsCore_sd.input.r2_val := d.toInputs.h_b1_value
   let promises : ZiskFv.EquivCore.Promises.StorePromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.sd_state_assumptions d.toClaim.sd_input state)
-      (PureSpec.execute_STORED_pure d.toClaim.sd_input).nextPC
+      (PureSpec.sd_state_assumptions d.toInputs.toInputsCore_sd.input state)
+      (PureSpec.execute_STORED_pure d.toInputs.toInputsCore_sd.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -1823,7 +1831,7 @@ theorem stepStrong_sd
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sd d.toClaim.sd_input d.toInputs.regs bus pins d.toInputs.h_opcode_assumptions promises
+    OpEnvelope.sd d.toInputs.toInputsCore_sd.input d.toInputs.regs bus pins d.toInputs.h_opcode_assumptions promises
       (mainRowVar := mainConstVar (mainRowWithRomSt trace i)) (mainEnv := emptyMainEnv)
       (by simpa only [eval_mainConstVar] using h_core)
       (by simpa only [eval_mainConstVar] using h_main_spec)
@@ -1831,15 +1839,15 @@ theorem stepStrong_sd
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toClaim.sd_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_sd.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_a1_value :
-            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toClaim.sd_input.r1_val := by
+            (mainRowWithRomSt trace i).core.a_1 = lane_hi d.toInputs.toInputsCore_sd.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a1_value
         have h_addr_bound :
-            (d.toClaim.sd_input.r1_val + BitVec.signExtend 64 d.toClaim.sd_input.imm).toNat
+            (d.toInputs.toInputsCore_sd.input.r1_val + BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize :=
           d.toInputs.h_opcode_assumptions.2.2.2.1
         simpa only [eval_mainConstVar] using
