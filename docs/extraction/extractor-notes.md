@@ -782,3 +782,5 @@ The raw-slot layout equality is sealed independently of the fixed-value
 function. Delta unfolding followed by separate rewrite steps projects the
 cell before inspecting its layout, avoiding simplification over the array's
 generating function.
+Canonical provider projection proofs use a generic fixed-schema rewrite and
+symbolic `List.ofFn` length/index laws, rather than reducing full source lists.

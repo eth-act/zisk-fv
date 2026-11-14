@@ -30,6 +30,8 @@ structure LogicalWitness (F : Type) where
   bus330 : Fin source330.rows → F
   bus331 : Fin source331.rows → F
 
+variable {F : Type}
+
 def project (raw : Witness F) (source : Source) : Fin source.rows → F :=
   fun index => raw (source.location index)
 
@@ -120,6 +122,14 @@ theorem extensionRow_constructible (raw : Witness FGL)
     BinaryExtensionTableSlice.sourceCircuit.ProverAssumptions (extensionRow raw index) data hint := by
   exact BinaryExtensionTableSlice.sourceRow_constructible index _ data hint
 
+private theorem table_of_fixedColumns (t : Table FGL)
+    (columns : IndexedFixedColumns FGL t.component.rawWidth)
+    (h : t.component.fixedColumns = some columns) :
+    t.table = t.rawRows.mapIdx (fun index row => columns.materialize index row) := by
+  unfold Table.table
+  rewrite [h]
+  rfl
+
 /-- Canonical full-domain raw rows for the projected provider table. The only
 witness cell comes from the actual packed multiplicity lane, without a copy of
 or a caller premise about any fixed column. -/
@@ -136,7 +146,7 @@ def binaryProviderTable (raw : Witness FGL) (data : ProverData FGL) : Table FGL 
     intro columns hcolumns
     have he : columns = BinaryTableSlice.sourceFixedColumns := Option.some.inj hcolumns.symm
     subst columns
-    simp [BinaryTableSlice.sourceFixedColumns]
+    exact Nat.le_of_eq List.length_ofFn
 
 def extensionProviderTable (raw : Witness FGL) (data : ProverData FGL) : Table FGL where
   component := BinaryExtensionTableSlice.sourceComponent
@@ -151,7 +161,7 @@ def extensionProviderTable (raw : Witness FGL) (data : ProverData FGL) : Table F
     intro columns hcolumns
     have he : columns = BinaryExtensionTableSlice.sourceFixedColumns := Option.some.inj hcolumns.symm
     subst columns
-    simp [BinaryExtensionTableSlice.sourceFixedColumns]
+    exact Nat.le_of_eq List.length_ofFn
 
 open ZiskFv.Channels.BinaryTable (BinaryTableChannel)
 open ZiskFv.Channels.BinaryExtensionTable (BinaryExtensionTableChannel)
@@ -160,32 +170,32 @@ theorem binaryProviderTable_materialized (raw : Witness FGL) (data : ProverData 
     (binaryProviderTable raw data).table =
       List.ofFn (fun index : Fin BinaryTable.tableSize =>
         (toElements (binaryRow raw index)).toArray) := by
-  change (List.ofFn (fun index : Fin BinaryTable.tableSize =>
-      #[(binaryRow raw index).multiplicity])).mapIdx
-      (fun index row => BinaryTableSlice.sourceFixedColumns.materialize index row) = _
+  rewrite [table_of_fixedColumns (binaryProviderTable raw data)
+    BinaryTableSlice.sourceFixedColumns rfl]
+  dsimp only [binaryProviderTable]
   apply List.ext_getElem
-  · simp
+  · simp only [List.length_mapIdx, List.length_ofFn]
   · intro index hi hi'
     have hindex : index < BinaryTable.tableSize := by
       simpa only [List.length_mapIdx, List.length_ofFn] using hi
     simp only [List.getElem_mapIdx, List.getElem_ofFn]
-    simpa only [binaryRow] using BinaryTableSlice.sourceFixedColumns_materialize
+    exact BinaryTableSlice.sourceFixedColumns_materialize
       ⟨index, hindex⟩ (binaryRow raw ⟨index, hindex⟩).multiplicity
 
 theorem extensionProviderTable_materialized (raw : Witness FGL) (data : ProverData FGL) :
     (extensionProviderTable raw data).table =
       List.ofFn (fun index : Fin BinaryExtensionTable.tableSize =>
         (toElements (extensionRow raw index)).toArray) := by
-  change (List.ofFn (fun index : Fin BinaryExtensionTable.tableSize =>
-      #[(extensionRow raw index).multiplicity])).mapIdx
-      (fun index row => BinaryExtensionTableSlice.sourceFixedColumns.materialize index row) = _
+  rewrite [table_of_fixedColumns (extensionProviderTable raw data)
+    BinaryExtensionTableSlice.sourceFixedColumns rfl]
+  dsimp only [extensionProviderTable]
   apply List.ext_getElem
-  · simp
+  · simp only [List.length_mapIdx, List.length_ofFn]
   · intro index hi hi'
     have hindex : index < BinaryExtensionTable.tableSize := by
       simpa only [List.length_mapIdx, List.length_ofFn] using hi
     simp only [List.getElem_mapIdx, List.getElem_ofFn]
-    simpa only [extensionRow] using BinaryExtensionTableSlice.sourceFixedColumns_materialize
+    exact BinaryExtensionTableSlice.sourceFixedColumns_materialize
       ⟨index, hindex⟩ (extensionRow raw ⟨index, hindex⟩).multiplicity
 
 /-- All provider constraints hold for every physical raw witness. Membership
