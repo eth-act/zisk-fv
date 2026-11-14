@@ -166,6 +166,16 @@ def provider_buses(reach) -> set[int]:
         raise ValueError("cannot find fullRv64imSoundEnsemble")
     channels = set(re.findall(r"addFinishedChannel\s+([A-Za-z0-9_]+)\.toRaw", body_match.group()))
     found: set[int] = set()
+    registry = tomllib.loads((ROOT / "trust" / "constants.toml").read_text())
+    registered = {}
+    for entry in registry.get("constant", []):
+        if entry.get("kind") != "channel":
+            continue
+        name, value, model = entry.get("name"), entry.get("value"), entry.get("model")
+        if (not isinstance(name, str) or type(value) is not int
+                or not isinstance(model, str) or name in registered):
+            raise ValueError("invalid or duplicate registered channel")
+        registered[name] = (value, ROOT / model)
     channel_dir = ROOT / "ZiskFv" / "Channels"
     for channel in sorted(channels):
         declaration = None
@@ -178,6 +188,15 @@ def provider_buses(reach) -> set[int]:
                 break
         if declaration is None or owner is None:
             raise ValueError(f"cannot resolve finished channel {channel}")
+        if channel in registered:
+            value, model = registered[channel]
+            if model.resolve() != owner.resolve():
+                raise ValueError(f"finished channel {channel} has a stale registry owner")
+            # The existing constant gate checks this explicit mapping against
+            # pinned PIL/generated IDs. Unrelated links in the same wiring
+            # module must not assign their IDs to this channel.
+            found.add(value)
+            continue
         text = reach.strip_comments(owner.read_text(errors="replace"))
         before = text[:declaration.start()]
         nearby = before[max(0, len(before) - 1800):] + text[declaration.start():declaration.start() + 500]

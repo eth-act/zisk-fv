@@ -185,6 +185,12 @@ build fidelity checks, theorem-consumed correspondences, proof-backed generated
 model use, and links to uncomposed provider channels. Its schema/semantics and
 compiled false-credit regressions are documented in
 [`docs/extraction/coverage.md`](../docs/extraction/coverage.md).
+Finished channels without an embedded numeric ID use their existing
+`trust/constants.toml` channel mapping, checked by the constant gate against
+the pinned source/generated IDs and the declaring module. A multi-bus wiring
+module does not assign all its IDs to every channel it mentions; unregistered
+ambiguous channels still fail closed. This inventory alone grants no exposure
+credit.
 
 `regenerate.sh` refreshes every generated ledger after an intentional
 trust-boundary change.

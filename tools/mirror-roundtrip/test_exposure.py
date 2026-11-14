@@ -6,8 +6,59 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import exposure
+
+
+class ChannelRegistryTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="exposure-channels-")
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.reach = exposure.load_reachability()
+        channels = self.root / "ZiskFv/Channels"
+        airs = self.root / "ZiskFv/AirsClean"
+        channels.mkdir(parents=True)
+        airs.mkdir()
+        (self.root / "trust").mkdir()
+        (channels / "MemoryBus.lean").write_text(
+            'instance MemBusChannel : Channel FGL MemBusMessage where\n'
+            '  name := "MemoryBus"\n')
+        (airs / "FullEnsemble.lean").write_text(
+            "def fullRv64imSoundEnsemble :=\n"
+            "  ensemble.addFinishedChannel MemBusChannel.toRaw\n"
+            "theorem fullRv64imSoundEnsemble_assumptionsConsistency := by trivial\n")
+        (airs / "MultiBusWiring.lean").write_text(
+            'MemBusChannel\nbusId = constant "10"\nbusId = constant "88"\n'
+            'busId = constant "103"\nbusId = constant "107"\n')
+        self.entry = (
+            '[[constant]]\nname = "MemBusChannel"\nkind = "channel"\n'
+            'value = 10\nmodel = "ZiskFv/Channels/MemoryBus.lean"\n')
+        self.registry = self.root / "trust/constants.toml"
+        self.registry.write_text(self.entry)
+
+    def resolve(self):
+        with patch.object(exposure, "ROOT", self.root):
+            return exposure.provider_buses(self.reach)
+
+    def test_registered_channel_ignores_other_buses_in_same_wiring(self):
+        self.assertEqual(self.resolve(), {10})
+
+    def test_stale_registered_owner_fails_closed(self):
+        self.registry.write_text(self.entry.replace("MemoryBus.lean", "Other.lean"))
+        with self.assertRaisesRegex(ValueError, "stale registry owner"):
+            self.resolve()
+
+    def test_duplicate_registered_channel_fails_closed(self):
+        self.registry.write_text(self.entry + self.entry)
+        with self.assertRaisesRegex(ValueError, "duplicate registered channel"):
+            self.resolve()
+
+    def test_unregistered_ambiguous_channel_still_fails_closed(self):
+        self.registry.write_text("")
+        with self.assertRaisesRegex(ValueError, "ambiguous bus IDs"):
+            self.resolve()
 
 
 class DeclarationCreditTests(unittest.TestCase):
