@@ -799,11 +799,18 @@ theorem sdLdExtensionSource_actual_consumer_balanced :
         ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.operations.interactionValuesWith
           ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
           (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData)) := by
-  rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith
-    sdLdPackedSources sdLdMemData]
-  exact ZiskFv.AirsClean.FullEnsemble.extension_actual_row_requests_balanced
+  have h_balance := ZiskFv.AirsClean.FullEnsemble.extension_actual_row_requests_balanced
     (fun _ => 0) sdLdMemData sdLdSlliBinaryExtensionRow []
     sdLdExtensionSourceRequests sdLdExtensionSourceRequests_weld
+  have h_source :=
+    ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith
+      sdLdPackedSources sdLdMemData
+  exact (congrArg
+    (fun sourceInteractions : List (Interaction FGL) =>
+      BalancedInteractions (sourceInteractions ++
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+          (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData))) h_source).mpr h_balance
 
 theorem sdLdSlliBinaryExtension_proverAssumptions :
     ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupCircuit.ProverAssumptions

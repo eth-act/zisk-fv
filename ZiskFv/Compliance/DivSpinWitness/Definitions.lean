@@ -497,11 +497,18 @@ theorem divSpinBinarySource_actual_consumer_balanced :
         ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
           ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
           (Environment.fromInput divSpinRemainderBoundRow emptyData)) := by
-  rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith
-    divSpinPackedSources emptyData]
-  exact ZiskFv.AirsClean.FullEnsemble.binary_actual_row_requests_balanced
+  have h_balance := ZiskFv.AirsClean.FullEnsemble.binary_actual_row_requests_balanced
     (fun _ => 0) emptyData divSpinRemainderBoundRow divSpinBinarySourceRequests []
     divSpinBinarySourceRequests_weld
+  have h_source :=
+    ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith
+      divSpinPackedSources emptyData
+  exact (congrArg
+    (fun sourceInteractions : List (Interaction FGL) =>
+      BalancedInteractions (sourceInteractions ++
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+          (Environment.fromInput divSpinRemainderBoundRow emptyData))) h_source).mpr h_balance
 
 def divSpinRemainderBoundTable : Table FGL :=
   ZiskFv.Compliance.Instantiation.binaryConsumerSingleRowTable divSpinRemainderBoundRow
