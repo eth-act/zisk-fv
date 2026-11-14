@@ -158,7 +158,7 @@ theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : F
       subst i
       rw [Array.getElem_append_right (by simpa only [hsize] using (Nat.le_refl 7))]
       simp only [hsize, Nat.sub_self]
-      rewrite [IndexedFixedColumns.materialize]
+      unfold IndexedFixedColumns.materialize
       rewrite [Array.getElem_ofFn]
       rewrite [sourceFixedColumns_multiplicity_layout]
       rfl
