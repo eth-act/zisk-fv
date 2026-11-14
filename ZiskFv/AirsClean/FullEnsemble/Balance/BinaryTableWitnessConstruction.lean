@@ -206,6 +206,18 @@ in the existing examples whose Binary-family consumer tables are empty. -/
 def noRequestPackedSources : Witness FGL :=
   physicalOfRequests (fun _ => 0) [] []
 
+/-- Seal the fully instantiated empty-request balance before a caller supplies
+an expected type through the noninjective physical-witness construction. -/
+theorem noRequestPackedSources_binary_balanced :
+    BalancedInteractions (binaryInteractions noRequestPackedSources) := by
+  have h := binary_no_requests_balanced (fun _ => 0) []
+  exact h
+
+theorem noRequestPackedSources_extension_balanced :
+    BalancedInteractions (extensionInteractions noRequestPackedSources) := by
+  have h := extension_no_requests_balanced (fun _ => 0) []
+  exact h
+
 theorem binary_source_transitions {table : Table FGL}
     (h_component : table.component = BinaryTableSlice.sourceComponent) :
     table.TransitionConstraints := by

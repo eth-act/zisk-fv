@@ -1340,7 +1340,7 @@ theorem addFaithfulWitness_binaryTableChannel_balanced :
       ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)
   rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith
     ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData]
-  exact ZiskFv.AirsClean.FullEnsemble.binary_no_requests_balanced (fun _ => 0) []
+  exact ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources_binary_balanced
 
 /-- Actual bus-124 balance, including the full fixed-domain provider. -/
 theorem addFaithfulWitness_extensionTableChannel_balanced :
@@ -1408,7 +1408,7 @@ theorem addFaithfulWitness_extensionTableChannel_balanced :
       ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
   rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith
     ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData]
-  exact ZiskFv.AirsClean.FullEnsemble.extension_no_requests_balanced (fun _ => 0) []
+  exact ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources_extension_balanced
 
 theorem addFaithfulWitness_balancedChannels : addFaithfulWitness.BalancedChannels := by
   refine addFaithfulWitness.balancedChannels_of_tables addFaithfulEnsemble_verifier ?_
