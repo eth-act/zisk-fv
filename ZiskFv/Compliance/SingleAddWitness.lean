@@ -909,7 +909,9 @@ theorem singleAddWitness_binaryTableChannel_balanced :
   have h_list :
       singleAddWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
       (noRequestBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw := by
-    unfold singleAddWitness singleAddTables
+    change singleAddTables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
+      noRequestBinarySourceTable.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+    unfold singleAddTables
     generalize noRequestBinarySourceTable = sourceTable
     simp only [List.flatMap_cons, List.flatMap_nil,
       h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil]
@@ -977,7 +979,9 @@ theorem singleAddWitness_extensionTableChannel_balanced :
   have h_list :
       singleAddWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw) =
       (noRequestExtensionSourceTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw := by
-    unfold singleAddWitness singleAddTables
+    change singleAddTables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw) =
+      noRequestExtensionSourceTable.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+    unfold singleAddTables
     generalize noRequestExtensionSourceTable = sourceTable
     simp only [List.flatMap_cons, List.flatMap_nil,
       h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_15, h_silent_16, List.nil_append, List.append_nil]
