@@ -1438,21 +1438,17 @@ private theorem addAddiSpinJalMemBusInteractions_balanced (step : FGL) :
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
     decide
 
+/-- The exact ordered memory stream, with the full-table equality proved below.
+Keeping this representation finite avoids evaluating the canonical lookup
+providers, whose memory-channel streams are empty. Zero-multiplicity Main
+interactions are retained. -/
 noncomputable def addAddiSpinMemBusInteractions : List (Interaction FGL) :=
-  addAddiSpinWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw)
-
-private noncomputable def addAddiSpinReducedMemBusInteractions : List (Interaction FGL) :=
   (boundaryInteractions addAddiSpinBoundaryRowX1 ++ idleBoundaryInteractions) ++
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow ++
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow ++
     addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) ++
     addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3)
 
-private theorem addAddiSpinMemBusInteractions_eq_tables :
-    addAddiSpinMemBusInteractions =
-      addAddiSpinTables.flatMap (·.interactionsWith MemBusChannel.toRaw) := by
-  exact congrArg (fun tables => tables.flatMap (·.interactionsWith MemBusChannel.toRaw))
-    addAddiSpinWitness_tables
 
 
 private theorem addAddiSpinTablesMemBusInteractions_eq_active :
@@ -1485,9 +1481,9 @@ private theorem addAddiSpinMainTableMemBusInteractions_eq_rows :
         addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 3) :=
   addAddiSpinMainTable_interactionsWith_memBus
 
-private theorem addAddiSpinReducedMemBusInteractions_balanced :
-    BalancedInteractions addAddiSpinReducedMemBusInteractions := by
-  unfold addAddiSpinReducedMemBusInteractions
+theorem addAddiSpinWitness_memBus_balanced :
+    BalancedInteractions addAddiSpinMemBusInteractions := by
+  unfold addAddiSpinMemBusInteractions
   let addRows := addAddiSpinMainValueMemBusInteractions addAddiSpinAddRow ++
     addAddiSpinMainValueMemBusInteractions addAddiSpinAddiRow
   let jalRows := addAddiSpinMainValueMemBusInteractions (addAddiSpinJalRow 2) ++
@@ -1526,17 +1522,17 @@ private theorem addAddiSpinReducedMemBusInteractions_balanced :
   apply balancedInteractions_of_perm h_reordered
   simpa [addRows, jalRows, List.append_assoc] using h_perm.symm
 
-theorem addAddiSpinWitness_memBus_balanced :
-    BalancedInteractions addAddiSpinMemBusInteractions := by
-  rw [addAddiSpinMemBusInteractions_eq_tables,
+private theorem addAddiSpinMemBusInteractions_eq_tables :
+    addAddiSpinMemBusInteractions =
+      addAddiSpinWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw) := by
+  rw [addAddiSpinWitness_tables,
     addAddiSpinTablesMemBusInteractions_eq_active,
     addAddiSpinBoundaryTableMemBusInteractions_eq_rows,
     addAddiSpinBinaryAddTableMemBusInteractions_eq_nil,
-    addAddiSpinMainTableMemBusInteractions_eq_rows]
-  simp only [List.append_nil]
-  rw [addAddiSpinBoundaryRows_interactions]
-  simpa [addAddiSpinReducedMemBusInteractions, List.append_assoc] using
-    addAddiSpinReducedMemBusInteractions_balanced
+    addAddiSpinMainTableMemBusInteractions_eq_rows,
+    addAddiSpinBoundaryRows_interactions]
+  simp only [addAddiSpinMemBusInteractions, List.nil_append, List.append_nil,
+    List.append_assoc]
 
 private theorem addAddiSpinRangeChannel_ne_memBus :
     SpecifiedRangesSliceChannel.toRaw ≠ MemBusChannel.toRaw := by
@@ -2031,7 +2027,7 @@ theorem addAddiSpinWitness_balancedChannels : addAddiSpinWitness.BalancedChannel
   · exact addAddiSpinWitness_binaryTableChannel_balanced
   · exact addAddiSpinWitness_registerStepRangeChannel_balanced
   · exact addAddiSpinWitness_memAlignRangeChannel_balanced
-  · change BalancedInteractions addAddiSpinMemBusInteractions
+  · rw [← addAddiSpinMemBusInteractions_eq_tables]
     exact addAddiSpinWitness_memBus_balanced
   · exact addAddiSpinWitness_opBus_balanced
   · exact addAddiSpinWitness_memAlignRomChannel_balanced
