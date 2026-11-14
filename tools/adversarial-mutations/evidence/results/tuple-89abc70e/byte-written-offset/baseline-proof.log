@@ -1,0 +1,8 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.MemAlignByte.ExtractedWiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+✔ [8070/8078] Built ZiskFv.AirsClean.DirectPadding (3.9s)
+✔ [8076/8078] Built Extraction.LookupWiring (11s)
+✔ [8077/8078] Built ZiskFv.AirsClean.MemAlignByte.Circuit (11s)
+✔ [8078/8078] Built ZiskFv.AirsClean.MemAlignByte.ExtractedWiring (3.9s)
+Build completed successfully (8078 jobs).

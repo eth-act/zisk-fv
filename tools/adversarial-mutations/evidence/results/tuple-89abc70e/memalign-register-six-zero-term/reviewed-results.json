@@ -1,0 +1,316 @@
+{
+  "actual_layer": "Existing MemAlign.Bridge source correspondence; NOT the new RegisterRangeWiring proof",
+  "actual_source_control": {
+    "artifact_delta": [
+      "LookupWiring.lean",
+      "MemAirFacts.md",
+      "MemAlign.lean"
+    ],
+    "commands": [
+      {
+        "argv": [
+          "nix",
+          "--extra-experimental-features",
+          "nix-command flakes",
+          "develop",
+          "--no-write-lock-file",
+          "/home/cody/zisk-fv-closure-mutation",
+          "-c",
+          "lake",
+          "build",
+          "ZiskFv.AirsClean.MemAlign.ExtractedWiring",
+          "--log-level=warning"
+        ],
+        "cwd": "/home/cody/zisk-fv-closure-mutation",
+        "exit_code": 0,
+        "log": "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/logs/baseline-proof.log",
+        "seconds": 8.625695210997947,
+        "timed_out": false
+      },
+      {
+        "argv": [
+          "nix",
+          "--extra-experimental-features",
+          "nix-command flakes",
+          "run",
+          "--no-write-lock-file",
+          ".#compile-mutation",
+          "--",
+          "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/mutant-source",
+          "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/mutant.pilout"
+        ],
+        "cwd": "/home/cody/zisk-fv-closure-mutation",
+        "exit_code": 0,
+        "log": "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/logs/mutant-compiler.log",
+        "seconds": 203.02369803696638,
+        "timed_out": false
+      },
+      {
+        "argv": [
+          "nix",
+          "--extra-experimental-features",
+          "nix-command flakes",
+          "build",
+          "--no-write-lock-file",
+          "--impure",
+          "--no-link",
+          "--print-out-paths",
+          "--expr",
+          "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/mutant-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+        ],
+        "cwd": "/home/cody/zisk-fv-closure-mutation",
+        "exit_code": 0,
+        "log": "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/logs/mutant-extraction.log",
+        "seconds": 160.60229016200174,
+        "timed_out": false
+      },
+      {
+        "argv": [
+          "/usr/bin/python3",
+          "/home/cody/zisk-fv-closure-mutation/tools/pilout-roundtrip/check.py",
+          "--pilout",
+          "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/mutant.pilout",
+          "--extraction",
+          "/nix/store/x89w6ad6w0jynss52kb5ym95n0sich7k-zisk-fv-extracted-lean-1.0",
+          "--quiet"
+        ],
+        "cwd": "/home/cody/zisk-fv-closure-mutation",
+        "exit_code": 0,
+        "log": "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/logs/mutant-roundtrip.log",
+        "seconds": 1.6502536060288548,
+        "timed_out": false
+      },
+      {
+        "argv": [
+          "nix",
+          "--extra-experimental-features",
+          "nix-command flakes",
+          "develop",
+          "--no-write-lock-file",
+          "/home/cody/zisk-fv-closure-mutation",
+          "-c",
+          "lake",
+          "build",
+          "ZiskFv.AirsClean.MemAlign.ExtractedWiring",
+          "--log-level=warning"
+        ],
+        "cwd": "/home/cody/zisk-fv-closure-mutation",
+        "exit_code": 1,
+        "log": "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/logs/mutant-proof.log",
+        "seconds": 49.00358000502456,
+        "timed_out": false
+      }
+    ],
+    "complete": false,
+    "failure": "actual named source-wiring rejection missing",
+    "inputs": {
+      "baseline_extraction": {
+        "files": 25,
+        "path": "/nix/store/ac6b2dayswm3g61gxvvkcgq80fhk22qf-zisk-fv-extracted-lean-1.0",
+        "sha256": "0a7240cc866911b911e9d33da277777ecc1bab865db5204c0958c4475df33d4b"
+      },
+      "baseline_pilout": {
+        "bytes": 4417270,
+        "path": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout",
+        "sha256": "e7d48845b24243302b2aa694333adb9fafbfee1976aa12c3032592fbed068873"
+      },
+      "mutant_extraction": {
+        "files": 25,
+        "path": "/nix/store/x89w6ad6w0jynss52kb5ym95n0sich7k-zisk-fv-extracted-lean-1.0",
+        "sha256": "87689ee983decc9a532a72918e9b547e7d166dea7706e8500c8be25b9cc09912"
+      },
+      "mutant_pilout": {
+        "bytes": 4417143,
+        "path": "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-register-six-zero-control/memalign-register-six-zero-term/mutant.pilout",
+        "sha256": "67555a765edcaec12fa0176f67bdd83cc8b2fda6cd83c5272dda8089e854860c"
+      }
+    },
+    "missing_source_targets": [
+      "ZiskFv/AirsClean/MemAlign/ExtractedWiring.lean:"
+    ],
+    "mutation": {
+      "after": "range_check(i == 6 ? 0 : reg[i], 0, 2**CHUNK_BITS-1);",
+      "air": "MemAlign",
+      "before": "range_check(reg[i], 0, 2**CHUNK_BITS-1);",
+      "expected_artifacts": [
+        "MemAlign",
+        "LookupWiring"
+      ],
+      "expected_outcome": "proof",
+      "historical_class": "NEW",
+      "line": 114,
+      "number": 56,
+      "operator": "OPERAND_SWAP",
+      "path": "zisk/state-machines/mem/pil/mem_align.pil"
+    },
+    "named_rejections": [],
+    "proof_diagnostic": "error: ZiskFv/AirsClean/MemAlign/Bridge.lean:240:4: Tactic `rfl` failed: The left-hand side",
+    "semantic_diff": {
+      "airs": {
+        "Arith": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 65,
+          "n_mut": 65
+        },
+        "Binary": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 14,
+          "n_mut": 14
+        },
+        "BinaryAdd": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 9,
+          "n_mut": 9
+        },
+        "BinaryExtension": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 8,
+          "n_mut": 8
+        },
+        "Main": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 144,
+          "n_mut": 144
+        },
+        "Mem": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 34,
+          "n_mut": 34
+        },
+        "MemAlign": {
+          "added": [],
+          "changed": [
+            35,
+            36,
+            37,
+            38,
+            39
+          ],
+          "changed_representable": [
+            35,
+            36,
+            37,
+            38,
+            39
+          ],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 40,
+          "n_mut": 40
+        },
+        "MemAlignByte": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 16,
+          "n_mut": 16
+        },
+        "MemAlignReadByte": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 10,
+          "n_mut": 10
+        },
+        "MemAlignWriteByte": {
+          "added": [],
+          "changed": [],
+          "changed_representable": [],
+          "changed_unrepresentable": [],
+          "dropped": [],
+          "n_base": 15,
+          "n_mut": 15
+        }
+      },
+      "base_constraint_count": 355,
+      "changed": [
+        {
+          "air": "MemAlign",
+          "constraint": 35,
+          "kind": "changed"
+        },
+        {
+          "air": "MemAlign",
+          "constraint": 36,
+          "kind": "changed"
+        },
+        {
+          "air": "MemAlign",
+          "constraint": 37,
+          "kind": "changed"
+        },
+        {
+          "air": "MemAlign",
+          "constraint": 38,
+          "kind": "changed"
+        },
+        {
+          "air": "MemAlign",
+          "constraint": 39,
+          "kind": "changed"
+        }
+      ],
+      "equal": false,
+      "mutant_constraint_count": 355,
+      "structurally_changed_but_equivalent": []
+    }
+  },
+  "baseline_generation_delta": [],
+  "compiler_round_zero": {
+    "canonical_pilout_equal": true,
+    "extraction_byte_delta": [],
+    "passed": true
+  },
+  "initial_harness_disposition": "Expected only ExtractedWiring diagnostic; matcher was too narrow. Original incomplete result is preserved; no claim that original driver passed.",
+  "named_rejections": [
+    "error: ZiskFv/AirsClean/MemAlign/Bridge.lean:240:4: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/MemAlign/Bridge.lean:237:21: Type mismatch"
+  ],
+  "repository": {
+    "dirty_paths": [],
+    "head": "89abc70ebec48029fd038218fd211d363e2fb380",
+    "proof_file_count": 1231,
+    "proof_relevant_dirty": [],
+    "proof_source_sha256": "2e5cde5b9ba3c7322c84af6ad4edfb07db72a14f49938e29030754cad06a8b38"
+  },
+  "resource_failures_credited": false,
+  "reviewed_complete": true,
+  "reviewed_outcome": "proof",
+  "scope": "Actual one-register range term replaced by constant0. Production compiler, extraction and roundtrip succeeded; fresh baseline green; actual related source bridge rejected before new register weld.",
+  "source": {
+    "identity": {
+      "files": 1838,
+      "path": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+      "sha256": "330b710f89b01b10956999e00fce5295a64b9d5d709e8b12d40bd3aee450ebad"
+    },
+    "locked_revision": "b63274507a040bf9e09d22214df43066e8f80cb7"
+  }
+}

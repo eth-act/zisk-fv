@@ -66,6 +66,9 @@ def main (row : Var MemAlignByteRow FGL) : Circuit FGL Unit := do
   -- h1030: exact `DualByte` membership in source tuple order
   -- `[byte_value, value_8b]` (`zisk.pil:62-76`, `mem_align_byte.pil:104`).
   lookup (Table.fromStatic dualByteTable) #v[row.byte_value, row.value_8b]
+  -- h1016: the unconditional written-byte range check, including read rows
+  -- (`mem_align_byte.pil:25`). The bus-byte mux alone does not enforce it.
+  lookup (Table.fromStatic rangeTable8) row.written_byte_value
   -- constraint 0 (mem/pil/mem_align_byte.pil:35)
   assertZero (row.sel_high_4b * (1 - row.sel_high_4b))
   -- constraint 1 (mem/pil/mem_align_byte.pil:36)

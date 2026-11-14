@@ -1,0 +1,7 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "build", "--no-write-lock-file", "--impure", "--no-link", "--print-out-paths", "--expr", "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-tuple-source-controls/dualbyte-slot-order/mutant-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-tuple-source-controls/dualbyte-slot-order/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+this derivation will be built:
+  /nix/store/vksv5xagy99shmkg0d39hndq5fphrwj2-zisk-fv-extracted-lean-1.0.drv
+building '/nix/store/vksv5xagy99shmkg0d39hndq5fphrwj2-zisk-fv-extracted-lean-1.0.drv'...
+/nix/store/3dszyg69xc7fxw05bja3lswbsvrpsygw-zisk-fv-extracted-lean-1.0

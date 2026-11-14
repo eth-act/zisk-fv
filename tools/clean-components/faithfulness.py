@@ -64,10 +64,8 @@ def extractor_command() -> list[str]:
     if override:
         return [override]
 
-    binary = ROOT / "tools" / "pil-extract" / "target" / "debug" / "pil-extract"
-    if binary.is_file() and os.access(binary, os.X_OK):
-        return [str(binary)]
-
+    # A cargo-test executable is not the CLI binary. Always let Cargo refresh
+    # the current source instead of trusting an unrelated existing debug CLI.
     return [
         "cargo",
         "run",

@@ -212,6 +212,7 @@ LEAN
       --export-dir build/extraction/ByteTables --quiet
     run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
     run "MemAlignRom fidelity controls" python3 -m unittest discover -s tools/virtual-tables -p test_mem_align_rom.py
+    run "clean-component extractor selection" python3 -m unittest discover -s tools/clean-components -p test_faithfulness.py
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
     run "constant registry" python3 trust/scripts/check-constants.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py
