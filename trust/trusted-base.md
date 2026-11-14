@@ -963,12 +963,18 @@ The qualification matters: at `main_segment ≥ 1` the same expression is at lea
 `MAX_RANGE`, so `447` *does* exclude `0` in every later segment. The Lean model is single-segment, so
 the conclusion holds where it is used, but the PIL-level fact is segment-dependent.
 
-`447` remains genuinely unmodelled and is still an extraction-fidelity gap: it would give an **upper**
-bound `reloadTimestamp ≤ 2^24 - 1`. Nothing in the development consumes that bound today, and the
-backward walk to `bootMessage` will not consume it either — the reload is a push, so it is never the
-target of a backward step. Modelling it would make `RegisterBoundary` a bus-102 consumer, which
-deletes `registerBoundary_table_interactionsWith_registerStepRange_nil`, changes the provider case
-split, and adds one provider row per register to all seven witnesses.
+`447` is now modeled by `RegisterBoundary.reloadDistanceExpr`: an unconditional bus-102 pull of
+`2^24 - reloadTimestamp - 1`. `reloadDistance_range_iff` identifies its exact segment-zero timestamp
+bound, including zero. Main's `ReloadRangeWiring`/`reloadRangeWiring` pins all 31 generated
+`Main.49 + 3*k` links (constraint and accumulator indices, named slot expression, direction, bus,
+and multiplicity), and `reloadRange_emission_matches_source` identifies their evaluated slots with
+the live boundary consumer. The expression interpreter rejects unsupported columns/syntax.
+The boundary still has `Spec = True`, its fixed register schema is unchanged, and the existing
+24-bit provider derives the guarantee through actual channel balance:
+`rangeTable24_spec_reloadDistance_of_boundaryRow`. All seven existing accepted witnesses supply
+one additional constructible provider row per boundary register, including idle timestamp-zero rows.
+No new caller range, validator field, axiom, or register-simulation premise is introduced. The
+completed backward walk/boot anchor does not require this separate upper-bound fidelity repair.
 
 This slice does **not** claim register/memory access-ordering soundness. The
 cross-segment continuation terms (`MAIN_CONTINUATION_ID` block and

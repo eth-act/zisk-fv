@@ -1,0 +1,7 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "build", "--no-write-lock-file", "--impure", "--no-link", "--print-out-paths", "--expr", "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+this derivation will be built:
+  /nix/store/1g65lws35l2sh6h7992j29hgp8v8yxvz-zisk-fv-extracted-lean-1.0.drv
+building '/nix/store/1g65lws35l2sh6h7992j29hgp8v8yxvz-zisk-fv-extracted-lean-1.0.drv'...
+/nix/store/ac6b2dayswm3g61gxvvkcgq80fhk22qf-zisk-fv-extracted-lean-1.0

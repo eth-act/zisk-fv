@@ -306,7 +306,7 @@ def divSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
   -- bus-102: five of the fifteen pulls are active -- each ADDI row's store (2 and 6) and all
   -- three of the DIV row's slots (a 5, b 2, c 10). Both JAL rows emit at multiplicity 0.
-  , registerStepRangeRowsTable [2, 6, 5, 2, 10]
+  , registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows)
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , divSpinArithTable
@@ -365,9 +365,13 @@ theorem divSpinWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
   · refine registerStepRangeRowsTable_constraints _ ?_
     intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl | rfl | rfl <;>
-      simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+    rcases (List.mem_append (s := ([2, 6, 5, 2, 10] : List FGL))
+      (t := registerBoundaryRangeValues divSpinBoundaryRows)).mp hv with hv | hv
+    ·
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+      rcases hv with rfl | rfl | rfl | rfl | rfl <;>
+        simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+    · exact divSpinBoundaryRangeValues_spec v hv
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · rw [Table.Constraints]

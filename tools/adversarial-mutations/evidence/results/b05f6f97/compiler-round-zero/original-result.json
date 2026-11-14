@@ -1,0 +1,202 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "eval",
+        "--no-write-lock-file",
+        "--impure",
+        "--raw",
+        "--expr",
+        "(builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\").inputs.zisk-src.outPath"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/resolve-source.log",
+      "seconds": 0.06392376701114699,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#zisk-pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/production-pilout.log",
+      "seconds": 2.568752521998249,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#extracted-lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/production-extraction.log",
+      "seconds": 2.6184868669952266,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "--no-write-lock-file",
+        ".#compile-mutation",
+        "--",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline-source",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/baseline-compiler.log",
+      "seconds": 178.2002381060156,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/baseline-extraction.log",
+      "seconds": 137.43834800296463,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/cody/zisk-fv-closure-mutation/tools/extraction-coverage/main_fixed.py",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout",
+        "--fixed",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline-source/Main.fixed",
+        "--selftest"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/baseline-fixed.log",
+      "seconds": 3.922348427993711,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/cody/zisk-fv-closure-mutation",
+        "-c",
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.BinaryAdd.Wiring",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/baseline-proof.log",
+      "seconds": 8.078350386989769,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "--no-write-lock-file",
+        ".#compile-mutation",
+        "--",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/mutant-source",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/mutant.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/mutant-compiler.log",
+      "seconds": 177.02618197299307,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/mutant-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 1,
+      "log": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/logs/mutant-extraction.log",
+      "seconds": 183.0952663680073,
+      "timed_out": false
+    }
+  ],
+  "complete": false,
+  "mutation": {
+    "after": "range_check(expression: c_chunks[i * 2], min: 0, max: 2**16 - 1);",
+    "air": "BinaryAdd",
+    "before": "range_check(expression: c_chunks[i * 2 + 1], min: 0, max: 2**16 - 1);",
+    "expected_artifacts": [
+      "BinaryAdd",
+      "LookupWiring"
+    ],
+    "expected_outcome": "proof",
+    "historical_class": "NEW",
+    "line": 22,
+    "number": 54,
+    "operator": "OPERAND_SWAP",
+    "path": "zisk/state-machines/binary/pil/binary_add.pil"
+  },
+  "repository": {
+    "dirty_paths": [],
+    "head": "1efd504a41aa81a38a36e68fa1137a9c006f79cf",
+    "proof_file_count": 1211,
+    "proof_relevant_dirty": [],
+    "proof_source_sha256": "864fd938f09272ba053d6c800e9cc226783d103704bde0a52e3cafeac703f985"
+  },
+  "round_zero": {
+    "canonical_pilout_equal": true,
+    "extraction_byte_delta": [],
+    "passed": true
+  },
+  "source": {
+    "identity": {
+      "files": 1838,
+      "path": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+      "sha256": "330b710f89b01b10956999e00fce5295a64b9d5d709e8b12d40bd3aee450ebad"
+    },
+    "locked_revision": "b63274507a040bf9e09d22214df43066e8f80cb7"
+  }
+}

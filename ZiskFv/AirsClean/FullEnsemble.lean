@@ -247,18 +247,23 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
               SpecifiedRangesSliceChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
               ZiskFv.AirsClean.RegisterBoundary.circuit] using h_finished
-          have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
+          have h_memBus_list : channel ∈
+              [MemBusChannel.toRaw, RegisterStepRangeChannel.toRaw] := by
             simpa [circuit_norm, ZiskFv.AirsClean.RegisterBoundary.component,
               ZiskFv.AirsClean.RegisterBoundary.circuit] using h_memBus
           have h_finished' : channel = MemAlignRomChannel.toRaw ∨
               channel = SpecifiedRangesSliceChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
-          have h_memBus' : channel = MemBusChannel.toRaw := by
+          have h_memBus' : channel = MemBusChannel.toRaw ∨
+              channel = RegisterStepRangeChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_memBus_list
-          subst channel
-          rcases h_finished' with h_finished | h_finished
-          · exact memAlignRomChannel_ne_memBus h_finished.symm
-          · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
+          rcases h_finished' with h_finished | h_finished <;>
+            rcases h_memBus' with h_boundary | h_boundary <;>
+            have h_name := congrArg (fun raw : RawChannel FGL => raw.name)
+              (h_finished.symm.trans h_boundary)
+          all_goals
+            simp [MemAlignRomChannel, SpecifiedRangesSliceChannel, MemBusChannel,
+              RegisterStepRangeChannel, Channel.toRaw] at h_name)
     |>.addFinishedChannel OpBusChannel.toRaw
     |>.addFinishedChannel MemBusChannel.toRaw
     |>.addFinishedChannel MemAlignRangeChannel.toRaw

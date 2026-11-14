@@ -46,13 +46,12 @@ theorem memDistanceMessage_guarantees_iff (value : FGL) (data : ProverData FGL) 
       rangeTable16.Spec value := by
   simp [SpecifiedRangesSliceChannel, memDistanceMessage, memDistanceRangeId]
 
-/-- The `Range Check` hint bus used by Main's three register-step distances.
+/-- The `Range Check` hint bus used by Main's register-step and reload distances.
 
-`main.pil:333-335` emits `range_check(<slot>_mem_step - <slot>_reg_prev_mem_step - 1, min: 0,
-max: MAX_RANGE)` for the a, b and store register slots, with `MAX_RANGE = (1 << 24) - 1`. The
-pinned extraction puts all three on bus **102**
-(`build/extraction/Extraction/LookupWiring.lean` `hint_Main_40_1`, and `constraint_Main_41` for the
-b / store twins). -/
+`main.pil:333-335` emits the three selected per-row distances; `main.pil:447` emits one
+unconditional last-access distance for each of the 31 tracked registers. All use
+`MAX_RANGE = (1 << 24) - 1` and the pinned extraction's bus **102**. The reload loop
+correspondences are checked by Main's `ReloadRangeWiring`. -/
 def registerStepRangeId : FGL := 102
 
 /-- The source-linked static slice of the bus-102 range check.

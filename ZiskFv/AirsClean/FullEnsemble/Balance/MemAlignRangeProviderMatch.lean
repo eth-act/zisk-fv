@@ -162,11 +162,8 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
       simp
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
-      apply Table.interactionsWith_nil_of_channel_not_mem
-      rw [h_boundary]
-      change MemAlignRangeChannel.toRaw ∉ [MemBusChannel.toRaw]
-      simp only [List.mem_singleton]
-      exact memAlignRangeChannel_ne_memBus
+      exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+        h_boundary _ (by decide) (by decide)
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
