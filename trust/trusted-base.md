@@ -1325,10 +1325,10 @@ Three boundaries remain explicit. First, the layout functions (`start` and
 `addr`) are caller-supplied: their meaning is that architectural word `k` sits
 at the binary/ROM location assigned to `k`; the binding proves exact,
 gap-free lowered rows relative to that map, not that the map came from a
-particular linker image. Second, grounding the same word in Sail's
-`ext_decode` is #172 and is not claimed here. Third, identifying `rawProgram`
-with the intended compiled binary remains the external compile/commitment
-boundary.
+particular linker image. Second, #172 concerns grounding the same word in Sail's
+state-aware encoder; that root-level encoder conclusion is not claimed here,
+nor is an `ext_decode` direction. Third, identifying `rawProgram` with the
+intended compiled binary remains the external compile/commitment boundary.
 
 **Non-vacuity of this endpoint IS witnessed (#320).** Two theorems in the tree
 conclude `ProgramRowsBinding` and feed it to `root_soundness`:
@@ -1448,3 +1448,34 @@ non-trivial `Guarantees` for the first time: Main's three bus-102 emissions then
 produce obligations of exactly the gated shape
 `¬(sel = 1) → ¬(sel = 0) → Guarantees …`, vacuous under selector booleanity.
 Without the gating those would be range obligations Main cannot discharge.
+
+## Sail M-extension state domain
+
+`Completeness.SailDecode.IsaExtensionsEnabled` now requires only the actual
+generated `M` guard to return true. `SailDecode.IsaState` relates this guard in
+BOTH directions to a successful typed MISA read whose M bit (bit12) is set.
+The generated Zmmul guard includes M, so Zmmul enablement follows from that
+same fact even though standalone `hartSupports Zmmul` remains false. The old
+M=true/Zmmul=false conjunction was contradictory in this model; it is removed,
+not used to discharge any encoder or containment theorem by contradiction.
+
+The closed `mEnabledState` is constructed by an actual typed Sail MISA write
+of4096#64 to `default`. MUL/DIV encoder results on that state feed shape
+containment and ZisK opcode classification. This witnesses the encoder-domain
+premise without an ISA oracle; it does NOT claim a fully initialized machine,
+boot reachability, CSR-instruction legalization, `ext_decode`, or root encoder
+grounding. Existing boot/execution assumptions are not broadened.
+
+Source scope is exact: the locked Sail-riscv revision
+[`04e595954b2af7fa9e18f2519e4ae4bba72b2701`](https://github.com/riscv/sail-riscv/blob/04e595954b2af7fa9e18f2519e4ae4bba72b2701/model/extensions/M/mext_insts.sail#L13-L14)
+contains these guard formulas, introduced by
+[`c41950c0`](https://github.com/riscv/sail-riscv/commit/c41950c02d47dede3518b9fdf32115e3a9d439ef).
+The earlier `ea5ed919` rename boundary still had literal-true Zmmul; the present
+claim is not extended to earlier/later upstream revisions. Generated Lean and
+configuration citations are recorded next to the proofs in `IsaState.lean`.
+
+The separate locked Sail fork `46acc966` is NOT wired into this generation
+recipe: `nix/sail-lean-tree.nix` inherits nixpkgs's Sail compiler. The recorded
+derivation uses Sail0.20.1. These proofs are against the actual imported Lean
+declarations, not a newly asserted compiler-provenance or byte-for-byte
+regeneration result. No compiler/native proof trust is added by this repair.
