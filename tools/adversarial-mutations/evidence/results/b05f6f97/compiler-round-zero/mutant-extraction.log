@@ -1,0 +1,38 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "build", "--no-write-lock-file", "--impure", "--no-link", "--print-out-paths", "--expr", "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/mutant-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+this derivation will be built:
+  /nix/store/7w1q2066x3lx4a3kl4ys10qbyw54whph-zisk-fv-extracted-lean-1.0.drv
+building '/nix/store/7w1q2066x3lx4a3kl4ys10qbyw54whph-zisk-fv-extracted-lean-1.0.drv'...
+error: Cannot build '/nix/store/7w1q2066x3lx4a3kl4ys10qbyw54whph-zisk-fv-extracted-lean-1.0.drv'.
+       Reason: builder failed with exit code 1.
+       Output paths:
+         /nix/store/nc8wp966mcrf1373ky08rkrfqkmdr2b8-zisk-fv-extracted-lean-1.0
+       Last 25 log lines:
+       > AIR instance VirtualTable0(Zisk) in airgroup Zisk
+       >   > VirtualTable0 instantiated with: N=2^8, #Fixed=7, #Witness=1
+       >   > Table composition (total height of 256):
+       >   >    - Table 133 with height=256 and width=6
+       >   > Declare airgroupval gsum_result (Zisk.gsum_result) 
+       >   > Witness cols: 2 from stage 1 (1,1)
+       >   > Fixed cols: 8
+       >   > Constraints: 2
+       >   > Execution time: 28.29ms
+       >   > Closing time: 0.18ms
+       >   > Total time: 28.58ms
+       >
+       > AIRGROUP Zisk summary
+       >   > AirGroupValues:
+       >     · Zisk.gsum_result aggregate:sum  stage:2 default:0
+       >   > Airs:
+       >     · RomConsumer rows:2^8  template:RomConsumer          witness: 0,1        fixed:   1 constraints:    3
+       >   > Total proto time (0%): 0ms
+       >   > Memory: 489.46 MB
+       >   > Total compilation: 1s 520ms
+       > 2026-11-13T22:09:04.846303Z  INFO pil_extract::mem_align_rom: wrote MemAlignRom extraction path=/nix/store/nc8wp966mcrf1373ky08rkrfqkmdr2b8-zisk-fv-extracted-lean-1.0/MemAlignRom.lean rows=256
+       > 2026-11-13T22:09:04.910593Z  INFO pil_extract: wrote extraction path=/nix/store/nc8wp966mcrf1373ky08rkrfqkmdr2b8-zisk-fv-extracted-lean-1.0/MemAirFacts.md
+       > 2026-11-13T22:09:04.939562Z  INFO pil_extract: wrote extraction path=/nix/store/nc8wp966mcrf1373ky08rkrfqkmdr2b8-zisk-fv-extracted-lean-1.0/MemGeneratedArtifact.lean
+       > 2026-11-13T22:09:04.944380Z  INFO pil_extract: wrote extraction path=/nix/store/nc8wp966mcrf1373ky08rkrfqkmdr2b8-zisk-fv-extracted-lean-1.0/MemGeneratedConstraintBridge.lean
+       > Error: constraint #4 has 4 possible two-hint template links
+       For full logs, run:
+         nix-store -l /nix/store/7w1q2066x3lx4a3kl4ys10qbyw54whph-zisk-fv-extracted-lean-1.0.drv

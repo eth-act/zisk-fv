@@ -1,0 +1,4 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "build", "--no-write-lock-file", "--no-link", "--print-out-paths", ".#zisk-pilout"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+/nix/store/92q10mb4n7pxhsdpg0n6x5ppbmg0kixl-zisk-pilout-git-b632745

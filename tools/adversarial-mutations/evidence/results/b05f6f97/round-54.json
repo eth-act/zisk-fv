@@ -1,0 +1,688 @@
+{
+  "artifact_delta": [
+    "LookupWiring.lean",
+    "Main.lean"
+  ],
+  "baseline_generation_delta": [],
+  "commands": [
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--no-link",
+        "--print-out-paths",
+        ".#extracted-lean"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "logs/normal-production-extraction.log",
+      "seconds": 3.1056830440065823,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "logs/baseline-extraction.log",
+      "seconds": 136.18724346201634,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/cody/zisk-fv-closure-mutation",
+        "-c",
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.Main.Wiring",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "logs/baseline-proof.log",
+      "seconds": 52.000709796033334,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "--no-write-lock-file",
+        ".#compile-mutation",
+        "--",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-reload-source-control-v2/mutant-source",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-reload-source-control-v2/mutant.pilout"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "logs/mutant-compiler.log",
+      "seconds": 176.1841965619824,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "build",
+        "--no-write-lock-file",
+        "--impure",
+        "--no-link",
+        "--print-out-paths",
+        "--expr",
+        "let\n      fv = builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\";\n      system = builtins.currentSystem;\n      pkgs = import fv.inputs.nixpkgs { inherit system; };\n    in pkgs.callPackage /home/cody/zisk-fv-closure-mutation/nix/extracted-lean.nix {\n      zisk-src = /home/cody/zisk-fv-closure-mutation/build/closure-reload-source-control-v2/mutant-source;\n      zisk-pilout = /home/cody/zisk-fv-closure-mutation/build/closure-reload-source-control-v2/mutant.pilout;\n      pil-extract = fv.packages.${system}.pil-extract;\n      pil2-compiler = fv.packages.${system}.pil2-compiler;\n      pil2-proofman-src = fv.inputs.pil2-proofman-src;\n    }"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "logs/mutant-extraction.log",
+      "seconds": 134.40767470101127,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "/home/cody/zisk-fv-closure-mutation/tools/pilout-roundtrip/check.py",
+        "--pilout",
+        "/home/cody/zisk-fv-closure-mutation/build/closure-reload-source-control-v2/mutant.pilout",
+        "--extraction",
+        "/nix/store/s1z62ab5c0cwp65r608fjqzvnzn63m7c-zisk-fv-extracted-lean-1.0",
+        "--quiet"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 0,
+      "log": "logs/mutant-roundtrip.log",
+      "seconds": 1.6654496809933335,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "develop",
+        "--no-write-lock-file",
+        "/home/cody/zisk-fv-closure-mutation",
+        "-c",
+        "lake",
+        "build",
+        "ZiskFv.AirsClean.Main.Wiring",
+        "--log-level=warning"
+      ],
+      "cwd": "/home/cody/zisk-fv-closure-mutation",
+      "exit_code": 1,
+      "log": "logs/mutant-proof.log",
+      "seconds": 36.01177978300257,
+      "timed_out": false
+    }
+  ],
+  "compiler_baseline_sha256": "e7d48845b24243302b2aa694333adb9fafbfee1976aa12c3032592fbed068873",
+  "compiler_round_zero": {
+    "canonical_pilout_equal": true,
+    "extraction_byte_delta": [],
+    "passed": true
+  },
+  "compiler_round_zero_provenance": "compiler-round-zero/original-result.json",
+  "complete": true,
+  "inputs": {
+    "baseline_extraction": {
+      "files": 25,
+      "path": "/nix/store/ac6b2dayswm3g61gxvvkcgq80fhk22qf-zisk-fv-extracted-lean-1.0",
+      "sha256": "0a7240cc866911b911e9d33da277777ecc1bab865db5204c0958c4475df33d4b"
+    },
+    "baseline_pilout": {
+      "bytes": 4417270,
+      "path": "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout",
+      "sha256": "e7d48845b24243302b2aa694333adb9fafbfee1976aa12c3032592fbed068873"
+    },
+    "mutant_extraction": {
+      "files": 25,
+      "path": "/nix/store/s1z62ab5c0cwp65r608fjqzvnzn63m7c-zisk-fv-extracted-lean-1.0",
+      "sha256": "ddc80d7cc55ddaeac69c34a9fdd806bca63a7072615b06cf4111d801b2d333b1"
+    },
+    "mutant_pilout": {
+      "bytes": 4417268,
+      "path": "/home/cody/zisk-fv-closure-mutation/build/closure-reload-source-control-v2/mutant.pilout",
+      "sha256": "8b5b083ae50fc96dd289b63c003dfb48c412966600b8aed2c934c115175b016d"
+    }
+  },
+  "issue": 348,
+  "logs": "logs",
+  "mutation": {
+    "after": "range_check(expression: last_segment_reg_mem_step - last_reg_mem_step[ireg] - 2, min: 0, max: MAX_RANGE);",
+    "air": "Main",
+    "before": "range_check(expression: last_segment_reg_mem_step - last_reg_mem_step[ireg] - 1, min: 0, max: MAX_RANGE);",
+    "expected_artifacts": [
+      "Main",
+      "LookupWiring"
+    ],
+    "expected_outcome": "proof",
+    "historical_class": "NEW",
+    "line": 447,
+    "number": 54,
+    "operator": "CONST_PERTURB",
+    "path": "zisk/state-machines/main/pil/main.pil"
+  },
+  "outcome": "proof",
+  "pinned_baseline_sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+  "proof_diagnostic": "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+  "repository": {
+    "dirty_paths": [],
+    "head": "b05f6f97dd9bd0a0ad05667b67f3ccf9853bb1d3",
+    "proof_file_count": 1211,
+    "proof_relevant_dirty": [],
+    "proof_source_sha256": "648cd10197888b00029e24618f77fc140d8a3378886dcccad73fb209dbf5589d"
+  },
+  "reused_compiler_baseline_canonical": {
+    "airs": {
+      "Arith": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 65,
+        "n_mut": 65
+      },
+      "Binary": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 14,
+        "n_mut": 14
+      },
+      "BinaryAdd": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 9,
+        "n_mut": 9
+      },
+      "BinaryExtension": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 8,
+        "n_mut": 8
+      },
+      "Main": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 144,
+        "n_mut": 144
+      },
+      "Mem": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 34,
+        "n_mut": 34
+      },
+      "MemAlign": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 40,
+        "n_mut": 40
+      },
+      "MemAlignByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 16,
+        "n_mut": 16
+      },
+      "MemAlignReadByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 10,
+        "n_mut": 10
+      },
+      "MemAlignWriteByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 15,
+        "n_mut": 15
+      }
+    },
+    "base_constraint_count": 355,
+    "changed": [],
+    "equal": true,
+    "mutant_constraint_count": 355,
+    "structurally_changed_but_equivalent": []
+  },
+  "scope": "Actual source447 scalar-offset mutation; reused previously verified compiler/fixed-data round zero, fresh byte-identical production extraction and green Main.Wiring proof baseline; not a full source closure or timestamp-zero exclusion.",
+  "semantic_diff": {
+    "airs": {
+      "Arith": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 65,
+        "n_mut": 65
+      },
+      "Binary": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 14,
+        "n_mut": 14
+      },
+      "BinaryAdd": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 9,
+        "n_mut": 9
+      },
+      "BinaryExtension": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 8,
+        "n_mut": 8
+      },
+      "Main": {
+        "added": [],
+        "changed": [
+          49,
+          52,
+          55,
+          58,
+          61,
+          64,
+          67,
+          70,
+          73,
+          76,
+          79,
+          82,
+          85,
+          88,
+          91,
+          94,
+          97,
+          100,
+          103,
+          106,
+          109,
+          112,
+          115,
+          118,
+          121,
+          124,
+          127,
+          130,
+          133,
+          136,
+          139
+        ],
+        "changed_representable": [
+          49,
+          52,
+          55,
+          58,
+          61,
+          64,
+          67,
+          70,
+          73,
+          76,
+          79,
+          82,
+          85,
+          88,
+          91,
+          94,
+          97,
+          100,
+          103,
+          106,
+          109,
+          112,
+          115,
+          118,
+          121,
+          124,
+          127,
+          130,
+          133,
+          136,
+          139
+        ],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 144,
+        "n_mut": 144
+      },
+      "Mem": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 34,
+        "n_mut": 34
+      },
+      "MemAlign": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 40,
+        "n_mut": 40
+      },
+      "MemAlignByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 16,
+        "n_mut": 16
+      },
+      "MemAlignReadByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 10,
+        "n_mut": 10
+      },
+      "MemAlignWriteByte": {
+        "added": [],
+        "changed": [],
+        "changed_representable": [],
+        "changed_unrepresentable": [],
+        "dropped": [],
+        "n_base": 15,
+        "n_mut": 15
+      }
+    },
+    "base_constraint_count": 355,
+    "changed": [
+      {
+        "air": "Main",
+        "constraint": 49,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 52,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 55,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 58,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 61,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 64,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 67,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 70,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 73,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 76,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 79,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 82,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 85,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 88,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 91,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 94,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 97,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 100,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 103,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 106,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 109,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 112,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 115,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 118,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 121,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 124,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 127,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 130,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 133,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 136,
+        "kind": "changed"
+      },
+      {
+        "air": "Main",
+        "constraint": 139,
+        "kind": "changed"
+      }
+    ],
+    "equal": false,
+    "mutant_constraint_count": 355,
+    "structurally_changed_but_equivalent": []
+  },
+  "source": {
+    "identity": {
+      "files": 1838,
+      "path": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+      "sha256": "330b710f89b01b10956999e00fce5295a64b9d5d709e8b12d40bd3aee450ebad"
+    },
+    "locked_revision": "b63274507a040bf9e09d22214df43066e8f80cb7"
+  },
+  "source_named_rejections": [
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side",
+    "error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side"
+  ],
+  "workspace": null,
+  "workspace_retained": false
+}

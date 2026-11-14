@@ -1,0 +1,4 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "eval", "--no-write-lock-file", "--impure", "--raw", "--expr", "(builtins.getFlake \"git+file:///home/cody/zisk-fv-closure-mutation\").inputs.zisk-src.outPath"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source

@@ -1,0 +1,4 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.BinaryAdd.Wiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+Build completed successfully (8085 jobs).

@@ -1,0 +1,4 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "build", "--no-write-lock-file", "--no-link", "--print-out-paths", ".#extracted-lean"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+/nix/store/ppx6iy6i991w3pfhawqsyk66kn07zkj6-zisk-fv-extracted-lean-1.0
