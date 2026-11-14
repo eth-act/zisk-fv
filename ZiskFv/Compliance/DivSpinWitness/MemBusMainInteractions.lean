@@ -99,6 +99,8 @@ theorem divSpinWitness_memBusInteractions :
   unfold divSpinMemBusInteractions
   rw [divSpinWitness_tables]
   simp [divSpinTables, divSpinBoundaryTable_memBusInteractions,
+    divSpinBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
+    divSpinExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
     divSpinMainTable_memBusInteractions, emptyComponentTable_interactionsWith,
     h_arith, h_remainder, h_binaryAdd,
     registerStepRangeRowsTable_interactionsWith_memBus_nil]

@@ -909,6 +909,8 @@ theorem jalrOpBus_interactions :
         (table := jalrBoundaryTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, h_boundary, emptyComponentTable_interactionsWith,
+    jalrBinarySourceTable_other_channel OpBusChannel.toRaw (by decide),
+    jalrExtensionSourceTable_other_channel OpBusChannel.toRaw (by decide),
     jalrBinaryAndTable, binaryConsumerSingleRowTable_interactionsWith_opBus,
     jalrBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus,
     jalrMainTable_interactionsWith_opBus,
@@ -967,6 +969,8 @@ theorem jalrWitness_memBus_interactions :
         (table := jalrBinaryAddTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, jalrMemBusInteractions, h_boundary, h_binary, h_binaryAdd,
+    jalrBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
+    jalrExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
     emptyComponentTable_interactionsWith, jalrMainTable_interactionsWith_memBus,
     registerStepRangeRowsTable_interactionsWith_memBus_nil]
 
@@ -1293,6 +1297,8 @@ private theorem jalrWitness_otherChannel_balanced
   simp only [List.cons_append, List.nil_append] at h_provider
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [h_binary_name, h_extension_name, jalrTables, h_boundary, h_binary, h_binaryAdd, h_main, h_provider,
+    jalrBinarySourceTable_other_channel channel h_binary_name,
+    jalrExtensionSourceTable_other_channel channel h_extension_name,
     emptyComponentTable_interactionsWith]
   refine ⟨?_, ?_⟩
   · left
@@ -1419,6 +1425,10 @@ theorem jalrRegisterStepRange_interactions :
       (table := jalrBinaryAndTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd, h_binary,
+    jalrBinarySourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+    jalrExtensionSourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
     registerStepRangeRowsTable_interactionsWith,
     jalrMainTable_interactionsWith_registerStepRange, List.map_append, List.append_assoc]
 

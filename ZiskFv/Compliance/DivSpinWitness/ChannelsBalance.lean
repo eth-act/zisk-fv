@@ -58,6 +58,8 @@ private theorem divSpinWitness_otherChannel_balanced
   simp only [List.cons_append, List.nil_append] at h_stepRange
   rw [divSpinWitness_tables]
   simp [h_binary_name, h_extension_name, divSpinTables, h_boundary, h_arith, h_remainder, h_binaryAdd, h_main,
+    divSpinBinarySourceTable_other_channel channel h_binary_name,
+    divSpinExtensionSourceTable_other_channel channel h_extension_name,
     h_stepRange, h_empty]
   refine ⟨?_, ?_⟩
   · left
@@ -189,6 +191,10 @@ theorem divSpinWitness_registerStepRange_interactions :
     simpa using h_ne_op
   rw [divSpinWitness_tables]
   simp [divSpinTables, h_boundary, h_arith, h_remainder, h_binaryAdd,
+    divSpinBinarySourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+    divSpinExtensionSourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
     ZiskFv.Compliance.SingleAddWitness.emptyComponentTable_interactionsWith,
     registerStepRangeRowsTable_interactionsWith,
     divSpinMainTable_registerStepRangeInteractions, List.map_append, List.append_assoc]

@@ -1487,6 +1487,8 @@ private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
   simp only [List.cons_append, List.nil_append] at h_stepRange
   rw [sdLdWitness_tables]
   simp [h_binary_name, h_extension_name, sdLdTables, h_boundary, h_memTable, h_rangeTable, h_extension, h_binaryAdd, h_main,
+    sdLdBinarySourceTable_other_channel channel h_binary_name,
+    sdLdExtensionSourceTable_other_channel channel h_extension_name,
     h_stepRange]
 
 private theorem sdLdBalancedInteractions_nil :
@@ -1558,6 +1560,8 @@ private theorem sdLdWitness_rangeInteractions :
   simp only [List.cons_append, List.nil_append] at h_stepRange
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, sdLdMemTable_rangeInteractions,
+    sdLdBinarySourceTable_other_channel SpecifiedRangesSliceChannel.toRaw (by decide),
+    sdLdExtensionSourceTable_other_channel SpecifiedRangesSliceChannel.toRaw (by decide),
     sdLdSpecifiedRangesTable_rangeInteractions, h_extension, h_binaryAdd, h_main, h_stepRange]
 
 theorem sdLdWitness_rangeChannel_balanced :
@@ -1860,6 +1864,8 @@ private theorem sdLdWitness_opBusInteractions :
   simp only [List.cons_append, List.nil_append] at h_stepRangeTable
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_mem, h_ranges, h_stepRangeTable,
+    sdLdBinarySourceTable_other_channel OpBusChannel.toRaw (by decide),
+    sdLdExtensionSourceTable_other_channel OpBusChannel.toRaw (by decide),
     sdLdBinaryExtensionTable_opBusInteractions, sdLdBinaryAddTable_opBusInteractions,
     sdLdBinaryAddRows, sdLdMainTable_opBusInteractions, sdLdMainRows]
 
@@ -1988,6 +1994,8 @@ private theorem sdLdWitness_memBusInteractions :
   simp only [List.cons_append, List.nil_append] at h_stepRangeTable
   rw [sdLdWitness_tables]
   simp [sdLdTables, sdLdBoundaryTable_memBusInteractions,
+    sdLdBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
+    sdLdExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
     sdLdMemTable_memBusInteractions, sdLdMainTable_memBusInteractions, h_ranges,
     h_extension, h_add, h_stepRangeTable, sdLdMemBusInteractions]
 
@@ -2582,6 +2590,10 @@ theorem sdLdWitness_registerStepRange_interactions :
   simp only [List.cons_append, List.nil_append] at h_provider
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_mem, h_extension, h_add, h_ranges, h_provider,
+    sdLdBinarySourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+    sdLdExtensionSourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
     sdLdMainTable_registerStepRangeInteractions, List.map_append, List.append_assoc]
 
 set_option maxRecDepth 20000 in
