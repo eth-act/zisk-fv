@@ -131,7 +131,8 @@ theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : F
       (toElements ({ message := rowOfIndex index.val, multiplicity } :
         SourceRow FGL)).toArray := by
   apply Array.ext
-  · rfl
+  · rw [IndexedFixedColumns.materialize_size, Vector.size_toArray]
+    rfl
   · intro i hi hi'
     have h_i : i < 8 := by simpa only [IndexedFixedColumns.materialize_size] using hi
     interval_cases i <;>
@@ -172,6 +173,13 @@ theorem sourceComponent_lookups :
   rw [Component.lookups_eq]
   rfl
 
+theorem sourceComponent_interactions :
+    sourceComponent.operations.interactions =
+      [((BinaryTableChannel.emitted sourceComponent.rowInputVar.multiplicity
+          sourceComponent.rowInputVar.message).toRaw)] := by
+  rw [Component.interactions_eq]
+  rfl
+
 /-- Every meaningful source row, with any source multiplicity, has a
     constructive completeness witness. No membership premise is requested. -/
 theorem sourceRow_constructible (index : Fin tableSize) (multiplicity : FGL)
@@ -185,18 +193,22 @@ theorem sourceRow_constructible (index : Fin tableSize) (multiplicity : FGL)
 theorem sourceComponent_spec_of_constraints (env : Environment FGL)
     (h : sourceComponent.operations.ConstraintsHold env) :
     binaryTable.Spec (eval env sourceComponent.rowInputVar.message) := by
-  let query : Lookup FGL :=
-    { table := (Table.fromStatic binaryTable).toRaw
-      entry := toElements sourceComponent.rowInputVar.message }
-  have hquery : query.Contains env :=
-    h.2 query (by
-      rw [sourceComponent_lookups]
-      exact List.mem_singleton_self _)
-  change ∃ index : Fin tableSize,
-    fromElements ((toElements sourceComponent.rowInputVar.message).map env) =
-      rowOfIndex index.val at hquery
-  rw [ProvableType.fromElements_eval_toElements] at hquery
-  exact hquery
+  have hg : sourceComponent.operations.FullGuarantees env := by
+    intro interaction hmem
+    rw [sourceComponent_interactions] at hmem
+    obtain rfl := List.mem_singleton.mp hmem
+    simp [AbstractInteraction.Guarantees, ChannelInteraction.toRaw,
+      Channel.emitted, emitted]
+  have hs := (Component.weakSoundness (component := sourceComponent) (env := env)
+    (by trivial) h hg).1
+  change binaryTable.Spec (sourceComponent.rowInput env).message at hs
+  have he : eval env sourceComponent.rowInputVar.message =
+      (sourceComponent.rowInput env).message := by
+    rw [← eval_source_message]
+    exact congrArg SourceRow.message
+      (eval_varFromOffset_valueFromOffset SourceRow 0 env)
+  rw [he]
+  exact hs
 
 /-- Exact concrete producer tuple, retaining the actual source multiplicity. -/
 theorem sourceInteraction_mem_spec
@@ -239,14 +251,19 @@ theorem source_constraints_fromInput (row : SourceRow FGL) (data : ProverData FG
   refine ⟨?_, ?_⟩
   · intro expression hmem
     rw [sourceComponent_constraints] at hmem
-    exact False.elim (List.not_mem_nil _ hmem)
+    cases hmem
   · intro query hmem
     rw [sourceComponent_lookups] at hmem
     obtain rfl := List.mem_singleton.mp hmem
-    change ∃ index : Fin tableSize,
-      fromElements ((toElements sourceComponent.rowInputVar.message).map
-        (Environment.fromInput row data)) = rowOfIndex index.val
-    rw [ProvableType.fromElements_eval_toElements, source_input_message]
+    apply (Table.fromStatic binaryTable).toRaw.implied_by_completeness
+    change Lookup.Completeness
+      { table := (Table.fromStatic binaryTable).toRaw
+        entry := toElements sourceComponent.rowInputVar.message }
+      (Environment.fromInput row data)
+    rw [Lookup.completeness_def]
+    change binaryTable.Spec
+      (eval (Environment.fromInput row data) sourceComponent.rowInputVar.message)
+    rw [source_input_message]
     exact h
 
 theorem source_interaction_fromInput (row : SourceRow FGL) (data : ProverData FGL) :

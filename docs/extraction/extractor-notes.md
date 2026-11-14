@@ -771,6 +771,8 @@ its actual eight emitted tuples; no aggregate row-honesty premise replaces
 that integration obligation.
 
 Source constructibility follows Clean's actual `(input, data, hint)` argument
-order and quantifies over arbitrary prover hints. Provider soundness and
-constructibility inspect the exact singleton lookup list directly, rather
-than unfolding the entire formal-circuit record during simplification.
+order and quantifies over arbitrary prover hints. Provider membership reuses
+the checked circuit soundness, discharging its non-assuming emission's
+guarantees unconditionally; construction uses generic lookup completeness.
+Materialization uses the vector's stored size proof rather than normalizing
+the arithmetic source decoder to compute an array length.
