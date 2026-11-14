@@ -30,6 +30,11 @@ pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
 
 pil-extract public-io --pilout <path> [--output <path>]
 
+pil-extract runtime-source --context-source <path> --elf2rom-source <path>
+                 --builder-source <path> --operations-source <path>
+                 --instruction-source <path>
+                 --rust-output <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -84,6 +89,12 @@ the flags themselves.
   the actual signed public-IO terms against its cleared numerator/denominator
   constraint. This does not by itself authenticate the external verifier's
   public vector or connect it to an accepted trace.
+- `runtime-source`: emit source-literal runtime-helper, builder, opcode and
+  instruction field/default/cfg metadata plus a Rust input for future private
+  extraction. Normal Nix metadata
+  uses the existing b632 source, not the distinct 9ca Aeneas gitlink. Missing
+  typed setters are recorded explicitly, never synthesized. This is not an
+  execution binding, Aeneas correspondence, or accepted-image theorem.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR

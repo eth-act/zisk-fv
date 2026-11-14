@@ -146,6 +146,17 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --output $out/PublicIo.lean
 
+    # Metadata only from the existing production source pin. The distinct
+    # checked Aeneas gitlink is not substituted or claimed equivalent.
+    ${pil-extract}/bin/pil-extract runtime-source \
+      --context-source ${zisk-src}/core/src/riscv2zisk_context.rs \
+      --elf2rom-source ${zisk-src}/core/src/elf2rom.rs \
+      --builder-source ${zisk-src}/core/src/zisk_inst_builder.rs \
+      --operations-source ${zisk-src}/core/src/zisk_ops.rs \
+      --instruction-source ${zisk-src}/core/src/zisk_inst.rs \
+      --rust-output $out/RuntimeSource.rs \
+      --output $out/RuntimeSource.lean
+
     # Observe the actual production VirtualTable0/1 packing with the exact
     # Rust-generated external fixed columns. All compiler writes stay private.
     packed_source="$TMPDIR/packed-zisk"

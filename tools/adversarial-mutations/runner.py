@@ -208,7 +208,7 @@ def extraction_manifest(path: Path) -> dict[str, str]:
         if not candidate.is_file():
             continue
         result[candidate.relative_to(lean).as_posix()] = sha256(candidate)
-    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json"):
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json", "RuntimeSource.rs"):
         candidate = container / name
         if candidate.is_file():
             result[name] = sha256(candidate)
@@ -579,7 +579,7 @@ def copy_proof_tree(repo: Path, destination: Path, pilout: Path,
     shutil.copytree(lean_artifact_dir(extraction), target_extraction)
     make_tree_writable(target_extraction)
     container = extraction_container(extraction)
-    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json"):
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json", "RuntimeSource.rs"):
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, destination / "build" / "extraction" / name)
@@ -622,7 +622,7 @@ def install_proof_artifacts(repo: Path, proof_tree: Path, pilout: Path,
     shutil.copytree(lean_artifact_dir(extraction), copied_extraction)
     make_tree_writable(copied_extraction)
     container = extraction_container(extraction)
-    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json"):
+    for name in ("MemAirFacts.md", "MemAlignRom.tsv", "PackedVirtualTables.json", "RuntimeSource.rs"):
         sidecar = container / name
         if sidecar.is_file():
             shutil.copy2(sidecar, target_extraction / name)

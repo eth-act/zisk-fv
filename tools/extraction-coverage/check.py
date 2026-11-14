@@ -250,7 +250,7 @@ def generated_outputs(directory: Path) -> list[dict[str, str]]:
         # packed-placement metadata with full-source digests. Keep the suffix
         # classifier closed: an unknown output kind is still an error.
         kind = {".lean": "lean", ".md": "report", ".tsv": "source_table",
-                ".json": "table_digest"}.get(suffix)
+                ".json": "table_digest", ".rs": "rust_source"}.get(suffix)
         if kind is None:
             raise CoverageError(f"unclassified generated output kind: {path}")
         outputs.append({"path": path.relative_to(directory).as_posix(), "kind": kind})

@@ -33,6 +33,7 @@ expected_modules=(
   PackedVirtualTables
   PublicIo
   RomSource
+  RuntimeSource
   SourceDimensions
 )
 

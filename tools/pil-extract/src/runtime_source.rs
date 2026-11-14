@@ -154,6 +154,138 @@ fn builder_declaration(source: &str, code: &str) -> Result<String> {
     Ok(source[start..=end].to_owned())
 }
 
+struct FieldTokens { name: String, attributes: Vec<String>, tokens: Vec<String> }
+struct NumericConstant {
+    name: String, source_line: usize, attributes: Vec<String>,
+    rust_type: String, expression: Vec<String>, value: u64,
+}
+struct InstructionSource {
+    declaration: String,
+    fields: Vec<FieldTokens>,
+    default: MethodSource,
+    initializers: Vec<FieldTokens>,
+    operation_types: String,
+    operation_type_values: Vec<(String,u64)>,
+    constants: Vec<NumericConstant>,
+}
+
+fn record_fields(source: &str, code: &str, open: usize, end: usize,
+    public: bool) -> Result<Vec<FieldTokens>> {
+    let field = Regex::new(if public {
+        r"\bpub\s+([A-Za-z_][A-Za-z_0-9]*)\s*:"
+    } else { r"\b([A-Za-z_][A-Za-z_0-9]*)\s*:" })?;
+    let mut fields = Vec::new();
+    let mut cursor = open+1;
+    let mut nesting = Vec::new();
+    for i in open+1..=end {
+        let c = code.as_bytes()[i];
+        if (c==b',' && nesting.is_empty()) || i==end {
+            let fragment = &source[cursor..i];
+            let fragment_code = &code[cursor..i];
+            if !fragment_code.trim().is_empty() {
+                let found = field.captures(fragment_code)
+                    .ok_or_else(||anyhow!("unsupported explicit source instruction field"))?;
+                let (_,attributes) = attributes_before(fragment,fragment_code,found.get(0).unwrap().start())?;
+                fields.push(FieldTokens {
+                    name: found[1].to_owned(), attributes,
+                    tokens: tokens(&mask_with_strings(&fragment[found.get(0).unwrap().end()..],false)?)?,
+                });
+            }
+            cursor=i+1;
+        } else {
+            match c {
+                b'(' | b'[' | b'{' | b'<' => nesting.push(c),
+                b')' | b']' | b'}' => {
+                    let expected = match c { b')'=>b'(', b']'=>b'[', _=>b'{' };
+                    if nesting.pop()!=Some(expected) { bail!("unbalanced instruction field"); }
+                },
+                b'>' if nesting.last()==Some(&b'<') => { nesting.pop(); },
+                _ => (),
+            }
+        }
+    }
+    if !nesting.is_empty() || fields.is_empty() { bail!("unsupported instruction field roster"); }
+    Ok(fields)
+}
+
+fn natural(source: &str) -> Result<u64> {
+    let value = source.trim().replace('_',"");
+    let value = value.strip_suffix("u64").or_else(||value.strip_suffix("u32")).unwrap_or(&value);
+    Ok(if let Some(hex)=value.strip_prefix("0x") {
+        u64::from_str_radix(hex,16)?
+    } else { value.parse()? })
+}
+
+fn instruction_metadata(source: &str) -> Result<InstructionSource> {
+    let code = mask(source)?;
+    let declaration = Regex::new(r"\bpub\s+struct\s+ZiskInst\s*\{")?;
+    let declarations = declaration.find_iter(&code).collect::<Vec<_>>();
+    if declarations.len()!=1 { bail!("expected actual ZiskInst declaration"); }
+    let open = declarations[0].end()-1;
+    let end = close(&code,open,b'{',b'}')?;
+    let (start,_) = attributes_before(source,&code,declarations[0].start())?;
+    let fields = record_fields(source,&code,open,end,true)?;
+    let mut defaults = methods_in_impl(source,&code,r"\bimpl\s+Default\s+for\s+ZiskInst\s*\{")?;
+    if defaults.len()!=1 || defaults[0].name!="default" {
+        bail!("expected actual ZiskInst default method");
+    }
+    let default = defaults.remove(0);
+    let default_code = mask(&default.source)?;
+    let body = default_code.find('{').ok_or_else(||anyhow!("missing default body"))?;
+    let record = Regex::new(r"\b(?:Self|ZiskInst)\s*\{")?;
+    let records = record.find_iter(&default_code[body+1..]).collect::<Vec<_>>();
+    if records.len()!=1 { bail!("default is not one explicit source instruction initializer"); }
+    let record_open = body+1+records[0].end()-1;
+    let record_end = close(&default_code,record_open,b'{',b'}')?;
+    let initializers = record_fields(&default.source,&default_code,record_open,record_end,false)?;
+    if !fields.iter().map(|field|(&field.name,&field.attributes))
+        .eq(initializers.iter().map(|field|(&field.name,&field.attributes))) {
+        bail!("instruction declaration/default field or cfg rosters differ");
+    }
+    let enumeration = Regex::new(r"\bpub\s+enum\s+ZiskOperationType\s*\{")?;
+    let enumerations = enumeration.find_iter(&code).collect::<Vec<_>>();
+    if enumerations.len()!=1 { bail!("expected actual ZiskOperationType declaration"); }
+    let enum_open = enumerations[0].end()-1;
+    let enum_end = close(&code,enum_open,b'{',b'}')?;
+    let (enum_start,_) = attributes_before(source,&code,enumerations[0].start())?;
+    let variant = Regex::new(r"^\s*([A-Za-z_][A-Za-z_0-9]*)(?:\s*=\s*([A-Za-z_0-9]+))?\s*$")?;
+    let mut operation_type_values = Vec::new();
+    let mut next = 0;
+    for fragment in code[enum_open+1..enum_end].split(',').filter(|s|!s.trim().is_empty()) {
+        let found = variant.captures(fragment)
+            .ok_or_else(||anyhow!("unsupported conditional or non-unit operation type variant"))?;
+        let value = if let Some(literal)=found.get(2) { natural(literal.as_str())? } else { next };
+        operation_type_values.push((found[1].to_owned(),value));
+        next=value.checked_add(1).ok_or_else(||anyhow!("operation type discriminant overflow"))?;
+    }
+    let values = operation_type_values.iter().map(|(name,value)|(name.as_str(),*value))
+        .collect::<BTreeMap<_,_>>();
+    let constant = Regex::new(r"\bpub\s+const\s+([A-Za-z_][A-Za-z_0-9]*)\s*:\s*(u32|u64)\s*=\s*([^;]+);")?;
+    let cast = Regex::new(r"^\s*ZiskOperationType\s*::\s*([A-Za-z_][A-Za-z_0-9]*)\s+as\s+(?:u32|u64)\s*$")?;
+    let mut constants = Vec::new();
+    for found in constant.captures_iter(&code) {
+        let declaration = found.get(0).unwrap();
+        let (_,attributes) = attributes_before(source,&code,declaration.start())?;
+        let expression = found.get(3).unwrap();
+        let value = if let Some(conversion)=cast.captures(expression.as_str()) {
+            *values.get(&conversion[1]).ok_or_else(||anyhow!("unknown source operation type constant"))?
+        } else { natural(expression.as_str())? };
+        constants.push(NumericConstant {
+            name: found[1].to_owned(),
+            source_line: source[..declaration.start()].bytes().filter(|b|*b==b'\n').count()+1,
+            attributes, rust_type: found[2].to_owned(),
+            expression: tokens(&mask_with_strings(&source[expression.start()..expression.end()],false)?)?,
+            value,
+        });
+    }
+    if constants.is_empty() { bail!("missing actual instruction numeric constants"); }
+    Ok(InstructionSource {
+        declaration: source[start..=end].to_owned(), fields, default, initializers,
+        operation_types: source[enum_start..=enum_end].to_owned(),
+        operation_type_values, constants,
+    })
+}
+
 struct Helper {
     name: &'static str,
     source: String,
@@ -392,12 +524,14 @@ fn private_constants(source: &str, code: &str, helpers: &[Helper]) -> Result<Vec
 }
 
 pub(crate) fn render(context_source: &str, elf2rom_source: &str,
-    builder_source: &str, operations_source: &str) -> Result<RuntimeSourceOutput> {
+    builder_source: &str, operations_source: &str,
+    instruction_source: &str) -> Result<RuntimeSourceOutput> {
     let code=mask(context_source)?;
     let helpers=["add_end_and_lib","add_zisk_init_data","add_entry_exit_jmp"].into_iter()
         .map(|name| project_helper(context_source,&code,name)).collect::<Result<Vec<_>>>()?;
     let calls=image_calls(elf2rom_source)?;
     let constants = private_constants(context_source, &code, &helpers)?;
+    let instruction = instruction_metadata(instruction_source)?;
     let rows = helpers.iter().map(row_sources).collect::<Result<Vec<_>>>()?
         .into_iter().flatten().collect::<Vec<_>>();
     let opcodes = opcode_sources(operations_source)?;
@@ -471,7 +605,35 @@ pub(crate) fn render(context_source: &str, elf2rom_source: &str,
     writeln!(lean,"def builderDeclarationTokens : List String := [{}]",
         tokens(&mask_with_strings(&builder_declaration,false)?)?.iter()
             .map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
-    lean.push_str("\n-- Four-input metadata does not supply the actual instruction Default implementation.\n-- The new method and builder declaration above expose, but do not discharge, this dependency.\ndef instructionDefaultSourceProvided : Bool := false\ndef unprovidedInitializationSource : String := \"core/src/zisk_inst.rs\"\n");
+    writeln!(lean,"\ndef instructionDeclaration : String := {}",quoted(&instruction.declaration)).unwrap();
+    lean.push_str("\n-- Field tokens are types in instructionFields and value expressions in instructionDefaultFields.\nstructure InstructionFieldSource where\n name : String\n attributes : List String\n tokens : List String\n deriving DecidableEq, Repr\n");
+    for (name,fields) in [("instructionFields",&instruction.fields),
+        ("instructionDefaultFields",&instruction.initializers)] {
+        writeln!(lean,"\ndef {name} : List InstructionFieldSource := [").unwrap();
+        for field in fields {
+            writeln!(lean," ⟨{}, [{}], [{}]⟩,",quoted(&field.name),
+                field.attributes.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", "),
+                field.tokens.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+        }
+        lean.push_str("]\n");
+    }
+    let default = &instruction.default;
+    writeln!(lean,"\ndef instructionDefault : MethodSource :=\n ⟨{}, {}, [{}], {}, [{}]⟩",
+        quoted(&default.name),default.source_line,
+        default.attributes.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", "),
+        quoted(&default.source),default.tokens.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+    writeln!(lean,"\ndef operationTypeDeclaration : String := {}",quoted(&instruction.operation_types)).unwrap();
+    writeln!(lean,"def operationTypeValues : List (String × Nat) := [{}]",
+        instruction.operation_type_values.iter().map(|(name,value)|format!("({}, {value})",quoted(name)))
+            .collect::<Vec<_>>().join(", ")).unwrap();
+    lean.push_str("\nstructure InstructionConstant where\n name : String\n sourceLine : Nat\n attributes : List String\n rustType : String\n expression : List String\n value : Nat\n deriving DecidableEq, Repr\n\ndef instructionConstants : List InstructionConstant := [\n");
+    for constant in &instruction.constants {
+        writeln!(lean," ⟨{}, {}, [{}], {}, [{}], {}⟩,",quoted(&constant.name),constant.source_line,
+            constant.attributes.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", "),
+            quoted(&constant.rust_type),constant.expression.iter().map(|s|quoted(s))
+                .collect::<Vec<_>>().join(", "),constant.value).unwrap();
+    }
+    lean.push_str("]\n");
     writeln!(lean,"\ndef puboutResultArgument : Nat := {pubout_argument}\ndef puboutResultFlag : Bool := {pubout_flag}\n\nend Extraction.RuntimeSource").unwrap();
     Ok(RuntimeSourceOutput {rust,lean})
 }

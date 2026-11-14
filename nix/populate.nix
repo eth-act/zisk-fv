@@ -88,6 +88,9 @@ EOF
     cp --reflink=never --no-preserve=mode "${extracted-lean}/PackedVirtualTables.json" \
       build/extraction/PackedVirtualTables.json
     chmod u+w build/extraction/PackedVirtualTables.json
+    cp --reflink=never --no-preserve=mode "${extracted-lean}/RuntimeSource.rs" \
+      build/extraction/RuntimeSource.rs
+    chmod u+w build/extraction/RuntimeSource.rs
 
     echo "▶ build/clean-lean/ ← ${clean-source}"
     rm -rf build/clean-lean

@@ -16,6 +16,7 @@ mod source_dimensions;
 mod rom_source;
 mod packed_virtual_tables;
 mod public_io;
+mod runtime_source;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -60,6 +61,8 @@ enum Cmd {
     PackedVirtualTables(PackedVirtualTablesCmd),
     /// Emit constraint-linked compiled GLOBAL public-IO contributions.
     PublicIo(LookupWiringCmd),
+    /// Emit runtime-helper source metadata and a future extraction input.
+    RuntimeSource(RuntimeSourceCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -164,6 +167,26 @@ struct ArithTableCmd {
     /// Output path for the generated .lean file. If omitted, prints to stdout.
     #[arg(long)]
     output: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+struct RuntimeSourceCmd {
+    #[arg(long)]
+    context_source: PathBuf,
+    #[arg(long)]
+    elf2rom_source: PathBuf,
+    #[arg(long)]
+    builder_source: PathBuf,
+    #[arg(long)]
+    operations_source: PathBuf,
+    #[arg(long)]
+    instruction_source: PathBuf,
+    /// Lean metadata output. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+    /// Generated Rust input only: not a checked execution binding.
+    #[arg(long)]
+    rust_output: PathBuf,
 }
 
 #[derive(Args, Debug)]
@@ -325,6 +348,21 @@ fn main() -> Result<()> {
                 .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
             let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
             write_output(args.output.as_deref(), &public_io::render(&pilout)?)
+        }
+        Cmd::RuntimeSource(args) => {
+            let context = fs::read_to_string(&args.context_source)
+                .with_context(|| format!("failed to read {}", args.context_source.display()))?;
+            let elf2rom = fs::read_to_string(&args.elf2rom_source)
+                .with_context(|| format!("failed to read {}", args.elf2rom_source.display()))?;
+            let builder = fs::read_to_string(&args.builder_source)
+                .with_context(|| format!("failed to read {}", args.builder_source.display()))?;
+            let operations = fs::read_to_string(&args.operations_source)
+                .with_context(|| format!("failed to read {}", args.operations_source.display()))?;
+            let instruction = fs::read_to_string(&args.instruction_source)
+                .with_context(|| format!("failed to read {}", args.instruction_source.display()))?;
+            let rendered = runtime_source::render(&context, &elf2rom, &builder, &operations, &instruction)?;
+            write_output(Some(args.rust_output.as_path()), &rendered.rust)?;
+            write_output(args.output.as_deref(), &rendered.lean)
         }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;
