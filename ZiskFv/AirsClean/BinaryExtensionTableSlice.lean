@@ -129,6 +129,10 @@ private theorem sourceRow_toArray (message : BinaryExtensionTableMessage FGL)
   cases message
   rfl
 
+private theorem sourceFixedColumns_multiplicity_layout :
+    sourceFixedColumns.layout (⟨7, by decide⟩ : Fin 8) = .inl 0 := by
+  rfl
+
 theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : FGL) :
     sourceFixedColumns.materialize index.val #[multiplicity] =
       (toElements ({ message := rowOfIndex index.val, multiplicity } :
@@ -151,7 +155,7 @@ theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : F
       rw [Array.getElem_append_right (by simpa only [hsize] using (Nat.le_refl 7))]
       simp only [hsize, Nat.sub_self]
       simpa only [IndexedFixedColumns.materialize, Array.getElem_ofFn,
-        sourceFixedColumns, dif_neg (by decide : ¬(7 < 7))]
+        sourceFixedColumns_multiplicity_layout]
 
 theorem eval_sourceFixedColumns (index : Fin tableSize) (multiplicity : FGL)
     (data : ProverData FGL) :

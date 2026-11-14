@@ -778,3 +778,5 @@ Materialization uses the vector's stored size proof and an abstract seven-slot
 serialization lemma rather than normalizing the arithmetic source decoder.
 Each indexed output is reduced with `Array.getElem_ofFn` before inspecting
 its layout, so the raw multiplicity proof does not construct the fixed array.
+The raw-slot layout equality is sealed independently of the fixed-value
+function; the multiplicity proof does not unfold the full fixed-column record.
