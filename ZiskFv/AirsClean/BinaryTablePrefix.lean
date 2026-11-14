@@ -125,17 +125,30 @@ theorem extensionPrefix_materialized_row (base : Witness FGL) (binary extension 
   exact BinaryExtensionTableSlice.sourceFixedColumns_materialize
     ⟨index.val, lt_of_lt_of_le index.isLt (extensionPrefix_bound extension he)⟩ _
 
+private theorem binary_table_eq_mapIdx (table : Table FGL)
+    (hc : table.component = BinaryTableSlice.sourceComponent) :
+    table.table = table.rawRows.mapIdx
+      (fun index row => BinaryTableSlice.sourceFixedColumns.materialize index row) := by
+  cases table with
+  | mk component rawRows data hwidth hdomain =>
+    cases hc
+    rfl
+
+private theorem extension_table_eq_mapIdx (table : Table FGL)
+    (hc : table.component = BinaryExtensionTableSlice.sourceComponent) :
+    table.table = table.rawRows.mapIdx
+      (fun index row => BinaryExtensionTableSlice.sourceFixedColumns.materialize index row) := by
+  cases table with
+  | mk component rawRows data hwidth hdomain =>
+    cases hc
+    rfl
+
 theorem binaryPrefix_materialized (base : Witness FGL) (binary extension : Table FGL)
     (hb : binary.component = BinaryTableSlice.sourceComponent)
     (he : extension.component = BinaryExtensionTableSlice.sourceComponent) :
     binary.table = (binaryProviderTable (reifyPrefixes base binary extension hb he)
       binary.data).table.take binary.length := by
-  have hmaterialized : binary.table = binary.rawRows.mapIdx
-      (fun index row => BinaryTableSlice.sourceFixedColumns.materialize index row) := by
-    unfold Table.table
-    rewrite [hb]
-    rfl
-  rw [hmaterialized, binaryProviderTable_materialized]
+  rw [binary_table_eq_mapIdx binary hb, binaryProviderTable_materialized]
   apply List.ext_getElem
   · simp only [List.length_mapIdx, List.length_take, List.length_ofFn,
       Nat.min_eq_left (binaryPrefix_bound binary hb)]
@@ -149,12 +162,7 @@ theorem extensionPrefix_materialized (base : Witness FGL) (binary extension : Ta
     (he : extension.component = BinaryExtensionTableSlice.sourceComponent) :
     extension.table = (extensionProviderTable (reifyPrefixes base binary extension hb he)
       extension.data).table.take extension.length := by
-  have hmaterialized : extension.table = extension.rawRows.mapIdx
-      (fun index row => BinaryExtensionTableSlice.sourceFixedColumns.materialize index row) := by
-    unfold Table.table
-    rewrite [he]
-    rfl
-  rw [hmaterialized, extensionProviderTable_materialized]
+  rw [extension_table_eq_mapIdx extension he, extensionProviderTable_materialized]
   apply List.ext_getElem
   · simp only [List.length_mapIdx, List.length_take, List.length_ofFn,
       Nat.min_eq_left (extensionPrefix_bound extension he)]
@@ -180,6 +188,7 @@ theorem binaryPrefix_interactionsWith (base : Witness FGL) (binary extension : T
   simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
     hprefix, hfull, List.map_singleton, ← List.map_eq_flatMap]
   rw [binaryPrefix_materialized base binary extension hb he, List.map_take]
+  rfl
 
 theorem extensionPrefix_interactionsWith (base : Witness FGL) (binary extension : Table FGL)
     (hb : binary.component = BinaryTableSlice.sourceComponent)
@@ -199,6 +208,7 @@ theorem extensionPrefix_interactionsWith (base : Witness FGL) (binary extension 
   simp only [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
     hprefix, hfull, List.map_singleton, ← List.map_eq_flatMap]
   rw [extensionPrefix_materialized base binary extension hb he, List.map_take]
+  rfl
 
 theorem binaryReified_suffix_zero (base : Witness FGL) (binary extension : Table FGL)
     (hb : binary.component = BinaryTableSlice.sourceComponent)

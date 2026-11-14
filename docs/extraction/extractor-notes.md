@@ -795,6 +795,7 @@ projections apply these sealed lemmas to generated `sourceBUS_at` proofs;
 concrete division/modulo coordinates do not enter a rewrite motive or a
 projection conversion. Internal ownership premises are discharged rather
 than exported to callers.
-Prefix transport rewrites the entire dependent fixed-schema domain or
-materialization expression before specializing its columns; it does not
-coerce a schema across an unexplained raw-width equality.
+Prefix bounds rewrite the full dependent fixed-domain invariant before
+specialization. Materialization destructs the table carrier and substitutes
+its component equality before reducing the dependent fixed-schema match;
+no schema is coerced across an unexplained raw-width equality.
