@@ -33,7 +33,7 @@ EXPECTED_CHANNELS = {
 }
 ALLOWED_KEYS = {
     "name", "kind", "value", "pil", "pil-symbol", "model", "generated",
-    "pin", "issue", "status",
+    "pin", "proof", "source-air", "issue", "status",
 }
 
 
@@ -91,7 +91,7 @@ def main() -> int:
         names.add(name)
         kind = entry.get("kind")
         value = entry.get("value")
-        if kind not in {"opcode", "bus-id", "channel", "extractor-item"}:
+        if kind not in {"opcode", "bus-id", "channel", "dimension"}:
             fail(f"{name}: invalid kind {kind!r}")
         if not isinstance(value, int):
             fail(f"{name}: value must be an integer")
@@ -124,14 +124,31 @@ def main() -> int:
                 fail(f"{name}: channel declaration missing from {model}")
             registered_channels[name] = value
         else:
-            if entry.get("status") != "missing generated numRows field; not an exemption":
-                fail(f"{name}: extractor item must be recorded as work, not exempted")
             if re.search(rf"def {re.escape(name)} : Nat := {value}$", model_text, re.M) is None:
                 fail(f"{name}: model capacity mismatch")
             if str(value) not in source_line:
-                fail(f"{name}: extractor-source capacity mismatch")
-            if "generated" in entry or "pin" in entry:
-                fail(f"{name}: ungenerated extractor item cannot claim a pin")
+                fail(f"{name}: cited source capacity mismatch")
+            air = entry.get("source-air")
+            proof = entry.get("proof")
+            pin = entry.get("pin")
+            generated = entry.get("generated")
+            if not all(isinstance(item, str) for item in (air, proof, pin, generated)):
+                fail(f"{name}: dimension requires source-air/proof/pin/generated")
+            proof_text = read(proof)
+            equation = rf"{re.escape(name)} = Extraction\.SourceDimensions\.{re.escape(air)}\.rowCount := rfl"
+            if re.search(rf"theorem {re.escape(pin)} :\s+\w+\.{equation}", proof_text) is None:
+                fail(f"{name}: missing compiled source-dimension equality")
+            if generated_available:
+                dimension_text = read(generated)
+                capacity = re.search(
+                    rf"namespace «{re.escape(air)}»\n"
+                    rf"def airGroupIndex : Nat := \d+\n"
+                    rf"def airIndex : Nat := \d+\n"
+                    rf"def rowCount : Nat := (\d+)\n",
+                    dimension_text,
+                )
+                if capacity is None or int(capacity[1]) != value:
+                    fail(f"{name}: generated physical dimension mismatch")
             continue
 
         pin = entry.get("pin")
@@ -170,7 +187,7 @@ def main() -> int:
     print(
         "constant inventory: "
         f"{len(entries)} items ({by_kind['opcode']} opcodes, {by_kind['bus-id']} bus ids, "
-        f"{by_kind['channel']} channels, {by_kind['extractor-item']} extractor item); "
+        f"{by_kind['channel']} channels, {by_kind['dimension']} dimensions); "
         "model/PIL/generated/pin checks passed"
     )
     return 0
