@@ -1335,12 +1335,7 @@ theorem addFaithfulWitness_binaryTableChannel_balanced :
     simp only [addFaithfulWitness, addFaithfulTables, List.flatMap_cons, List.flatMap_nil,
       h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil]
   rw [h_list]
-  change BalancedInteractions
-    ((ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable
-      ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)
-  rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith
-    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData]
-  exact ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources_binary_balanced
+  exact noRequestBinarySourceTable_balanced
 
 /-- Actual bus-124 balance, including the full fixed-domain provider. -/
 theorem addFaithfulWitness_extensionTableChannel_balanced :
@@ -1403,12 +1398,7 @@ theorem addFaithfulWitness_extensionTableChannel_balanced :
     simp only [addFaithfulWitness, addFaithfulTables, List.flatMap_cons, List.flatMap_nil,
       h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_15, h_silent_16, List.nil_append, List.append_nil]
   rw [h_list]
-  change BalancedInteractions
-    ((ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
-      ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
-  rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith
-    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData]
-  exact ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources_extension_balanced
+  exact noRequestExtensionSourceTable_balanced
 
 theorem addFaithfulWitness_balancedChannels : addFaithfulWitness.BalancedChannels := by
   refine addFaithfulWitness.balancedChannels_of_tables addFaithfulEnsemble_verifier ?_
