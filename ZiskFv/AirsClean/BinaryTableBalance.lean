@@ -101,12 +101,14 @@ theorem binary_nonpull_source (w : EnsembleWitness ensemble)
     hc | hc | hc | hc | hc
   · have he : table.interactionsWith BinaryTableChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
-      simp [hc, ensemble, Ensemble.verifierTable, GeneralFormalCircuit.empty, circuit_norm]
+      rw [hc]
+      simp [ensemble, Ensemble.verifierTable, GeneralFormalCircuit.empty, circuit_norm]
     simp [he] at hi
   · exact False.elim (hn (binaryConsumer_mult hc hi))
   · have he : table.interactionsWith BinaryTableChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
-      simp [hc, BinaryExtension.shiftTableConsumerComponent,
+      rw [hc]
+      simp [BinaryExtension.shiftTableConsumerComponent,
         BinaryExtension.shiftTableConsumerCircuit,
         BinaryExtension.tableConsumerCircuit, circuit_norm,
         BinaryTableChannel, BinaryExtensionTableChannel,
@@ -115,7 +117,8 @@ theorem binary_nonpull_source (w : EnsembleWitness ensemble)
   · exact hc
   · have he : table.interactionsWith BinaryTableChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
-      simp [hc, BinaryExtensionTableSlice.sourceComponent,
+      rw [hc]
+      simp [BinaryExtensionTableSlice.sourceComponent,
         BinaryExtensionTableSlice.sourceCircuit, circuit_norm,
         BinaryTableChannel, BinaryExtensionTableChannel]
     simp [he] at hi
@@ -130,18 +133,21 @@ theorem extension_nonpull_source (w : EnsembleWitness ensemble)
     hc | hc | hc | hc | hc
   · have he : table.interactionsWith BinaryExtensionTableChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
-      simp [hc, ensemble, Ensemble.verifierTable, GeneralFormalCircuit.empty, circuit_norm]
+      rw [hc]
+      simp [ensemble, Ensemble.verifierTable, GeneralFormalCircuit.empty, circuit_norm]
     simp [he] at hi
   · have he : table.interactionsWith BinaryExtensionTableChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
-      simp [hc, Binary.tableConsumerComponent, Binary.tableConsumerCircuit,
+      rw [hc]
+      simp [Binary.tableConsumerComponent, Binary.tableConsumerCircuit,
         circuit_norm, BinaryTableChannel, BinaryExtensionTableChannel,
         ZiskFv.Channels.OperationBus.OpBusChannel]
     simp [he] at hi
   · exact False.elim (hn (extensionConsumer_mult hc hi))
   · have he : table.interactionsWith BinaryExtensionTableChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
-      simp [hc, BinaryTableSlice.sourceComponent, BinaryTableSlice.sourceCircuit,
+      rw [hc]
+      simp [BinaryTableSlice.sourceComponent, BinaryTableSlice.sourceCircuit,
         circuit_norm, BinaryTableChannel, BinaryExtensionTableChannel]
     simp [he] at hi
   · exact hc
@@ -279,7 +285,10 @@ theorem eval_binaryMessage (env : Environment FGL) (row : Var Binary.BinaryRow F
       Binary.lookupFlags012Row, Binary.lookupFlags3456Row, Binary.lookupFlags7Row,
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
-      ProvableType.eval_field, Expression.eval, sub_eq_add_neg]
+      sub_eq_add_neg] <;>
+    simp [Eval.eval, CircuitType.verifierEval, CircuitType.evalVerifier,
+      ProvableType.toCircuitType, ProvableType.eval, toElements, fromElements,
+      Expression.eval, sub_eq_add_neg]
 
 /-- Integration contract: the same eight memberships previously obtained by
     a detached static-lookup consumer now follow from the actual finished
@@ -327,8 +336,10 @@ theorem eval_extensionMessage (env : Environment FGL)
   fin_cases index <;>
     simp [BinaryExtension.byteMessage, extensionMessageRow,
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
-      ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
-      ProvableType.eval_field, Expression.eval]
+      ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go] <;>
+    simp [Eval.eval, CircuitType.verifierEval, CircuitType.evalVerifier,
+      ProvableType.toCircuitType, ProvableType.eval, toElements, fromElements,
+      Expression.eval]
 
 theorem extension_spec_facts_of_balance (w : EnsembleWitness ensemble)
     (hc : w.Constraints) (hb : w.BalancedChannels)
@@ -366,10 +377,11 @@ def withPackedProviders
   same_circuits := by
     intro index hi
     change index < 4 at hi
-    interval_cases index <;>
-      simp [ensemble, h_binary, h_extension,
-        PackedVirtualTableSources.binaryProviderTable,
-        PackedVirtualTableSources.extensionProviderTable]
+    interval_cases index
+    · exact h_binary.symm
+    · exact h_extension.symm
+    · rfl
+    · rfl
   same_data := by
     intro table ht
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
