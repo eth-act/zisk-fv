@@ -679,8 +679,10 @@ theorem jalrWitness_table_constraints :
       ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   · exact jalrBinaryAndTable_constraints
   · exact jalrBinaryAddTable_constraints
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints _ _
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints _ _
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints
+      jalrPackedSources emptyData
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints
+      jalrPackedSources emptyData
   · exact jalrMainTable_constraints
 
 theorem jalrWitness_constraints : jalrWitness.Constraints :=

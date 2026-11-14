@@ -385,8 +385,10 @@ theorem divSpinWitness_table_constraints :
       ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   · exact divSpinRemainderBoundTable_constraints
   · exact divSpinBinaryAddTable_constraints
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints _ _
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints _ _
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints
+      divSpinPackedSources emptyData
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints
+      divSpinPackedSources emptyData
   · exact divSpinMainTable_constraints
 
 theorem divSpinWitness_constraints : divSpinWitness.Constraints :=

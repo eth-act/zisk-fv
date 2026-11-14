@@ -585,8 +585,8 @@ theorem addSpinWitness_table_constraints :
       ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Binary.tableConsumerComponent
   · exact addX1BinaryAddTable_constraints
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints _ _
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints _ _
+  · exact noRequestExtensionSourceTable_constraints
+  · exact noRequestBinarySourceTable_constraints
   · exact addSpinMainTable_constraints
 
 theorem addSpinWitness_constraints : addSpinWitness.Constraints :=

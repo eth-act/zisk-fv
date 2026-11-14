@@ -1152,8 +1152,10 @@ theorem sdLdWitness_table_constraints :
   · exact sdLdBinaryExtensionTableWithData_constraints
   · exact sdLdEmptyTableWithData_constraints _
   · exact sdLdBinaryAddTableWithData_constraints
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints _ _
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints _ _
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints
+      sdLdPackedSources sdLdMemData
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints
+      sdLdPackedSources sdLdMemData
   · simpa [sdLdTableWithData, sdLdMainTable] using sdLdMainTable_constraints
 
 theorem sdLdWitness_constraints : sdLdWitness.Constraints :=

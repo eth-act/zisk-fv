@@ -1450,6 +1450,14 @@ def noRequestExtensionSourceTable : Table FGL :=
   exact ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel
     ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData channel h
 
+theorem noRequestBinarySourceTable_constraints : noRequestBinarySourceTable.Constraints :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints
+    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData
+
+theorem noRequestExtensionSourceTable_constraints : noRequestExtensionSourceTable.Constraints :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints
+    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData
+
 private def binarySpikeRow : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
   { aBytes :=
       { free_in_a_0 := 2, free_in_a_1 := 0, free_in_a_2 := 0, free_in_a_3 := 0,

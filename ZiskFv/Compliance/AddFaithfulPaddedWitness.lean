@@ -475,8 +475,8 @@ theorem addFaithfulWitness_table_constraints :
       ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Binary.tableConsumerComponent
   · exact addFaithfulBinaryAddTable_constraints
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints _ _
-  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints _ _
+  · exact noRequestExtensionSourceTable_constraints
+  · exact noRequestBinarySourceTable_constraints
   · exact addFaithfulMainTable_constraints
 
 theorem addFaithfulWitness_constraints : addFaithfulWitness.Constraints :=
