@@ -298,11 +298,10 @@ theorem construction_andi_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
         m providerInput i.val andi_input.imm h_matches h_m32_zero h_match
         h_andi_subset
-  exact ZiskFv.Compliance.equiv_ANDI
-    state andi_input r1 rd imm m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_imm_row h_andi_subset h_lane_rd promises
+  exact ZiskFv.EquivCore.Andi.equiv_ANDI_of_static_row
+    state andi_input r1 rd imm m providerInput i.val bus promises pins
+    h_match h_row_spec h_core h_static h_facts
+    h_input_r1_row h_input_imm_row h_lane_rd h_andi_subset
 
 /-- Sound ORI construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE ORI) = (bus_effect …).2`.
@@ -476,11 +475,10 @@ theorem construction_ori_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
         m providerInput i.val ori_input.imm h_matches h_m32_zero h_match
         h_ori_subset
-  exact ZiskFv.Compliance.equiv_ORI
-    state ori_input r1 rd imm m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_imm_row h_ori_subset h_lane_rd promises
+  exact ZiskFv.EquivCore.Ori.equiv_ORI_of_static_row
+    state ori_input r1 rd imm m providerInput i.val bus promises pins
+    h_match h_row_spec h_core h_static h_facts
+    h_input_r1_row h_input_imm_row h_lane_rd h_ori_subset
 
 /-- Sound XORI construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE XORI) = (bus_effect …).2`.
@@ -651,11 +649,10 @@ theorem construction_xori_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
         m providerInput i.val xori_input.imm h_matches h_m32_zero h_match
         h_xori_subset
-  exact ZiskFv.Compliance.equiv_XORI
-    state xori_input r1 rd imm m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_imm_row h_xori_subset h_lane_rd promises
+  exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
+    state xori_input r1 rd imm m providerInput i.val bus promises pins
+    h_match h_row_spec h_core h_static h_facts
+    h_input_r1_row h_input_imm_row h_lane_rd h_xori_subset
 
 /-- Sound SLTI construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE SLTI) = (bus_effect …).2`.
@@ -825,11 +822,13 @@ theorem construction_slti_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) slti_input.r1_val
         h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
-  exact ZiskFv.Compliance.equiv_SLTI
-    state slti_input r1 rd imm m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match h_m32_zero
-    h_input_r1_row h_slti_subset h_lane_rd promises
+  have h_input_imm_row :=
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      m providerInput i.val slti_input.imm h_matches h_m32_zero h_match h_slti_subset
+  exact ZiskFv.EquivCore.Slti.equiv_SLTI_of_static_row
+    state slti_input r1 rd imm m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop
+    h_input_r1_row h_lane_rd h_input_imm_row
 
 /-- Sound SLTIU construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (ITYPE SLTIU) = (bus_effect …).2`.
@@ -999,10 +998,12 @@ theorem construction_sltiu_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
         m providerInput i.val (regidx_to_fin r1) sltiu_input.r1_val
         h_matches h_m32_zero h_a_lo h_a_hi h_match h_input_r1
-  exact ZiskFv.Compliance.equiv_SLTIU
-    state sltiu_input r1 rd imm m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match h_m32_zero
-    h_input_r1_row h_sltiu_subset h_lane_rd promises
+  have h_input_imm_row :=
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      m providerInput i.val sltiu_input.imm h_matches h_m32_zero h_match h_sltiu_subset
+  exact ZiskFv.EquivCore.Sltiu.equiv_SLTIU_of_static_row
+    state sltiu_input r1 rd imm m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop
+    h_input_r1_row h_lane_rd h_input_imm_row
 
 end ZiskFv.Compliance

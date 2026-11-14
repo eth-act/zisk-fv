@@ -290,10 +290,9 @@ theorem construction_and_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) and_input.r2_val
         h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
-  exact ZiskFv.Compliance.equiv_AND
-    state and_input r1 r2 rd m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_r2_row h_lane_rd promises
+  exact ZiskFv.EquivCore.And.equiv_AND_of_static_row
+    state and_input r1 r2 rd m providerInput i.val bus promises pins
+    h_match h_row_spec h_core h_static h_facts
+    h_input_r1_row h_input_r2_row h_lane_rd
 
 end ZiskFv.Compliance

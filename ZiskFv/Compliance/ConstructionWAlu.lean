@@ -251,11 +251,24 @@ theorem construction_subw_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin r2) subw_input.r2_val
         hb0 hb1 hb2 hb3 h_m32_one h_b_lo h_b_hi h_match h_input_r2
-  exact ZiskFv.Compliance.equiv_SUBW
-    state subw_input r1 r2 rd m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_extract h_input_r2_extract h_lane_rd promises
+  have h_emit : providerInput.chain.b_op + 16 * providerInput.mode.mode32 = (0x1B : FGL) := by
+    have h_lane_eqs := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_lane_eqs
+    rw [← h_lane_eqs.2.1]
+    simpa [ZiskFv.Trusted.OP_SUB_W] using h_main_op
+  obtain ⟨h_row_m32, h_bop_val⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
+      providerInput h_static h_core 0x1B (Or.inr rfl) h_emit
+  have h_bop : providerInput.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB] using h_bop_val
+  obtain ⟨h_sext_choice, h_carry_7_zero⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+      providerInput h_static h_facts h_core h_row_m32 (Or.inr h_bop)
+  exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_static_row
+    state subw_input r1 r2 rd m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop h_sext_choice h_carry_7_zero
+    h_input_r1_extract h_input_r2_extract h_lane_rd
 
 /-- Sound ADDW construction (m32 = 1 word ALU). DELTA from
     `construction_subw_sound`: op pin `OP_ADD_W` (`Or.inl` of the shared W
@@ -426,11 +439,24 @@ theorem construction_addw_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b32_row
         m providerInput i.val (regidx_to_fin r2) addw_input.r2_val
         hb0 hb1 hb2 hb3 h_m32_one h_b_lo h_b_hi h_match h_input_r2
-  exact ZiskFv.Compliance.equiv_ADDW
-    state addw_input r1 r2 rd m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_extract h_input_r2_extract h_lane_rd promises
+  have h_emit : providerInput.chain.b_op + 16 * providerInput.mode.mode32 = (0x1A : FGL) := by
+    have h_lane_eqs := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_lane_eqs
+    rw [← h_lane_eqs.2.1]
+    simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op
+  obtain ⟨h_row_m32, h_bop_val⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
+      providerInput h_static h_core 0x1A (Or.inl rfl) h_emit
+  have h_bop : providerInput.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
+  obtain ⟨h_sext_choice, h_carry_7_zero⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+      providerInput h_static h_facts h_core h_row_m32 (Or.inl h_bop)
+  exact ZiskFv.EquivCore.Addw.equiv_ADDW_of_static_row
+    state addw_input r1 r2 rd m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop h_sext_choice h_carry_7_zero
+    h_input_r1_extract h_input_r2_extract h_lane_rd
 
 /-- Sound ADDIW construction (m32 = 1 word ALU, ITYPE immediate). DELTA from
     `construction_addw_sound`: drops the r2 read + r2 lane bridges; adds the
@@ -581,10 +607,87 @@ theorem construction_addiw_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a32_row
         m providerInput i.val (regidx_to_fin r1) addiw_input.r1_val
         ha0 ha1 ha2 ha3 h_m32_one h_a_lo h_a_hi h_match h_input_r1
-  exact ZiskFv.Compliance.equiv_ADDIW
-    state addiw_input r1 rd imm m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_addiw_subset h_match
-    h_input_r1_extract h_lane_rd promises
+  have h_emit : providerInput.chain.b_op + 16 * providerInput.mode.mode32 = (0x1A : FGL) := by
+    have h_lane_eqs := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_lane_eqs
+    rw [← h_lane_eqs.2.1]
+    simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op
+  obtain ⟨h_row_m32, h_bop_val⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
+      providerInput h_static h_core 0x1A (Or.inl rfl) h_emit
+  have h_bop : providerInput.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
+  obtain ⟨h_sext_choice, h_carry_7_zero⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.w_mode_sext_choice_and_carry_7_zero_of_static_row
+      providerInput h_static h_facts h_core h_row_m32 (Or.inl h_bop)
+  let v := ZiskFv.AirsClean.Binary.validOfRow providerInput
+  have h_b_lo_m : m.b_0 i.val = v.free_in_b_0 0 + 256 * v.free_in_b_1 0
+                                  + 65536 * v.free_in_b_2 0
+                                  + 16777216 * v.free_in_b_3 0 := by
+    have h_match_proj := h_match
+    simp only [ZiskFv.Airs.OperationBus.matches_entry,
+      ZiskFv.Airs.OperationBus.opBus_row_Main] at h_match_proj
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_match_proj.2.2.2.2.1
+  have h_input_imm := promises.input_imm_eq
+  have h_subset := h_addiw_subset
+  simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main,
+             h_input_imm] at h_subset
+  have hb0 : (v.free_in_b_0 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
+  have hb1 : (v.free_in_b_1 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.1.1.2.1
+  have hb2 : (v.free_in_b_2 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.1.1.2.1
+  have hb3 : (v.free_in_b_3 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.2.1
+  have h_b0_val : (m.b_0 i.val).val =
+      (v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
+      + (v.free_in_b_2 0).val * 65536
+      + (v.free_in_b_3 0).val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        v.free_in_b_0 0 + 256 * v.free_in_b_1 0
+          + 65536 * v.free_in_b_2 0 + 16777216 * v.free_in_b_3 0
+        = ((((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
+              + (v.free_in_b_2 0).val * 65536
+              + (v.free_in_b_3 0).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  have h_byte_lt :
+      (v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
+        + (v.free_in_b_2 0).val * 65536
+        + (v.free_in_b_3 0).val * 16777216 < 4294967296 := by
+    omega
+  have h_input_imm_extract :
+      (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
+          + (v.free_in_b_2 0).val * 65536
+          + (v.free_in_b_3 0).val * 16777216) % 2^32 := by
+    rw [h_subset]
+    simp only [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+               BitVec.toNat_ofNat, Nat.shiftRight_zero,
+               show (31 - 0 + 1 : ℕ) = 32 from rfl,
+               show (2:ℕ)^32 = 4294967296 from rfl,
+               show (2:ℕ)^64 = 18446744073709551616 from rfl]
+    rw [h_b0_val]
+    have h_b1_lt : (m.b_1 i.val).val < GL_prime := (m.b_1 i.val).isLt
+    omega
+  exact ZiskFv.EquivCore.Addiw.equiv_ADDIW_of_static_row
+    state addiw_input r1 rd imm m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop h_sext_choice h_carry_7_zero
+    h_input_r1_extract h_lane_rd h_input_imm_extract
 
 end ZiskFv.Compliance

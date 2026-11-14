@@ -37,7 +37,7 @@ carried — the conclusion holds regardless of which provider served the op.
   `logic_row_mode_pins_of_emit_op_lt_16_of_static_spec` (`OP_ADD = 10 < 16`) +
   `byte_chain_discharge_64_of_static_row`, then the lane→Sail binding
   (`input_r1_packed_a_row` / `input_r2_packed_b_row`), then calls
-  `Compliance.equiv_ADD` (the lookup-arm wrapper).
+  `EquivCore.Add.equiv_ADD_of_static_row` directly on the actual source row.
 * **BinaryAdd arm** — calls `Compliance.equiv_ADD_via_binaryadd`, which consumes
   the `add_subset_holds` conjunct (derived, NOT a binder), the r1/r2 lane bridges,
   `m32 = 0`, and the BinaryAdd component facts (all derived from the provider's
@@ -483,11 +483,10 @@ theorem construction_add_sound_claimed_dead
         ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
           m providerInput i.val (regidx_to_fin r2) add_input.r2_val
           h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
-    exact ZiskFv.Compliance.equiv_ADD
-      state add_input r1 r2 rd m
-      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      i.val bus pins h_match
-      h_input_r1_row h_input_r2_row h_lane_rd promises
+    exact ZiskFv.EquivCore.Add.equiv_ADD_of_static_row
+      state add_input r1 r2 rd m providerInput i.val bus promises pins
+      h_match h_core h_facts h_row_m32 h_bop
+      h_input_r1_row h_input_r2_row h_lane_rd
   · -- BinaryAdd arm: discharge via `equiv_ADD_via_binaryadd`.
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
@@ -692,11 +691,10 @@ theorem construction_addi_sound_claimed_dead
         ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
           m providerInput i.val addi_input.imm h_matches h_m32_zero h_match
           h_addi_subset
-    exact ZiskFv.Compliance.equiv_ADDI
-      state addi_input r1 rd imm m
-      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      i.val bus pins h_match
-      h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
+    exact ZiskFv.EquivCore.Addi.equiv_ADDI_of_static_row
+      state addi_input r1 rd imm m providerInput i.val bus promises pins
+      h_match h_addi_subset h_core h_facts h_row_m32 h_bop
+      h_input_r1_row h_input_imm_row h_lane_rd
   · -- BinaryAdd arm: discharge via `equiv_ADDI_via_binaryadd`.
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
