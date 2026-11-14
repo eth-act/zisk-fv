@@ -258,19 +258,19 @@ noncomputable def sailInstructionOf
   | .sd c => instruction.STORE
       (c.imm, c.r2, c.r1, 8)
   | .ld c => instruction.LOAD
-      (c.ld_input.imm, regidx.Regidx c.ld_input.r1, regidx.Regidx c.ld_input.rd, false, 8)
+      (c.imm, c.r1, c.rd, false, 8)
   | .lbu c => instruction.LOAD
-      (c.lbu_input.imm, regidx.Regidx c.lbu_input.r1, regidx.Regidx c.lbu_input.rd, true, 1)
+      (c.imm, c.r1, c.rd, true, 1)
   | .lhu c => instruction.LOAD
-      (c.lhu_input.imm, regidx.Regidx c.lhu_input.r1, regidx.Regidx c.lhu_input.rd, true, 2)
+      (c.imm, c.r1, c.rd, true, 2)
   | .lwu c => instruction.LOAD
-      (c.lwu_input.imm, regidx.Regidx c.lwu_input.r1, regidx.Regidx c.lwu_input.rd, true, 4)
+      (c.imm, c.r1, c.rd, true, 4)
   | .lb c => instruction.LOAD
-      (c.lb_input.imm, regidx.Regidx c.lb_input.r1, regidx.Regidx c.lb_input.rd, false, 1)
+      (c.imm, c.r1, c.rd, false, 1)
   | .lh c => instruction.LOAD
-      (c.lh_input.imm, regidx.Regidx c.lh_input.r1, regidx.Regidx c.lh_input.rd, false, 2)
+      (c.imm, c.r1, c.rd, false, 2)
   | .lw c => instruction.LOAD
-      (c.lw_input.imm, regidx.Regidx c.lw_input.r1, regidx.Regidx c.lw_input.rd, false, 4)
+      (c.imm, c.r1, c.rd, false, 4)
   | .fence c => instruction.FENCE (c.fm, c.fenceP, c.fenceS, c.rs, c.rd)
 
 /-- The Sail action `StepSound` equates with the channel effect, applied to the step's Sail state.

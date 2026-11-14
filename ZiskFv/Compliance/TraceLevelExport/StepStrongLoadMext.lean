@@ -181,15 +181,17 @@ theorem stepStrong_ld
     (d : RowData_ld trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.ld_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_ld.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.ld_input.imm, regidx.Regidx d.toClaim.ld_input.r1, regidx.Regidx d.toClaim.ld_input.rd, false, 8))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, false, 8))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -214,8 +216,8 @@ theorem stepStrong_ld
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.ld_state_assumptions d.toClaim.ld_input state)
-      (PureSpec.execute_LOADD_pure d.toClaim.ld_input).nextPC
+      (PureSpec.ld_state_assumptions d.toInputs.toInputsCore_ld.input state)
+      (PureSpec.execute_LOADD_pure d.toInputs.toInputsCore_ld.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -233,7 +235,7 @@ theorem stepStrong_ld
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.ld d.toClaim.ld_input d.toInputs.regs d.toInputs.mem bus pins promises d.toInputs.r_mem
+    OpEnvelope.ld d.toInputs.toInputsCore_ld.input d.toInputs.regs d.toInputs.mem bus pins promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
       (mainEnv := loadEvalEnv) (memEnv := loadEvalEnv)
@@ -248,12 +250,12 @@ theorem stepStrong_ld
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.ld_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_ld.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.ld_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.ld_input.imm).toNat
+            d.toInputs.toInputsCore_ld.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with
             ⟨_, _, _, _, _, _, _, _, _, _, h_bound, _, _⟩
@@ -275,15 +277,17 @@ theorem stepStrong_lbu
     (d : RowData_lbu trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.lbu_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_lbu.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.lbu_input.imm, regidx.Regidx d.toClaim.lbu_input.r1, regidx.Regidx d.toClaim.lbu_input.rd, true, 1))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, true, 1))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -308,8 +312,8 @@ theorem stepStrong_lbu
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.lbu_state_assumptions d.toClaim.lbu_input state)
-      (PureSpec.execute_LOADBU_pure d.toClaim.lbu_input).nextPC
+      (PureSpec.lbu_state_assumptions d.toInputs.toInputsCore_lbu.input state)
+      (PureSpec.execute_LOADBU_pure d.toInputs.toInputsCore_lbu.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -327,7 +331,7 @@ theorem stepStrong_lbu
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lbu d.toClaim.lbu_input d.toInputs.regs d.toInputs.mem bus d.toInputs.align pins d.toDecode.h_width promises d.toInputs.r_mem
+    OpEnvelope.lbu d.toInputs.toInputsCore_lbu.input d.toInputs.regs d.toInputs.mem bus d.toInputs.align pins d.toDecode.h_width promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
       (mainEnv := loadEvalEnv) (memEnv := loadEvalEnv)
@@ -342,12 +346,12 @@ theorem stepStrong_lbu
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lbu_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_lbu.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.lbu_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.lbu_input.imm).toNat
+            d.toInputs.toInputsCore_lbu.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, h_bound, _⟩
           exact h_bound
@@ -368,15 +372,17 @@ theorem stepStrong_lhu
     (d : RowData_lhu trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.lhu_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_lhu.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.lhu_input.imm, regidx.Regidx d.toClaim.lhu_input.r1, regidx.Regidx d.toClaim.lhu_input.rd, true, 2))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, true, 2))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -401,8 +407,8 @@ theorem stepStrong_lhu
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.lhu_state_assumptions d.toClaim.lhu_input state)
-      (PureSpec.execute_LOADHU_pure d.toClaim.lhu_input).nextPC
+      (PureSpec.lhu_state_assumptions d.toInputs.toInputsCore_lhu.input state)
+      (PureSpec.execute_LOADHU_pure d.toInputs.toInputsCore_lhu.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -420,7 +426,7 @@ theorem stepStrong_lhu
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lhu d.toClaim.lhu_input d.toInputs.regs d.toInputs.mem bus d.toInputs.align pins d.toDecode.h_width promises d.toInputs.r_mem
+    OpEnvelope.lhu d.toInputs.toInputsCore_lhu.input d.toInputs.regs d.toInputs.mem bus d.toInputs.align pins d.toDecode.h_width promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
       (mainEnv := loadEvalEnv) (memEnv := loadEvalEnv)
@@ -435,12 +441,12 @@ theorem stepStrong_lhu
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lhu_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_lhu.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.lhu_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.lhu_input.imm).toNat
+            d.toInputs.toInputsCore_lhu.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, _, h_bound, _, _⟩
           exact h_bound
@@ -461,15 +467,17 @@ theorem stepStrong_lwu
     (d : RowData_lwu trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.lwu_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_lwu.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.lwu_input.imm, regidx.Regidx d.toClaim.lwu_input.r1, regidx.Regidx d.toClaim.lwu_input.rd, true, 4))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, true, 4))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -494,8 +502,8 @@ theorem stepStrong_lwu
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.lwu_state_assumptions d.toClaim.lwu_input state)
-      (PureSpec.execute_LOADWU_pure d.toClaim.lwu_input).nextPC
+      (PureSpec.lwu_state_assumptions d.toInputs.toInputsCore_lwu.input state)
+      (PureSpec.execute_LOADWU_pure d.toInputs.toInputsCore_lwu.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -513,7 +521,7 @@ theorem stepStrong_lwu
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lwu d.toClaim.lwu_input d.toInputs.regs d.toInputs.mem bus d.toInputs.align pins d.toDecode.h_width promises d.toInputs.r_mem
+    OpEnvelope.lwu d.toInputs.toInputsCore_lwu.input d.toInputs.regs d.toInputs.mem bus d.toInputs.align pins d.toDecode.h_width promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
       (mainEnv := loadEvalEnv) (memEnv := loadEvalEnv)
@@ -528,12 +536,12 @@ theorem stepStrong_lwu
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lwu_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_lwu.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.lwu_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.lwu_input.imm).toNat
+            d.toInputs.toInputsCore_lwu.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with
             ⟨_, _, _, _, _, _, h_bound, _, _⟩
@@ -555,15 +563,17 @@ theorem stepStrong_lb
     (d : RowData_lb trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.lb_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_lb.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.lb_input.imm, regidx.Regidx d.toClaim.lb_input.r1, regidx.Regidx d.toClaim.lb_input.rd, false, 1))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, false, 1))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -588,8 +598,8 @@ theorem stepStrong_lb
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.lb_state_assumptions d.toClaim.lb_input state)
-      (PureSpec.execute_LOADB_pure d.toClaim.lb_input).nextPC
+      (PureSpec.lb_state_assumptions d.toInputs.toInputsCore_lb.input state)
+      (PureSpec.execute_LOADB_pure d.toInputs.toInputsCore_lb.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -607,7 +617,7 @@ theorem stepStrong_lb
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lb_via_static_match d.toClaim.lb_input d.toInputs.regs d.toInputs.mem d.toDecode.v d.toDecode.r_binary d.toDecode.offset d.toDecode.env
+    OpEnvelope.lb_via_static_match d.toInputs.toInputsCore_lb.input d.toInputs.regs d.toInputs.mem d.toDecode.v d.toDecode.r_binary d.toDecode.offset d.toDecode.env
       d.toDecode.h_static d.toDecode.h_match bus pins promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
@@ -623,12 +633,12 @@ theorem stepStrong_lb
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lb_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_lb.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.lb_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.lb_input.imm).toNat
+            d.toInputs.toInputsCore_lb.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, h_bound, _⟩
           exact h_bound
@@ -649,15 +659,17 @@ theorem stepStrong_lh
     (d : RowData_lh trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.lh_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_lh.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.lh_input.imm, regidx.Regidx d.toClaim.lh_input.r1, regidx.Regidx d.toClaim.lh_input.rd, false, 2))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, false, 2))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -682,8 +694,8 @@ theorem stepStrong_lh
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.lh_state_assumptions d.toClaim.lh_input state)
-      (PureSpec.execute_LOADH_pure d.toClaim.lh_input).nextPC
+      (PureSpec.lh_state_assumptions d.toInputs.toInputsCore_lh.input state)
+      (PureSpec.execute_LOADH_pure d.toInputs.toInputsCore_lh.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -701,7 +713,7 @@ theorem stepStrong_lh
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lh_via_static_match d.toClaim.lh_input d.toInputs.regs d.toInputs.mem d.toDecode.v d.toDecode.r_binary d.toDecode.offset d.toDecode.env
+    OpEnvelope.lh_via_static_match d.toInputs.toInputsCore_lh.input d.toInputs.regs d.toInputs.mem d.toDecode.v d.toDecode.r_binary d.toDecode.offset d.toDecode.env
       d.toDecode.h_static d.toDecode.h_match bus pins promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
@@ -717,12 +729,12 @@ theorem stepStrong_lh
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lh_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_lh.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.lh_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.lh_input.imm).toNat
+            d.toInputs.toInputsCore_lh.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with ⟨_, _, _, _, h_bound, _, _⟩
           exact h_bound
@@ -743,15 +755,17 @@ theorem stepStrong_lw
     (d : RowData_lw trace binding i)
     (h_mem_ev : LoadMemoryTimelineCoherenceEvidence (binding i)
       (busLd trace i (Pilot.execRowOf trace i)).e1)
-    (h_domain : SequentialPcDomain d.toClaim.lw_input.PC) :
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_lw.input.PC) :
     execute_instruction (instruction.LOAD
-        (d.toClaim.lw_input.imm, regidx.Regidx d.toClaim.lw_input.r1, regidx.Regidx d.toClaim.lw_input.rd, false, 4))
+        (d.toClaim.imm, d.toClaim.r1, d.toClaim.rd, false, 4))
         (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busLd trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busLd trace i (Pilot.execRowOf trace i)).e0
            , (busLd trace i (Pilot.execRowOf trace i)).e1
            , (busLd trace i (Pilot.execRowOf trace i)).e2 ]⟩ (binding i) := by
+  rw [← storeRegBits_roundtrip d.toClaim.r1,
+    ← storeRegBits_roundtrip d.toClaim.rd]
   set m := ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable with hm
   set state := binding i with hstate
   let bus := busLd trace i (Pilot.execRowOf trace i)
@@ -776,8 +790,8 @@ theorem stepStrong_lw
     ZiskFv.Airs.MemoryBus.matches_memory_entry_refl _
   let promises : ZiskFv.EquivCore.Promises.LoadStructuralPromises
       state d.toInputs.regs.mstatus d.toInputs.regs.pmaRegion d.toInputs.regs.misa d.toInputs.regs.mseccfg
-      (PureSpec.lw_state_assumptions d.toClaim.lw_input state)
-      (PureSpec.execute_LOADW_pure d.toClaim.lw_input).nextPC
+      (PureSpec.lw_state_assumptions d.toInputs.toInputsCore_lw.input state)
+      (PureSpec.execute_LOADW_pure d.toInputs.toInputsCore_lw.input).nextPC
       bus.exec_row bus.e0 bus.e1 bus.e2 :=
     { risc_v_assumptions := d.toInputs.h_risc_v_assumptions
       opcode_assumptions_ := d.toInputs.h_opcode_assumptions
@@ -795,7 +809,7 @@ theorem stepStrong_lw
       m2_mult := by rfl
       m2_as := by rfl }
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.lw_via_static_match d.toClaim.lw_input d.toInputs.regs d.toInputs.mem d.toDecode.v d.toDecode.r_binary d.toDecode.offset d.toDecode.env
+    OpEnvelope.lw_via_static_match d.toInputs.toInputsCore_lw.input d.toInputs.regs d.toInputs.mem d.toDecode.v d.toDecode.r_binary d.toDecode.offset d.toDecode.env
       d.toDecode.h_static d.toDecode.h_match bus pins promises d.toInputs.r_mem
       (mainRowVar := mainConstVar (mainRowWithRomLd trace i))
       (memRowVar := memConstVar (ZiskFv.AirsClean.Mem.rowAt d.toInputs.mem d.toInputs.r_mem))
@@ -811,12 +825,12 @@ theorem stepStrong_lw
       (by simpa only [eval_mainConstVar] using h_main_c_match)
       (by
         have h_a0_value :
-            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toClaim.lw_input.r1_val := by
+            (mainRowWithRomLd trace i).core.a_0 = lane_lo d.toInputs.toInputsCore_lw.input.r1_val := by
           rw [h_core]
           simpa [ZiskFv.AirsClean.Main.rowAt] using d.toInputs.h_a0_value
         have h_addr_bound :
-            d.toClaim.lw_input.r1_val.toNat
-              + (BitVec.signExtend 64 d.toClaim.lw_input.imm).toNat
+            d.toInputs.toInputsCore_lw.input.r1_val.toNat
+              + (BitVec.signExtend 64 d.toClaim.imm).toNat
               < ZiskPhysicalAddressSpaceSize := by
           rcases d.toInputs.h_opcode_assumptions with
             ⟨_, _, _, _, _, _, h_bound, _, _⟩

@@ -37,11 +37,11 @@ private theorem store_rX_from_read
   exact Classical.choose_spec h_read
 
 /-- Reconstruct30 pure ALU inputs from decoded operands and current register/PC
-agreement, not caller operand values or operand proofs. Four store families also
-reconstruct their successful-read witnesses from this same induction invariant;
-only their existing range/alignment, lane and platform facts are retained.
+agreement. Four store families also reconstruct successful-read witnesses. Seven
+loads consume complete-old-surface certificates, retaining their existing byte,
+range/alignment, lane, provider and platform obligations on the unchanged domain.
 
-No public aggregate premise is removed here. The other29 families pass through
+No public aggregate premise is removed here. The other22 families pass through
 unchanged. The construction uses current, never all-step, soundness. -/
 noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
     (steps : ∀ i, ZiskStep trace i)
@@ -449,13 +449,125 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
         h_b0_value := ia.h_b0_value
         h_b1_value := ia.h_b1_value
         h_risc_v_assumptions := ia.h_risc_v_assumptions }
-  | .ld _, ia => ia
-  | .lbu _, ia => ia
-  | .lhu _, ia => ia
-  | .lwu _, ia => ia
-  | .lb _, ia => ia
-  | .lh _, ia => ia
-  | .lw _, ia => ia
+  | .ld c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_ld.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.ld_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
+  | .lbu c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_lbu.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.align ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.lbu_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
+  | .lhu c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_lhu.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.align ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.lhu_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
+  | .lwu c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_lwu.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.align ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.lwu_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
+  | .lb c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_lb.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.lb_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
+  | .lh c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_lh.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.lh_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
+  | .lw c, ia => by
+      rcases c with ⟨r1, rd, imm⟩
+      cases r1 with
+      | Regidx r1 =>
+        cases rd with
+        | Regidx rd =>
+          let construction := InputsCore_lw.of_state_assumptions i ia.input
+            ia.regs ia.mem ia.r_mem ia.h_opcode_assumptions ia.h_a0_value
+            ia.h_risc_v_assumptions ia.h_msg ia.h_mem_sel ia.h_mem_wr
+          exact { construction.val with
+            h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
+            h_input_pc := ⟨pc, hpc⟩
+            h_opcode_assumptions := by
+              change PureSpec.lw_state_assumptions construction.val.input
+                (chainedSailTrace steps init i)
+              rw [construction.property]
+              exact ia.h_opcode_assumptions }
   | .fence _, ia => ia
 
 end ZiskFv.Compliance
