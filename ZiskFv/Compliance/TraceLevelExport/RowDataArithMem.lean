@@ -3220,17 +3220,7 @@ def InputsCore_ld.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_ld, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
-      | exact h_data1
-      | exact h_data2
-      | exact h_data3
-      | exact h_data4
-      | exact h_data5
-      | exact h_data6
-      | exact h_data7
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
@@ -3428,10 +3418,7 @@ def InputsCore_lbu.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_lbu, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
@@ -3636,11 +3623,7 @@ def InputsCore_lhu.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_lhu, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
-      | exact h_data1
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
@@ -3857,13 +3840,7 @@ def InputsCore_lwu.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_lwu, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
-      | exact h_data1
-      | exact h_data2
-      | exact h_data3
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
@@ -4068,10 +4045,7 @@ def InputsCore_lb.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_lb, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
@@ -4281,11 +4255,7 @@ def InputsCore_lh.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_lh, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
-      | exact h_data1
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
@@ -4507,13 +4477,7 @@ def InputsCore_lw.of_state_assumptions
       (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
     cases input
     dsimp only [loadInput_lw, storeRegBits]
-    congr 1 <;> first
-      | exact h_value
-      | exact h_pc_value
-      | exact h_data0
-      | exact h_data1
-      | exact h_data2
-      | exact h_data3
+    congr 1
   refine ⟨{
     h_input_r1 := h_r1
     h_input_pc := h_pc
