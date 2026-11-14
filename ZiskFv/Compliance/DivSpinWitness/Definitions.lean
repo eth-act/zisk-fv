@@ -470,6 +470,26 @@ def divSpinBinarySourceTable : Table FGL :=
 def divSpinExtensionSourceTable : Table FGL :=
   ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable divSpinPackedSources emptyData
 
+-- Keep full canonical source rows sealed when simplifying the outer ensemble.
+@[simp] theorem divSpinBinarySourceTable_component :
+    divSpinBinarySourceTable.component =
+      ZiskFv.AirsClean.BinaryTableSlice.sourceComponent := rfl
+
+@[simp] theorem divSpinExtensionSourceTable_component :
+    divSpinExtensionSourceTable.component =
+      ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent := rfl
+
+@[simp] theorem divSpinBinarySourceTable_other_channel (channel : RawChannel FGL)
+    (h : channel.name ≠ ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw.name) :
+    divSpinBinarySourceTable.interactionsWith channel = [] :=
+  ZiskFv.AirsClean.FullEnsemble.binaryProviderTable_other_channel _ _ channel h
+
+@[simp] theorem divSpinExtensionSourceTable_other_channel (channel : RawChannel FGL)
+    (h : channel.name ≠
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw.name) :
+    divSpinExtensionSourceTable.interactionsWith channel = [] :=
+  ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel _ _ channel h
+
 theorem divSpinBinarySource_actual_consumer_balanced :
     BalancedInteractions
       (divSpinBinarySourceTable.interactionsWith

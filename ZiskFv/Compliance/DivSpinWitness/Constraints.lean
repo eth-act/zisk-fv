@@ -323,7 +323,7 @@ def divSpinWitness : EnsembleWitness divSpinEnsemble where
   publicInput := ()
   same_length := by
     simp [divSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
-      divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+      divSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
       SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
       divSpinMainTable, mainRowsTable]
   same_circuits := by
@@ -332,17 +332,14 @@ def divSpinWitness : EnsembleWitness divSpinEnsemble where
       simpa [divSpinTables] using hi
     interval_cases i <;>
       simp [divSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
-        divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+        divSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
         SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         divSpinBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
         divSpinArithTable, divSpinRemainderBoundTable, binaryConsumerSingleRowTable,
         divSpinBinaryAddTable, binaryAddRowsTable, divSpinMainTable, mainRowsTable]
   same_data := by
     intro table h_table
-    simp [divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, divSpinBoundaryTable, registerBoundaryRowsTableOf,
-      emptyComponentTable, divSpinArithTable, divSpinRemainderBoundTable,
-      binaryConsumerSingleRowTable, divSpinBinaryAddTable, binaryAddRowsTable,
-      divSpinMainTable, mainRowsTable] at h_table
+    simp only [divSpinTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> rfl
 
@@ -354,7 +351,7 @@ theorem divSpinEnsemble_verifier :
 theorem divSpinWitness_table_constraints :
     ∀ table ∈ divSpinWitness.tables, table.Constraints := by
   intro table h_table
-  simp [divSpinWitness, divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable] at h_table
+  simp only [divSpinWitness, divSpinTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
   rcases h_table with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -404,7 +401,7 @@ theorem divSpinWitness_transitions : divSpinWitness.TransitionConstraints := by
     rw [Table.TransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [divSpinWitness, divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable] at h_table
+  · simp only [divSpinWitness, divSpinTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -449,7 +446,7 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
     rw [Table.CyclicSuccessorTransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [divSpinWitness, divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable] at h_table
+  · simp only [divSpinWitness, divSpinTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl

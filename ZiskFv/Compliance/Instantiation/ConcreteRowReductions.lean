@@ -1421,6 +1421,35 @@ def noRequestExtensionSourceTable : Table FGL :=
   ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
     ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData
 
+@[simp] theorem noRequestBinarySourceTable_component :
+    noRequestBinarySourceTable.component =
+      ZiskFv.AirsClean.BinaryTableSlice.sourceComponent := rfl
+
+@[simp] theorem noRequestExtensionSourceTable_component :
+    noRequestExtensionSourceTable.component =
+      ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent := rfl
+
+@[simp] theorem noRequestBinarySourceTable_data :
+    noRequestBinarySourceTable.data = emptyData := rfl
+
+@[simp] theorem noRequestExtensionSourceTable_data :
+    noRequestExtensionSourceTable.data = emptyData := rfl
+
+@[simp] theorem noRequestBinarySourceTable_other_channel
+    (channel : RawChannel FGL)
+    (h : channel.name ≠ ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw.name) :
+    noRequestBinarySourceTable.interactionsWith channel = [] := by
+  exact ZiskFv.AirsClean.FullEnsemble.binaryProviderTable_other_channel
+    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData channel h
+
+@[simp] theorem noRequestExtensionSourceTable_other_channel
+    (channel : RawChannel FGL)
+    (h : channel.name ≠
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw.name) :
+    noRequestExtensionSourceTable.interactionsWith channel = [] := by
+  exact ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel
+    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData channel h
+
 private def binarySpikeRow : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
   { aBytes :=
       { free_in_a_0 := 2, free_in_a_1 := 0, free_in_a_2 := 0, free_in_a_3 := 0,

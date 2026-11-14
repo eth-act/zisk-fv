@@ -98,7 +98,7 @@ theorem divSpinWitness_memBusInteractions :
     simpa using h_ne
   unfold divSpinMemBusInteractions
   rw [divSpinWitness_tables]
-  simp [divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, divSpinBoundaryTable_memBusInteractions,
+  simp [divSpinTables, divSpinBoundaryTable_memBusInteractions,
     divSpinMainTable_memBusInteractions, emptyComponentTable_interactionsWith,
     h_arith, h_remainder, h_binaryAdd,
     registerStepRangeRowsTable_interactionsWith_memBus_nil]

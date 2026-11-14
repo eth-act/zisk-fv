@@ -216,7 +216,7 @@ def singleAddWitness : EnsembleWitness singleAddEnsemble where
   data := emptyData
   publicInput := ()
   same_length := by
-    simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable,
+    simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, singleAddTables,
       SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addTable,
       SoundEnsemble.empty_tables, Ensemble.addTable]
   same_circuits := by
@@ -224,7 +224,7 @@ def singleAddWitness : EnsembleWitness singleAddEnsemble where
     have hi' : i < 17 := by
       simpa [singleAddTables] using hi
     interval_cases i <;>
-      simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable,
+      simp [singleAddEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble, singleAddTables,
         SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables, SoundEnsemble.addTable,
         SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         registerBoundaryRowsTable,
@@ -232,15 +232,14 @@ def singleAddWitness : EnsembleWitness singleAddEnsemble where
         mainSingleRowTable]
   same_data := by
     intro table h_table
-    simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, registerBoundaryRowsTable, registerBoundaryRowsTableOf,
-      emptyComponentTable, registerStepRangeRowsTable, binaryAddRowsTable, mainSingleRowTable] at h_table
+    simp only [singleAddTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rfl
 
 theorem singleAddWitness_table_constraints :
     ∀ table ∈ singleAddWitness.tables, table.Constraints := by
   intro table h_table
-  simp [singleAddWitness, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable] at h_table
+  simp only [singleAddWitness, singleAddTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
   rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact registerBoundaryRowsTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
@@ -310,7 +309,7 @@ theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints :=
     rw [Table.TransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [singleAddWitness, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable] at h_table
+  · simp only [singleAddWitness, singleAddTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
@@ -347,7 +346,7 @@ theorem singleAddWitness_cyclicSuccessorTransitions :
     rw [Table.CyclicSuccessorTransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [singleAddWitness, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable] at h_table
+  · simp only [singleAddWitness, singleAddTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
@@ -418,8 +417,12 @@ private theorem singleAddWitness_main_component_cases
   · subst table
     exfalso
     exact not_main_component_of_width_ne (by decide) h_component
-  · simp [singleAddWitness, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable] at h_table
+  · simp only [singleAddWitness, singleAddTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_main_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_main_component_of_name_ne (by decide) h_component
     · exfalso
@@ -465,7 +468,7 @@ private theorem singleAddWitness_mutable_mem_component_tables_empty (table : Tab
     rw [h_component,
       ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
     exact absurd h_verifier_nil (by simp)
-  · simp [singleAddWitness, singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable] at h_table
+  · simp only [singleAddWitness, singleAddTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_mutable_mem_component_of_name_ne (by decide) h_component
@@ -482,6 +485,10 @@ private theorem singleAddWitness_mutable_mem_component_tables_empty (table : Tab
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_table ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
     · exact emptyComponentTable_table ZiskFv.AirsClean.Binary.tableConsumerComponent
+    · exfalso
+      exact not_mutable_mem_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
@@ -527,7 +534,10 @@ theorem singleAddWitness_opBus_interactions :
         [mainOpBusInteraction addX1Row] :=
     mainSingleRowTable_interactionsWith_opBus 1 addX1Program addX1Row (by rfl) (by rfl)
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, h_registerBoundary, emptyComponentTable_interactionsWith,
+  simp [singleAddTables,
+    noRequestBinarySourceTable_other_channel OpBusChannel.toRaw (by decide),
+    noRequestExtensionSourceTable_other_channel OpBusChannel.toRaw (by decide),
+    h_registerBoundary, emptyComponentTable_interactionsWith,
     binaryAddRowsTable_interactionsWith_opBus, h_main,
     registerStepRangeRowsTable_interactionsWith_opBus_nil]
 
@@ -577,7 +587,10 @@ theorem singleAddWitness_memBus_interactions :
     exact ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
       (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, h_registerBoundary, h_binaryAdd, emptyComponentTable_interactionsWith,
+  simp [singleAddTables,
+    noRequestBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
+    noRequestExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
+    h_registerBoundary, h_binaryAdd, emptyComponentTable_interactionsWith,
     addX1Row_main_interactionsWith_memBus_eq_mainRegisterInteractionsFromTable,
     singleAddMemBusInteractions, registerStepRangeRowsTable_interactionsWith_memBus_nil]
 
@@ -636,7 +649,10 @@ theorem singleAddWitness_rangeChannel_balanced :
     BalancedInteractions
       (singleAddWitness.tables.flatMap (·.interactionsWith SpecifiedRangesSliceChannel.toRaw)) := by
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, registerBoundaryRowsTable_interactionsWith_rangeChannel_nil,
+  simp [singleAddTables,
+    noRequestBinarySourceTable_other_channel SpecifiedRangesSliceChannel.toRaw (by decide),
+    noRequestExtensionSourceTable_other_channel SpecifiedRangesSliceChannel.toRaw (by decide),
+    registerBoundaryRowsTable_interactionsWith_rangeChannel_nil,
     binaryAddRowsTable_interactionsWith_rangeChannel_nil,
     mainSingleRowTable_interactionsWith_rangeChannel_nil,
     emptyComponentTable_interactionsWith,
@@ -682,7 +698,10 @@ theorem singleAddWitness_memAlignRangeChannel_balanced :
     BalancedInteractions
       (singleAddWitness.tables.flatMap (·.interactionsWith MemAlignRangeChannel.toRaw)) := by
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, registerBoundaryRowsTable_interactionsWith_memAlignRangeChannel_nil,
+  simp [singleAddTables,
+    noRequestBinarySourceTable_other_channel MemAlignRangeChannel.toRaw (by decide),
+    noRequestExtensionSourceTable_other_channel MemAlignRangeChannel.toRaw (by decide),
+    registerBoundaryRowsTable_interactionsWith_memAlignRangeChannel_nil,
     binaryAddRowsTable_interactionsWith_memAlignRangeChannel_nil,
     mainSingleRowTable_interactionsWith_memAlignRangeChannel_nil,
     emptyComponentTable_interactionsWith,
@@ -737,7 +756,10 @@ theorem singleAddWitness_memAlignRomChannel_balanced :
     BalancedInteractions
       (singleAddWitness.tables.flatMap (·.interactionsWith MemAlignRomChannel.toRaw)) := by
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, registerBoundaryRowsTable_interactionsWith_memAlignRomChannel_nil,
+  simp [singleAddTables,
+    noRequestBinarySourceTable_other_channel MemAlignRomChannel.toRaw (by decide),
+    noRequestExtensionSourceTable_other_channel MemAlignRomChannel.toRaw (by decide),
+    registerBoundaryRowsTable_interactionsWith_memAlignRomChannel_nil,
     binaryAddRowsTable_interactionsWith_memAlignRomChannel_nil,
     mainSingleRowTable_interactionsWith_memAlignRomChannel_nil,
     emptyComponentTable_interactionsWith,
@@ -775,7 +797,12 @@ theorem singleAddWitness_registerStepRange_interactions :
     mainSingleRowTable_interactionsWith_registerStepRange 1 addX1Program addX1Row
       (by rfl) (by rfl)
   rw [show singleAddWitness.tables = singleAddTables from rfl]
-  simp [singleAddTables, noRequestExtensionSourceTable, noRequestBinarySourceTable, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd,
+  simp [singleAddTables,
+    noRequestBinarySourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+    noRequestExtensionSourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+    emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd,
     registerStepRangeRowsTable_interactionsWith, h_main, List.map_append, List.append_assoc]
 
 set_option maxRecDepth 8000 in
@@ -858,8 +885,7 @@ theorem singleAddWitness_binaryTableChannel_balanced :
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
   have h_silent_12 : (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith _ _
   have h_silent_13 : (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
@@ -919,8 +945,7 @@ theorem singleAddWitness_extensionTableChannel_balanced :
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
   have h_silent_11 : (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith _ _
   have h_silent_12 : (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide

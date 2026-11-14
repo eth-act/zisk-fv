@@ -67,7 +67,7 @@ theorem divSpinOpBusTables3_flatMap :
       , mainOpBusInteraction divSpinDivRow
       , mainOpBusInteraction (divSpinJalRow 3)
       , mainOpBusInteraction (divSpinJalRow 4) ] := by
-  simp [divSpinExtensionSourceTable, divSpinBinarySourceTable, divSpinOpBusTables3, List.flatMap_cons, List.flatMap_nil,
+  simp [divSpinOpBusTables3, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, divSpinRemainderBoundTable_opBusInteractions,
     divSpinBinaryAddTable_opBusInteractions, divSpinMainTable_opBusInteractions,
     divSpinBinaryAddRows, divSpinMainRows, List.map_cons, List.map_nil]

@@ -376,6 +376,25 @@ def jalrBinarySourceTable : Table FGL :=
 def jalrExtensionSourceTable : Table FGL :=
   ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable jalrPackedSources emptyData
 
+-- Keep full canonical source rows sealed when simplifying the outer ensemble.
+@[simp] private theorem jalrBinarySourceTable_component :
+    jalrBinarySourceTable.component = ZiskFv.AirsClean.BinaryTableSlice.sourceComponent := rfl
+
+@[simp] private theorem jalrExtensionSourceTable_component :
+    jalrExtensionSourceTable.component =
+      ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent := rfl
+
+@[simp] private theorem jalrBinarySourceTable_other_channel (channel : RawChannel FGL)
+    (h : channel.name ≠ ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw.name) :
+    jalrBinarySourceTable.interactionsWith channel = [] :=
+  ZiskFv.AirsClean.FullEnsemble.binaryProviderTable_other_channel _ _ channel h
+
+@[simp] private theorem jalrExtensionSourceTable_other_channel (channel : RawChannel FGL)
+    (h : channel.name ≠
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw.name) :
+    jalrExtensionSourceTable.interactionsWith channel = [] :=
+  ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel _ _ channel h
+
 theorem jalrBinarySource_actual_consumer_balanced :
     BalancedInteractions
       (jalrBinarySourceTable.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw ++
@@ -610,14 +629,14 @@ def jalrWitness : EnsembleWitness jalrEnsemble where
   publicInput := ()
   same_length := by
     simp [jalrEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
-      jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+      jalrTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
       SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
   same_circuits := by
     intro i hi
     have hi' : i < 17 := by simpa [jalrTables] using hi
     interval_cases i <;>
       simp [jalrEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
-        jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+        jalrTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
         SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         jalrBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
         jalrBinaryAndTable, binaryConsumerSingleRowTable, jalrBinaryAddTable,
@@ -625,10 +644,7 @@ def jalrWitness : EnsembleWitness jalrEnsemble where
         ZiskFv.Compliance.AddSpinWitness.mainRowsTable]
   same_data := by
     intro table h_table
-    simp [jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, jalrBoundaryTable, registerBoundaryRowsTableOf,
-      emptyComponentTable, jalrBinaryAndTable, binaryConsumerSingleRowTable,
-      jalrBinaryAddTable, binaryAddRowsTable, jalrMainTable,
-      ZiskFv.Compliance.AddSpinWitness.mainRowsTable] at h_table
+    simp only [jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
@@ -636,7 +652,7 @@ def jalrWitness : EnsembleWitness jalrEnsemble where
 theorem jalrWitness_table_constraints :
     ∀ table ∈ jalrWitness.tables, table.Constraints := by
   intro table h_table
-  simp [jalrWitness, jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable] at h_table
+  simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
   rcases h_table with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -679,7 +695,7 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
     rw [Table.TransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [jalrWitness, jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -722,7 +738,7 @@ theorem jalrWitness_cyclicSuccessorTransitions :
     rw [Table.CyclicSuccessorTransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [jalrWitness, jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -877,7 +893,7 @@ theorem jalrOpBus_interactions :
       ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_opBus_nil
         (table := jalrBoundaryTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
-  simp [jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, h_boundary, emptyComponentTable_interactionsWith,
+  simp [jalrTables, h_boundary, emptyComponentTable_interactionsWith,
     jalrBinaryAndTable, binaryConsumerSingleRowTable_interactionsWith_opBus,
     jalrBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus,
     jalrMainTable_interactionsWith_opBus,
@@ -935,7 +951,7 @@ theorem jalrWitness_memBus_interactions :
       ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
         (table := jalrBinaryAddTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
-  simp [jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, jalrMemBusInteractions, h_boundary, h_binary, h_binaryAdd,
+  simp [jalrTables, jalrMemBusInteractions, h_boundary, h_binary, h_binaryAdd,
     emptyComponentTable_interactionsWith, jalrMainTable_interactionsWith_memBus,
     registerStepRangeRowsTable_interactionsWith_memBus_nil]
 
@@ -1261,7 +1277,7 @@ private theorem jalrWitness_otherChannel_balanced
     registerStepRangeRowsTable_interactionsWith_of_ne _ channel hne_rsr
   simp only [List.cons_append, List.nil_append] at h_provider
   rw [show jalrWitness.tables = jalrTables from rfl]
-  simp [h_binary_name, h_extension_name, jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, h_boundary, h_binary, h_binaryAdd, h_main, h_provider,
+  simp [h_binary_name, h_extension_name, jalrTables, h_boundary, h_binary, h_binaryAdd, h_main, h_provider,
     emptyComponentTable_interactionsWith]
   refine ⟨?_, ?_⟩
   · left
@@ -1387,7 +1403,7 @@ theorem jalrRegisterStepRange_interactions :
     ZiskFv.AirsClean.FullEnsemble.staticBinary_table_interactionsWith_registerStepRange_nil
       (table := jalrBinaryAndTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
-  simp [jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd, h_binary,
+  simp [jalrTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd, h_binary,
     registerStepRangeRowsTable_interactionsWith,
     jalrMainTable_interactionsWith_registerStepRange, List.map_append, List.append_assoc]
 
@@ -1482,8 +1498,7 @@ theorem jalrWitness_binaryTableChannel_balanced :
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
   have h_silent_14 : (jalrExtensionSourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact jalrExtensionSourceTable_other_channel _ (by decide)
   have h_silent_16 : (jalrMainTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
@@ -1492,8 +1507,11 @@ theorem jalrWitness_binaryTableChannel_balanced :
       (ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
         ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw (Environment.fromInput jalrBinaryAndRow emptyData)) ++
       (jalrBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw := by
-    simpa only [jalrWitness, jalrTables, List.flatMap_cons, List.flatMap_nil,
-      h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil]
+    simp only [jalrWitness, jalrTables, List.flatMap_cons, List.flatMap_nil,
+      h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil,
+      jalrBinaryAndTable, binaryConsumerSingleRowTable,
+      ZiskFv.AirsClean.FullEnsemble.binaryConsumerRowsTable_interactionsWith,
+      List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [h_list]
   exact balancedInteractions_of_perm jalrBinarySource_actual_consumer_balanced List.perm_append_comm
 
@@ -1535,8 +1553,7 @@ theorem jalrWitness_extensionTableChannel_balanced :
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
   have h_silent_11 : (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith _ _
   have h_silent_12 : (jalrBinaryAndTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
@@ -1544,8 +1561,7 @@ theorem jalrWitness_extensionTableChannel_balanced :
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
   have h_silent_15 : (jalrBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact jalrBinarySourceTable_other_channel _ (by decide)
   have h_silent_16 : (jalrMainTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     decide
@@ -1615,7 +1631,7 @@ private theorem jalrWitness_main_component_cases
   · subst table
     exfalso
     exact not_jalr_main_component_of_width_ne (by decide) h_component
-  · simp [jalrWitness, jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -1670,7 +1686,7 @@ private theorem jalrWitness_mutable_mem_component_tables_empty
     rw [h_component,
       ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
     exact absurd h_verifier_nil (by simp)
-  · simp [jalrWitness, jalrTables, jalrExtensionSourceTable, jalrBinarySourceTable] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
