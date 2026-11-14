@@ -1,0 +1,4 @@
+argv: ["/usr/bin/python3", "/home/cody/zisk-fv-closure-mutation/tools/extraction-coverage/main_fixed.py", "--pilout", "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline.pilout", "--fixed", "/home/cody/zisk-fv-closure-mutation/build/closure-binaryadd-source-control/baseline-source/Main.fixed", "--selftest"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+Main fixed fidelity: both modeled columns match all 4194304 physical rows

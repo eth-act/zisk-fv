@@ -41,6 +41,7 @@
     {"kind": "table_digest", "path": "ByteTables/BinaryTable.json"},
     {"kind": "lean", "path": "Extraction.lean"},
     {"kind": "lean", "path": "Extraction/Arith.lean"},
+    {"kind": "lean", "path": "Extraction/ArithRangeTable.lean"},
     {"kind": "lean", "path": "Extraction/ArithTable.lean"},
     {"kind": "lean", "path": "Extraction/Binary.lean"},
     {"kind": "lean", "path": "Extraction/BinaryAdd.lean"},
@@ -62,6 +63,7 @@
     {"kind": "lean", "path": "Extraction/MemGeneratedConstraintBridge.lean"},
     {"kind": "lean", "path": "Extraction/MemoryBuses.lean"},
     {"kind": "lean", "path": "Extraction/PackedVirtualTables.lean"},
+    {"kind": "lean", "path": "Extraction/SourceDimensions.lean"},
     {"kind": "report", "path": "MemAirFacts.md"},
     {"kind": "source_table", "path": "MemAlignRom.tsv"},
     {"kind": "table_digest", "path": "PackedVirtualTables.json"}

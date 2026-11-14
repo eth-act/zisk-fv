@@ -480,9 +480,12 @@ pin = "ROM_BUS_ID_pinned"
 
 [[constant]]
 name = "memAlignFixedCapacity"
-kind = "extractor-item"
+kind = "dimension"
 value = 2097152
 pil = "zisk/pil/src/pil_helpers/traces.rs:331"
 model = "ZiskFv/AirsClean/MemAlign/Circuit.lean"
 issue = "eth-act/zisk-fv#366"
-status = "missing generated numRows field; not an exemption"
+generated = "build/extraction/Extraction/SourceDimensions.lean"
+source-air = "MemAlign"
+proof = "ZiskFv/AirsClean/SourceDimensions.lean"
+pin = "memAlignFixedCapacity_eq_source"

@@ -8,10 +8,12 @@ use clap::{Args, Parser, Subcommand};
 use prost::Message;
 
 mod arith_table;
+mod arith_range_table;
 mod clean_component;
 mod lookup_wiring;
 mod mem_align_rom;
 mod packed_virtual_tables;
+mod source_dimensions;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -48,6 +50,10 @@ enum Cmd {
     ArithTable(ArithTableCmd),
     /// Emit checked physical placement metadata from production packed tables.
     PackedVirtualTables(PackedVirtualTablesCmd),
+    /// Parse arithmetic range helper data and emit its checked source mapping.
+    ArithRangeTable(ArithTableCmd),
+    /// Emit physical AIR row capacities from the pinned pilout metadata.
+    SourceDimensions(LookupWiringCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -290,6 +296,17 @@ fn main() -> Result<()> {
             let source = fs::read_to_string(&args.compiled_json)
                 .with_context(|| format!("failed to read {}", args.compiled_json.display()))?;
             write_output(args.output.as_deref(), &packed_virtual_tables::render(&source)?)
+        }
+        Cmd::ArithRangeTable(args) => {
+            let source = fs::read_to_string(&args.rust_source)
+                .with_context(|| format!("failed to read {}", args.rust_source.display()))?;
+            write_output(args.output.as_deref(), &arith_range_table::render(&source)?)
+        }
+        Cmd::SourceDimensions(args) => {
+            let bytes = fs::read(&args.pilout)
+                .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
+            let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
+            write_output(args.output.as_deref(), &source_dimensions::render(&pilout)?)
         }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;

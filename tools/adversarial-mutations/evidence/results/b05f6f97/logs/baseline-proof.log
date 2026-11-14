@@ -1,0 +1,50 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.Main.Wiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+✔ [8050/8059] Built ZiskFv.Channels.SpecifiedRanges (13s)
+✔ [8058/8083] Built Extraction.LookupWiring (20s)
+✔ [8081/8083] Built ZiskFv.AirsClean.Main.Constraints (8.4s)
+⚠ [8082/8083] Built ZiskFv.AirsClean.RegisterBoundary (8.8s)
+warning: ZiskFv/AirsClean/RegisterBoundary.lean:137:8: This simp argument is unused:
+  reloadDistanceExpr
+
+Hint: Omit it from the simp argument list.
+  simp [̵r̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵E̵x̵p̵r̵,̵ ̵r̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵,̵[̲r̲e̲l̲o̲a̲d̲D̲i̲s̲t̲a̲n̲c̲e̲,̲ circuit_norm, sub_eq_add_neg, ProvableStruct.eval_eq_eval,
+  ̲  ̲ ̲ ̲ProvableStruct.eval, ProvableStruct.fromComponents, ProvableStruct.components,
+  ̲  ̲ ̲ ̲ProvableStruct.toComponents, ProvableStruct.eval.go]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/RegisterBoundary.lean:366:19: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_cons, L̵i̵s̵t̵.̵m̵e̵m̵_̵s̵i̵n̵g̵l̵e̵t̵o̵n̵,̵ ̵List.map_cons,
+  ̲  ̲ ̲ ̲List.map_nil, List.cons_append, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/RegisterBoundary.lean:381:19: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_cons, L̵i̵s̵t̵.̵m̵e̵m̵_̵s̵i̵n̵g̵l̵e̵t̵o̵n̵,̵ ̵List.map_cons,
+  ̲  ̲ ̲ ̲List.map_nil, List.cons_append, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [8083/8083] Built ZiskFv.AirsClean.Main.Wiring (17s)
+warning: ZiskFv/AirsClean/Main/Wiring.lean:475:13: This simp argument is unused:
+  sourceReloadDistanceExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [s̵o̵u̵r̵c̵e̵R̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵E̵x̵p̵r̵,̵ ̵ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr,
+      ZiskFv.AirsClean.RegisterBoundary.reloadEndTimestamp, Expression.eval]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/Main/Wiring.lean:475:39: This simp argument is unused:
+  ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [sourceReloadDistanceExpr, Z̵i̵s̵k̵F̵v̵.̵A̵i̵r̵s̵C̵l̵e̵a̵n̵.̵R̵e̵g̵i̵s̵t̵e̵r̵B̵o̵u̵n̵d̵a̵r̵y̵.̵r̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵E̵x̵p̵r̵,̵ZiskFv.AirsClean.RegisterBoundary.reloadEndTimestamp,
+      Expression.eval]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+Build completed successfully (8083 jobs).

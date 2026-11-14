@@ -22,6 +22,10 @@ pil-extract arith-table --rust-source <path> [--output <path>]
 
 pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
 
+pil-extract arith-range-table --rust-source <path> [--output <path>]
+
+pil-extract source-dimensions --pilout <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -57,6 +61,17 @@ the flags themselves.
   using the real Rust-generated external fixed columns. The generated placement
   theorems do not themselves establish logical payload fidelity or provider
   composition; those remain checked at the concrete model consumers.
+- `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
+  functions and kernel-checked inverse certificates from
+  `state-machines/arith/src/arith_range_table_helpers.rs`. This supplies source
+  data to the maintained range model; it does not establish honest row-builder
+  constructibility or close that separate part of #108.
+- `source-dimensions`: emit each physical AIR's group/AIR indices,
+  `rowCount` directly from pilout metadata. The pinned compiler's
+  `src/proto_out.js::pushAir` serializes `numRows: Number(rows)`; the upstream
+  protobuf comment calling it `log2(n)` is stale. Missing metadata fails rather
+  than inventing a default capacity. Normal-build kernel identities pin Main,
+  Mem and MemAlign's live fixed-column capacities to these actual counts.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
