@@ -83,4 +83,13 @@ theorem extracted_of_main_constraints (c : SourceTrace FGL FGL) (r offset : ℕ)
   have hspec := spec_of_main_constraints offset env (ProvableType.const (c.rows r)) h_holds
   simpa only [ProvableType.eval_const] using hspec
 
+/-- Pin the resolved source instance to the independently recorded fourteen
+stage-1 columns; arbitrary unmodeled source cells remain explicit. -/
+theorem sourceCircuit_pinned :
+    (inferInstance : Extraction.Circuit FGL FGL SourceTrace) =
+      { main := sourceMain
+        preprocessed := fun c => c.fixed
+        challenge := fun c => c.challenges
+        exposed := fun c => c.airValues } := rfl
+
 end ZiskFv.AirsClean.MemAlignWriteByte
