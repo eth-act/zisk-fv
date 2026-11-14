@@ -23,6 +23,16 @@ open Goldilocks Air.Flat
 open ZiskFv.Channels.BinaryTable
 open ZiskFv.Channels.BinaryExtensionTable
 
+/-- Exclude a channel using its decidable source name, without requiring
+decidable equality of raw channels and their function-valued layouts. -/
+theorem interactionsWith_nil_of_channel_names
+    {table : Table FGL} (channel : RawChannel FGL)
+    (h_names : channel.name ∉ table.component.circuit.channels.map (·.name)) :
+    table.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  intro h
+  exact h_names (List.mem_map_of_mem (f := fun c : RawChannel FGL => c.name) h)
+
 /-- Both actual negative-emission consumers and both source-multiplicity
 providers. The provider fixed schemas own all seven tuple slots. -/
 def ensemble : Ensemble FGL unit where

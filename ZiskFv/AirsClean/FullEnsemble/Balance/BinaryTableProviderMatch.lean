@@ -25,15 +25,8 @@ open ZiskFv.Channels.BinaryExtensionTable
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 open ZiskFv.AirsClean.BinaryTableBalance
   (binaryMessage binaryMessage_mem binaryMessageRow eval_binaryMessage
-   extensionMessageRow eval_extensionMessage)
+   extensionMessageRow eval_extensionMessage interactionsWith_nil_of_channel_names)
 
-private theorem interactionsWith_nil_of_channel_names
-    {table : Table FGL} (channel : RawChannel FGL)
-    (h_names : channel.name ∉ table.component.circuit.channels.map (·.name)) :
-    table.interactionsWith channel = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  intro h
-  exact h_names (List.mem_map_of_mem (f := fun c : RawChannel FGL => c.name) h)
 
 private theorem full_verifier_channels (length : Nat) (program : Program length) :
     (fullRv64imEnsemble length program).ensemble.verifierTable.circuit.channels = [] := by

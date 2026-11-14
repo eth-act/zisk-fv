@@ -482,13 +482,13 @@ def divSpinExtensionSourceTable : Table FGL :=
 @[simp] theorem divSpinBinarySourceTable_other_channel (channel : RawChannel FGL)
     (h : channel.name ≠ ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw.name) :
     divSpinBinarySourceTable.interactionsWith channel = [] :=
-  ZiskFv.AirsClean.FullEnsemble.binaryProviderTable_other_channel _ _ channel h
+  ZiskFv.AirsClean.FullEnsemble.binaryProviderTable_other_channel divSpinPackedSources emptyData channel h
 
 @[simp] theorem divSpinExtensionSourceTable_other_channel (channel : RawChannel FGL)
     (h : channel.name ≠
       ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw.name) :
     divSpinExtensionSourceTable.interactionsWith channel = [] :=
-  ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel _ _ channel h
+  ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel divSpinPackedSources emptyData channel h
 
 theorem divSpinBinarySource_actual_consumer_balanced :
     BalancedInteractions
@@ -497,7 +497,8 @@ theorem divSpinBinarySource_actual_consumer_balanced :
         ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
           ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
           (Environment.fromInput divSpinRemainderBoundRow emptyData)) := by
-  rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith]
+  rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith
+    divSpinPackedSources emptyData]
   exact ZiskFv.AirsClean.FullEnsemble.binary_actual_row_requests_balanced
     (fun _ => 0) emptyData divSpinRemainderBoundRow divSpinBinarySourceRequests []
     divSpinBinarySourceRequests_weld

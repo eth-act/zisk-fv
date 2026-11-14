@@ -235,48 +235,44 @@ theorem divSpinWitness_binaryTableChannel_balanced :
     BalancedInteractions
       (divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)) := by
   have h_silent_0 : (divSpinBoundaryTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinBoundaryTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
     decide
   have h_silent_1 : (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignReadByte.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_2 : (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignByte.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_3 : (emptyComponentTable ZiskFv.AirsClean.MemAlign.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlign.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_4 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRangeSlice.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_5 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRomSlice.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_6 : (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.Mem.componentWithDualMemBus ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_7 : (registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows)).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows)) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
     decide
   have h_silent_8 : (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.SpecifiedRangesSlice.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_9 : (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.ArithDiv.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_10 : (divSpinArithTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinArithTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
     decide
   have h_silent_11 : (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
   have h_silent_13 : (divSpinBinaryAddTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinBinaryAddTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
     decide
   have h_silent_14 : (divSpinExtensionSourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
     exact divSpinExtensionSourceTable_other_channel _ (by decide)
   have h_silent_16 : (divSpinMainTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinMainTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
     decide
   have h_list :
       divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
@@ -296,50 +292,48 @@ theorem divSpinWitness_extensionTableChannel_balanced :
     BalancedInteractions
       (divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)) := by
   have h_silent_0 : (divSpinBoundaryTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinBoundaryTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     decide
   have h_silent_1 : (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignReadByte.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_2 : (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignByte.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_3 : (emptyComponentTable ZiskFv.AirsClean.MemAlign.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlign.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_4 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRangeSlice.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_5 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRomSlice.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_6 : (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.Mem.componentWithDualMemBus ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_7 : (registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows)).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows)) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     decide
   have h_silent_8 : (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.SpecifiedRangesSlice.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_9 : (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    decide
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.ArithDiv.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_10 : (divSpinArithTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinArithTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     decide
   have h_silent_11 : (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    exact emptyComponentTable_interactionsWith _ _
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
   have h_silent_12 : (divSpinRemainderBoundTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinRemainderBoundTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     decide
   have h_silent_13 : (divSpinBinaryAddTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinBinaryAddTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     decide
   have h_silent_15 : (divSpinBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
     exact divSpinBinarySourceTable_other_channel _ (by decide)
   have h_silent_16 : (divSpinMainTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinMainTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     decide
   have h_list :
       divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw) =
@@ -350,7 +344,8 @@ theorem divSpinWitness_extensionTableChannel_balanced :
   change BalancedInteractions
     ((ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
       divSpinPackedSources emptyData).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
-  rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith]
+  rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith
+    divSpinPackedSources emptyData]
   exact ZiskFv.AirsClean.FullEnsemble.extension_no_requests_balanced (fun _ => 0) (List.ofFn divSpinBinarySourceRequests)
 
 theorem divSpinWitness_balancedChannels : divSpinWitness.BalancedChannels := by
