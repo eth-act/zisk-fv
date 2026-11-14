@@ -286,10 +286,7 @@ theorem eval_binaryMessage (env : Environment FGL) (row : Var Binary.BinaryRow F
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go,
       sub_eq_add_neg] <;>
-    unfold Eval.eval <;>
-    simp [CircuitType.verifierEval, CircuitType.evalVerifier,
-      ProvableType.toCircuitType, ProvableType.eval, toElements, fromElements,
-      Expression.eval, sub_eq_add_neg]
+    simp [CircuitType.eval_expr, Expression.eval, sub_eq_add_neg]
 
 /-- Integration contract: the same eight memberships previously obtained by
     a detached static-lookup consumer now follow from the actual finished
@@ -338,10 +335,7 @@ theorem eval_extensionMessage (env : Environment FGL)
     simp [BinaryExtension.byteMessage, extensionMessageRow,
       ProvableStruct.eval_eq_eval, ProvableStruct.eval, ProvableStruct.fromComponents,
       ProvableStruct.components, ProvableStruct.toComponents, ProvableStruct.eval.go] <;>
-    unfold Eval.eval <;>
-    simp [CircuitType.verifierEval, CircuitType.evalVerifier,
-      ProvableType.toCircuitType, ProvableType.eval, toElements, fromElements,
-      Expression.eval]
+    simp [CircuitType.eval_expr, Expression.eval]
 
 theorem extension_spec_facts_of_balance (w : EnsembleWitness ensemble)
     (hc : w.Constraints) (hb : w.BalancedChannels)
