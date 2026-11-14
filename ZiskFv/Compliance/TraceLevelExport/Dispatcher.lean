@@ -629,38 +629,38 @@ def RowOutsideDefectRegion (ziskTrace : AcceptedZiskTrace numInstructions)
   | .sh _ => MainSequentialPcDomain ziskTrace i
   | .sw _ => MainSequentialPcDomain ziskTrace i
   | .sd _ => MainSequentialPcDomain ziskTrace i
-  | .ld c => MainSequentialPcDomain ziskTrace i
-  | .lbu c =>
+  | .ld _ => MainSequentialPcDomain ziskTrace i
+  | .lbu _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
           1 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
-  | .lhu c =>
+  | .lhu _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
           2 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
-  | .lwu c =>
+  | .lwu _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
           4 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
-  | .lb c =>
+  | .lb _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
           1 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
-  | .lh c =>
+  | .lh _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
           2 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧
         ¬ Defects.MemAlignSkippableProveForge ziskTrace.program ziskTrace.witness
           (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1
-  | .lw c =>
+  | .lw _ =>
       MainSequentialPcDomain ziskTrace i ∧
         ¬ Defects.MemAlignNarrowLoadLaneForge ziskTrace.program ziskTrace.witness
           4 (busLd ziskTrace i (Pilot.execRowOf ziskTrace i)).e1 ∧

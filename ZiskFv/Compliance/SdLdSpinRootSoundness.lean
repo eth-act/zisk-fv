@@ -1249,7 +1249,13 @@ def sdLdLaneBridge : ∀ i : Fin 7,
         (fun m i => m.a_0 i) (by
           have hinput : sdLdLdInputs.toInputsCore_ld.input = sdLdLdInput :=
             sdLdLdConstruction.property
-          simpa only [hinput, sdLdLdInput] using sdLdLdInputs.h_a0_value))
+          have h_lane :
+              (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+                sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable).a_0 sdLdLdIndex.val =
+                  lane_lo sdLdLdInputs.toInputsCore_ld.input.r1_val :=
+            sdLdLdInputs.h_a0_value
+          rw [hinput] at h_lane
+          simpa only [sdLdLdInput] using h_lane))
       (sdLdLaneHi sdLdLdIndex (2684354568#64)
         (by simpa [sdLdLdIndex] using sdLdReadX1 sdLdLdIndex)
         (fun m i => m.a_1 i) (by
