@@ -15,7 +15,7 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
-open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
+open ZiskFv.AirsClean.BinaryExtension (shiftTableConsumerComponent)
 
 /-! ## Row extraction from full-ensemble channel interactions -/
 
@@ -296,41 +296,54 @@ theorem exists_binaryAdd_row_eval_of_interaction_mem
       ZiskFv.AirsClean.BinaryAdd.component_interactionsWith_opBus
   · exact h_mem
 
-/-- Row extraction for a lookup-aware Binary operation-bus provider
+/-- Row extraction for the actual Binary consumer operation-bus provider
     interaction in the full ensemble. -/
 theorem exists_staticBinary_row_eval_of_interaction_mem
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_component : table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
     ∃ row ∈ table.table,
       interaction =
         ((OpBusChannel.pushed
           (ZiskFv.AirsClean.Binary.opBusMessageExpr
-            ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)).toRaw).eval
+            ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar)).toRaw).eval
           (table.environment row) := by
   apply exists_opBus_row_eval_of_singleton_interactionsWith
-  · simpa [h_component] using
-      ZiskFv.AirsClean.Binary.staticLookupComponent_interactionsWith_opBus
+  · rw [h_component]
+    apply Component.interactionsWith_of_exposedChannels
+    change ⟨OpBusChannel.toRaw,
+        [((OpBusChannel.pushed
+          (ZiskFv.AirsClean.Binary.opBusMessageExpr ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar)).toRaw)]⟩ ∈
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.exposedChannels
+    simp [ZiskFv.AirsClean.Binary.tableConsumerComponent, ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+      Component.exposedChannels, expose]
   · exact h_mem
 
-/-- Row extraction for a lookup-aware BinaryExtension operation-bus provider
+/-- Row extraction for the actual BinaryExtension consumer operation-bus provider
     interaction in the full ensemble. -/
 theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
     {table : Table FGL}
     (h_component :
-      table.component = shiftStaticLookupComponent)
+      table.component = shiftTableConsumerComponent)
     {interaction : Interaction FGL}
     (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
     ∃ row ∈ table.table,
       interaction =
         ((OpBusChannel.pushed
           (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-            shiftStaticLookupComponent.rowInputVar)).toRaw).eval
+            shiftTableConsumerComponent.rowInputVar)).toRaw).eval
           (table.environment row) := by
   apply exists_opBus_row_eval_of_singleton_interactionsWith
-  · simpa [h_component] using
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_interactionsWith_opBus
+  · rw [h_component]
+    apply Component.interactionsWith_of_exposedChannels
+    change ⟨OpBusChannel.toRaw,
+        [((OpBusChannel.pushed
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInputVar)).toRaw)]⟩ ∈
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.exposedChannels
+    simp [ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent, ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+      ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+      Component.exposedChannels, expose]
   · exact h_mem
 
 /-- Row extraction for either polarity of a completed Arith operation-bus
@@ -472,33 +485,41 @@ theorem staticBinaryExtension_provider_branch_ne_xor
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_XOR) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_bitwise_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_bitwise_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   exact h_ne.2.2 (by
     rw [← h_provider_op, h_main_op]
@@ -565,36 +586,44 @@ theorem staticBinaryExtension_provider_branch_ne_staticBinaryLogic
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op :
       m.op r_main = ZiskFv.Trusted.OP_AND
         ∨ m.op r_main = ZiskFv.Trusted.OP_OR
         ∨ m.op r_main = ZiskFv.Trusted.OP_XOR) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_bitwise_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_bitwise_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   rcases h_main_op with h_and | h_or | h_xor
   · exact h_ne.1 (by
@@ -673,35 +702,43 @@ theorem staticBinaryExtension_provider_branch_ne_staticBinaryCompare
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op :
       m.op r_main = ZiskFv.Trusted.OP_LT
         ∨ m.op r_main = ZiskFv.Trusted.OP_LTU) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_compare_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_compare_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   rcases h_main_op with h_lt | h_ltu
   · exact h_ne.2 (by
@@ -769,33 +806,41 @@ theorem staticBinaryExtension_provider_branch_ne_staticBinaryEq
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_EQ) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_eq_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_eq_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   exact h_ne (by
     rw [← h_provider_op, h_main_op]
@@ -876,33 +921,41 @@ theorem staticBinaryExtension_provider_branch_ne_staticBinarySub
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SUB) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_add_sub_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_add_sub_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   exact h_ne.2 (by
     rw [← h_provider_op, h_main_op]
@@ -914,33 +967,41 @@ theorem staticBinaryExtension_provider_branch_ne_staticBinaryAdd
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_ADD) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_add_sub_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_add_sub_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   exact h_ne.1 (by
     rw [← h_provider_op, h_main_op]
@@ -1004,35 +1065,43 @@ theorem staticBinaryExtension_provider_branch_ne_staticBinaryW
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = shiftStaticLookupComponent)
+      providerTable.component = shiftTableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
-              shiftStaticLookupComponent.rowInputVar)) 1))
+              shiftTableConsumerComponent.rowInputVar)) 1))
     (h_main_op :
       m.op r_main = ZiskFv.Trusted.OP_ADD_W
         ∨ m.op r_main = ZiskFv.Trusted.OP_SUB_W) :
     False := by
   let env := providerTable.environment providerRow
-  have h_componentSpec :
-      shiftStaticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
-    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_op_val_ne_W_add_sub_of_spec
-      env h_componentSpec
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_W_add_sub_of_spec_facts
+      _ h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
-        (shiftStaticLookupComponent.rowInput env).flags.op.val := by
+        (shiftTableConsumerComponent.rowInput env).flags.op.val := by
     have h_op := h_match.2.1
     have h_op_val := congrArg Fin.val h_op
     simpa [env, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_eval_opBusMessageExpr_op]
+      ZiskFv.AirsClean.BinaryExtension.eval_opBusMessageExpr,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
       using h_op_val
   rcases h_main_op with h_addw | h_subw
   · exact h_ne.1 (by
@@ -1117,16 +1186,21 @@ theorem staticBinary_provider_branch_ne_staticBinaryExtensionShift
     {m : ZiskFv.Airs.Main.Valid_Main FGL FGL} {r_main : ℕ}
     {providerTable : Table FGL} {providerRow : Array FGL}
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
     (h_providerSpec :
-      providerTable.component.Spec (providerTable.environment providerRow))
+      (ZiskFv.AirsClean.Binary.Spec
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+            (providerTable.environment providerRow))))
     (h_match :
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (eval (providerTable.environment providerRow)
             (ZiskFv.AirsClean.Binary.opBusMessageExpr
-              ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1))
+              ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar)) 1))
     (h_main_op :
       m.op r_main = ZiskFv.Trusted.OP_SLL
         ∨ m.op r_main = ZiskFv.Trusted.OP_SRL
@@ -1136,17 +1210,15 @@ theorem staticBinary_provider_branch_ne_staticBinaryExtensionShift
         ∨ m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
     False := by
   let env := providerTable.environment providerRow
-  let row := ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput env
-  have h_componentSpec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec env := by
-    simpa [env, h_component] using h_providerSpec
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_componentSpec
+  let row := ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput env
+
   have h_provider_op :
       m.op r_main = row.chain.b_op + 16 * row.mode.mode32 := by
     have h_op := h_match.2.1
     simpa [env, row, ZiskFv.Airs.OperationBus.opBus_row_Main,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
-      ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr,
+      ZiskFv.AirsClean.Binary.eval_opBusMessageExpr,
+      Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput,
       ZiskFv.AirsClean.Binary.opBusMessage] using h_op
   have h_contra
       (op_val : ℕ)
@@ -1160,7 +1232,7 @@ theorem staticBinary_provider_branch_ne_staticBinaryExtensionShift
       (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
       False :=
     ZiskFv.AirsClean.Binary.static_table_op_val_ne_binaryExtension_shift_of_emit
-      row h_componentSpec.1 h_componentSpec.2 op_val h_shift h_emit
+      row h_providerSpec.1 h_providerSpec.2 op_val h_shift h_emit
   rcases h_main_op with h_sll | h_srl | h_sra | h_sllw | h_srlw | h_sraw
   · exact h_contra ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL
       (Or.inl rfl)

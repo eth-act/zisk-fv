@@ -277,4 +277,86 @@ def extensionConsumerRowsTable (data : ProverData FGL)
     intro columns h_columns
     simp [BinaryExtension.shiftTableConsumerComponent] at h_columns
 
+
+@[simp] theorem binaryProviderTable_component (raw : Witness FGL) (data : ProverData FGL) :
+    (binaryProviderTable raw data).component = BinaryTableSlice.sourceComponent := rfl
+
+@[simp] theorem extensionProviderTable_component (raw : Witness FGL) (data : ProverData FGL) :
+    (extensionProviderTable raw data).component = BinaryExtensionTableSlice.sourceComponent := rfl
+
+@[simp] theorem binaryProviderTable_data (raw : Witness FGL) (data : ProverData FGL) :
+    (binaryProviderTable raw data).data = data := rfl
+
+@[simp] theorem extensionProviderTable_data (raw : Witness FGL) (data : ProverData FGL) :
+    (extensionProviderTable raw data).data = data := rfl
+
+@[simp] theorem binaryProviderTable_other_channel
+    (raw : Witness FGL) (data : ProverData FGL) (channel : RawChannel FGL)
+    (h : channel.name ≠ BinaryTableChannel.toRaw.name) :
+    (binaryProviderTable raw data).interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [BinaryTableChannel.toRaw]
+  simpa only [List.mem_singleton] using
+    (show channel ≠ BinaryTableChannel.toRaw from fun he => h (congrArg RawChannel.name he))
+
+@[simp] theorem extensionProviderTable_other_channel
+    (raw : Witness FGL) (data : ProverData FGL) (channel : RawChannel FGL)
+    (h : channel.name ≠ BinaryExtensionTableChannel.toRaw.name) :
+    (extensionProviderTable raw data).interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [BinaryExtensionTableChannel.toRaw]
+  simpa only [List.mem_singleton] using
+    (show channel ≠ BinaryExtensionTableChannel.toRaw from fun he =>
+      h (congrArg RawChannel.name he))
+
+@[simp] theorem binaryConsumerRowsTable_table
+    (data : ProverData FGL) (rows : List (Binary.BinaryRow FGL)) :
+    (binaryConsumerRowsTable data rows).table =
+      rows.map (fun row => (toElements row).toArray) := by
+  simp [binaryConsumerRowsTable, Table.table, Binary.tableConsumerComponent]
+
+@[simp] theorem extensionConsumerRowsTable_table
+    (data : ProverData FGL) (rows : List (BinaryExtension.BinaryExtensionRow FGL)) :
+    (extensionConsumerRowsTable data rows).table =
+      rows.map (fun row => (toElements row).toArray) := by
+  simp [extensionConsumerRowsTable, Table.table,
+    BinaryExtension.shiftTableConsumerComponent]
+
+theorem binaryConsumerRowsTable_interactionsWith
+    (data : ProverData FGL) (rows : List (Binary.BinaryRow FGL))
+    (channel : RawChannel FGL) :
+    (binaryConsumerRowsTable data rows).interactionsWith channel =
+      rows.flatMap (fun row =>
+        Binary.tableConsumerComponent.operations.interactionValuesWith channel
+          (Environment.fromInput row data)) := by
+  simp only [Table.interactionsWith, binaryConsumerRowsTable_table, List.flatMap_map]
+  rfl
+
+theorem extensionConsumerRowsTable_interactionsWith
+    (data : ProverData FGL) (rows : List (BinaryExtension.BinaryExtensionRow FGL))
+    (channel : RawChannel FGL) :
+    (extensionConsumerRowsTable data rows).interactionsWith channel =
+      rows.flatMap (fun row =>
+        BinaryExtension.shiftTableConsumerComponent.operations.interactionValuesWith channel
+          (Environment.fromInput row data)) := by
+  simp only [Table.interactionsWith, extensionConsumerRowsTable_table, List.flatMap_map]
+  rfl
+
+@[simp] theorem binaryConsumerRowsTable_component
+    (data : ProverData FGL) (rows : List (Binary.BinaryRow FGL)) :
+    (binaryConsumerRowsTable data rows).component = Binary.tableConsumerComponent := rfl
+
+@[simp] theorem extensionConsumerRowsTable_component
+    (data : ProverData FGL) (rows : List (BinaryExtension.BinaryExtensionRow FGL)) :
+    (extensionConsumerRowsTable data rows).component =
+      BinaryExtension.shiftTableConsumerComponent := rfl
+
+@[simp] theorem binaryConsumerRowsTable_data
+    (data : ProverData FGL) (rows : List (Binary.BinaryRow FGL)) :
+    (binaryConsumerRowsTable data rows).data = data := rfl
+
+@[simp] theorem extensionConsumerRowsTable_data
+    (data : ProverData FGL) (rows : List (BinaryExtension.BinaryExtensionRow FGL)) :
+    (extensionConsumerRowsTable data rows).data = data := rfl
+
 end ZiskFv.AirsClean.FullEnsemble

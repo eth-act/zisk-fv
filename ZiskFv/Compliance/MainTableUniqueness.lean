@@ -22,8 +22,8 @@ property a prover must be trusted to supply. The discriminator is `rawWidth`, me
 ```
 verifier 0, RegisterBoundary 3, MemAlignReadByte 10, MemAlignByte 16, MemAlign 30,
 MemAlignRangeSlice 1, MemAlignRomSlice 6, Mem 17, RegisterStepRangeSlice 1,
-SpecifiedRangesSlice 1, ArithDiv 43, ArithMul 44, BinaryExtension.shiftStaticLookup 29,
-Binary.staticLookup 39, BinaryAdd 10, Main 41
+SpecifiedRangesSlice 1, ArithDiv 43, ArithMul 44, BinaryExtension.shiftTableConsumer 29,
+Binary.tableConsumer 39, BinaryAdd 10, BinaryExtensionTableSource 1, BinaryTableSource 1, Main 41
 ```
 
 `41` occurs once. Note the widths are *not* pairwise distinct — `MemAlignReadByte` and `BinaryAdd`
@@ -37,7 +37,7 @@ close it would be the trade the anti-laundering rule forbids.
 
 ## Why the widths are proved one at a time
 
-Each width needs `circuit_norm` to run over a full elaborated circuit. Asking for all sixteen inside
+Each width needs `circuit_norm` to run over a full elaborated circuit. Asking for all eighteen inside
 one `simp only` exhausts eight million heartbeats at `isDefEq`; split into separate declarations
 they each go through, and the list lemma then only rewrites with numerals.
 -/
@@ -116,15 +116,15 @@ theorem rawWidth_arithMul :
   norm_num
 
 theorem rawWidth_shiftStaticLookup :
-    (BinaryExtension.shiftStaticLookupComponent : Component FGL).rawWidth = 29 := by
-  simp only [BinaryExtension.shiftStaticLookupComponent, GeneralFormalCircuit.size_eq, circuit_norm,
-    BinaryExtension.shiftStaticLookupCircuit]
+    (BinaryExtension.shiftTableConsumerComponent : Component FGL).rawWidth = 29 := by
+  simp only [BinaryExtension.shiftTableConsumerComponent, GeneralFormalCircuit.size_eq, circuit_norm,
+    BinaryExtension.shiftTableConsumerCircuit]
   norm_num
 
 theorem rawWidth_binaryStaticLookup :
-    (Binary.staticLookupComponent : Component FGL).rawWidth = 39 := by
-  simp only [Binary.staticLookupComponent, GeneralFormalCircuit.size_eq, circuit_norm,
-    Binary.staticLookupCircuit]
+    (Binary.tableConsumerComponent : Component FGL).rawWidth = 39 := by
+  simp only [Binary.tableConsumerComponent, GeneralFormalCircuit.size_eq, circuit_norm,
+    Binary.tableConsumerCircuit]
   norm_num
 
 theorem rawWidth_binaryAdd :
@@ -132,13 +132,19 @@ theorem rawWidth_binaryAdd :
   simp only [BinaryAdd.component, GeneralFormalCircuit.size_eq, circuit_norm, BinaryAdd.circuit]
   norm_num
 
+theorem rawWidth_binaryExtensionTableSource :
+    (BinaryExtensionTableSlice.sourceComponent : Component FGL).rawWidth = 1 := rfl
+
+theorem rawWidth_binaryTableSource :
+    (BinaryTableSlice.sourceComponent : Component FGL).rawWidth = 1 := rfl
+
 /-! ## The ensemble's width profile, and what it pins -/
 
 /-- **The ensemble's raw widths, in table order.** Only the numerals are rewritten here; the
-    circuit-level work is in the sixteen lemmas above. -/
+    circuit-level work is in the eighteen lemmas above. -/
 theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
     ((fullRv64imEnsemble length program).ensemble.allTables.map (·.rawWidth))
-      = [0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] := by
+      = [0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 1, 1, 41] := by
   simp only [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
     Ensemble.allTables, SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables,
     List.map_cons, SoundEnsemble.empty, Ensemble.verifierTable,
@@ -146,31 +152,31 @@ theorem ensemble_rawWidths {length : ℕ} (program : Program length) :
     rawWidth_memAlign, rawWidth_memAlignRangeSlice, rawWidth_memAlignRomSlice, rawWidth_mem,
     rawWidth_registerStepRangeSlice, rawWidth_specifiedRangesSlice, rawWidth_arithDiv,
     rawWidth_arithMul, rawWidth_shiftStaticLookup, rawWidth_binaryStaticLookup,
-    rawWidth_binaryAdd]
+    rawWidth_binaryAdd, rawWidth_binaryExtensionTableSource, rawWidth_binaryTableSource]
   rfl
 
 /-- **A witness table sits where the width profile says it does.** Generic over the width, so both
-    the Main table (`41` at index `15`) and the `RegisterBoundary` table (`3` at index `1`) use it.
+    the Main table (`41` at index `17`) and the `RegisterBoundary` table (`3` at index `1`) use it.
     The caller supplies the uniqueness of its width in the profile. -/
 theorem table_index_of_rawWidth {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
     {t : Table FGL} (h_mem : t ∈ witness.allTables) {w idx : ℕ}
     (h_width : t.component.rawWidth = w)
-    (h_unique : ∀ i, ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+    (h_unique : ∀ i, ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 1, 1, 41] : List ℕ)[i]?
       = some w → i = idx) :
     witness.allTables[idx]? = some t := by
   obtain ⟨i, h_i⟩ := List.mem_iff_getElem?.mp h_mem
   have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[i]? = some t.component := by
     rw [← witness.allTables_map_component, List.getElem?_map, h_i, Option.map_some]
-  have h_prof : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+  have h_prof : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 1, 1, 41] : List ℕ)[i]?
       = some w := by
     rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some, h_width]
   rw [← h_unique i h_prof]
   exact h_i
 
-theorem index_lt_sixteen_of_profile {i w : ℕ}
-    (h : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]? = some w) :
-    i < 16 := by
+theorem index_lt_eighteen_of_profile {i w : ℕ}
+    (h : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 1, 1, 41] : List ℕ)[i]? = some w) :
+    i < 18 := by
   by_contra h_ge
   rw [List.getElem?_eq_none (by simpa using Nat.le_of_not_lt h_ge)] at h
   simp at h
@@ -182,14 +188,14 @@ theorem allTables_index_of_rawWidth {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
     {a : ℕ} (ha : a < witness.allTables.length) {w idx : ℕ}
     (h_width : (witness.allTables[a]).component.rawWidth = w)
-    (h_unique : ∀ i, ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[i]?
+    (h_unique : ∀ i, ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 1, 1, 41] : List ℕ)[i]?
       = some w → i = idx) :
     a = idx := by
   have h_comp : ((fullRv64imEnsemble length program).ensemble.allTables)[a]?
       = some (witness.allTables[a]).component := by
     rw [← witness.allTables_map_component, List.getElem?_map,
       List.getElem?_eq_getElem ha, Option.map_some]
-  have h_prof : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 41] : List ℕ)[a]?
+  have h_prof : ([0, 3, 10, 16, 30, 1, 6, 17, 1, 1, 43, 44, 29, 39, 10, 1, 1, 41] : List ℕ)[a]?
       = some w := by
     rw [← ensemble_rawWidths program, List.getElem?_map, h_comp, Option.map_some, h_width]
   exact h_unique a h_prof
@@ -200,10 +206,10 @@ theorem allTables_index_eq_main {length : ℕ} {program : Program length}
     {a : ℕ} (ha : a < witness.allTables.length)
     (h_component : (witness.allTables[a]).component
       = Main.componentWithRomMemAndOpBus length program) :
-    a = 15 := by
+    a = 17 := by
   refine allTables_index_of_rawWidth (w := 41) witness ha
     (by rw [h_component]; exact rawWidth_main program) (fun i h => ?_)
-  have h_lt := index_lt_sixteen_of_profile h
+  have h_lt := index_lt_eighteen_of_profile h
   interval_cases i <;> simp_all
 
 /-- The `RegisterBoundary` table's index, at a position. -/
@@ -214,19 +220,19 @@ theorem allTables_index_eq_registerBoundary {length : ℕ} {program : Program le
     a = 1 := by
   refine allTables_index_of_rawWidth (w := 3) witness ha
     (by rw [h_component]; exact rawWidth_registerBoundary) (fun i h => ?_)
-  have h_lt := index_lt_sixteen_of_profile h
+  have h_lt := index_lt_eighteen_of_profile h
   interval_cases i <;> simp_all
 
-/-- A witness table carrying the Main component sits at index `15`, because that is the only place
+/-- A witness table carrying the Main component sits at index `17`, because that is the only place
     the ensemble's width profile shows `41`. -/
 theorem main_table_index {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
     {t : Table FGL} (h_mem : t ∈ witness.allTables)
     (h_component : t.component = Main.componentWithRomMemAndOpBus length program) :
-    witness.allTables[15]? = some t := by
+    witness.allTables[17]? = some t := by
   refine table_index_of_rawWidth (w := 41) witness h_mem
     (by rw [h_component]; exact rawWidth_main program) (fun i h => ?_)
-  have h_lt := index_lt_sixteen_of_profile h
+  have h_lt := index_lt_eighteen_of_profile h
   interval_cases i <;> simp_all
 
 /-- A witness table carrying the `RegisterBoundary` component sits at index `1`: the profile shows
@@ -239,7 +245,7 @@ theorem registerBoundary_table_index {length : ℕ} {program : Program length}
     witness.allTables[1]? = some t := by
   refine table_index_of_rawWidth (w := 3) witness h_mem
     (by rw [h_component]; exact rawWidth_registerBoundary) (fun i h => ?_)
-  have h_lt := index_lt_sixteen_of_profile h
+  have h_lt := index_lt_eighteen_of_profile h
   interval_cases i <;> simp_all
 
 /-- **At most one witness table carries the `RegisterBoundary` component.** -/

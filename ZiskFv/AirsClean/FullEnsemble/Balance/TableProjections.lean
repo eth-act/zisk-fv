@@ -19,7 +19,7 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
-open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
+open ZiskFv.AirsClean.BinaryExtension (shiftTableConsumerComponent)
 
 /-- Zero row for totalizing concrete Main table projections. -/
 def zeroMainRowWithRom : ZiskFv.AirsClean.Main.MainRowWithRom FGL where
@@ -439,7 +439,7 @@ def binaryTableRowAtOrZero
     (row : ℕ) : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
   if h_row : row < table.table.length then
     eval (table.environment (table.table.get ⟨row, h_row⟩))
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar
   else
     zeroBinaryRow
 
@@ -500,7 +500,7 @@ theorem binaryTableRowAtOrZero_get
     (idx : Fin table.table.length) :
     binaryTableRowAtOrZero table idx.val =
       eval (table.environment (table.table.get idx))
-        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar := by
   unfold binaryTableRowAtOrZero
   rw [dif_pos idx.isLt]
 
@@ -511,11 +511,11 @@ theorem rowAt_binaryOfTable
     (idx : Fin table.table.length) :
     ZiskFv.AirsClean.Binary.rowAt (binaryOfTable table) idx.val =
       eval (table.environment (table.table.get idx))
-        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar := by
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar := by
   simp [ZiskFv.AirsClean.Binary.rowAt, binaryTableRowAtOrZero_get table idx]
   let row :=
     eval (table.environment (table.table.get idx))
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar
   change
     { aBytes := row.aBytes
       bBytes := row.bBytes
@@ -534,7 +534,7 @@ theorem opBus_row_Binary_binaryOfTable
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
           (eval (table.environment (table.table.get idx))
-            ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1 := by
+            ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar)) 1 := by
   rw [← ZiskFv.AirsClean.Binary.opBusMessage_toEntry_rowAt_eq_opBus_row]
   rw [rowAt_binaryOfTable table idx]
 
@@ -585,7 +585,7 @@ def binaryExtensionTableRowAtOrZero
     (row : ℕ) : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL :=
   if h_row : row < table.table.length then
     eval (table.environment (table.table.get ⟨row, h_row⟩))
-      shiftStaticLookupComponent.rowInputVar
+      shiftTableConsumerComponent.rowInputVar
   else
     zeroBinaryExtensionRow
 
@@ -662,7 +662,7 @@ theorem binaryExtensionTableRowAtOrZero_get
     (idx : Fin table.table.length) :
     binaryExtensionTableRowAtOrZero table idx.val =
       eval (table.environment (table.table.get idx))
-        shiftStaticLookupComponent.rowInputVar := by
+        shiftTableConsumerComponent.rowInputVar := by
   unfold binaryExtensionTableRowAtOrZero
   rw [dif_pos idx.isLt]
 
@@ -674,12 +674,12 @@ theorem rowAt_binaryExtensionOfTable
     ZiskFv.AirsClean.BinaryExtension.rowAt
       (binaryExtensionOfTable table) idx.val =
       eval (table.environment (table.table.get idx))
-        shiftStaticLookupComponent.rowInputVar := by
+        shiftTableConsumerComponent.rowInputVar := by
   simp [ZiskFv.AirsClean.BinaryExtension.rowAt,
     binaryExtensionTableRowAtOrZero_get table idx]
   let row :=
     eval (table.environment (table.table.get idx))
-      shiftStaticLookupComponent.rowInputVar
+      shiftTableConsumerComponent.rowInputVar
   change
     { aCols := row.aCols
       cColsLo := row.cColsLo
@@ -698,7 +698,7 @@ theorem opBus_row_BinaryExtension_binaryExtensionOfTable
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
           (eval (table.environment (table.table.get idx))
-            shiftStaticLookupComponent.rowInputVar)) 1 := by
+            shiftTableConsumerComponent.rowInputVar)) 1 := by
   rw [← ZiskFv.AirsClean.BinaryExtension.opBusMessage_toEntry_rowAt_eq_opBus_row]
   rw [rowAt_binaryExtensionOfTable table idx]
 

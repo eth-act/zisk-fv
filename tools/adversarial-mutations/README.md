@@ -84,6 +84,13 @@ every register (62 `rfl` failures). Its retained source/log provenance is under
 claim that first-segment timestamp zero is invalid or that the remaining
 Main finalizer/provider-composition work is complete.
 
+Round 55 changes the actual `binary_extension_table.pil:197` builder output
+from `C0[i] = c0` to `C0[i] = c0 + 1`. It uses the same production compilation,
+export and complete-domain provider comparison as round 53. Inclusion in the
+corpus and regression profile is not execution evidence: only an observed green
+baseline followed by the named `byte-table mismatch:` is a fidelity-gate
+detection, not a Lean proof rejection.
+
 Round 50 uses `tools/virtual-tables/check.py` on the clean and mutant
 `MemAlignRom.tsv` exports. The gate evaluates the actual accepted-model static
 provider, including all six columns, physical indices, and reset-padding rows.
@@ -154,8 +161,8 @@ fidelity miss.
 CI-facing suites create their own source mutants through the full production
 pipeline. The boundary profile selects one mutation for each repaired interface
 (rounds 5, 7, 32, 38, and 50). The regression profile runs the eleven historical
-misses, the three commutativity controls, and round 50. The full profile runs all
-fixtures:
+misses, the three commutativity controls, round 50, and byte-provider controls
+53 and 55. The full profile runs all fixtures:
 
 ```bash
 python3 tools/adversarial-mutations/runner.py suite \

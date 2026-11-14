@@ -34,11 +34,13 @@ def test_corpus() -> None:
     check(sum(r.historical_class == "VALID" for r in historical) == 35, "valid count")
     check(sum(r.expected_outcome == "proof" for r in historical) == 24, "caught count")
     check(sum(r.expected_outcome == "fidelity" for r in historical) == 11, "missed count")
-    check(len(rounds) == 54, "round count")
+    check(len(rounds) == 55, "round count")
     check(runner.expected_detection_layer(runner.round_by_number(53)) == "fidelity_gate",
           "byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(54)) == "proof",
           "reload-range fixture detection layer")
+    check(runner.expected_detection_layer(runner.round_by_number(55)) == "fidelity_gate",
+          "extension byte-table fixture detection layer")
     check(runner.expected_detection_layer(runner.round_by_number(27)) == "proof",
           "round 27 is caught after Main c41 is tied")
     check(runner.expected_detection_layer(runner.round_by_number(50)) == "fidelity_gate",

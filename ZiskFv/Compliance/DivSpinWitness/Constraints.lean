@@ -310,9 +310,11 @@ def divSpinTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , divSpinArithTable
-  , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+  , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   , divSpinRemainderBoundTable
   , divSpinBinaryAddTable
+  , divSpinExtensionSourceTable
+  , divSpinBinarySourceTable
   , divSpinMainTable ]
 
 def divSpinWitness : EnsembleWitness divSpinEnsemble where
@@ -321,27 +323,27 @@ def divSpinWitness : EnsembleWitness divSpinEnsemble where
   publicInput := ()
   same_length := by
     simp [divSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
-      divSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+      divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
       SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
       divSpinMainTable, mainRowsTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 15 := by
+    have hi' : i < 17 := by
       simpa [divSpinTables] using hi
     interval_cases i <;>
       simp [divSpinEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
-        divSpinTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
+        divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
         SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         divSpinBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
-        divSpinArithTable, divSpinRemainderBoundTable, binarySingleRowTable,
+        divSpinArithTable, divSpinRemainderBoundTable, binaryConsumerSingleRowTable,
         divSpinBinaryAddTable, binaryAddRowsTable, divSpinMainTable, mainRowsTable]
   same_data := by
     intro table h_table
-    simp [divSpinTables, divSpinBoundaryTable, registerBoundaryRowsTableOf,
+    simp [divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, divSpinBoundaryTable, registerBoundaryRowsTableOf,
       emptyComponentTable, divSpinArithTable, divSpinRemainderBoundTable,
-      binarySingleRowTable, divSpinBinaryAddTable, binaryAddRowsTable,
+      binaryConsumerSingleRowTable, divSpinBinaryAddTable, binaryAddRowsTable,
       divSpinMainTable, mainRowsTable] at h_table
-    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rcases h_table with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> rfl
 
 theorem divSpinEnsemble_verifier :
@@ -352,9 +354,9 @@ theorem divSpinEnsemble_verifier :
 theorem divSpinWitness_table_constraints :
     ∀ table ∈ divSpinWitness.tables, table.Constraints := by
   intro table h_table
-  simp [divSpinWitness, divSpinTables] at h_table
+  simp [divSpinWitness, divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable] at h_table
   rcases h_table with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact divSpinBoundaryTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
@@ -383,9 +385,11 @@ theorem divSpinWitness_table_constraints :
       (Environment.fromInput divSpinArithRow emptyData)
     exact divSpinArithRow_constraints
   · exact emptyComponentTable_constraints
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   · exact divSpinRemainderBoundTable_constraints
   · exact divSpinBinaryAddTable_constraints
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints _ _
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints _ _
   · exact divSpinMainTable_constraints
 
 theorem divSpinWitness_constraints : divSpinWitness.Constraints :=
@@ -400,9 +404,9 @@ theorem divSpinWitness_transitions : divSpinWitness.TransitionConstraints := by
     rw [Table.TransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [divSpinWitness, divSpinTables] at h_table
+  · simp [divSpinWitness, divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
@@ -423,15 +427,17 @@ theorem divSpinWitness_transitions : divSpinWitness.TransitionConstraints := by
       intro index
       simp [divSpinArithTable, ZiskFv.AirsClean.ArithMul.componentComplete]
     · exact emptyComponentTable_transitions
-        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
     · rw [Table.TransitionConstraints]
       intro index
-      simp [divSpinRemainderBoundTable, binarySingleRowTable,
-        ZiskFv.AirsClean.Binary.staticLookupComponent]
+      simp [divSpinRemainderBoundTable, binaryConsumerSingleRowTable,
+        ZiskFv.AirsClean.Binary.tableConsumerComponent]
     · rw [Table.TransitionConstraints]
       intro index
       simp [divSpinBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions rfl
     · exact divSpinMainTable_transitions
 
 theorem divSpinWitness_cyclicSuccessorTransitions :
@@ -443,9 +449,9 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
     rw [Table.CyclicSuccessorTransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [divSpinWitness, divSpinTables] at h_table
+  · simp [divSpinWitness, divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
@@ -474,15 +480,17 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
       intro index
       simp [divSpinArithTable, ZiskFv.AirsClean.ArithMul.componentComplete]
     · exact emptyComponentTable_cyclicSuccessorTransitions
-        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
-      simp [divSpinRemainderBoundTable, binarySingleRowTable,
-        ZiskFv.AirsClean.Binary.staticLookupComponent]
+      simp [divSpinRemainderBoundTable, binaryConsumerSingleRowTable,
+        ZiskFv.AirsClean.Binary.tableConsumerComponent]
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
       simp [divSpinBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions rfl
     · exact divSpinMainTable_cyclicSuccessorTransitions
 
 

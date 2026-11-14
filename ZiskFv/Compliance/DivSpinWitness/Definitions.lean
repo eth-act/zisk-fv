@@ -441,13 +441,55 @@ def divSpinRemainderBoundRow : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
     divSpinLtuMiddleIndex divSpinLtuMiddleIndex divSpinLtuMiddleIndex
     divSpinLtuLastIndex
 
+/-- The secondary LTU operation emits eight real Binary-table requests. -/
+def divSpinBinarySourceRequests : Fin 8 → ZiskFv.AirsClean.Binary.BinaryTableIndex
+  | ⟨0, _⟩ => divSpinLtuByte0Index
+  | ⟨7, _⟩ => divSpinLtuLastIndex
+  | _ => divSpinLtuMiddleIndex
+
+theorem divSpinBinarySourceRequests_weld (index : Fin 8) :
+    ZiskFv.AirsClean.BinaryTable.rowOfIndex (divSpinBinarySourceRequests index).val =
+      ZiskFv.AirsClean.BinaryTableBalance.binaryMessageRow divSpinRemainderBoundRow index := by
+  have h_elements :
+      toElements (ZiskFv.AirsClean.BinaryTable.rowOfIndex
+        (divSpinBinarySourceRequests index).val) =
+      toElements (ZiskFv.AirsClean.BinaryTableBalance.binaryMessageRow
+        divSpinRemainderBoundRow index) := by
+    fin_cases index <;> decide
+  simpa only [ProvableType.fromElements_toElements] using
+    congrArg (fun elements =>
+      (fromElements elements : ZiskFv.Channels.BinaryTable.BinaryTableMessage FGL)) h_elements
+
+def divSpinPackedSources : ZiskFv.AirsClean.PackedVirtualTableSources.Witness FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.physicalOfRequests (fun _ => 0)
+    (List.ofFn divSpinBinarySourceRequests) []
+
+def divSpinBinarySourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable divSpinPackedSources emptyData
+
+def divSpinExtensionSourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable divSpinPackedSources emptyData
+
+theorem divSpinBinarySource_actual_consumer_balanced :
+    BalancedInteractions
+      (divSpinBinarySourceTable.interactionsWith
+          ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw ++
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+          (Environment.fromInput divSpinRemainderBoundRow emptyData)) := by
+  rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith]
+  exact ZiskFv.AirsClean.FullEnsemble.binary_actual_row_requests_balanced
+    (fun _ => 0) emptyData divSpinRemainderBoundRow divSpinBinarySourceRequests []
+    divSpinBinarySourceRequests_weld
+
 def divSpinRemainderBoundTable : Table FGL :=
-  ZiskFv.Compliance.Instantiation.binarySingleRowTable divSpinRemainderBoundRow
+  ZiskFv.Compliance.Instantiation.binaryConsumerSingleRowTable divSpinRemainderBoundRow
 
 theorem divSpinRemainderBoundTable_constraints :
     divSpinRemainderBoundTable.Constraints := by
   apply
-    ZiskFv.Compliance.Instantiation.binarySingleRowTable_constraints_of_proverAssumptions
+    ZiskFv.Compliance.Instantiation.binaryConsumerSingleRowTable_constraints_of_proverAssumptions
+  apply ZiskFv.AirsClean.FullEnsemble.binary_consumer_prover_of_static
   refine ⟨false, false, false, false, true,
     divSpinLtuByte0Index,
     divSpinLtuMiddleIndex, divSpinLtuMiddleIndex, divSpinLtuMiddleIndex,

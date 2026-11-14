@@ -92,11 +92,11 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
   | .add_via_binary add_input _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       add_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ add_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .add_via_binaryadd _ r1 r2 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
       m.a_0 r_main =
@@ -119,11 +119,11 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
   | .addi_via_binary addi_input _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ =>
       addi_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ BitVec.signExtend 64 addi_input.imm =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .addi_via_binaryadd _ r1 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ =>
       m.a_0 r_main =
@@ -139,226 +139,226 @@ def OpEnvelope.aeneasBridgeTrust : OpEnvelope state m r_main → Prop
   | .addw addw_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow)) % 2^32
       ∧ (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow)) % 2^32
   | .subw subw_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow)) % 2^32
       ∧ (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowB32
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow)) % 2^32
   | .addiw addiw_input _ _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ =>
       (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
         = ZiskFv.EquivCore.Addw.binaryRowA32
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow)) % 2^32
   | .sub sub_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       sub_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sub_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .and and_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       and_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ and_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .or or_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       or_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ or_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .xor xor_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       xor_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ xor_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .slt slt_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       slt_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ slt_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sltu sltu_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ =>
       sltu_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sltu_input.r2_val =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .andi andi_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ =>
       andi_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ BitVec.signExtend 64 andi_input.imm =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .ori ori_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ =>
       ori_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ BitVec.signExtend 64 ori_input.imm =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .xori xori_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ =>
       xori_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ BitVec.signExtend 64 xori_input.imm =
         ZiskFv.EquivCore.Add.binaryRowB64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .slti slti_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ =>
       m.m32 r_main = 0
       ∧ slti_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sltiu sltiu_input _ _ _ _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ =>
       m.m32 r_main = 0
       ∧ sltiu_input.r1_val =
         ZiskFv.EquivCore.Add.binaryRowA64
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sll sll_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
       sll_input.r1_val =
         ZiskFv.AirsClean.BinaryExtension.rowA64
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sll_input.r2_val.toNat % 64 =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .srl srl_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
       srl_input.r1_val =
         ZiskFv.AirsClean.BinaryExtension.rowA64
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ srl_input.r2_val.toNat % 64 =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sra sra_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
       sra_input.r1_val =
         ZiskFv.AirsClean.BinaryExtension.rowA64
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sra_input.r2_val.toNat % 64 =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sllw sllw_input _ _ _ providerTable providerRow .. =>
       (Sail.BitVec.extractLsb sllw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
         ZiskFv.AirsClean.BinaryExtension.rowA32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sllw_input.r2_val.toNat % 32 =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .srlw srlw_input _ _ _ providerTable providerRow .. =>
       (Sail.BitVec.extractLsb srlw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
         ZiskFv.AirsClean.BinaryExtension.rowA32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ srlw_input.r2_val.toNat % 32 =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sraw sraw_input _ _ _ providerTable providerRow .. =>
       (Sail.BitVec.extractLsb sraw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
         ZiskFv.AirsClean.BinaryExtension.rowA32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sraw_input.r2_val.toNat % 32 =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .slliw slliw_input _ _ providerTable providerRow .. =>
       (Sail.BitVec.extractLsb slliw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
         ZiskFv.AirsClean.BinaryExtension.rowA32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ slliw_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .srliw srliw_input _ _ providerTable providerRow .. =>
       (Sail.BitVec.extractLsb srliw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
         ZiskFv.AirsClean.BinaryExtension.rowA32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ srliw_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sraiw sraiw_input _ _ providerTable providerRow .. =>
       (Sail.BitVec.extractLsb sraiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat =
         ZiskFv.AirsClean.BinaryExtension.rowA32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ sraiw_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount32
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .slli slli_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
       slli_input.r1_val =
         ZiskFv.AirsClean.BinaryExtension.rowA64
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ slli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .srli srli_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
       srli_input.r1_val =
         ZiskFv.AirsClean.BinaryExtension.rowA64
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ srli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .srai srai_input _ _ _ providerTable providerRow _ _ _ _ _ _ _ _ _ _ =>
       srai_input.r1_val =
         ZiskFv.AirsClean.BinaryExtension.rowA64
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
       ∧ srai_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))
   | .sb sb_input .. =>
       m.ind_width r_main = 1

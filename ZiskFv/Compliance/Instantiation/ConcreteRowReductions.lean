@@ -7,6 +7,7 @@ import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
 import ZiskFv.AirsClean.Mem.Bridge
 import ZiskFv.AirsClean.RegisterStepRangeSlice
 import ZiskFv.AirsClean.RegisterBoundary
+import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableWitnessConstruction
 
 /-!
 # Concrete row interaction reductions
@@ -1295,6 +1296,130 @@ theorem binarySingleRowTable_constraints_of_proverAssumptions
   subst arr
   simpa [binarySingleRowTable, binaryRowArray, Table.environment, Environment.fromInput]
     using h_component
+
+/-! Actual accepted-ensemble consumers. The static constructors above remain
+available for detached local examples; these constructors emit every real request. -/
+
+def binaryExtensionShiftConsumerRowsTable
+    (rows : List (ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)) : Table FGL :=
+  ZiskFv.AirsClean.FullEnsemble.extensionConsumerRowsTable emptyData rows
+
+theorem binaryExtensionShiftConsumerRowsTable_constraints_of_proverAssumptions
+    (rows : List (ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL))
+    (h_assumptions :
+      ∀ row ∈ rows,
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.circuit.ProverAssumptions
+          row emptyData (ProverHint.empty FGL)) :
+    (binaryExtensionShiftConsumerRowsTable rows).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.circuit.localLength
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInputVar = 0 := by
+    rfl
+  rw [Table.Constraints]
+  intro arr h_arr
+  change arr ∈ rows.map binaryExtensionRowArray at h_arr
+  rcases List.mem_map.mp h_arr with ⟨row, h_row, rfl⟩
+  have h_component :
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent row h_localLength
+      (h_assumptions row h_row)
+  simpa [binaryExtensionShiftConsumerRowsTable, binaryExtensionRowArray, Table.table,
+    Environment.fromInput] using h_component
+
+def binaryConsumerSingleRowTable (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) : Table FGL :=
+  ZiskFv.AirsClean.FullEnsemble.binaryConsumerRowsTable emptyData [row]
+
+private theorem binaryConsumerSingleRowTable_effectiveRows
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :
+    (binaryConsumerSingleRowTable row).table = [binaryRowArray row] := by
+  simp [binaryConsumerSingleRowTable, Table.table, binaryRowArray,
+    ZiskFv.AirsClean.Binary.tableConsumerComponent]
+
+theorem binaryConsumerSingleRowTable_rowInput
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+        ((binaryConsumerSingleRowTable row).environment (binaryRowArray row)) =
+      row := by
+  change ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+      (Environment.fromInput row emptyData) = row
+  simp [Air.Flat.Component.rowInput, ProvableType.valueFromOffset_zero_fromInput_eq]
+
+theorem binaryConsumerComponentOpBusInteraction_eval
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :
+    (((OpBusChannel.pushed
+        (ZiskFv.AirsClean.Binary.opBusMessageExpr
+          ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar)).toRaw).eval
+      ((binaryConsumerSingleRowTable row).environment (binaryRowArray row))) =
+      binaryOpBusInteraction row := by
+  let env := (binaryConsumerSingleRowTable row).environment (binaryRowArray row)
+  let rowVar := ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar
+  have h_input : eval env rowVar = row := by
+    change eval (Environment.fromInput row emptyData)
+        (varFromOffset ZiskFv.AirsClean.Binary.BinaryRow 0) = row
+    exact ProvableType.eval_fromInput_varFromOffset_zero row emptyData
+  have h_msg_eval :
+      eval env (ZiskFv.AirsClean.Binary.opBusMessageExpr rowVar) =
+        ZiskFv.AirsClean.Binary.opBusMessage row := by
+    rw [ZiskFv.AirsClean.Binary.eval_opBusMessageExpr]
+    rw [h_input]
+  simp [binaryOpBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · rfl
+  constructor
+  · rw [toElements_eval_toArray]
+    change (toElements
+        (eval env (ZiskFv.AirsClean.Binary.opBusMessageExpr rowVar))).toArray =
+      (toElements (ZiskFv.AirsClean.Binary.opBusMessage row)).toArray
+    rw [h_msg_eval]
+  · rfl
+
+theorem binaryConsumerSingleRowTable_interactionsWith_opBus
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :
+    (binaryConsumerSingleRowTable row).interactionsWith OpBusChannel.toRaw =
+      [binaryOpBusInteraction row] := by
+  rw [Table.interactionsWith, binaryConsumerSingleRowTable_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  change
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+        OpBusChannel.toRaw
+        ((binaryConsumerSingleRowTable row).environment (binaryRowArray row)) =
+      [binaryOpBusInteraction row]
+  rw [Operations.interactionValuesWith_eq_map,
+    ZiskFv.AirsClean.FullEnsemble.binary_consumer_interactionsWith_opBus]
+  exact congrArg (fun interaction => [interaction]) (binaryConsumerComponentOpBusInteraction_eval row)
+
+theorem binaryConsumerSingleRowTable_constraints_of_proverAssumptions
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_assumptions :
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.circuit.ProverAssumptions
+        row emptyData (ProverHint.empty FGL)) :
+    (binaryConsumerSingleRowTable row).Constraints := by
+  have h_localLength :
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.circuit.localLength
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar = 0 := by
+    rfl
+  have h_component :
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.ConstraintsHold
+        (Environment.fromInput row emptyData) :=
+    component_constraintsHold_of_proverAssumptions
+      ZiskFv.AirsClean.Binary.tableConsumerComponent row h_localLength h_assumptions
+  rw [Table.Constraints, binaryConsumerSingleRowTable_effectiveRows]
+  intro arr h_arr
+  simp only [List.mem_singleton] at h_arr
+  subst arr
+  simpa [binaryConsumerSingleRowTable, binaryRowArray, Table.environment, Environment.fromInput]
+    using h_component
+
+/-- Both full-domain providers share the zero-request physical multiplicity witness. -/
+def noRequestBinarySourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable
+    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData
+
+def noRequestExtensionSourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
+    ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData
 
 private def binarySpikeRow : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
   { aBytes :=

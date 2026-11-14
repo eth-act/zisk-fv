@@ -6,7 +6,8 @@ import ZiskFv.AirsClean.FullEnsemble.Balance.RowExtraction
 
 The finished bus-103 channel turns each source-linked Mem consumer pull into
 a same-message `SpecifiedRangesSlice` provider push.  The provider's `Spec`
-is the concrete 16-bit static-table membership fact.
+is the concrete 16-bit static-table membership fact. The packed binary-table
+sources are silent on bus 103 and are excluded by their channel names.
 -/
 
 namespace ZiskFv.AirsClean.FullEnsemble
@@ -57,7 +58,9 @@ theorem specifiedRangesSlice_balanced_of_witness
     BalancedInteractions (witness.interactionsWith SpecifiedRangesSliceChannel.toRaw) := by
   have h := h_balanced SpecifiedRangesSliceChannel.toRaw (by
     change SpecifiedRangesSliceChannel.toRaw ∈
-      [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw,
+      [ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw,
+        ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw,
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw,
         ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw,
         MemBusChannel.toRaw, OpBusChannel.toRaw, MemAlignRomChannel.toRaw,
         SpecifiedRangesSliceChannel.toRaw]
@@ -133,7 +136,8 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_memAlignRom | h_mem | h_ranges | h_regRange |
-      h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
+      h_div | h_mul | h_extension | h_binary | h_binaryAdd |
+      h_extensionSource | h_binarySource | h_main
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_verifier]
@@ -215,16 +219,23 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_extension]
-      change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw]
-      simp only [List.mem_singleton]
-      exact specifiedRangesSliceChannel_ne_opBus
+      change SpecifiedRangesSliceChannel.toRaw ∉
+        [OpBusChannel.toRaw,
+          ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw]
+      intro h
+      have h_name := List.mem_map_of_mem (f := fun c : RawChannel FGL => c.name) h
+      change "SpecifiedRangesSlice103" ∈ ["OperationBus", "BinaryExtensionTable"] at h_name
+      simp at h_name
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_binary]
-      change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw]
-      simp only [List.mem_singleton]
-      exact specifiedRangesSliceChannel_ne_opBus
+      change SpecifiedRangesSliceChannel.toRaw ∉
+        [OpBusChannel.toRaw, ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+      intro h
+      have h_name := List.mem_map_of_mem (f := fun c : RawChannel FGL => c.name) h
+      change "SpecifiedRangesSlice103" ∈ ["OperationBus", "BinaryTable"] at h_name
+      simp at h_name
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -232,6 +243,12 @@ theorem exists_specifiedRangesSlice_provider_of_mem_interaction
       change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw]
       simp only [List.mem_singleton]
       exact specifiedRangesSliceChannel_ne_opBus
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource SpecifiedRangesSliceChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource SpecifiedRangesSliceChannel.toRaw (by decide)
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem

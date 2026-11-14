@@ -89,8 +89,8 @@ theorem divSpinWitness_memBusInteractions :
   have h_remainder :
       divSpinRemainderBoundTable.interactionsWith MemBusChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
-    change MemBusChannel.toRaw ∉ [ZiskFv.Channels.OperationBus.OpBusChannel.toRaw]
-    simpa using h_ne
+    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw, ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+    decide
   have h_binaryAdd :
       divSpinBinaryAddTable.interactionsWith MemBusChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
@@ -98,7 +98,7 @@ theorem divSpinWitness_memBusInteractions :
     simpa using h_ne
   unfold divSpinMemBusInteractions
   rw [divSpinWitness_tables]
-  simp [divSpinTables, divSpinBoundaryTable_memBusInteractions,
+  simp [divSpinTables, divSpinExtensionSourceTable, divSpinBinarySourceTable, divSpinBoundaryTable_memBusInteractions,
     divSpinMainTable_memBusInteractions, emptyComponentTable_interactionsWith,
     h_arith, h_remainder, h_binaryAdd,
     registerStepRangeRowsTable_interactionsWith_memBus_nil]

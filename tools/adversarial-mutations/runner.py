@@ -39,7 +39,7 @@ def _round_choices() -> range:
     return range(1, len(rounds) + 1)
 
 
-REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50, 53]
+REGRESSION_ROUNDS = [5, 7, 16, 22, 26, 27, 32, 33, 36, 38, 46, 6, 21, 51, 50, 53, 55]
 
 
 class CorpusError(Exception):

@@ -48,7 +48,7 @@ theorem divSpinArithDiv_opBus_nil :
 
 theorem divSpinBinaryExtension_opBus_nil :
     (emptyComponentTable
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent).interactionsWith
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith
         OpBusChannel.toRaw = [] :=
   emptyComponentTable_interactionsWith _ _
 

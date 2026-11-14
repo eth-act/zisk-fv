@@ -14,7 +14,7 @@ open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
-open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
+open ZiskFv.AirsClean.BinaryExtension (shiftTableConsumerComponent)
 
 /-! ## Full-ensemble op-bus counterpart classification -/
 
@@ -125,8 +125,8 @@ theorem exists_matching_op_component_of_active_main_interaction
         ∧ ∃ table ∈ witness.allTables,
           providerInteraction ∈ table.interactionsWith OpBusChannel.toRaw
             ∧ (table.component = arithMulProviderComponent
-              ∨ table.component = shiftStaticLookupComponent
-              ∨ table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+              ∨ table.component = shiftTableConsumerComponent
+              ∨ table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryAdd.component
               ∨ table.component =
                   ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program) := by
@@ -140,7 +140,8 @@ theorem exists_matching_op_component_of_active_main_interaction
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom | h_mem | h_ranges | h_regRange |
-    h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
+    h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd | h_extensionSource |
+    h_binarySource | h_main
   · have h_nil : table.interactionsWith OpBusChannel.toRaw = [] := by
       have h_ops_nil :
           table.component.operations.interactionsWith OpBusChannel.toRaw = [] := by
@@ -197,6 +198,12 @@ theorem exists_matching_op_component_of_active_main_interaction
         exact ⟨table, h_table, h_mem_table⟩,
       h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
       Or.inr (Or.inr (Or.inr (Or.inl h_binaryAdd)))⟩
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource OpBusChannel.toRaw (by decide)
+    simp [h_nil] at h_mem_table
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource OpBusChannel.toRaw (by decide)
+    simp [h_nil] at h_mem_table
   · exact ⟨providerInteraction, by
         rw [EnsembleWitness.mem_interactionsWith]
         exact ⟨table, h_table, h_mem_table⟩,
@@ -222,8 +229,8 @@ theorem exists_matching_provider_op_component_of_active_main_interaction
         ∧ ∃ table ∈ witness.allTables,
           providerInteraction ∈ table.interactionsWith OpBusChannel.toRaw
             ∧ (table.component = arithMulProviderComponent
-              ∨ table.component = shiftStaticLookupComponent
-              ∨ table.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+              ∨ table.component = shiftTableConsumerComponent
+              ∨ table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent
               ∨ table.component = ZiskFv.AirsClean.BinaryAdd.component) := by
   obtain ⟨providerInteraction, h_provider_mem, h_msg, h_nonpull, h_nonzero,
       table, h_table, h_mem_table, h_component⟩ :=
@@ -304,7 +311,8 @@ theorem exists_matching_mem_component_of_active_main_interaction
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom | h_mem | h_ranges | h_regRange |
-    h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
+    h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd | h_extensionSource |
+    h_binarySource | h_main
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       have h_ops_nil :
           table.component.operations.interactionsWith MemBusChannel.toRaw = [] := by
@@ -363,6 +371,12 @@ theorem exists_matching_mem_component_of_active_main_interaction
     simp [h_nil] at h_mem_table
   · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       exact binaryAdd_table_interactionsWith_memBus_nil h_binaryAdd
+    simp [h_nil] at h_mem_table
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource MemBusChannel.toRaw (by decide)
+    simp [h_nil] at h_mem_table
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource MemBusChannel.toRaw (by decide)
     simp [h_nil] at h_mem_table
   · exact ⟨providerInteraction, by
         rw [EnsembleWitness.mem_interactionsWith]

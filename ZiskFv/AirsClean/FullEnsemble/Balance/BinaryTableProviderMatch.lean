@@ -29,11 +29,17 @@ open ZiskFv.AirsClean.BinaryTableBalance
 
 private theorem interactionsWith_nil_of_channel_names
     {table : Table FGL} (channel : RawChannel FGL)
-    (h_names : ∀ c ∈ table.component.circuit.channels, c.name ≠ channel.name) :
+    (h_names : channel.name ∉ table.component.circuit.channels.map (·.name)) :
     table.interactionsWith channel = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
   intro h
-  exact h_names channel h rfl
+  exact h_names (List.mem_map_of_mem (f := fun c : RawChannel FGL => c.name) h)
+
+private theorem full_verifier_channels (length : Nat) (program : Program length) :
+    (fullRv64imEnsemble length program).ensemble.verifierTable.circuit.channels = [] := by
+  change (fullRv64imSoundEnsemble length program).ensemble.verifier.channels = []
+  rw [(fullRv64imSoundEnsemble length program).verifier_empty]
+  rfl
 
 private theorem binaryConsumer_mult {table : Table FGL}
     (hc : table.component = Binary.tableConsumerComponent)
@@ -81,43 +87,9 @@ theorem binary_nonpull_source
     | have he : table.interactionsWith BinaryTableChannel.toRaw = [] := by
         apply interactionsWith_nil_of_channel_names
         rw [hc]
-        simp [circuit_norm, arithMulProviderComponent,
-      ZiskFv.AirsClean.RegisterBoundary.component,
-      ZiskFv.AirsClean.RegisterBoundary.circuit,
-      ZiskFv.AirsClean.MemAlignReadByte.component,
-      ZiskFv.AirsClean.MemAlignReadByte.circuit,
-      ZiskFv.AirsClean.MemAlignByte.component,
-      ZiskFv.AirsClean.MemAlignByte.circuit,
-      ZiskFv.AirsClean.MemAlign.component, ZiskFv.AirsClean.MemAlign.circuit,
-      ZiskFv.AirsClean.MemAlignRangeSlice.component,
-      ZiskFv.AirsClean.MemAlignRangeSlice.circuit,
-      ZiskFv.AirsClean.MemAlignRomSlice.component,
-      ZiskFv.AirsClean.MemAlignRomSlice.circuit,
-      ZiskFv.AirsClean.Mem.componentWithDualMemBus,
-      ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-      ZiskFv.AirsClean.SpecifiedRangesSlice.component,
-      ZiskFv.AirsClean.SpecifiedRangesSlice.circuit,
-      ZiskFv.AirsClean.RegisterStepRangeSlice.component,
-      ZiskFv.AirsClean.RegisterStepRangeSlice.circuit,
-      ZiskFv.AirsClean.ArithDiv.component, ZiskFv.AirsClean.ArithDiv.circuit,
-      ZiskFv.AirsClean.ArithMul.componentComplete, ZiskFv.AirsClean.ArithMul.circuitComplete,
-      Binary.tableConsumerComponent, Binary.tableConsumerCircuit,
-      BinaryExtension.shiftTableConsumerComponent, BinaryExtension.shiftTableConsumerCircuit,
-      BinaryExtension.tableConsumerComponent, BinaryExtension.tableConsumerCircuit,
-      BinaryTableSlice.sourceComponent, BinaryTableSlice.sourceCircuit,
-      BinaryExtensionTableSlice.sourceComponent, BinaryExtensionTableSlice.sourceCircuit,
-      BinaryAdd.component, BinaryAdd.circuit,
-      Main.componentWithRomMemAndOpBus, Main.circuitWithRomMemAndOpBus,
-      Main.mainWithRomMemAndOpBusElaborated,
-      ZiskFv.Channels.OperationBus.OpBusChannel,
-      ZiskFv.Channels.MemoryBus.MemBusChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      BinaryTableChannel, BinaryExtensionTableChannel, Channel.toRaw,
-          fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
-          Ensemble.verifierTable, GeneralFormalCircuit.empty]
+        first
+        | rw [full_verifier_channels]; simp
+        | exact of_decide_eq_true (by with_unfolding_all rfl)
       simp [he] at hi
 
 
@@ -140,43 +112,9 @@ theorem extension_nonpull_source
     | have he : table.interactionsWith BinaryExtensionTableChannel.toRaw = [] := by
         apply interactionsWith_nil_of_channel_names
         rw [hc]
-        simp [circuit_norm, arithMulProviderComponent,
-      ZiskFv.AirsClean.RegisterBoundary.component,
-      ZiskFv.AirsClean.RegisterBoundary.circuit,
-      ZiskFv.AirsClean.MemAlignReadByte.component,
-      ZiskFv.AirsClean.MemAlignReadByte.circuit,
-      ZiskFv.AirsClean.MemAlignByte.component,
-      ZiskFv.AirsClean.MemAlignByte.circuit,
-      ZiskFv.AirsClean.MemAlign.component, ZiskFv.AirsClean.MemAlign.circuit,
-      ZiskFv.AirsClean.MemAlignRangeSlice.component,
-      ZiskFv.AirsClean.MemAlignRangeSlice.circuit,
-      ZiskFv.AirsClean.MemAlignRomSlice.component,
-      ZiskFv.AirsClean.MemAlignRomSlice.circuit,
-      ZiskFv.AirsClean.Mem.componentWithDualMemBus,
-      ZiskFv.AirsClean.Mem.circuitWithDualMemBus,
-      ZiskFv.AirsClean.SpecifiedRangesSlice.component,
-      ZiskFv.AirsClean.SpecifiedRangesSlice.circuit,
-      ZiskFv.AirsClean.RegisterStepRangeSlice.component,
-      ZiskFv.AirsClean.RegisterStepRangeSlice.circuit,
-      ZiskFv.AirsClean.ArithDiv.component, ZiskFv.AirsClean.ArithDiv.circuit,
-      ZiskFv.AirsClean.ArithMul.componentComplete, ZiskFv.AirsClean.ArithMul.circuitComplete,
-      Binary.tableConsumerComponent, Binary.tableConsumerCircuit,
-      BinaryExtension.shiftTableConsumerComponent, BinaryExtension.shiftTableConsumerCircuit,
-      BinaryExtension.tableConsumerComponent, BinaryExtension.tableConsumerCircuit,
-      BinaryTableSlice.sourceComponent, BinaryTableSlice.sourceCircuit,
-      BinaryExtensionTableSlice.sourceComponent, BinaryExtensionTableSlice.sourceCircuit,
-      BinaryAdd.component, BinaryAdd.circuit,
-      Main.componentWithRomMemAndOpBus, Main.circuitWithRomMemAndOpBus,
-      Main.mainWithRomMemAndOpBusElaborated,
-      ZiskFv.Channels.OperationBus.OpBusChannel,
-      ZiskFv.Channels.MemoryBus.MemBusChannel,
-      ZiskFv.Channels.SpecifiedRanges.SpecifiedRangesSliceChannel,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel,
-      ZiskFv.Channels.MemAlignRom.MemAlignRomChannel,
-      ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel,
-      BinaryTableChannel, BinaryExtensionTableChannel, Channel.toRaw,
-          fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
-          Ensemble.verifierTable, GeneralFormalCircuit.empty]
+        first
+        | rw [full_verifier_channels]; simp
+        | exact of_decide_eq_true (by with_unfolding_all rfl)
       simp [he] at hi
 
 /-- The two source-owned tuple prefixes are jointly realizable in one actual
@@ -236,7 +174,8 @@ theorem binary_membership_of_balance {length : Nat} {program : Program length}
   obtain ⟨extension, h_extension_mem, h_extension⟩ := exists_full_table_of_component w
     (component := BinaryExtensionTableSlice.sourceComponent)
     (by simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
-      circuit_norm])
+      Ensemble.allTables, SoundEnsemble.addTable_tables,
+      SoundEnsemble.addFinishedChannel_tables])
   obtain ⟨raw, _, _, h_binary_prefix, _⟩ :=
     source_pair_reifies (fun _ => 0) table extension h_binary h_extension
   rw [h_binary_prefix] at hp
@@ -270,7 +209,8 @@ theorem extension_membership_of_balance {length : Nat} {program : Program length
   obtain ⟨binary, h_binary_mem, h_binary⟩ := exists_full_table_of_component w
     (component := BinaryTableSlice.sourceComponent)
     (by simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
-      circuit_norm])
+      Ensemble.allTables, SoundEnsemble.addTable_tables,
+      SoundEnsemble.addFinishedChannel_tables])
   obtain ⟨raw, _, _, _, h_extension_prefix⟩ :=
     source_pair_reifies (fun _ => 0) binary table h_binary h_extension
   rw [h_extension_prefix] at hp

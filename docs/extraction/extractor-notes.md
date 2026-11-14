@@ -746,6 +746,19 @@ the operation bus. `shiftTableConsumerComponent` retains the former static
 shift consumer's `b_0` range lookup. These local declarations do not by
 themselves replace the accepted full ensemble or close #415.
 
+`FullEnsemble/Balance/BinaryTableProviderMatch.lean` performs the corresponding
+accepted-ensemble composition. Both actual consumers and both source providers
+occur in the 17-table ensemble, and buses 125/124 are finished alongside the
+six existing channels. The source tuples are exactly
+`[POS_IND, OP, A, B, CIN, C, FLAGS]` (`binary_table.pil:335-336`) and
+`[OP, OFFSET, A, B, C0, C1, FLAGS]`
+(`binary_extension_table.pil:204-205`), over the production domains
+5,505,024 and 3,151,872 respectively. Accepted source prefixes jointly reify
+into one physical raw witness; arbitrary field multiplicities are not replaced
+by positivity or honest-count assumptions. The old full semantic row predicates
+are derived from accepted constraints and existing finished-channel balance,
+not added as a new root, trace, or source-map premise.
+
 Mutation recipes for the integration owner (not execution evidence):
 
 * Swap `A,B` in BinaryTable's actual `lookup_proves` tuple, or `C0,C1` in
@@ -760,9 +773,9 @@ Mutation recipes for the integration owner (not execution evidence):
 * Retain the prior output/carry builder mutants: the original complete-domain
   opcode-block comparison remains required.
 
-No gates or mutation runs were executed for these local additions; acceptance
-requires the integration owner's regenerated source artifacts, Lean build,
-trust gates, mutation rejection evidence and complete `nix run .#test`.
+Acceptance requires regenerated source artifacts, the Lean build, trust gates,
+named mutation rejection evidence after a green baseline, and complete
+`nix run .#test`; the mutation recipes above alone are not execution evidence.
 
 `binaryProviderTable_materialized` / `extensionProviderTable_materialized`,
 the corresponding `_constraints` and `_interactionsWith` lemmas expose
@@ -775,6 +788,14 @@ The materialized/interactions prefix lemmas and `_balanceOf` lemmas prove
 exact per-message balance-sum preservation. They do not claim that adding
 zero interactions preserves Clean's separate interaction-count guard.
 No new `AcceptedTrace` field or caller source-map certificate is required.
+
+`BinaryTableWitnessConstruction.lean` connects counted source requests to the
+actual consumer operation streams, not a stand-in list of negative messages.
+The closed Jalr and DIV LTU witnesses supply eight exact Binary source-index
+welds; Sd/Ld supplies eight BinaryExtension welds. The other four accepted
+witnesses have no requests on these channels. Each construction places both
+full-domain source providers using the same physical raw witness, including
+zero multiplicities where no request occurs.
 
 `BinaryTableRequests.lean` builds both packed multiplicity projections from
 exact source-index request lists. It counts repeated indices rather than
@@ -814,8 +835,9 @@ Prefix bounds rewrite the full dependent fixed-domain invariant before
 specialization. Materialization destructs the table carrier and substitutes
 its component equality before reducing the dependent fixed-schema match;
 no schema is coerced across an unexplained raw-width equality.
-Consumer message evaluation isolates the field-specialized scalar evaluator instance
-behind a checked computational equality after decomposing the row and tuple
-structures; this covers every
-arithmetic flag and all eight extension byte-index constants. Ensemble
-assembly checks component projections without unfolding source-domain lists.
+Consumer message evaluation first decomposes row and tuple structures, then
+normalizes the actual scalar evaluator dispatch, including the
+`ProvableStruct.WithProvableType` field-instance projection. This covers every
+arithmetic flag and all eight extension byte-index constants without an extra
+scalar-evaluation premise. Ensemble assembly checks component projections
+without unfolding source-domain lists.
