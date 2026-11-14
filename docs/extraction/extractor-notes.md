@@ -789,3 +789,7 @@ before simplifying source metadata; the packed `sourceAt` map stays opaque.
 Only separately sealed table-ID projections are rewritten. Source records
 and row counts stay opaque, and dependent guards use the exact `Fin.isLt`
 proof rather than reconstructing a large-domain bound.
+The conditional proof is checked once at an abstract physical location.
+Public projections apply that sealed lemma to the generated `sourceBUS_at`
+proof; no concrete division/modulo coordinates enter a rewrite motive, and
+the internal ownership premise is discharged rather than exported to callers.
