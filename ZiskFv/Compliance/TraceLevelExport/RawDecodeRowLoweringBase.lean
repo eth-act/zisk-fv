@@ -79,7 +79,7 @@ def oneOfTerminal {raw : BitVec 32}
   source := by
     unfold aeneas_extract.extract_transpile_rv64im_rows_raw
     rw [source]
-    simp only [bind_ok, lift, nonJalr, if_false]
+    simp only [Bind.bind, bind_ok, lift, nonJalr, if_false]
   accepted := accepted
 
 @[simp] theorem oneOfTerminal_width {raw : BitVec 32}

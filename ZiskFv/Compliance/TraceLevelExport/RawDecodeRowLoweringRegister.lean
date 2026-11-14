@@ -26,13 +26,13 @@ only share the repeated proof, not a new raw-program interface. -/
 
 local macro "register_source_width" nm:ident : command => do
   let s := nm.getId.toString
-  let name := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
+  let theoremName := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
   let rawName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("RawProgramDecode_" ++ s))
   let claimName := Lean.mkIdent ((`ZiskFv.Compliance).str ("Claim_" ++ s))
   let transpileName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("transpile_" ++ s))
-  `(theorem $name {n rawLength : Nat} (trace : AcceptedZiskTrace n)
+  `(theorem $theoremName {n rawLength : Nat} (trace : AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
       (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32)
       (rawDecode : $rawName trace i c addr rawProgram) :
@@ -65,13 +65,13 @@ register_source_width mulw
 
 local macro "immediate_source_width" nm:ident : command => do
   let s := nm.getId.toString
-  let name := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
+  let theoremName := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
   let rawName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("RawProgramDecode_" ++ s))
   let claimName := Lean.mkIdent ((`ZiskFv.Compliance).str ("Claim_" ++ s))
   let transpileName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("transpile_" ++ s))
-  `(theorem $name {n rawLength : Nat} (trace : AcceptedZiskTrace n)
+  `(theorem $theoremName {n rawLength : Nat} (trace : AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
       (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32)
       (rawDecode : $rawName trace i c addr rawProgram) :
@@ -93,13 +93,13 @@ immediate_source_width andi
 
 local macro "shift_source_width" nm:ident "," shget:term : command => do
   let s := nm.getId.toString
-  let name := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
+  let theoremName := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
   let rawName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("RawProgramDecode_" ++ s))
   let claimName := Lean.mkIdent ((`ZiskFv.Compliance).str ("Claim_" ++ s))
   let transpileName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("transpile_" ++ s))
-  `(theorem $name {n rawLength : Nat} (trace : AcceptedZiskTrace n)
+  `(theorem $theoremName {n rawLength : Nat} (trace : AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
       (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32)
       (rawDecode : $rawName trace i c addr rawProgram) :
@@ -161,13 +161,13 @@ theorem sourceWidth_or {n rawLength : Nat} (trace : AcceptedZiskTrace n)
 
 local macro "copyb_immediate_source_width" nm:ident : command => do
   let s := nm.getId.toString
-  let name := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
+  let theoremName := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
   let rawName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("RawProgramDecode_" ++ s))
   let claimName := Lean.mkIdent ((`ZiskFv.Compliance).str ("Claim_" ++ s))
   let transpileName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
     ("transpile_" ++ s))
-  `(theorem $name {n rawLength : Nat} (trace : AcceptedZiskTrace n)
+  `(theorem $theoremName {n rawLength : Nat} (trace : AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
       (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32)
       (rawDecode : $rawName trace i c addr rawProgram) :
