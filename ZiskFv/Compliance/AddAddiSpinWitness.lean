@@ -1456,11 +1456,51 @@ private theorem addAddiSpinTablesMemBusInteractions_eq_active :
       addAddiSpinBoundaryTable.interactionsWith MemBusChannel.toRaw ++
         addAddiSpinBinaryAddTable.interactionsWith MemBusChannel.toRaw ++
         addAddiSpinMainTable.interactionsWith MemBusChannel.toRaw := by
-  simp [addAddiSpinTables,
-    noRequestExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
-    noRequestBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
-    emptyComponentTable_interactionsWith,
-    registerStepRangeRowsTable_interactionsWith_memBus_nil, List.append_assoc]
+  have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_active0_13_16
+    (fun table : Table FGL => table.interactionsWith MemBusChannel.toRaw)
+    addAddiSpinBoundaryTable
+    (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
+    (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
+    (emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
+    (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
+    (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
+    (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+    (registerStepRangeRowsTable
+      ([0, 0, 0, 1, 1] ++ registerBoundaryRangeValues addAddiSpinBoundaryRows))
+    (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+    (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+    (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
+    (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent)
+    (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    addAddiSpinBinaryAddTable noRequestExtensionSourceTable
+    noRequestBinarySourceTable addAddiSpinMainTable
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.MemAlignReadByte.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.MemAlignByte.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.MemAlign.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.MemAlignRangeSlice.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.MemAlignRomSlice.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.Mem.componentWithDualMemBus MemBusChannel.toRaw)
+    (registerStepRangeRowsTable_interactionsWith_memBus_nil
+      ([0, 0, 0, 1, 1] ++ registerBoundaryRangeValues addAddiSpinBoundaryRows))
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.SpecifiedRangesSlice.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.ArithDiv.component MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.ArithMul.componentComplete MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent MemBusChannel.toRaw)
+    (emptyComponentTable_interactionsWith
+      ZiskFv.AirsClean.Binary.tableConsumerComponent MemBusChannel.toRaw)
+    (noRequestExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide))
+    (noRequestBinarySourceTable_other_channel MemBusChannel.toRaw (by decide))
+  exact h
 
 private theorem addAddiSpinBoundaryTableMemBusInteractions_eq_rows :
     addAddiSpinBoundaryTable.interactionsWith MemBusChannel.toRaw =

@@ -82,6 +82,22 @@ theorem flatMap_seventeen_consumer11_source14
     h5, h6, h7, h8, h9, h10, h11, h12, h13, h15, h16,
     List.nil_append, List.append_nil]
 
+/-- Preserve the exact memory-channel order while excluding only tables with
+a proved empty stream. No concrete provider is reduced inside this proof. -/
+theorem flatMap_seventeen_active0_13_16
+    (f : Table FGL → List (Interaction FGL))
+    (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 : Table FGL)
+    (h1 : f t1 = []) (h2 : f t2 = []) (h3 : f t3 = [])
+    (h4 : f t4 = []) (h5 : f t5 = []) (h6 : f t6 = [])
+    (h7 : f t7 = []) (h8 : f t8 = []) (h9 : f t9 = [])
+    (h10 : f t10 = []) (h11 : f t11 = []) (h12 : f t12 = [])
+    (h14 : f t14 = []) (h15 : f t15 = []) :
+    [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13,
+      t14, t15, t16].flatMap f = f t0 ++ f t13 ++ f t16 := by
+  simp only [List.flatMap_cons, List.flatMap_nil, h1, h2, h3, h4,
+    h5, h6, h7, h8, h9, h10, h11, h12, h14, h15,
+    List.nil_append, List.append_nil]
+
 /-- Retain the actual operation-bus emission while adding table requests. -/
 theorem binary_consumer_interactionsWith_opBus :
     Binary.tableConsumerComponent.operations.interactionsWith OpBusChannel.toRaw =
