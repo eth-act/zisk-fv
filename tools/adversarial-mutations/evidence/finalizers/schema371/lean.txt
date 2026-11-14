@@ -1,0 +1,111 @@
+⚠ [8082/8122] Replayed Extraction.ArithRangeTable
+warning: build/extraction/Extraction/ArithRangeTable.lean:347:35: This simp argument is unused:
+  Nat.add_left_comm
+
+Hint: Omit it from the simp argument list.
+  simp [ChunkValueValid, chunkRow, ranges, offsets, full, pos, neg, halfBlockId,
+  ̲  ̲ ̲ ̲ ̲ ̲halfBlockHighFull, halfBlockNeg, halfBlockSize, Nat.add_assoc, N̵a̵t̵.̵a̵d̵d̵_̵c̵o̵m̵m̵,̵ ̵N̵a̵t̵.̵a̵d̵d̵_̵l̵e̵f̵t̵_̵c̵o̵m̵m̵]̵N̲a̲t̲.̲a̲d̲d̲_̲c̲o̲m̲m̲]̲
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [8113/8122] Replayed ZiskFv.AirsClean.MemAlignWriteByte.Circuit
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Circuit.lean:85:27: This simp argument is unused:
+  DualByteChannel
+
+Hint: Omit it from the simp argument list.
+  simp [MemBusChannel,̵ ̵D̵u̵a̵l̵B̵y̵t̵e̵C̵h̵a̵n̵n̵e̵l̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Circuit.lean:92:10: This simp argument is unused:
+  rowOf
+
+Hint: Omit it from the simp argument list.
+  simp [r̵o̵w̵O̵f̵,̵ ̵composedValueOf, byte_value_factor, value_8b_factor,
+  ̵  ̵ ̵ ̵ ̵ ̵value_16b_factor] at h_input ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [8117/8122] Replayed ZiskFv.AirsClean.MemAlignWriteByte.Direct
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Direct.lean:58:8: This simp argument is unused:
+  Nat.cast_add
+
+Hint: Omit it from the simp argument list.
+  simp only [List.replicate_succ, List.flatten_cons, memoryCoefficient_append, ih, N̵a̵t̵.̵c̵a̵s̵t̵_̵a̵d̵d̵,̵ ̵Nat.cast_one,
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲Nat.cast_succ]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Direct.lean:58:22: This simp argument is unused:
+  Nat.cast_one
+
+Hint: Omit it from the simp argument list.
+  simp only [List.replicate_succ, List.flatten_cons, memoryCoefficient_append, ih, Nat.cast_add,
+  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲N̵a̵t̵.̵c̵a̵s̵t̵_̵o̵n̵e̵,̵ ̵Nat.cast_succ]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Direct.lean:82:36: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Direct.lean:82:36: 'ring' tactic does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+⚠ [8118/8122] Replayed ZiskFv.AirsClean.MemAlignWriteByte.Segment
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Segment.lean:88:27: This simp argument is unused:
+  memReadMessageExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [circuit_norm, memR̵e̵a̵d̵M̵e̵s̵s̵a̵g̵e̵E̵x̵p̵r̵,̵ ̵m̵e̵m̵WriteMessageExpr, memBusMessageExpr,
+  ̵  ̵ ̵ ̵paddingLoadMessage,
+  ̲  ̲ ̲ ̲paddingAlignedStoreMessage, paddingSelectedStoreMessage,
+  ̵  ̵ ̵ ̵h4, h2, h1, hd, hc, hw, ha, hs, hm0,
+  ̲  ̲ ̲ ̲hm1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Segment.lean:88:47: This simp argument is unused:
+  memWriteMessageExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [circuit_norm, memReadMessageExpr, memW̵r̵i̵t̵e̵M̵e̵s̵s̵a̵g̵e̵E̵x̵p̵r̵,̵ ̵m̵e̵m̵BusMessageExpr,
+  ̵  ̵ ̵ ̵paddingLoadMessage,
+  ̲  ̲ ̲ ̲paddingAlignedStoreMessage, paddingSelectedStoreMessage,
+  ̵  ̵ ̵ ̵h4, h2, h1, hd, hc, hw, ha, hs, hm0,
+  ̲  ̲ ̲ ̲hm1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Segment.lean:88:68: This simp argument is unused:
+  memBusMessageExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [circuit_norm, memReadMessageExpr, memWriteMessageExpr, m̵e̵m̵B̵u̵s̵M̵e̵s̵s̵a̵g̵e̵E̵x̵pr̵,̵
+  ̵ ̵ ̵ ̵ ̵p̵addingLoadMessage,
+  ̲  ̲ ̲ ̲paddingAlignedStoreMessage, paddingSelectedStoreMessage,
+  ̵  ̵ ̵ ̵h4, h2, h1, hd, hc, hw, ha, hs, hm0,
+  ̲  ̲ ̲ ̲hm1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Segment.lean:89:4: This simp argument is unused:
+  paddingLoadMessage
+
+Hint: Omit it from the simp argument list.
+  simp only [circuit_norm, memReadMessageExpr, memWriteMessageExpr, memBusMessageExpr,
+      paddingL̵o̵a̵d̵M̵e̵s̵s̵a̵g̵e̵,̵ ̵p̵a̵d̵d̵i̵n̵g̵AlignedStoreMessage, paddingSelectedStoreMessage,
+  ̵  ̵ ̵ ̵h4, h2, h1, hd, hc, hw, ha, hs, hm0,
+  ̲  ̲ ̲ ̲hm1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Segment.lean:89:24: This simp argument is unused:
+  paddingAlignedStoreMessage
+
+Hint: Omit it from the simp argument list.
+  simp only [circuit_norm, memReadMessageExpr, memWriteMessageExpr, memBusMessageExpr,
+      paddingLoadMessage, paddingA̵l̵i̵g̵n̵e̵d̵St̵o̵r̵eM̵e̵s̵s̵a̵g̵e̵,̵ ̵p̵a̵d̵d̵i̵n̵g̵S̵e̵lectedStoreMessage,
+  ̵  ̵ ̵ ̵h4, h2, h1, hd, hc, hw, ha, hs, hm0, hm1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/MemAlignWriteByte/Segment.lean:89:52: This simp argument is unused:
+  paddingSelectedStoreMessage
+
+Hint: Omit it from the simp argument list.
+  simp only [circuit_norm, memReadMessageExpr, memWriteMessageExpr, memBusMessageExpr,
+      paddingLoadMessage, paddingAlignedStoreMessage, p̵a̵d̵d̵i̵n̵g̵S̵e̵l̵e̵c̵t̵e̵d̵S̵t̵o̵r̵e̵M̵e̵s̵s̵a̵g̵e̵,̵
+  ̵ ̵ ̵ ̵ ̵h4, h2, h1, hd, hc, hw, ha, hs, hm0, hm1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+Build completed successfully (8122 jobs).
