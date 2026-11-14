@@ -244,6 +244,15 @@ theorem load_op_typed_full_pins
 
 #print axioms load_op_typed_full_pins
 
+/-- The actual load A-slot lowering: architectural x0 becomes immediate zero,
+while the other decoded registers remain register sources. These are source
+conclusions, never a caller-supplied selector promise. -/
+def LoadASourcePins (row : aeneas_extract.ZiskInstExtract) (rs1 : Nat) : Prop :=
+  row.a_src = (if rs1 = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+  row.a_offset_imm0.val = rs1 ∧
+  row.a_use_sp_imm1 = 0#u64 ∧
+  row.is_precompiled = false
+
 private def loadOperandPins (before after : zisk_inst_builder.ZiskInstBuilder) : Prop :=
   after.i.a_src = before.i.a_src
     ∧ after.i.a_use_sp_imm1 = before.i.a_use_sp_imm1
@@ -351,6 +360,192 @@ private theorem src_a_reg_u32_nonzero_pins (self z : zisk_inst_builder.ZiskInstB
        simp [zisk_inst.SRC_REG, hc])
     | (exfalso; scalar_tac)
 
+/-- Source-sensitive x0/nonzero split for the real builder, not a selector oracle.
+The pinned Rust `core/src/zisk_inst_builder.rs:203–219` implements x0 with
+`src_a_imm(0)` and preserves indices 1–31 in `src_a_reg`. The corresponding
+definitions are in `trust/aeneas/ProductionM2.lean:2535` and its `src_a_imm`
+dependency. Mutating that actual zero selector or offset must reject this proof
+(through `src_a_reg_zero_pins`), and hence `transpile_ld_a_source_pins`. -/
+private theorem src_a_reg_u32_a_source_pins
+    (self z : zisk_inst_builder.ZiskInstBuilder)
+    (rs1 : Std.U32) (hrs1 : rs1.val < 32)
+    (h : self.src_a_reg (UScalar.cast UScalarTy.U64 rs1) false = ok z) :
+    z.i.a_src = (if rs1.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+      z.i.a_offset_imm0.val = rs1.val ∧ z.i.a_use_sp_imm1 = 0#u64 := by
+  by_cases hz : rs1.val = 0
+  · have hc : UScalar.cast UScalarTy.U64 rs1 = 0#u64 :=
+      UScalar.eq_of_val_eq ((ZiskFv.Compliance.Extraction.cast_u32_u64_val rs1).trans hz)
+    obtain ⟨hs, ho, hu⟩ := src_a_reg_zero_pins self z false (by simpa only [hc] using h)
+    simp only [if_pos hz]
+    exact ⟨hs, by rw [ho]; norm_num; exact hz.symm, hu⟩
+  · obtain ⟨hs, hu, ho⟩ := src_a_reg_u32_nonzero_pins self z rs1 hrs1 hz h
+    exact ⟨by simpa only [if_neg hz] using hs, ho, hu⟩
+
+/-- Preserve the real A-source pins through the entire successful typed-load
+builder chain. ProductionM2 `load_op_with_reg_offset:2787–2810` calls
+`src_a_reg`, `ind_width`, `src_b_ind`, `op_zisk`, `store_reg`, `j`, `build`,
+and `insert_inst`; `load_op_typed:2815–2824` selects register offset zero.
+`op_zisk` supplies the non-precompiled fact needed by actual ROM packflags. -/
+theorem load_op_typed_a_source_pins
+    (self : riscv2zisk_context.Riscv2ZiskContext)
+    (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
+    (w inst_size : Std.U64) (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (hrs1 : i.rs1.val < 32)
+    (hinput : zisk_ops.ZiskOp.input_size op = ok 0#u64)
+    (h : self.load_op_typed i op w inst_size = ok ctx) :
+    ∃ zib, ctx.extract_inst = some zib ∧
+      zib.i.a_src = (if i.rs1.val = 0 then zisk_inst.SRC_IMM else zisk_inst.SRC_REG) ∧
+      zib.i.a_offset_imm0.val = i.rs1.val ∧ zib.i.a_use_sp_imm1 = 0#u64 ∧
+      zib.i.is_precompiled = false := by
+  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
+    Bind.bind, bind_ok] at h
+  obtain ⟨s1, hs1, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
+  rw [Result.ok.injEq] at h
+  subst h
+  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
+    lift, Bind.bind, bind_ok] at hs1
+  obtain ⟨z0, _, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z1, h1, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z2, h2, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z3, h3, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z4, h4, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨iadd, _, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z5, h5, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z6, h6, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨z7, h7, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  obtain ⟨s2, h8, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
+  rw [Result.ok.injEq] at hs1
+  subst hs1
+  obtain ⟨haSrc, haOff, haSp⟩ := src_a_reg_u32_a_source_pins z0 z1 i.rs1 hrs1 h1
+  obtain ⟨haSrc4, haSp4, haOff4, hpre4⟩ := loadOperandPins_op_zisk z3 z4 op hinput h4
+  have hp12 := loadOperandPins_ind_width z1 z2 w h2
+  have hp23 := loadOperandPins_src_b_ind z2 z3 _ _ h3
+  have hp45 := loadOperandPins_store_reg z4 z5 iadd false false h5
+  have hp56 := loadOperandPins_j z5 z6 _ _ h6
+  have hp67 := loadOperandPins_build z6 z7 h7
+  have hp14 : loadOperandPins z1 z4 :=
+    loadOperandPins_trans (loadOperandPins_trans hp12 hp23)
+      ⟨haSrc4, haSp4, haOff4⟩
+  rcases loadOperandPins_trans
+      (loadOperandPins_trans (loadOperandPins_trans hp14 hp45) hp56) hp67 with
+    ⟨haSrc7, haSp7, haOff7⟩
+  refine ⟨z7, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h8,
+    haSrc7.trans haSrc, ?_, haSp7.trans haSp, ?_⟩
+  · rw [haOff7]
+    exact haOff
+  · have hp45' : z5.i.is_precompiled = false := by
+      rw [← hpre4]
+      exact precompiled_pres_store_reg z4 z5 iadd false false h5
+    have hp56' : z6.i.is_precompiled = false := by
+      rw [← hp45']
+      simp only [zisk_inst_builder.ZiskInstBuilder.j, bind_ok, Bind.bind] at h6
+      rw [Result.ok.injEq] at h6
+      subst z6
+      rfl
+    rw [ZiskFv.Compliance.Extraction.build_eq z6 z7 h7]
+    exact hp56'
+
+/-- Follow the actual decode/typed-load/from-inst pipeline and identify its result
+with the caller's successful lowering. ProductionM2 `lowering_opcode:1263–1276`
+and `lower_rv64im_single_row_input:3440–3481` supply the actual load dispatch;
+`ZiskInstExtract.from_inst:1343–1372` copies all four A-pin fields. No source
+equation is postulated: each per-op dispatch equality below is proved by `rfl`. -/
+private theorem transpile_load_a_source_pins_of
+    (raw : Std.U32) (rop : RiscvOpcode)
+    (srop : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (zop : zisk_ops.ZiskOp) (W : Std.U64) (rs1 : Nat)
+    (hrs1v : ∀ d, decode_i raw rop false = ok d → d.rs1.val = rs1)
+    (hdec : aeneas_extract.rv64im_decode.decode_32_core raw = decode_i raw rop false)
+    (hlowop : aeneas_extract.lowering_opcode rop = ok (some srop))
+    (hwtot : ∀ s : zisk_inst_builder.ZiskInstBuilder, ∃ z, s.ind_width W = ok z)
+    (harm : ∀ (self : riscv2zisk_context.Riscv2ZiskContext)
+        (input : riscv2zisk_single_row.Rv64imLoweringInput),
+        riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+            self input srop false =
+          (do let s ← riscv2zisk_context.Riscv2ZiskContext.load_op_typed
+                  { self with extract_marker := () } input zop W 4#u64
+              ok { s with extract_marker := () }))
+    (hopinput : zisk_ops.ZiskOp.input_size zop = ok 0#u64)
+    (ext : aeneas_extract.Rv64imTranspileExtract)
+    (hok : extract_transpile_rv64im_raw raw = ok ext) :
+    LoadASourcePins ext.row rs1 := by
+  obtain ⟨decoded, hdecoded, hopd, hrdb, hrs1b, _⟩ := decode_i_bounds raw rop false
+  have hdec0 : aeneas_extract.rv64im_decode.decode_32_core raw = ok decoded :=
+    hdec.trans hdecoded
+  set input : riscv2zisk_single_row.Rv64imLoweringInput :=
+    { rom_address := 0#u64, rd := decoded.rd, rs1 := decoded.rs1,
+      rs2 := decoded.rs2, imm := decoded.imm } with hinput
+  obtain ⟨ctx0, hctx0⟩ :=
+    load_op_typed_ok { defCtx with extract_marker := () } input zop W 4#u64
+      hwtot (by rw [hinput]; exact hrs1b) (by rw [hinput]; exact hrdb)
+  obtain ⟨zib, hzib, haSrc, haOff, haSp, hpre⟩ :=
+    load_op_typed_a_source_pins { defCtx with extract_marker := () }
+      input zop W 4#u64 ctx0 (by rw [hinput]; exact hrs1b) hopinput hctx0
+  have hrs1eq : input.rs1.val = rs1 := by
+    rw [hinput]
+    exact hrs1v decoded hdecoded
+  obtain ⟨dext, hdext⟩ := decode_extract_ok decoded
+  obtain ⟨row, hrow, _⟩ := from_inst_ok zib.i
+  have hpins : LoadASourcePins row rs1 := by
+    rw [aeneas_extract.ZiskInstExtract.from_inst] at hrow
+    obtain ⟨_, _, hrow⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hrow
+    rw [Result.ok.injEq] at hrow
+    subst row
+    exact ⟨by simpa only [hrs1eq] using haSrc,
+      haOff.trans hrs1eq, haSp, hpre⟩
+  have hlower :
+      riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+        defCtx input srop false = ok { ctx0 with extract_marker := () } := by
+    rw [harm defCtx input, hctx0]
+    rfl
+  have hext : extract_transpile_rv64im_raw raw =
+      ok { accepted := true, decode := dext, row := row } := by
+    rw [aeneas_extract.extract_transpile_rv64im_raw, hdec0]
+    simp only [bind_ok, Bind.bind, hdext, hopd, hlowop]
+    simp only [defCtx] at hlower
+    simp only [riscv2zisk_single_row.Rv64imLoweringInput.new, bind_ok, ← hinput,
+      hlower, hzib, core.option.Option.unwrap, Result.ofOption, hrow]
+  have heq : ext = { accepted := true, decode := dext, row := row } :=
+    Result.ok.inj (hok.symm.trans hext)
+  rw [heq]
+  exact hpins
+
+/-! The seven successful-lowering APIs deliberately include x0. A mutation of
+the actual builder's x0 selector/offset is intended to reject
+`transpile_ld_a_source_pins` (and the other six), not a detached test model. -/
+local macro "load_a_source_op" nm:ident "," f3:term "," rop:term "," srop:term ","
+    zop:term "," width:term : command => do
+  let tName := Lean.mkIdent (Lean.Name.mkSimple
+    ("transpile_" ++ nm.getId.toString ++ "_a_source_pins"))
+  `(theorem $tName (rd rs1 imm : Nat) (hrd : rd < 32) (hrs1 : rs1 < 32)
+        (ext : aeneas_extract.Rv64imTranspileExtract)
+        (hok : extract_transpile_rv64im_raw
+          (toU32 (ZiskFv.Completeness.Rv64imShapes.rawIType imm rs1 $f3 rd 0x03)) = ok ext) :
+        LoadASourcePins ext.row rs1 := by
+      refine transpile_load_a_source_pins_of _ $rop $srop $zop $width rs1
+        ?_ ?_ rfl (fun _ => ⟨_, rfl⟩) (by intro self input; rfl) rfl ext hok
+      · intro d hd
+        have hfields := decode_i_rawIType_fields imm rs1 $f3 rd 0x03
+          hrs1 (by norm_num) hrd (by norm_num) $rop d hd
+        change d.rs1.bv.toNat = rs1
+        rw [hfields.2.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      · simp only [aeneas_extract.rv64im_decode.decode_32_core,
+          lift, bind_assoc, Bind.bind, bind_ok,
+          ZiskFv.Compliance.Decode.toU32_and127, ZiskFv.Compliance.Decode.toU32_and7,
+          ZiskFv.Compliance.Decode.toU32_shr12, ZiskFv.Compliance.Decode.toU32_ofNat,
+          ZiskFv.Compliance.Decode.rawIType_opcode imm rs1 $f3 rd 0x03 (by norm_num),
+          ZiskFv.Compliance.Decode.rawIType_funct3 imm rs1 $f3 rd 0x03
+            (by norm_num) hrd (by norm_num)]
+        all_goals rfl)
+
+load_a_source_op ld, 3, RiscvOpcode.Ld, riscv2zisk_single_row.Rv64imSingleRowOpcode.Ld, zisk_ops.ZiskOp.CopyB, 8#u64
+load_a_source_op lbu, 4, RiscvOpcode.Lbu, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lbu, zisk_ops.ZiskOp.CopyB, 1#u64
+load_a_source_op lhu, 5, RiscvOpcode.Lhu, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lhu, zisk_ops.ZiskOp.CopyB, 2#u64
+load_a_source_op lwu, 6, RiscvOpcode.Lwu, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lwu, zisk_ops.ZiskOp.CopyB, 4#u64
+load_a_source_op lb, 0, RiscvOpcode.Lb, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lb, zisk_ops.ZiskOp.SignExtendB, 1#u64
+load_a_source_op lh, 1, RiscvOpcode.Lh, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lh, zisk_ops.ZiskOp.SignExtendH, 2#u64
+load_a_source_op lw, 2, RiscvOpcode.Lw, riscv2zisk_single_row.Rv64imSingleRowOpcode.Lw, zisk_ops.ZiskOp.SignExtendW, 4#u64
+
 theorem load_op_typed_nonzero_rs1_full_pins
     (self : riscv2zisk_context.Riscv2ZiskContext)
     (i : riscv2zisk_single_row.Rv64imLoweringInput) (op : zisk_ops.ZiskOp)
@@ -377,56 +572,13 @@ theorem load_op_typed_nonzero_rs1_full_pins
   obtain ⟨zib, hzib, hiw', hbSrc, hbOff, hstoreOff, hstore, hstoreReg,
       hstoreSelector, hj1, hj2⟩ :=
     load_op_typed_full_pins self i op w inst_size wval ctx hrd hiw h
-  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_typed,
-    Bind.bind, bind_ok] at h
-  obtain ⟨s1, hs1, h⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp h
-  rw [Result.ok.injEq] at h
-  subst h
-  simp only [riscv2zisk_context.Riscv2ZiskContext.load_op_with_reg_offset,
-    lift, Bind.bind, bind_ok] at hs1
-  obtain ⟨z0, h0, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z1, h1, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z2, h2, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z3, h3, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z4, h4, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨iadd, hadd, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z5, h5, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z6, h6, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨z7, h7, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  obtain ⟨s2, h8, hs1⟩ := ZiskFv.Compliance.Extraction.bind_eq_ok_imp hs1
-  rw [Result.ok.injEq] at hs1
-  subst hs1
-  obtain ⟨haSrc, haSp, haOff⟩ := src_a_reg_u32_nonzero_pins z0 z1 i.rs1 hrs1 hrs1ne h1
-  obtain ⟨haSrc4, haSp4, haOff4, hpre4⟩ := loadOperandPins_op_zisk z3 z4 op hinput h4
-  have hp12 := loadOperandPins_ind_width z1 z2 w h2
-  have hp23 := loadOperandPins_src_b_ind z2 z3 _ _ h3
-  have hp45 := loadOperandPins_store_reg z4 z5 iadd false false h5
-  have hp56 := loadOperandPins_j z5 z6 _ _ h6
-  have hp67 := loadOperandPins_build z6 z7 h7
-  have hp14 : loadOperandPins z1 z4 :=
-    loadOperandPins_trans (loadOperandPins_trans hp12 hp23)
-      ⟨haSrc4, haSp4, haOff4⟩
-  have hp17 := loadOperandPins_trans (loadOperandPins_trans (loadOperandPins_trans hp14 hp45) hp56) hp67
-  rcases hp17 with ⟨haSrc7, haSp7, haOff7⟩
-  have hzz : zib = z7 := Option.some.inj (hzib.symm.trans
-    (ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h8))
-  subst zib
-  refine ⟨z7, ZiskFv.Compliance.Extraction.insert_inst_extract _ _ _ _ h8,
-    haSrc7.trans haSrc, ?_, haSp7.trans haSp, hbSrc, hbOff, hstoreOff, hstore,
-    hstoreReg, hstoreSelector, hiw', hj1, hj2, ?_⟩
-  · rw [haOff7]
-    exact haOff
-  · have hp45' : z5.i.is_precompiled = false := by
-      rw [← hpre4]
-      exact precompiled_pres_store_reg z4 z5 iadd false false h5
-    have hp56' : z6.i.is_precompiled = false := by
-      rw [← hp45']
-      simp only [zisk_inst_builder.ZiskInstBuilder.j, bind_ok, Bind.bind] at h6
-      rw [Result.ok.injEq] at h6
-      subst z6
-      rfl
-    rw [ZiskFv.Compliance.Extraction.build_eq z6 z7 h7]
-    exact hp56'
+  obtain ⟨zib', hzib', haSrc, haOff, haSp, hpre⟩ :=
+    load_op_typed_a_source_pins self i op w inst_size ctx hrs1 hinput h
+  have hzz : zib' = zib := Option.some.inj (hzib'.symm.trans hzib)
+  subst zib'
+  refine ⟨zib, hzib, ?_, haOff, haSp, hbSrc, hbOff, hstoreOff, hstore,
+    hstoreReg, hstoreSelector, hiw', hj1, hj2, hpre⟩
+  simpa only [if_neg hrs1ne] using haSrc
 
 #print axioms load_op_typed_nonzero_rs1_full_pins
 
