@@ -5,6 +5,7 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
 import ZiskFv.Compliance.TraceLevelExport.PureInputs
+import ZiskFv.Compliance.TraceLevelExport.StatePresence
 import ZiskFv.AirsClean.ArithTableProjections
 
 /-!
@@ -2034,36 +2035,39 @@ theorem root_soundness
       ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
             ziskTrace.program ziskTrace.mainTable).pc k).val
         = ((chainedSailTrace ziskStep init ⟨k, hk⟩).regs.get? Register.PC).elim 0
-            BitVec.toNat := by
+            BitVec.toNat
+      ∧ ∃ pc, (chainedSailTrace ziskStep init ⟨k, hk⟩).regs.get? Register.PC = some pc := by
     intro k
     induction k with
     | zero =>
         intro hk
-        exact ⟨regAgree_zero ziskStep rowDecodes init regBoot, pcBoot hk⟩
+        exact ⟨regAgree_zero ziskStep rowDecodes init regBoot, pcBoot hk,
+          inputsAgreeCore_pc_present ⟨0, hk⟩ (ziskStep ⟨0, hk⟩) (inputsAgree ⟨0, hk⟩)⟩
     | succ j ih =>
         intro hk
         have hj : j < numInstructions := Nat.lt_of_succ_lt hk
-        obtain ⟨h_reg_j, h_pc_j⟩ := ih hj
+        obtain ⟨h_reg_j, h_pc_j, pc_j, h_present_j⟩ := ih hj
         have ss_j : StepSound ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
             (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩) :=
           stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
             (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)
             (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩)
               (pureInputsOfRegAgree ziskStep rowDecodes init ⟨j, hj⟩ h_reg_j
-                (inputsAgree ⟨j, hj⟩)))
+                pc_j h_present_j (inputsAgree ⟨j, hj⟩)))
             (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
             (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init j hj
               h_reg_j h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
         exact ⟨
           regAgree_succ ziskStep rowDecodes init j hj ss_j h_reg_j,
           pcBridge_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init)
-            rowsAligned j hk ss_j⟩
+            rowsAligned j hk ss_j,
+          pc_present_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init) j hk ss_j⟩
   intro i
-  obtain ⟨h_reg_i, h_pc_i⟩ := combined i.val i.isLt
+  obtain ⟨h_reg_i, h_pc_i, pc_i, h_present_i⟩ := combined i.val i.isLt
   exact stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
     (rowDecodes i)
     (inputsAgree_of_pcBridge i h_pc_i (ziskStep i)
-      (pureInputsOfRegAgree ziskStep rowDecodes init i h_reg_i (inputsAgree i)))
+      (pureInputsOfRegAgree ziskStep rowDecodes init i h_reg_i pc_i h_present_i (inputsAgree i)))
     (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
     (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
       h_reg_i h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
